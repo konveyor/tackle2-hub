@@ -1,3 +1,4 @@
-# tackle-hub
+# tackle2-hub
+Tackle (2nd generation) hub component.
 
-<img src="https://github.com/mansam/tackle-hub/blob/main/tackle-hub.png" width="850" height="600">
+<img src="https://github.com/konveyor/tackle2-hub/blob/main/arch.png" width="850" height="600">
