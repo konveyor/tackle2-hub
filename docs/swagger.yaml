@@ -1,0 +1,2049 @@
+definitions:
+  api.Addon:
+    properties:
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  api.Application:
+    properties:
+      businessService:
+        type: string
+      comments:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      repository:
+        $ref: '#/definitions/api.Repository'
+      review:
+        $ref: '#/definitions/api.Review'
+      tags:
+        items:
+          type: string
+        type: array
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  api.Bucket:
+    properties:
+      application:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      path:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  api.BusinessService:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      owner:
+        properties:
+          displayName:
+            type: string
+          id:
+            type: integer
+        type: object
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  api.CopyRequest:
+    properties:
+      sourceReview:
+        type: integer
+      targetApplications:
+        items:
+          type: integer
+        type: array
+    required:
+    - sourceReview
+    - targetApplications
+    type: object
+  api.Dependency:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      from:
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+        required:
+        - id
+        type: object
+      id:
+        type: integer
+      to:
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+        required:
+        - id
+        type: object
+      updateUser:
+        type: string
+    type: object
+  api.Identity:
+    properties:
+      application:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      encrypted:
+        type: string
+      id:
+        type: integer
+      key:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      settings:
+        type: string
+      updateUser:
+        type: string
+      user:
+        type: string
+    required:
+    - kind
+    - name
+    type: object
+  api.Import:
+    additionalProperties: true
+    type: object
+  api.ImportSummary:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      filename:
+        type: string
+      id:
+        type: integer
+      importStatus:
+        type: string
+      importTime:
+        type: string
+      invalidCount:
+        type: integer
+      updateUser:
+        type: string
+      validCount:
+        type: integer
+    type: object
+  api.JobFunction:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      role:
+        type: string
+      stakeholders:
+        items:
+          $ref: '#/definitions/api.Stakeholder'
+        type: array
+      updateUser:
+        type: string
+    required:
+    - role
+    type: object
+  api.Proxy:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      host:
+        type: string
+      id:
+        type: integer
+      identity:
+        type: integer
+      kind:
+        enum:
+        - http
+        - https
+        type: string
+      port:
+        type: integer
+      updateUser:
+        type: string
+    required:
+    - host
+    type: object
+  api.Repository:
+    properties:
+      branch:
+        type: string
+      kind:
+        type: string
+      path:
+        type: string
+      tag:
+        type: string
+      url:
+        type: string
+    required:
+    - kind
+    type: object
+  api.Review:
+    properties:
+      application:
+        properties:
+          id:
+            type: integer
+        required:
+        - id
+        type: object
+      businessCriticality:
+        type: integer
+      comments:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      effortEstimate:
+        type: string
+      id:
+        type: integer
+      proposedAction:
+        type: string
+      updateUser:
+        type: string
+      workPriority:
+        type: integer
+    required:
+    - application
+    type: object
+  api.Setting:
+    properties:
+      key:
+        type: string
+      value: {}
+    type: object
+  api.Stakeholder:
+    properties:
+      businessServices:
+        items:
+          $ref: '#/definitions/api.BusinessService'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      displayName:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      jobFunction:
+        properties:
+          id:
+            type: integer
+          role:
+            type: string
+        type: object
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/api.StakeholderGroup'
+        type: array
+      updateUser:
+        type: string
+    required:
+    - displayName
+    - email
+    type: object
+  api.StakeholderGroup:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      stakeholders:
+        items:
+          $ref: '#/definitions/api.Stakeholder'
+        type: array
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  api.Tag:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      tagType:
+        properties:
+          colour:
+            type: string
+          id:
+            type: integer
+          name:
+            type: string
+        required:
+        - id
+        type: object
+      updateUser:
+        type: string
+    required:
+    - name
+    - tagType
+    type: object
+  api.TagType:
+    properties:
+      colour:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      rank:
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/api.Tag'
+        type: array
+      updateUser:
+        type: string
+      username:
+        type: string
+    required:
+    - name
+    type: object
+  api.Task:
+    properties:
+      addon:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data:
+        type: object
+      error:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      isolated:
+        type: boolean
+      job:
+        type: string
+      locator:
+        type: string
+      name:
+        type: string
+      report:
+        $ref: '#/definitions/api.TaskReport'
+      started:
+        type: string
+      status:
+        type: string
+      terminated:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  api.TaskReport:
+    properties:
+      activity:
+        type: string
+      completed:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      error:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+      task:
+        type: integer
+      total:
+        type: integer
+      updateUser:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /addons:
+    get:
+      description: List all addons.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Addon'
+            type: array
+      summary: List all addons.
+      tags:
+      - get
+  /addons/:name/tasks:
+    post:
+      consumes:
+      - application/json
+      description: Create an addon task.
+      parameters:
+      - description: Task data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.Task'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Task'
+      summary: Create an addon task.
+      tags:
+      - create
+  /addons/{name}:
+    get:
+      description: Get an addon by name.
+      parameters:
+      - description: Addon name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Addon'
+      summary: Get an addon by name.
+      tags:
+      - get
+  /application-inventory/application:
+    get:
+      description: List all applications.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Application'
+            type: array
+      summary: List all applications.
+      tags:
+      - list
+    post:
+      consumes:
+      - application/json
+      description: Create an application.
+      parameters:
+      - description: Application data
+        in: body
+        name: application
+        required: true
+        schema:
+          $ref: '#/definitions/api.Application'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Application'
+      summary: Create an application.
+      tags:
+      - create
+  /application-inventory/application-import:
+    get:
+      description: List imports.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Import'
+            type: array
+      summary: List imports.
+      tags:
+      - list
+  /application-inventory/application-import/{id}:
+    delete:
+      description: Delete an import. This leaves any created application or dependency.
+      parameters:
+      - description: Import ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an import.
+      tags:
+      - delete
+    get:
+      description: Get an import by ID.
+      parameters:
+      - description: Import ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Import'
+      summary: Get an import by ID.
+      tags:
+      - get
+  /application-inventory/application/{id}:
+    delete:
+      description: Delete an application.
+      parameters:
+      - description: Application id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: ""
+      summary: Delete an application.
+      tags:
+      - delete
+    get:
+      description: Get an application by ID.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Application'
+      summary: Get an application by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update an application.
+      parameters:
+      - description: Application id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Application data
+        in: body
+        name: application
+        required: true
+        schema:
+          $ref: '#/definitions/api.Application'
+      responses:
+        "204":
+          description: ""
+      summary: Update an application.
+      tags:
+      - update
+  /application-inventory/application/{id}/bucket:
+    get:
+      description: List all buckets.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Bucket'
+            type: array
+      summary: List all buckets.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a bucket for an application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Bucket data
+        in: body
+        name: bucket
+        required: true
+        schema:
+          $ref: '#/definitions/api.Bucket'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Create a bucket for an application.
+      tags:
+      - create
+  /application-inventory/application/{id}/identities:
+    get:
+      description: List identities for an application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Identity'
+            type: array
+      summary: List identities for an application.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create an identity for an application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Identity data
+        in: body
+        name: identity
+        required: true
+        schema:
+          $ref: '#/definitions/api.Identity'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Identity'
+      summary: Create an identity for an application.
+      tags:
+      - create
+  /application-inventory/applications-dependency:
+    get:
+      description: List all dependencies.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Dependency'
+            type: array
+      summary: List all dependencies.
+      tags:
+      - list
+    post:
+      consumes:
+      - application/json
+      description: Create a dependency.
+      parameters:
+      - description: Dependency data
+        in: body
+        name: applications_dependency
+        required: true
+        schema:
+          $ref: '#/definitions/api.Dependency'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Dependency'
+      summary: Create a dependency.
+      tags:
+      - create
+  /application-inventory/applications-dependency/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a dependency.
+      parameters:
+      - description: Dependency id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a dependency.
+      tags:
+      - delete
+    get:
+      description: Get a dependency by ID.
+      parameters:
+      - description: Dependency ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Dependency'
+      summary: Get a dependency by ID.
+      tags:
+      - get
+  /application-inventory/csv-export:
+    get:
+      description: Export the source CSV for a particular import summary.
+      parameters:
+      - description: ImportSummary ID
+        in: query
+        name: importSummary.id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Export the source CSV for a particular import summary.
+      tags:
+      - export
+  /application-inventory/file/upload:
+    post:
+      description: Upload a CSV containing applications and dependencies to import.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ImportSummary'
+      summary: Upload a CSV containing applications and dependencies to import.
+      tags:
+      - post
+  /application-inventory/import-summary:
+    get:
+      description: List import summaries.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.ImportSummary'
+            type: array
+      summary: List import summaries.
+      tags:
+      - list
+  /application-inventory/import-summary/{id}:
+    delete:
+      description: Delete an import summary and associated import records.
+      parameters:
+      - description: ImportSummary ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an import summary and associated import records.
+      tags:
+      - delete
+    get:
+      description: Get an import by ID.
+      parameters:
+      - description: ImportSummary ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ImportSummary'
+      summary: Get an import summary by ID.
+      tags:
+      - get
+  /application-inventory/review:
+    get:
+      description: List all reviews.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Review'
+            type: array
+      summary: List all reviews.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a review.
+      parameters:
+      - description: Review data
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/api.Review'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Review'
+      summary: Create a review.
+      tags:
+      - create
+  /application-inventory/review/{id}:
+    delete:
+      description: Delete a review.
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a review.
+      tags:
+      - delete
+    get:
+      description: Get a review by ID.
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Review'
+            type: array
+      summary: Get a review by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a review.
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Review data
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/api.Review'
+      responses:
+        "204":
+          description: ""
+      summary: Update a review.
+      tags:
+      - update
+  /application-inventory/review/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Copy a review from one application to others.
+      parameters:
+      - description: Review copy request data
+        in: body
+        name: copy_request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CopyRequest'
+      responses:
+        "204":
+          description: ""
+      summary: Copy a review from one application to others.
+      tags:
+      - copy
+  /controls/bucket:
+    get:
+      description: List all buckets.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Bucket'
+            type: array
+      summary: List all buckets.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a bucket.
+      parameters:
+      - description: Bucket data
+        in: body
+        name: bucket
+        required: true
+        schema:
+          $ref: '#/definitions/api.Bucket'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Create a bucket.
+      tags:
+      - create
+  /controls/bucket/{id}:
+    delete:
+      description: Delete a bucket.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Delete a bucket.
+      tags:
+      - delete
+    get:
+      description: Get a bucket by ID.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Get a bucket by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a bucket.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bucket data
+        in: body
+        name: bucket
+        required: true
+        schema:
+          $ref: '#/definitions/api.Bucket'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Update a bucket.
+      tags:
+      - update
+  /controls/business-service:
+    get:
+      description: List all business services.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.BusinessService'
+      summary: List all business services.
+      tags:
+      - list
+    post:
+      consumes:
+      - application/json
+      description: Create a business service.
+      parameters:
+      - description: Business service data
+        in: body
+        name: business_service
+        required: true
+        schema:
+          $ref: '#/definitions/api.BusinessService'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.BusinessService'
+      summary: Create a business service.
+      tags:
+      - create
+  /controls/business-service/{id}:
+    delete:
+      description: Delete a business service.
+      parameters:
+      - description: Business service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a business service.
+      tags:
+      - delete
+    get:
+      description: Get a business service by ID.
+      parameters:
+      - description: Business Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.BusinessService'
+      summary: Get a business service by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a business service.
+      parameters:
+      - description: Business service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Business service data
+        in: body
+        name: business_service
+        required: true
+        schema:
+          $ref: '#/definitions/api.BusinessService'
+      responses:
+        "204":
+          description: ""
+      summary: Update a business service.
+      tags:
+      - update
+  /controls/job-function:
+    get:
+      description: List all job functions.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.JobFunction'
+            type: array
+      summary: List all job functions.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a job function.
+      parameters:
+      - description: Job Function data
+        in: body
+        name: job_function
+        required: true
+        schema:
+          $ref: '#/definitions/api.JobFunction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.JobFunction'
+      summary: Create a job function.
+      tags:
+      - create
+  /controls/job-function/{id}:
+    delete:
+      description: Delete a job function.
+      parameters:
+      - description: Job Function ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a job function.
+      tags:
+      - delete
+    get:
+      description: Get a job function by ID.
+      parameters:
+      - description: Job Function ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.JobFunction'
+            type: array
+      summary: Get a job function by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a job function.
+      parameters:
+      - description: Job Function ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Job Function data
+        in: body
+        name: job_function
+        required: true
+        schema:
+          $ref: '#/definitions/api.JobFunction'
+      responses:
+        "204":
+          description: ""
+      summary: Update a job function.
+      tags:
+      - update
+  /controls/stakeholder:
+    get:
+      description: List all stakeholders.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Stakeholder'
+            type: array
+      summary: List all stakeholders.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a stakeholder.
+      parameters:
+      - description: Stakeholder data
+        in: body
+        name: stakeholder
+        required: true
+        schema:
+          $ref: '#/definitions/api.Stakeholder'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Stakeholder'
+      summary: Create a stakeholder.
+      tags:
+      - create
+  /controls/stakeholder-group:
+    get:
+      description: List all stakeholder groups.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.StakeholderGroup'
+            type: array
+      summary: List all stakeholder groups.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a stakeholder group.
+      parameters:
+      - description: Stakeholder Group data
+        in: body
+        name: stakeholder_group
+        required: true
+        schema:
+          $ref: '#/definitions/api.StakeholderGroup'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.StakeholderGroup'
+      summary: Create a stakeholder group.
+      tags:
+      - create
+  /controls/stakeholder-group/{id}:
+    delete:
+      description: Delete a stakeholder group.
+      parameters:
+      - description: Stakeholder Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a stakeholder group.
+      tags:
+      - delete
+    get:
+      description: Get a stakeholder group by ID.
+      parameters:
+      - description: Stakeholder Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StakeholderGroup'
+      summary: Get a stakeholder group by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a stakeholder group.
+      parameters:
+      - description: Stakeholder Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Stakeholder Group data
+        in: body
+        name: stakeholder_group
+        required: true
+        schema:
+          $ref: '#/definitions/api.StakeholderGroup'
+      responses:
+        "204":
+          description: ""
+      summary: Update a stakeholder group.
+      tags:
+      - update
+  /controls/stakeholder/{id}:
+    delete:
+      description: Delete a stakeholder.
+      parameters:
+      - description: Stakeholder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a stakeholder.
+      tags:
+      - delete
+    get:
+      description: Get a stakeholder by ID.
+      parameters:
+      - description: Stakeholder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Stakeholder'
+      summary: Get a stakeholder by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a stakeholder.
+      parameters:
+      - description: Stakeholder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Stakeholder data
+        in: body
+        name: stakeholder
+        required: true
+        schema:
+          $ref: '#/definitions/api.Stakeholder'
+      responses:
+        "204":
+          description: ""
+      summary: Update a stakeholder.
+      tags:
+      - update
+  /controls/tag:
+    get:
+      description: List all tags.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Tag'
+            type: array
+      summary: List all tags.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a tag.
+      parameters:
+      - description: Tag data
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/api.Tag'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Tag'
+      summary: Create a tag.
+      tags:
+      - create
+  /controls/tag-type:
+    get:
+      description: List all tag types.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TagType'
+            type: array
+      summary: List all tag types.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a tag type.
+      parameters:
+      - description: Tag Type data
+        in: body
+        name: tag_type
+        required: true
+        schema:
+          $ref: '#/definitions/api.TagType'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.TagType'
+      summary: Create a tag type.
+      tags:
+      - create
+  /controls/tag-type/{id}:
+    delete:
+      description: Delete a tag type.
+      parameters:
+      - description: Tag Type ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a tag type.
+      tags:
+      - delete
+    get:
+      description: Get a tag type by ID.
+      parameters:
+      - description: Tag Type ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagType'
+      summary: Get a tag type by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a tag type.
+      parameters:
+      - description: Tag Type ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag Type data
+        in: body
+        name: tag_type
+        required: true
+        schema:
+          $ref: '#/definitions/api.TagType'
+      responses:
+        "204":
+          description: ""
+      summary: Update a tag type.
+      tags:
+      - update
+  /controls/tag/{id}:
+    delete:
+      description: Delete a tag.
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a tag.
+      tags:
+      - delete
+    get:
+      description: Get a tag by ID.
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Tag'
+      summary: Get a tag by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a tag.
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag data
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/api.Tag'
+      responses:
+        "204":
+          description: ""
+      summary: Update a tag.
+      tags:
+      - update
+  /identities:
+    get:
+      description: List all identities.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Identity'
+            type: array
+      summary: List all identities.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create an identity.
+      parameters:
+      - description: Identity data
+        in: body
+        name: identity
+        required: true
+        schema:
+          $ref: '#/definitions/api.Identity'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Identity'
+      summary: Create an identity.
+      tags:
+      - create
+  /identities/{id}:
+    delete:
+      description: Delete an identity.
+      parameters:
+      - description: Identity ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an identity.
+      tags:
+      - delete
+    get:
+      description: Get an identity by ID.
+      parameters:
+      - description: Identity ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Identity'
+      summary: Get an identity by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update an identity.
+      parameters:
+      - description: Identity ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Identity data
+        in: body
+        name: identity
+        required: true
+        schema:
+          $ref: '#/definitions/api.Identity'
+      responses:
+        "204":
+          description: ""
+      summary: Update an identity.
+      tags:
+      - update
+  /proxies:
+    get:
+      description: List all proxies.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Proxy'
+            type: array
+      summary: List all proxies.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create an proxy.
+      parameters:
+      - description: Proxy data
+        in: body
+        name: proxy
+        required: true
+        schema:
+          $ref: '#/definitions/api.Proxy'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Proxy'
+      summary: Create an proxy.
+      tags:
+      - create
+  /proxies/{id}:
+    delete:
+      description: Delete an proxy.
+      parameters:
+      - description: Proxy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an proxy.
+      tags:
+      - delete
+    get:
+      description: Get an proxy by ID.
+      parameters:
+      - description: Proxy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Proxy'
+      summary: Get an proxy by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update an proxy.
+      parameters:
+      - description: Proxy ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Proxy data
+        in: body
+        name: proxy
+        required: true
+        schema:
+          $ref: '#/definitions/api.Proxy'
+      responses:
+        "204":
+          description: ""
+      summary: Update an proxy.
+      tags:
+      - update
+  /settings:
+    get:
+      description: List all settings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Setting'
+            type: array
+      summary: List all settings.
+      tags:
+      - list
+      - setting
+    post:
+      consumes:
+      - application/json
+      description: Create a setting.
+      parameters:
+      - description: Setting data
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/api.Setting'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Setting'
+      summary: Create a setting.
+      tags:
+      - create
+      - setting
+  /settings/{key}:
+    delete:
+      description: Delete a setting.
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a setting.
+      tags:
+      - delete
+      - setting
+    get:
+      description: Get a setting by its key.
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Setting'
+      summary: Get a setting by its key.
+      tags:
+      - get
+      - setting
+    put:
+      consumes:
+      - application/json
+      description: Update a setting.
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Update a setting.
+      tags:
+      - update
+      - setting
+  /tasks:
+    get:
+      description: List all tasks.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Task'
+            type: array
+      summary: List all tasks.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a task.
+      parameters:
+      - description: Task data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.Task'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Task'
+      summary: Create a task.
+      tags:
+      - create
+  /tasks/{id}:
+    delete:
+      description: Delete a task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a task.
+      tags:
+      - delete
+    get:
+      description: Get a task by ID.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Task'
+      summary: Get a task by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Task data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.Task'
+      responses:
+        "204":
+          description: ""
+      summary: Update a task.
+      tags:
+      - update
+  /tasks/{id}/report:
+    post:
+      consumes:
+      - application/json
+      description: Update a task report.
+      parameters:
+      - description: TaskReport ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: TaskReport data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.TaskReport'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.TaskReport'
+      summary: Create a task report.
+      tags:
+      - update
+    put:
+      consumes:
+      - application/json
+      description: Update a task report.
+      parameters:
+      - description: TaskReport ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: TaskReport data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.TaskReport'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TaskReport'
+      summary: Update a task report.
+      tags:
+      - update
+swagger: "2.0"

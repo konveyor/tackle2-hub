@@ -1,0 +1,8 @@
+---
+kind: Addon
+apiVersion: tackle.konveyor.io/v1alpha1
+metadata:
+  name: test
+spec:
+  image: quay.io/jortel/tackle-addon
+

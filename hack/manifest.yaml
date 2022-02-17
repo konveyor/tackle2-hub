@@ -1,0 +1,93 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: bucket
+  namespace: tackle-hub
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tackle-hub
+  namespace: tackle-hub
+  labels:
+    app: tackle-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tackle-hub
+  template:
+    metadata:
+      labels:
+        app: tackle-hub
+    spec:
+      serviceAccountName: tackle-hub
+      automountServiceAccountToken: true
+      containers:
+      - name: main
+        image: quay.io/jortel/tackle-hub:latest
+        env:
+          - name: "HUB_BASE_URL"
+            value: "http://tackle-hub"
+          - name: "ADDON_SECRET_PATH"
+            value: "/secret/addon.json"
+          - name: "BUCKET_PATH"
+            value: "/bucket"
+        volumeMounts:
+          - name: bucket
+            mountPath: /bucket
+      volumes:
+        - name: bucket
+          persistentVolumeClaim:
+            claimName: bucket
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tackle-hub
+  namespace: tackle-hub
+  labels:
+    app: tackle-hub
+spec:
+  type: NodePort
+  selector:
+    app: tackle-hub
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: tackle-hub
+  name:  tackle-hub
+rules:
+- apiGroups: ["", "batch", "tackle.konveyor.io"]
+  resources: ["*"]
+  verbs: ["*"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: tackle-hub
+  namespace: tackle-hub
+subjects:
+- kind: ServiceAccount
+  name: tackle-hub
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: tackle-hub
+  apiGroup: ""
