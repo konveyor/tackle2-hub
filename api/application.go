@@ -189,6 +189,7 @@ type Application struct {
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
 	Repository      *Repository `json:"repository"`
+	Extensions      Extensions  `json:"extensions"`
 	Review          *Review     `json:"review"`
 	Comments        string      `json:"comments"`
 	Tags            []string    `json:"tags"`
@@ -203,6 +204,7 @@ func (r *Application) With(m *model.Application) {
 	r.Description = m.Description
 	r.Comments = m.Comments
 	_ = json.Unmarshal(m.Repository, &r.Repository)
+	_ = json.Unmarshal(m.Extensions, &r.Extensions)
 	if m.Review != nil {
 		r.Review = &Review{Resource: Resource{ID: m.Review.ID}}
 	}
@@ -225,6 +227,9 @@ func (r *Application) Model() (m *model.Application) {
 	m.ID = r.ID
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
+	}
+	if r.Extensions != nil {
+		m.Extensions, _ = json.Marshal(r.Extensions)
 	}
 	if len(r.BusinessService) > 0 {
 		id, _ := strconv.Atoi(r.BusinessService)
@@ -253,3 +258,7 @@ type Repository struct {
 	Tag    string `json:"tag"`
 	Path   string `json:"path"`
 }
+
+//
+// Extensions of the application.
+type Extensions map[string]interface{}

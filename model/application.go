@@ -8,6 +8,7 @@ type Application struct {
 	Description       string
 	Review            *Review
 	Repository        JSON
+	Extensions        JSON
 	Comments          string
 	Tags              []Tag      `gorm:"many2many:applicationTags"`
 	Identities        []Identity `gorm:"many2many:appIdentity"`
