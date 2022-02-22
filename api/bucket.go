@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
+	"io"
 	"net/http"
 	"os"
 	pathlib "path"
@@ -35,11 +36,15 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 	e.GET(BucketRoot, h.Get)
 	e.DELETE(BucketRoot, h.Delete)
 	e.GET(BucketContent, h.GetContent)
+	e.POST(BucketContent, h.UploadContent)
+	e.PUT(BucketContent, h.UploadContent)
 	e.GET(AppBucketsRoot, h.AppList)
 	e.GET(AppBucketsRoot+"/", h.AppList)
 	e.GET(AppBucketRoot+"/", h.AppGet)
 	e.POST(AppBucketRoot, h.AppCreate)
 	e.GET(AppBucketContentRoot, h.AppContent)
+	e.POST(AppBucketContentRoot, h.AppUploadContent)
+	e.PUT(AppBucketContentRoot, h.AppUploadContent)
 }
 
 // Get godoc
@@ -160,6 +165,27 @@ func (h BucketHandler) GetContent(ctx *gin.Context) {
 		rPath))
 }
 
+// UploadContent godoc
+// @summary Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path.
+// @tags get
+// @produce json
+// @success 204 {object}
+// @router /bucket/{id}/content/* [post]
+// @param id path string true "Bucket ID"
+func (h BucketHandler) UploadContent(ctx *gin.Context) {
+	m := &model.Bucket{}
+	id := ctx.Param(ID)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	r := &Bucket{}
+	r.With(m)
+	h.upload(ctx, r)
+}
+
 // AppList godoc
 // @summary List buckets associated with application.
 // @description List buckets associated with application.
@@ -271,9 +297,33 @@ func (h BucketHandler) AppContent(ctx *gin.Context) {
 		rPath))
 }
 
+// AppUploadContent godoc
+// @summary Upload bucket content by application ID, bucket name and path.
+// @description Upload bucket content by application ID, bucket name and path.
+// @tags get
+// @produce json
+// @success 204 {object}
+// @router /application-inventory/application/{id}/buckets/{name}/content/* [post]
+// @param id path string true "Bucket ID"
+// @param name path string true "Bucket Name"
+func (h BucketHandler) AppUploadContent(ctx *gin.Context) {
+	appID := ctx.Param(ID)
+	name := ctx.Param(Name)
+	m := &model.Bucket{}
+	db := h.DB.Where("applicationID", appID).Where("name", name)
+	result := db.First(m)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	r := &Bucket{}
+	r.With(m)
+	h.upload(ctx, r)
+}
+
 //
 // create a bucket.
-func (h BucketHandler) create(r *Bucket) (err error) {
+func (h *BucketHandler) create(r *Bucket) (err error) {
 	uid := uuid.New()
 	r.Path = pathlib.Join(
 		Settings.Hub.Bucket.Path,
@@ -292,6 +342,54 @@ func (h BucketHandler) create(r *Bucket) (err error) {
 	r.With(m)
 
 	return
+}
+
+//
+// upload file.
+func (h *BucketHandler) upload(ctx *gin.Context, b *Bucket) {
+	rPath := ctx.Param(Wildcard)
+	path := pathlib.Join(
+		b.Path,
+		rPath)
+	input, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.Status(http.StatusBadRequest)
+		return
+	}
+	defer func() {
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+	}()
+	reader, err := input.Open()
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	err = os.MkdirAll(pathlib.Dir(path), 0777)
+	if err != nil {
+		return
+	}
+	writer, err := os.Create(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = writer.Close()
+	}()
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(path, 0666)
+	if err != nil {
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 //
