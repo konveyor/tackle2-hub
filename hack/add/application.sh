@@ -8,6 +8,10 @@ curl -X POST ${host}/application-inventory/application -d \
     "name":"Dog",
     "description": "Dog application.",
     "businessService": "1",
+    "identities": [
+      {"id":1},
+      {"id":2}
+    ],
     "tags":[
       "1",
       "2"

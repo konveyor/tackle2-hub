@@ -27,7 +27,6 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	e.GET(IdentityRoot, h.Get)
 	e.PUT(IdentityRoot, h.Update)
 	e.DELETE(IdentityRoot, h.Delete)
-	e.POST(AppIdentitiesRoot, h.CreateForApplication)
 	e.GET(AppIdentitiesRoot, h.ListByApplication)
 	e.GET(AppIdentitiesRoot+"/", h.ListByApplication)
 }
@@ -80,35 +79,6 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resources)
 }
 
-// ListByApplication  godoc
-// @summary List identities for an application.
-// @description List identities for an application.
-// @tags get
-// @produce json
-// @success 200 {object} []Identity
-// @router /application-inventory/application/{id}/identities [get]
-// @param id path int true "Application ID"
-func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
-	var list []model.Identity
-	appId := ctx.Param(ID)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = db.Where("applicationid", appId)
-	result := db.Find(&list)
-	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
-		return
-	}
-	resources := []Identity{}
-	for i := range list {
-		r := Identity{}
-		r.With(&list[i])
-		resources = append(resources, r)
-	}
-
-	ctx.JSON(http.StatusOK, resources)
-}
-
 // Create godoc
 // @summary Create an identity.
 // @description Create an identity.
@@ -127,42 +97,6 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	result := h.DB.Create(m)
-	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
-		return
-	}
-	r.With(m)
-
-	ctx.JSON(http.StatusCreated, r)
-}
-
-// CreateForApplication godoc
-// @summary Create an identity for an application.
-// @description Create an identity for an application.
-// @tags create
-// @accept json
-// @produce json
-// @success 201 {object} Identity
-// @router /application-inventory/application/{id}/identities [post]
-// @param id path int true "Application ID"
-// @param identity body Identity true "Identity data"
-func (h IdentityHandler) CreateForApplication(ctx *gin.Context) {
-	r := &Identity{}
-	err := ctx.BindJSON(r)
-	if err != nil {
-		h.bindFailed(ctx, err)
-		return
-	}
-	appId := ctx.Param(ID)
-	application := &model.Application{}
-	result := h.DB.First(application, appId)
-	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
-		return
-	}
-	r.ApplicationID = application.ID
-	m := r.Model()
-	result = h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
@@ -226,19 +160,47 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// ListByApplication  godoc
+// @summary List identities for an application.
+// @description List identities for an application.
+// @tags get
+// @produce json
+// @success 200 {object} []Identity
+// @router /application-inventory/application/{id}/identities [get]
+// @param id path int true "Application ID"
+func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
+	m := &model.Application{}
+	id := ctx.Param(ID)
+	db := h.preLoad(h.DB, "Identities")
+	result := db.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	resources := []Identity{}
+	for i := range m.Identities {
+		id := Identity{}
+		id.With(&m.Identities[i])
+		resources = append(
+			resources,
+			id)
+	}
+
+	ctx.JSON(http.StatusOK, resources)
+}
+
 //
 // Identity REST resource.
 type Identity struct {
 	Resource
-	Kind          string `json:"kind" binding:"required"`
-	Name          string `json:"name" binding:"required"`
-	Description   string `json:"description"`
-	User          string `json:"user"`
-	Password      string `json:"password"`
-	Key           string `json:"key"`
-	Settings      string `json:"settings"`
-	Encrypted     string `json:"encrypted"`
-	ApplicationID uint   `json:"application"`
+	Kind        string `json:"kind" binding:"required"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+	User        string `json:"user"`
+	Password    string `json:"password"`
+	Key         string `json:"key"`
+	Settings    string `json:"settings"`
+	Encrypted   string `json:"encrypted"`
 }
 
 //
@@ -253,22 +215,20 @@ func (r *Identity) With(m *model.Identity) {
 	r.Key = m.Key
 	r.Settings = m.Settings
 	r.Encrypted = m.Encrypted
-	r.ApplicationID = m.ApplicationID
 }
 
 //
 // Model builds a model.
 func (r *Identity) Model() (m *model.Identity) {
 	m = &model.Identity{
-		Kind:          r.Kind,
-		Name:          r.Name,
-		Description:   r.Description,
-		User:          r.User,
-		Password:      r.Password,
-		Key:           r.Key,
-		Settings:      r.Settings,
-		Encrypted:     r.Encrypted,
-		ApplicationID: r.ApplicationID,
+		Kind:        r.Kind,
+		Name:        r.Name,
+		Description: r.Description,
+		User:        r.User,
+		Password:    r.Password,
+		Key:         r.Key,
+		Settings:    r.Settings,
+		Encrypted:   r.Encrypted,
 	}
 	m.ID = r.ID
 
