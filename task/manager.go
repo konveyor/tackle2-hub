@@ -328,7 +328,7 @@ func (r *Task) container() (container core.Container) {
 				Value: Settings.Addon.Path.Secret,
 			},
 			{
-				Name:  settings.EnvWorkingDirPath,
+				Name:  settings.EnvAddonWorkingDir,
 				Value: Settings.Addon.Path.WorkingDir,
 			},
 		},
