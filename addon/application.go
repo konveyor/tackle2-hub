@@ -41,3 +41,28 @@ func (h *Application) Update(r *api.Application) (err error) {
 	}
 	return
 }
+
+//
+// FindIdentity by kind.
+func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
+	list := []api.Identity{}
+	path := Params{api.ID: id}.inject(api.AppIdentitiesRoot)
+	err = h.client.Get(path, &list)
+	if err != nil {
+		return
+	}
+	for i := range list {
+		r = &list[i]
+		if r.Kind == kind {
+			m := r.Model()
+			err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
+			r.With(m)
+			if err != nil {
+				return
+			}
+			found = true
+			break
+		}
+	}
+	return
+}
