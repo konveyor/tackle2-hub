@@ -38,7 +38,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 // @description Get a setting by its key.
 // @tags get, setting
 // @produce json
-// @success 200 {object} api.Setting
+// @success 200 {object}
 // @router /settings/{key} [get]
 // @param key path string true "Key"
 func (h SettingHandler) Get(ctx *gin.Context) {
@@ -52,7 +52,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 	r := Setting{}
 	r.With(setting)
 
-	ctx.JSON(http.StatusOK, r)
+	ctx.JSON(http.StatusOK, r.Value)
 }
 
 // List godoc
@@ -138,13 +138,13 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	updates := &Setting{}
-	err := ctx.BindJSON(updates)
+	updates := Setting{}
+	updates.Key = key
+	err := ctx.BindJSON(&updates.Value)
 	if err != nil {
 		h.bindFailed(ctx, err)
 		return
 	}
-	updates.Key = key
 
 	m := updates.Model()
 	db := h.DB.Model(&model.Setting{})
