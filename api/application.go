@@ -53,6 +53,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		h.DB,
 		"Tags",
 		"Review",
+		"Identities",
 		"BusinessService")
 	result := db.First(m, id)
 	if result.Error != nil {
@@ -82,6 +83,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		db,
 		"Tags",
 		"Review",
+		"Identities",
 		"BusinessService")
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -118,6 +120,11 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
+		return
+	}
+	err = h.DB.Model(m).Association("Identities").Replace("Identities", m.Identities)
+	if err != nil {
+		h.createFailed(ctx, err)
 		return
 	}
 	err = h.DB.Model(m).Association("Tags").Replace("Tags", m.Tags)
@@ -168,9 +175,16 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	nID, _ := strconv.Atoi(id)
+	m.ID = uint(nID)
 	result := h.DB.Model(&model.Application{}).Where("id = ?", id).Omit("id").Updates(m)
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
+		return
+	}
+	err = h.DB.Model(&m).Association("Identities").Replace("Identities", m.Identities)
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
 	err = h.DB.Model(&m).Association("Tags").Replace("Tags", m.Tags)
@@ -192,6 +206,7 @@ type Application struct {
 	Extensions      Extensions  `json:"extensions"`
 	Review          *Review     `json:"review"`
 	Comments        string      `json:"comments"`
+	Identities      []Ref       `json:"identities"`
 	Tags            []string    `json:"tags"`
 	BusinessService string      `json:"businessService"`
 }
@@ -209,6 +224,15 @@ func (r *Application) With(m *model.Application) {
 		r.Review = &Review{Resource: Resource{ID: m.Review.ID}}
 	}
 	r.BusinessService = strconv.Itoa(int(m.BusinessServiceID))
+	r.Identities = []Ref{}
+	for _, id := range m.Identities {
+		ref := Ref{}
+		ref.With(id.ID, id.Name)
+		r.Identities = append(
+			r.Identities,
+			ref)
+	}
+	r.Tags = []string{}
 	for _, tag := range m.Tags {
 		r.Tags = append(
 			r.Tags,
@@ -234,6 +258,15 @@ func (r *Application) Model() (m *model.Application) {
 	if len(r.BusinessService) > 0 {
 		id, _ := strconv.Atoi(r.BusinessService)
 		m.BusinessServiceID = uint(id)
+	}
+	for _, ref := range r.Identities {
+		m.Identities = append(
+			m.Identities,
+			model.Identity{
+				Model: model.Model{
+					ID: ref.ID,
+				},
+			})
 	}
 	for _, tagID := range r.Tags {
 		id, _ := strconv.Atoi(tagID)

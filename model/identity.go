@@ -8,18 +8,16 @@ import (
 
 //
 // Identity represents and identity with a set of credentials.
-// Kinds = (git|svn|mvn|proxy)
 type Identity struct {
 	Model
-	Kind          string `gorm:"not null"`
-	Name          string `gorm:"not null"`
-	Description   string
-	User          string
-	Password      string
-	Key           string
-	Settings      string
-	Encrypted     string
-	ApplicationID uint `gorm:"many2many:appIdentity"`
+	Kind        string `gorm:"not null"`
+	Name        string `gorm:"not null"`
+	Description string
+	User        string
+	Password    string
+	Key         string
+	Settings    string
+	Encrypted   string
 }
 
 //

@@ -222,3 +222,17 @@ func (r *Resource) With(m *model.Model) {
 	r.UpdateUser = m.UpdateUser
 	r.CreateTime = m.CreateTime
 }
+
+//
+// Ref represents a FK.
+// Contains the PK and (name) natural key.
+// The name is read-only.
+type Ref struct {
+	ID   uint   `json:"id" binding:"required"`
+	Name string `json:"name"`
+}
+
+func (r *Ref) With(id uint, name string) {
+	r.ID = id
+	r.Name = name
+}
