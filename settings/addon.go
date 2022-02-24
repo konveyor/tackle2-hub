@@ -7,7 +7,7 @@ import (
 
 const (
 	EnvAddonSecretPath = "ADDON_SECRET_PATH"
-	EnvWorkingDirPath  = "ADDON_WORKINGDIR_PATH"
+	EnvAddonWorkingDir = "ADDON_WORKING_DIR"
 	EnvHubBaseURL      = "HUB_BASE_URL"
 )
 
@@ -42,7 +42,7 @@ func (r *Addon) Load() (err error) {
 	if !found {
 		r.Path.Secret = "/tmp/secret.json"
 	}
-	r.Path.WorkingDir, found = os.LookupEnv(EnvWorkingDirPath)
+	r.Path.WorkingDir, found = os.LookupEnv(EnvAddonWorkingDir)
 	if !found {
 		r.Path.WorkingDir = "/tmp"
 	}
