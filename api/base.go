@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"os"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
@@ -172,6 +173,36 @@ func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 		tx = tx.Preload(f)
 	}
 
+	return
+}
+
+//
+// fields builds a map of fields.
+func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
+	var inspect func(r interface{})
+	inspect = func(r interface{}) {
+		mt := reflect.TypeOf(r)
+		mv := reflect.ValueOf(r)
+		if mt.Kind() == reflect.Ptr {
+			mt = mt.Elem()
+			mv = mv.Elem()
+		}
+		for i := 0; i < mt.NumField(); i++ {
+			ft := mt.Field(i)
+			fv := mv.Field(i)
+			if !fv.CanSet() {
+				continue
+			}
+			switch fv.Kind() {
+			case reflect.Struct:
+				inspect(fv.Addr().Interface())
+			default:
+				mp[ft.Name] = fv.Interface()
+			}
+		}
+	}
+	mp = map[string]interface{}{}
+	inspect(m)
 	return
 }
 

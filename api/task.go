@@ -242,16 +242,9 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	task, _ := strconv.Atoi(id)
 	report.TaskID = uint(task)
 	m := report.Model()
-	db := h.DB.Model(&model.TaskReport{})
+	db := h.DB.Model(m)
 	db = db.Where("taskid", task)
-	result := db.Updates(
-		map[string]interface{}{
-			"status":    m.Status,
-			"error":     m.Error,
-			"total":     m.Total,
-			"completed": m.Completed,
-			"activity":  m.Activity,
-		})
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 	}

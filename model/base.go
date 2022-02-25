@@ -7,8 +7,8 @@ import (
 //
 // Model Base model.
 type Model struct {
-	ID         uint `gorm:"primaryKey"`
-	CreateUser string
+	ID         uint      `gorm:"<-:create;primaryKey"`
+	CreateTime time.Time `gorm:"<-:create;autoCreateTime"`
+	CreateUser string    `gorm:"<-:create"`
 	UpdateUser string
-	CreateTime time.Time `gorm:"autoCreateTime"`
 }
