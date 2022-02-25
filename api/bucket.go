@@ -121,7 +121,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 // @summary Delete a bucket.
 // @description Delete a bucket.
 // @tags delete
-// @success 204 {object} Bucket
+// @success 204
 // @router /buckets/{id} [delete]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) Delete(ctx *gin.Context) {
@@ -145,9 +145,9 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @tags get
-// @produce json
-// @success 200 {object}
-// @router /bucket/{id}/content/* [get]
+// @produce octet-stream
+// @success 200
+// @router /bucket/{id}/content/{wildcard} [get]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) GetContent(ctx *gin.Context) {
 	rPath := ctx.Param(Wildcard)
@@ -168,8 +168,8 @@ func (h BucketHandler) GetContent(ctx *gin.Context) {
 // @description Upload bucket content by ID and path.
 // @tags get
 // @produce json
-// @success 204 {object}
-// @router /bucket/{id}/content/* [post]
+// @success 204
+// @router /bucket/{id}/content/{wildcard} [post]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) UploadContent(ctx *gin.Context) {
 	m := &model.Bucket{}
@@ -272,9 +272,9 @@ func (h BucketHandler) AppCreate(ctx *gin.Context) {
 // @summary Get bucket content by application ID, bucket name and path.
 // @description Get bucket content by application ID, bucket name and path.
 // @tags get
-// @produce json
-// @success 200 {object}
-// @router /applications/{id}/buckets/{name}/content/* [get]
+// @produce octet-stream
+// @success 200
+// @router /applications/{id}/buckets/{name}/content/{wildcard} [get]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppContent(ctx *gin.Context) {
@@ -298,8 +298,8 @@ func (h BucketHandler) AppContent(ctx *gin.Context) {
 // @description Upload bucket content by application ID, bucket name and path.
 // @tags get
 // @produce json
-// @success 204 {object}
-// @router /applications/{id}/buckets/{name}/content/* [post]
+// @success 204
+// @router /applications/{id}/buckets/{name}/content/{wildcard} [post]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppUploadContent(ctx *gin.Context) {
