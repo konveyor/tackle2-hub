@@ -8,20 +8,14 @@ import (
 )
 
 //
-// Kind
-const (
-	StakeholderGroupKind = "stakeholder-group"
-)
-
-//
 // Routes
 const (
-	StakeholderGroupsRoot = ControlsRoot + "/stakeholder-group"
+	StakeholderGroupsRoot = "/stakeholdergroups"
 	StakeholderGroupRoot  = StakeholderGroupsRoot + "/:" + ID
 )
 
 //
-// StakeholderGroupHandler handles stakeholder-group routes.
+// StakeholderGroupHandler handles stakeholder group routes.
 type StakeholderGroupHandler struct {
 	BaseHandler
 }
@@ -43,7 +37,7 @@ func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.StakeholderGroup
-// @router /controls/stakeholder-group/{id} [get]
+// @router /stakeholdergroups/{id} [get]
 // @param id path string true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 	m := &model.StakeholderGroup{}
@@ -66,14 +60,10 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.StakeholderGroup
-// @router /controls/stakeholder-group [get]
+// @router /stakeholdergroups [get]
 func (h StakeholderGroupHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.StakeholderGroup
-	h.DB.Model(model.StakeholderGroup{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Stakeholders")
+	db := h.preLoad(h.DB, "Stakeholders")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -86,7 +76,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, StakeholderGroupKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -96,7 +86,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.StakeholderGroup
-// @router /controls/stakeholder-group [post]
+// @router /stakeholdergroups [post]
 // @param stakeholder_group body api.StakeholderGroup true "Stakeholder Group data"
 func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 	r := &StakeholderGroup{}
@@ -121,7 +111,7 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 // @description Delete a stakeholder group.
 // @tags delete
 // @success 204
-// @router /controls/stakeholder-group/{id} [delete]
+// @router /stakeholdergroups/{id} [delete]
 // @param id path string true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param(ID))
@@ -142,7 +132,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/stakeholder-group/{id} [put]
+// @router /stakeholdergroups/{id} [put]
 // @param id path string true "Stakeholder Group ID"
 // @param stakeholder_group body api.StakeholderGroup true "Stakeholder Group data"
 func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
@@ -172,9 +162,9 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 // StakeholderGroup REST resource.
 type StakeholderGroup struct {
 	Resource
-	Name         string        `json:"name" binding:"required"`
-	Description  string        `json:"description"`
-	Stakeholders []Stakeholder `json:"stakeholders"`
+	Name         string `json:"name" binding:"required"`
+	Description  string `json:"description"`
+	Stakeholders []Ref  `json:"stakeholders"`
 }
 
 //
@@ -184,12 +174,9 @@ func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
 	r.Name = m.Name
 	r.Description = m.Description
 	for _, s := range m.Stakeholders {
-		r.Stakeholders = append(r.Stakeholders, Stakeholder{
-			Resource: Resource{
-				ID: s.ID,
-			},
-			DisplayName: s.DisplayName,
-		})
+		ref := Ref{}
+		ref.With(s.ID, s.Name)
+		r.Stakeholders = append(r.Stakeholders, ref)
 	}
 }
 
@@ -202,7 +189,7 @@ func (r *StakeholderGroup) Model() (m *model.StakeholderGroup) {
 	}
 	m.ID = r.ID
 	for _, s := range r.Stakeholders {
-		m.Stakeholders = append(m.Stakeholders, *s.Model())
+		m.Stakeholders = append(m.Stakeholders, model.Stakeholder{Model: model.Model{ID: s.ID}})
 	}
 	return
 }

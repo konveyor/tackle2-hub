@@ -7,15 +7,9 @@ import (
 )
 
 //
-// Kind
-const (
-	DependencyKind = "applications-dependency"
-)
-
-//
 // Routes
 const (
-	DependenciesRoot = InventoryRoot + "/applications-dependency"
+	DependenciesRoot = "/dependencies"
 	DependencyRoot   = DependenciesRoot + "/:" + ID
 )
 
@@ -41,7 +35,7 @@ func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.Dependency
-// @router /application-inventory/applications-dependency/{id} [get]
+// @router /dependencies/{id} [get]
 // @param id path string true "Dependency ID"
 func (h DependencyHandler) Get(ctx *gin.Context) {
 	m := &model.Dependency{}
@@ -65,9 +59,8 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 // @tags list
 // @produce json
 // @success 200 {object} []api.Dependency
-// @router /application-inventory/applications-dependency [get]
+// @router /dependencies [get]
 func (h DependencyHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.Dependency
 
 	db := h.DB
@@ -79,9 +72,6 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 		db = db.Where("fromid = ?", from)
 	}
 
-	db.Model(model.Dependency{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db = pagination.apply(db)
 	db = h.preLoad(db, "To", "From")
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -96,7 +86,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, DependencyKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -106,7 +96,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Dependency
-// @router /application-inventory/applications-dependency [post]
+// @router /dependencies [post]
 // @param applications_dependency body Dependency true "Dependency data"
 func (h DependencyHandler) Create(ctx *gin.Context) {
 	r := Dependency{}
@@ -131,7 +121,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 // @tags delete
 // @accept json
 // @success 204
-// @router /application-inventory/applications-dependency/{id} [delete]
+// @router /dependencies/{id} [delete]
 // @param id path string true "Dependency id"
 func (h DependencyHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -148,14 +138,8 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 // Dependency REST resource.
 type Dependency struct {
 	Resource
-	To struct {
-		ID   uint   `json:"id" binding:"required"`
-		Name string `json:"name"`
-	} `json:"to"`
-	From struct {
-		ID   uint   `json:"id" binding:"required"`
-		Name string `json:"name"`
-	} `json:"from"`
+	To   Ref `json:"to"`
+	From Ref `json:"from"`
 }
 
 //

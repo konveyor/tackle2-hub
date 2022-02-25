@@ -26,13 +26,6 @@ const (
 )
 
 //
-// Kind
-const (
-	ImportKind  = "application-import"
-	SummaryKind = "import-summary"
-)
-
-//
 // Routes
 const (
 	UploadRoot    = InventoryRoot + "/file/upload"
@@ -94,7 +87,6 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 // @success 200 {object} []api.Import
 // @router /application-inventory/application-import [get]
 func (h ImportHandler) ListImports(ctx *gin.Context) {
-	var count int64
 	var list []model.Import
 	db := h.DB
 	summaryId := ctx.Query("importSummary.id")
@@ -107,9 +99,6 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 	} else if isValid == "false" {
 		db = db.Not("isvalid")
 	}
-	db.Model(model.Import{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db = pagination.apply(db)
 	db = h.preLoad(db, "ImportTags")
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -121,7 +110,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 		resources = append(resources, list[i].AsMap())
 	}
 
-	h.listResponse(ctx, ImportKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 //
@@ -173,12 +162,8 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 // @success 200 {object} []api.ImportSummary
 // @router /application-inventory/import-summary [get]
 func (h ImportHandler) ListSummaries(ctx *gin.Context) {
-	var count int64
 	var list []model.ImportSummary
-	h.DB.Model(model.ImportSummary{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Imports")
+	db := h.preLoad(h.DB, "Imports")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -191,7 +176,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, SummaryKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 //

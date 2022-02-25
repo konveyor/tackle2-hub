@@ -81,8 +81,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
 	var list []model.Task
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
+	db := h.DB
 	locator := ctx.Query(LocatorParam)
 	if locator != "" {
 		db = db.Where("locator", locator)
@@ -306,10 +305,8 @@ func (h TaskHandler) AddonCreate(ctx *gin.Context) {
 // @router /addons/{name}/tasks [get]
 func (h TaskHandler) AddonList(ctx *gin.Context) {
 	var list []model.Task
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
 	name := ctx.Param(Name)
-	db = db.Where("addon", name)
+	db := h.DB.Where("addon", name)
 	locator := ctx.Query(LocatorParam)
 	if locator != "" {
 		db = db.Where("locator", locator)

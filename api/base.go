@@ -10,7 +10,6 @@ import (
 	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 	"time"
 )
 
@@ -204,36 +203,6 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 	mp = map[string]interface{}{}
 	inspect(m)
 	return
-}
-
-//
-// listResponse selectively returns hal+json or plain json based on the "accept" header
-func (h *BaseHandler) listResponse(ctx *gin.Context, kind string, resources interface{}, count int) {
-	for _, accept := range ctx.Request.Header.Values("Accept") {
-		if strings.Contains(accept, "application/hal+json") {
-			ctx.Writer.Header().Set("Content-Type", "application/hal+json; charset=utf-8")
-			hal := Hal{}
-			hal.With(kind, resources, count)
-			ctx.JSON(http.StatusOK, hal)
-			return
-		}
-	}
-	ctx.JSON(http.StatusOK, resources)
-}
-
-//
-// Hal REST resource.
-type Hal struct {
-	Embedded   map[string]interface{} `json:"_embedded"`
-	TotalCount int                    `json:"total_count"`
-}
-
-//
-// With sets the embedded resource and count.
-func (r *Hal) With(kind string, resources interface{}, total int) {
-	r.Embedded = make(map[string]interface{})
-	r.Embedded[kind] = resources
-	r.TotalCount = total
 }
 
 //

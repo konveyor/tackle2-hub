@@ -7,15 +7,9 @@ import (
 )
 
 //
-// Kind
-const (
-	TagTypeKind = "tag-type"
-)
-
-//
 // Routes
 const (
-	TagTypesRoot = ControlsRoot + "/tag-type"
+	TagTypesRoot = "/tagtypes"
 	TagTypeRoot  = TagTypesRoot + "/:" + ID
 )
 
@@ -42,7 +36,7 @@ func (h TagTypeHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.TagType
-// @router /controls/tag-type/{id} [get]
+// @router /tagtypes/{id} [get]
 // @param id path string true "Tag Type ID"
 func (h TagTypeHandler) Get(ctx *gin.Context) {
 	m := &model.TagType{}
@@ -65,14 +59,10 @@ func (h TagTypeHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.TagType
-// @router /controls/tag-type [get]
+// @router /tagtypes [get]
 func (h TagTypeHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.TagType
-	h.DB.Model(model.TagType{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Tags")
+	db := h.preLoad(h.DB, "Tags")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -85,7 +75,7 @@ func (h TagTypeHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, TagTypeKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -95,7 +85,7 @@ func (h TagTypeHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.TagType
-// @router /controls/tag-type [post]
+// @router /tagtypes [post]
 // @param tag_type body api.TagType true "Tag Type data"
 func (h TagTypeHandler) Create(ctx *gin.Context) {
 	r := TagType{}
@@ -120,7 +110,7 @@ func (h TagTypeHandler) Create(ctx *gin.Context) {
 // @description Delete a tag type.
 // @tags delete
 // @success 204
-// @router /controls/tag-type/{id} [delete]
+// @router /tagtypes/{id} [delete]
 // @param id path string true "Tag Type ID"
 func (h TagTypeHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -139,7 +129,7 @@ func (h TagTypeHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/tag-type/{id} [put]
+// @router /tagtypes/{id} [put]
 // @param id path string true "Tag Type ID"
 // @param tag_type body api.TagType true "Tag Type data"
 func (h TagTypeHandler) Update(ctx *gin.Context) {
@@ -168,7 +158,7 @@ type TagType struct {
 	Username string `json:"username"`
 	Rank     uint   `json:"rank"`
 	Color    string `json:"colour"`
-	Tags     []Tag  `json:"tags"`
+	Tags     []Ref  `json:"tags"`
 }
 
 //
@@ -181,7 +171,9 @@ func (r *TagType) With(m *model.TagType) {
 	r.Rank = m.Rank
 	r.Color = m.Color
 	for _, tag := range m.Tags {
-		r.Tags = append(r.Tags, Tag{Resource: Resource{ID: tag.ID}, Name: tag.Name})
+		ref := Ref{}
+		ref.With(tag.ID, tag.Name)
+		r.Tags = append(r.Tags, ref)
 	}
 }
 

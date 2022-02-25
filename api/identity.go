@@ -62,9 +62,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @router /identities [get]
 func (h IdentityHandler) List(ctx *gin.Context) {
 	var list []model.Identity
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	result := db.Find(&list)
+	result := h.DB.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
 		return

@@ -7,15 +7,9 @@ import (
 )
 
 //
-// Kind
-const (
-	TagKind = "tag"
-)
-
-//
 // Routes
 const (
-	TagsRoot = ControlsRoot + "/tag"
+	TagsRoot = "/tags"
 	TagRoot  = TagsRoot + "/:" + ID
 )
 
@@ -42,7 +36,7 @@ func (h TagHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.Tag
-// @router /controls/tag/{id} [get]
+// @router /tags/{id} [get]
 // @param id path string true "Tag ID"
 func (h TagHandler) Get(ctx *gin.Context) {
 	m := &model.Tag{}
@@ -65,14 +59,10 @@ func (h TagHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.Tag
-// @router /controls/tag [get]
+// @router /tags [get]
 func (h TagHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.Tag
-	h.DB.Model(model.Tag{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "TagType")
+	db := h.preLoad(h.DB, "TagType")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -85,7 +75,7 @@ func (h TagHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, TagKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -95,7 +85,7 @@ func (h TagHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Tag
-// @router /controls/tag [post]
+// @router /tags [post]
 // @param tag body Tag true "Tag data"
 func (h TagHandler) Create(ctx *gin.Context) {
 	r := &Tag{}
@@ -120,7 +110,7 @@ func (h TagHandler) Create(ctx *gin.Context) {
 // @description Delete a tag.
 // @tags delete
 // @success 204
-// @router /controls/tag/{id} [delete]
+// @router /tags/{id} [delete]
 // @param id path string true "Tag ID"
 func (h TagHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -139,7 +129,7 @@ func (h TagHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/tag/{id} [put]
+// @router /tags/{id} [put]
 // @param id path string true "Tag ID"
 // @param tag body api.Tag true "Tag data"
 func (h TagHandler) Update(ctx *gin.Context) {
@@ -165,11 +155,7 @@ func (h TagHandler) Update(ctx *gin.Context) {
 type Tag struct {
 	Resource
 	Name    string `json:"name" binding:"required"`
-	TagType struct {
-		ID    uint   `json:"id" binding:"required"`
-		Name  string `json:"name"`
-		Color string `json:"colour"`
-	} `json:"tagType" binding:"required"`
+	TagType Ref    `json:"tagType" binding:"required"`
 }
 
 //
@@ -179,7 +165,6 @@ func (r *Tag) With(m *model.Tag) {
 	r.Name = m.Name
 	r.TagType.ID = m.TagTypeID
 	r.TagType.Name = m.TagType.Name
-	r.TagType.Color = m.TagType.Color
 }
 
 //

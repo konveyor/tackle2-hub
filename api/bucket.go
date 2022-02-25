@@ -78,9 +78,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 // @router /buckets [get]
 func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	result := db.Find(&list)
+	result := h.DB.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
 		return
@@ -192,14 +190,12 @@ func (h BucketHandler) UploadContent(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []Bucket
-// @router /application-inventory/application/{id}/buckets [get]
+// @router /applications/{id}/buckets [get]
 // @param id path int true "Application ID"
 func (h BucketHandler) AppList(ctx *gin.Context) {
 	var list []model.Bucket
 	appId := ctx.Param(ID)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = db.Where("applicationid", appId)
+	db := h.DB.Where("applicationid", appId)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -221,7 +217,7 @@ func (h BucketHandler) AppList(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} Bucket
-// @router /application-inventory/application/{id}/buckets/{name} [get]
+// @router /applications/{id}/buckets/{name} [get]
 // @param id path int true "Application ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppGet(ctx *gin.Context) {
@@ -247,7 +243,7 @@ func (h BucketHandler) AppGet(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} Bucket
-// @router /application-inventory/application/{id}/buckets/{name} [post]
+// @router /applications/{id}/buckets/{name} [post]
 // @param id path int true "Application ID"
 // @param name path string true "Bucket Name"
 // @param bucket body Bucket true "Bucket data"
@@ -261,7 +257,7 @@ func (h BucketHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	r := &Bucket{}
-	r.ApplicationID = application.ID
+	r.Application.ID = application.ID
 	r.Name = name
 	err := h.create(r)
 	if err != nil {
@@ -278,7 +274,7 @@ func (h BucketHandler) AppCreate(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object}
-// @router /application-inventory/application/{id}/buckets/{name}/content/* [get]
+// @router /applications/{id}/buckets/{name}/content/* [get]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppContent(ctx *gin.Context) {
@@ -303,7 +299,7 @@ func (h BucketHandler) AppContent(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 204 {object}
-// @router /application-inventory/application/{id}/buckets/{name}/content/* [post]
+// @router /applications/{id}/buckets/{name}/content/* [post]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppUploadContent(ctx *gin.Context) {
@@ -396,9 +392,9 @@ func (h *BucketHandler) upload(ctx *gin.Context, b *Bucket) {
 // Bucket REST Resource.
 type Bucket struct {
 	Resource
-	Name          string `json:"name" binding:"alphanum|containsany=_-"`
-	Path          string `json:"path"`
-	ApplicationID uint   `json:"application" binding:"required"`
+	Name        string `json:"name" binding:"alphanum|containsany=_-"`
+	Path        string `json:"path"`
+	Application Ref    `json:"application" binding:"required"`
 }
 
 //
@@ -407,7 +403,7 @@ func (r *Bucket) With(m *model.Bucket) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Path = m.Path
-	r.ApplicationID = m.ApplicationID
+	r.Application.ID = m.ApplicationID
 }
 
 //
@@ -416,7 +412,7 @@ func (r *Bucket) Model() (m *model.Bucket) {
 	m = &model.Bucket{
 		Name:          r.Name,
 		Path:          r.Path,
-		ApplicationID: r.ApplicationID,
+		ApplicationID: r.Application.ID,
 	}
 	m.ID = r.ID
 

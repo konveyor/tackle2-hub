@@ -7,15 +7,9 @@ import (
 )
 
 //
-// Kind
-const (
-	JobFunctionKind = "job-function"
-)
-
-//
 // Routes
 const (
-	JobFunctionsRoot = ControlsRoot + "/job-function"
+	JobFunctionsRoot = "/jobfunctions"
 	JobFunctionRoot  = JobFunctionsRoot + "/:" + ID
 )
 
@@ -42,7 +36,7 @@ func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.JobFunction
-// @router /controls/job-function/{id} [get]
+// @router /jobfunctions/{id} [get]
 // @param id path string true "Job Function ID"
 func (h JobFunctionHandler) Get(ctx *gin.Context) {
 	m := &model.JobFunction{}
@@ -65,14 +59,10 @@ func (h JobFunctionHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.JobFunction
-// @router /controls/job-function [get]
+// @router /jobfunctions [get]
 func (h JobFunctionHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.JobFunction
-	h.DB.Model(model.JobFunction{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Stakeholders")
+	db := h.preLoad(h.DB, "Stakeholders")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -85,7 +75,7 @@ func (h JobFunctionHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, JobFunctionKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -95,7 +85,7 @@ func (h JobFunctionHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 200 {object} api.JobFunction
-// @router /controls/job-function [post]
+// @router /jobfunctions [post]
 // @param job_function body api.JobFunction true "Job Function data"
 func (h JobFunctionHandler) Create(ctx *gin.Context) {
 	r := &JobFunction{}
@@ -120,7 +110,7 @@ func (h JobFunctionHandler) Create(ctx *gin.Context) {
 // @description Delete a job function.
 // @tags delete
 // @success 204
-// @router /controls/job-function/{id} [delete]
+// @router /jobfunctions/{id} [delete]
 // @param id path string true "Job Function ID"
 func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -139,7 +129,7 @@ func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/job-function/{id} [put]
+// @router /jobfunctions/{id} [put]
 // @param id path string true "Job Function ID"
 // @param job_function body api.JobFunction true "Job Function data"
 func (h JobFunctionHandler) Update(ctx *gin.Context) {
@@ -161,25 +151,22 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 }
 
 //
-// JobFunction REST resrouce.
+// JobFunction REST resource.
 type JobFunction struct {
 	Resource
-	Role         string        `json:"role" binding:"required"`
-	Stakeholders []Stakeholder `json:"stakeholders"`
+	Name         string `json:"name" binding:"required"`
+	Stakeholders []Ref  `json:"stakeholders"`
 }
 
 //
 // With updates the resource with the model.
 func (r *JobFunction) With(m *model.JobFunction) {
 	r.Resource.With(&m.Model)
-	r.Role = m.Role
+	r.Name = m.Name
 	for _, s := range m.Stakeholders {
-		r.Stakeholders = append(r.Stakeholders, Stakeholder{
-			Resource: Resource{
-				ID: s.ID,
-			},
-			DisplayName: s.DisplayName,
-		})
+		ref := Ref{}
+		ref.With(s.ID, s.Name)
+		r.Stakeholders = append(r.Stakeholders, ref)
 	}
 }
 
@@ -187,7 +174,7 @@ func (r *JobFunction) With(m *model.JobFunction) {
 // Model builds a model.
 func (r *JobFunction) Model() (m *model.JobFunction) {
 	m = &model.JobFunction{
-		Role: r.Role,
+		Name: r.Name,
 	}
 	m.ID = r.ID
 

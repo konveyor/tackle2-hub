@@ -9,15 +9,9 @@ import (
 )
 
 //
-// Kind
-const (
-	ApplicationKind = "application"
-)
-
-//
 // Routes
 const (
-	ApplicationsRoot = InventoryRoot + "/application"
+	ApplicationsRoot = "/applications"
 	ApplicationRoot  = ApplicationsRoot + "/:" + ID
 )
 
@@ -44,7 +38,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.Application
-// @router /application-inventory/application/{id} [get]
+// @router /applications/{id} [get]
 // @param id path int true "Application ID"
 func (h ApplicationHandler) Get(ctx *gin.Context) {
 	m := &model.Application{}
@@ -72,15 +66,11 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @tags list
 // @produce json
 // @success 200 {object} []api.Application
-// @router /application-inventory/application [get]
+// @router /applications [get]
 func (h ApplicationHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.Application
-	h.DB.Model(model.Application{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.BaseHandler.preLoad(
-		db,
+	db := h.BaseHandler.preLoad(
+		h.DB,
 		"Tags",
 		"Review",
 		"Identities",
@@ -97,7 +87,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, ApplicationKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -107,7 +97,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Application
-// @router /application-inventory/application [post]
+// @router /applications [post]
 // @param application body api.Application true "Application data"
 func (h ApplicationHandler) Create(ctx *gin.Context) {
 	r := &Application{}
@@ -142,7 +132,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 // @description Delete an application.
 // @tags delete
 // @success 204
-// @router /application-inventory/application/{id} [delete]
+// @router /applications/{id} [delete]
 // @param id path int true "Application id"
 func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param(ID))
@@ -163,7 +153,7 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /application-inventory/application/{id} [put]
+// @router /applications/{id} [put]
 // @param id path int true "Application id"
 // @param application body api.Application true "Application data"
 func (h ApplicationHandler) Update(ctx *gin.Context) {
@@ -204,11 +194,11 @@ type Application struct {
 	Description     string      `json:"description"`
 	Repository      *Repository `json:"repository"`
 	Extensions      Extensions  `json:"extensions"`
-	Review          *Review     `json:"review"`
+	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
-	Tags            []string    `json:"tags"`
-	BusinessService string      `json:"businessService"`
+	Tags            []Ref       `json:"tags"`
+	BusinessService Ref         `json:"businessService"`
 }
 
 //
@@ -221,9 +211,14 @@ func (r *Application) With(m *model.Application) {
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	_ = json.Unmarshal(m.Extensions, &r.Extensions)
 	if m.Review != nil {
-		r.Review = &Review{Resource: Resource{ID: m.Review.ID}}
+		ref := &Ref{}
+		ref.With(m.Review.ID, "")
+		r.Review = ref
 	}
-	r.BusinessService = strconv.Itoa(int(m.BusinessServiceID))
+	r.BusinessService.ID = m.BusinessServiceID
+	if m.BusinessService != nil {
+		r.BusinessService.Name = m.BusinessService.Name
+	}
 	r.Identities = []Ref{}
 	for _, id := range m.Identities {
 		ref := Ref{}
@@ -232,11 +227,10 @@ func (r *Application) With(m *model.Application) {
 			r.Identities,
 			ref)
 	}
-	r.Tags = []string{}
 	for _, tag := range m.Tags {
-		r.Tags = append(
-			r.Tags,
-			strconv.Itoa(int(tag.ID)))
+		ref := Ref{}
+		ref.With(tag.ID, tag.Name)
+		r.Tags = append(r.Tags, ref)
 	}
 }
 
@@ -244,9 +238,10 @@ func (r *Application) With(m *model.Application) {
 // Model builds a model.
 func (r *Application) Model() (m *model.Application) {
 	m = &model.Application{
-		Name:        r.Name,
-		Description: r.Description,
-		Comments:    r.Comments,
+		Name:              r.Name,
+		Description:       r.Description,
+		Comments:          r.Comments,
+		BusinessServiceID: r.BusinessService.ID,
 	}
 	m.ID = r.ID
 	if r.Repository != nil {
@@ -254,10 +249,6 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	if r.Extensions != nil {
 		m.Extensions, _ = json.Marshal(r.Extensions)
-	}
-	if len(r.BusinessService) > 0 {
-		id, _ := strconv.Atoi(r.BusinessService)
-		m.BusinessServiceID = uint(id)
 	}
 	for _, ref := range r.Identities {
 		m.Identities = append(
@@ -268,13 +259,12 @@ func (r *Application) Model() (m *model.Application) {
 				},
 			})
 	}
-	for _, tagID := range r.Tags {
-		id, _ := strconv.Atoi(tagID)
+	for _, ref := range r.Tags {
 		m.Tags = append(
 			m.Tags,
 			model.Tag{
 				Model: model.Model{
-					ID: uint(id),
+					ID: ref.ID,
 				},
 			})
 	}
