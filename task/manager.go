@@ -352,10 +352,10 @@ func (r *Task) container() (container core.Container) {
 		container.VolumeMounts = append(
 			container.VolumeMounts,
 			core.VolumeMount{
-					Name:      mnt.Name,
-					MountPath: "/mnt/"+mnt.Name,
-				},
-			)
+				Name:      mnt.Name,
+				MountPath: "/mnt/" + mnt.Name,
+			},
+		)
 	}
 
 	return
