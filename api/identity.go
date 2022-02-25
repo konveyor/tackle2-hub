@@ -148,10 +148,9 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	db := h.DB.Model(&Identity{})
+	db := h.DB.Model(m)
 	db = db.Where("id", id)
-	db = db.Omit("id")
-	result := db.Updates(m)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return

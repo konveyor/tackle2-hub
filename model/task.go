@@ -11,18 +11,18 @@ type TaskReport struct {
 	Total     int
 	Completed int
 	Activity  JSON
-	TaskID    uint `gorm:"uniqueIndex"`
+	TaskID    uint `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
 
 type Task struct {
 	Model
-	Name       string `gorm:"index"`
-	Addon      string `gorm:"index"`
-	Locator    string `gorm:"index"`
-	Image      string
-	Isolated   bool
-	Data       JSON
+	Name       string `gorm:"<-:create;index"`
+	Addon      string `gorm:"<-:create;index"`
+	Locator    string `gorm:"<-:create;index"`
+	Image      string `gorm:"<-:create"`
+	Isolated   bool   `gorm:"<-:create"`
+	Data       JSON   `gorm:"<-:create"`
 	Started    *time.Time
 	Terminated *time.Time
 	Status     string

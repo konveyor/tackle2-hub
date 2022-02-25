@@ -74,6 +74,13 @@ func (r *Identity) BeforeSave(tx *gorm.DB) (err error) {
 }
 
 //
+// BeforeUpdate ensure encrypted.
+func (r *Identity) BeforeUpdate(tx *gorm.DB) (err error) {
+	err = r.Encrypt(Settings.Encryption.Passphrase)
+	return
+}
+
+//
 // encrypted returns the encrypted credentials.
 func (r *Identity) encrypted(passphrase string) (encrypted *Identity, err error) {
 	aes := encryption.New(passphrase)
