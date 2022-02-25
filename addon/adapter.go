@@ -105,12 +105,6 @@ func (h *Adapter) Client() *Client {
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
 	//
-	// Working directory.
-	wDir := Settings.Path.WorkingDir
-	_ = os.MkdirAll(wDir, 0755)
-	_ = os.Setenv("HOME", wDir)
-	_ = os.Chdir(wDir)
-	//
 	// Load secret.
 	secret := &task.Secret{}
 	b, err := os.ReadFile(Settings.Addon.Path.Secret)

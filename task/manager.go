@@ -347,6 +347,16 @@ func (r *Task) container() (container core.Container) {
 			},
 		},
 	}
+	mounts := r.addon.Spec.Mounts
+	for _, mnt := range mounts {
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			core.VolumeMount{
+					Name:      mnt.Name,
+					MountPath: "/mnt/"+mnt.Name,
+				},
+			)
+	}
 
 	return
 }
