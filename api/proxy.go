@@ -10,7 +10,7 @@ import (
 // Routes
 const (
 	ProxiesRoot = "/proxies"
-	ProxyRoot   = ProxiesRoot + "/" + ID
+	ProxyRoot   = ProxiesRoot + "/:" + ID
 )
 
 //
@@ -77,7 +77,7 @@ func (h ProxyHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, list)
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
