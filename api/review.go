@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -23,13 +24,15 @@ type ReviewHandler struct {
 //
 // AddRoutes adds routes.
 func (h ReviewHandler) AddRoutes(e *gin.Engine) {
-	e.GET(ReviewsRoot, h.List)
-	e.GET(ReviewsRoot+"/", h.List)
-	e.POST(ReviewsRoot, h.Create)
-	e.GET(ReviewRoot, h.Get)
-	e.PUT(ReviewRoot, h.Update)
-	e.DELETE(ReviewRoot, h.Delete)
-	e.POST(CopyRoot, h.CopyReview)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "reviews"))
+	routeGroup.GET(ReviewsRoot, h.List)
+	routeGroup.GET(ReviewsRoot+"/", h.List)
+	routeGroup.POST(ReviewsRoot, h.Create)
+	routeGroup.GET(ReviewRoot, h.Get)
+	routeGroup.PUT(ReviewRoot, h.Update)
+	routeGroup.DELETE(ReviewRoot, h.Delete)
+	routeGroup.POST(CopyRoot, h.CopyReview)
 }
 
 // Get godoc

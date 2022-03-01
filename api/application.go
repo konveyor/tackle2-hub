@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strconv"
@@ -24,12 +25,14 @@ type ApplicationHandler struct {
 //
 // AddRoutes adds routes.
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
-	e.GET(ApplicationsRoot, h.List)
-	e.GET(ApplicationsRoot+"/", h.List)
-	e.POST(ApplicationsRoot, h.Create)
-	e.GET(ApplicationRoot, h.Get)
-	e.PUT(ApplicationRoot, h.Update)
-	e.DELETE(ApplicationRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "applications"))
+	routeGroup.GET(ApplicationsRoot, h.List)
+	routeGroup.GET(ApplicationsRoot+"/", h.List)
+	routeGroup.POST(ApplicationsRoot, h.Create)
+	routeGroup.GET(ApplicationRoot, h.Get)
+	routeGroup.PUT(ApplicationRoot, h.Update)
+	routeGroup.DELETE(ApplicationRoot, h.Delete)
 }
 
 // Get godoc

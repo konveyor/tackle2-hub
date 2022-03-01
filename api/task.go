@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	batch "k8s.io/api/batch/v1"
@@ -37,16 +38,18 @@ type TaskHandler struct {
 //
 // AddRoutes adds routes.
 func (h TaskHandler) AddRoutes(e *gin.Engine) {
-	e.GET(TasksRoot, h.List)
-	e.GET(TasksRoot+"/", h.List)
-	e.POST(TasksRoot, h.Create)
-	e.GET(TaskRoot, h.Get)
-	e.PUT(TaskRoot, h.Update)
-	e.POST(TaskReportRoot, h.CreateReport)
-	e.PUT(TaskReportRoot, h.UpdateReport)
-	e.POST(AddonTasksRoot, h.AddonCreate)
-	e.GET(AddonTasksRoot, h.AddonList)
-	e.DELETE(TaskRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tasks"))
+	routeGroup.GET(TasksRoot, h.List)
+	routeGroup.GET(TasksRoot+"/", h.List)
+	routeGroup.POST(TasksRoot, h.Create)
+	routeGroup.GET(TaskRoot, h.Get)
+	routeGroup.PUT(TaskRoot, h.Update)
+	routeGroup.POST(TaskReportRoot, h.CreateReport)
+	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
+	routeGroup.POST(AddonTasksRoot, h.AddonCreate)
+	routeGroup.GET(AddonTasksRoot, h.AddonList)
+	routeGroup.DELETE(TaskRoot, h.Delete)
 }
 
 // Get godoc

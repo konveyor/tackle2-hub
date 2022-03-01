@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
@@ -20,12 +21,15 @@ type BaseHandler struct {
 	DB *gorm.DB
 	// k8s Client
 	Client client.Client
+	// Auth provider
+	AuthProvider auth.Provider
 }
 
 // With database and k8s client.
-func (h *BaseHandler) With(db *gorm.DB, client client.Client) {
+func (h *BaseHandler) With(db *gorm.DB, client client.Client, provider auth.Provider) {
 	h.DB = db.Debug()
 	h.Client = client
+	h.AuthProvider = provider
 }
 
 //

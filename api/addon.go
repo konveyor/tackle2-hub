@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
@@ -25,9 +26,11 @@ type AddonHandler struct {
 //
 // AddRoutes adds routes.
 func (h AddonHandler) AddRoutes(e *gin.Engine) {
-	e.GET(AddonsRoot, h.List)
-	e.GET(AddonsRoot+"/", h.List)
-	e.GET(AddonRoot, h.Get)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "addons"))
+	routeGroup.GET(AddonsRoot, h.List)
+	routeGroup.GET(AddonsRoot+"/", h.List)
+	routeGroup.GET(AddonRoot, h.Get)
 }
 
 // Get godoc

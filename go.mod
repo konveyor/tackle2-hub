@@ -3,7 +3,9 @@ module github.com/konveyor/tackle2-hub
 go 1.16
 
 require (
+	github.com/Nerzal/gocloak/v10 v10.0.1
 	github.com/gin-gonic/gin v1.7.4
+	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/google/uuid v1.1.2
 	github.com/konveyor/controller v0.8.0
 	github.com/mattn/go-sqlite3 v1.14.9

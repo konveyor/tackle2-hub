@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strings"
@@ -25,12 +26,14 @@ type SettingHandler struct {
 //
 // AddRoutes add routes.
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
-	e.GET(SettingsRoot, h.List)
-	e.GET(SettingsRoot+"/", h.List)
-	e.GET(SettingRoot, h.Get)
-	e.POST(SettingsRoot, h.Create)
-	e.PUT(SettingRoot, h.Update)
-	e.DELETE(SettingRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "settings"))
+	routeGroup.GET(SettingsRoot, h.List)
+	routeGroup.GET(SettingsRoot+"/", h.List)
+	routeGroup.GET(SettingRoot, h.Get)
+	routeGroup.POST(SettingsRoot, h.Create)
+	routeGroup.PUT(SettingRoot, h.Update)
+	routeGroup.DELETE(SettingRoot, h.Delete)
 }
 
 // Get godoc

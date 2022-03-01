@@ -1,10 +1,16 @@
 package settings
 
+import (
+	"os"
+	"strconv"
+)
+
 var Settings TackleSettings
 
 type TackleSettings struct {
 	Hub
 	Addon
+	Auth
 }
 
 func (r *TackleSettings) Load() (err error) {
@@ -16,6 +22,23 @@ func (r *TackleSettings) Load() (err error) {
 	if err != nil {
 		return
 	}
-
+	err = r.Auth.Load()
+	if err != nil {
+		return
+	}
 	return
+}
+
+//
+// Get boolean.
+func getEnvBool(name string, def bool) bool {
+	boolean := def
+	if s, found := os.LookupEnv(name); found {
+		parsed, err := strconv.ParseBool(s)
+		if err == nil {
+			boolean = parsed
+		}
+	}
+
+	return boolean
 }
