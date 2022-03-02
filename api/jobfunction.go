@@ -141,7 +141,7 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	result := h.DB.Model(&JobFunction{}).Where("id = ?", id).Omit("id").Updates(m)
+	result := h.DB.Model(&model.JobFunction{}).Where("id = ?", id).Omit("id").Updates(m)
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
