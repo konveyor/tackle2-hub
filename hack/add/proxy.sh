@@ -15,5 +15,8 @@ curl -X POST ${host}/proxies -d \
     "createUser": "tackle",
     "kind": "https",
     "host":"myhost",
-    "port": 443
+    "port": 443,
+    "excluded": [
+      "redhat.com"
+    ]
 }' | jq -M .

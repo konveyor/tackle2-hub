@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
@@ -148,10 +149,9 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	db := h.DB.Model(&model.Proxy{})
+	db := h.DB.Model(m)
 	db = db.Where("id", id)
-	db = db.Omit("id")
-	result := db.Updates(m)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
@@ -164,32 +164,43 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 // Proxy REST resource.
 type Proxy struct {
 	Resource
-	Kind       string `json:"kind" binding:"oneof=http https"`
-	Host       string `json:"host" binding:"required"`
-	Port       int    `json:"port" binding:"gt=0"`
-	IdentityID uint   `json:"identity"`
+	Enabled    bool     `json:"enabled"`
+	Kind       string   `json:"kind" binding:"oneof=http https"`
+	Host       string   `json:"host"`
+	Port       int      `json:"port"`
+	Excluded   []string `json:"excluded"`
+	IdentityID uint     `json:"identity"`
 }
 
 //
 // With updates the resource with the model.
 func (r *Proxy) With(m *model.Proxy) {
 	r.Resource.With(&m.Model)
+	r.Enabled = m.Enabled
 	r.Kind = m.Kind
 	r.Host = m.Host
 	r.Port = m.Port
 	r.IdentityID = m.IdentityID
+	_ = json.Unmarshal(m.Excluded, &r.Excluded)
+	if r.Excluded == nil {
+		r.Excluded = []string{}
+	}
 }
 
 //
 // Model builds a model.
 func (r *Proxy) Model() (m *model.Proxy) {
 	m = &model.Proxy{
+		Enabled:    r.Enabled,
 		Kind:       r.Kind,
 		Host:       r.Host,
 		Port:       r.Port,
 		IdentityID: r.IdentityID,
 	}
 	m.ID = r.ID
+	if r.Excluded != nil {
+		m.Excluded, _ = json.Marshal(r.Excluded)
+	}
 
 	return
 }
