@@ -166,8 +166,8 @@ type Proxy struct {
 	Resource
 	Enabled    bool     `json:"enabled"`
 	Kind       string   `json:"kind" binding:"oneof=http https"`
-	Host       string   `json:"host" binding:"required"`
-	Port       int      `json:"port" binding:"gt=0"`
+	Host       string   `json:"host"`
+	Port       int      `json:"port"`
 	Excluded   []string `json:"excluded"`
 	IdentityID uint     `json:"identity"`
 }
