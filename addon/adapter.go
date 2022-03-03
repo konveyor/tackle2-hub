@@ -120,6 +120,7 @@ func newAdapter() (adapter *Adapter) {
 	client := &Client{
 		baseURL: Settings.Addon.Hub.URL,
 		http:    &http.Client{},
+		token:   secret.Hub.Token,
 	}
 	//
 	// Build Adapter.

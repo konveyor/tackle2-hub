@@ -10,7 +10,7 @@ const (
 	EnvKeycloakRealm        = "KEYCLOAK_REALM"
 	EnvKeycloakClientID     = "KEYCLOAK_CLIENT_ID"
 	EnvKeycloakClientSecret = "KEYCLOAK_CLIENT_SECRET"
-	EnvAddonAccessSecret    = "ADDON_ACCESS_SECRET"
+	EnvAddonToken           = "ADDON_TOKEN"
 )
 
 type Auth struct {
@@ -23,32 +23,16 @@ type Auth struct {
 		ClientID     string
 		ClientSecret string
 	}
-	// Addon API access secret
-	AddonAccessSecret string
+	// Addon API access token
+	AddonToken string
 }
 
 func (r *Auth) Load() (err error) {
-	var found bool
 	r.Required = getEnvBool(EnvAuthRequired, true)
-	r.Keycloak.Host, found = os.LookupEnv(EnvKeycloakHost)
-	if r.Required && !found {
-		panic("KEYCLOAK_HOST required")
-	}
-	r.Keycloak.Realm, found = os.LookupEnv(EnvKeycloakRealm)
-	if r.Required && !found {
-		panic("KEYCLOAK_REALM required")
-	}
-	r.Keycloak.ClientID, found = os.LookupEnv(EnvKeycloakClientID)
-	if r.Required && !found {
-		panic("KEYCLOAK_CLIENT_ID required")
-	}
-	r.Keycloak.ClientSecret, found = os.LookupEnv(EnvKeycloakClientSecret)
-	if r.Required && !found {
-		panic("KEYCLOAK_CLIENT_SECRET required")
-	}
-	r.AddonAccessSecret, found = os.LookupEnv(EnvAddonAccessSecret)
-	if r.Required && !found {
-		panic("ADDON_ACCESS_SECRET required")
-	}
+	r.Keycloak.Host = os.Getenv(EnvKeycloakHost)
+	r.Keycloak.Realm = os.Getenv(EnvKeycloakRealm)
+	r.Keycloak.ClientID = os.Getenv(EnvKeycloakClientID)
+	r.Keycloak.ClientSecret = os.Getenv(EnvKeycloakClientSecret)
+	r.AddonToken = os.Getenv(EnvAddonToken)
 	return
 }

@@ -13,8 +13,8 @@ import (
 func AuthorizationRequired(p Provider, requiredScope string) func(*gin.Context) {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
-		secret := settings.Settings.Auth.AddonAccessSecret
-		if secret != "" && token == secret {
+		addonToken := settings.Settings.Auth.AddonToken
+		if addonToken != "" && token == addonToken {
 			c.Next()
 			return
 		}
