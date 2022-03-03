@@ -95,7 +95,7 @@ func (r *Keycloak) Scopes(token string) (scopes []Scope, err error) {
 	}
 	claimScopes := strings.Split(rawClaimScopes, " ")
 	for _, s := range claimScopes {
-		scope := NewKeycloakScope(s)
+		scope := r.newScope(s)
 		scopes = append(scopes, &scope)
 	}
 	return
@@ -103,7 +103,7 @@ func (r *Keycloak) Scopes(token string) (scopes []Scope, err error) {
 
 //
 // NewKeycloakScope builds a Scope object from a string.
-func NewKeycloakScope(s string) (scope KeycloakScope) {
+func (r *Keycloak) newScope(s string) (scope KeycloakScope) {
 	if strings.Contains(s, ":") {
 		segments := strings.Split(s, ":")
 		scope.resource = segments[0]
