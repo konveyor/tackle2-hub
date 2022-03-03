@@ -4,6 +4,8 @@ import (
 	"os"
 )
 
+//
+// Environment variables
 const (
 	EnvAuthRequired         = "AUTH_REQUIRED"
 	EnvKeycloakHost         = "KEYCLOAK_HOST"
@@ -11,6 +13,16 @@ const (
 	EnvKeycloakClientID     = "KEYCLOAK_CLIENT_ID"
 	EnvKeycloakClientSecret = "KEYCLOAK_CLIENT_SECRET"
 	EnvAddonToken           = "ADDON_TOKEN"
+)
+
+//
+// Defaults
+const (
+	KeycloakHost         = "https://localhost:8081"
+	KeycloakRealm        = "tackle"
+	KeycloakClientID     = "tackle-hub"
+	KeycloakClientSecret = "tackle"
+	AddonToken           = "tackle"
 )
 
 type Auth struct {
@@ -28,11 +40,30 @@ type Auth struct {
 }
 
 func (r *Auth) Load() (err error) {
+	var found bool
 	r.Required = getEnvBool(EnvAuthRequired, true)
-	r.Keycloak.Host = os.Getenv(EnvKeycloakHost)
-	r.Keycloak.Realm = os.Getenv(EnvKeycloakRealm)
-	r.Keycloak.ClientID = os.Getenv(EnvKeycloakClientID)
-	r.Keycloak.ClientSecret = os.Getenv(EnvKeycloakClientSecret)
-	r.AddonToken = os.Getenv(EnvAddonToken)
+	if !r.Required {
+		return
+	}
+	r.Keycloak.Host, found = os.LookupEnv(EnvKeycloakHost)
+	if !found {
+		r.Keycloak.Host = KeycloakHost
+	}
+	r.Keycloak.Realm, found = os.LookupEnv(EnvKeycloakRealm)
+	if !found {
+		r.Keycloak.Realm = KeycloakRealm
+	}
+	r.Keycloak.ClientID, found = os.LookupEnv(EnvKeycloakClientID)
+	if !found {
+		r.Keycloak.ClientID = KeycloakClientID
+	}
+	r.Keycloak.ClientSecret, found = os.LookupEnv(EnvKeycloakClientSecret)
+	if !found {
+		r.Keycloak.ClientSecret = KeycloakClientSecret
+	}
+	r.AddonToken, found = os.LookupEnv(EnvAddonToken)
+	if !found {
+		r.AddonToken = AddonToken
+	}
 	return
 }
