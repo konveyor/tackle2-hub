@@ -38,7 +38,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 // @description Get a setting by its key.
 // @tags get, setting
 // @produce json
-// @success 200 {object}
+// @success 200 {object} interface{}
 // @router /settings/{key} [get]
 // @param key path string true "Key"
 func (h SettingHandler) Get(ctx *gin.Context) {

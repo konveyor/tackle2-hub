@@ -78,9 +78,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 // @router /buckets [get]
 func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	result := db.Find(&list)
+	result := h.DB.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
 		return
@@ -123,7 +121,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 // @summary Delete a bucket.
 // @description Delete a bucket.
 // @tags delete
-// @success 204 {object} Bucket
+// @success 204
 // @router /buckets/{id} [delete]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) Delete(ctx *gin.Context) {
@@ -147,9 +145,9 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @tags get
-// @produce json
-// @success 200 {object}
-// @router /bucket/{id}/content/* [get]
+// @produce octet-stream
+// @success 200
+// @router /bucket/{id}/content/{wildcard} [get]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) GetContent(ctx *gin.Context) {
 	rPath := ctx.Param(Wildcard)
@@ -170,8 +168,8 @@ func (h BucketHandler) GetContent(ctx *gin.Context) {
 // @description Upload bucket content by ID and path.
 // @tags get
 // @produce json
-// @success 204 {object}
-// @router /bucket/{id}/content/* [post]
+// @success 204
+// @router /bucket/{id}/content/{wildcard} [post]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) UploadContent(ctx *gin.Context) {
 	m := &model.Bucket{}
@@ -192,14 +190,12 @@ func (h BucketHandler) UploadContent(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []Bucket
-// @router /application-inventory/application/{id}/buckets [get]
+// @router /applications/{id}/buckets [get]
 // @param id path int true "Application ID"
 func (h BucketHandler) AppList(ctx *gin.Context) {
 	var list []model.Bucket
 	appId := ctx.Param(ID)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = db.Where("applicationid", appId)
+	db := h.DB.Where("applicationid", appId)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -221,7 +217,7 @@ func (h BucketHandler) AppList(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} Bucket
-// @router /application-inventory/application/{id}/buckets/{name} [get]
+// @router /applications/{id}/buckets/{name} [get]
 // @param id path int true "Application ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppGet(ctx *gin.Context) {
@@ -247,7 +243,7 @@ func (h BucketHandler) AppGet(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} Bucket
-// @router /application-inventory/application/{id}/buckets/{name} [post]
+// @router /applications/{id}/buckets/{name} [post]
 // @param id path int true "Application ID"
 // @param name path string true "Bucket Name"
 // @param bucket body Bucket true "Bucket data"
@@ -261,7 +257,7 @@ func (h BucketHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	r := &Bucket{}
-	r.ApplicationID = application.ID
+	r.Application.ID = application.ID
 	r.Name = name
 	err := h.create(r)
 	if err != nil {
@@ -276,9 +272,9 @@ func (h BucketHandler) AppCreate(ctx *gin.Context) {
 // @summary Get bucket content by application ID, bucket name and path.
 // @description Get bucket content by application ID, bucket name and path.
 // @tags get
-// @produce json
-// @success 200 {object}
-// @router /application-inventory/application/{id}/buckets/{name}/content/* [get]
+// @produce octet-stream
+// @success 200
+// @router /applications/{id}/buckets/{name}/content/{wildcard} [get]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppContent(ctx *gin.Context) {
@@ -302,8 +298,8 @@ func (h BucketHandler) AppContent(ctx *gin.Context) {
 // @description Upload bucket content by application ID, bucket name and path.
 // @tags get
 // @produce json
-// @success 204 {object}
-// @router /application-inventory/application/{id}/buckets/{name}/content/* [post]
+// @success 204
+// @router /applications/{id}/buckets/{name}/content/{wildcard} [post]
 // @param id path string true "Bucket ID"
 // @param name path string true "Bucket Name"
 func (h BucketHandler) AppUploadContent(ctx *gin.Context) {
@@ -396,9 +392,9 @@ func (h *BucketHandler) upload(ctx *gin.Context, b *Bucket) {
 // Bucket REST Resource.
 type Bucket struct {
 	Resource
-	Name          string `json:"name" binding:"alphanum|containsany=_-"`
-	Path          string `json:"path"`
-	ApplicationID uint   `json:"application" binding:"required"`
+	Name        string `json:"name" binding:"alphanum|containsany=_-"`
+	Path        string `json:"path"`
+	Application Ref    `json:"application" binding:"required"`
 }
 
 //
@@ -407,7 +403,7 @@ func (r *Bucket) With(m *model.Bucket) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Path = m.Path
-	r.ApplicationID = m.ApplicationID
+	r.Application.ID = m.ApplicationID
 }
 
 //
@@ -416,7 +412,7 @@ func (r *Bucket) Model() (m *model.Bucket) {
 	m = &model.Bucket{
 		Name:          r.Name,
 		Path:          r.Path,
-		ApplicationID: r.ApplicationID,
+		ApplicationID: r.Application.ID,
 	}
 	m.ID = r.ID
 

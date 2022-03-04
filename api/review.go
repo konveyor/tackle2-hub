@@ -7,17 +7,11 @@ import (
 )
 
 //
-// Kind
-const (
-	ReviewKind = "review"
-)
-
-//
 // Routes
 const (
-	ReviewsRoot = InventoryRoot + "/review"
+	ReviewsRoot = "/reviews"
 	ReviewRoot  = ReviewsRoot + "/:" + ID
-	BulkRoot    = ReviewsRoot + "/bulk"
+	CopyRoot    = ReviewsRoot + "/copy"
 )
 
 //
@@ -35,7 +29,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	e.GET(ReviewRoot, h.Get)
 	e.PUT(ReviewRoot, h.Update)
 	e.DELETE(ReviewRoot, h.Delete)
-	e.POST(BulkRoot, h.CopyReview)
+	e.POST(CopyRoot, h.CopyReview)
 }
 
 // Get godoc
@@ -44,7 +38,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.Review
-// @router /application-inventory/review/{id} [get]
+// @router /reviews/{id} [get]
 // @param id path string true "Review ID"
 func (h ReviewHandler) Get(ctx *gin.Context) {
 	m := &model.Review{}
@@ -67,14 +61,10 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.Review
-// @router /application-inventory/review [get]
+// @router /reviews [get]
 func (h ReviewHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.Review
-	h.DB.Model(&model.Review{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Application")
+	db := h.preLoad(h.DB, "Application")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -87,7 +77,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, ReviewKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -97,7 +87,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Review
-// @router /application-inventory/review [post]
+// @router /reviews [post]
 // @param review body api.Review true "Review data"
 func (h ReviewHandler) Create(ctx *gin.Context) {
 	review := Review{}
@@ -121,7 +111,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 // @description Delete a review.
 // @tags delete
 // @success 204
-// @router /application-inventory/review/{id} [delete]
+// @router /reviews/{id} [delete]
 // @param id path string true "Review ID"
 func (h ReviewHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -140,7 +130,7 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /application-inventory/review/{id} [put]
+// @router /reviews/{id} [put]
 // @param id path string true "Review ID"
 // @param review body api.Review true "Review data"
 func (h ReviewHandler) Update(ctx *gin.Context) {
@@ -165,7 +155,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 // @tags copy
 // @accept json
 // @success 204
-// @router /application-inventory/review/bulk [post]
+// @router /reviews/copy [post]
 // @param copy_request body api.CopyRequest true "Review copy request data"
 func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 	c := CopyRequest{}
@@ -223,9 +213,7 @@ type Review struct {
 	ProposedAction      string `json:"proposedAction"`
 	WorkPriority        uint   `json:"workPriority"`
 	Comments            string `json:"comments"`
-	Application         *struct {
-		ID uint `json:"id" binding:"required"`
-	} `json:"application" binding:"required"`
+	Application         Ref    `json:"application" binding:"required"`
 }
 
 // With updates the resource with the model.
@@ -236,11 +224,8 @@ func (r *Review) With(m *model.Review) {
 	r.ProposedAction = m.ProposedAction
 	r.WorkPriority = m.WorkPriority
 	r.Comments = m.Comments
-	r.Application = &struct {
-		ID uint `json:"id" binding:"required"`
-	}{
-		ID: m.ApplicationID,
-	}
+	r.Application.ID = m.Application.ID
+	r.Application.Name = m.Application.Name
 }
 
 //
@@ -252,9 +237,7 @@ func (r *Review) Model() (m *model.Review) {
 		ProposedAction:      r.ProposedAction,
 		WorkPriority:        r.WorkPriority,
 		Comments:            r.Comments,
-	}
-	if r.Application != nil {
-		m.ApplicationID = r.Application.ID
+		ApplicationID:       r.Application.ID,
 	}
 	m.ID = r.ID
 	return

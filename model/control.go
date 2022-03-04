@@ -18,7 +18,7 @@ type StakeholderGroup struct {
 
 type Stakeholder struct {
 	Model
-	DisplayName      string             `gorm:"not null;"`
+	Name             string             `gorm:"not null;"`
 	Email            string             `gorm:"index;unique;not null"`
 	Groups           []StakeholderGroup `gorm:"many2many:sgStakeholder"`
 	BusinessServices []BusinessService  `gorm:"foreignKey:OwnerID"`
@@ -29,7 +29,7 @@ type Stakeholder struct {
 type JobFunction struct {
 	Model
 	Username     string
-	Role         string `gorm:"index;unique;not null"`
+	Name         string `gorm:"index;unique;not null"`
 	Stakeholders []Stakeholder
 }
 

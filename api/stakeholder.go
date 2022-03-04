@@ -8,15 +8,9 @@ import (
 )
 
 //
-// Kind
-const (
-	StakeholderKind = "stakeholder"
-)
-
-//
 // Routes
 const (
-	StakeholdersRoot = ControlsRoot + "/stakeholder"
+	StakeholdersRoot = "/stakeholders"
 	StakeholderRoot  = StakeholdersRoot + "/:" + ID
 )
 
@@ -43,7 +37,7 @@ func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.Stakeholder
-// @router /controls/stakeholder/{id} [get]
+// @router /stakeholders/{id} [get]
 // @param id path string true "Stakeholder ID"
 func (h StakeholderHandler) Get(ctx *gin.Context) {
 	m := &model.Stakeholder{}
@@ -70,15 +64,11 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []api.Stakeholder
-// @router /controls/stakeholder [get]
+// @router /stakeholders [get]
 func (h StakeholderHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.Stakeholder
-	h.DB.Model(model.Stakeholder{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(
-		db,
+	db := h.preLoad(
+		h.DB,
 		"JobFunction",
 		"BusinessServices",
 		"Groups")
@@ -94,7 +84,7 @@ func (h StakeholderHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, StakeholderKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -104,7 +94,7 @@ func (h StakeholderHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Stakeholder
-// @router /controls/stakeholder [post]
+// @router /stakeholders [post]
 // @param stakeholder body api.Stakeholder true "Stakeholder data"
 func (h StakeholderHandler) Create(ctx *gin.Context) {
 	r := &Stakeholder{}
@@ -129,7 +119,7 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 // @description Delete a stakeholder.
 // @tags delete
 // @success 204
-// @router /controls/stakeholder/{id} [delete]
+// @router /stakeholders/{id} [delete]
 // @param id path string true "Stakeholder ID"
 func (h StakeholderHandler) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param(ID))
@@ -150,7 +140,7 @@ func (h StakeholderHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/stakeholder/{id} [put]
+// @router /stakeholders/{id} [put]
 // @param id path string true "Stakeholder ID"
 // @param stakeholder body api.Stakeholder true "Stakeholder data"
 func (h StakeholderHandler) Update(ctx *gin.Context) {
@@ -180,35 +170,33 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 // Stakeholder REST resource.
 type Stakeholder struct {
 	Resource
-	DisplayName      string             `json:"displayName" binding:"required"`
-	Email            string             `json:"email" binding:"required"`
-	Groups           []StakeholderGroup `json:"stakeholderGroups"`
-	BusinessServices []BusinessService  `json:"businessServices"`
-	JobFunction      struct {
-		ID   *uint  `json:"id"`
-		Role string `json:"role"`
-	} `json:"jobFunction"`
+	Name             string `json:"name" binding:"required"`
+	Email            string `json:"email" binding:"required"`
+	Groups           []Ref  `json:"stakeholderGroups"`
+	BusinessServices []Ref  `json:"businessServices"`
+	JobFunction      *Ref   `json:"jobFunction"`
 }
 
 //
 // With updates the resource with the model.
 func (r *Stakeholder) With(m *model.Stakeholder) {
 	r.Resource.With(&m.Model)
-	r.DisplayName = m.DisplayName
+	r.Name = m.Name
 	r.Email = m.Email
-	r.JobFunction.ID = m.JobFunctionID
 	if m.JobFunction != nil {
-		r.JobFunction.Role = m.JobFunction.Role
+		ref := &Ref{}
+		ref.With(m.JobFunction.ID, m.JobFunction.Name)
+		r.JobFunction = ref
 	}
 	for _, g := range m.Groups {
-		group := StakeholderGroup{}
-		group.With(&g)
-		r.Groups = append(r.Groups, group)
+		ref := Ref{}
+		ref.With(g.ID, g.Name)
+		r.Groups = append(r.Groups, ref)
 	}
 	for _, b := range m.BusinessServices {
-		business := BusinessService{}
-		business.With(&b)
-		r.BusinessServices = append(r.BusinessServices, business)
+		ref := Ref{}
+		ref.With(b.ID, b.Name)
+		r.BusinessServices = append(r.BusinessServices, ref)
 	}
 }
 
@@ -216,16 +204,18 @@ func (r *Stakeholder) With(m *model.Stakeholder) {
 // Model builds a model.
 func (r *Stakeholder) Model() (m *model.Stakeholder) {
 	m = &model.Stakeholder{
-		DisplayName:   r.DisplayName,
-		Email:         r.Email,
-		JobFunctionID: r.JobFunction.ID,
+		Name:  r.Name,
+		Email: r.Email,
 	}
 	m.ID = r.ID
+	if r.JobFunction != nil {
+		m.JobFunctionID = &r.JobFunction.ID
+	}
 	for _, g := range r.Groups {
-		m.Groups = append(m.Groups, *g.Model())
+		m.Groups = append(m.Groups, model.StakeholderGroup{Model: model.Model{ID: g.ID}})
 	}
 	for _, b := range r.BusinessServices {
-		m.BusinessServices = append(m.BusinessServices, *b.Model())
+		m.BusinessServices = append(m.BusinessServices, model.BusinessService{Model: model.Model{ID: b.ID}})
 	}
 	return
 }

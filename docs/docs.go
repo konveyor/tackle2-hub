@@ -109,56 +109,24 @@ var doc = `{
                 }
             }
         },
-        "/application-inventory/application": {
+        "/addons/{name}/tasks": {
             "get": {
-                "description": "List all applications.",
+                "description": "List all tasks associated to an addon.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "get"
                 ],
-                "summary": "List all applications.",
+                "summary": "List all tasks associated to an addon.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Application"
+                                "$ref": "#/definitions/api.Task"
                             }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create an application.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create an application.",
-                "parameters": [
-                    {
-                        "description": "Application data",
-                        "name": "application",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Application"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Application"
                         }
                     }
                 }
@@ -237,160 +205,6 @@ var doc = `{
                 }
             }
         },
-        "/application-inventory/application/{id}": {
-            "get": {
-                "description": "Get an application by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get an application by ID.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Application"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update an application.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Application data",
-                        "name": "application",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Application"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete an application.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/application-inventory/application/{id}/bucket": {
-            "get": {
-                "description": "List all buckets.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all buckets.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Bucket"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a bucket for an application.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a bucket for an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Bucket data",
-                        "name": "bucket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            }
-        },
         "/application-inventory/application/{id}/identities": {
             "get": {
                 "description": "List identities for an application.",
@@ -419,153 +233,6 @@ var doc = `{
                                 "$ref": "#/definitions/api.Identity"
                             }
                         }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create an identity for an application.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create an identity for an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Identity data",
-                        "name": "identity",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Identity"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Identity"
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/applications-dependency": {
-            "get": {
-                "description": "List all dependencies.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "list"
-                ],
-                "summary": "List all dependencies.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Dependency"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a dependency.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a dependency.",
-                "parameters": [
-                    {
-                        "description": "Dependency data",
-                        "name": "applications_dependency",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Dependency"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Dependency"
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/applications-dependency/{id}": {
-            "get": {
-                "description": "Get a dependency by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a dependency by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Dependency ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Dependency"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a dependency.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a dependency.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Dependency id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
                     }
                 }
             }
@@ -692,30 +359,30 @@ var doc = `{
                 }
             }
         },
-        "/application-inventory/review": {
+        "/applications": {
             "get": {
-                "description": "List all reviews.",
+                "description": "List all applications.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "list"
                 ],
-                "summary": "List all reviews.",
+                "summary": "List all applications.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Review"
+                                "$ref": "#/definitions/api.Application"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a review.",
+                "description": "Create an application.",
                 "consumes": [
                     "application/json"
                 ],
@@ -725,15 +392,15 @@ var doc = `{
                 "tags": [
                     "create"
                 ],
-                "summary": "Create a review.",
+                "summary": "Create an application.",
                 "parameters": [
                     {
-                        "description": "Review data",
-                        "name": "review",
+                        "description": "Application data",
+                        "name": "application",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/api.Application"
                         }
                     }
                 ],
@@ -741,54 +408,26 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/api.Application"
                         }
                     }
                 }
             }
         },
-        "/application-inventory/review/bulk": {
-            "post": {
-                "description": "Copy a review from one application to others.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "copy"
-                ],
-                "summary": "Copy a review from one application to others.",
-                "parameters": [
-                    {
-                        "description": "Review copy request data",
-                        "name": "copy_request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.CopyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/application-inventory/review/{id}": {
+        "/applications/{id}": {
             "get": {
-                "description": "Get a review by ID.",
+                "description": "Get an application by ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "get"
                 ],
-                "summary": "Get a review by ID.",
+                "summary": "Get an application by ID.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Review ID",
+                        "type": "integer",
+                        "description": "Application ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -798,38 +437,35 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Review"
-                            }
+                            "$ref": "#/definitions/api.Application"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a review.",
+                "description": "Update an application.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
                     "update"
                 ],
-                "summary": "Update a review.",
+                "summary": "Update an application.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Review ID",
+                        "type": "integer",
+                        "description": "Application id",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Review data",
-                        "name": "review",
+                        "description": "Application data",
+                        "name": "application",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/api.Application"
                         }
                     }
                 ],
@@ -840,15 +476,15 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete a review.",
+                "description": "Delete an application.",
                 "tags": [
                     "delete"
                 ],
-                "summary": "Delete a review.",
+                "summary": "Delete an application.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Review ID",
+                        "type": "integer",
+                        "description": "Application id",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -861,7 +497,235 @@ var doc = `{
                 }
             }
         },
-        "/controls/bucket": {
+        "/applications/{id}/buckets": {
+            "get": {
+                "description": "List buckets associated with application.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List buckets associated with application.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Bucket"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/buckets/{name}": {
+            "get": {
+                "description": "List buckets associated with application.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List buckets associated with application.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Bucket"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a bucket for an application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a bucket for an application.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bucket data",
+                        "name": "bucket",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Bucket"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Bucket"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/buckets/{name}/content/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by application ID, bucket name and path.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by application ID, bucket name and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Upload bucket content by application ID, bucket name and path.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Upload bucket content by application ID, bucket name and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/bucket/{id}/content/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by ID and path.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Upload bucket content by ID and path.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Upload bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/buckets": {
             "get": {
                 "description": "List all buckets.",
                 "produces": [
@@ -916,7 +780,7 @@ var doc = `{
                 }
             }
         },
-        "/controls/bucket/{id}": {
+        "/buckets/{id}": {
             "get": {
                 "description": "Get a bucket by ID.",
                 "produces": [
@@ -944,45 +808,6 @@ var doc = `{
                     }
                 }
             },
-            "put": {
-                "description": "Update a bucket.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a bucket.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bucket ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Bucket data",
-                        "name": "bucket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Delete a bucket.",
                 "tags": [
@@ -1000,15 +825,12 @@ var doc = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
+                        "description": ""
                     }
                 }
             }
         },
-        "/controls/business-service": {
+        "/businessservices": {
             "get": {
                 "description": "List all business services.",
                 "produces": [
@@ -1060,7 +882,7 @@ var doc = `{
                 }
             }
         },
-        "/controls/business-service/{id}": {
+        "/businessservices/{id}": {
             "get": {
                 "description": "Get a business service by ID.",
                 "produces": [
@@ -1143,30 +965,30 @@ var doc = `{
                 }
             }
         },
-        "/controls/job-function": {
+        "/dependencies": {
             "get": {
-                "description": "List all job functions.",
+                "description": "List all dependencies.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "list"
                 ],
-                "summary": "List all job functions.",
+                "summary": "List all dependencies.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.JobFunction"
+                                "$ref": "#/definitions/api.Dependency"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a job function.",
+                "description": "Create a dependency.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1176,156 +998,15 @@ var doc = `{
                 "tags": [
                     "create"
                 ],
-                "summary": "Create a job function.",
+                "summary": "Create a dependency.",
                 "parameters": [
                     {
-                        "description": "Job Function data",
-                        "name": "job_function",
+                        "description": "Dependency data",
+                        "name": "applications_dependency",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
-                        }
-                    }
-                }
-            }
-        },
-        "/controls/job-function/{id}": {
-            "get": {
-                "description": "Get a job function by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a job function by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Job Function ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.JobFunction"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a job function.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a job function.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Job Function ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Job Function data",
-                        "name": "job_function",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a job function.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a job function.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Job Function ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/controls/stakeholder": {
-            "get": {
-                "description": "List all stakeholders.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all stakeholders.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Stakeholder"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a stakeholder.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a stakeholder.",
-                "parameters": [
-                    {
-                        "description": "Stakeholder data",
-                        "name": "stakeholder",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/api.Dependency"
                         }
                     }
                 ],
@@ -1333,81 +1014,26 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/api.Dependency"
                         }
                     }
                 }
             }
         },
-        "/controls/stakeholder-group": {
+        "/dependencies/{id}": {
             "get": {
-                "description": "List all stakeholder groups.",
+                "description": "Get a dependency by ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "get"
                 ],
-                "summary": "List all stakeholder groups.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.StakeholderGroup"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a stakeholder group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a stakeholder group.",
-                "parameters": [
-                    {
-                        "description": "Stakeholder Group data",
-                        "name": "stakeholder_group",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
-                        }
-                    }
-                }
-            }
-        },
-        "/controls/stakeholder-group/{id}": {
-            "get": {
-                "description": "Get a stakeholder group by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a stakeholder group by ID.",
+                "summary": "Get a dependency by ID.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Stakeholder Group ID",
+                        "description": "Dependency ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1417,413 +1043,24 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
+                            "$ref": "#/definitions/api.Dependency"
                         }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a stakeholder group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a stakeholder group.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Stakeholder Group ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Stakeholder Group data",
-                        "name": "stakeholder_group",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
                     }
                 }
             },
             "delete": {
-                "description": "Delete a stakeholder group.",
+                "description": "Delete a dependency.",
+                "consumes": [
+                    "application/json"
+                ],
                 "tags": [
                     "delete"
                 ],
-                "summary": "Delete a stakeholder group.",
+                "summary": "Delete a dependency.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Stakeholder Group ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/controls/stakeholder/{id}": {
-            "get": {
-                "description": "Get a stakeholder by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a stakeholder by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Stakeholder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a stakeholder.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a stakeholder.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Stakeholder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Stakeholder data",
-                        "name": "stakeholder",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a stakeholder.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a stakeholder.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Stakeholder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/controls/tag": {
-            "get": {
-                "description": "List all tags.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all tags.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Tag"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a tag.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a tag.",
-                "parameters": [
-                    {
-                        "description": "Tag data",
-                        "name": "tag",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Tag"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Tag"
-                        }
-                    }
-                }
-            }
-        },
-        "/controls/tag-type": {
-            "get": {
-                "description": "List all tag types.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all tag types.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.TagType"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a tag type.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a tag type.",
-                "parameters": [
-                    {
-                        "description": "Tag Type data",
-                        "name": "tag_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                }
-            }
-        },
-        "/controls/tag-type/{id}": {
-            "get": {
-                "description": "Get a tag type by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a tag type by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a tag type.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a tag type.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Tag Type data",
-                        "name": "tag_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a tag type.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a tag type.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/controls/tag/{id}": {
-            "get": {
-                "description": "Get a tag by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a tag by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Tag"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a tag.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a tag.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Tag data",
-                        "name": "tag",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Tag"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a tag.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a tag.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag ID",
+                        "description": "Dependency id",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1974,6 +1211,147 @@ var doc = `{
                 }
             }
         },
+        "/jobfunctions": {
+            "get": {
+                "description": "List all job functions.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all job functions.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.JobFunction"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a job function.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a job function.",
+                "parameters": [
+                    {
+                        "description": "Job Function data",
+                        "name": "job_function",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.JobFunction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.JobFunction"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobfunctions/{id}": {
+            "get": {
+                "description": "Get a job function by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a job function by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.JobFunction"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a job function.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a job function.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Job Function data",
+                        "name": "job_function",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.JobFunction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a job function.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a job function.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/proxies": {
             "get": {
                 "description": "List all proxies.",
@@ -2112,6 +1490,175 @@ var doc = `{
                 }
             }
         },
+        "/reviews": {
+            "get": {
+                "description": "List all reviews.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all reviews.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Review"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a review.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a review.",
+                "parameters": [
+                    {
+                        "description": "Review data",
+                        "name": "review",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Review"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Review"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/copy": {
+            "post": {
+                "description": "Copy a review from one application to others.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "copy"
+                ],
+                "summary": "Copy a review from one application to others.",
+                "parameters": [
+                    {
+                        "description": "Review copy request data",
+                        "name": "copy_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CopyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/reviews/{id}": {
+            "get": {
+                "description": "Get a review by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a review by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Review"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a review.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a review.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Review data",
+                        "name": "review",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Review"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a review.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a review.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/settings": {
             "get": {
                 "description": "List all settings.",
@@ -2193,7 +1740,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Setting"
+                            "type": "object"
                         }
                     }
                 }
@@ -2238,6 +1785,558 @@ var doc = `{
                         "type": "string",
                         "description": "Key",
                         "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/stakeholdergroups": {
+            "get": {
+                "description": "List all stakeholder groups.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all stakeholder groups.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.StakeholderGroup"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a stakeholder group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a stakeholder group.",
+                "parameters": [
+                    {
+                        "description": "Stakeholder Group data",
+                        "name": "stakeholder_group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.StakeholderGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.StakeholderGroup"
+                        }
+                    }
+                }
+            }
+        },
+        "/stakeholdergroups/{id}": {
+            "get": {
+                "description": "Get a stakeholder group by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a stakeholder group by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.StakeholderGroup"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a stakeholder group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a stakeholder group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Stakeholder Group data",
+                        "name": "stakeholder_group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.StakeholderGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a stakeholder group.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a stakeholder group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/stakeholders": {
+            "get": {
+                "description": "List all stakeholders.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all stakeholders.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Stakeholder"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a stakeholder.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a stakeholder.",
+                "parameters": [
+                    {
+                        "description": "Stakeholder data",
+                        "name": "stakeholder",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Stakeholder"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Stakeholder"
+                        }
+                    }
+                }
+            }
+        },
+        "/stakeholders/{id}": {
+            "get": {
+                "description": "Get a stakeholder by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a stakeholder by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Stakeholder"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a stakeholder.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a stakeholder.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Stakeholder data",
+                        "name": "stakeholder",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Stakeholder"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a stakeholder.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a stakeholder.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stakeholder ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "description": "List all tags.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all tags.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Tag"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a tag.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a tag.",
+                "parameters": [
+                    {
+                        "description": "Tag data",
+                        "name": "tag",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Tag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Tag"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags/{id}": {
+            "get": {
+                "description": "Get a tag by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a tag by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Tag"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a tag.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a tag.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag data",
+                        "name": "tag",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Tag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a tag.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a tag.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/tagtypes": {
+            "get": {
+                "description": "List all tag types.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all tag types.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.TagType"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a tag type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a tag type.",
+                "parameters": [
+                    {
+                        "description": "Tag Type data",
+                        "name": "tag_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TagType"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagType"
+                        }
+                    }
+                }
+            }
+        },
+        "/tagtypes/{id}": {
+            "get": {
+                "description": "Get a tag type by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a tag type by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagType"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a tag type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a tag type.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag Type data",
+                        "name": "tag_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TagType"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a tag type.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a tag type.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Type ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2487,7 +2586,7 @@ var doc = `{
             ],
             "properties": {
                 "businessService": {
-                    "type": "string"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "comments": {
                     "type": "string"
@@ -2501,8 +2600,17 @@ var doc = `{
                 "description": {
                     "type": "string"
                 },
+                "extensions": {
+                    "$ref": "#/definitions/api.Extensions"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "identities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
                 },
                 "name": {
                     "type": "string"
@@ -2511,12 +2619,12 @@ var doc = `{
                     "$ref": "#/definitions/api.Repository"
                 },
                 "review": {
-                    "$ref": "#/definitions/api.Review"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "tags": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "updateUser": {
@@ -2526,9 +2634,12 @@ var doc = `{
         },
         "api.Bucket": {
             "type": "object",
+            "required": [
+                "application"
+            ],
             "properties": {
                 "application": {
-                    "type": "integer"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -2572,15 +2683,7 @@ var doc = `{
                     "type": "string"
                 },
                 "owner": {
-                    "type": "object",
-                    "properties": {
-                        "displayName": {
-                            "type": "string"
-                        },
-                        "id": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
@@ -2615,40 +2718,22 @@ var doc = `{
                     "type": "string"
                 },
                 "from": {
-                    "type": "object",
-                    "required": [
-                        "id"
-                    ],
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        },
-                        "name": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "to": {
-                    "type": "object",
-                    "required": [
-                        "id"
-                    ],
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        },
-                        "name": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
                 }
             }
+        },
+        "api.Extensions": {
+            "type": "object",
+            "additionalProperties": true
         },
         "api.Identity": {
             "type": "object",
@@ -2657,9 +2742,6 @@ var doc = `{
                 "name"
             ],
             "properties": {
-                "application": {
-                    "type": "integer"
-                },
                 "createTime": {
                     "type": "string"
                 },
@@ -2737,7 +2819,7 @@ var doc = `{
         "api.JobFunction": {
             "type": "object",
             "required": [
-                "role"
+                "name"
             ],
             "properties": {
                 "createTime": {
@@ -2749,13 +2831,13 @@ var doc = `{
                 "id": {
                     "type": "integer"
                 },
-                "role": {
+                "name": {
                     "type": "string"
                 },
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Stakeholder"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "updateUser": {
@@ -2782,7 +2864,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "type": "integer"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "kind": {
                     "type": "string",
@@ -2799,11 +2881,22 @@ var doc = `{
                 }
             }
         },
-        "api.Repository": {
+        "api.Ref": {
             "type": "object",
             "required": [
-                "kind"
+                "id"
             ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Repository": {
+            "type": "object",
             "properties": {
                 "branch": {
                     "type": "string"
@@ -2829,15 +2922,7 @@ var doc = `{
             ],
             "properties": {
                 "application": {
-                    "type": "object",
-                    "required": [
-                        "id"
-                    ],
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "businessCriticality": {
                     "type": "integer"
@@ -2880,23 +2965,20 @@ var doc = `{
         "api.Stakeholder": {
             "type": "object",
             "required": [
-                "displayName",
-                "email"
+                "email",
+                "name"
             ],
             "properties": {
                 "businessServices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.BusinessService"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "createTime": {
                     "type": "string"
                 },
                 "createUser": {
-                    "type": "string"
-                },
-                "displayName": {
                     "type": "string"
                 },
                 "email": {
@@ -2906,20 +2988,15 @@ var doc = `{
                     "type": "integer"
                 },
                 "jobFunction": {
-                    "type": "object",
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        },
-                        "role": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "stakeholderGroups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.StakeholderGroup"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "updateUser": {
@@ -2951,7 +3028,7 @@ var doc = `{
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Stakeholder"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "updateUser": {
@@ -2979,21 +3056,7 @@ var doc = `{
                     "type": "string"
                 },
                 "tagType": {
-                    "type": "object",
-                    "required": [
-                        "id"
-                    ],
-                    "properties": {
-                        "colour": {
-                            "type": "string"
-                        },
-                        "id": {
-                            "type": "integer"
-                        },
-                        "name": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
@@ -3027,7 +3090,7 @@ var doc = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Tag"
+                        "$ref": "#/definitions/api.Ref"
                     }
                 },
                 "updateUser": {
@@ -3095,7 +3158,10 @@ var doc = `{
             "type": "object",
             "properties": {
                 "activity": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "completed": {
                     "type": "integer"

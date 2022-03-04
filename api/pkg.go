@@ -17,7 +17,6 @@ var (
 // Routes
 const (
 	InventoryRoot = "/application-inventory"
-	ControlsRoot  = "/controls"
 )
 
 //

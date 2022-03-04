@@ -7,15 +7,9 @@ import (
 )
 
 //
-// Kind
-const (
-	BusinessServiceKind = "business-service"
-)
-
-//
 // Routes
 const (
-	BusinessServicesRoot = ControlsRoot + "/business-service"
+	BusinessServicesRoot = "/businessservices"
 	BusinessServiceRoot  = BusinessServicesRoot + "/:" + ID
 )
 
@@ -42,7 +36,7 @@ func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.BusinessService
-// @router /controls/business-service/{id} [get]
+// @router /businessservices/{id} [get]
 // @param id path string true "Business Service ID"
 func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 	m := &model.BusinessService{}
@@ -65,14 +59,10 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 // @tags list
 // @produce json
 // @success 200 {object} api.BusinessService
-// @router /controls/business-service [get]
+// @router /businessservices [get]
 func (h BusinessServiceHandler) List(ctx *gin.Context) {
-	var count int64
 	var list []model.BusinessService
-	h.DB.Model(&model.BusinessService{}).Count(&count)
-	pagination := NewPagination(ctx)
-	db := pagination.apply(h.DB)
-	db = h.preLoad(db, "Owner")
+	db := h.preLoad(h.DB, "Owner")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -85,7 +75,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.listResponse(ctx, BusinessServiceKind, resources, int(count))
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // Create godoc
@@ -95,7 +85,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.BusinessService
-// @router /controls/business-service [post]
+// @router /businessservices [post]
 // @param business_service body api.BusinessService true "Business service data"
 func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 	r := &BusinessService{}
@@ -120,7 +110,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 // @description Delete a business service.
 // @tags delete
 // @success 204
-// @router /controls/business-service/{id} [delete]
+// @router /businessservices/{id} [delete]
 // @param id path string true "Business service ID"
 func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -139,7 +129,7 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /controls/business-service/{id} [put]
+// @router /businessservices/{id} [put]
 // @param id path string true "Business service ID"
 // @param business_service body api.BusinessService true "Business service data"
 func (h BusinessServiceHandler) Update(ctx *gin.Context) {
@@ -166,10 +156,7 @@ type BusinessService struct {
 	Resource
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	Owner       struct {
-		ID          *uint  `json:"id"`
-		DisplayName string `json:"displayName"`
-	} `json:"owner"`
+	Owner       *Ref   `json:"owner"`
 }
 
 //
@@ -178,9 +165,10 @@ func (r *BusinessService) With(m *model.BusinessService) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Owner.ID = m.OwnerID
 	if m.Owner != nil {
-		r.Owner.DisplayName = m.Owner.DisplayName
+		ref := &Ref{}
+		ref.With(m.Owner.ID, m.Owner.Name)
+		r.Owner = ref
 	}
 }
 
@@ -190,8 +178,10 @@ func (r *BusinessService) Model() (m *model.BusinessService) {
 	m = &model.BusinessService{
 		Name:        r.Name,
 		Description: r.Description,
-		OwnerID:     r.Owner.ID,
 	}
 	m.ID = r.ID
+	if r.Owner != nil {
+		m.OwnerID = &r.Owner.ID
+	}
 	return
 }
