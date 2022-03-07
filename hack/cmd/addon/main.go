@@ -115,6 +115,12 @@ func ensureBucket(d *Data, paths []string) (err error) {
 		return
 	}
 	//
+	// Tag
+	err = tag(d)
+	if err != nil {
+		return
+	}
+	//
 	// Task update: update the current addon activity.
 	addon.Activity("done")
 	return
