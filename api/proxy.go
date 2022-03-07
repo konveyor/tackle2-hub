@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -21,12 +22,14 @@ type ProxyHandler struct {
 }
 
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
-	e.GET(ProxiesRoot, h.List)
-	e.GET(ProxiesRoot+"/", h.List)
-	e.POST(ProxiesRoot, h.Create)
-	e.GET(ProxyRoot, h.Get)
-	e.PUT(ProxyRoot, h.Update)
-	e.DELETE(ProxyRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "proxies"))
+	routeGroup.GET(ProxiesRoot, h.List)
+	routeGroup.GET(ProxiesRoot+"/", h.List)
+	routeGroup.POST(ProxiesRoot, h.Create)
+	routeGroup.GET(ProxyRoot, h.Get)
+	routeGroup.PUT(ProxyRoot, h.Update)
+	routeGroup.DELETE(ProxyRoot, h.Delete)
 }
 
 // Get godoc

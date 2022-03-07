@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -22,12 +23,14 @@ type JobFunctionHandler struct {
 //
 // AddRoutes adds routes.
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
-	e.GET(JobFunctionsRoot, h.List)
-	e.GET(JobFunctionsRoot+"/", h.List)
-	e.POST(JobFunctionsRoot, h.Create)
-	e.GET(JobFunctionRoot, h.Get)
-	e.PUT(JobFunctionRoot, h.Update)
-	e.DELETE(JobFunctionRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "jobfunctions"))
+	routeGroup.GET(JobFunctionsRoot, h.List)
+	routeGroup.GET(JobFunctionsRoot+"/", h.List)
+	routeGroup.POST(JobFunctionsRoot, h.Create)
+	routeGroup.GET(JobFunctionRoot, h.Get)
+	routeGroup.PUT(JobFunctionRoot, h.Update)
+	routeGroup.DELETE(JobFunctionRoot, h.Delete)
 }
 
 // Get godoc

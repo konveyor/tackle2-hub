@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
@@ -30,21 +31,23 @@ type BucketHandler struct {
 //
 // AddRoutes adds routes.
 func (h BucketHandler) AddRoutes(e *gin.Engine) {
-	e.GET(BucketsRoot, h.List)
-	e.GET(BucketsRoot+"/", h.List)
-	e.POST(BucketsRoot, h.Create)
-	e.GET(BucketRoot, h.Get)
-	e.DELETE(BucketRoot, h.Delete)
-	e.GET(BucketContent, h.GetContent)
-	e.POST(BucketContent, h.UploadContent)
-	e.PUT(BucketContent, h.UploadContent)
-	e.GET(AppBucketsRoot, h.AppList)
-	e.GET(AppBucketsRoot+"/", h.AppList)
-	e.GET(AppBucketRoot+"/", h.AppGet)
-	e.POST(AppBucketRoot, h.AppCreate)
-	e.GET(AppBucketContentRoot, h.AppContent)
-	e.POST(AppBucketContentRoot, h.AppUploadContent)
-	e.PUT(AppBucketContentRoot, h.AppUploadContent)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "buckets"))
+	routeGroup.GET(BucketsRoot, h.List)
+	routeGroup.GET(BucketsRoot+"/", h.List)
+	routeGroup.POST(BucketsRoot, h.Create)
+	routeGroup.GET(BucketRoot, h.Get)
+	routeGroup.DELETE(BucketRoot, h.Delete)
+	routeGroup.GET(BucketContent, h.GetContent)
+	routeGroup.POST(BucketContent, h.UploadContent)
+	routeGroup.PUT(BucketContent, h.UploadContent)
+	routeGroup.GET(AppBucketsRoot, h.AppList)
+	routeGroup.GET(AppBucketsRoot+"/", h.AppList)
+	routeGroup.GET(AppBucketRoot+"/", h.AppGet)
+	routeGroup.POST(AppBucketRoot, h.AppCreate)
+	routeGroup.GET(AppBucketContentRoot, h.AppContent)
+	routeGroup.POST(AppBucketContentRoot, h.AppUploadContent)
+	routeGroup.PUT(AppBucketContentRoot, h.AppUploadContent)
 }
 
 // Get godoc

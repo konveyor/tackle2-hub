@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
@@ -132,11 +133,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	var provider auth.Provider
+	if settings.Settings.Auth.Required {
+		k := auth.NewKeycloak(
+			settings.Settings.Auth.Keycloak.Host,
+			settings.Settings.Auth.Keycloak.Realm,
+			settings.Settings.Auth.Keycloak.ClientID,
+			settings.Settings.Auth.Keycloak.ClientSecret)
+		provider = &k
+	} else {
+		provider = &auth.NoAuth{}
+	}
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	for _, h := range api.All() {
-		h.With(db, client)
+		h.With(db, client, provider)
 		h.AddRoutes(router)
 	}
 	taskManager := task.Manager{

@@ -367,6 +367,7 @@ func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID
 	data.Hub.Encryption.Passphrase = Settings.Encryption.Passphrase
+	data.Hub.Token = Settings.Auth.AddonToken
 	data.Addon = r.Task.Data
 	encoded, _ := json.Marshal(data)
 	secret = core.Secret{

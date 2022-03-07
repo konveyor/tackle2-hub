@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -21,14 +22,16 @@ type IdentityHandler struct {
 }
 
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
-	e.GET(IdentitiesRoot, h.List)
-	e.GET(IdentitiesRoot+"/", h.List)
-	e.POST(IdentitiesRoot, h.Create)
-	e.GET(IdentityRoot, h.Get)
-	e.PUT(IdentityRoot, h.Update)
-	e.DELETE(IdentityRoot, h.Delete)
-	e.GET(AppIdentitiesRoot, h.ListByApplication)
-	e.GET(AppIdentitiesRoot+"/", h.ListByApplication)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "identities"))
+	routeGroup.GET(IdentitiesRoot, h.List)
+	routeGroup.GET(IdentitiesRoot+"/", h.List)
+	routeGroup.POST(IdentitiesRoot, h.Create)
+	routeGroup.GET(IdentityRoot, h.Get)
+	routeGroup.PUT(IdentityRoot, h.Update)
+	routeGroup.DELETE(IdentityRoot, h.Delete)
+	routeGroup.GET(AppIdentitiesRoot, h.ListByApplication)
+	routeGroup.GET(AppIdentitiesRoot+"/", h.ListByApplication)
 }
 
 // Get godoc

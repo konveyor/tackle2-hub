@@ -28,7 +28,7 @@ var (
 //
 // main
 func main() {
-	addon.Run(func() (err error){
+	addon.Run(func() (err error) {
 		//
 		// Get the addon data associated with the task.
 		d := &Data{}

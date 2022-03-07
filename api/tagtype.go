@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -22,12 +23,14 @@ type TagTypeHandler struct {
 //
 // AddRoutes adds routes.
 func (h TagTypeHandler) AddRoutes(e *gin.Engine) {
-	e.GET(TagTypesRoot, h.List)
-	e.GET(TagTypesRoot+"/", h.List)
-	e.POST(TagTypesRoot, h.Create)
-	e.GET(TagTypeRoot, h.Get)
-	e.PUT(TagTypeRoot, h.Update)
-	e.DELETE(TagTypeRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tagtypes"))
+	routeGroup.GET(TagTypesRoot, h.List)
+	routeGroup.GET(TagTypesRoot+"/", h.List)
+	routeGroup.POST(TagTypesRoot, h.Create)
+	routeGroup.GET(TagTypeRoot, h.Get)
+	routeGroup.PUT(TagTypeRoot, h.Update)
+	routeGroup.DELETE(TagTypeRoot, h.Delete)
 }
 
 // Get godoc

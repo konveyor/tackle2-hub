@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -22,11 +23,13 @@ type DependencyHandler struct {
 //
 // AddRoutes adds routes.
 func (h DependencyHandler) AddRoutes(e *gin.Engine) {
-	e.GET(DependenciesRoot, h.List)
-	e.GET(DependenciesRoot+"/", h.List)
-	e.POST(DependenciesRoot, h.Create)
-	e.GET(DependencyRoot, h.Get)
-	e.DELETE(DependencyRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "dependencies"))
+	routeGroup.GET(DependenciesRoot, h.List)
+	routeGroup.GET(DependenciesRoot+"/", h.List)
+	routeGroup.POST(DependenciesRoot, h.Create)
+	routeGroup.GET(DependencyRoot, h.Get)
+	routeGroup.DELETE(DependencyRoot, h.Delete)
 }
 
 // Get godoc

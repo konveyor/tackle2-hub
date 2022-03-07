@@ -18,6 +18,8 @@ type Client struct {
 	baseURL string
 	// http client.
 	http *http.Client
+	// addon API token
+	token string
 }
 
 //
@@ -27,6 +29,7 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 		Method: http.MethodGet,
 		URL:    r.join(path),
 	}
+	request.Header.Set("Authorization", r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -65,6 +68,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		Body:   ioutil.NopCloser(reader),
 		URL:    r.join(path),
 	}
+	request.Header.Set("Authorization", r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -104,6 +108,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 		Body:   ioutil.NopCloser(reader),
 		URL:    r.join(path),
 	}
+	request.Header.Set("Authorization", r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -137,6 +142,7 @@ func (r *Client) Delete(path string) (err error) {
 		Method: http.MethodDelete,
 		URL:    r.join(path),
 	}
+	request.Header.Set("Authorization", r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return

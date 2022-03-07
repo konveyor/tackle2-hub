@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 )
@@ -22,12 +23,14 @@ type BusinessServiceHandler struct {
 //
 // AddRoutes adds routes.
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
-	e.GET(BusinessServicesRoot, h.List)
-	e.GET(BusinessServicesRoot+"/", h.List)
-	e.POST(BusinessServicesRoot, h.Create)
-	e.GET(BusinessServiceRoot, h.Get)
-	e.PUT(BusinessServiceRoot, h.Update)
-	e.DELETE(BusinessServiceRoot, h.Delete)
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "businessservices"))
+	routeGroup.GET(BusinessServicesRoot, h.List)
+	routeGroup.GET(BusinessServicesRoot+"/", h.List)
+	routeGroup.POST(BusinessServicesRoot, h.Create)
+	routeGroup.GET(BusinessServiceRoot, h.Get)
+	routeGroup.PUT(BusinessServiceRoot, h.Update)
+	routeGroup.DELETE(BusinessServiceRoot, h.Delete)
 }
 
 // Get godoc
