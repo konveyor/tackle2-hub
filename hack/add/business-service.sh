@@ -2,7 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X POST ${host}/controls/business-service -d \
+curl -X POST ${host}/businessservices -d \
 '{
     "createUser": "tackle",
     "name": "Marketing",

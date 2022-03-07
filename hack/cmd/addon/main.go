@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	pathlib "path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -194,7 +193,7 @@ func tag(d *Data) (err error) {
 	//
 	// Create tag.
 	tag := &api.Tag{}
-	tag.Name = "MyTag"
+	tag.Name = "LISTED"
 	tag.TagType.ID = 1
 	err = addon.Tag.Create(tag)
 	if err != nil {
@@ -204,7 +203,7 @@ func tag(d *Data) (err error) {
 	// append tag.
 	application.Tags = append(
 		application.Tags,
-		strconv.Itoa(int(tag.ID)))
+		api.Ref{ID: tag.ID})
 	//
 	// Update application.
 	err = addon.Application.Update(application)
