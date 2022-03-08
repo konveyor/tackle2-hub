@@ -188,7 +188,7 @@ func (r *Stakeholder) With(m *model.Stakeholder) {
 	r.Email = m.Email
 	if m.JobFunctionID != nil {
 		r.JobFunction = &Ref{ID: *m.JobFunctionID}
-		if r.JobFunction != nil {
+		if m.JobFunction != nil {
 			r.JobFunction.Name = m.JobFunction.Name
 		}
 	}

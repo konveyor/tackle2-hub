@@ -4,7 +4,6 @@ host="${HOST:-localhost:8080}"
 
 curl -X POST ${host}/proxies -d \
 '{
-    "createUser": "tackle",
     "kind": "http",
     "host":"myhost",
     "port": 80
@@ -12,7 +11,6 @@ curl -X POST ${host}/proxies -d \
 
 curl -X POST ${host}/proxies -d \
 '{
-    "createUser": "tackle",
     "kind": "https",
     "host":"myhost",
     "port": 443,

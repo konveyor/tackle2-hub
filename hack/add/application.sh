@@ -2,25 +2,22 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X POST ${host}/application-inventory/application -d \
+curl -X POST ${host}/applications -d \
 '{
-    "createUser": "tackle",
     "name":"Dog",
     "description": "Dog application.",
-    "businessService": "1",
+    "businessService": {"id":1},
     "identities": [
       {"id":1},
       {"id":2}
     ],
     "tags":[
-      "1",
-      "2"
+      {"id":1}
     ]
 }' | jq -M .
 
-curl -X POST ${host}/application-inventory/application -d \
+curl -X POST ${host}/applications -d \
 '{
-    "createUser": "tackle",
     "name":"Cat",
     "description": "Cat application.",
     "repository": {
@@ -29,14 +26,13 @@ curl -X POST ${host}/application-inventory/application -d \
       "url": "git://github.com/pet/cat",
       "branch": "/cat"
     },
-    "businessService": "1",
+    "businessService": {"id":1},
     "tags":[
-      "1",
-      "2"
+      {"id":1}
     ]
 }' | jq -M .
 
-curl -X POST ${host}/application-inventory/application -d \
+curl -X POST ${host}/applications -d \
 '{
     "createUser": "tackle",
     "name":"Pathfinder",
@@ -49,6 +45,6 @@ curl -X POST ${host}/application-inventory/application -d \
     "extensions": {
       "binary": "pathfinder.jar"
     },
-    "businessService": "1"
+    "businessService": {"id":1}
 }' | jq -M .
 

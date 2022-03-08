@@ -2,9 +2,8 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X POST ${host}/controls/job-function -d \
+curl -X POST ${host}/jobfunctions -d \
 '{
-    "createUser": "tackle",
-    "username": "tackle",
+    "name": "tackle",
     "role": "Administrator"
 }' | jq -M .
