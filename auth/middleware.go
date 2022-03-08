@@ -7,12 +7,15 @@ import (
 	"strings"
 )
 
+const (
+	Header = "Authorization"
+)
 //
 // AuthorizationRequired enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
 func AuthorizationRequired(p Provider, requiredScope string) func(*gin.Context) {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
+		token := c.GetHeader(Header)
 		addonToken := settings.Settings.Auth.AddonToken
 		if addonToken != "" && token == addonToken {
 			c.Next()
