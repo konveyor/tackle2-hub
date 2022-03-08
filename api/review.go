@@ -227,8 +227,10 @@ func (r *Review) With(m *model.Review) {
 	r.ProposedAction = m.ProposedAction
 	r.WorkPriority = m.WorkPriority
 	r.Comments = m.Comments
-	r.Application.ID = m.Application.ID
-	r.Application.Name = m.Application.Name
+	r.Application.ID = m.ApplicationID
+	if m.Application != nil {
+		r.Application.Name = m.Application.Name
+	}
 }
 
 //
