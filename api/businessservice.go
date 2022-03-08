@@ -168,10 +168,11 @@ func (r *BusinessService) With(m *model.BusinessService) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	if m.Owner != nil {
-		ref := &Ref{}
-		ref.With(m.Owner.ID, m.Owner.Name)
-		r.Owner = ref
+	if m.OwnerID != nil {
+		r.Owner = &Ref{ID: *m.OwnerID}
+		if m.Owner != nil {
+			r.Owner.Name = m.Owner.Name
+		}
 	}
 }
 

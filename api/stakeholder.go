@@ -186,10 +186,11 @@ func (r *Stakeholder) With(m *model.Stakeholder) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Email = m.Email
-	if m.JobFunction != nil {
-		ref := &Ref{}
-		ref.With(m.JobFunction.ID, m.JobFunction.Name)
-		r.JobFunction = ref
+	if m.JobFunctionID != nil {
+		r.JobFunction = &Ref{ID: *m.JobFunctionID}
+		if r.JobFunction != nil {
+			r.JobFunction.Name = m.JobFunction.Name
+		}
 	}
 	for _, g := range m.Groups {
 		ref := Ref{}

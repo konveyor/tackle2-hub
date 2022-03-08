@@ -150,9 +150,13 @@ type Dependency struct {
 func (r *Dependency) With(m *model.Dependency) {
 	r.Resource.With(&m.Model)
 	r.To.ID = m.ToID
-	r.To.Name = m.To.Name
+	if m.To != nil {
+		r.To.Name = m.To.Name
+	}
 	r.From.ID = m.FromID
-	r.From.Name = m.From.Name
+	if m.From != nil {
+		r.From.Name = m.From.Name
+	}
 }
 
 // Model builds a model.Dependency.
