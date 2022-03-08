@@ -171,7 +171,7 @@ type Proxy struct {
 	Host     string   `json:"host"`
 	Port     int      `json:"port"`
 	Excluded []string `json:"excluded"`
-	Identity Ref      `json:"identity"`
+	Identity *Ref     `json:"identity"`
 }
 
 //
@@ -182,7 +182,7 @@ func (r *Proxy) With(m *model.Proxy) {
 	r.Kind = m.Kind
 	r.Host = m.Host
 	r.Port = m.Port
-	r.Identity.ID = m.IdentityID
+	r.Identity = &Ref{ID: m.IdentityID}
 	_ = json.Unmarshal(m.Excluded, &r.Excluded)
 	if r.Excluded == nil {
 		r.Excluded = []string{}
@@ -197,11 +197,13 @@ func (r *Proxy) Model() (m *model.Proxy) {
 		Kind:       r.Kind,
 		Host:       r.Host,
 		Port:       r.Port,
-		IdentityID: r.Identity.ID,
 	}
 	m.ID = r.ID
 	if r.Excluded != nil {
 		m.Excluded, _ = json.Marshal(r.Excluded)
+	}
+	if r.Identity != nil {
+		m.IdentityID = r.Identity.ID
 	}
 
 	return
