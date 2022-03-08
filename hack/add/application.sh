@@ -12,8 +12,7 @@ curl -X POST ${host}/applications -d \
       {"id":2}
     ],
     "tags":[
-      {"id":1},
-      {"id":2}
+      {"id":1}
     ]
 }' | jq -M .
 
@@ -29,12 +28,11 @@ curl -X POST ${host}/applications -d \
     },
     "businessService": {"id":1},
     "tags":[
-      {"id":1},
-      {"id":2}
+      {"id":1}
     ]
 }' | jq -M .
 
-curl -X POST ${host}/application-inventory/application -d \
+curl -X POST ${host}/applications -d \
 '{
     "createUser": "tackle",
     "name":"Pathfinder",
@@ -47,6 +45,6 @@ curl -X POST ${host}/application-inventory/application -d \
     "extensions": {
       "binary": "pathfinder.jar"
     },
-    "businessService": "1"
+    "businessService": {"id":1}
 }' | jq -M .
 

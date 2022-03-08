@@ -193,10 +193,10 @@ func (r *Proxy) With(m *model.Proxy) {
 // Model builds a model.
 func (r *Proxy) Model() (m *model.Proxy) {
 	m = &model.Proxy{
-		Enabled:    r.Enabled,
-		Kind:       r.Kind,
-		Host:       r.Host,
-		Port:       r.Port,
+		Enabled: r.Enabled,
+		Kind:    r.Kind,
+		Host:    r.Host,
+		Port:    r.Port,
 	}
 	m.ID = r.ID
 	if r.Excluded != nil {
