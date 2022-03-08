@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/konveyor/tackle2-hub/auth"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -26,10 +27,11 @@ type Client struct {
 // Get a resource.
 func (r *Client) Get(path string, object interface{}) (err error) {
 	request := &http.Request{
+		Header: http.Header{},
 		Method: http.MethodGet,
 		URL:    r.join(path),
 	}
-	request.Header.Set("Authorization", r.token)
+	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -64,11 +66,12 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	}
 	reader := bytes.NewReader(bfr)
 	request := &http.Request{
+		Header: http.Header{},
 		Method: http.MethodPost,
 		Body:   ioutil.NopCloser(reader),
 		URL:    r.join(path),
 	}
-	request.Header.Set("Authorization", r.token)
+	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -104,11 +107,12 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 	}
 	reader := bytes.NewReader(bfr)
 	request := &http.Request{
+		Header: http.Header{},
 		Method: http.MethodPut,
 		Body:   ioutil.NopCloser(reader),
 		URL:    r.join(path),
 	}
-	request.Header.Set("Authorization", r.token)
+	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
@@ -139,10 +143,11 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 // Delete a resource.
 func (r *Client) Delete(path string) (err error) {
 	request := &http.Request{
+		Header: http.Header{},
 		Method: http.MethodDelete,
 		URL:    r.join(path),
 	}
-	request.Header.Set("Authorization", r.token)
+	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
 		return
