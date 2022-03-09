@@ -6,7 +6,10 @@ curl -X POST ${host}/proxies -d \
 '{
     "kind": "http",
     "host":"myhost",
-    "port": 80
+    "port": 80,
+    "identity": {
+      "id": 1
+    }
 }' | jq -M .
 
 curl -X POST ${host}/proxies -d \

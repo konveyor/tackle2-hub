@@ -16,6 +16,6 @@ cd ${dir}
 ./stakeholder.sh
 ./business-service.sh
 ./application.sh
+./bucket.sh
 ./review.sh
 ./proxy.sh
-

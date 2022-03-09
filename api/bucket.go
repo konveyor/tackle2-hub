@@ -61,7 +61,10 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 func (h BucketHandler) Get(ctx *gin.Context) {
 	m := &model.Bucket{}
 	id := ctx.Param(ID)
-	result := h.DB.First(m, id)
+	db := h.BaseHandler.preLoad(
+		h.DB,
+		"Application")
+	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
 		return
@@ -81,7 +84,10 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 // @router /buckets [get]
 func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
-	result := h.DB.Find(&list)
+	db := h.BaseHandler.preLoad(
+		h.DB,
+		"Application")
+	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
 		return
@@ -406,7 +412,7 @@ func (r *Bucket) With(m *model.Bucket) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Path = m.Path
-	r.Application.ID = m.ApplicationID
+	r.Application = r.ref(m.ApplicationID, &m.Application)
 }
 
 //

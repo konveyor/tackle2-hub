@@ -219,12 +219,50 @@ type Resource struct {
 }
 
 //
-// Update the resource with the model.
+// With updates the resource with the model.
 func (r *Resource) With(m *model.Model) {
 	r.ID = m.ID
 	r.CreateUser = m.CreateUser
 	r.UpdateUser = m.UpdateUser
 	r.CreateTime = m.CreateTime
+}
+
+//
+// ref with id and named model.
+func (r *Resource) ref(id uint, m Named) (ref Ref) {
+	ref.ID = id
+	if m != nil {
+		ref.Name = m.GetName()
+	}
+	return
+}
+
+//
+// refPtr with id and named model.
+func (r *Resource) refPtr(id *uint, m Named) (ref *Ref) {
+	if id == nil {
+		return
+	}
+	ref = &Ref{ID: *id}
+	if m != nil {
+		ref.Name = m.GetName()
+	}
+	return
+}
+
+//
+// idPtr extracts ref ID.
+func (r *Resource) idPtr(ref *Ref) (id *uint) {
+	if ref != nil {
+		id = &ref.ID
+	}
+	return
+}
+
+//
+// Named model.
+type Named interface {
+	GetName() string
 }
 
 //
@@ -236,6 +274,8 @@ type Ref struct {
 	Name string `json:"name"`
 }
 
+//
+// With id and named model.
 func (r *Ref) With(id uint, name string) {
 	r.ID = id
 	r.Name = name

@@ -10,10 +10,15 @@ type Application struct {
 	Repository        JSON
 	Extensions        JSON
 	Comments          string
+	Buckets           []Bucket
 	Tags              []Tag      `gorm:"many2many:applicationTags"`
 	Identities        []Identity `gorm:"many2many:appIdentity"`
 	BusinessServiceID uint       `gorm:"index"`
 	BusinessService   *BusinessService
+}
+
+func (r *Application) GetName() string {
+	return r.Name
 }
 
 type Dependency struct {
