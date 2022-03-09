@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -43,7 +44,7 @@ func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 func (h DependencyHandler) Get(ctx *gin.Context) {
 	m := &model.Dependency{}
 	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "To", "From")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -75,7 +76,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 		db = db.Where("fromid = ?", from)
 	}
 
-	db = h.preLoad(db, "To", "From")
+	db = h.preLoad(db, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -127,8 +128,14 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 // @router /dependencies/{id} [delete]
 // @param id path string true "Dependency id"
 func (h DependencyHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.Dependency{}, id)
+	id := h.pk(ctx)
+	m := &model.Dependency{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -149,14 +156,8 @@ type Dependency struct {
 // With updates the resource using the model.
 func (r *Dependency) With(m *model.Dependency) {
 	r.Resource.With(&m.Model)
-	r.To.ID = m.ToID
-	if m.To != nil {
-		r.To.Name = m.To.Name
-	}
-	r.From.ID = m.FromID
-	if m.From != nil {
-		r.From.Name = m.From.Name
-	}
+	r.To = r.ref(m.ToID, m.To)
+	r.From = r.ref(m.FromID, m.From)
 }
 
 // Model builds a model.Dependency.

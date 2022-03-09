@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -42,9 +43,9 @@ func (h TagTypeHandler) AddRoutes(e *gin.Engine) {
 // @router /tagtypes/{id} [get]
 // @param id path string true "Tag Type ID"
 func (h TagTypeHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.TagType{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Tags")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -65,7 +66,7 @@ func (h TagTypeHandler) Get(ctx *gin.Context) {
 // @router /tagtypes [get]
 func (h TagTypeHandler) List(ctx *gin.Context) {
 	var list []model.TagType
-	db := h.preLoad(h.DB, "Tags")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -116,8 +117,14 @@ func (h TagTypeHandler) Create(ctx *gin.Context) {
 // @router /tagtypes/{id} [delete]
 // @param id path string true "Tag Type ID"
 func (h TagTypeHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.TagType{}, id)
+	id := h.pk(ctx)
+	m := &model.TagType{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -136,7 +143,7 @@ func (h TagTypeHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Tag Type ID"
 // @param tag_type body api.TagType true "Tag Type data"
 func (h TagTypeHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &TagType{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -144,7 +151,10 @@ func (h TagTypeHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	result := h.DB.Model(&TagType{}).Where("id = ?", id).Omit("id").Updates(m)
+	m.ID = id
+	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return

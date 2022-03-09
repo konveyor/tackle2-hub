@@ -150,9 +150,9 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	}
 
 	m := updates.Model()
-	db := h.DB.Model(&model.Setting{})
-	db = db.Where(&model.Setting{Key: key})
-	result := db.Updates(m)
+	db := h.DB.Model(m)
+	db = db.Where("key", key)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 	}

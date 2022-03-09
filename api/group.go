@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
-	"strconv"
 )
 
 //
@@ -43,9 +43,9 @@ func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 // @router /stakeholdergroups/{id} [get]
 // @param id path string true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.StakeholderGroup{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Stakeholders")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -66,7 +66,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 // @router /stakeholdergroups [get]
 func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 	var list []model.StakeholderGroup
-	db := h.preLoad(h.DB, "Stakeholders")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -117,10 +117,14 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 // @router /stakeholdergroups/{id} [delete]
 // @param id path string true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param(ID))
+	id := h.pk(ctx)
 	m := &model.StakeholderGroup{}
-	m.ID = uint(id)
-	result := h.DB.Select("Stakeholders").Delete(m)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Select("Stakeholders").Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -139,7 +143,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Stakeholder Group ID"
 // @param stakeholder_group body api.StakeholderGroup true "Stakeholder Group data"
 func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &StakeholderGroup{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -147,12 +151,15 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	result := h.DB.Model(&model.StakeholderGroup{}).Where("id = ?", id).Omit("id").Updates(m)
+	m.ID = id
+	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
-	err = h.DB.Model(m).Association("Stakeholders").Replace("Stakeholders", m.Stakeholders)
+	err = db.Model(m).Association("Stakeholders").Replace(m.Stakeholders)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return

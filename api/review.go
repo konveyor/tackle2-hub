@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -44,9 +45,9 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 // @router /reviews/{id} [get]
 // @param id path string true "Review ID"
 func (h ReviewHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.Review{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Application")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -67,7 +68,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 // @router /reviews [get]
 func (h ReviewHandler) List(ctx *gin.Context) {
 	var list []model.Review
-	db := h.preLoad(h.DB, "Application")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -117,8 +118,14 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 // @router /reviews/{id} [delete]
 // @param id path string true "Review ID"
 func (h ReviewHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&Review{}, id)
+	id := h.pk(ctx)
+	m := &model.Review{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -137,13 +144,18 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Review ID"
 // @param review body api.Review true "Review data"
 func (h ReviewHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	updates := Review{}
-	err := ctx.BindJSON(&updates)
+	id := h.pk(ctx)
+	r := &Review{}
+	err := ctx.BindJSON(r)
 	if err != nil {
+		h.bindFailed(ctx, err)
 		return
 	}
-	result := h.DB.Model(&Review{}).Where("id = ?", id).Omit("id").Updates(updates)
+	m := r.Model()
+	m.ID = id
+	db := h.DB.Model(m)
+	db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
@@ -174,7 +186,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 		return
 	}
 	for _, id := range c.TargetApplications {
-		copied := model.Review{
+		copied := &model.Review{
 			BusinessCriticality: m.BusinessCriticality,
 			EffortEstimate:      m.EffortEstimate,
 			ProposedAction:      m.ProposedAction,
@@ -190,14 +202,14 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 		}
 		// if the application doesn't already have a review, create one.
 		if len(existing) == 0 {
-			result = h.DB.Create(&copied)
+			result = h.DB.Create(copied)
 			if result.Error != nil {
 				h.createFailed(ctx, result.Error)
 				return
 			}
 			// if the application already has a review, replace it with the copied review.
 		} else {
-			result = h.DB.Model(&model.Review{}).Where("id = ?", existing[0].ID).Updates(&copied)
+			result = h.DB.Model(&existing[0]).Updates(h.fields(copied))
 			if result.Error != nil {
 				h.createFailed(ctx, result.Error)
 				return
@@ -227,10 +239,7 @@ func (r *Review) With(m *model.Review) {
 	r.ProposedAction = m.ProposedAction
 	r.WorkPriority = m.WorkPriority
 	r.Comments = m.Comments
-	r.Application.ID = m.ApplicationID
-	if m.Application != nil {
-		r.Application.Name = m.Application.Name
-	}
+	r.Application = r.ref(m.ApplicationID, m.Application)
 }
 
 //

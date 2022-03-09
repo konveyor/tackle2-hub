@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -43,8 +44,8 @@ func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 // @param id path string true "Business Service ID"
 func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 	m := &model.BusinessService{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Owner")
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -65,7 +66,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 // @router /businessservices [get]
 func (h BusinessServiceHandler) List(ctx *gin.Context) {
 	var list []model.BusinessService
-	db := h.preLoad(h.DB, "Owner")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -116,8 +117,14 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 // @router /businessservices/{id} [delete]
 // @param id path string true "Business service ID"
 func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.BusinessService{}, id)
+	id := h.pk(ctx)
+	m := &model.BusinessService{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -136,15 +143,18 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Business service ID"
 // @param business_service body api.BusinessService true "Business service data"
 func (h BusinessServiceHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &BusinessService{}
 	err := ctx.BindJSON(r)
 	if err != nil {
 		h.bindFailed(ctx, err)
 		return
 	}
-	updates := r.Model()
-	result := h.DB.Model(&model.BusinessService{}).Where("id = ?", id).Omit("id").Updates(updates)
+	m := r.Model()
+	m.ID = id
+	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
@@ -168,12 +178,7 @@ func (r *BusinessService) With(m *model.BusinessService) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	if m.OwnerID != nil {
-		r.Owner = &Ref{ID: *m.OwnerID}
-		if m.Owner != nil {
-			r.Owner.Name = m.Owner.Name
-		}
-	}
+	r.Owner = r.refPtr(m.OwnerID, m.Owner)
 }
 
 //

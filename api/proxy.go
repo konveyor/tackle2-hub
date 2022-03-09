@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -41,11 +42,9 @@ func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 // @router /proxies/{id} [get]
 // @param id path string true "Proxy ID"
 func (h ProxyHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	proxy := &model.Proxy{}
-	id := ctx.Param(ID)
-	db := h.BaseHandler.preLoad(
-		h.DB,
-		"Identity")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(proxy, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -67,9 +66,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 func (h ProxyHandler) List(ctx *gin.Context) {
 	var list []model.Proxy
 	kind := ctx.Query("kind")
-	db := h.BaseHandler.preLoad(
-		h.DB,
-		"Identity")
+	db := h.preLoad(h.DB, clause.Associations)
 	if kind != "" {
 		db = db.Where("kind", kind)
 	}
@@ -122,7 +119,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 // @router /proxies/{id} [delete]
 // @param id path string true "Proxy ID"
 func (h ProxyHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	proxy := &model.Proxy{}
 	result := h.DB.First(proxy, id)
 	if result.Error != nil {
@@ -148,7 +145,7 @@ func (h ProxyHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Proxy ID"
 // @param proxy body Proxy true "Proxy data"
 func (h ProxyHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &Proxy{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -156,8 +153,9 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.ID = id
 	db := h.DB.Model(m)
-	db = db.Where("id", id)
+	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
