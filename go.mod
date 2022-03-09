@@ -15,7 +15,7 @@ require (
 	gorm.io/driver/postgres v1.2.3 // indirect
 	gorm.io/driver/sqlite v1.2.4
 	gorm.io/driver/sqlserver v1.2.1 // indirect
-	gorm.io/gorm v1.22.4
+	gorm.io/gorm v1.22.5
 	k8s.io/api v0.17.4
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v0.17.4
