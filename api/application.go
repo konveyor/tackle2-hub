@@ -199,6 +199,7 @@ type Application struct {
 	Extensions      Extensions  `json:"extensions"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
+	Buckets         []Ref       `json:"buckets"`
 	Identities      []Ref       `json:"identities"`
 	Tags            []Ref       `json:"tags"`
 	BusinessService Ref         `json:"businessService"`
@@ -228,6 +229,14 @@ func (r *Application) With(m *model.Application) {
 		ref.With(id.ID, id.Name)
 		r.Identities = append(
 			r.Identities,
+			ref)
+	}
+	r.Buckets = []Ref{}
+	for _, id := range m.Buckets {
+		ref := Ref{}
+		ref.With(id.ID, id.Name)
+		r.Identities = append(
+			r.Buckets,
 			ref)
 	}
 	for _, tag := range m.Tags {

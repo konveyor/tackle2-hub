@@ -10,6 +10,7 @@ type Bucket struct {
 	Name          string `gorm:"uniqueIndex:A"`
 	Path          string
 	ApplicationID uint `gorm:"uniqueIndex:A"`
+	Application   Application
 }
 
 func (m *Bucket) AfterDelete(db *gorm.DB) (err error) {

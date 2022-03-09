@@ -17,7 +17,12 @@ type Identity struct {
 	Password    string
 	Key         string
 	Settings    string
+	Proxies     []Proxy
 	Encrypted   string
+}
+
+func (r *Identity) GetName() string {
+	return r.Name
 }
 
 //

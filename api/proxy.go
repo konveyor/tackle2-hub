@@ -43,7 +43,10 @@ func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 func (h ProxyHandler) Get(ctx *gin.Context) {
 	proxy := &model.Proxy{}
 	id := ctx.Param(ID)
-	result := h.DB.First(proxy, id)
+	db := h.BaseHandler.preLoad(
+		h.DB,
+		"Identity")
+	result := db.First(proxy, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
 		return
@@ -64,7 +67,9 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 func (h ProxyHandler) List(ctx *gin.Context) {
 	var list []model.Proxy
 	kind := ctx.Query("kind")
-	db := h.DB
+	db := h.BaseHandler.preLoad(
+		h.DB,
+		"Identity")
 	if kind != "" {
 		db = db.Where("kind", kind)
 	}
@@ -182,7 +187,7 @@ func (r *Proxy) With(m *model.Proxy) {
 	r.Kind = m.Kind
 	r.Host = m.Host
 	r.Port = m.Port
-	r.Identity = &Ref{ID: m.IdentityID}
+	r.Identity = r.refPtr(m.IdentityID, m.Identity)
 	_ = json.Unmarshal(m.Excluded, &r.Excluded)
 	if r.Excluded == nil {
 		r.Excluded = []string{}
@@ -199,11 +204,9 @@ func (r *Proxy) Model() (m *model.Proxy) {
 		Port:    r.Port,
 	}
 	m.ID = r.ID
+	m.IdentityID = r.idPtr(r.Identity)
 	if r.Excluded != nil {
 		m.Excluded, _ = json.Marshal(r.Excluded)
-	}
-	if r.Identity != nil {
-		m.IdentityID = r.Identity.ID
 	}
 
 	return
