@@ -21,10 +21,6 @@ type Identity struct {
 	Encrypted   string
 }
 
-func (r *Identity) GetName() string {
-	return r.Name
-}
-
 //
 // Encrypt sensitive fields.
 func (r *Identity) Encrypt(passphrase string) (err error) {
