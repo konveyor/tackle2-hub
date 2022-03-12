@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"time"
 )
 
@@ -193,12 +194,14 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 		for i := 0; i < mt.NumField(); i++ {
 			ft := mt.Field(i)
 			fv := mv.Field(i)
-			if !fv.CanSet() {
+			if !ft.IsExported() {
 				continue
 			}
 			switch fv.Kind() {
 			case reflect.Struct:
-				inspect(fv.Addr().Interface())
+				if ft.Anonymous {
+					inspect(fv.Addr().Interface())
+				}
 			default:
 				mp[ft.Name] = fv.Interface()
 			}
@@ -206,6 +209,15 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 	}
 	mp = map[string]interface{}{}
 	inspect(m)
+	return
+}
+
+//
+// pk returns the PK (ID) parameter.
+func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
+	s := ctx.Param(ID)
+	n, _ := strconv.Atoi(s)
+	id = uint(n)
 	return
 }
 
