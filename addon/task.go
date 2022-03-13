@@ -2,7 +2,6 @@ package addon
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/task"
@@ -37,6 +36,7 @@ func (h *Task) DataWith(object interface{}) (err error) {
 //
 // Started report addon started.
 func (h *Task) Started() {
+	h.deleteReport()
 	h.report.Status = task.Running
 	h.pushReport()
 	Log.Info("Addon reported started.")
@@ -117,6 +117,19 @@ func (h *Task) Completed(n int) {
 }
 
 //
+// deleteReport deletes the task report.
+func (h *Task) deleteReport() {
+	params := Params{
+		api.ID: h.secret.Hub.Task,
+	}
+	path := params.inject(api.TaskReportRoot)
+	err := h.client.Delete(path)
+	if err != nil {
+		panic(err)
+	}
+}
+
+//
 // pushReport create/update the task report.
 func (h *Task) pushReport() {
 	var err error
@@ -129,10 +142,10 @@ func (h *Task) pushReport() {
 		api.ID: h.secret.Hub.Task,
 	}
 	path := params.inject(api.TaskReportRoot)
-	err = h.client.Post(path, &h.report)
-	if errors.Is(err, &Conflict{}) {
+	if h.report.ID == 0 {
+		err = h.client.Post(path, &h.report)
+	} else {
 		err = h.client.Put(path, &h.report)
 	}
-
 	return
 }

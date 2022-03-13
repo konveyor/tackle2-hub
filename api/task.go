@@ -45,13 +45,14 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TasksRoot, h.Create)
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
+	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit)
 	routeGroup.GET(TaskBucketRoot, h.Content)
 	routeGroup.POST(TaskBucketRoot, h.Upload)
 	routeGroup.PUT(TaskBucketRoot, h.Upload)
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
-	routeGroup.DELETE(TaskRoot, h.Delete)
+	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)
 }
 
 // Get godoc
@@ -282,7 +283,7 @@ func (h TaskHandler) Upload(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.TaskReport
 // @router /tasks/{id}/report [post]
-// @param id path string true "TaskReport ID"
+// @param id path string true "Task ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -310,7 +311,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.TaskReport
 // @router /tasks/{id}/report [put]
-// @param id path string true "TaskReport ID"
+// @param id path string true "Task ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -330,6 +331,29 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	report.With(m)
 
 	ctx.JSON(http.StatusOK, report)
+}
+
+// DeleteReport godoc
+// @summary Delete a task report.
+// @description Delete a task report.
+// @tags update
+// @accept json
+// @produce json
+// @success 204
+// @router /tasks/{id}/report [delete]
+// @param id path string true "Task ID"
+func (h TaskHandler) DeleteReport(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.TaskReport{}
+	m.ID = id
+	db := h.DB.Where("taskid", id)
+	result := db.Delete(&model.TaskReport{})
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 //
