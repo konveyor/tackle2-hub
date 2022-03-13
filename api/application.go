@@ -196,7 +196,7 @@ type Application struct {
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
 	Repository      *Repository `json:"repository"`
-	Extensions      Extensions  `json:"extensions"`
+	Facts           Facts       `json:"facts"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
 	Buckets         []Ref       `json:"buckets"`
@@ -213,7 +213,7 @@ func (r *Application) With(m *model.Application) {
 	r.Description = m.Description
 	r.Comments = m.Comments
 	_ = json.Unmarshal(m.Repository, &r.Repository)
-	_ = json.Unmarshal(m.Extensions, &r.Extensions)
+	_ = json.Unmarshal(m.Facts, &r.Facts)
 	if m.Review != nil {
 		ref := &Ref{}
 		ref.With(m.Review.ID, "")
@@ -259,8 +259,8 @@ func (r *Application) Model() (m *model.Application) {
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
 	}
-	if r.Extensions != nil {
-		m.Extensions, _ = json.Marshal(r.Extensions)
+	if r.Facts != nil {
+		m.Facts, _ = json.Marshal(r.Facts)
 	}
 	for _, ref := range r.Identities {
 		m.Identities = append(
@@ -295,5 +295,5 @@ type Repository struct {
 }
 
 //
-// Extensions of the application.
-type Extensions map[string]interface{}
+// Facts about the application.
+type Facts map[string]interface{}
