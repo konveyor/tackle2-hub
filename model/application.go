@@ -8,7 +8,7 @@ type Application struct {
 	Description       string
 	Review            *Review
 	Repository        JSON
-	Extensions        JSON
+	Facts             JSON
 	Comments          string
 	Buckets           []Bucket   `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:applicationTags;constraint:OnDelete:CASCADE"`
