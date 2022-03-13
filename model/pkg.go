@@ -35,6 +35,7 @@ func All() []interface{} {
 		Review{},
 		Identity{},
 		Task{},
+		TaskGroup{},
 		TaskReport{},
 		Proxy{},
 	}

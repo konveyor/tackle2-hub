@@ -39,8 +39,8 @@ func main() {
 		// Find files.
 		paths, _ := find(d.Path, 25)
 		//
-		// Ensure bucket.
-		err = ensureBucket(d, paths)
+		// List directory.
+		err = listDir(d, paths)
 		if err != nil {
 			return
 		}
@@ -49,31 +49,23 @@ func main() {
 }
 
 //
-// ensureBucket builds and populates the bucket.
-func ensureBucket(d *Data, paths []string) (err error) {
+// listDir builds and populates the bucket.
+func listDir(d *Data, paths []string) (err error) {
 	//
 	// Task update: Update the task with total number of
 	// items to be processed by the addon.
 	addon.Total(len(paths))
 	//
-	// Ensure the bucket.
-	addon.Activity("Ensuring bucket.")
-	bucket, err := addon.Bucket.Ensure(d.Application, "Listing")
-	if err == nil {
-		addon.Activity("Using bucket: id=%d", bucket.ID)
-	} else {
-		return
-	}
-	defer func() {
-		if err != nil {
-			_ = addon.Bucket.Delete(bucket)
-		}
-	}()
-	addon.Activity("Purging bucket.")
-	err = addon.Bucket.Purge(bucket)
+	// Get application.
+	application, err := addon.Application.Get(d.Application)
 	if err != nil {
 		return
 	}
+	//
+	// List directory.
+	output := pathlib.Join(application.Bucket, "list")
+	_ = os.RemoveAll(output)
+	_ = os.MkdirAll(output, 0777)
 	//
 	// Write files.
 	for _, p := range paths {
@@ -90,7 +82,7 @@ func ensureBucket(d *Data, paths []string) (err error) {
 		//
 		// Task update: The current addon activity.
 		target := pathlib.Join(
-			bucket.Path,
+			output,
 			pathlib.Base(p))
 		addon.Activity("writing: %s", p)
 		//
@@ -110,7 +102,7 @@ func ensureBucket(d *Data, paths []string) (err error) {
 	}
 	//
 	// Build the index.
-	err = buildIndex(bucket)
+	err = buildIndex(output)
 	if err != nil {
 		return
 	}
@@ -128,10 +120,10 @@ func ensureBucket(d *Data, paths []string) (err error) {
 
 //
 // Build index.html
-func buildIndex(bucket *api.Bucket) (err error) {
+func buildIndex(output string) (err error) {
 	addon.Activity("Building index.")
 	time.Sleep(time.Second)
-	dir := bucket.Path
+	dir := output
 	path := pathlib.Join(dir, "index.html")
 	f, err := os.Create(path)
 	if err != nil {

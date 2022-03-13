@@ -11,6 +11,7 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -19,7 +20,8 @@ import (
 )
 
 const (
-	Pending   = ""
+	Created   = "Created"
+	Ready     = "Ready"
 	Succeeded = "Succeeded"
 	Failed    = "Failed"
 	Running   = "Running"
@@ -48,21 +50,22 @@ func (m *Manager) Run(ctx context.Context) {
 			default:
 				time.Sleep(time.Second)
 				_ = m.updateRunning()
-				_ = m.startPending()
+				_ = m.purgeTerminated()
+				_ = m.startReady()
 			}
 		}
 	}()
 }
 
 //
-// startPending starts pending tasks.
-func (m *Manager) startPending() (err error) {
+// startReady starts pending tasks.
+func (m *Manager) startReady() (err error) {
 	list := []model.Task{}
 	result := m.DB.Find(
 		&list,
 		"status IN ?",
 		[]string{
-			Pending,
+			Ready,
 			Running,
 			Postponed,
 		})
@@ -71,21 +74,21 @@ func (m *Manager) startPending() (err error) {
 		return
 	}
 	for i := range list {
-		pending := &list[i]
+		ready := &list[i]
 		task := Task{
 			client: m.Client,
-			Task:   pending,
+			Task:   ready,
 		}
-		switch pending.Status {
-		case Pending,
+		switch ready.Status {
+		case Ready,
 			Postponed:
-			if m.postpone(pending, list) {
-				pending.Status = Postponed
-				_ = m.DB.Save(pending)
+			if m.postpone(ready, list) {
+				ready.Status = Postponed
+				_ = m.DB.Save(ready)
 				continue
 			}
 			_ = task.Run()
-			_ = m.DB.Save(pending)
+			_ = m.DB.Save(ready)
 		}
 	}
 
@@ -111,6 +114,39 @@ func (m *Manager) updateRunning() (err error) {
 			continue
 		}
 		_ = m.DB.Save(&running)
+	}
+
+	return
+}
+
+//
+// purgeTerminated purge resources associated with terminated tasks.
+//   - delete buckets.
+func (m *Manager) purgeTerminated() (err error) {
+	list := []model.Task{}
+	result := m.DB.Find(
+		&list,
+		"status IN ?",
+		[]string{
+			Succeeded,
+			Failed,
+		})
+	if result.Error != nil {
+		err = result.Error
+		return
+	}
+	for _, task := range list {
+		delete := false
+		done := time.Since(*task.Terminated)
+		switch task.Status {
+		case Succeeded:
+			delete = done > time.Hour
+		case Failed:
+			delete = done > time.Hour*48
+		}
+		if delete {
+			_ = os.Remove(task.Path)
+		}
 	}
 
 	return
@@ -152,9 +188,11 @@ type Task struct {
 //
 // Run the specified task.
 func (r *Task) Run() (err error) {
+	mark := time.Now()
 	defer func() {
 		if err != nil {
 			r.Error = err.Error()
+			r.Terminated = &mark
 			r.Status = Failed
 		}
 	}()
@@ -173,7 +211,6 @@ func (r *Task) Run() (err error) {
 	if err != nil {
 		return
 	}
-	mark := time.Now()
 	r.Started = &mark
 	r.Status = Running
 	r.Job = path.Join(
