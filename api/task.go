@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
+	"gorm.io/gorm/clause"
 	batch "k8s.io/api/batch/v1"
 	"net/http"
 	"path"
@@ -64,9 +65,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 func (h TaskHandler) Get(ctx *gin.Context) {
 	task := &model.Task{}
 	id := h.pk(ctx)
-	db := h.preLoad(
-		h.DB,
-		"Report")
+	db := h.DB.Preload(clause.Associations)
 	result := db.First(task, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -92,9 +91,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	if locator != "" {
 		db = db.Where("locator", locator)
 	}
-	db = h.preLoad(
-		db,
-		"Report")
+	db = db.Preload(clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
