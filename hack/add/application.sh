@@ -42,8 +42,8 @@ curl -X POST ${host}/applications -d \
       "url": "https://github.com/konveyor/tackle2-pathfinder.git",
       "branch": "1.2.0"
     },
-    "extensions": {
-      "binary": "pathfinder.jar"
+    "facts": {
+      "analysed": true
     },
     "businessService": {"id":1}
 }' | jq -M .
