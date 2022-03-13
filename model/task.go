@@ -32,7 +32,7 @@ type Task struct {
 	Error       string
 	Job         string
 	Report      *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
-	TaskGroupID *uint
+	TaskGroupID *uint       `gorm:"<-:create"`
 	TaskGroup   *TaskGroup
 }
 
@@ -43,8 +43,17 @@ func (m *Task) Reset() {
 }
 
 func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
-	err = m.Bucket.BeforeCreate(db)
+	if m.TaskGroupID == nil {
+		err = m.Bucket.BeforeCreate(db)
+	}
 	m.Reset()
+	return
+}
+
+func (m *Task) BeforeDelete(db *gorm.DB) (err error) {
+	if m.TaskGroupID == nil {
+		err = m.Bucket.BeforeDelete(db)
+	}
 	return
 }
 
@@ -84,6 +93,7 @@ func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
+		task.Bucket = m.Bucket
 		if task.Addon == "" {
 			task.Addon = m.Addon
 		}

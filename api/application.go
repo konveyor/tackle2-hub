@@ -6,7 +6,6 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
-	"strconv"
 )
 
 //
@@ -168,7 +167,7 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 // @param id path int true "Application id"
 // @param application body api.Application true "Application data"
 func (h ApplicationHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &Application{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -176,19 +175,19 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	nID, _ := strconv.Atoi(id)
-	m.ID = uint(nID)
-	result := h.DB.Model(&model.Application{}).Where("id = ?", id).Omit("id").Updates(m)
+	m.ID = id
+	db := h.DB.Model(m)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
-	err = h.DB.Model(&m).Association("Identities").Replace("Identities", m.Identities)
+	err = db.Association("Identities").Replace("Identities", m.Identities)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
 	}
-	err = h.DB.Model(&m).Association("Tags").Replace("Tags", m.Tags)
+	err = db.Association("Tags").Replace("Tags", m.Tags)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -299,9 +298,10 @@ func (r *Application) Model() (m *model.Application) {
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
 	}
-	if r.Facts != nil {
-		m.Facts, _ = json.Marshal(r.Facts)
+	if r.Facts == nil {
+		r.Facts = Facts{}
 	}
+	m.Facts, _ = json.Marshal(r.Facts)
 	for _, ref := range r.Identities {
 		m.Identities = append(
 			m.Identities,
