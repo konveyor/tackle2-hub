@@ -315,16 +315,6 @@ func (h TaskGroupHandler) Upload(ctx *gin.Context) {
 }
 
 //
-// AddonTaskGroup REST resource.
-type AddonTaskGroup struct {
-	Resource
-	Name     string      `json:"name"`
-	Locator  string      `json:"locator"`
-	Isolated bool        `json:"isolated,omitempty"`
-	Data     interface{} `json:"data" swaggertype:"object"`
-}
-
-//
 // TaskGroup REST resource.
 type TaskGroup struct {
 	Resource
