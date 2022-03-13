@@ -14,12 +14,14 @@ import (
 const (
 	ApplicationsRoot = "/applications"
 	ApplicationRoot  = ApplicationsRoot + "/:" + ID
+	AppContentRoot   = ApplicationRoot + "/bucket/*" + Wildcard
 )
 
 //
 // ApplicationHandler handles application resource routes.
 type ApplicationHandler struct {
 	BaseHandler
+	BucketHandler
 }
 
 //
@@ -33,6 +35,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ApplicationRoot, h.Get)
 	routeGroup.PUT(ApplicationRoot, h.Update)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
+	routeGroup.POST(AppContentRoot, h.Upload)
+	routeGroup.GET(AppContentRoot, h.Content)
 }
 
 // Get godoc
@@ -138,10 +142,14 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 // @router /applications/{id} [delete]
 // @param id path int true "Application id"
 func (h ApplicationHandler) Delete(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param(ID))
+	id := ctx.Param(ID)
 	m := &model.Application{}
-	m.ID = uint(id)
-	result := h.DB.Select("Tags").Delete(m)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Select("Tags").Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -189,17 +197,56 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// Content godoc
+// @summary Get bucket content by ID and path.
+// @description Get bucket content by ID and path.
+// @tags get
+// @produce octet-stream
+// @success 200
+// @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
+// @param id path string true "Task ID"
+func (h ApplicationHandler) Content(ctx *gin.Context) {
+	taskID := ctx.Param(ID)
+	m := &model.Application{}
+	result := h.DB.First(m, taskID)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	h.content(ctx, &m.Bucket)
+}
+
+// Upload godoc
+// @summary Upload bucket content by task ID and path.
+// @description Upload bucket content by task ID and path.
+// @tags get
+// @produce json
+// @success 204
+// @router /bucket/{id}/content/{wildcard} [post]
+// @param id path string true "Bucket ID"
+func (h ApplicationHandler) Upload(ctx *gin.Context) {
+	m := &model.Application{}
+	id := ctx.Param(ID)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+
+	h.upload(ctx, &m.Bucket)
+}
+
 //
 // Application REST resource.
 type Application struct {
 	Resource
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
+	Bucket          string      `json:"bucket"`
 	Repository      *Repository `json:"repository"`
 	Extensions      Extensions  `json:"extensions"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
-	Buckets         []Ref       `json:"buckets"`
 	Identities      []Ref       `json:"identities"`
 	Tags            []Ref       `json:"tags"`
 	BusinessService Ref         `json:"businessService"`
@@ -211,6 +258,7 @@ func (r *Application) With(m *model.Application) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
+	r.Bucket = m.Bucket.Path
 	r.Comments = m.Comments
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	_ = json.Unmarshal(m.Extensions, &r.Extensions)
@@ -229,14 +277,6 @@ func (r *Application) With(m *model.Application) {
 		ref.With(id.ID, id.Name)
 		r.Identities = append(
 			r.Identities,
-			ref)
-	}
-	r.Buckets = []Ref{}
-	for _, id := range m.Buckets {
-		ref := Ref{}
-		ref.With(id.ID, id.Name)
-		r.Identities = append(
-			r.Buckets,
 			ref)
 	}
 	for _, tag := range m.Tags {

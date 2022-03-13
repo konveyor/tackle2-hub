@@ -35,7 +35,6 @@ func All() []Handler {
 	return []Handler{
 		&AddonHandler{},
 		&ApplicationHandler{},
-		&BucketHandler{},
 		&BusinessServiceHandler{},
 		&DependencyHandler{},
 		&ImportHandler{},
@@ -49,6 +48,7 @@ func All() []Handler {
 		&TagHandler{},
 		&TagTypeHandler{},
 		&TaskHandler{},
+		&TaskGroupHandler{},
 	}
 }
 

@@ -42,8 +42,6 @@ type Adapter struct {
 	Setting Setting
 	// Application API.
 	Application Application
-	// Bucket API.
-	Bucket Bucket
 	// Identity API.
 	Identity Identity
 	// Proxy API.
@@ -133,9 +131,6 @@ func newAdapter() (adapter *Adapter) {
 			client: client,
 		},
 		Application: Application{
-			client: client,
-		},
-		Bucket: Bucket{
 			client: client,
 		},
 		Identity: Identity{

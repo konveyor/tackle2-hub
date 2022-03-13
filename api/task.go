@@ -5,24 +5,22 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	batch "k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 	"time"
 )
 
 //
 // Routes
 const (
-	TasksRoot      = "/tasks"
-	TaskRoot       = TasksRoot + "/:" + ID
-	TaskReportRoot = TaskRoot + "/report"
-	AddonTasksRoot = AddonRoot + "/tasks"
+	TasksRoot       = "/tasks"
+	TaskRoot        = TasksRoot + "/:" + ID
+	TaskReportRoot  = TaskRoot + "/report"
+	TaskContentRoot = TaskRoot + "/bucket/*" + Wildcard
+	TaskSubmitRoot  = TaskRoot + "/submit"
 )
 
 const (
@@ -33,6 +31,7 @@ const (
 // TaskHandler handles task routes.
 type TaskHandler struct {
 	BaseHandler
+	BucketHandler
 }
 
 //
@@ -45,10 +44,12 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TasksRoot, h.Create)
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
+	routeGroup.PUT(TaskSubmitRoot, h.Submit)
+	routeGroup.GET(TaskContentRoot, h.Content)
+	routeGroup.POST(TaskContentRoot, h.Upload)
+	routeGroup.PUT(TaskContentRoot, h.Upload)
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
-	routeGroup.POST(AddonTasksRoot, h.AddonCreate)
-	routeGroup.GET(AddonTasksRoot, h.AddonList)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 }
 
@@ -62,8 +63,10 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 // @param id path string true "Task ID"
 func (h TaskHandler) Get(ctx *gin.Context) {
 	task := &model.Task{}
-	id := ctx.Param(ID)
-	db := h.DB.Preload("Report")
+	id := h.pk(ctx)
+	db := h.preLoad(
+		h.DB,
+		"Report")
 	result := db.First(task, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -89,7 +92,9 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	if locator != "" {
 		db = db.Where("locator", locator)
 	}
-	db = db.Preload("Report")
+	db = h.preLoad(
+		h.DB,
+		"Report")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -121,9 +126,8 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		h.createFailed(ctx, err)
 		return
 	}
-
 	m := task.Model()
-	m.Reset()
+	m.Status = tasking.Created
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -142,7 +146,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 // @router /tasks/{id} [delete]
 // @param id path string true "Task ID"
 func (h TaskHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	task := &model.Task{}
 	result := h.DB.First(task, id)
 	if result.Error != nil {
@@ -160,7 +164,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 			h.deleteFailed(ctx, result.Error)
 		}
 	}
-	result = h.DB.Delete(task, id)
+	result = h.DB.Delete(task)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -179,20 +183,98 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Task ID"
 // @param task body Task true "Task data"
 func (h TaskHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	updates := &Task{}
-	err := ctx.BindJSON(updates)
+	id := h.pk(ctx)
+	r := &Task{}
+	err := ctx.BindJSON(r)
 	if err != nil {
 		return
 	}
-	m := updates.Model()
-	result := h.DB.Model(&Task{}).Where("id", id).Omit("id").Updates(m)
+	m := r.Model()
+	m.Reset()
+	db := h.DB.Model(m)
+	db = db.Where("id", id)
+	db = db.Where("status", tasking.Created)
+	db = db.Omit("status")
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+// Submit godoc
+// @summary Submit a task.
+// @description Submit a task.
+// @tags update
+// @accept json
+// @success 202
+// @router /tasks/{id}/submit [post]
+// @param id path string true "Task ID"
+func (h TaskHandler) Submit(ctx *gin.Context) {
+	id := h.pk(ctx)
+	result := h.DB.First(&model.Task{}, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	db := h.DB.Model(&model.Task{})
+	db = db.Where("id", id)
+	db = db.Where("status", tasking.Created)
+	result = db.Updates(
+		map[string]interface{}{
+			"status": tasking.Ready,
+		})
+	if result.Error != nil {
+		h.updateFailed(ctx, result.Error)
+		return
+	}
+	if result.RowsAffected > 0 {
+		ctx.Status(http.StatusAccepted)
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
+// Content godoc
+// @summary Get bucket content by ID and path.
+// @description Get bucket content by ID and path.
+// @tags get
+// @produce octet-stream
+// @success 200
+// @router /tasks/{id}/bucket/{wildcard} [get]
+// @param id path string true "Task ID"
+func (h TaskHandler) Content(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Task{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	h.content(ctx, &m.Bucket)
+}
+
+// Upload godoc
+// @summary Upload bucket content by task ID and path.
+// @description Upload bucket content by task ID and path.
+// @tags get
+// @produce json
+// @success 204
+// @router /tasks/{id}/bucket/{wildcard} [post]
+// @param id path string true "Bucket ID"
+func (h TaskHandler) Upload(ctx *gin.Context) {
+	m := &model.Task{}
+	id := h.pk(ctx)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+
+	h.upload(ctx, &m.Bucket)
 }
 
 // CreateReport godoc
@@ -206,14 +288,13 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @param id path string true "TaskReport ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) CreateReport(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	report := &TaskReport{}
 	err := ctx.BindJSON(report)
 	if err != nil {
 		return
 	}
-	task, _ := strconv.Atoi(id)
-	report.TaskID = uint(task)
+	report.TaskID = id
 	m := report.Model()
 	result := h.DB.Create(m)
 	if result.Error != nil {
@@ -235,17 +316,16 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // @param id path string true "TaskReport ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) UpdateReport(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	report := &TaskReport{}
 	err := ctx.BindJSON(report)
 	if err != nil {
 		return
 	}
-	task, _ := strconv.Atoi(id)
-	report.TaskID = uint(task)
+	report.TaskID = id
 	m := report.Model()
 	db := h.DB.Model(m)
-	db = db.Where("taskid", task)
+	db = db.Where("taskid", id)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -255,91 +335,6 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, report)
 }
 
-// AddonCreate godoc
-// @summary Create an addon task.
-// @description Create an addon task.
-// @tags create
-// @accept json
-// @produce json
-// @success 201 {object} api.Task
-// @router /addons/:name/tasks [post]
-// @param task body api.Task true "Task data"
-func (h TaskHandler) AddonCreate(ctx *gin.Context) {
-	name := ctx.Param(Name)
-	addon := &crd.Addon{}
-	err := h.Client.Get(
-		context.TODO(),
-		client.ObjectKey{
-			Namespace: Settings.Hub.Namespace,
-			Name:      name,
-		},
-		addon)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			ctx.Status(http.StatusNotFound)
-			return
-		}
-	}
-	task := Task{}
-	task.Name = addon.Name
-	task.Addon = addon.Name
-	task.Image = addon.Spec.Image
-	err = ctx.BindJSON(&task.Data)
-	if err != nil {
-		return
-	}
-	m := task.Model()
-	result := h.DB.Create(m)
-	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
-		return
-	}
-	task.With(m)
-
-	ctx.JSON(http.StatusCreated, task)
-}
-
-// AddonList godoc
-// @summary List all tasks associated to an addon.
-// @description List all tasks associated to an addon.
-// @tags get
-// @produce json
-// @success 200 {object} []api.Task
-// @router /addons/{name}/tasks [get]
-func (h TaskHandler) AddonList(ctx *gin.Context) {
-	var list []model.Task
-	name := ctx.Param(Name)
-	db := h.DB.Where("addon", name)
-	locator := ctx.Query(LocatorParam)
-	if locator != "" {
-		db = db.Where("locator", locator)
-	}
-	db = db.Preload("Report")
-	result := db.Find(&list)
-	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
-		return
-	}
-	resources := []Task{}
-	for i := range list {
-		r := Task{}
-		r.With(&list[i])
-		resources = append(resources, r)
-	}
-
-	ctx.JSON(http.StatusOK, resources)
-}
-
-//
-// AddonTask REST resource.
-type AddonTask struct {
-	Resource
-	Name     string      `json:"name"`
-	Locator  string      `json:"locator"`
-	Isolated bool        `json:"isolated,omitempty"`
-	Data     interface{} `json:"data" swaggertype:"object"`
-}
-
 //
 // Task REST resource.
 type Task struct {
@@ -347,15 +342,16 @@ type Task struct {
 	Name       string      `json:"name"`
 	Locator    string      `json:"locator"`
 	Isolated   bool        `json:"isolated,omitempty"`
+	Addon      string      `json:"addon,omitempty"`
 	Data       interface{} `json:"data" swaggertype:"object"`
-	Addon      string      `json:"addon"`
-	Image      string      `json:"image"`
-	Started    *time.Time  `json:"started"`
-	Terminated *time.Time  `json:"terminated"`
 	Status     string      `json:"status"`
-	Error      string      `json:"error"`
-	Job        string      `json:"job"`
-	Report     *TaskReport `json:"report"`
+	Image      string      `json:"image,omitempty"`
+	Bucket     string      `json:"bucket"`
+	Started    *time.Time  `json:"started,omitempty"`
+	Terminated *time.Time  `json:"terminated,omitempty"`
+	Error      string      `json:"error,omitempty"`
+	Job        string      `json:"job,omitempty"`
+	Report     *TaskReport `json:"report,omitempty"`
 }
 
 //
@@ -367,9 +363,10 @@ func (r *Task) With(m *model.Task) {
 	r.Addon = m.Addon
 	r.Locator = m.Locator
 	r.Isolated = m.Isolated
+	r.Bucket = m.Bucket.Path
+	r.Status = m.Status
 	r.Started = m.Started
 	r.Terminated = m.Terminated
-	r.Status = m.Status
 	r.Error = m.Error
 	r.Job = m.Job
 	_ = json.Unmarshal(m.Data, &r.Data)

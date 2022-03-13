@@ -4,15 +4,15 @@ import "fmt"
 
 type Application struct {
 	Model
+	Bucket
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
 	Review            *Review
 	Repository        JSON
 	Extensions        JSON
 	Comments          string
-	Buckets           []Bucket   `gorm:"constraint:OnDelete:CASCADE"`
-	Tags              []Tag      `gorm:"many2many:applicationTags;constraint:OnDelete:CASCADE"`
-	Identities        []Identity `gorm:"many2many:appIdentity;constraint:OnDelete:CASCADE"`
+	Tags              []Tag      `gorm:"many2many:applicationTags"`
+	Identities        []Identity `gorm:"many2many:appIdentity"`
 	BusinessServiceID uint       `gorm:"index"`
 	BusinessService   *BusinessService
 }
