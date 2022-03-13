@@ -14,7 +14,7 @@ import (
 const (
 	ApplicationsRoot = "/applications"
 	ApplicationRoot  = ApplicationsRoot + "/:" + ID
-	AppContentRoot   = ApplicationRoot + "/bucket/*" + Wildcard
+	AppBucketRoot    = ApplicationRoot + "/bucket/*" + Wildcard
 )
 
 //
@@ -35,8 +35,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ApplicationRoot, h.Get)
 	routeGroup.PUT(ApplicationRoot, h.Update)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
-	routeGroup.POST(AppContentRoot, h.Upload)
-	routeGroup.GET(AppContentRoot, h.Content)
+	routeGroup.POST(AppBucketRoot, h.Upload)
+	routeGroup.GET(AppBucketRoot, h.Content)
 }
 
 // Get godoc

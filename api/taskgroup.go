@@ -13,10 +13,10 @@ import (
 //
 // Routes
 const (
-	TaskGroupsRoot       = "/taskgroups"
-	TaskGroupRoot        = TaskGroupsRoot + "/:" + ID
-	TaskGroupContentRoot = TaskGroupRoot + "/bucket/*" + Wildcard
-	TaskGroupSubmitRoot  = TaskGroupRoot + "/submit"
+	TaskGroupsRoot      = "/taskgroups"
+	TaskGroupRoot       = TaskGroupsRoot + "/:" + ID
+	TaskGroupBucketRoot = TaskGroupRoot + "/bucket/*" + Wildcard
+	TaskGroupSubmitRoot = TaskGroupRoot + "/submit"
 )
 
 //
@@ -37,9 +37,9 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskGroupRoot, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
 	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit)
-	routeGroup.GET(TaskGroupContentRoot, h.Content)
-	routeGroup.POST(TaskGroupContentRoot, h.Upload)
-	routeGroup.PUT(TaskGroupContentRoot, h.Upload)
+	routeGroup.GET(TaskGroupBucketRoot, h.Content)
+	routeGroup.POST(TaskGroupBucketRoot, h.Upload)
+	routeGroup.PUT(TaskGroupBucketRoot, h.Upload)
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
 }
 
