@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -54,9 +55,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	db := h.preLoad(
-		h.DB,
-		"Tasks")
+	db := h.DB.Preload(clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -77,9 +76,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 // @router /taskgroups [get]
 func (h TaskGroupHandler) List(ctx *gin.Context) {
 	var list []model.TaskGroup
-	db := h.preLoad(
-		h.DB,
-		"Tasks")
+	db := h.DB.Preload(clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -144,7 +141,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	err = h.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			db := tx.Model(g)
-			db = db.Omit("Tasks")
+			db = db.Omit(clause.Associations)
 			result := db.Updates(h.fields(g))
 			if result.Error != nil {
 				err = result.Error
@@ -209,9 +206,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	err := h.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
-			db := h.preLoad(
-				tx,
-				"Tasks")
+			db := tx.Preload(clause.Associations)
 			result := db.First(m, id)
 			if result.Error != nil {
 				err = result.Error

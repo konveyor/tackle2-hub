@@ -61,9 +61,11 @@ func listDir(d *Data, paths []string) (err error) {
 	if err != nil {
 		return
 	}
-	output := pathlib.Join(
-		application.Bucket,
-		"list")
+	//
+	// List directory.
+	output := pathlib.Join(application.Bucket, "list")
+	_ = os.RemoveAll(output)
+	_ = os.MkdirAll(output, 0777)
 	//
 	// Write files.
 	for _, p := range paths {

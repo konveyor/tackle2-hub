@@ -93,7 +93,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		db = db.Where("locator", locator)
 	}
 	db = h.preLoad(
-		h.DB,
+		db,
 		"Report")
 	result := db.Find(&list)
 	if result.Error != nil {
