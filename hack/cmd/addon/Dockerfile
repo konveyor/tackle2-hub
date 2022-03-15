@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi8/go-toolset:1.16.7 as builder
 ENV GOPATH=$APP_ROOT
-COPY . .
+COPY --chown=1001:0 . .
 RUN make addon
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
