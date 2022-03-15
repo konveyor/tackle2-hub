@@ -37,7 +37,7 @@ func main() {
 		}
 		//
 		// Get application.
-		application, err := addon.Application.Get(d.Application)
+		application, err := addon.Task.Application()
 		if err != nil {
 			return
 		}
@@ -59,7 +59,7 @@ func main() {
 		}
 		//
 		// Tag
-		err = tag(d)
+		err = tag(d, application)
 		if err != nil {
 			return
 		}
@@ -191,10 +191,7 @@ func find(path string, max int) (paths []string, err error) {
 
 //
 // Tag application.
-func tag(d *Data) (err error) {
-	//
-	// Fetch application.
-	application, _ := addon.Application.Get(d.Application)
+func tag(d *Data, application *api.Application) (err error) {
 	//
 	// Create tag.
 	tag := &api.Tag{}
@@ -222,8 +219,6 @@ func tag(d *Data) (err error) {
 //
 // Data Addon data passed in the secret.
 type Data struct {
-	// Application ID.
-	Application uint `json:"application"`
 	// Path to be listed.
 	Path string `json:"path"`
 	// Delay on error (minutes).

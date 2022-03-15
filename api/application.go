@@ -5,6 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -143,15 +145,29 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	m := &model.Application{}
-	result := h.DB.First(m, id)
-	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+	err := h.DB.Transaction(func(tx *gorm.DB) (err error) {
+		db := tx.Preload(clause.Associations)
+		result := db.First(m, id)
+		if result.Error != nil {
+			err = result.Error
+			return
+		}
+		result = db.Select("Tags").Delete(m)
+		if result.Error != nil {
+			err = result.Error
+			return
+		}
+		for _, task := range m.Tasks {
+			result := tx.Delete(task)
+			if result.Error != nil {
+				err = result.Error
+				return
+			}
+		}
 		return
-	}
-	result = h.DB.Select("Tags").Delete(m)
-	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
-		return
+	})
+	if err != nil {
+		h.deleteFailed(ctx, err)
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -212,7 +228,7 @@ func (h ApplicationHandler) Content(ctx *gin.Context) {
 		h.getFailed(ctx, result.Error)
 		return
 	}
-	h.content(ctx, &m.Bucket)
+	h.content(ctx, &m.BucketOwner)
 }
 
 // Upload godoc
@@ -232,7 +248,7 @@ func (h ApplicationHandler) Upload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.Bucket)
+	h.upload(ctx, &m.BucketOwner)
 }
 
 //
@@ -243,6 +259,7 @@ type Application struct {
 	Description     string      `json:"description"`
 	Bucket          string      `json:"bucket"`
 	Repository      *Repository `json:"repository"`
+	Binary          string      `json:"binary"`
 	Facts           Facts       `json:"facts"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
@@ -257,8 +274,9 @@ func (r *Application) With(m *model.Application) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Bucket = m.Bucket.Path
+	r.Bucket = m.Bucket
 	r.Comments = m.Comments
+	r.Binary = m.Binary
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	_ = json.Unmarshal(m.Facts, &r.Facts)
 	if m.Review != nil {
@@ -293,6 +311,7 @@ func (r *Application) Model() (m *model.Application) {
 		Description:       r.Description,
 		Comments:          r.Comments,
 		BusinessServiceID: r.BusinessService.ID,
+		Binary:            r.Binary,
 	}
 	m.ID = r.ID
 	if r.Repository != nil {

@@ -3,15 +3,17 @@ package task
 import (
 	"context"
 	"encoding/json"
+	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/controller/pkg/logging"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -28,7 +30,14 @@ const (
 	Postponed = "Postponed"
 )
 
-var Settings = &settings.Settings
+const (
+	ReaperUnit = time.Hour
+)
+
+var (
+	Settings = &settings.Settings
+	Log      = logging.WithName("task")
+)
 
 //
 // Manager provides task management.
@@ -42,24 +51,39 @@ type Manager struct {
 //
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	go func() {
+	scheduler := func() {
+		Log.Info("Scheduler started.")
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 				time.Sleep(time.Second)
-				_ = m.updateRunning()
-				_ = m.purgeTerminated()
-				_ = m.startReady()
+				m.updateRunning()
+				m.startReady()
 			}
 		}
-	}()
+	}
+	reaper := func() {
+		Log.Info("Reaper started.")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(ReaperUnit)
+				m.reapTasks()
+				m.reapGroups()
+			}
+		}
+	}
+	go scheduler()
+	go reaper()
 }
 
 //
 // startReady starts pending tasks.
-func (m *Manager) startReady() (err error) {
+func (m *Manager) startReady() {
 	list := []model.Task{}
 	result := m.DB.Find(
 		&list,
@@ -69,8 +93,8 @@ func (m *Manager) startReady() (err error) {
 			Running,
 			Postponed,
 		})
+	Log.Trace(result.Error)
 	if result.Error != nil {
-		err = result.Error
 		return
 	}
 	for i := range list {
@@ -84,24 +108,30 @@ func (m *Manager) startReady() (err error) {
 			Postponed:
 			if m.postpone(ready, list) {
 				ready.Status = Postponed
-				_ = m.DB.Save(ready)
+				result := m.DB.Save(ready)
+				Log.Trace(result.Error)
+				if result.Error == nil {
+					Log.Info("Task postponed.", "id", ready.ID)
+				}
+			}
+			err := task.Run()
+			if err != nil {
 				continue
 			}
-			_ = task.Run()
-			_ = m.DB.Save(ready)
+			Log.Info("Task started.", "id", ready.ID)
+			result := m.DB.Save(ready)
+			Log.Trace(result.Error)
 		}
 	}
-
-	return
 }
 
 //
 // updateRunning tasks to reflect job status.
-func (m *Manager) updateRunning() (err error) {
+func (m *Manager) updateRunning() {
 	list := []model.Task{}
 	result := m.DB.Find(&list, "status", Running)
+	Log.Trace(result.Error)
 	if result.Error != nil {
-		err = result.Error
 		return
 	}
 	for _, running := range list {
@@ -110,19 +140,22 @@ func (m *Manager) updateRunning() (err error) {
 			Task:   &running,
 		}
 		err := task.Reflect()
+		Log.Trace(err)
 		if err != nil {
 			continue
 		}
-		_ = m.DB.Save(&running)
+		result := m.DB.Save(&running)
+		Log.Trace(result.Error)
+		if result.Error != nil {
+			continue
+		}
+		Log.V(1).Info("Task updated.", "id", running.ID)
 	}
-
-	return
 }
 
 //
-// purgeTerminated purge resources associated with terminated tasks.
-//   - delete buckets.
-func (m *Manager) purgeTerminated() (err error) {
+// reapTasks reaps tasks.
+func (m *Manager) reapTasks() {
 	list := []model.Task{}
 	result := m.DB.Find(
 		&list,
@@ -131,24 +164,157 @@ func (m *Manager) purgeTerminated() (err error) {
 			Succeeded,
 			Failed,
 		})
+	Log.Trace(result.Error)
+	if result.Error != nil {
+		return
+	}
+	for i := range list {
+		task := &list[i]
+		if m.mayDelete(task) {
+			result := m.DB.Delete(task)
+			Log.Trace(result.Error)
+			continue
+		}
+		if task.Purged {
+			continue
+		}
+		if !m.mayPurge(task) {
+			continue
+		}
+		task.Purged = true
+		err := task.Purge()
+		Log.Trace(err)
+		if err != nil {
+			continue
+		}
+		Log.Info("Task bucket purged.", "id", task.ID)
+		result := m.DB.Save(task)
+		Log.Trace(result.Error)
+	}
+
+	return
+}
+
+//
+// reapGroups reaps groups.
+func (m *Manager) reapGroups() (err error) {
+	list := []model.TaskGroup{}
+	db := m.DB.Preload(clause.Associations)
+	result := db.Find(&list)
 	if result.Error != nil {
 		err = result.Error
 		return
 	}
-	for _, task := range list {
-		delete := false
-		done := time.Since(*task.Terminated)
-		switch task.Status {
-		case Succeeded:
-			delete = done > time.Hour
-		case Failed:
-			delete = done > time.Hour*48
+	for i := range list {
+		g := &list[i]
+		if m.mayDeleteGroup(g) {
+			result := m.DB.Delete(g)
+			Log.Trace(result.Error)
+			if result.Error == nil {
+				Log.Info("Group deleted.", "id", g.ID)
+			}
+			continue
 		}
-		if delete {
-			_ = os.Remove(task.Path)
+		if g.Purged {
+			continue
+		}
+		if !m.mayPurgeGroup(g) {
+			continue
+		}
+		Log.Info("Group bucket purged.", "id", g.ID)
+		g.Purged = true
+		err := g.Purge()
+		Log.Trace(err)
+		if err != nil {
+			continue
+		}
+		Log.Info("Group bucket purged.", "id", g.ID)
+		result := m.DB.Save(g)
+		Log.Trace(result.Error)
+	}
+	return
+}
+
+//
+// mayPurge determines if a task (bucket) may be purged.
+// May be purged when:
+//   - Not associated with a group.
+//   - Terminated for defined period.
+func (m *Manager) mayPurge(task *model.Task) (may bool) {
+	if task.TaskGroupID != nil {
+		return
+	}
+	switch task.Status {
+	case Succeeded:
+		mark := *task.Terminated
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
+		may = time.Since(mark) > d
+	case Failed:
+		mark := *task.Terminated
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
+		may = time.Since(mark) > d
+	}
+	return
+}
+
+//
+// mayDelete determines if a task may be deleted.
+// May be deleted:
+//   - Not associated with an application.
+//   - Never submitted or terminated for defined period.
+func (m *Manager) mayDelete(task *model.Task) (approved bool) {
+	if task.ApplicationID != nil {
+		return
+	}
+	switch task.Status {
+	case Created:
+		mark := task.CreateTime
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Created) * ReaperUnit
+		approved = time.Since(mark) > d
+	case Succeeded:
+		mark := *task.Terminated
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
+		approved = time.Since(mark) > d
+	case Failed:
+		mark := *task.Terminated
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
+		approved = time.Since(mark) > d
+	}
+	return
+}
+
+//
+// mayDeleteGroup determines if a group may be deleted.
+// May be deleted when:
+//   - Empty for defined period.
+func (m *Manager) mayDeleteGroup(g *model.TaskGroup) (approved bool) {
+	empty := len(g.Tasks) == 0
+	mark := g.CreateTime
+	d := time.Duration(
+		Settings.Hub.Task.Reaper.Created) * ReaperUnit
+	approved = empty && time.Since(mark) > d
+	return
+}
+
+//
+// mayPurgeGroup determines if a group may be purged.
+// May be purged when:
+//   - All tasks may purge.
+func (m *Manager) mayPurgeGroup(g *model.TaskGroup) (approved bool) {
+	nMayPurge := 0
+	for i := range g.Tasks {
+		task := &g.Tasks[i]
+		task.TaskGroupID = nil
+		if m.mayPurge(task) {
+			nMayPurge++
 		}
 	}
-
+	approved = nMayPurge == len(g.Tasks)
 	return
 }
 
@@ -204,11 +370,13 @@ func (r *Task) Run() (err error) {
 	secret := r.secret()
 	err = r.client.Create(context.TODO(), &secret)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	job := r.job(&secret)
 	err = r.client.Create(context.TODO(), &job)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	r.Started = &mark
@@ -233,6 +401,8 @@ func (r *Task) Reflect() (err error) {
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = r.Run()
+		} else {
+			err = liberr.Wrap(err)
 		}
 		return
 	}
@@ -266,6 +436,7 @@ func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
 		},
 		addon)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 
@@ -403,6 +574,7 @@ func (r *Task) container() (container core.Container) {
 func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID
+	data.Hub.Application = r.Task.ApplicationID
 	data.Hub.Encryption.Passphrase = Settings.Encryption.Passphrase
 	data.Hub.Token = Settings.Auth.AddonToken
 	data.Addon = r.Task.Data
@@ -433,9 +605,10 @@ func (r *Task) labels() map[string]string {
 // Secret payload.
 type Secret struct {
 	Hub struct {
-		Token      string
-		Task       uint
-		Encryption struct {
+		Token       string
+		Application *uint
+		Task        uint
+		Encryption  struct {
 			Passphrase string
 		}
 	}
