@@ -19,6 +19,19 @@ type Task struct {
 }
 
 //
+// Application returns the application associated with the task.
+func (h *Task) Application() (r *api.Application, err error) {
+	id := h.secret.Hub.Application
+	if id == nil {
+		err = NotFound{}
+	}
+	r = &api.Application{}
+	path := Params{api.ID: *id}.inject(api.ApplicationRoot)
+	err = h.client.Get(path, r)
+	return
+}
+
+//
 // Data returns the addon data.
 func (h *Task) Data() (d map[string]interface{}) {
 	d = h.secret.Addon.(map[string]interface{})

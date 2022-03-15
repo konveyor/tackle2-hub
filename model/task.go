@@ -19,21 +19,24 @@ type TaskReport struct {
 
 type Task struct {
 	Model
-	Bucket
-	Name        string `gorm:"index"`
-	Addon       string `gorm:"index"`
-	Locator     string `gorm:"index"`
-	Image       string
-	Isolated    bool
-	Data        JSON
-	Started     *time.Time
-	Terminated  *time.Time
-	Status      string
-	Error       string
-	Job         string
-	Report      *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
-	TaskGroupID *uint       `gorm:"<-:create"`
-	TaskGroup   *TaskGroup
+	BucketOwner
+	Name          string `gorm:"index"`
+	Addon         string `gorm:"index"`
+	Locator       string `gorm:"index"`
+	Image         string
+	Isolated      bool
+	Data          JSON
+	Started       *time.Time
+	Terminated    *time.Time
+	Status        string
+	Error         string
+	Job           string
+	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
+	Purged        bool
+	ApplicationID *uint
+	Application   *Application
+	TaskGroupID   *uint `gorm:"<-:create"`
+	TaskGroup     *TaskGroup
 }
 
 func (m *Task) Reset() {
@@ -44,7 +47,7 @@ func (m *Task) Reset() {
 
 func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	if m.TaskGroupID == nil {
-		err = m.Bucket.BeforeCreate(db)
+		err = m.BucketOwner.BeforeCreate(db)
 	}
 	m.Reset()
 	return
@@ -52,22 +55,23 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 
 func (m *Task) BeforeDelete(db *gorm.DB) (err error) {
 	if m.TaskGroupID == nil {
-		err = m.Bucket.BeforeDelete(db)
+		err = m.BucketOwner.BeforeDelete(db)
 	}
 	return
 }
 
 type TaskGroup struct {
 	Model
-	Bucket
-	Name  string
-	Addon string
-	Data  JSON
-	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
+	BucketOwner
+	Name   string
+	Addon  string
+	Data   JSON
+	Tasks  []Task `gorm:"constraint:OnDelete:CASCADE"`
+	Purged bool
 }
 
 func (m *TaskGroup) BeforeCreate(db *gorm.DB) (err error) {
-	err = m.Bucket.BeforeCreate(db)
+	err = m.BucketOwner.BeforeCreate(db)
 	if err != nil {
 		return
 	}
@@ -81,7 +85,7 @@ func (m *TaskGroup) BeforeUpdate(*gorm.DB) (err error) {
 }
 
 func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
-	err = m.Bucket.BeforeDelete(db)
+	err = m.BucketOwner.BeforeDelete(db)
 	if err != nil {
 		return
 	}

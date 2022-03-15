@@ -2,15 +2,19 @@ package settings
 
 import (
 	"os"
+	"strconv"
 )
 
 const (
-	EnvNamespace  = "NAMESPACE"
-	EnvDbPath     = "DB_PATH"
-	EnvDbSeedPath = "DB_SEED_PATH"
-	EnvBucketPath = "BUCKET_PATH"
-	EnvBucketPVC  = "BUCKET_PVC"
-	EnvPassphrase = "ENCRYPTION_PASSPHRASE"
+	EnvNamespace         = "NAMESPACE"
+	EnvDbPath            = "DB_PATH"
+	EnvDbSeedPath        = "DB_SEED_PATH"
+	EnvBucketPath        = "BUCKET_PATH"
+	EnvBucketPVC         = "BUCKET_PVC"
+	EnvPassphrase        = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated   = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed    = "TASK_REAP_FAILED"
 )
 
 type Hub struct {
@@ -29,6 +33,14 @@ type Hub struct {
 	// Encryption settings.
 	Encryption struct {
 		Passphrase string
+	}
+	// Task
+	Task struct {
+		Reaper struct {
+			Created   int
+			Succeeded int
+			Failed    int
+		}
 	}
 }
 
@@ -57,6 +69,27 @@ func (r *Hub) Load() (err error) {
 	r.Encryption.Passphrase, found = os.LookupEnv(EnvPassphrase)
 	if !found {
 		r.Encryption.Passphrase = "tackle"
+	}
+	s, found := os.LookupEnv(EnvTaskReapCreated)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Reaper.Created = n
+	} else {
+		r.Task.Reaper.Created = 720
+	}
+	s, found = os.LookupEnv(EnvTaskReapSucceeded)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Reaper.Succeeded = n
+	} else {
+		r.Task.Reaper.Succeeded = 12
+	}
+	s, found = os.LookupEnv(EnvTaskReapFailed)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Reaper.Failed = n
+	} else {
+		r.Task.Reaper.Failed = 48
 	}
 
 	return

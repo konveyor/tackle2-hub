@@ -293,7 +293,7 @@ func (h TaskGroupHandler) Content(ctx *gin.Context) {
 		h.getFailed(ctx, result.Error)
 		return
 	}
-	h.content(ctx, &m.Bucket)
+	h.content(ctx, &m.BucketOwner)
 }
 
 // Upload godoc
@@ -313,7 +313,7 @@ func (h TaskGroupHandler) Upload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.Bucket)
+	h.upload(ctx, &m.BucketOwner)
 }
 
 //
@@ -324,6 +324,7 @@ type TaskGroup struct {
 	Addon  string      `json:"addon"`
 	Data   interface{} `json:"data" swaggertype:"object"`
 	Bucket string      `json:"bucket"`
+	Purged bool        `json:"purged,omitempty"`
 	Tasks  []Task      `json:"tasks"`
 }
 
@@ -333,7 +334,8 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Addon = m.Addon
-	r.Bucket = m.Bucket.Path
+	r.Bucket = m.Bucket
+	r.Purged = m.Purged
 	r.Tasks = []Task{}
 	for _, task := range m.Tasks {
 		member := Task{}
@@ -349,8 +351,9 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 // Model builds a model.
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{
-		Name:  r.Name,
-		Addon: r.Addon,
+		Name:   r.Name,
+		Addon:  r.Addon,
+		Purged: r.Purged,
 	}
 	for _, task := range r.Tasks {
 		member := *task.Model()

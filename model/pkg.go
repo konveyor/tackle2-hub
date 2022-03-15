@@ -30,7 +30,6 @@ func All() []interface{} {
 		Stakeholder{},
 		BusinessService{},
 		Application{},
-		Bucket{},
 		Dependency{},
 		Review{},
 		Identity{},

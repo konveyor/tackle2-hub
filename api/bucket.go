@@ -16,19 +16,19 @@ type BucketHandler struct {
 
 //
 // content at path.
-func (h *BucketHandler) content(ctx *gin.Context, bucket *model.Bucket) {
+func (h *BucketHandler) content(ctx *gin.Context, owner *model.BucketOwner) {
 	rPath := ctx.Param(Wildcard)
 	ctx.File(pathlib.Join(
-		bucket.Path,
+		owner.Bucket,
 		rPath))
 }
 
 //
 // upload file at path.
-func (h *BucketHandler) upload(ctx *gin.Context, bucket *model.Bucket) {
+func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
 	rPath := ctx.Param(Wildcard)
 	path := pathlib.Join(
-		bucket.Path,
+		owner.Bucket,
 		rPath)
 	input, err := ctx.FormFile("file")
 	if err != nil {
