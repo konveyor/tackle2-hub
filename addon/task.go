@@ -143,6 +143,22 @@ func (h *Task) deleteReport() {
 }
 
 //
+// Bucket returns the bucket path.
+func (h *Task) Bucket() (b string) {
+	r := &api.Task{}
+	params := Params{
+		api.ID: h.secret.Hub.Task,
+	}
+	path := params.inject(api.TaskRoot)
+	err := h.client.Get(path, r)
+	if err != nil {
+		panic(err)
+	}
+	b = r.Bucket
+	return
+}
+
+//
 // pushReport create/update the task report.
 func (h *Task) pushReport() {
 	var err error
