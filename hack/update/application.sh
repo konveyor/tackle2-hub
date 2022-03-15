@@ -4,8 +4,8 @@ host="${HOST:-localhost:8080}"
 
 curl -X PUT ${host}/applications/1 -d \
 '{
-    "name":"Dogfish",
-    "description": "Dogfish application.",
+    "name":"Cat",
+    "description": "Cat application.",
     "businessService": {"id":1},
     "identities": [
       {"id":1},

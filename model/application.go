@@ -7,14 +7,14 @@ type Application struct {
 	BucketOwner
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
-	Review            *Review
+	Review            *Review `gorm:"constraint:OnDelete:CASCADE"`
 	Repository        JSON
 	Binary            string
 	Facts             JSON
 	Comments          string
 	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:applicationTags"`
-	Identities        []Identity `gorm:"many2many:appIdentity"`
+	Identities        []Identity `gorm:"many2many:appIdentity;constraint:OnDelete:CASCADE'"`
 	BusinessServiceID uint       `gorm:"index"`
 	BusinessService   *BusinessService
 }
