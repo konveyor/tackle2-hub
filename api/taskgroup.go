@@ -136,21 +136,28 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	g := r.Model()
-	g.ID = id
+	current := &model.TaskGroup{}
+	result := h.DB.First(current, id)
+	if result.Error != nil {
+		h.updateFailed(ctx, result.Error)
+		return
+	}
+	updated := r.Model()
+	updated.ID = current.ID
+	updated.Bucket = current.Bucket
 	err = h.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
-			db := tx.Model(g)
+			db := tx.Model(updated)
 			db = db.Omit(clause.Associations)
-			result := db.Updates(h.fields(g))
+			result := db.Updates(h.fields(updated))
 			if result.Error != nil {
 				err = result.Error
 				return
 			}
 			wanted := []uint{}
-			for i := range g.Tasks {
-				m := &g.Tasks[i]
-				m.TaskGroupID = &g.ID
+			for i := range updated.Tasks {
+				m := &updated.Tasks[i]
+				m.TaskGroupID = &id
 				if m.ID == 0 {
 					result := tx.Create(m)
 					if result.Error != nil {
@@ -169,7 +176,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 				wanted = append(wanted, m.ID)
 			}
 			db = tx.Where("id NOT IN ?", wanted)
-			db = db.Where("taskgroupid", g.ID)
+			db = db.Where("taskgroupid", id)
 			var unwanted []model.Task
 			result = db.Find(&unwanted)
 			if result.Error != nil {

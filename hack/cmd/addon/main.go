@@ -36,11 +36,30 @@ func main() {
 			return
 		}
 		//
+		// Get application.
+		application, err := addon.Application.Get(d.Application)
+		if err != nil {
+			return
+		}
+		//
 		// Find files.
 		paths, _ := find(d.Path, 25)
 		//
 		// List directory.
-		err = listDir(d, paths)
+		err = listDir(d, application, paths)
+		if err != nil {
+			return
+		}
+		//
+		// Set fact.
+		application.Facts["Listed"] = true
+		err = addon.Application.Update(application)
+		if err != nil {
+			return
+		}
+		//
+		// Tag
+		err = tag(d)
 		if err != nil {
 			return
 		}
@@ -50,17 +69,11 @@ func main() {
 
 //
 // listDir builds and populates the bucket.
-func listDir(d *Data, paths []string) (err error) {
+func listDir(d *Data, application *api.Application, paths []string) (err error) {
 	//
 	// Task update: Update the task with total number of
 	// items to be processed by the addon.
 	addon.Total(len(paths))
-	//
-	// Get application.
-	application, err := addon.Application.Get(d.Application)
-	if err != nil {
-		return
-	}
 	//
 	// List directory.
 	output := pathlib.Join(application.Bucket, "list")
@@ -103,12 +116,6 @@ func listDir(d *Data, paths []string) (err error) {
 	//
 	// Build the index.
 	err = buildIndex(output)
-	if err != nil {
-		return
-	}
-	//
-	// Tag
-	err = tag(d)
 	if err != nil {
 		return
 	}
@@ -195,7 +202,11 @@ func tag(d *Data) (err error) {
 	tag.TagType.ID = 1
 	err = addon.Tag.Create(tag)
 	if err != nil {
-		return
+		if !errors.Is(err, &hub.Conflict{}) {
+			return
+		} else {
+			err = nil
+		}
 	}
 	//
 	// append tag.
