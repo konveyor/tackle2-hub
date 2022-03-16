@@ -521,6 +521,7 @@ func (r *Task) container() (container core.Container) {
 	container = core.Container{
 		Name:       "main",
 		Image:      r.Image,
+		ImagePullPolicy: core.PullAlways,
 		WorkingDir: Settings.Addon.Path.WorkingDir,
 		Env: []core.EnvVar{
 			{
