@@ -519,10 +519,10 @@ func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 // container builds the job container.
 func (r *Task) container() (container core.Container) {
 	container = core.Container{
-		Name:       "main",
-		Image:      r.Image,
+		Name:            "main",
+		Image:           r.Image,
 		ImagePullPolicy: core.PullAlways,
-		WorkingDir: Settings.Addon.Path.WorkingDir,
+		WorkingDir:      Settings.Addon.Path.WorkingDir,
 		Env: []core.EnvVar{
 			{
 				Name:  settings.EnvBucketPath,
