@@ -10,6 +10,7 @@ import (
 const (
 	Header = "Authorization"
 )
+
 //
 // AuthorizationRequired enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

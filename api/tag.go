@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -42,9 +43,9 @@ func (h TagHandler) AddRoutes(e *gin.Engine) {
 // @router /tags/{id} [get]
 // @param id path string true "Tag ID"
 func (h TagHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.Tag{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "TagType")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -65,7 +66,7 @@ func (h TagHandler) Get(ctx *gin.Context) {
 // @router /tags [get]
 func (h TagHandler) List(ctx *gin.Context) {
 	var list []model.Tag
-	db := h.preLoad(h.DB, "TagType")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -116,8 +117,14 @@ func (h TagHandler) Create(ctx *gin.Context) {
 // @router /tags/{id} [delete]
 // @param id path string true "Tag ID"
 func (h TagHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.Tag{}, id)
+	id := h.pk(ctx)
+	m := &model.Tag{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -136,7 +143,7 @@ func (h TagHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Tag ID"
 // @param tag body api.Tag true "Tag data"
 func (h TagHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &Tag{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -144,7 +151,10 @@ func (h TagHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	result := h.DB.Model(&model.Tag{}).Where("id = ?", id).Omit("id").Updates(m)
+	m.ID = id
+	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
@@ -166,8 +176,7 @@ type Tag struct {
 func (r *Tag) With(m *model.Tag) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	r.TagType.ID = m.TagTypeID
-	r.TagType.Name = m.TagType.Name
+	r.TagType = r.ref(m.TagTypeID, &m.TagType)
 }
 
 //

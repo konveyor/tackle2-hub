@@ -50,13 +50,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 // @param id path int true "Application ID"
 func (h ApplicationHandler) Get(ctx *gin.Context) {
 	m := &model.Application{}
-	id := ctx.Param(ID)
-	db := h.preLoad(
-		h.DB,
-		"Tags",
-		"Review",
-		"Identities",
-		"BusinessService")
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -77,12 +72,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @router /applications [get]
 func (h ApplicationHandler) List(ctx *gin.Context) {
 	var list []model.Application
-	db := h.BaseHandler.preLoad(
-		h.DB,
-		"Tags",
-		"Review",
-		"Identities",
-		"BusinessService")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -143,7 +133,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 // @router /applications/{id} [delete]
 // @param id path int true "Application id"
 func (h ApplicationHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	m := &model.Application{}
 	err := h.DB.Transaction(func(tx *gorm.DB) (err error) {
 		db := tx.Preload(clause.Associations)
@@ -193,17 +183,18 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
-	err = db.Association("Identities").Replace("Identities", m.Identities)
+	err = db.Association("Identities").Replace(m.Identities)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
 	}
-	err = db.Association("Tags").Replace("Tags", m.Tags)
+	err = db.Association("Tags").Replace(m.Tags)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -221,7 +212,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
 // @param id path string true "Task ID"
 func (h ApplicationHandler) Content(ctx *gin.Context) {
-	taskID := ctx.Param(ID)
+	taskID := h.pk(ctx)
 	m := &model.Application{}
 	result := h.DB.First(m, taskID)
 	if result.Error != nil {
@@ -240,8 +231,8 @@ func (h ApplicationHandler) Content(ctx *gin.Context) {
 // @router /bucket/{id}/content/{wildcard} [post]
 // @param id path string true "Bucket ID"
 func (h ApplicationHandler) Upload(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.Application{}
-	id := ctx.Param(ID)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -284,10 +275,7 @@ func (r *Application) With(m *model.Application) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
-	r.BusinessService.ID = m.BusinessServiceID
-	if m.BusinessService != nil {
-		r.BusinessService.Name = m.BusinessService.Name
-	}
+	r.BusinessService = r.ref(m.BusinessServiceID, m.BusinessService)
 	r.Identities = []Ref{}
 	for _, id := range m.Identities {
 		ref := Ref{}

@@ -43,8 +43,8 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 // @router /identities/{id} [get]
 // @param id path string true "Identity ID"
 func (h IdentityHandler) Get(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.Identity{}
-	id := ctx.Param(ID)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -115,14 +115,14 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 // @router /identities/{id} [delete]
 // @param id path string true "Identity ID"
 func (h IdentityHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	identity := &model.Identity{}
 	result := h.DB.First(identity, id)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(identity, id)
+	result = h.DB.Delete(identity)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -141,7 +141,7 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Identity ID"
 // @param identity body Identity true "Identity data"
 func (h IdentityHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &Identity{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -149,8 +149,8 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.ID = id
 	db := h.DB.Model(m)
-	db = db.Where("id", id)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -169,8 +169,8 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 // @router /application-inventory/application/{id}/identities [get]
 // @param id path int true "Application ID"
 func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
+	id := h.pk(ctx)
 	m := &model.Application{}
-	id := ctx.Param(ID)
 	db := h.preLoad(h.DB, "Identities")
 	result := db.First(m, id)
 	if result.Error != nil {

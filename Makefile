@@ -2,6 +2,7 @@ GOBIN ?= ${GOPATH}/bin
 
 PKG = ./addon/... \
       ./api/... \
+      ./auth/... \
       ./cmd/... \
       ./encryption/... \
       ./importer/... \

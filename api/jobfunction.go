@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 	"net/http"
 )
 
@@ -43,8 +44,8 @@ func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 // @param id path string true "Job Function ID"
 func (h JobFunctionHandler) Get(ctx *gin.Context) {
 	m := &model.JobFunction{}
-	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Stakeholders")
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
@@ -65,7 +66,7 @@ func (h JobFunctionHandler) Get(ctx *gin.Context) {
 // @router /jobfunctions [get]
 func (h JobFunctionHandler) List(ctx *gin.Context) {
 	var list []model.JobFunction
-	db := h.preLoad(h.DB, "Stakeholders")
+	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
@@ -116,8 +117,14 @@ func (h JobFunctionHandler) Create(ctx *gin.Context) {
 // @router /jobfunctions/{id} [delete]
 // @param id path string true "Job Function ID"
 func (h JobFunctionHandler) Delete(ctx *gin.Context) {
-	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.JobFunction{}, id)
+	id := h.pk(ctx)
+	m := &model.JobFunction{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -136,7 +143,7 @@ func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Job Function ID"
 // @param job_function body api.JobFunction true "Job Function data"
 func (h JobFunctionHandler) Update(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	id := h.pk(ctx)
 	r := &JobFunction{}
 	err := ctx.BindJSON(r)
 	if err != nil {
@@ -144,7 +151,10 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	result := h.DB.Model(&model.JobFunction{}).Where("id = ?", id).Omit("id").Updates(m)
+	m.ID = id
+	db := h.DB.Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
 		return
