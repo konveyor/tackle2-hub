@@ -28,7 +28,7 @@ type Task struct {
 	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
-	Status        string
+	State         string
 	Error         string
 	Job           string
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`

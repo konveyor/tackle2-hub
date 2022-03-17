@@ -357,7 +357,7 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	}
 	for _, task := range r.Tasks {
 		member := *task.Model()
-		member.Status = tasking.Created
+		member.State = tasking.Created
 		m.Tasks = append(
 			m.Tasks,
 			member)

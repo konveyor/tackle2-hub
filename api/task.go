@@ -126,7 +126,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := task.Model()
-	m.Status = tasking.Created
+	m.State = tasking.Created
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -195,8 +195,8 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	m.Reset()
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
-	db = db.Where("status", tasking.Created)
-	db = db.Omit("status")
+	db = db.Where("state", tasking.Created)
+	db = db.Omit("state")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -223,10 +223,10 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 	}
 	db := h.DB.Model(&model.Task{})
 	db = db.Where("id", id)
-	db = db.Where("status", tasking.Created)
+	db = db.Where("state", tasking.Created)
 	result = db.Updates(
 		map[string]interface{}{
-			"status": tasking.Ready,
+			"state": tasking.Ready,
 		})
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -370,7 +370,7 @@ type Task struct {
 	Addon       string      `json:"addon,omitempty"`
 	Data        interface{} `json:"data" swaggertype:"object"`
 	Application *Ref        `json:"application"`
-	Status      string      `json:"status"`
+	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
 	Bucket      string      `json:"bucket"`
 	Purged      bool        `json:"purged,omitempty"`
@@ -393,7 +393,7 @@ func (r *Task) With(m *model.Task) {
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = m.Bucket
 	r.Purged = m.Purged
-	r.Status = m.Status
+	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated
 	r.Error = m.Error
