@@ -24,6 +24,7 @@ func (h *Task) Application() (r *api.Application, err error) {
 	id := h.secret.Hub.Application
 	if id == nil {
 		err = NotFound{}
+		return
 	}
 	r = &api.Application{}
 	path := Params{api.ID: *id}.inject(api.ApplicationRoot)

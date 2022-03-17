@@ -9,6 +9,7 @@ import (
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	batch "k8s.io/api/batch/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"path"
 	"time"
@@ -159,7 +160,10 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 			context.TODO(),
 			job)
 		if err != nil {
-			h.deleteFailed(ctx, result.Error)
+			if !k8serr.IsNotFound(err) {
+				h.deleteFailed(ctx, err)
+				return
+			}
 		}
 	}
 	result = h.DB.Delete(task)
