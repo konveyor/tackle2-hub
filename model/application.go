@@ -14,7 +14,7 @@ type Application struct {
 	Comments          string
 	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:applicationTags"`
-	Identities        []Identity `gorm:"many2many:appIdentity;constraint:OnDelete:CASCADE'"`
+	Identities        []Identity `gorm:"many2many:appIdentity;constraint:OnDelete:CASCADE"`
 	BusinessServiceID uint       `gorm:"index"`
 	BusinessService   *BusinessService
 }
