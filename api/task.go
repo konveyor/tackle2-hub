@@ -126,6 +126,18 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := task.Model()
+	switch task.State {
+	case "":
+		m.State = tasking.Created
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be ('''|Created|Ready)",
+			})
+	}
 	m.State = tasking.Created
 	result := h.DB.Create(&m)
 	if result.Error != nil {
@@ -191,12 +203,21 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+	switch r.State {
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be (Created|Ready)",
+			})
+	}
 	m := r.Model()
 	m.Reset()
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
 	db = db.Where("state", tasking.Created)
-	db = db.Omit("state")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -414,6 +435,7 @@ func (r *Task) Model() (m *model.Task) {
 		Addon:         r.Addon,
 		Locator:       r.Locator,
 		Isolated:      r.Isolated,
+		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
 	m.Data, _ = json.Marshal(r.Data)
