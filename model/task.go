@@ -67,22 +67,9 @@ type TaskGroup struct {
 	Addon  string
 	Data   JSON
 	Tasks  []Task `gorm:"constraint:OnDelete:CASCADE"`
+	List   JSON
 	State  string
 	Purged bool
-}
-
-func (m *TaskGroup) BeforeCreate(db *gorm.DB) (err error) {
-	err = m.BucketOwner.BeforeCreate(db)
-	if err != nil {
-		return
-	}
-	err = m.Propagate()
-	return
-}
-
-func (m *TaskGroup) BeforeUpdate(*gorm.DB) (err error) {
-	err = m.Propagate()
-	return
 }
 
 //

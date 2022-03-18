@@ -108,7 +108,6 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		h.createFailed(ctx, err)
 		return
 	}
-	m := r.Model()
 	switch r.State {
 	case "":
 		r.State = tasking.Created
@@ -122,7 +121,10 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			})
 		return
 	}
-	result := h.DB.Create(&m)
+	m := r.Model()
+	m.State = tasking.Created
+	db := h.DB.Omit(clause.Associations)
+	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
@@ -144,15 +146,29 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @param task body Task true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &TaskGroup{}
-	err := ctx.BindJSON(r)
+	updated := &TaskGroup{}
+	err := ctx.BindJSON(updated)
 	if err != nil {
 		return
 	}
-	switch r.State {
-	case "",
-		tasking.Created,
-		tasking.Ready:
+	current := &model.TaskGroup{}
+	err = h.DB.First(current, id).Error
+	if err != nil {
+		h.getFailed(ctx, err)
+		return
+	}
+	m := updated.Model()
+	m.ID = current.ID
+	m.Bucket = current.Bucket
+	db := h.DB.Model(m)
+	switch updated.State {
+	case "", tasking.Created:
+		db = db.Omit(clause.Associations)
+	case tasking.Ready:
+		err := m.Propagate()
+		if err != nil {
+			return
+		}
 	default:
 		ctx.JSON(
 			http.StatusBadRequest,
@@ -161,63 +177,8 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
-	current := &model.TaskGroup{}
-	result := h.DB.First(current, id)
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
-		return
-	}
-	updated := r.Model()
-	updated.ID = current.ID
-	updated.Bucket = current.Bucket
-	err = h.DB.Transaction(
-		func(tx *gorm.DB) (err error) {
-			db := tx.Model(updated)
-			db = db.Omit(clause.Associations)
-			result := db.Updates(h.fields(updated))
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			wanted := []uint{}
-			for i := range updated.Tasks {
-				m := &updated.Tasks[i]
-				m.TaskGroupID = &id
-				if m.ID == 0 {
-					result := tx.Create(m)
-					if result.Error != nil {
-						err = result.Error
-						return
-					}
-				} else {
-					db := tx.Model(m)
-					db = db.Where("status", tasking.Created)
-					result := db.Save(m)
-					if result.Error != nil {
-						err = result.Error
-						return
-					}
-				}
-				wanted = append(wanted, m.ID)
-			}
-			db = tx.Where("id NOT IN ?", wanted)
-			db = db.Where("taskgroupid", id)
-			var unwanted []model.Task
-			result = db.Find(&unwanted)
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			for i := range unwanted {
-				task := &unwanted[i]
-				result = db.Delete(task)
-				if result.Error != nil {
-					err = result.Error
-					return
-				}
-			}
-			return
-		})
+	db = db.Where("state IN ?", []string{"", tasking.Created})
+	err = db.Updates(h.fields(m)).Error
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -357,17 +318,23 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Addon = m.Addon
+	r.State = m.State
 	r.Bucket = m.Bucket
 	r.Purged = m.Purged
 	r.Tasks = []Task{}
-	for _, task := range m.Tasks {
-		member := Task{}
-		member.With(&task)
-		r.Tasks = append(
-			r.Tasks,
-			member)
-	}
 	_ = json.Unmarshal(m.Data, &r.Data)
+	switch m.State {
+	case "", tasking.Created:
+		_ = json.Unmarshal(m.List, &r.Tasks)
+	default:
+		for _, task := range m.Tasks {
+			member := Task{}
+			member.With(&task)
+			r.Tasks = append(
+				r.Tasks,
+				member)
+		}
+	}
 }
 
 //
@@ -377,15 +344,17 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		Name:   r.Name,
 		Addon:  r.Addon,
 		Purged: r.Purged,
+		State:  r.State,
 	}
+	m.ID = r.ID
+	m.Bucket = r.Bucket
+	m.Data, _ = json.Marshal(r.Data)
+	m.List, _ = json.Marshal(r.Tasks)
 	for _, task := range r.Tasks {
-		member := *task.Model()
-		member.State = tasking.Created
+		member := task.Model()
 		m.Tasks = append(
 			m.Tasks,
-			member)
+			*member)
 	}
-	m.Data, _ = json.Marshal(r.Data)
-	m.ID = r.ID
 	return
 }

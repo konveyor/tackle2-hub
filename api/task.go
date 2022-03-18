@@ -437,6 +437,7 @@ func (r *Task) Model() (m *model.Task) {
 		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
+	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.ID = r.ID
 	return
