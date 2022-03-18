@@ -14,7 +14,8 @@ curl -X PUT ${host}/taskgroups/1 -d \
     },
     "tasks": [
       {
-        "id": 1,
+        "id": 3,
+	"state": "Created",
         "name": "Renamed",
         "locator": "renamed",
         "data": {

@@ -136,6 +136,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be ('''|Created|Ready)",
 			})
+		return
 	}
 	m := r.Model()
 	m.State = tasking.Created
@@ -212,6 +213,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be (Created|Ready)",
 			})
+		return
 	}
 	m := r.Model()
 	m.Reset()

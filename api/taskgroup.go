@@ -120,6 +120,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be ('''|Created|Ready)",
 			})
+		return
 	}
 	result := h.DB.Create(&m)
 	if result.Error != nil {
@@ -149,7 +150,8 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		return
 	}
 	switch r.State {
-	case tasking.Created,
+	case "",
+		tasking.Created,
 		tasking.Ready:
 	default:
 		ctx.JSON(
@@ -157,6 +159,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be (Created|Ready)",
 			})
+		return
 	}
 	current := &model.TaskGroup{}
 	result := h.DB.First(current, id)
