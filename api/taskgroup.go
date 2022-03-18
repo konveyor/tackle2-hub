@@ -235,7 +235,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 202
-// @router /taskgroups/{id}/submit [post]
+// @router /taskgroups/{id}/submit [put]
 // @param id path string true "TaskGroup ID"
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
