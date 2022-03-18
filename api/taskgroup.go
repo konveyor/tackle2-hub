@@ -341,7 +341,7 @@ type TaskGroup struct {
 	Resource
 	Name   string      `json:"name"`
 	Addon  string      `json:"addon"`
-	Data   interface{} `json:"data" swaggertype:"object"`
+	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Bucket string      `json:"bucket"`
 	Purged bool        `json:"purged,omitempty"`
 	State  string      `json:"state"`

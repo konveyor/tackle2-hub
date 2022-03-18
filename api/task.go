@@ -386,7 +386,7 @@ type Task struct {
 	Locator     string      `json:"locator"`
 	Isolated    bool        `json:"isolated,omitempty"`
 	Addon       string      `json:"addon,omitempty" binding:"required"`
-	Data        interface{} `json:"data" swaggertype:"object"`
+	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref        `json:"application"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
