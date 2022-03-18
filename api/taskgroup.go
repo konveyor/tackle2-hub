@@ -37,7 +37,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TaskGroupsRoot, h.Create)
 	routeGroup.PUT(TaskGroupRoot, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
-	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit)
+	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
 	routeGroup.GET(TaskGroupBucketRoot, h.Content)
 	routeGroup.POST(TaskGroupBucketRoot, h.Upload)
 	routeGroup.PUT(TaskGroupBucketRoot, h.Upload)
@@ -102,22 +102,34 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // @router /taskgroups [post]
 // @param taskgroup body api.TaskGroup true "TaskGroup data"
 func (h TaskGroupHandler) Create(ctx *gin.Context) {
-	group := &TaskGroup{}
-	err := ctx.BindJSON(group)
+	r := &TaskGroup{}
+	err := ctx.BindJSON(r)
 	if err != nil {
 		h.createFailed(ctx, err)
 		return
 	}
-	m := group.Model()
+	m := r.Model()
+	switch r.State {
+	case "":
+		r.State = tasking.Created
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be ('''|Created|Ready)",
+			})
+	}
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
 	}
 
-	group.With(m)
+	r.With(m)
 
-	ctx.JSON(http.StatusCreated, group)
+	ctx.JSON(http.StatusCreated, r)
 }
 
 // Update godoc
@@ -135,6 +147,16 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	err := ctx.BindJSON(r)
 	if err != nil {
 		return
+	}
+	switch r.State {
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be (Created|Ready)",
+			})
 	}
 	current := &model.TaskGroup{}
 	result := h.DB.First(current, id)
@@ -253,28 +275,25 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // @param id path string true "TaskGroup ID"
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
-	result := h.DB.First(&model.TaskGroup{}, id)
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	r := &TaskGroup{}
+	mod := func(withBody bool) (err error) {
+		if !withBody {
+			m := r.Model()
+			err = h.DB.First(m, id).Error
+			if err != nil {
+				return
+			}
+			r.With(m)
+		}
+		r.State = tasking.Ready
 		return
 	}
-	db := h.DB.Model(&model.Task{})
-	db = db.Where("taskgroupid", id)
-	db = db.Where("status", tasking.Created)
-	result = db.Updates(
-		model.Map{
-			"status": tasking.Ready,
-		})
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	err := h.modBody(ctx, r, mod)
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
-	if result.RowsAffected > 0 {
-		ctx.Status(http.StatusAccepted)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+	ctx.Next()
 }
 
 // Content godoc
@@ -325,6 +344,7 @@ type TaskGroup struct {
 	Data   interface{} `json:"data" swaggertype:"object"`
 	Bucket string      `json:"bucket"`
 	Purged bool        `json:"purged,omitempty"`
+	State  string      `json:"state"`
 	Tasks  []Task      `json:"tasks"`
 }
 

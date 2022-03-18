@@ -67,6 +67,7 @@ type TaskGroup struct {
 	Addon  string
 	Data   JSON
 	Tasks  []Task `gorm:"constraint:OnDelete:CASCADE"`
+	State  string
 	Purged bool
 }
 
@@ -97,6 +98,7 @@ func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
+		task.State = m.State
 		task.Bucket = m.Bucket
 		if task.Addon == "" {
 			task.Addon = m.Addon

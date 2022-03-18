@@ -119,16 +119,15 @@ func (h TaskHandler) List(ctx *gin.Context) {
 // @router /tasks [post]
 // @param task body api.Task true "Task data"
 func (h TaskHandler) Create(ctx *gin.Context) {
-	task := Task{}
-	err := ctx.BindJSON(&task)
+	r := Task{}
+	err := ctx.BindJSON(&r)
 	if err != nil {
 		h.createFailed(ctx, err)
 		return
 	}
-	m := task.Model()
-	switch task.State {
+	switch r.State {
 	case "":
-		m.State = tasking.Created
+		r.State = tasking.Created
 	case tasking.Created,
 		tasking.Ready:
 	default:
@@ -138,15 +137,16 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 				"error": "state must be ('''|Created|Ready)",
 			})
 	}
+	m := r.Model()
 	m.State = tasking.Created
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
 	}
-	task.With(m)
+	r.With(m)
 
-	ctx.JSON(http.StatusCreated, task)
+	ctx.JSON(http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -385,7 +385,7 @@ type Task struct {
 	Name        string      `json:"name"`
 	Locator     string      `json:"locator"`
 	Isolated    bool        `json:"isolated,omitempty"`
-	Addon       string      `json:"addon,omitempty"`
+	Addon       string      `json:"addon,omitempty" binding:"required"`
 	Data        interface{} `json:"data" swaggertype:"object"`
 	Application *Ref        `json:"application"`
 	State       string      `json:"state"`
