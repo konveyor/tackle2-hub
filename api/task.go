@@ -47,7 +47,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
-	routeGroup.PUT(TaskSubmitRoot, h.Submit)
+	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.GET(TaskBucketRoot, h.Content)
 	routeGroup.POST(TaskBucketRoot, h.Upload)
 	routeGroup.PUT(TaskBucketRoot, h.Upload)
@@ -233,32 +233,29 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 202
-// @router /tasks/{id}/submit [post]
+// @router /tasks/{id}/submit [put]
 // @param id path string true "Task ID"
 func (h TaskHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
-	result := h.DB.First(&model.Task{}, id)
-	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+	r := &Task{}
+	mod := func(withBody bool) (err error) {
+		if !withBody {
+			m := r.Model()
+			err = h.DB.First(m, id).Error
+			if err != nil {
+				return
+			}
+			r.With(m)
+		}
+		r.State = tasking.Ready
 		return
 	}
-	db := h.DB.Model(&model.Task{})
-	db = db.Where("id", id)
-	db = db.Where("state", tasking.Created)
-	result = db.Updates(
-		map[string]interface{}{
-			"state": tasking.Ready,
-		})
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	err := h.modBody(ctx, r, mod)
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
-	if result.RowsAffected > 0 {
-		ctx.Status(http.StatusAccepted)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+	ctx.Next()
 }
 
 // Content godoc
