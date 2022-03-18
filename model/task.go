@@ -85,14 +85,6 @@ func (m *TaskGroup) BeforeUpdate(*gorm.DB) (err error) {
 	return
 }
 
-func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
-	err = m.BucketOwner.BeforeDelete(db)
-	if err != nil {
-		return
-	}
-	return
-}
-
 //
 // Propagate group data into the task.
 func (m *TaskGroup) Propagate() (err error) {
