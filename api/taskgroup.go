@@ -37,7 +37,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TaskGroupsRoot, h.Create)
 	routeGroup.PUT(TaskGroupRoot, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
-	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit)
+	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
 	routeGroup.GET(TaskGroupBucketRoot, h.Content)
 	routeGroup.POST(TaskGroupBucketRoot, h.Upload)
 	routeGroup.PUT(TaskGroupBucketRoot, h.Upload)
@@ -102,22 +102,36 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // @router /taskgroups [post]
 // @param taskgroup body api.TaskGroup true "TaskGroup data"
 func (h TaskGroupHandler) Create(ctx *gin.Context) {
-	group := &TaskGroup{}
-	err := ctx.BindJSON(group)
+	r := &TaskGroup{}
+	err := ctx.BindJSON(r)
 	if err != nil {
 		h.createFailed(ctx, err)
 		return
 	}
-	m := group.Model()
-	result := h.DB.Create(&m)
+	switch r.State {
+	case "":
+		r.State = tasking.Created
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be ('''|Created|Ready)",
+			})
+		return
+	}
+	m := r.Model()
+	db := h.DB.Omit(clause.Associations)
+	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
 	}
 
-	group.With(m)
+	r.With(m)
 
-	ctx.JSON(http.StatusCreated, group)
+	ctx.JSON(http.StatusCreated, r)
 }
 
 // Update godoc
@@ -131,68 +145,39 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @param task body Task true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &TaskGroup{}
-	err := ctx.BindJSON(r)
+	updated := &TaskGroup{}
+	err := ctx.BindJSON(updated)
 	if err != nil {
 		return
 	}
 	current := &model.TaskGroup{}
-	result := h.DB.First(current, id)
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	err = h.DB.First(current, id).Error
+	if err != nil {
+		h.getFailed(ctx, err)
 		return
 	}
-	updated := r.Model()
-	updated.ID = current.ID
-	updated.Bucket = current.Bucket
-	err = h.DB.Transaction(
-		func(tx *gorm.DB) (err error) {
-			db := tx.Model(updated)
-			db = db.Omit(clause.Associations)
-			result := db.Updates(h.fields(updated))
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			wanted := []uint{}
-			for i := range updated.Tasks {
-				m := &updated.Tasks[i]
-				m.TaskGroupID = &id
-				if m.ID == 0 {
-					result := tx.Create(m)
-					if result.Error != nil {
-						err = result.Error
-						return
-					}
-				} else {
-					db := tx.Model(m)
-					db = db.Where("status", tasking.Created)
-					result := db.Save(m)
-					if result.Error != nil {
-						err = result.Error
-						return
-					}
-				}
-				wanted = append(wanted, m.ID)
-			}
-			db = tx.Where("id NOT IN ?", wanted)
-			db = db.Where("taskgroupid", id)
-			var unwanted []model.Task
-			result = db.Find(&unwanted)
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			for i := range unwanted {
-				task := &unwanted[i]
-				result = db.Delete(task)
-				if result.Error != nil {
-					err = result.Error
-					return
-				}
-			}
+	m := updated.Model()
+	m.ID = current.ID
+	m.Bucket = current.Bucket
+	db := h.DB.Model(m)
+	switch updated.State {
+	case "", tasking.Created:
+		db = db.Omit(clause.Associations)
+	case tasking.Ready:
+		err := m.Propagate()
+		if err != nil {
 			return
-		})
+		}
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be (Created|Ready)",
+			})
+		return
+	}
+	db = db.Where("state IN ?", []string{"", tasking.Created})
+	err = db.Updates(h.fields(m)).Error
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -249,32 +234,29 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 202
-// @router /taskgroups/{id}/submit [post]
+// @router /taskgroups/{id}/submit [put]
 // @param id path string true "TaskGroup ID"
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
-	result := h.DB.First(&model.TaskGroup{}, id)
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	r := &TaskGroup{}
+	mod := func(withBody bool) (err error) {
+		if !withBody {
+			m := r.Model()
+			err = h.DB.First(m, id).Error
+			if err != nil {
+				return
+			}
+			r.With(m)
+		}
+		r.State = tasking.Ready
 		return
 	}
-	db := h.DB.Model(&model.Task{})
-	db = db.Where("taskgroupid", id)
-	db = db.Where("status", tasking.Created)
-	result = db.Updates(
-		model.Map{
-			"status": tasking.Ready,
-		})
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	err := h.modBody(ctx, r, mod)
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
-	if result.RowsAffected > 0 {
-		ctx.Status(http.StatusAccepted)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+	ctx.Next()
 }
 
 // Content godoc
@@ -322,9 +304,10 @@ type TaskGroup struct {
 	Resource
 	Name   string      `json:"name"`
 	Addon  string      `json:"addon"`
-	Data   interface{} `json:"data" swaggertype:"object"`
+	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Bucket string      `json:"bucket"`
 	Purged bool        `json:"purged,omitempty"`
+	State  string      `json:"state"`
 	Tasks  []Task      `json:"tasks"`
 }
 
@@ -334,17 +317,23 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Addon = m.Addon
+	r.State = m.State
 	r.Bucket = m.Bucket
 	r.Purged = m.Purged
 	r.Tasks = []Task{}
-	for _, task := range m.Tasks {
-		member := Task{}
-		member.With(&task)
-		r.Tasks = append(
-			r.Tasks,
-			member)
-	}
 	_ = json.Unmarshal(m.Data, &r.Data)
+	switch m.State {
+	case "", tasking.Created:
+		_ = json.Unmarshal(m.List, &r.Tasks)
+	default:
+		for _, task := range m.Tasks {
+			member := Task{}
+			member.With(&task)
+			r.Tasks = append(
+				r.Tasks,
+				member)
+		}
+	}
 }
 
 //
@@ -354,15 +343,17 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		Name:   r.Name,
 		Addon:  r.Addon,
 		Purged: r.Purged,
+		State:  r.State,
 	}
+	m.ID = r.ID
+	m.Bucket = r.Bucket
+	m.Data, _ = json.Marshal(r.Data)
+	m.List, _ = json.Marshal(r.Tasks)
 	for _, task := range r.Tasks {
-		member := *task.Model()
-		member.Status = tasking.Created
+		member := task.Model()
 		m.Tasks = append(
 			m.Tasks,
-			member)
+			*member)
 	}
-	m.Data, _ = json.Marshal(r.Data)
-	m.ID = r.ID
 	return
 }

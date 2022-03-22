@@ -28,7 +28,7 @@ type Task struct {
 	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
-	Status        string
+	State         string
 	Error         string
 	Job           string
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
@@ -67,29 +67,9 @@ type TaskGroup struct {
 	Addon  string
 	Data   JSON
 	Tasks  []Task `gorm:"constraint:OnDelete:CASCADE"`
+	List   JSON
+	State  string
 	Purged bool
-}
-
-func (m *TaskGroup) BeforeCreate(db *gorm.DB) (err error) {
-	err = m.BucketOwner.BeforeCreate(db)
-	if err != nil {
-		return
-	}
-	err = m.Propagate()
-	return
-}
-
-func (m *TaskGroup) BeforeUpdate(*gorm.DB) (err error) {
-	err = m.Propagate()
-	return
-}
-
-func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
-	err = m.BucketOwner.BeforeDelete(db)
-	if err != nil {
-		return
-	}
-	return
 }
 
 //
@@ -97,6 +77,7 @@ func (m *TaskGroup) BeforeDelete(db *gorm.DB) (err error) {
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
+		task.State = m.State
 		task.Bucket = m.Bucket
 		if task.Addon == "" {
 			task.Addon = m.Addon

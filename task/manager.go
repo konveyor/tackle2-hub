@@ -87,7 +87,7 @@ func (m *Manager) startReady() {
 	list := []model.Task{}
 	result := m.DB.Find(
 		&list,
-		"status IN ?",
+		"state IN ?",
 		[]string{
 			Ready,
 			Running,
@@ -103,11 +103,11 @@ func (m *Manager) startReady() {
 			client: m.Client,
 			Task:   ready,
 		}
-		switch ready.Status {
+		switch ready.State {
 		case Ready,
 			Postponed:
 			if m.postpone(ready, list) {
-				ready.Status = Postponed
+				ready.State = Postponed
 				result := m.DB.Save(ready)
 				Log.Trace(result.Error)
 				if result.Error == nil {
@@ -126,10 +126,10 @@ func (m *Manager) startReady() {
 }
 
 //
-// updateRunning tasks to reflect job status.
+// updateRunning tasks to reflect job state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
-	result := m.DB.Find(&list, "status", Running)
+	result := m.DB.Find(&list, "state", Running)
 	Log.Trace(result.Error)
 	if result.Error != nil {
 		return
@@ -159,7 +159,7 @@ func (m *Manager) reapTasks() {
 	list := []model.Task{}
 	result := m.DB.Find(
 		&list,
-		"status IN ?",
+		"state IN ?",
 		[]string{
 			Succeeded,
 			Failed,
@@ -244,7 +244,7 @@ func (m *Manager) mayPurge(task *model.Task) (may bool) {
 	if task.TaskGroupID != nil {
 		return
 	}
-	switch task.Status {
+	switch task.State {
 	case Succeeded:
 		mark := *task.Terminated
 		d := time.Duration(
@@ -268,7 +268,7 @@ func (m *Manager) mayDelete(task *model.Task) (approved bool) {
 	if task.ApplicationID != nil {
 		return
 	}
-	switch task.Status {
+	switch task.State {
 	case Created:
 		mark := task.CreateTime
 		d := time.Duration(
@@ -328,7 +328,7 @@ func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) 
 		if pending.ID == task.ID {
 			continue
 		}
-		if pending.Status != Running {
+		if pending.State != Running {
 			continue
 		}
 		if pending.Isolated || task.Isolated {
@@ -359,7 +359,7 @@ func (r *Task) Run() (err error) {
 		if err != nil {
 			r.Error = err.Error()
 			r.Terminated = &mark
-			r.Status = Failed
+			r.State = Failed
 		}
 	}()
 	r.addon, err = r.findAddon(r.Addon)
@@ -380,7 +380,7 @@ func (r *Task) Run() (err error) {
 		return
 	}
 	r.Started = &mark
-	r.Status = Running
+	r.State = Running
 	r.Job = path.Join(
 		job.Namespace,
 		job.Name)
@@ -388,7 +388,7 @@ func (r *Task) Run() (err error) {
 }
 
 //
-// Reflect finds the associated job and updates the task status.
+// Reflect finds the associated job and updates the task state.
 func (r *Task) Reflect() (err error) {
 	job := &batch.Job{}
 	err = r.client.Get(
@@ -410,13 +410,13 @@ func (r *Task) Reflect() (err error) {
 	status := job.Status
 	for _, cnd := range status.Conditions {
 		if cnd.Type == batch.JobFailed {
-			r.Status = Failed
+			r.State = Failed
 			r.Terminated = &mark
 			r.Error = "job failed."
 			return
 		}
 		if status.Succeeded > 0 {
-			r.Status = Succeeded
+			r.State = Succeeded
 			r.Terminated = &mark
 		}
 	}

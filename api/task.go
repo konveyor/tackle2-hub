@@ -47,7 +47,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
-	routeGroup.PUT(TaskSubmitRoot, h.Submit)
+	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.GET(TaskBucketRoot, h.Content)
 	routeGroup.POST(TaskBucketRoot, h.Upload)
 	routeGroup.PUT(TaskBucketRoot, h.Upload)
@@ -119,22 +119,34 @@ func (h TaskHandler) List(ctx *gin.Context) {
 // @router /tasks [post]
 // @param task body api.Task true "Task data"
 func (h TaskHandler) Create(ctx *gin.Context) {
-	task := Task{}
-	err := ctx.BindJSON(&task)
+	r := Task{}
+	err := ctx.BindJSON(&r)
 	if err != nil {
 		h.createFailed(ctx, err)
 		return
 	}
-	m := task.Model()
-	m.Status = tasking.Created
+	switch r.State {
+	case "":
+		r.State = tasking.Created
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be ('''|Created|Ready)",
+			})
+		return
+	}
+	m := r.Model()
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
 	}
-	task.With(m)
+	r.With(m)
 
-	ctx.JSON(http.StatusCreated, task)
+	ctx.JSON(http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -191,12 +203,22 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+	switch r.State {
+	case tasking.Created,
+		tasking.Ready:
+	default:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must be (Created|Ready)",
+			})
+		return
+	}
 	m := r.Model()
 	m.Reset()
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
-	db = db.Where("status", tasking.Created)
-	db = db.Omit("status")
+	db = db.Where("state", tasking.Created)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -212,32 +234,29 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 202
-// @router /tasks/{id}/submit [post]
+// @router /tasks/{id}/submit [put]
 // @param id path string true "Task ID"
 func (h TaskHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
-	result := h.DB.First(&model.Task{}, id)
-	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+	r := &Task{}
+	mod := func(withBody bool) (err error) {
+		if !withBody {
+			m := r.Model()
+			err = h.DB.First(m, id).Error
+			if err != nil {
+				return
+			}
+			r.With(m)
+		}
+		r.State = tasking.Ready
 		return
 	}
-	db := h.DB.Model(&model.Task{})
-	db = db.Where("id", id)
-	db = db.Where("status", tasking.Created)
-	result = db.Updates(
-		map[string]interface{}{
-			"status": tasking.Ready,
-		})
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	err := h.modBody(ctx, r, mod)
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
-	if result.RowsAffected > 0 {
-		ctx.Status(http.StatusAccepted)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+	ctx.Next()
 }
 
 // Content godoc
@@ -367,10 +386,10 @@ type Task struct {
 	Name        string      `json:"name"`
 	Locator     string      `json:"locator"`
 	Isolated    bool        `json:"isolated,omitempty"`
-	Addon       string      `json:"addon,omitempty"`
-	Data        interface{} `json:"data" swaggertype:"object"`
+	Addon       string      `json:"addon,omitempty" binding:"required"`
+	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref        `json:"application"`
-	Status      string      `json:"status"`
+	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
 	Bucket      string      `json:"bucket"`
 	Purged      bool        `json:"purged,omitempty"`
@@ -393,7 +412,7 @@ func (r *Task) With(m *model.Task) {
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = m.Bucket
 	r.Purged = m.Purged
-	r.Status = m.Status
+	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated
 	r.Error = m.Error
@@ -414,8 +433,10 @@ func (r *Task) Model() (m *model.Task) {
 		Addon:         r.Addon,
 		Locator:       r.Locator,
 		Isolated:      r.Isolated,
+		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
+	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.ID = r.ID
 	return

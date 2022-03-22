@@ -1,12 +1,15 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
@@ -221,6 +224,34 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 	s := ctx.Param(ID)
 	n, _ := strconv.Atoi(s)
 	id = uint(n)
+	return
+}
+
+//
+// modBody updates the body using the `mod` function.
+//   1. read the body.
+//   2. mod()
+//   3. write body.
+func (h *BaseHandler) modBody(
+	ctx *gin.Context,
+	r interface{},
+	mod func(bool) error) (err error) {
+	//
+	withBody := false
+	if ctx.Request.ContentLength > 0 {
+		withBody = true
+		err = ctx.BindJSON(r)
+		if err != nil {
+			return
+		}
+	}
+	err = mod(withBody)
+	if err != nil {
+		return
+	}
+	b, _ := json.Marshal(r)
+	bfr := bytes.NewBuffer(b)
+	ctx.Request.Body = ioutil.NopCloser(bfr)
 	return
 }
 

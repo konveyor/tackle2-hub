@@ -2,7 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X PUT ${host}/taskgroups/1 -d \
+curl -X PUT ${host}/taskgroups/1/submit -d \
 '{
     "id": 1,
     "name": "Test-updated",
@@ -14,8 +14,6 @@ curl -X PUT ${host}/taskgroups/1 -d \
     },
     "tasks": [
       {
-        "id": 3,
-	"state": "Created",
         "name": "Renamed",
         "locator": "renamed",
         "data": {
@@ -23,10 +21,10 @@ curl -X PUT ${host}/taskgroups/1 -d \
 	}
       },
       {
-        "name": "Another",
-        "locator": "another.2",
+        "name": "Renamed",
+        "locator": "renamed2",
         "data": {
-          "application": 2
+	  "x": 1
         }
       }
     ]
