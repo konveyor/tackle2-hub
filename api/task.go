@@ -139,7 +139,6 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.State = tasking.Created
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)

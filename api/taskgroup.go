@@ -122,7 +122,6 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.State = tasking.Created
 	db := h.DB.Omit(clause.Associations)
 	result := db.Create(&m)
 	if result.Error != nil {
