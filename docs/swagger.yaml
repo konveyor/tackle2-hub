@@ -8,6 +8,10 @@ definitions:
     type: object
   api.Application:
     properties:
+      binary:
+        type: string
+      bucket:
+        type: string
       businessService:
         $ref: '#/definitions/api.Ref'
       comments:
@@ -18,8 +22,8 @@ definitions:
         type: string
       description:
         type: string
-      extensions:
-        $ref: '#/definitions/api.Extensions'
+      facts:
+        $ref: '#/definitions/api.Facts'
       id:
         type: integer
       identities:
@@ -40,25 +44,6 @@ definitions:
         type: string
     required:
     - name
-    type: object
-  api.Bucket:
-    properties:
-      application:
-        $ref: '#/definitions/api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      path:
-        type: string
-      updateUser:
-        type: string
-    required:
-    - application
     type: object
   api.BusinessService:
     properties:
@@ -106,7 +91,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.Extensions:
+  api.Facts:
     additionalProperties: true
     type: object
   api.Identity:
@@ -188,6 +173,12 @@ definitions:
         type: string
       createUser:
         type: string
+      enabled:
+        type: boolean
+      excluded:
+        items:
+          type: string
+        type: array
       host:
         type: string
       id:
@@ -203,8 +194,6 @@ definitions:
         type: integer
       updateUser:
         type: string
-    required:
-    - host
     type: object
   api.Ref:
     properties:
@@ -355,6 +344,10 @@ definitions:
     properties:
       addon:
         type: string
+      application:
+        $ref: '#/definitions/api.Ref'
+      bucket:
+        type: string
       createTime:
         type: string
       createUser:
@@ -375,16 +368,50 @@ definitions:
         type: string
       name:
         type: string
+      purged:
+        type: boolean
       report:
         $ref: '#/definitions/api.TaskReport'
       started:
         type: string
-      status:
+      state:
         type: string
       terminated:
         type: string
       updateUser:
         type: string
+    required:
+    - addon
+    - data
+    type: object
+  api.TaskGroup:
+    properties:
+      addon:
+        type: string
+      bucket:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data:
+        type: object
+      id:
+        type: integer
+      name:
+        type: string
+      purged:
+        type: boolean
+      state:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/api.Task'
+        type: array
+      updateUser:
+        type: string
+    required:
+    - data
     type: object
   api.TaskReport:
     properties:
@@ -429,28 +456,6 @@ paths:
       summary: List all addons.
       tags:
       - get
-  /addons/:name/tasks:
-    post:
-      consumes:
-      - application/json
-      description: Create an addon task.
-      parameters:
-      - description: Task data
-        in: body
-        name: task
-        required: true
-        schema:
-          $ref: '#/definitions/api.Task'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/api.Task'
-      summary: Create an addon task.
-      tags:
-      - create
   /addons/{name}:
     get:
       description: Get an addon by name.
@@ -468,21 +473,6 @@ paths:
           schema:
             $ref: '#/definitions/api.Addon'
       summary: Get an addon by name.
-      tags:
-      - get
-  /addons/{name}/tasks:
-    get:
-      description: List all tasks associated to an addon.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Task'
-            type: array
-      summary: List all tasks associated to an addon.
       tags:
       - get
   /application-inventory/application-import:
@@ -725,130 +715,11 @@ paths:
       summary: Update an application.
       tags:
       - update
-  /applications/{id}/buckets:
-    get:
-      description: List buckets associated with application.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Bucket'
-            type: array
-      summary: List buckets associated with application.
-      tags:
-      - get
-  /applications/{id}/buckets/{name}:
-    get:
-      description: List buckets associated with application.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Bucket Name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.Bucket'
-      summary: List buckets associated with application.
-      tags:
-      - get
-    post:
-      consumes:
-      - application/json
-      description: Create a bucket for an application.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Bucket Name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Bucket data
-        in: body
-        name: bucket
-        required: true
-        schema:
-          $ref: '#/definitions/api.Bucket'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/api.Bucket'
-      summary: Create a bucket for an application.
-      tags:
-      - create
-  /applications/{id}/buckets/{name}/content/{wildcard}:
-    get:
-      description: Get bucket content by application ID, bucket name and path.
-      parameters:
-      - description: Bucket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Bucket Name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: ""
-      summary: Get bucket content by application ID, bucket name and path.
-      tags:
-      - get
-    post:
-      description: Upload bucket content by application ID, bucket name and path.
-      parameters:
-      - description: Bucket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Bucket Name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: ""
-      summary: Upload bucket content by application ID, bucket name and path.
-      tags:
-      - get
-  /bucket/{id}/content/{wildcard}:
+  /applications/{id}/tasks/{id}/content/{wildcard}:
     get:
       description: Get bucket content by ID and path.
       parameters:
-      - description: Bucket ID
+      - description: Task ID
         in: path
         name: id
         required: true
@@ -861,8 +732,9 @@ paths:
       summary: Get bucket content by ID and path.
       tags:
       - get
+  /bucket/{id}/content/{wildcard}:
     post:
-      description: Upload bucket content by ID and path.
+      description: Upload bucket content by task ID and path.
       parameters:
       - description: Bucket ID
         in: path
@@ -874,76 +746,7 @@ paths:
       responses:
         "204":
           description: ""
-      summary: Upload bucket content by ID and path.
-      tags:
-      - get
-  /buckets:
-    get:
-      description: List all buckets.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Bucket'
-            type: array
-      summary: List all buckets.
-      tags:
-      - get
-    post:
-      consumes:
-      - application/json
-      description: Create a bucket.
-      parameters:
-      - description: Bucket data
-        in: body
-        name: bucket
-        required: true
-        schema:
-          $ref: '#/definitions/api.Bucket'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/api.Bucket'
-      summary: Create a bucket.
-      tags:
-      - create
-  /buckets/{id}:
-    delete:
-      description: Delete a bucket.
-      parameters:
-      - description: Bucket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: ""
-      summary: Delete a bucket.
-      tags:
-      - delete
-    get:
-      description: Get a bucket by ID.
-      parameters:
-      - description: Bucket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.Bucket'
-      summary: Get a bucket by ID.
+      summary: Upload bucket content by task ID and path.
       tags:
       - get
   /businessservices:
@@ -1948,6 +1751,109 @@ paths:
       summary: Update a tag type.
       tags:
       - update
+  /taskgroups:
+    get:
+      description: List all task groups.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TaskGroup'
+            type: array
+      summary: List all task groups.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a task group.
+      parameters:
+      - description: TaskGroup data
+        in: body
+        name: taskgroup
+        required: true
+        schema:
+          $ref: '#/definitions/api.TaskGroup'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.TaskGroup'
+      summary: Create a task group.
+      tags:
+      - create
+  /taskgroups/{id}:
+    delete:
+      description: Delete a task group.
+      parameters:
+      - description: TaskGroup ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a task group.
+      tags:
+      - delete
+    get:
+      description: Get a task group by ID.
+      parameters:
+      - description: TaskGroup ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TaskGroup'
+      summary: Get a task group by ID.
+      tags:
+      - get
+  /taskgroups/{id}/bucket/{wildcard}:
+    get:
+      description: Get bucket content by ID and path.
+      parameters:
+      - description: TaskGroup ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: ""
+      summary: Get bucket content by ID and path.
+      tags:
+      - get
+  /taskgroups/{id}/submit:
+    put:
+      consumes:
+      - application/json
+      description: Submit a task group.
+      parameters:
+      - description: TaskGroup ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: ""
+      summary: Submit a task group.
+      tags:
+      - update
   /tasks:
     get:
       description: List all tasks.
@@ -2020,7 +1926,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update a task.
+      description: Update a task group.
       parameters:
       - description: Task ID
         in: path
@@ -2036,16 +1942,67 @@ paths:
       responses:
         "204":
           description: ""
-      summary: Update a task.
+      summary: Update a task group.
       tags:
       - update
+  /tasks/{id}/bucket/{wildcard}:
+    get:
+      description: Get bucket content by ID and path.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: ""
+      summary: Get bucket content by ID and path.
+      tags:
+      - get
+    post:
+      description: Upload bucket content by task ID and path.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Upload bucket content by task ID and path.
+      tags:
+      - get
   /tasks/{id}/report:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a task report.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Delete a task report.
+      tags:
+      - update
     post:
       consumes:
       - application/json
       description: Update a task report.
       parameters:
-      - description: TaskReport ID
+      - description: Task ID
         in: path
         name: id
         required: true
@@ -2071,7 +2028,7 @@ paths:
       - application/json
       description: Update a task report.
       parameters:
-      - description: TaskReport ID
+      - description: Task ID
         in: path
         name: id
         required: true
@@ -2090,6 +2047,23 @@ paths:
           schema:
             $ref: '#/definitions/api.TaskReport'
       summary: Update a task report.
+      tags:
+      - update
+  /tasks/{id}/submit:
+    put:
+      consumes:
+      - application/json
+      description: Submit a task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: ""
+      summary: Submit a task.
       tags:
       - update
 swagger: "2.0"

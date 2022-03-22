@@ -46,40 +46,6 @@ var doc = `{
                 }
             }
         },
-        "/addons/:name/tasks": {
-            "post": {
-                "description": "Create an addon task.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create an addon task.",
-                "parameters": [
-                    {
-                        "description": "Task data",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Task"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Task"
-                        }
-                    }
-                }
-            }
-        },
         "/addons/{name}": {
             "get": {
                 "description": "Get an addon by name.",
@@ -104,29 +70,6 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.Addon"
-                        }
-                    }
-                }
-            }
-        },
-        "/addons/{name}/tasks": {
-            "get": {
-                "description": "List all tasks associated to an addon.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all tasks associated to an addon.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Task"
-                            }
                         }
                     }
                 }
@@ -497,185 +440,7 @@ var doc = `{
                 }
             }
         },
-        "/applications/{id}/buckets": {
-            "get": {
-                "description": "List buckets associated with application.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List buckets associated with application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Bucket"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/applications/{id}/buckets/{name}": {
-            "get": {
-                "description": "List buckets associated with application.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List buckets associated with application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Bucket Name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a bucket for an application.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a bucket for an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Bucket Name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Bucket data",
-                        "name": "bucket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            }
-        },
-        "/applications/{id}/buckets/{name}/content/{wildcard}": {
-            "get": {
-                "description": "Get bucket content by application ID, bucket name and path.",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get bucket content by application ID, bucket name and path.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bucket ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Bucket Name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            },
-            "post": {
-                "description": "Upload bucket content by application ID, bucket name and path.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Upload bucket content by application ID, bucket name and path.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bucket ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Bucket Name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/bucket/{id}/content/{wildcard}": {
+        "/applications/{id}/tasks/{id}/content/{wildcard}": {
             "get": {
                 "description": "Get bucket content by ID and path.",
                 "produces": [
@@ -688,7 +453,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bucket ID",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -699,121 +464,18 @@ var doc = `{
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "description": "Upload bucket content by ID and path.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Upload bucket content by ID and path.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bucket ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
             }
         },
-        "/buckets": {
-            "get": {
-                "description": "List all buckets.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all buckets.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Bucket"
-                            }
-                        }
-                    }
-                }
-            },
+        "/bucket/{id}/content/{wildcard}": {
             "post": {
-                "description": "Create a bucket.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a bucket.",
-                "parameters": [
-                    {
-                        "description": "Bucket data",
-                        "name": "bucket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            }
-        },
-        "/buckets/{id}": {
-            "get": {
-                "description": "Get a bucket by ID.",
+                "description": "Upload bucket content by task ID and path.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "get"
                 ],
-                "summary": "Get a bucket by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bucket ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Bucket"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a bucket.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a bucket.",
+                "summary": "Upload bucket content by task ID and path.",
                 "parameters": [
                     {
                         "type": "string",
@@ -2348,6 +2010,163 @@ var doc = `{
                 }
             }
         },
+        "/taskgroups": {
+            "get": {
+                "description": "List all task groups.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all task groups.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.TaskGroup"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a task group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a task group.",
+                "parameters": [
+                    {
+                        "description": "TaskGroup data",
+                        "name": "taskgroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TaskGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.TaskGroup"
+                        }
+                    }
+                }
+            }
+        },
+        "/taskgroups/{id}": {
+            "get": {
+                "description": "Get a task group by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a task group by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TaskGroup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TaskGroup"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a task group.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a task group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TaskGroup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/taskgroups/{id}/bucket/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by ID and path.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TaskGroup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/taskgroups/{id}/submit": {
+            "put": {
+                "description": "Submit a task group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Submit a task group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TaskGroup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/tasks": {
             "get": {
                 "description": "List all tasks.",
@@ -2432,14 +2251,14 @@ var doc = `{
                 }
             },
             "put": {
-                "description": "Update a task.",
+                "description": "Update a task group.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
                     "update"
                 ],
-                "summary": "Update a task.",
+                "summary": "Update a task group.",
                 "parameters": [
                     {
                         "type": "string",
@@ -2486,6 +2305,56 @@ var doc = `{
                 }
             }
         },
+        "/tasks/{id}/bucket/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by ID and path.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Upload bucket content by task ID and path.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Upload bucket content by task ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/tasks/{id}/report": {
             "put": {
                 "description": "Update a task report.",
@@ -2502,7 +2371,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "TaskReport ID",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2541,7 +2410,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "TaskReport ID",
+                        "description": "Task ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2562,6 +2431,59 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/api.TaskReport"
                         }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a task report.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Delete a task report.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/submit": {
+            "put": {
+                "description": "Submit a task.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Submit a task.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": ""
                     }
                 }
             }
@@ -2585,6 +2507,12 @@ var doc = `{
                 "name"
             ],
             "properties": {
+                "binary": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "type": "string"
+                },
                 "businessService": {
                     "$ref": "#/definitions/api.Ref"
                 },
@@ -2600,8 +2528,8 @@ var doc = `{
                 "description": {
                     "type": "string"
                 },
-                "extensions": {
-                    "$ref": "#/definitions/api.Extensions"
+                "facts": {
+                    "$ref": "#/definitions/api.Facts"
                 },
                 "id": {
                     "type": "integer"
@@ -2626,35 +2554,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/api.Ref"
                     }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Bucket": {
-            "type": "object",
-            "required": [
-                "application"
-            ],
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -2731,7 +2630,7 @@ var doc = `{
                 }
             }
         },
-        "api.Extensions": {
+        "api.Facts": {
             "type": "object",
             "additionalProperties": true
         },
@@ -2847,15 +2746,21 @@ var doc = `{
         },
         "api.Proxy": {
             "type": "object",
-            "required": [
-                "host"
-            ],
             "properties": {
                 "createTime": {
                     "type": "string"
                 },
                 "createUser": {
                     "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "excluded": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "host": {
                     "type": "string"
@@ -3103,8 +3008,18 @@ var doc = `{
         },
         "api.Task": {
             "type": "object",
+            "required": [
+                "addon",
+                "data"
+            ],
             "properties": {
                 "addon": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "bucket": {
                     "type": "string"
                 },
                 "createTime": {
@@ -3137,17 +3052,64 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "purged": {
+                    "type": "boolean"
+                },
                 "report": {
                     "$ref": "#/definitions/api.TaskReport"
                 },
                 "started": {
                     "type": "string"
                 },
-                "status": {
+                "state": {
                     "type": "string"
                 },
                 "terminated": {
                     "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TaskGroup": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "purged": {
+                    "type": "boolean"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Task"
+                    }
                 },
                 "updateUser": {
                     "type": "string"
