@@ -21,6 +21,24 @@ func (h *Proxy) Get(id uint) (r *api.Proxy, err error) {
 }
 
 //
+// Find by Kind.
+// Returns nil when not found.
+func (h *Proxy) Find(kind string) (r *api.Proxy, err error) {
+	list, err := h.List()
+	if err != nil {
+		return
+	}
+	for i := range list {
+		p := &list[i]
+		if p.Kind == kind {
+			r = p
+			break
+		}
+	}
+	return
+}
+
+//
 // List proxies.
 func (h *Proxy) List() (list []api.Proxy, err error) {
 	list = []api.Proxy{}
