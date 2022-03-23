@@ -1,7 +1,6 @@
 package addon
 
 import (
-	"errors"
 	"github.com/konveyor/tackle2-hub/api"
 )
 
@@ -14,52 +13,29 @@ type Setting struct {
 
 //
 // Get a setting by key.
-func (h *Setting) Get(key string) (v interface{}, err error) {
-	r := &api.Setting{}
+func (h *Setting) Get(key string, v interface{}) (err error) {
 	path := Params{api.Key: key}.inject(api.SettingRoot)
-	err = h.client.Get(path, r)
-	v = r.Value
+	err = h.client.Get(path, v)
 	return
 }
 
 //
 // Bool setting value.
 func (h *Setting) Bool(key string) (b bool, err error) {
-	v, err := h.Get(key)
-	if err != nil {
-		return
-	}
-	b, cast := v.(bool)
-	if !cast {
-		err = errors.New(key + " not <boolean>")
-	}
+	err = h.Get(key, &b)
 	return
 }
 
 //
 // Str setting value.
 func (h *Setting) Str(key string) (s string, err error) {
-	v, err := h.Get(key)
-	if err != nil {
-		return
-	}
-	s, cast := v.(string)
-	if !cast {
-		err = errors.New(key + " not <string>")
-	}
+	err = h.Get(key, &s)
 	return
 }
 
 //
 // Int setting value.
 func (h *Setting) Int(key string) (n int, err error) {
-	v, err := h.Get(key)
-	if err != nil {
-		return
-	}
-	n, cast := v.(int)
-	if !cast {
-		err = errors.New(key + " not <int>")
-	}
+	err = h.Get(key, &n)
 	return
 }
