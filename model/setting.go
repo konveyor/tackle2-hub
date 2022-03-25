@@ -1,7 +1,7 @@
 package model
 
 type Setting struct {
-	ID    uint   `gorm:"primaryKey"`
-	Key   string `gorm:"uniqueIndex"`
+	Model
+	Key   string `gorm:"<-:create;uniqueIndex"`
 	Value JSON
 }
