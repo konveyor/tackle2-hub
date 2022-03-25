@@ -189,11 +189,13 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
+	db = h.DB.Model(m)
 	err = db.Association("Identities").Replace(m.Identities)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
 	}
+	db = h.DB.Model(m)
 	err = db.Association("Tags").Replace(m.Tags)
 	if err != nil {
 		h.updateFailed(ctx, err)
