@@ -97,6 +97,11 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	err = m.Encrypt()
+	if err != nil {
+		h.updateFailed(ctx, err)
+		return
+	}
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -151,7 +156,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	db := h.DB.Model(m)
-	err = m.BeforeUpdate(db)
+	err = m.Encrypt()
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
