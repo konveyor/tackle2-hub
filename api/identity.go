@@ -151,6 +151,11 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	db := h.DB.Model(m)
+	err = m.BeforeUpdate(db)
+	if err != nil {
+		h.updateFailed(ctx, err)
+		return
+	}
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -210,10 +215,6 @@ func (r *Identity) With(m *model.Identity) {
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
-	r.User = m.User
-	r.Password = m.Password
-	r.Key = m.Key
-	r.Settings = m.Settings
 	r.Encrypted = m.Encrypted
 }
 
@@ -228,7 +229,6 @@ func (r *Identity) Model() (m *model.Identity) {
 		Password:    r.Password,
 		Key:         r.Key,
 		Settings:    r.Settings,
-		Encrypted:   r.Encrypted,
 	}
 	m.ID = r.ID
 
