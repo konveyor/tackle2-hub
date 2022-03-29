@@ -67,7 +67,7 @@ func (r *Identity) BeforeSave(tx *gorm.DB) (err error) {
 	if err == nil {
 		r.User = ""
 		r.Password = ""
-		r.Kind = ""
+		r.Key = ""
 		r.Settings = ""
 	}
 	return
