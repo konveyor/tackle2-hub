@@ -350,15 +350,23 @@ func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app mod
 // 1,OtherApplication,,,MyBusinessService
 func (h ImportHandler) applicationFromRow(fileName string, row []string) (app model.Import) {
 	app = model.Import{
-		Filename:        fileName,
-		RecordType1:     row[0],
-		ApplicationName: row[1],
-		Description:     row[2],
-		Comments:        row[3],
-		BusinessService: row[4],
+		Filename:         fileName,
+		RecordType1:      row[0],
+		ApplicationName:  row[1],
+		Description:      row[2],
+		Comments:         row[3],
+		BusinessService:  row[4],
+		IdentityKind:     row[5],
+		IdentityName:     row[6],
+		Binary:           row[7],
+		RepositoryKind:   row[8],
+		RepositoryURL:    row[9],
+		RepositoryBranch: row[10],
+		RepositoryTag:    row[11],
+		RepositoryPath:   row[12],
 	}
 
-	for i := 5; i < len(row); i++ {
+	for i := 13; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
 				Name:    row[i],
