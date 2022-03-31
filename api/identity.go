@@ -206,10 +206,10 @@ type Identity struct {
 	Kind        string `json:"kind" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	User        string `json:"user"`
-	Password    string `json:"password"`
-	Key         string `json:"key"`
-	Settings    string `json:"settings"`
+	User        string `json:"user" binding:"ne=*"`
+	Password    string `json:"password" binding:"ne=*"`
+	Key         string `json:"key" binding:"ne=*"`
+	Settings    string `json:"settings" binding:"ne=*"`
 	Encrypted   string `json:"encrypted"`
 }
 
@@ -221,6 +221,11 @@ func (r *Identity) With(m *model.Identity) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Encrypted = m.Encrypted
+	_ = m.Decrypt(Settings.Encryption.Passphrase)
+	r.User = r.mask(m.User)
+	r.Password = r.mask(m.Password)
+	r.Key = r.mask(m.Key)
+	r.Settings = r.mask(m.Settings)
 }
 
 //
@@ -237,5 +242,14 @@ func (r *Identity) Model() (m *model.Identity) {
 	}
 	m.ID = r.ID
 
+	return
+}
+
+//
+// mask field.
+func (r *Identity) mask(s string) (m string) {
+	if len(s) > 0 {
+		m = "*"
+	}
 	return
 }
