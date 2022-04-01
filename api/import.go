@@ -28,12 +28,12 @@ const (
 //
 // Routes
 const (
-	UploadRoot    = InventoryRoot + "/file/upload"
-	SummariesRoot = InventoryRoot + "/import-summary"
+	SummariesRoot = "/importsummaries"
 	SummaryRoot   = SummariesRoot + "/:" + ID
-	ImportsRoot   = InventoryRoot + "/application-import"
+	UploadRoot    = SummariesRoot + "/upload"
+	DownloadRoot  = SummariesRoot + "/download"
+	ImportsRoot   = "/imports"
 	ImportRoot    = ImportsRoot + "/:" + ID
-	DownloadRoot  = InventoryRoot + "/csv-export"
 )
 
 //

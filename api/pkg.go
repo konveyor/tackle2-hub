@@ -15,12 +15,6 @@ var (
 )
 
 //
-// Routes
-const (
-	InventoryRoot = "/application-inventory"
-)
-
-//
 // Params
 const (
 	ID       = "id"
