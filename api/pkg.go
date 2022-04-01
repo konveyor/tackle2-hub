@@ -28,6 +28,7 @@ const (
 func All() []Handler {
 	return []Handler{
 		&AddonHandler{},
+		&AdoptionPlanHandler{},
 		&ApplicationHandler{},
 		&BusinessServiceHandler{},
 		&DependencyHandler{},
