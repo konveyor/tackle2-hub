@@ -105,8 +105,11 @@ func (m *TaskGroup) Propagate() (err error) {
 // merge maps B into A.
 // The B map is the authority.
 func (m *TaskGroup) merge(a, b Map) (out Map) {
-	if a == nil || b == nil {
-		return
+	if a == nil {
+		a = Map{}
+	}
+	if b == nil {
+		b = Map{}
 	}
 	out = Map{}
 	//
