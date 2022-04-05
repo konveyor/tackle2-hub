@@ -341,13 +341,26 @@ func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app mod
 // Col 5: Business Service -- The name of the business service this Application should belong to.
 //                            This business service must already exist.
 //
+// Identity: May be left blank, but if provided then an identity of that kind with that name must already exist.
+// Col 6: Kind -- The kind of identity to associate with the application
+// Col 7: Name -- The name of the specific identity to associate with the application.
+//
+// Col 8: Binary -- Binary coordinates.
+//
+// Repository: The following columns are coordinates to a source repository.
+// Col 9: Kind
+// Col 10: URL
+// Col 11: Branch
+// Col 12: Tag
+// Col 13: Path
+//
 // Following that are up to twenty pairs of Tag Types and Tags, specified by name. These are optional.
 // If a tag type and a tag are specified, they must already exist.
 //
 // Examples:
 //
-// 1,MyApplication,My cool app,No comment,MyBusinessService,TagType1,Tag1,TagType2,Tag2
-// 1,OtherApplication,,,MyBusinessService
+// 1,MyApplication,My cool app,No comment,MyBusinessService,git,test-git,binary,kind,url,branch,tag,path,TagType1,Tag1,TagType2,Tag2
+// 1,OtherApplication,,,,,,,,,,,MyBusinessService
 func (h ImportHandler) applicationFromRow(fileName string, row []string) (app model.Import) {
 	app = model.Import{
 		Filename:         fileName,

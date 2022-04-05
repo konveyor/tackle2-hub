@@ -129,13 +129,15 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	}
 	app.BusinessService = businessService
 
-	identity := &model.Identity{}
-	result = m.DB.Where("name LIKE ? AND kind LIKE ?", imp.IdentityName, imp.IdentityKind).First(identity)
-	if result.Error != nil {
-		imp.ErrorMessage = fmt.Sprintf("Identity '%s' of kind '%s' could not be found.", imp.IdentityName, imp.IdentityKind)
-		return
+	if imp.IdentityName != "" && imp.IdentityKind != "" {
+		identity := &model.Identity{}
+		result = m.DB.Where("name LIKE ? AND kind LIKE ?", imp.IdentityName, imp.IdentityKind).First(identity)
+		if result.Error != nil {
+			imp.ErrorMessage = fmt.Sprintf("Identity '%s' of kind '%s' could not be found.", imp.IdentityName, imp.IdentityKind)
+			return
+		}
+		app.Identities = append(app.Identities, *identity)
 	}
-	app.Identities = append(app.Identities, *identity)
 
 	tags := []model.Tag{}
 	db := m.DB.Preload("TagType")
