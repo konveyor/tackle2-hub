@@ -15,6 +15,7 @@ const (
 	EnvTaskReapCreated   = "TASK_REAP_CREATED"
 	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
 	EnvTaskReapFailed    = "TASK_REAP_FAILED"
+	EnvTaskSA            = "TASK_SA"
 )
 
 type Hub struct {
@@ -36,6 +37,7 @@ type Hub struct {
 	}
 	// Task
 	Task struct {
+		SA     string
 		Reaper struct {
 			Created   int
 			Succeeded int
@@ -90,6 +92,10 @@ func (r *Hub) Load() (err error) {
 		r.Task.Reaper.Failed = n
 	} else {
 		r.Task.Reaper.Failed = 48
+	}
+	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
+	if !found {
+		r.Task.SA = "tackle-hub"
 	}
 
 	return
