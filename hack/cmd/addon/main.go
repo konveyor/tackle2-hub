@@ -24,6 +24,8 @@ var (
 	Log   = hub.Log
 )
 
+type SoftError = hub.SoftError
+
 //
 // main
 func main() {
