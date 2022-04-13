@@ -447,7 +447,7 @@ func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
 // job build the Job.
 func (r *Task) job(secret *core.Secret) (job batch.Job) {
 	template := r.template(secret)
-	backOff := int32(2)
+	backOff := int32(1)
 	job = batch.Job{
 		Spec: batch.JobSpec{
 			Template:     template,
@@ -468,7 +468,8 @@ func (r *Task) job(secret *core.Secret) (job batch.Job) {
 func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 	template = core.PodTemplateSpec{
 		Spec: core.PodSpec{
-			RestartPolicy: core.RestartPolicyNever,
+			ServiceAccountName: Settings.Hub.Task.SA,
+			RestartPolicy:      core.RestartPolicyNever,
 			Containers: []core.Container{
 				r.container(),
 			},
