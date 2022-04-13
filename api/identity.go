@@ -239,6 +239,7 @@ func (r *Identity) Model() (m *model.Identity) {
 		Password:    r.Password,
 		Key:         r.Key,
 		Settings:    r.Settings,
+		Encrypted:   r.Encrypted,
 	}
 	m.ID = r.ID
 
