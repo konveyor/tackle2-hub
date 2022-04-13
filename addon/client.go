@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/konveyor/tackle2-hub/auth"
 	"io"
 	"io/ioutil"
@@ -49,7 +48,7 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 		}
 		err = json.Unmarshal(body, object)
 	case http.StatusNotFound:
-		err = &NotFound{path}
+		err = &NotFound{Path: path}
 	default:
 		err = errors.New(http.StatusText(status))
 	}
@@ -90,7 +89,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			return
 		}
 	case http.StatusConflict:
-		err = &Conflict{path}
+		err = &Conflict{Path: path}
 	default:
 		err = errors.New(http.StatusText(status))
 	}
@@ -131,7 +130,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 			return
 		}
 	case http.StatusNotFound:
-		err = &NotFound{path}
+		err = &NotFound{Path: path}
 	default:
 		err = errors.New(http.StatusText(status))
 	}
@@ -160,7 +159,7 @@ func (r *Client) Delete(path string) (err error) {
 	case http.StatusOK,
 		http.StatusNoContent:
 	case http.StatusNotFound:
-		err = &NotFound{path}
+		err = &NotFound{Path: path}
 	default:
 		err = errors.New(http.StatusText(status))
 	}
@@ -171,35 +170,5 @@ func (r *Client) Delete(path string) (err error) {
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
 	parsedURL.Path = path
-	return
-}
-
-//
-// Conflict reports 409 error.
-type Conflict struct {
-	Path string
-}
-
-func (e Conflict) Error() string {
-	return fmt.Sprintf("POST: path:%s [conflict]", e.Path)
-}
-
-func (e *Conflict) Is(err error) (matched bool) {
-	_, matched = err.(*Conflict)
-	return
-}
-
-//
-// NotFound reports 404 error.
-type NotFound struct {
-	Path string
-}
-
-func (e NotFound) Error() string {
-	return fmt.Sprintf("GET: path:%s [not-found]", e.Path)
-}
-
-func (e *NotFound) Is(err error) (matched bool) {
-	_, matched = err.(*NotFound)
 	return
 }

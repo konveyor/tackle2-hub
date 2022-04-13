@@ -74,7 +74,9 @@ func (h *Adapter) Run(addon func() error) {
 			}
 		}
 		if err != nil {
-			Log.Error(err, "Addon failed.")
+			if _, soft := err.(interface{ Soft() *SoftError }); !soft {
+				Log.Error(err, "Addon failed.")
+			}
 			h.Failed(err.Error())
 			os.Exit(1)
 		}
