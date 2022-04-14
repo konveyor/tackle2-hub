@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/auth"
 	"io"
 	"io/ioutil"
@@ -33,6 +34,7 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	defer func() {
@@ -44,6 +46,7 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 		var body []byte
 		body, err = io.ReadAll(reply.Body)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		err = json.Unmarshal(body, object)
@@ -61,6 +64,7 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 func (r *Client) Post(path string, object interface{}) (err error) {
 	bfr, err := json.Marshal(object)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	reader := bytes.NewReader(bfr)
@@ -73,6 +77,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	status := reply.StatusCode
@@ -82,10 +87,12 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		var body []byte
 		body, err = ioutil.ReadAll(reply.Body)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		err = json.Unmarshal(body, object)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 	case http.StatusConflict:
@@ -102,6 +109,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 func (r *Client) Put(path string, object interface{}) (err error) {
 	bfr, err := json.Marshal(object)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	reader := bytes.NewReader(bfr)
@@ -114,6 +122,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	status := reply.StatusCode
@@ -123,10 +132,12 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 		var body []byte
 		body, err = ioutil.ReadAll(reply.Body)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		err = json.Unmarshal(body, object)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 	case http.StatusNotFound:
@@ -149,6 +160,7 @@ func (r *Client) Delete(path string) (err error) {
 	request.Header.Set(auth.Header, r.token)
 	reply, err := r.http.Do(request)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	defer func() {

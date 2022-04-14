@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"fmt"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
@@ -41,7 +42,7 @@ func (m *Manager) processImports() (err error) {
 	db := m.DB.Preload("ImportTags")
 	result := db.Find(&list, "processed = ?", false)
 	if result.Error != nil {
-		err = result.Error
+		err = liberr.Wrap(result.Error)
 		return
 	}
 	for _, imp := range list {
@@ -56,7 +57,7 @@ func (m *Manager) processImports() (err error) {
 		imp.Processed = true
 		result = m.DB.Save(&imp)
 		if result.Error != nil {
-			err = result.Error
+			err = liberr.Wrap(result.Error)
 			return
 		}
 	}
