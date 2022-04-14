@@ -142,17 +142,17 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 			err = result.Error
 			return
 		}
-		result = db.Select("Tags").Delete(m)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
 		for _, task := range m.Tasks {
-			result := tx.Delete(task)
+			result := tx.Delete(&task)
 			if result.Error != nil {
 				err = result.Error
 				return
 			}
+		}
+		result = db.Select(clause.Associations).Delete(m)
+		if result.Error != nil {
+			err = result.Error
+			return
 		}
 		return
 	})
