@@ -51,7 +51,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
-	r.With(m)
+	r.With(m, true)
 
 	ctx.JSON(http.StatusOK, r)
 }
@@ -73,7 +73,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	resources := []Identity{}
 	for i := range list {
 		r := Identity{}
-		r.With(&list[i])
+		r.With(&list[i], true)
 		resources = append(resources, r)
 	}
 
@@ -107,7 +107,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		h.createFailed(ctx, result.Error)
 		return
 	}
-	r.With(m)
+	r.With(m, true)
 
 	ctx.JSON(http.StatusCreated, r)
 }
@@ -190,7 +190,7 @@ func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 	resources := []Identity{}
 	for i := range m.Identities {
 		id := Identity{}
-		id.With(&m.Identities[i])
+		id.With(&m.Identities[i], true)
 		resources = append(
 			resources,
 			id)
@@ -215,17 +215,24 @@ type Identity struct {
 
 //
 // With updates the resource with the model.
-func (r *Identity) With(m *model.Identity) {
+func (r *Identity) With(m *model.Identity, masked bool) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Encrypted = m.Encrypted
 	_ = m.Decrypt(Settings.Encryption.Passphrase)
-	r.User = r.mask(m.User)
-	r.Password = r.mask(m.Password)
-	r.Key = r.mask(m.Key)
-	r.Settings = r.mask(m.Settings)
+	if masked {
+		r.User = r.mask(m.User)
+		r.Password = r.mask(m.Password)
+		r.Key = r.mask(m.Key)
+		r.Settings = r.mask(m.Settings)
+	} else {
+		r.User = m.User
+		r.Password = m.Password
+		r.Key = m.Key
+		r.Settings = m.Settings
+	}
 }
 
 //
