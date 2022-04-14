@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"gorm.io/gorm"
 	"time"
 )
@@ -88,11 +89,19 @@ func (m *TaskGroup) Propagate() (err error) {
 		a := Map{}
 		err = json.Unmarshal(m.Data, &a)
 		if err != nil {
+			err = liberr.Wrap(
+				err,
+				"id",
+				m.ID)
 			return
 		}
 		b := Map{}
 		err = json.Unmarshal(task.Data, &b)
 		if err != nil {
+			err = liberr.Wrap(
+				err,
+				"id",
+				m.ID)
 			return
 		}
 		task.Data, _ = json.Marshal(m.merge(a, b))

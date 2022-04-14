@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/encryption"
 	"gorm.io/gorm"
 )
@@ -33,6 +34,10 @@ func (r *Identity) Encrypt() (err error) {
 	encrypted.Settings = r.Settings
 	b, err := json.Marshal(encrypted)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"id",
+			r.ID)
 		return
 	}
 	r.Encrypted, err = aes.Encrypt(string(b))
@@ -47,10 +52,18 @@ func (r *Identity) Decrypt(passphrase string) (err error) {
 	var dj string
 	dj, err = aes.Decrypt(r.Encrypted)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"id",
+			r.ID)
 		return
 	}
 	err = json.Unmarshal([]byte(dj), decrypted)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"id",
+			r.ID)
 		return
 	}
 	r.User = decrypted.User

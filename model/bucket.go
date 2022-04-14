@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/google/uuid"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"gorm.io/gorm"
 	"io/ioutil"
 	"os"
@@ -31,6 +32,10 @@ func (m *BucketOwner) Create() (err error) {
 		uid.String())
 	err = os.MkdirAll(m.Bucket, 0777)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			m.Bucket)
 		return
 	}
 	return

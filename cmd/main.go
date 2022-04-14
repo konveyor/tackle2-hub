@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/auth"
@@ -46,6 +47,7 @@ func init() {
 func Setup() (db *gorm.DB, err error) {
 	db, err = open()
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	if seeded(db) {
@@ -61,6 +63,7 @@ func Setup() (db *gorm.DB, err error) {
 	_ = sqlDB.Close()
 	err = os.Remove(Settings.DB.Path)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	db, err = open()
@@ -69,6 +72,7 @@ func Setup() (db *gorm.DB, err error) {
 	}
 	err = seed(db, model.All())
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 
@@ -87,10 +91,12 @@ func open() (db *gorm.DB, err error) {
 			},
 		})
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = db.AutoMigrate(append(model.All())...)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	return
@@ -127,6 +133,7 @@ func main() {
 	}
 	client, err := k8s.NewClient()
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	db, err := Setup()
@@ -181,12 +188,14 @@ func seed(db *gorm.DB, models []interface{}) (err error) {
 			defer file.Close()
 			jsonBytes, err := ioutil.ReadAll(file)
 			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 
 			var unmarshalled []map[string]interface{}
 			err = json.Unmarshal(jsonBytes, &unmarshalled)
 			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 			for i := range unmarshalled {
@@ -199,6 +208,7 @@ func seed(db *gorm.DB, models []interface{}) (err error) {
 			return
 		}()
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 	}
@@ -207,7 +217,7 @@ func seed(db *gorm.DB, models []interface{}) (err error) {
 	setting := model.Setting{Key: ".hub.db.seeded", Value: seeded}
 	result := db.Create(&setting)
 	if result.Error != nil {
-		err = result.Error
+		err = liberr.Wrap(result.Error)
 		return
 	}
 	log.Info("Database seeded.")
