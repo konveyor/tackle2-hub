@@ -112,17 +112,15 @@ func (m *Manager) startReady() {
 			Postponed:
 			if m.postpone(ready, list) {
 				ready.State = Postponed
-				result := m.DB.Save(ready)
-				Log.Trace(result.Error)
-				if result.Error == nil {
-					Log.Info("Task postponed.", "id", ready.ID)
+				Log.Info("Task postponed.", "id", ready.ID)
+			} else {
+				err := task.Run()
+				if err == nil {
+					Log.Info("Task started.", "id", ready.ID)
+				} else {
+					continue
 				}
 			}
-			err := task.Run()
-			if err != nil {
-				continue
-			}
-			Log.Info("Task started.", "id", ready.ID)
 			result := m.DB.Save(ready)
 			Log.Trace(result.Error)
 		}
