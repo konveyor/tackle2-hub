@@ -1,4 +1,4 @@
-package task
+package tasking
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,10 +27,6 @@ const (
 	Failed    = "Failed"
 	Running   = "Running"
 	Postponed = "Postponed"
-)
-
-const (
-	ReaperUnit = time.Hour
 )
 
 var (
@@ -65,6 +60,14 @@ func (m *Manager) Run(ctx context.Context) {
 		}
 	}
 	reaper := func() {
+		reapers := []Reaper{
+			&TaskReaper{
+				DB: m.DB,
+			},
+			&TaskReaper{
+				DB: m.DB,
+			},
+		}
 		Log.Info("Reaper started.")
 		for {
 			select {
@@ -72,8 +75,9 @@ func (m *Manager) Run(ctx context.Context) {
 				return
 			default:
 				time.Sleep(ReaperUnit)
-				m.reapTasks()
-				m.reapGroups()
+				for _, r := range reapers {
+					r.Run()
+				}
 			}
 		}
 	}
@@ -151,171 +155,6 @@ func (m *Manager) updateRunning() {
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
 	}
-}
-
-//
-// reapTasks reaps tasks.
-func (m *Manager) reapTasks() {
-	list := []model.Task{}
-	result := m.DB.Find(
-		&list,
-		"state IN ?",
-		[]string{
-			Succeeded,
-			Failed,
-		})
-	Log.Trace(result.Error)
-	if result.Error != nil {
-		return
-	}
-	for i := range list {
-		task := &list[i]
-		if m.mayDelete(task) {
-			result := m.DB.Delete(task)
-			Log.Trace(result.Error)
-			continue
-		}
-		if task.Purged {
-			continue
-		}
-		if !m.mayPurge(task) {
-			continue
-		}
-		task.Purged = true
-		err := task.Purge()
-		Log.Trace(err)
-		if err != nil {
-			continue
-		}
-		Log.Info("Task bucket purged.", "id", task.ID)
-		result := m.DB.Save(task)
-		Log.Trace(result.Error)
-	}
-
-	return
-}
-
-//
-// reapGroups reaps groups.
-func (m *Manager) reapGroups() (err error) {
-	list := []model.TaskGroup{}
-	db := m.DB.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		err = result.Error
-		return
-	}
-	for i := range list {
-		g := &list[i]
-		if m.mayDeleteGroup(g) {
-			result := m.DB.Delete(g)
-			Log.Trace(result.Error)
-			if result.Error == nil {
-				Log.Info("Group deleted.", "id", g.ID)
-			}
-			continue
-		}
-		if g.Purged {
-			continue
-		}
-		if !m.mayPurgeGroup(g) {
-			continue
-		}
-		Log.Info("Group bucket purged.", "id", g.ID)
-		g.Purged = true
-		err := g.Purge()
-		Log.Trace(err)
-		if err != nil {
-			continue
-		}
-		Log.Info("Group bucket purged.", "id", g.ID)
-		result := m.DB.Save(g)
-		Log.Trace(result.Error)
-	}
-	return
-}
-
-//
-// mayPurge determines if a task (bucket) may be purged.
-// May be purged when:
-//   - Not associated with a group.
-//   - Terminated for defined period.
-func (m *Manager) mayPurge(task *model.Task) (may bool) {
-	if task.TaskGroupID != nil {
-		return
-	}
-	switch task.State {
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		may = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		may = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayDelete determines if a task may be deleted.
-// May be deleted:
-//   - Not associated with an application.
-//   - Never submitted or terminated for defined period.
-func (m *Manager) mayDelete(task *model.Task) (approved bool) {
-	if task.ApplicationID != nil {
-		return
-	}
-	switch task.State {
-	case Created:
-		mark := task.CreateTime
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Created) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		approved = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayDeleteGroup determines if a group may be deleted.
-// May be deleted when:
-//   - Empty for defined period.
-func (m *Manager) mayDeleteGroup(g *model.TaskGroup) (approved bool) {
-	empty := len(g.Tasks) == 0
-	mark := g.CreateTime
-	d := time.Duration(
-		Settings.Hub.Task.Reaper.Created) * ReaperUnit
-	approved = empty && time.Since(mark) > d
-	return
-}
-
-//
-// mayPurgeGroup determines if a group may be purged.
-// May be purged when:
-//   - All tasks may purge.
-func (m *Manager) mayPurgeGroup(g *model.TaskGroup) (approved bool) {
-	nMayPurge := 0
-	for i := range g.Tasks {
-		task := &g.Tasks[i]
-		task.TaskGroupID = nil
-		if m.mayPurge(task) {
-			nMayPurge++
-		}
-	}
-	approved = nMayPurge == len(g.Tasks)
-	return
 }
 
 //

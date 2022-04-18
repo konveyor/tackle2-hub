@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/task"
+	tasking "github.com/konveyor/tackle2-hub/tasking"
 	"gorm.io/gorm/clause"
 	batch "k8s.io/api/batch/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -411,7 +411,6 @@ func (r *Task) With(m *model.Task) {
 	r.Isolated = m.Isolated
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = m.Bucket
-	r.Purged = m.Purged
 	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated
