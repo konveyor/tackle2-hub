@@ -158,9 +158,10 @@ func (m *Manager) updateRunning() {
 }
 
 //
-// postpone task based on requested isolation.
-// An isolated task must run by itself and will cause all
-// other tasks to be postponed.
+// postpone Postpones a task based on the following rules:
+//   - Tasks must be unique for an addon and application.
+//   - An isolated task must run by itself and will cause all
+//     other tasks to be postponed.
 func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) {
 	for i := range list {
 		task := &list[i]
@@ -169,6 +170,10 @@ func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) 
 		}
 		if pending.State != Running {
 			continue
+		}
+		if pending.Application == task.Application && pending.Addon == task.Addon {
+			found = true
+			return
 		}
 		if pending.Isolated || task.Isolated {
 			found = true
