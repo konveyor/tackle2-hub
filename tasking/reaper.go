@@ -2,12 +2,14 @@ package tasking
 
 import (
 	"context"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	batch "k8s.io/api/batch/v1"
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	pathlib "path"
+	"os"
+	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -34,6 +36,7 @@ type TaskReaper struct {
 //
 // Run Executes the reaper.
 func (r *TaskReaper) Run() {
+	Log.Info("Reaping tasks.")
 	list := []model.Task{}
 	result := r.DB.Find(
 		&list,
@@ -50,15 +53,21 @@ func (r *TaskReaper) Run() {
 	for i := range list {
 		task := &list[i]
 		deleted, err := r.delete(task)
-		if deleted || err != nil {
+		if err != nil {
+			Log.Trace(err)
+			continue
+		}
+		if deleted {
 			continue
 		}
 		err = r.emptyBucket(task)
 		if err != nil {
+			Log.Trace(err)
 			continue
 		}
-		err = r.deleteJob(task)
+		err = r.deletePod(task)
 		if err != nil {
+			Log.Trace(err)
 			continue
 		}
 	}
@@ -70,11 +79,11 @@ func (r *TaskReaper) delete(task *model.Task) (deleted bool, err error) {
 	if !r.mayDelete(task) {
 		return
 	}
-	result := r.DB.Delete(task)
-	if result.Error == nil {
+	err = r.DB.Delete(task).Error
+	if err == nil {
 		Log.Info("Task deleted.", "id", task.ID)
 	} else {
-		Log.Trace(result.Error)
+		err = liberr.Wrap(err)
 	}
 
 	return
@@ -86,44 +95,62 @@ func (r *TaskReaper) emptyBucket(task *model.Task) (err error) {
 	if !r.mayEmptyBucket(task) {
 		return
 	}
+	dir, err := os.ReadDir(task.Bucket)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if len(dir) == 0 {
+		return
+	}
 	err = task.EmptyBucket()
 	if err == nil {
 		Log.Info("Task bucket emptied.", "id", task.ID)
 	} else {
-		Log.Trace(err)
+		err = liberr.Wrap(err)
 	}
 	return
 }
 
 //
-// deleteJob Deletes the associated job as needed.
-func (r *TaskReaper) deleteJob(task *model.Task) (err error) {
-	if !r.mayDeleteJob(task) {
+// deletePod Deletes the associated pod as needed.
+func (r *TaskReaper) deletePod(task *model.Task) (err error) {
+	if !r.mayDeletePod(task) {
 		return
 	}
-	job := &batch.Job{}
-	ns, name := pathlib.Split(task.Job)
+	if task.Pod == Reaped {
+		return
+	}
+	pod := &core.Pod{}
 	err = r.Client.Get(
 		context.TODO(),
 		client.ObjectKey{
-			Namespace: ns,
-			Name:      name,
+			Namespace: path.Dir(task.Pod),
+			Name:      path.Base(task.Pod),
 		},
-		job)
+		pod)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = nil
 		} else {
-			Log.Trace(err)
+			err = liberr.Wrap(err)
 		}
 		return
 	}
-	err = r.Client.Delete(context.TODO(), job)
+	err = r.Client.Delete(context.TODO(), pod)
 	if err == nil {
-		Log.Info("Task job deleted.", "id", task.ID)
+		Log.Info(
+			"Task pod deleted.",
+			"id",
+			task.ID,
+			"pod",
+			pod.Name)
 	} else {
-		Log.Trace(err)
+		err = liberr.Wrap(err)
+		return
 	}
+	task.Pod = Reaped
+	err = r.DB.Save(task).Error
 	return
 }
 
@@ -181,8 +208,8 @@ func (r *TaskReaper) mayEmptyBucket(task *model.Task) (may bool) {
 }
 
 //
-// mayDeleteJob Determines if a task job can be deleted.
-func (r *TaskReaper) mayDeleteJob(task *model.Task) (may bool) {
+// mayDeletePod Determines if a task pod can be deleted.
+func (r *TaskReaper) mayDeletePod(task *model.Task) (may bool) {
 	switch task.State {
 	case Succeeded:
 		mark := *task.Terminated
@@ -203,6 +230,7 @@ type GroupReaper struct {
 //
 // Run Executes the reaper.
 func (r *GroupReaper) Run() {
+	Log.Info("Reaping task-groups.")
 	list := []model.TaskGroup{}
 	db := r.DB.Preload(clause.Associations)
 	result := db.Find(&list)
@@ -212,11 +240,16 @@ func (r *GroupReaper) Run() {
 	for i := range list {
 		g := &list[i]
 		deleted, err := r.delete(g)
-		if deleted || err != nil {
+		if err != nil {
+			Log.Trace(err)
+			continue
+		}
+		if deleted {
 			continue
 		}
 		err = r.emptyBucket(g)
 		if err != nil {
+			Log.Trace(err)
 			continue
 		}
 	}
@@ -228,11 +261,11 @@ func (r *GroupReaper) delete(g *model.TaskGroup) (deleted bool, err error) {
 	if !r.mayDelete(g) {
 		return
 	}
-	result := r.DB.Delete(g)
-	if result.Error == nil {
+	err = r.DB.Delete(g).Error
+	if err == nil {
 		Log.Info("Group deleted.", "id", g.ID)
 	} else {
-		Log.Trace(result.Error)
+		err = liberr.Wrap(err)
 	}
 	return
 }
@@ -243,11 +276,19 @@ func (r *GroupReaper) emptyBucket(g *model.TaskGroup) (err error) {
 	if !r.mayDelete(g) {
 		return
 	}
+	dir, err := os.ReadDir(g.Bucket)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if len(dir) == 0 {
+		return
+	}
 	err = g.EmptyBucket()
 	if err == nil {
 		Log.Info("Group bucket emptied.", "id", g.ID)
 	} else {
-		Log.Trace(err)
+		err = liberr.Wrap(err)
 	}
 	return
 }

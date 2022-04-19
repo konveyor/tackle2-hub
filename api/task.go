@@ -8,7 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/tasking"
 	"gorm.io/gorm/clause"
-	batch "k8s.io/api/batch/v1"
+	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"path"
@@ -164,13 +164,13 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 		h.deleteFailed(ctx, result.Error)
 		return
 	}
-	if task.Job != "" {
-		job := &batch.Job{}
-		job.Namespace = path.Dir(task.Job)
-		job.Name = path.Base(task.Job)
+	if task.Pod != "" {
+		pod := &core.Pod{}
+		pod.Namespace = path.Dir(task.Pod)
+		pod.Name = path.Base(task.Pod)
 		err := h.Client.Delete(
 			context.TODO(),
-			job)
+			pod)
 		if err != nil {
 			if !k8serr.IsNotFound(err) {
 				h.deleteFailed(ctx, err)
@@ -396,7 +396,8 @@ type Task struct {
 	Started     *time.Time  `json:"started,omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty"`
 	Error       string      `json:"error,omitempty"`
-	Job         string      `json:"job,omitempty"`
+	Pod         string      `json:"pod,omitempty"`
+	Retries     int         `json:"retries,omitempty"`
 	Report      *TaskReport `json:"report,omitempty"`
 }
 
@@ -415,7 +416,8 @@ func (r *Task) With(m *model.Task) {
 	r.Started = m.Started
 	r.Terminated = m.Terminated
 	r.Error = m.Error
-	r.Job = m.Job
+	r.Pod = m.Pod
+	r.Retries = m.Retries
 	_ = json.Unmarshal(m.Data, &r.Data)
 	if m.Report != nil {
 		report := &TaskReport{}
@@ -433,6 +435,7 @@ func (r *Task) Model() (m *model.Task) {
 		Locator:       r.Locator,
 		Isolated:      r.Isolated,
 		State:         r.State,
+		Retries:       r.Retries,
 		ApplicationID: r.idPtr(r.Application),
 	}
 	m.Bucket = r.Bucket

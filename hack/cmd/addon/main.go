@@ -214,7 +214,7 @@ func tag(d *Data, application *api.Application) (err error) {
 		api.Ref{ID: tag.ID})
 	//
 	// Update application.
-	err = addon.Application.Update(application)
+	_ = addon.Application.Update(application)
 	return
 }
 

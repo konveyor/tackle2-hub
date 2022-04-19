@@ -31,7 +31,8 @@ type Task struct {
 	Terminated    *time.Time
 	State         string
 	Error         string
-	Job           string
+	Pod           string
+	Retries       int
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
 	Application   *Application

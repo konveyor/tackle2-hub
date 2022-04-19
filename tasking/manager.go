@@ -9,7 +9,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
-	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +19,8 @@ import (
 	"time"
 )
 
+//
+// States
 const (
 	Created   = "Created"
 	Ready     = "Ready"
@@ -27,6 +28,12 @@ const (
 	Failed    = "Failed"
 	Running   = "Running"
 	Postponed = "Postponed"
+)
+
+//
+// Other
+const (
+	Reaped = "REAPED"
 )
 
 var (
@@ -62,9 +69,10 @@ func (m *Manager) Run(ctx context.Context) {
 	reaper := func() {
 		reapers := []Reaper{
 			&TaskReaper{
-				DB: m.DB,
+				Client: m.Client,
+				DB:     m.DB,
 			},
-			&TaskReaper{
+			&GroupReaper{
 				DB: m.DB,
 			},
 		}
@@ -128,7 +136,7 @@ func (m *Manager) startReady() {
 }
 
 //
-// updateRunning tasks to reflect job state.
+// updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
 	result := m.DB.Find(&list, "state", Running)
@@ -163,10 +171,10 @@ func (m *Manager) updateRunning() {
 func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) {
 	for i := range list {
 		task := &list[i]
-		if pending.ID == task.ID {
+		if task.ID == pending.ID {
 			continue
 		}
-		if pending.State != Running {
+		if task.State != Running {
 			continue
 		}
 		if pending.Application == task.Application && pending.Addon == task.Addon {
@@ -215,31 +223,31 @@ func (r *Task) Run() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	job := r.job(&secret)
-	err = r.client.Create(context.TODO(), &job)
+	pod := r.pod(&secret)
+	err = r.client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	r.Started = &mark
 	r.State = Running
-	r.Job = path.Join(
-		job.Namespace,
-		job.Name)
+	r.Pod = path.Join(
+		pod.Namespace,
+		pod.Name)
 	return
 }
 
 //
-// Reflect finds the associated job and updates the task state.
+// Reflect finds the associated pod and updates the task state.
 func (r *Task) Reflect() (err error) {
-	job := &batch.Job{}
+	pod := &core.Pod{}
 	err = r.client.Get(
 		context.TODO(),
 		client.ObjectKey{
-			Namespace: path.Dir(r.Job),
-			Name:      path.Base(r.Job),
+			Namespace: path.Dir(r.Pod),
+			Name:      path.Base(r.Pod),
 		},
-		job)
+		pod)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = r.Run()
@@ -249,17 +257,23 @@ func (r *Task) Reflect() (err error) {
 		return
 	}
 	mark := time.Now()
-	status := job.Status
-	for _, cnd := range status.Conditions {
-		if cnd.Type == batch.JobFailed {
+	status := pod.Status
+	switch status.Phase {
+	case core.PodPending:
+	case core.PodSucceeded:
+		r.State = Succeeded
+		r.Terminated = &mark
+	case core.PodFailed:
+		if r.Retries < Settings.Hub.Task.Retries {
+			_ = r.client.Delete(context.TODO(), pod)
+			r.Pod = ""
+			r.Error = ""
+			r.State = Ready
+			r.Retries++
+		} else {
 			r.State = Failed
 			r.Terminated = &mark
-			r.Error = "job failed."
-			return
-		}
-		if status.Succeeded > 0 {
-			r.State = Succeeded
-			r.Terminated = &mark
+			r.Error = "pod failed."
 		}
 	}
 
@@ -286,15 +300,10 @@ func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
 }
 
 //
-// job build the Job.
-func (r *Task) job(secret *core.Secret) (job batch.Job) {
-	template := r.template(secret)
-	backOff := int32(1)
-	job = batch.Job{
-		Spec: batch.JobSpec{
-			Template:     template,
-			BackoffLimit: &backOff,
-		},
+// pod build the pod.
+func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
+	pod = core.Pod{
+		Spec: r.specification(secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
 			GenerateName: strings.ToLower(r.Name) + "-",
@@ -306,36 +315,34 @@ func (r *Task) job(secret *core.Secret) (job batch.Job) {
 }
 
 //
-// template builds a Job template.
-func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
-	template = core.PodTemplateSpec{
-		Spec: core.PodSpec{
-			ServiceAccountName: Settings.Hub.Task.SA,
-			RestartPolicy:      core.RestartPolicyNever,
-			Containers: []core.Container{
-				r.container(),
+// specification builds a Pod specification.
+func (r *Task) specification(secret *core.Secret) (specification core.PodSpec) {
+	specification = core.PodSpec{
+		ServiceAccountName: Settings.Hub.Task.SA,
+		RestartPolicy:      core.RestartPolicyNever,
+		Containers: []core.Container{
+			r.container(),
+		},
+		Volumes: []core.Volume{
+			{
+				Name: "working",
+				VolumeSource: core.VolumeSource{
+					EmptyDir: &core.EmptyDirVolumeSource{},
+				},
 			},
-			Volumes: []core.Volume{
-				{
-					Name: "working",
-					VolumeSource: core.VolumeSource{
-						EmptyDir: &core.EmptyDirVolumeSource{},
+			{
+				Name: "secret",
+				VolumeSource: core.VolumeSource{
+					Secret: &core.SecretVolumeSource{
+						SecretName: secret.Name,
 					},
 				},
-				{
-					Name: "secret",
-					VolumeSource: core.VolumeSource{
-						Secret: &core.SecretVolumeSource{
-							SecretName: secret.Name,
-						},
-					},
-				},
-				{
-					Name: "bucket",
-					VolumeSource: core.VolumeSource{
-						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-							ClaimName: Settings.Hub.Bucket.PVC,
-						},
+			},
+			{
+				Name: "bucket",
+				VolumeSource: core.VolumeSource{
+					PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+						ClaimName: Settings.Hub.Bucket.PVC,
 					},
 				},
 			},
@@ -343,8 +350,8 @@ func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 	}
 	mounts := r.addon.Spec.Mounts
 	for _, mnt := range mounts {
-		template.Spec.Volumes = append(
-			template.Spec.Volumes,
+		specification.Volumes = append(
+			specification.Volumes,
 			core.Volume{
 				Name: mnt.Name,
 				VolumeSource: core.VolumeSource{
@@ -359,7 +366,7 @@ func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 }
 
 //
-// container builds the job container.
+// container builds the pod container.
 func (r *Task) container() (container core.Container) {
 	container = core.Container{
 		Name:            "main",
@@ -414,7 +421,7 @@ func (r *Task) container() (container core.Container) {
 }
 
 //
-// secret builds the job secret.
+// secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID
