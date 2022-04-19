@@ -3,6 +3,7 @@ package tasking
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -306,7 +307,7 @@ func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
 		Spec: r.specification(secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
-			GenerateName: strings.ToLower(r.Name) + "-",
+			GenerateName: fmt.Sprintf("task-%d-", r.ID),
 			Labels:       r.labels(),
 		},
 	}

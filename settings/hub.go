@@ -40,7 +40,7 @@ type Hub struct {
 	Task struct {
 		SA      string
 		Retries int
-		Reaper struct {
+		Reaper  struct {
 			Created   int
 			Succeeded int
 			Failed    int
@@ -104,7 +104,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Retries = n
 	} else {
-		r.Task.Retries= 1
+		r.Task.Retries = 1
 	}
 
 	return
