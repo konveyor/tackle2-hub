@@ -82,6 +82,7 @@ func (r *TaskReaper) delete(task *model.Task) (deleted bool, err error) {
 	err = r.DB.Delete(task).Error
 	if err == nil {
 		Log.Info("Task deleted.", "id", task.ID)
+		deleted = true
 	} else {
 		err = liberr.Wrap(err)
 	}
@@ -264,6 +265,7 @@ func (r *GroupReaper) delete(g *model.TaskGroup) (deleted bool, err error) {
 	err = r.DB.Delete(g).Error
 	if err == nil {
 		Log.Info("Group deleted.", "id", g.ID)
+		deleted = true
 	} else {
 		err = liberr.Wrap(err)
 	}
