@@ -40,7 +40,7 @@ type Hub struct {
 	Task struct {
 		SA      string
 		Retries int
-		Reaper  struct {
+		Reaper  struct { // hours.
 			Created   int
 			Succeeded int
 			Failed    int
@@ -93,7 +93,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Failed = n
 	} else {
-		r.Task.Reaper.Failed = 48
+		r.Task.Reaper.Failed = 72
 	}
 	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
 	if !found {

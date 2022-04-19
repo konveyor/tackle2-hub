@@ -217,6 +217,11 @@ func (r *TaskReaper) mayDeletePod(task *model.Task) (may bool) {
 		d := time.Duration(
 			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
 		may = time.Since(mark) > d
+	case Failed:
+		mark := *task.Terminated
+		d := time.Duration(
+			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
+		may = time.Since(mark) > d
 	}
 	return
 }
