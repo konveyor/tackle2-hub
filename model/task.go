@@ -31,9 +31,9 @@ type Task struct {
 	Terminated    *time.Time
 	State         string
 	Error         string
-	Job           string
+	Pod           string
+	Retries       int
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
-	Purged        bool
 	ApplicationID *uint
 	Application   *Application
 	TaskGroupID   *uint `gorm:"<-:create"`
@@ -64,13 +64,12 @@ func (m *Task) BeforeDelete(db *gorm.DB) (err error) {
 type TaskGroup struct {
 	Model
 	BucketOwner
-	Name   string
-	Addon  string
-	Data   JSON
-	Tasks  []Task `gorm:"constraint:OnDelete:CASCADE"`
-	List   JSON
-	State  string
-	Purged bool
+	Name  string
+	Addon string
+	Data  JSON
+	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
+	List  JSON
+	State string
 }
 
 //

@@ -19,7 +19,7 @@ func (m *BucketOwner) BeforeCreate(db *gorm.DB) (err error) {
 }
 
 func (m *BucketOwner) BeforeDelete(db *gorm.DB) (err error) {
-	err = m.Delete()
+	err = m.DeleteBucket()
 	return
 }
 
@@ -42,8 +42,8 @@ func (m *BucketOwner) Create() (err error) {
 }
 
 //
-// Purge associated storage.
-func (m *BucketOwner) Purge() (err error) {
+// EmptyBucket delete bucket content.
+func (m *BucketOwner) EmptyBucket() (err error) {
 	content, _ := ioutil.ReadDir(m.Bucket)
 	for _, n := range content {
 		p := path.Join(m.Bucket, n.Name())
@@ -53,8 +53,8 @@ func (m *BucketOwner) Purge() (err error) {
 }
 
 //
-// Delete associated storage.
-func (m *BucketOwner) Delete() (err error) {
+// DeleteBucket associated storage.
+func (m *BucketOwner) DeleteBucket() (err error) {
 	err = os.RemoveAll(m.Bucket)
 	return
 }

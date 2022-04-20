@@ -15,7 +15,7 @@ import (
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/task"
+	"github.com/konveyor/tackle2-hub/tasking"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -159,7 +159,7 @@ func main() {
 		h.With(db, client, provider)
 		h.AddRoutes(router)
 	}
-	taskManager := task.Manager{
+	taskManager := tasking.Manager{
 		Client: client,
 		DB:     db,
 	}

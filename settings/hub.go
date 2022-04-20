@@ -16,6 +16,7 @@ const (
 	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
 	EnvTaskReapFailed    = "TASK_REAP_FAILED"
 	EnvTaskSA            = "TASK_SA"
+	EnvTaskRetries       = "TASK_RETRIES"
 )
 
 type Hub struct {
@@ -37,8 +38,9 @@ type Hub struct {
 	}
 	// Task
 	Task struct {
-		SA     string
-		Reaper struct {
+		SA      string
+		Retries int
+		Reaper  struct { // hours.
 			Created   int
 			Succeeded int
 			Failed    int
@@ -77,25 +79,32 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Created = n
 	} else {
-		r.Task.Reaper.Created = 720
+		r.Task.Reaper.Created = 72
 	}
 	s, found = os.LookupEnv(EnvTaskReapSucceeded)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Succeeded = n
 	} else {
-		r.Task.Reaper.Succeeded = 12
+		r.Task.Reaper.Succeeded = 1
 	}
 	s, found = os.LookupEnv(EnvTaskReapFailed)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Failed = n
 	} else {
-		r.Task.Reaper.Failed = 48
+		r.Task.Reaper.Failed = 72
 	}
 	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
 	if !found {
 		r.Task.SA = "tackle-hub"
+	}
+	s, found = os.LookupEnv(EnvTaskSA)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Retries = n
+	} else {
+		r.Task.Retries = 1
 	}
 
 	return
@@ -115,7 +124,7 @@ func (r *Hub) namespace() (ns string, err error) {
 		return
 	}
 	if os.IsNotExist(err) {
-		ns = "tackle-operator"
+		ns = "konveyor-tackle"
 		err = nil
 	}
 

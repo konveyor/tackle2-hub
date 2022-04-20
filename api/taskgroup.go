@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/task"
+	tasking "github.com/konveyor/tackle2-hub/tasking"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -319,7 +319,6 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Addon = m.Addon
 	r.State = m.State
 	r.Bucket = m.Bucket
-	r.Purged = m.Purged
 	r.Tasks = []Task{}
 	_ = json.Unmarshal(m.Data, &r.Data)
 	switch m.State {
@@ -340,10 +339,9 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 // Model builds a model.
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{
-		Name:   r.Name,
-		Addon:  r.Addon,
-		Purged: r.Purged,
-		State:  r.State,
+		Name:  r.Name,
+		Addon: r.Addon,
+		State: r.State,
 	}
 	m.ID = r.ID
 	m.Bucket = r.Bucket

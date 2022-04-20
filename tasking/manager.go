@@ -1,16 +1,15 @@
-package task
+package tasking
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +20,8 @@ import (
 	"time"
 )
 
+//
+// States
 const (
 	Created   = "Created"
 	Ready     = "Ready"
@@ -30,8 +31,10 @@ const (
 	Postponed = "Postponed"
 )
 
+//
+// Other
 const (
-	ReaperUnit = time.Hour
+	Reaped = "REAPED"
 )
 
 var (
@@ -65,6 +68,15 @@ func (m *Manager) Run(ctx context.Context) {
 		}
 	}
 	reaper := func() {
+		reapers := []Reaper{
+			&TaskReaper{
+				Client: m.Client,
+				DB:     m.DB,
+			},
+			&GroupReaper{
+				DB: m.DB,
+			},
+		}
 		Log.Info("Reaper started.")
 		for {
 			select {
@@ -72,8 +84,9 @@ func (m *Manager) Run(ctx context.Context) {
 				return
 			default:
 				time.Sleep(ReaperUnit)
-				m.reapTasks()
-				m.reapGroups()
+				for _, r := range reapers {
+					r.Run()
+				}
 			}
 		}
 	}
@@ -108,17 +121,15 @@ func (m *Manager) startReady() {
 			Postponed:
 			if m.postpone(ready, list) {
 				ready.State = Postponed
-				result := m.DB.Save(ready)
-				Log.Trace(result.Error)
-				if result.Error == nil {
-					Log.Info("Task postponed.", "id", ready.ID)
+				Log.Info("Task postponed.", "id", ready.ID)
+			} else {
+				err := task.Run()
+				if err == nil {
+					Log.Info("Task started.", "id", ready.ID)
+				} else {
+					continue
 				}
 			}
-			err := task.Run()
-			if err != nil {
-				continue
-			}
-			Log.Info("Task started.", "id", ready.ID)
 			result := m.DB.Save(ready)
 			Log.Trace(result.Error)
 		}
@@ -126,7 +137,7 @@ func (m *Manager) startReady() {
 }
 
 //
-// updateRunning tasks to reflect job state.
+// updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
 	result := m.DB.Find(&list, "state", Running)
@@ -154,182 +165,22 @@ func (m *Manager) updateRunning() {
 }
 
 //
-// reapTasks reaps tasks.
-func (m *Manager) reapTasks() {
-	list := []model.Task{}
-	result := m.DB.Find(
-		&list,
-		"state IN ?",
-		[]string{
-			Succeeded,
-			Failed,
-		})
-	Log.Trace(result.Error)
-	if result.Error != nil {
-		return
-	}
-	for i := range list {
-		task := &list[i]
-		if m.mayDelete(task) {
-			result := m.DB.Delete(task)
-			Log.Trace(result.Error)
-			continue
-		}
-		if task.Purged {
-			continue
-		}
-		if !m.mayPurge(task) {
-			continue
-		}
-		task.Purged = true
-		err := task.Purge()
-		Log.Trace(err)
-		if err != nil {
-			continue
-		}
-		Log.Info("Task bucket purged.", "id", task.ID)
-		result := m.DB.Save(task)
-		Log.Trace(result.Error)
-	}
-
-	return
-}
-
-//
-// reapGroups reaps groups.
-func (m *Manager) reapGroups() (err error) {
-	list := []model.TaskGroup{}
-	db := m.DB.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		err = result.Error
-		return
-	}
-	for i := range list {
-		g := &list[i]
-		if m.mayDeleteGroup(g) {
-			result := m.DB.Delete(g)
-			Log.Trace(result.Error)
-			if result.Error == nil {
-				Log.Info("Group deleted.", "id", g.ID)
-			}
-			continue
-		}
-		if g.Purged {
-			continue
-		}
-		if !m.mayPurgeGroup(g) {
-			continue
-		}
-		Log.Info("Group bucket purged.", "id", g.ID)
-		g.Purged = true
-		err := g.Purge()
-		Log.Trace(err)
-		if err != nil {
-			continue
-		}
-		Log.Info("Group bucket purged.", "id", g.ID)
-		result := m.DB.Save(g)
-		Log.Trace(result.Error)
-	}
-	return
-}
-
-//
-// mayPurge determines if a task (bucket) may be purged.
-// May be purged when:
-//   - Not associated with a group.
-//   - Terminated for defined period.
-func (m *Manager) mayPurge(task *model.Task) (may bool) {
-	if task.TaskGroupID != nil {
-		return
-	}
-	switch task.State {
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		may = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		may = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayDelete determines if a task may be deleted.
-// May be deleted:
-//   - Not associated with an application.
-//   - Never submitted or terminated for defined period.
-func (m *Manager) mayDelete(task *model.Task) (approved bool) {
-	if task.ApplicationID != nil {
-		return
-	}
-	switch task.State {
-	case Created:
-		mark := task.CreateTime
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Created) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		approved = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayDeleteGroup determines if a group may be deleted.
-// May be deleted when:
-//   - Empty for defined period.
-func (m *Manager) mayDeleteGroup(g *model.TaskGroup) (approved bool) {
-	empty := len(g.Tasks) == 0
-	mark := g.CreateTime
-	d := time.Duration(
-		Settings.Hub.Task.Reaper.Created) * ReaperUnit
-	approved = empty && time.Since(mark) > d
-	return
-}
-
-//
-// mayPurgeGroup determines if a group may be purged.
-// May be purged when:
-//   - All tasks may purge.
-func (m *Manager) mayPurgeGroup(g *model.TaskGroup) (approved bool) {
-	nMayPurge := 0
-	for i := range g.Tasks {
-		task := &g.Tasks[i]
-		task.TaskGroupID = nil
-		if m.mayPurge(task) {
-			nMayPurge++
-		}
-	}
-	approved = nMayPurge == len(g.Tasks)
-	return
-}
-
-//
-// postpone task based on requested isolation.
-// An isolated task must run by itself and will cause all
-// other tasks to be postponed.
+// postpone Postpones a task based on the following rules:
+//   - Tasks must be unique for an addon and application.
+//   - An isolated task must run by itself and will cause all
+//     other tasks to be postponed.
 func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) {
 	for i := range list {
 		task := &list[i]
-		if pending.ID == task.ID {
+		if task.ID == pending.ID {
 			continue
 		}
-		if pending.State != Running {
+		if task.State != Running {
 			continue
+		}
+		if pending.Application == task.Application && pending.Addon == task.Addon {
+			found = true
+			return
 		}
 		if pending.Isolated || task.Isolated {
 			found = true
@@ -373,31 +224,31 @@ func (r *Task) Run() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	job := r.job(&secret)
-	err = r.client.Create(context.TODO(), &job)
+	pod := r.pod(&secret)
+	err = r.client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	r.Started = &mark
 	r.State = Running
-	r.Job = path.Join(
-		job.Namespace,
-		job.Name)
+	r.Pod = path.Join(
+		pod.Namespace,
+		pod.Name)
 	return
 }
 
 //
-// Reflect finds the associated job and updates the task state.
+// Reflect finds the associated pod and updates the task state.
 func (r *Task) Reflect() (err error) {
-	job := &batch.Job{}
+	pod := &core.Pod{}
 	err = r.client.Get(
 		context.TODO(),
 		client.ObjectKey{
-			Namespace: path.Dir(r.Job),
-			Name:      path.Base(r.Job),
+			Namespace: path.Dir(r.Pod),
+			Name:      path.Base(r.Pod),
 		},
-		job)
+		pod)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = r.Run()
@@ -407,17 +258,23 @@ func (r *Task) Reflect() (err error) {
 		return
 	}
 	mark := time.Now()
-	status := job.Status
-	for _, cnd := range status.Conditions {
-		if cnd.Type == batch.JobFailed {
+	status := pod.Status
+	switch status.Phase {
+	case core.PodPending:
+	case core.PodSucceeded:
+		r.State = Succeeded
+		r.Terminated = &mark
+	case core.PodFailed:
+		if r.Retries < Settings.Hub.Task.Retries {
+			_ = r.client.Delete(context.TODO(), pod)
+			r.Pod = ""
+			r.Error = ""
+			r.State = Ready
+			r.Retries++
+		} else {
 			r.State = Failed
 			r.Terminated = &mark
-			r.Error = "job failed."
-			return
-		}
-		if status.Succeeded > 0 {
-			r.State = Succeeded
-			r.Terminated = &mark
+			r.Error = "pod failed."
 		}
 	}
 
@@ -444,18 +301,13 @@ func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
 }
 
 //
-// job build the Job.
-func (r *Task) job(secret *core.Secret) (job batch.Job) {
-	template := r.template(secret)
-	backOff := int32(1)
-	job = batch.Job{
-		Spec: batch.JobSpec{
-			Template:     template,
-			BackoffLimit: &backOff,
-		},
+// pod build the pod.
+func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
+	pod = core.Pod{
+		Spec: r.specification(secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
-			GenerateName: strings.ToLower(r.Name) + "-",
+			GenerateName: fmt.Sprintf("task-%d-", r.ID),
 			Labels:       r.labels(),
 		},
 	}
@@ -464,36 +316,34 @@ func (r *Task) job(secret *core.Secret) (job batch.Job) {
 }
 
 //
-// template builds a Job template.
-func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
-	template = core.PodTemplateSpec{
-		Spec: core.PodSpec{
-			ServiceAccountName: Settings.Hub.Task.SA,
-			RestartPolicy:      core.RestartPolicyNever,
-			Containers: []core.Container{
-				r.container(),
+// specification builds a Pod specification.
+func (r *Task) specification(secret *core.Secret) (specification core.PodSpec) {
+	specification = core.PodSpec{
+		ServiceAccountName: Settings.Hub.Task.SA,
+		RestartPolicy:      core.RestartPolicyNever,
+		Containers: []core.Container{
+			r.container(),
+		},
+		Volumes: []core.Volume{
+			{
+				Name: "working",
+				VolumeSource: core.VolumeSource{
+					EmptyDir: &core.EmptyDirVolumeSource{},
+				},
 			},
-			Volumes: []core.Volume{
-				{
-					Name: "working",
-					VolumeSource: core.VolumeSource{
-						EmptyDir: &core.EmptyDirVolumeSource{},
+			{
+				Name: "secret",
+				VolumeSource: core.VolumeSource{
+					Secret: &core.SecretVolumeSource{
+						SecretName: secret.Name,
 					},
 				},
-				{
-					Name: "secret",
-					VolumeSource: core.VolumeSource{
-						Secret: &core.SecretVolumeSource{
-							SecretName: secret.Name,
-						},
-					},
-				},
-				{
-					Name: "bucket",
-					VolumeSource: core.VolumeSource{
-						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-							ClaimName: Settings.Hub.Bucket.PVC,
-						},
+			},
+			{
+				Name: "bucket",
+				VolumeSource: core.VolumeSource{
+					PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+						ClaimName: Settings.Hub.Bucket.PVC,
 					},
 				},
 			},
@@ -501,8 +351,8 @@ func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 	}
 	mounts := r.addon.Spec.Mounts
 	for _, mnt := range mounts {
-		template.Spec.Volumes = append(
-			template.Spec.Volumes,
+		specification.Volumes = append(
+			specification.Volumes,
 			core.Volume{
 				Name: mnt.Name,
 				VolumeSource: core.VolumeSource{
@@ -517,7 +367,7 @@ func (r *Task) template(secret *core.Secret) (template core.PodTemplateSpec) {
 }
 
 //
-// container builds the job container.
+// container builds the pod container.
 func (r *Task) container() (container core.Container) {
 	container = core.Container{
 		Name:            "main",
@@ -572,7 +422,7 @@ func (r *Task) container() (container core.Container) {
 }
 
 //
-// secret builds the job secret.
+// secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID

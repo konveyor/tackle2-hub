@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/task"
+	"github.com/konveyor/tackle2-hub/tasking"
 	"net/http"
 	"os"
 	"strings"
@@ -106,7 +106,7 @@ func (h *Adapter) Client() *Client {
 func newAdapter() (adapter *Adapter) {
 	//
 	// Load secret.
-	secret := &task.Secret{}
+	secret := &tasking.Secret{}
 	b, err := os.ReadFile(Settings.Addon.Path.Secret)
 	if err != nil {
 		panic(err)
