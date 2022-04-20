@@ -119,7 +119,7 @@ func (r *TaskReaper) deletePod(task *model.Task) (err error) {
 	if !r.mayDeletePod(task) {
 		return
 	}
-	if task.Pod == Reaped {
+	if task.Pod == "" {
 		return
 	}
 	pod := &core.Pod{}
@@ -150,7 +150,7 @@ func (r *TaskReaper) deletePod(task *model.Task) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	task.Pod = Reaped
+	task.Pod = ""
 	err = r.DB.Save(task).Error
 	return
 }

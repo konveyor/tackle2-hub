@@ -31,12 +31,6 @@ const (
 	Postponed = "Postponed"
 )
 
-//
-// Other
-const (
-	Reaped = "REAPED"
-)
-
 var (
 	Settings = &settings.Settings
 	Log      = logging.WithName("task")
