@@ -31,6 +31,12 @@ const (
 	Postponed = "Postponed"
 )
 
+//
+// Policies
+const (
+	Isolated = "Isolated"
+)
+
 var (
 	Settings = &settings.Settings
 	Log      = logging.WithName("task")
@@ -176,7 +182,7 @@ func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) 
 			found = true
 			return
 		}
-		if pending.Isolated || task.Isolated {
+		if pending.Policy == Isolated || task.Policy == Isolated {
 			found = true
 			return
 		}
@@ -454,6 +460,7 @@ type Secret struct {
 		Token       string
 		Application *uint
 		Task        uint
+		Variant     string
 		Encryption  struct {
 			Passphrase string
 		}
