@@ -159,7 +159,8 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 		h.updateFailed(ctx, result.Error)
 		return
 	}
-	err = db.Model(m).Association("Stakeholders").Replace(m.Stakeholders)
+	db = h.DB.Model(m)
+	err = db.Association("Stakeholders").Replace(m.Stakeholders)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
