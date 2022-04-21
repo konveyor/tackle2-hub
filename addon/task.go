@@ -48,6 +48,12 @@ func (h *Task) DataWith(object interface{}) (err error) {
 }
 
 //
+// Variant returns the task variant.
+func (h *Task) Variant() string {
+	return h.secret.Hub.Variant
+}
+
+//
 // Started report addon started.
 func (h *Task) Started() {
 	h.deleteReport()

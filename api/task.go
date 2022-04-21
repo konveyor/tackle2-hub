@@ -384,8 +384,9 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 type Task struct {
 	Resource
 	Name        string      `json:"name"`
-	Locator     string      `json:"locator"`
-	Isolated    bool        `json:"isolated,omitempty"`
+	Locator     string      `json:"locator,omitempty"`
+	Variant     string      `json:"variant,omitempty"`
+	Policy      string      `json:"policy,omitempty"`
 	Addon       string      `json:"addon,omitempty" binding:"required"`
 	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref        `json:"application"`
@@ -409,7 +410,8 @@ func (r *Task) With(m *model.Task) {
 	r.Image = m.Image
 	r.Addon = m.Addon
 	r.Locator = m.Locator
-	r.Isolated = m.Isolated
+	r.Policy = m.Policy
+	r.Variant = m.Variant
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = m.Bucket
 	r.State = m.State
@@ -433,7 +435,8 @@ func (r *Task) Model() (m *model.Task) {
 		Name:          r.Name,
 		Addon:         r.Addon,
 		Locator:       r.Locator,
-		Isolated:      r.Isolated,
+		Variant:       r.Variant,
+		Policy:        r.Policy,
 		State:         r.State,
 		Retries:       r.Retries,
 		ApplicationID: r.idPtr(r.Application),

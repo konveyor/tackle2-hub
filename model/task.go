@@ -25,7 +25,8 @@ type Task struct {
 	Addon         string `gorm:"index"`
 	Locator       string `gorm:"index"`
 	Image         string
-	Isolated      bool
+	Variant       string
+	Policy        string
 	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
