@@ -178,7 +178,7 @@ func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) 
 		if task.State != Running {
 			continue
 		}
-		if pending.Application == task.Application && pending.Addon == task.Addon {
+		if pending.ApplicationID == task.ApplicationID && pending.Addon == task.Addon {
 			found = true
 			return
 		}
