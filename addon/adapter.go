@@ -10,6 +10,7 @@ import (
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/tasking"
+	"golang.org/x/sys/unix"
 	"net/http"
 	"os"
 	"strings"
@@ -25,6 +26,7 @@ var (
 var Addon *Adapter
 
 func init() {
+	unix.Umask(0)
 	err := Settings.Load()
 	if err != nil {
 		panic(err)

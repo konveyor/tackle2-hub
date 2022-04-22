@@ -105,7 +105,7 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 		err = os.WriteFile(
 			target,
 			b,
-			0644)
+			0666)
 		if err != nil {
 			return
 		}

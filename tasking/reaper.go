@@ -9,13 +9,15 @@ import (
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
+	"os/exec"
 	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 	"time"
 )
 
 const (
-	ReaperUnit = time.Hour
+	ReaperUnit = time.Minute
 )
 
 //
@@ -35,8 +37,23 @@ type TaskReaper struct {
 
 //
 // Run Executes the reaper.
+// Rules by state:
+//   Created
+//   - Deleted after the defined period.
+//   Succeeded
+//   - Deleted after the defined period when not associated with
+//     an application. Tasks associated with an application
+//     are deleted when the application is deleted.
+//   - Bucket is released after the defined period.
+//   - Pod is deleted after the defined period.
+//   Failed
+//   - Deleted after the defined period when not associated with
+//     an application. Tasks associated with an application
+//     are deleted when the application is deleted.
+//   - Bucket is released after the defined period.
+//   - Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
-	Log.Info("Reaping tasks.")
+	Log.V(1).Info("Reaping tasks.")
 	list := []model.Task{}
 	result := r.DB.Find(
 		&list,
@@ -51,83 +68,77 @@ func (r *TaskReaper) Run() {
 		return
 	}
 	for i := range list {
-		task := &list[i]
-		deleted, err := r.delete(task)
-		if err != nil {
-			Log.Trace(err)
-			continue
-		}
-		if deleted {
-			continue
-		}
-		err = r.emptyBucket(task)
-		if err != nil {
-			Log.Trace(err)
-			continue
-		}
-		err = r.deletePod(task)
-		if err != nil {
-			Log.Trace(err)
-			continue
+		m := &list[i]
+		switch m.State {
+		case Created:
+			mark := m.CreateTime
+			d := time.Duration(
+				Settings.Hub.Task.Reaper.Created) * ReaperUnit
+			if time.Since(mark) > d {
+				r.delete(m)
+			}
+		case Succeeded:
+			mark := *m.Terminated
+			d := time.Duration(
+				Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
+			if time.Since(mark) > d {
+				if m.ApplicationID == nil {
+					r.delete(m)
+				} else {
+					r.release(m)
+				}
+			}
+		case Failed:
+			mark := *m.Terminated
+			d := time.Duration(
+				Settings.Hub.Task.Reaper.Failed) * ReaperUnit
+			if time.Since(mark) > d {
+				if m.ApplicationID == nil {
+					r.delete(m)
+				} else {
+					r.release(m)
+				}
+			}
 		}
 	}
 }
 
 //
-// delete Deletes the task as needed.
-func (r *TaskReaper) delete(task *model.Task) (deleted bool, err error) {
-	if !r.mayDelete(task) {
-		return
+// release resources.
+func (r *TaskReaper) release(m *model.Task) {
+	nChanged := 0
+	if m.Pod != "" {
+		err := r.deletePod(m)
+		if err == nil {
+			m.Pod = ""
+			nChanged++
+		} else {
+			Log.Trace(err)
+		}
 	}
-	err = r.DB.Delete(task).Error
-	if err == nil {
-		Log.Info("Task deleted.", "id", task.ID)
-		deleted = true
-	} else {
-		err = liberr.Wrap(err)
+	if m.Bucket != "" {
+		Log.Info("Task bucket released.", "id", m.ID)
+		m.Bucket = ""
+		nChanged++
 	}
-
-	return
-}
-
-//
-// emptyBucket Empties the task bucket as needed.
-func (r *TaskReaper) emptyBucket(task *model.Task) (err error) {
-	if !r.mayEmptyBucket(task) {
-		return
-	}
-	dir, err := os.ReadDir(task.Bucket)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if len(dir) == 0 {
-		return
-	}
-	err = task.EmptyBucket()
-	if err == nil {
-		Log.Info("Task bucket emptied.", "id", task.ID)
-	} else {
-		err = liberr.Wrap(err)
+	if nChanged > 0 {
+		err := r.DB.Save(m).Error
+		if err != nil {
+			Log.Trace(err)
+		}
 	}
 	return
 }
 
 //
 // deletePod Deletes the associated pod as needed.
-func (r *TaskReaper) deletePod(task *model.Task) (err error) {
-	if !r.mayDeletePod(task) {
-		return
-	}
-	if task.Pod == "" {
-		return
-	}
+func (r *TaskReaper) deletePod(m *model.Task) (err error) {
 	pod := &core.Pod{}
 	err = r.Client.Get(
 		context.TODO(),
 		client.ObjectKey{
-			Namespace: path.Dir(task.Pod),
-			Name:      path.Base(task.Pod),
+			Namespace: path.Dir(m.Pod),
+			Name:      path.Base(m.Pod),
 		},
 		pod)
 	if err != nil {
@@ -143,87 +154,25 @@ func (r *TaskReaper) deletePod(task *model.Task) (err error) {
 		Log.Info(
 			"Task pod deleted.",
 			"id",
-			task.ID,
+			m.ID,
 			"pod",
 			pod.Name)
 	} else {
 		err = liberr.Wrap(err)
 		return
 	}
-	task.Pod = ""
-	err = r.DB.Save(task).Error
 	return
 }
 
 //
-// mayDelete determines if a task may be deleted.
-// May be deleted when:
-//   - Not associated with an application.
-//   - Never submitted or terminated for defined period.
-func (r *TaskReaper) mayDelete(task *model.Task) (approved bool) {
-	if task.ApplicationID != nil {
-		return
+// delete task.
+func (r *TaskReaper) delete(m *model.Task) {
+	err := r.DB.Delete(m).Error
+	if err == nil {
+		Log.Info("Task deleted.", "id", m.ID)
+	} else {
+		Log.Trace(err)
 	}
-	switch task.State {
-	case Created:
-		mark := task.CreateTime
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Created) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		approved = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		approved = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayEmptyBucket Determines if a task bucket may be emptied.
-// May be purged when:
-//   - Not associated with a group.
-//   - Terminated for defined period.
-func (r *TaskReaper) mayEmptyBucket(task *model.Task) (may bool) {
-	if task.TaskGroupID != nil {
-		return
-	}
-	switch task.State {
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		may = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		may = time.Since(mark) > d
-	}
-	return
-}
-
-//
-// mayDeletePod Determines if a task pod can be deleted.
-func (r *TaskReaper) mayDeletePod(task *model.Task) (may bool) {
-	switch task.State {
-	case Succeeded:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-		may = time.Since(mark) > d
-	case Failed:
-		mark := *task.Terminated
-		d := time.Duration(
-			Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-		may = time.Since(mark) > d
-	}
-	return
 }
 
 //
@@ -235,8 +184,14 @@ type GroupReaper struct {
 
 //
 // Run Executes the reaper.
+// Rules by state:
+//   Created
+//   - Deleted after the defined period.
+//   Ready (submitted)
+//   - Deleted when all of its task have been deleted.
+//   - Bucket is released immediately.
 func (r *GroupReaper) Run() {
-	Log.Info("Reaping task-groups.")
+	Log.V(1).Info("Reaping groups.")
 	list := []model.TaskGroup{}
 	db := r.DB.Preload(clause.Associations)
 	result := db.Find(&list)
@@ -244,89 +199,126 @@ func (r *GroupReaper) Run() {
 		return
 	}
 	for i := range list {
-		g := &list[i]
-		deleted, err := r.delete(g)
-		if err != nil {
-			Log.Trace(err)
-			continue
-		}
-		if deleted {
-			continue
-		}
-		err = r.emptyBucket(g)
-		if err != nil {
-			Log.Trace(err)
-			continue
+		m := &list[i]
+		switch m.State {
+		case Created:
+			mark := m.CreateTime
+			d := time.Duration(
+				Settings.Hub.Task.Reaper.Created) * ReaperUnit
+			if time.Since(mark) > d {
+				r.delete(m)
+			}
+		case Ready:
+			if len(m.Tasks) == 0 {
+				r.delete(m)
+				continue
+			}
+			if m.Bucket != "" {
+				r.release(m)
+			}
 		}
 	}
 }
 
 //
-// delete Deletes the group as needed.
-func (r *GroupReaper) delete(g *model.TaskGroup) (deleted bool, err error) {
-	if !r.mayDelete(g) {
-		return
-	}
-	err = r.DB.Delete(g).Error
+// release resources.
+func (r *GroupReaper) release(m *model.TaskGroup) {
+	m.Bucket = ""
+	err := r.DB.Save(m).Error
 	if err == nil {
-		Log.Info("Group deleted.", "id", g.ID)
-		deleted = true
+		Log.Info("Group bucket released.", "id", m.ID)
 	} else {
-		err = liberr.Wrap(err)
+		Log.Trace(err)
 	}
-	return
 }
 
 //
-// emptyBucket Empty the group bucket as needed.
-func (r *GroupReaper) emptyBucket(g *model.TaskGroup) (err error) {
-	if !r.mayDelete(g) {
-		return
+// delete task.
+func (r *GroupReaper) delete(m *model.TaskGroup) {
+	err := r.DB.Delete(m).Error
+	if err == nil {
+		Log.Info("Group deleted.", "id", m.ID)
+	} else {
+		Log.Trace(err)
 	}
-	dir, err := os.ReadDir(g.Bucket)
+}
+
+//
+// BucketReaper bucket reaper.
+type BucketReaper struct {
+	// DB
+	DB *gorm.DB
+}
+
+//
+// Run Executes the reaper.
+// (.) dot prefixed directories are ignored.
+// A bucket is deleted when it is no longer referenced.
+func (r *BucketReaper) Run() {
+	Log.V(1).Info("Reaping buckets.")
+	entries, err := os.ReadDir(Settings.Hub.Bucket.Path)
 	if err != nil {
-		err = liberr.Wrap(err)
-		return
+		Log.Trace(err)
 	}
-	if len(dir) == 0 {
-		return
-	}
-	err = g.EmptyBucket()
-	if err == nil {
-		Log.Info("Group bucket emptied.", "id", g.ID)
-	} else {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-//
-// mayDelete Determines if a group may be deleted.
-// May be deleted when:
-//   - Empty for defined period.
-func (r *GroupReaper) mayDelete(g *model.TaskGroup) (approved bool) {
-	empty := len(g.Tasks) == 0
-	mark := g.CreateTime
-	d := time.Duration(
-		Settings.Hub.Task.Reaper.Created) * ReaperUnit
-	approved = empty && time.Since(mark) > d
-	return
-}
-
-//
-// mayEmptyBucket Determines if a group bucket may be emptied.
-// May be purged when:
-//   - All tasks buckets may be emptied.
-func (r *GroupReaper) mayEmptyBucket(g *model.TaskGroup) (approved bool) {
-	nMayPurge := 0
-	tr := TaskReaper{DB: r.DB}
-	for i := range g.Tasks {
-		task := &g.Tasks[i]
-		task.TaskGroupID = nil
-		if tr.mayEmptyBucket(task) {
-			nMayPurge++
+	for _, dir := range entries {
+		name := dir.Name()
+		if strings.HasPrefix(name, ".") {
+			continue
+		}
+		bucket := path.Join(
+			Settings.Hub.Bucket.Path,
+			name)
+		busy, err := r.busy(bucket)
+		if err != nil {
+			Log.Trace(err)
+			continue
+		}
+		if busy {
+			continue
+		}
+		err = r.delete(bucket)
+		if err != nil {
+			Log.Trace(err)
+			continue
 		}
 	}
-	approved = nMayPurge == len(g.Tasks)
+}
+
+//
+// busy determines if anything references the bucket.
+func (r *BucketReaper) busy(bucket string) (busy bool, err error) {
+	nRef := int64(0)
+	var n int64
+	for _, m := range []interface{}{
+		&model.Application{},
+		&model.TaskGroup{},
+		&model.Task{},
+	} {
+		db := r.DB.Model(m)
+		db = db.Where("Bucket", bucket)
+		err = db.Count(&n).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		nRef += n
+	}
+	busy = nRef > 0
+	return
+}
+
+//
+// Delete bucket.
+func (r *BucketReaper) delete(path string) (err error) {
+	cmd := exec.Command("/usr/bin/rm", "-rf", path)
+	b, err := cmd.CombinedOutput()
+	if err != nil {
+		err = liberr.New(
+			string(b),
+			"path",
+			path)
+	} else {
+		Log.Info("Bucket deleted.", "path", path)
+	}
 	return
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 )
@@ -135,29 +134,15 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Application{}
-	err := h.DB.Transaction(func(tx *gorm.DB) (err error) {
-		db := tx.Preload(clause.Associations)
-		result := db.First(m, id)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-		for _, task := range m.Tasks {
-			result := tx.Delete(&task)
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-		}
-		result = db.Select(clause.Associations).Delete(m)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
 		return
-	})
-	if err != nil {
-		h.deleteFailed(ctx, err)
+	}
+	result = h.DB.Select(clause.Associations).Delete(m)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -184,6 +169,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	db := h.DB.Model(m)
 	db = db.Omit(clause.Associations)
+	db = db.Omit("Bucket")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)

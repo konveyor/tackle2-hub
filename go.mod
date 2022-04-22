@@ -11,6 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/onsi/gomega v1.7.0
 	github.com/swaggo/swag v1.7.8
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
 	gorm.io/datatypes v1.0.5
 	gorm.io/driver/postgres v1.2.3 // indirect
 	gorm.io/driver/sqlite v1.2.4
