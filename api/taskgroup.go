@@ -108,11 +108,19 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		h.createFailed(ctx, err)
 		return
 	}
+	db := h.DB
+	m := r.Model()
 	switch r.State {
 	case "":
-		r.State = tasking.Created
-	case tasking.Created,
-		tasking.Ready:
+		m.State = tasking.Created
+		fallthrough
+	case tasking.Created:
+		db = h.DB.Omit(clause.Associations)
+	case tasking.Ready:
+		err := m.Propagate()
+		if err != nil {
+			return
+		}
 	default:
 		ctx.JSON(
 			http.StatusBadRequest,
@@ -121,8 +129,6 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			})
 		return
 	}
-	m := r.Model()
-	db := h.DB.Omit(clause.Associations)
 	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -176,6 +182,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
+	db = db.Omit("Bucket")
 	db = db.Where("state IN ?", []string{"", tasking.Created})
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {
@@ -305,8 +312,7 @@ type TaskGroup struct {
 	Name   string      `json:"name"`
 	Addon  string      `json:"addon"`
 	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Bucket string      `json:"bucket"`
-	Purged bool        `json:"purged,omitempty"`
+	Bucket string      `json:"bucket,omitempty"`
 	State  string      `json:"state"`
 	Tasks  []Task      `json:"tasks"`
 }

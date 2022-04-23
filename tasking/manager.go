@@ -76,6 +76,9 @@ func (m *Manager) Run(ctx context.Context) {
 			&GroupReaper{
 				DB: m.DB,
 			},
+			&BucketReaper{
+				DB: m.DB,
+			},
 		}
 		Log.Info("Reaper started.")
 		for {

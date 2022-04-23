@@ -178,7 +178,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 			}
 		}
 	}
-	result = h.DB.Delete(task)
+	result = h.DB.Select(clause.Associations).Delete(task)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return
@@ -219,6 +219,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
 	db = db.Where("state", tasking.Created)
+	db = db.Omit("Bucket")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -392,7 +393,7 @@ type Task struct {
 	Application *Ref        `json:"application"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
-	Bucket      string      `json:"bucket"`
+	Bucket      string      `json:"bucket,omitempty"`
 	Purged      bool        `json:"purged,omitempty"`
 	Started     *time.Time  `json:"started,omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty"`

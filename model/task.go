@@ -55,13 +55,6 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-func (m *Task) BeforeDelete(db *gorm.DB) (err error) {
-	if m.TaskGroupID == nil {
-		err = m.BucketOwner.BeforeDelete(db)
-	}
-	return
-}
-
 type TaskGroup struct {
 	Model
 	BucketOwner
