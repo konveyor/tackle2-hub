@@ -33,7 +33,7 @@ type Mount struct {
 type AddonSpec struct {
 	// Addon fqin.
 	Image string `json:"image"`
-	// Resource requirements and limits.
+	// Resource requirements.
 	Resources core.ResourceRequirements
 	// Mounts optional.
 	Mounts []Mount `json:"mounts,omitempty"`
