@@ -34,7 +34,7 @@ type AddonSpec struct {
 	// Addon fqin.
 	Image string `json:"image"`
 	// Resource requirements.
-	Resources core.ResourceRequirements
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 	// Mounts optional.
 	Mounts []Mount `json:"mounts,omitempty"`
 }
