@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,6 +33,8 @@ type Mount struct {
 type AddonSpec struct {
 	// Addon fqin.
 	Image string `json:"image"`
+	// Resource requirements and limits.
+	Resources core.ResourceRequirements
 	// Mounts optional.
 	Mounts []Mount `json:"mounts,omitempty"`
 }

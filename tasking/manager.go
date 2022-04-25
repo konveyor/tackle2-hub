@@ -377,6 +377,7 @@ func (r *Task) container() (container core.Container) {
 		Image:           r.Image,
 		ImagePullPolicy: core.PullAlways,
 		WorkingDir:      Settings.Addon.Path.WorkingDir,
+		Resources:       r.addon.Spec.Resources,
 		Env: []core.EnvVar{
 			{
 				Name:  settings.EnvBucketPath,
