@@ -1,0 +1,17 @@
+[
+    {
+        "id": 29,
+        "createUser": "<shipped-data>",
+        "updateUser": "<shipped-data>",
+        "name": "Postgresql",
+        "tagType": {
+            "id": 15,
+            "createUser": "<shipped-data>",
+            "updateUser": "<shipped-data>",
+            "name": "Database",
+            "colour": "#6ec664",
+            "rank": 4,
+            "username": "<shipped-data>"
+        }
+    }
+]
