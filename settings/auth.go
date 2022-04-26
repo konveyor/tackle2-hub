@@ -41,7 +41,7 @@ type Auth struct {
 
 func (r *Auth) Load() (err error) {
 	var found bool
-	r.Required = getEnvBool(EnvAuthRequired, false)
+	r.Required = getEnvBool(EnvAuthRequired, true)
 	if !r.Required {
 		return
 	}
