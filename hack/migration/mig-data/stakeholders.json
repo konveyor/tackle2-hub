@@ -1,10 +1,18 @@
 [
     {
-        "id": 47,
+        "id": 49,
         "createUser": "tackle",
         "updateUser": "tackle",
-        "name": "Megan Pacocha IV",
-        "email": "Carmel32@yahoo.com",
-        "groups": []
+        "name": "Felicia Cassin",
+        "email": "Amelia_Cummerata21@gmail.com",
+        "groups": [
+            {
+                "id": 50,
+                "createUser": "tackle",
+                "updateUser": "tackle",
+                "name": "Legros LLC",
+                "description": "Beatae illo repudiandae incidunt blanditiis illo et est sunt."
+            }
+        ]
     }
 ]

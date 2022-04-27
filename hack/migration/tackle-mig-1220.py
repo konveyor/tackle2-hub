@@ -33,6 +33,7 @@ def debugPrint(str):
         print(str)
 
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
+    print("Getting auth token from %s" % host)
     url  = "%s/auth/realms/%s/protocol/openid-connect/token" % (host, realm)
     data = {'username': username, 'password': password, 'client_id': client_id, 'grant_type': 'password'}
 
@@ -51,6 +52,7 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
         case 'DELETE':
             r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)
         case 'POST':
+            debugPrint("POST data: %s" % json.dumps(data))
             r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)
         case _: # GET
             r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)  # add pagination?
@@ -59,8 +61,6 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
         if ignoreErrors:
             debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
         else:
-            if data:
-                print("ERROR: POST data: %s" % data)
             print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
             exit(1)
 
@@ -74,7 +74,7 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
         debugPrint("Unwrapping Tackle1 JSON")
         return respData['_embedded'][url.rsplit('/')[-1]] # unwrap Tackle1 JSON response (e.g. _embedded -> application -> [{...}])
     else:
-        return respData # raw return JSON (Tackle2)
+        return respData # raw return JSON (Tackle2, Pathfinder)
 
 def loadDump(path):
     data = open(path)
@@ -95,7 +95,7 @@ def cmdWanted(args, step):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['applications', 'proxies', 'dependencies', 'reviews', 'identities', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'tags', 'tagtypes']  # buckets
+    TYPES = ['tags', 'tagtypes', 'applications', 'proxies', 'dependencies', 'assessments', 'assessmentrisks', 'reviews', 'identities', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', ]  # buckets
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -137,10 +137,41 @@ class Tackle12Import:
             jf.name         = jf2['name']
             self.destData['jobfunctions'][jf.name] = jf
 
+    def findById(self, objType, id):
+        for obj in self.data[objType]:
+            if obj.id == id:
+                return obj
+        print("ERROR: %s record ID %d not found." % (objType, id))
+        exit(1)
+
     # Gather Tackle 1.2 API objects and map seeded Tackle2 API objects
     def dumpTackle1(self):
-        # Iterate Tackle 1.2 objects
-        print("Dumping Tackle 1.2 API objects")
+        ### TAG TYPES & TAGS ###
+        collection = apiJSON(self.tackle1Url + "/api/controls/tag-type", self.tackle1Token)
+        for tt1 in collection:
+            # Temp holder for tags
+            tags = []
+            # Prepare TagTypes's Tags
+            for tag1 in tt1['tags']:
+                tag             = Tackle2Object(tag1)
+                tag.name        = tag1['name']
+                # TagType is injected from tagType processing few lines below
+                # Store Tag only if doesn't exist in Tackle2 destination already
+                if tag.name not in self.destData['tags']:
+                    self.add('tags', tag)
+                tags.append(tag)
+            # Prepare TagType
+            tt            = Tackle2Object(tt1)
+            tt.name       = tt1['name']
+            tt.colour     = tt1['colour']
+            tt.rank       = tt1['rank']
+            tt.username   = tt1['createUser'] # Is there another relevant user?
+            for tag in tags:
+                tag.tagType = copy.deepcopy(tt) # Is this doule-nesting needed?
+            tt.tags = tags
+            # Store only if doesn't exist in Tackle2 destination already
+            if tt.name not in self.destData['tagtypes']:
+                self.add('tagtypes', tt)
 
         ### APPLICATION ###
         collection = apiJSON(self.tackle1Url + "/api/application-inventory/application", self.tackle1Token)
@@ -150,60 +181,90 @@ class Tackle12Import:
             # Prepare Tags
             debugPrint(app1)
             if app1['tags']:
-                for tag1 in app1['tags']:
+                for tagId in app1['tags']:
+                    appTag = self.findById('tags', int(tagId))
                     # Check if Tag exists in Tackle2 destination
-                    if tag1['name'] in self.destData['tags']:
+                    if appTag.name in self.destData['tags']:
                         # Re-map to existing Tackle2 Tag
-                        tags.append(self.destData['tags'][tag1['name']])  # deepcopy?
+                        tags.append(self.destData['tags'][appTag.name])
                     else:
-                        # Prepare new Tag
-                        tag             = Tackle2Object(tag1)
-                        tag.name        = tag1['name']
-                        self.add('tags', tag)
+                        # Use imported Tag, creating a new one to cut association to Tag type
+                        tag             = Tackle2Object()
+                        tag.id          = appTag.id
+                        tag.name        = appTag.name
                         tags.append(tag)
             # Prepare Application
             app                 = Tackle2Object(app1)
             app.name            = app1['name']
             app.description     = app1['description']
             app.businessService = app1['businessService']
-            app.repository      = app1['repository']
-            app.binary          = app1['binary']
-            app.facts           = app1['facts']
-            app.review          = app1['review']
             app.tags            = tags
+            #app.repository      = app1['repository']   # Not part of 1.2 API 
+            #app.binary          = app1['binary']
+            #app.facts           = app1['facts']
+            if app1['review']:
+                app.review                = app1['review']
+                app.review['application'] = {'id': app.id, 'name': app.name}    # Cut Tags and other not needed parameters of the Application
             self.add('applications', app)
 
         ### PROXIES ###
-        collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
-        for proxy1 in collection:
-            # Prepare Proxy
-            proxy                 = Tackle2Object(proxy1)
-            proxy.name            = proxy1['name']
-            self.add('proxies', proxy)
+        # collection = apiJSON(self.tackle1Url + "/api/proxies", self.tackle1Token)
+        # for proxy1 in collection:
+        #     # Prepare Proxy
+        #     proxy                 = Tackle2Object(proxy1)
+        #     proxy.name            = proxy1['name']
+        #     self.add('proxies', proxy)
 
         ### DEPENDENCIES ###
-        collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
+        collection = apiJSON(self.tackle1Url + "/api/application-inventory/applications-dependency", self.tackle1Token)
         for dep1 in collection:
             # Prepare Dependency
             dep                 = Tackle2Object(dep1)
-            dep.name            = rev1['name']
+            dep.to              = {'id': dep1['to']['id'], 'name': dep1['to']['name']}
+            setattr(dep, 'from', {'id': dep1['from']['id'], 'name': dep1['from']['name']})    # Cannot use "from" as an attribute name directly
             self.add('dependencies', dep)
 
-        ### REVIEWS ###
-        collection = apiJSON(self.tackle1Url + "/api/application-inventory/application", self.tackle1Token)
-        for rev1 in collection:
-            # Prepare Review
-            rev                 = Tackle2Object(rev1)
-            app.name            = rev1['name']
-            self.add('reviews', rev)
+        ### ASSESSMENTS & RISKS (per Application) ###
+        for app in self.data['applications']:
+            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments?applicationId=%d" % app.id, self.tackle1Token)
+            for assm1 in collection:
+                # Prepare Assessment
+                assm               = Tackle2Object()
+                assm.id            = assm1['id']
+                assm.applicationId = assm1['applicationId']
+                assm.status        = assm1['status']
+                self.add('assessments', assm)
+
+            # collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
+            # for assmr1 in collection:
+            #     # Prepare Assessment Risk
+            #     assmr               = Tackle2Object()
+            #     assmr.assessmentId  = assmr1['assessmentId']
+            #     assmr.applicationId = assmr1['applicationId']
+            #     assmr.risk          = assmr1['risk']
+            #     self.add('assessmentrisks', assmr)
+
+        ### REVIEWS ### part of application
+        # collection = apiJSON(self.tackle1Url + "/api/application-inventory/review", self.tackle1Token)
+        # for rev1 in collection:
+        #     # Prepare Review
+        #     rev                 = Tackle2Object(rev1)
+        #     rev.proposedAction      = rev1['proposedAction']
+        #     rev.effortEstimate      = rev1['effortEstimate']
+        #     rev.businessCriticality = rev1['businessCriticality']
+        #     rev.workPriority        = rev1['workPriority']
+        #     rev.comments            = rev1['comments']
+        #     rev.copiedFromReviewId  = rev1['copiedFromReviewId']
+        #     rev.application         = {'id': rev1['application']['id'], 'name': rev1['application']['name']}
+        #     self.add('reviews', rev)
 
         ### IDENTITIES ###
-        collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
-        for id1 in collection:
-            # Prepare Review
-            id                 = Tackle2Object(id1)
-            id.name            = id1['name']
-            self.add('identities', id)
+        # collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
+        # for id1 in collection:
+        #     # Prepare Review
+        #     id                 = Tackle2Object(id1)
+        #     id.name            = id1['name']
+        #     self.add('identities', id)
 
         ### STAKEHOLDER ###
         collection = apiJSON(self.tackle1Url + "/api/controls/stakeholder", self.tackle1Token)
@@ -212,7 +273,7 @@ class Tackle12Import:
             shgs = []
             # Prepare StakeholderGroups
             for shg1 in sh1['stakeholderGroups']:
-                shg             = Tackle2Object(shg)
+                shg             = Tackle2Object(shg1)
                 shg.name        = shg1['name']
                 shg.description = shg1['description']
                 self.add('stakeholdergroups', shg)
@@ -271,33 +332,6 @@ class Tackle12Import:
             bs.description  = bs1['description']
             bs.owner        = bs1['owner']  # Stakeholder
             self.add('businessservices', bs)
-
-        ### TAG TYPES & TAGS ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/tag-type", self.tackle1Token)
-        for tt1 in collection:
-            # Temp holder for tags
-            tags = []
-            # Prepare TagTypes's Tags
-            for tag1 in tt1['tags']:
-                tag             = Tackle2Object(tag1)
-                tag.name        = tag1['name']
-                # TagType is injected from tagType processing few lines below
-                # Store Tag only if doesn't exist in Tackle2 destination already
-                if tag.name not in self.destData['tags']:
-                    self.add('tags', tag)
-                tags.append(tag)
-            # Prepare TagType
-            tt            = Tackle2Object(tt1)
-            tt.name       = tt1['name']
-            tt.colour     = tt1['colour']
-            tt.rank       = tt1['rank']
-            tt.username   = tt1['createUser'] # Is there another relevant user?
-            for tag in tags:
-                tag.tagType = copy.deepcopy(tt) # Is this doule-nesting needed?
-            tt.tags = tags
-            # Store only if doesn't exist in Tackle2 destination already
-            if tt.name not in self.destData['tagtypes']:
-                self.add('tagtypes', tt)
 
     def add(self, type, item):
         for existingItem in self.data[type]:
@@ -360,21 +394,21 @@ tackle12import = Tackle12Import(dataDir, os.environ.get('TACKLE1_URL'), token1, 
 
 # Dump steps
 if cmdWanted(args, "dump"):
-    print("Dump Tackle objects..")
+    print("Dumping Tackle objects")
     tackle12import.loadTackle2Seeds()
     tackle12import.dumpTackle1()
-    print("Writing JSON data files into %s.." % dataDir)
+    print("Writing JSON data files into %s" % dataDir)
     tackle12import.store()
 
 # Upload steps
 if cmdWanted(args, "upload"):
-    print("Uploading data to Tackle2..")
+    print("Uploading data to Tackle2")
     tackle12import.preImportCheck()
     tackle12import.uploadTackle2()
 
 # Clean uploaded objects
 if cmdWanted(args, "clean"):
-    print("Cleaning data uploaded to Tackle2..")
+    print("Cleaning data uploaded to Tackle2")
     tackle12import.cleanTackle2()
 
 ###############################################################################
