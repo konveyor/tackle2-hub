@@ -10,8 +10,8 @@ import (
 // Identity represents and identity with a set of credentials.
 type Identity struct {
 	Model
-	Kind        string `gorm:"uniqueIndex:identity_a;not null"`
-	Name        string `gorm:"uniqueIndex:identity_a;not null"`
+	Kind        string `gorm:"not null"`
+	Name        string `gorm:"not null"`
 	Description string
 	User        string
 	Password    string

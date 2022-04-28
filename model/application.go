@@ -54,14 +54,14 @@ type Import struct {
 	ImportSummaryID     uint `gorm:"index"`
 	Processed           bool
 	ImportTags          []ImportTag `gorm:"constraint:OnDelete:CASCADE"`
-	Binary              string
-	RepositoryKind      string
+	BinaryGroup         string
+	BinaryArtifact      string
+	BinaryVersion       string
+	BinaryPackaging     string
 	RepositoryURL       string
 	RepositoryBranch    string
 	RepositoryTag       string
 	RepositoryPath      string
-	IdentityKind        string
-	IdentityName        string
 }
 
 func (r *Import) AsMap() (m map[string]interface{}) {

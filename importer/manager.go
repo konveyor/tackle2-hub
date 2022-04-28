@@ -110,16 +110,31 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		Name:        imp.ApplicationName,
 		Description: imp.Description,
 		Comments:    imp.Comments,
-		Binary:      imp.Binary,
 	}
 	repository := api.Repository{
-		Kind:   imp.RepositoryKind,
 		URL:    imp.RepositoryURL,
 		Branch: imp.RepositoryBranch,
 		Tag:    imp.RepositoryTag,
 		Path:   imp.RepositoryPath,
 	}
 	app.Repository, _ = json.Marshal(repository)
+
+	// Validate Binary-related fields (allow all 3 empty or present)
+	if imp.BinaryGroup != "" || imp.BinaryArtifact != "" || imp.BinaryVersion != "" {
+		if imp.BinaryGroup == "" || imp.BinaryArtifact == "" || imp.BinaryVersion == "" {
+			imp.ErrorMessage = fmt.Sprintf("Binary-related fields for application %s need to be all present or all empty", imp.ApplicationName)
+			return
+		}
+	}
+
+	// Build Binary attribute
+	if imp.BinaryGroup != "" {
+		app.Binary = fmt.Sprintf("%s:%s:%s", imp.BinaryGroup, imp.BinaryArtifact, imp.BinaryVersion)
+		if len(imp.BinaryPackaging) > 0 {
+			// Packaging can be empty
+			app.Binary = fmt.Sprintf("%s:%s", app.Binary, imp.BinaryPackaging)
+		}
+	}
 
 	businessService := &model.BusinessService{}
 	result := m.DB.Select("id").Where("name LIKE ?", imp.BusinessService).First(businessService)
@@ -128,16 +143,6 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 	app.BusinessService = businessService
-
-	if imp.IdentityName != "" && imp.IdentityKind != "" {
-		identity := &model.Identity{}
-		result = m.DB.Where("name LIKE ? AND kind LIKE ?", imp.IdentityName, imp.IdentityKind).First(identity)
-		if result.Error != nil {
-			imp.ErrorMessage = fmt.Sprintf("Identity '%s' of kind '%s' could not be found.", imp.IdentityName, imp.IdentityKind)
-			return
-		}
-		app.Identities = append(app.Identities, *identity)
-	}
 
 	tags := []model.Tag{}
 	db := m.DB.Preload("TagType")
