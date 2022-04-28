@@ -1,10 +1,8 @@
 package model
 
 import (
-	"encoding/json"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/encryption"
-	"gorm.io/gorm"
 )
 
 //
@@ -19,28 +17,42 @@ type Identity struct {
 	Key         string
 	Settings    string
 	Proxies     []Proxy
-	Encrypted   string
 }
 
 //
 // Encrypt sensitive fields.
-func (r *Identity) Encrypt() (err error) {
+// The ref identity is used to determine when sensitive fields
+// have changed and need to be (re)encrypted.
+func (r *Identity) Encrypt(ref *Identity) (err error) {
 	passphrase := Settings.Encryption.Passphrase
 	aes := encryption.New(passphrase)
-	encrypted := Identity{}
-	encrypted.User = r.User
-	encrypted.Password = r.Password
-	encrypted.Key = r.Key
-	encrypted.Settings = r.Settings
-	b, err := json.Marshal(encrypted)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"id",
-			r.ID)
-		return
+	if r.Password != ref.Password {
+		if r.Password != "" {
+			r.Password, err = aes.Encrypt(r.Password)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
 	}
-	r.Encrypted, err = aes.Encrypt(string(b))
+	if r.Key != ref.Key {
+		if r.Key != "" {
+			r.Key, err = aes.Encrypt(r.Key)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+	}
+	if r.Settings != ref.Settings {
+		if r.Settings != "" {
+			r.Settings, err = aes.Encrypt(r.Settings)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+	}
 	return
 }
 
@@ -48,47 +60,26 @@ func (r *Identity) Encrypt() (err error) {
 // Decrypt sensitive fields.
 func (r *Identity) Decrypt(passphrase string) (err error) {
 	aes := encryption.New(passphrase)
-	decrypted := &Identity{}
-	var dj string
-	dj, err = aes.Decrypt(r.Encrypted)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"id",
-			r.ID)
-		return
+	if r.Password != "" {
+		r.Password, err = aes.Decrypt(r.Password)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
-	err = json.Unmarshal([]byte(dj), decrypted)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"id",
-			r.ID)
-		return
+	if r.Key != "" {
+		r.Key, err = aes.Decrypt(r.Key)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
-	r.User = decrypted.User
-	r.Password = decrypted.Password
-	r.Key = decrypted.Key
-	r.Settings = decrypted.Settings
-	return
-}
-
-//
-// BeforeSave ensure encrypted.
-func (r *Identity) BeforeSave(tx *gorm.DB) (err error) {
-	err = r.Encrypt()
-	if err == nil {
-		r.User = ""
-		r.Password = ""
-		r.Key = ""
-		r.Settings = ""
+	if r.Settings != "" {
+		r.Settings, err = aes.Decrypt(r.Settings)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
-	return
-}
-
-//
-// BeforeUpdate ensure encrypted.
-func (r *Identity) BeforeUpdate(tx *gorm.DB) (err error) {
-	err = r.BeforeSave(tx)
 	return
 }

@@ -51,7 +51,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
-	r.With(m, true)
+	r.With(m)
 
 	ctx.JSON(http.StatusOK, r)
 }
@@ -73,7 +73,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	resources := []Identity{}
 	for i := range list {
 		r := Identity{}
-		r.With(&list[i], true)
+		r.With(&list[i])
 		resources = append(resources, r)
 	}
 
@@ -97,7 +97,8 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	err = m.Encrypt()
+	ref := &model.Identity{}
+	err = m.Encrypt(ref)
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -107,7 +108,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		h.createFailed(ctx, result.Error)
 		return
 	}
-	r.With(m, true)
+	r.With(m)
 
 	ctx.JSON(http.StatusCreated, r)
 }
@@ -153,17 +154,23 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		h.bindFailed(ctx, err)
 		return
 	}
-	m := r.Model()
-	m.ID = id
-	db := h.DB.Model(m)
-	err = m.Encrypt()
+	ref := &model.Identity{}
+	err = h.DB.First(ref, id).Error
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
 	}
-	result := db.Updates(h.fields(m))
-	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+	m := r.Model()
+	err = m.Encrypt(ref)
+	if err != nil {
+		h.updateFailed(ctx, err)
+		return
+	}
+	m.ID = id
+	db := h.DB.Model(m)
+	err = db.Updates(h.fields(m)).Error
+	if err != nil {
+		h.updateFailed(ctx, err)
 		return
 	}
 
@@ -190,7 +197,7 @@ func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 	resources := []Identity{}
 	for i := range m.Identities {
 		id := Identity{}
-		id.With(&m.Identities[i], true)
+		id.With(&m.Identities[i])
 		resources = append(
 			resources,
 			id)
@@ -206,33 +213,23 @@ type Identity struct {
 	Kind        string `json:"kind" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	User        string `json:"user" binding:"ne=*"`
-	Password    string `json:"password" binding:"ne=*"`
-	Key         string `json:"key" binding:"ne=*"`
-	Settings    string `json:"settings" binding:"ne=*"`
-	Encrypted   string `json:"encrypted"`
+	User        string `json:"user"`
+	Password    string `json:"password"`
+	Key         string `json:"key"`
+	Settings    string `json:"settings"`
 }
 
 //
 // With updates the resource with the model.
-func (r *Identity) With(m *model.Identity, masked bool) {
+func (r *Identity) With(m *model.Identity) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Encrypted = m.Encrypted
-	_ = m.Decrypt(Settings.Encryption.Passphrase)
-	if masked {
-		r.User = r.mask(m.User)
-		r.Password = r.mask(m.Password)
-		r.Key = r.mask(m.Key)
-		r.Settings = r.mask(m.Settings)
-	} else {
-		r.User = m.User
-		r.Password = m.Password
-		r.Key = m.Key
-		r.Settings = m.Settings
-	}
+	r.User = m.User
+	r.Password = m.Password
+	r.Key = m.Key
+	r.Settings = m.Settings
 }
 
 //
@@ -246,18 +243,8 @@ func (r *Identity) Model() (m *model.Identity) {
 		Password:    r.Password,
 		Key:         r.Key,
 		Settings:    r.Settings,
-		Encrypted:   r.Encrypted,
 	}
 	m.ID = r.ID
 
-	return
-}
-
-//
-// mask field.
-func (r *Identity) mask(s string) (m string) {
-	if len(s) > 0 {
-		m = "*"
-	}
 	return
 }
