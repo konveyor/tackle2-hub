@@ -2,6 +2,7 @@ package importer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
@@ -106,7 +107,35 @@ func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 // createApplication creates an application from an
 // application import record.
 func (m *Manager) createApplication(imp *model.Import) (ok bool) {
-	app := &model.Application{}
+	app := &model.Application{
+		Name:        imp.ApplicationName,
+		Description: imp.Description,
+		Comments:    imp.Comments,
+	}
+	repository := api.Repository{
+		URL:    imp.RepositoryURL,
+		Branch: imp.RepositoryBranch,
+		Path:   imp.RepositoryPath,
+	}
+	app.Repository, _ = json.Marshal(repository)
+
+	// Validate Binary-related fields (allow all 3 empty or present)
+	if imp.BinaryGroup != "" || imp.BinaryArtifact != "" || imp.BinaryVersion != "" {
+		if imp.BinaryGroup == "" || imp.BinaryArtifact == "" || imp.BinaryVersion == "" {
+			imp.ErrorMessage = fmt.Sprintf("Binary-related fields for application %s need to be all present or all empty", imp.ApplicationName)
+			return
+		}
+	}
+
+	// Build Binary attribute
+	if imp.BinaryGroup != "" {
+		app.Binary = fmt.Sprintf("%s:%s:%s", imp.BinaryGroup, imp.BinaryArtifact, imp.BinaryVersion)
+		if imp.BinaryPackaging != "" {
+			// Packaging can be empty
+			app.Binary = fmt.Sprintf("%s:%s", app.Binary, imp.BinaryPackaging)
+		}
+	}
+
 	businessService := &model.BusinessService{}
 	result := m.DB.Select("id").Where("name LIKE ?", imp.BusinessService).First(businessService)
 	if result.Error != nil {
@@ -114,14 +143,10 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 	app.BusinessService = businessService
-	app.Name = imp.ApplicationName
-	app.Description = imp.Description
-	app.Comments = imp.Comments
 
 	tags := []model.Tag{}
 	db := m.DB.Preload("TagType")
 	db.Find(&tags)
-
 	for _, impTag := range imp.ImportTags {
 		for _, tag := range tags {
 			if tag.Name == impTag.Name && tag.TagType.Name == impTag.TagType {
