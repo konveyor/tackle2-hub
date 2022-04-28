@@ -56,7 +56,7 @@ func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found
 		if r.Kind == kind {
 			m := r.Model()
 			err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
-			r.With(m, false)
+			r.With(m)
 			if err != nil {
 				return
 			}
