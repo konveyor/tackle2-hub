@@ -114,7 +114,6 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	repository := api.Repository{
 		URL:    imp.RepositoryURL,
 		Branch: imp.RepositoryBranch,
-		Tag:    imp.RepositoryTag,
 		Path:   imp.RepositoryPath,
 	}
 	app.Repository, _ = json.Marshal(repository)
@@ -130,7 +129,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	// Build Binary attribute
 	if imp.BinaryGroup != "" {
 		app.Binary = fmt.Sprintf("%s:%s:%s", imp.BinaryGroup, imp.BinaryArtifact, imp.BinaryVersion)
-		if len(imp.BinaryPackaging) > 0 {
+		if imp.BinaryPackaging != "" {
 			// Packaging can be empty
 			app.Binary = fmt.Sprintf("%s:%s", app.Binary, imp.BinaryPackaging)
 		}

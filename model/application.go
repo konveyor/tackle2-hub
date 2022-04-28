@@ -60,7 +60,6 @@ type Import struct {
 	BinaryPackaging     string
 	RepositoryURL       string
 	RepositoryBranch    string
-	RepositoryTag       string
 	RepositoryPath      string
 }
 
