@@ -58,6 +58,7 @@ type Import struct {
 	BinaryArtifact      string
 	BinaryVersion       string
 	BinaryPackaging     string
+	RepositoryKind      string
 	RepositoryURL       string
 	RepositoryBranch    string
 	RepositoryPath      string
