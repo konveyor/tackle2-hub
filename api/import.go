@@ -348,17 +348,18 @@ func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app mod
 // Col 9: Packaging (optional)
 //
 // Repository: The following columns are coordinates to a source repository.
-// Col 10: URL
-// Col 11: Branch
-// Col 12: Path
+// Col 10: Kind (defaults to 'git' if empty)
+// Col 11: URL
+// Col 12: Branch
+// Col 13: Path
 //
 // Following that are up to twenty pairs of Tag Types and Tags, specified by name. These are optional.
 // If a tag type and a tag are specified, they must already exist.
 //
 // Examples:
 //
-// 1,MyApplication,My cool app,No comment,Marketing,binarygrp,elfbin,v1,rpm,url,branch,path,TagType1,Tag1,TagType2,Tag2
-// 1,OtherApplication,,,,,,,,,,MyBusinessService
+// 1,MyApplication,My cool app,No comment,Marketing,binarygrp,elfbin,v1,rpm,git,url,branch,path,TagType1,Tag1,TagType2,Tag2
+// 1,OtherApplication,,,,,,,,,,,MyBusinessService
 func (h ImportHandler) applicationFromRow(fileName string, row []string) (app model.Import) {
 	app = model.Import{
 		Filename:         fileName,
@@ -371,13 +372,14 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 		BinaryArtifact:   row[6],
 		BinaryVersion:    row[7],
 		BinaryPackaging:  row[8],
-		RepositoryURL:    row[9],
-		RepositoryBranch: row[10],
-		RepositoryPath:   row[11],
+		RepositoryKind:   row[9],
+		RepositoryURL:    row[10],
+		RepositoryBranch: row[11],
+		RepositoryPath:   row[12],
 	}
 
 	// Tags
-	for i := 12; i < len(row); i++ {
+	for i := 13; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
 				Name:    row[i],

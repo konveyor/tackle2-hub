@@ -113,10 +113,17 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		Comments:    imp.Comments,
 	}
 	repository := api.Repository{
+		Kind:   imp.RepositoryKind,
 		URL:    imp.RepositoryURL,
 		Branch: imp.RepositoryBranch,
 		Path:   imp.RepositoryPath,
 	}
+
+	// Ensure default RepositoryType (git)
+	if repository.Kind == "" {
+		repository.Kind = "git"
+	}
+
 	app.Repository, _ = json.Marshal(repository)
 
 	// Validate Binary-related fields (allow all 3 empty or present)
