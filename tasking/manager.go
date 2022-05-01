@@ -24,11 +24,12 @@ import (
 // States
 const (
 	Created   = "Created"
+	Postponed = "Postponed"
 	Ready     = "Ready"
+	Pending   = "Pending"
+	Running   = "Running"
 	Succeeded = "Succeeded"
 	Failed    = "Failed"
-	Running   = "Running"
-	Postponed = "Postponed"
 )
 
 //
@@ -143,7 +144,13 @@ func (m *Manager) startReady() {
 // updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
-	result := m.DB.Find(&list, "state", Running)
+	result := m.DB.Find(
+		&list,
+		"state IN ?",
+		[]string{
+			Pending,
+			Running,
+		})
 	Log.Trace(result.Error)
 	if result.Error != nil {
 		return
@@ -234,7 +241,7 @@ func (r *Task) Run() (err error) {
 		return
 	}
 	r.Started = &mark
-	r.State = Running
+	r.State = Pending
 	r.Pod = path.Join(
 		pod.Namespace,
 		pod.Name)
@@ -263,7 +270,8 @@ func (r *Task) Reflect() (err error) {
 	mark := time.Now()
 	status := pod.Status
 	switch status.Phase {
-	case core.PodPending:
+	case core.PodRunning:
+		r.State = Running
 	case core.PodSucceeded:
 		r.State = Succeeded
 		r.Terminated = &mark
