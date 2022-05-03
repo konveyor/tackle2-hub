@@ -154,7 +154,7 @@ func (h *Task) Bucket() (b string) {
 
 //
 // Result report addon result.
-func (h *Task) Result(object interface{}) (err error) {
+func (h *Task) Result(object interface{}) {
 	h.report.Result = object
 	h.pushReport()
 	Log.Info("Addon reported: result.")
