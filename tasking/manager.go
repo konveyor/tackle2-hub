@@ -16,7 +16,6 @@ import (
 	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -128,6 +127,7 @@ func (m *Manager) startReady() {
 				Log.Info("Task postponed.", "id", ready.ID)
 			} else {
 				err := task.Run()
+				Log.Trace(err)
 				if err == nil {
 					Log.Info("Task started.", "id", ready.ID)
 				} else {
@@ -318,7 +318,7 @@ func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
 		Spec: r.specification(secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
-			GenerateName: fmt.Sprintf("task-%d-", r.ID),
+			GenerateName: r.k8sName(),
 			Labels:       r.labels(),
 		},
 	}
@@ -446,7 +446,7 @@ func (r *Task) secret() (secret core.Secret) {
 	secret = core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
-			GenerateName: strings.ToLower(r.Name) + "-",
+			GenerateName: r.k8sName(),
 			Labels:       r.labels(),
 		},
 		Data: map[string][]byte{
@@ -455,6 +455,12 @@ func (r *Task) secret() (secret core.Secret) {
 	}
 
 	return
+}
+
+//
+// k8sName returns a name suitable to be used for k8s resources.
+func (r *Task) k8sName() string {
+	return fmt.Sprintf("task-%d-", r.ID)
 }
 
 //
