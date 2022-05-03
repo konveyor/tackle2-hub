@@ -30,7 +30,7 @@ type Task struct {
 	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
-	State         string
+	State         string `gorm:"index"`
 	Error         string
 	Pod           string
 	Retries       int
