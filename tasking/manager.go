@@ -440,6 +440,7 @@ func (r *Task) container() (container core.Container) {
 func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID
+	data.Hub.Variant = r.Task.Variant
 	data.Hub.Application = r.Task.ApplicationID
 	data.Hub.Encryption.Passphrase = Settings.Encryption.Passphrase
 	data.Hub.Token = Settings.Auth.AddonToken

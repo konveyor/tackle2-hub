@@ -391,7 +391,7 @@ type Task struct {
 	Policy      string      `json:"policy,omitempty"`
 	Addon       string      `json:"addon,omitempty" binding:"required"`
 	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Application *Ref        `json:"application"`
+	Application *Ref        `json:"application,omitempty"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
 	Bucket      string      `json:"bucket,omitempty"`
