@@ -9,24 +9,24 @@ For more details about the Tackle project, see [Tackle2-Hub README](https://gith
 Use ```tackle-config.yml.example``` file as a template to set your Tackle endpoints and credentials and save it as ```tackle-config.yml``` before running the ```tackle``` command.
 
 ### Supported actions
-- ```dump-tackle1``` exports Tackle 1.2 API objects into local JSON files
-- ```upload``` creates objects in Tackle 2 from local JSON files
+- ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
+- ```import``` creates objects in Tackle 2 from local JSON files
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
 
-### Dump Tackle 1.2
+### Export Tackle 1.2
 
-Run ```tackle dump-tackle1``` to get dump of Tackle 1.2 objects into JSON files in local directory ```./tackle-data```.
+Run ```tackle export-tackle1``` to get dump of Tackle 1.2 objects into JSON files in local directory ```./tackle-data```.
 
-The dump command looks into Tackle2 to grab seed resources first, then downloads all resources from Tackle 1.2 API, transforms it to format expected by the Tackle 2 Hub and re-map resources to seeds already existing in destination Tackle2 Hub API. The result is serialized and stored into local JSON files.
+The ```export-tackle1``` command looks into Tackle2 to grab seed resources first, then downloads all resources from Tackle 1.2 API, transforms it to format expected by the Tackle 2 Hub and re-map resources to seeds already existing in destination Tackle2 Hub API. The result is serialized and stored into local JSON files.
 
-### Upload to Tackle 2 Hub
+### Import to Tackle 2 Hub
 
-Check local JSON dump files in ```./tackle-data``` directory (if needed) and upload it to Tackle 2 Hub running ```tackle upload```.
+Check local JSON dump files in ```./tackle-data``` directory (if needed) and create objects in Tackle 2 Hub running ```tackle import```.
 
-The upload command connects to Tackle2 Hub, check existing objects for possible collisions (by IDs) and uploads resources from local JSON files.
+The import command connects to Tackle2 Hub, check existing objects for possible collisions (by IDs) and uploads resources from local JSON files.
 
 ### Delete uploaded objects
-To delete objects previously uploaded by the ```upload``` command, run ```tackle clean```.
+To delete objects previously created by the ```import``` command, run ```tackle clean```.
 
 ### Command line options
 
@@ -45,7 +45,7 @@ usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [action ...]
 Konveyor Tackle maintenance tool.
 
 positional arguments:
-  action                One or more Tackle commands that should be executed, options: dump-tackle1 upload clean
+  action                One or more Tackle commands that should be executed, options: export-tackle1 import clean
 
 options:
   -h, --help            show this help message and exit
@@ -60,16 +60,17 @@ API endpoints and credentials should be set in a config file (```tackle-config.y
 
 ```
 ---
+# Main Tackle 2 endpoint and credentials
+url: https://tackle-konveyor-tackle.apps.cluster.local
+username: admin
+password:
+
 # Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
 tackle1:
   url: https://tackle-tackle.apps.mta01.cluster.local
   username: tackle
   password:
-# A default Tackle2 endpoint and credentials
-tackle2:
-  url: https://tackle-konveyor-tackle.apps.cluster.local
-  username: admin
-  password:
+
 ```
 
 Unverified HTTPS warnings from Python could be hidden by ```export PYTHONWARNINGS="ignore:Unverified HTTPS request"```.

@@ -11,7 +11,7 @@ import yaml
 
 parser = argparse.ArgumentParser(description='Konveyor Tackle maintenance tool.')
 parser.add_argument('action', type=str, nargs='*',
-                    help='One or more Tackle commands that should be executed, options: dump-tackle1 upload clean')
+                    help='One or more Tackle commands that should be executed, options: export-tackle1 import clean')
 parser.add_argument('-c','--config', type=str, help='A config file path (tackle-config.yml by default).',
                     nargs='?', default='./tackle-config.yml')
 parser.add_argument('-d','--data-dir', type=str, help='Local Tackle data directory path (tackle-data by default).',
@@ -399,36 +399,50 @@ class Tackle2Object:
 
 # Load YAML config file (tackle-config.yml)
 c = loadConfig(args.config)
-
 cmdExecuted = False
 
-# Gather Keycloak access tokens for Tackle1&2
-token1 = getKeycloakToken(c['tackle1']['url'], c['tackle1']['username'], c['tackle1']['password'])
-token2 = getKeycloakToken(c['tackle2']['url'], c['tackle2']['username'], c['tackle2']['password'])
-
-# Setup Tackle 1.2->2.0 data migration object
-tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['tackle2']['url'], token2)
-
-# Dump steps
-if cmdWanted(args, "dump-tackle1"):
+# Tackle 1 export steps
+if cmdWanted(args, "export-tackle1"):
     cmdExecuted = True
-    print("Dumping Tackle objects")
+    # Gather Keycloak access tokens for Tackle1&2
+    token1 = getKeycloakToken(c['tackle1']['url'], c['tackle1']['username'], c['tackle1']['password'])
+    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+
+    # Setup Tackle 1.2->2.0 data migration object
+    tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
+
+    # Run the export
+    print("Exporting Tackle 1.2 objects")
     tackle12import.loadTackle2Seeds()
     tackle12import.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
     tackle12import.store()
 
-# Upload steps
-if cmdWanted(args, "upload"):
+# Tackle 2 import steps
+if cmdWanted(args, "import"):
     cmdExecuted = True
-    print("Uploading data to Tackle2")
+    # Gather Keycloak access token for Tackle 2
+    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+
+    # Setup Tackle 1.2->2.0 data migration object
+    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+
+    # Run the import
+    print("Importing data to Tackle2")
     tackle12import.preImportCheck()
     tackle12import.uploadTackle2()
 
-# Clean uploaded objects
+# Clean created objects in Tackle2
 if cmdWanted(args, "clean"):
     cmdExecuted = True
-    print("Cleaning data uploaded to Tackle2")
+    # Gather Keycloak access token for Tackle 2
+    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+
+    # Setup Tackle 1.2->2.0 data migration object
+    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+
+    # Run the cleanup
+    print("Cleaning data created in Tackle2")
     tackle12import.cleanTackle2()
 
 # Print help if action was not specified
