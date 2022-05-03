@@ -1,0 +1,11 @@
+---
+# Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
+tackle1:
+  url: https://tackle-tackle.apps.mta01.cluster.local
+  username: tackle
+  password:
+# A default Tackle endpoint and credentials
+tackle2:
+  url: https://tackle-konveyor-tackle.apps.cluster.local
+  username: admin
+  password:

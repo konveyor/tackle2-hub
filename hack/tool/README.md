@@ -1,0 +1,75 @@
+# Tackle CLI tool
+
+A tool for Konveyor Tackle application maintenance written in Python.
+
+For more details about the Tackle project, see [Tackle2-Hub README](https://github.com/konveyor/tackle2-hub) or https://github.com/konveyor/tackle-documentation.
+
+## Usage
+
+Use ```tackle-config.yml.example``` file as a template to set your Tackle endpoints and credentials and save it as ```tackle-config.yml``` before running the ```tackle``` command.
+
+### Supported actions
+- ```dump-tackle1``` exports Tackle 1.2 API objects into local JSON files
+- ```upload``` creates objects in Tackle 2 from local JSON files
+- ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
+
+### Dump Tackle 1.2
+
+Run ```tackle dump-tackle1``` to get dump of Tackle 1.2 objects into JSON files in local directory ```./tackle-data```.
+
+The dump command looks into Tackle2 to grab seed resources first, then downloads all resources from Tackle 1.2 API, transforms it to format expected by the Tackle 2 Hub and re-map resources to seeds already existing in destination Tackle2 Hub API. The result is serialized and stored into local JSON files.
+
+### Upload to Tackle 2 Hub
+
+Check local JSON dump files in ```./tackle-data``` directory (if needed) and upload it to Tackle 2 Hub running ```tackle upload```.
+
+The upload command connects to Tackle2 Hub, check existing objects for possible collisions (by IDs) and uploads resources from local JSON files.
+
+### Delete uploaded objects
+To delete objects previously uploaded by the ```upload``` command, run ```tackle clean```.
+
+### Command line options
+
+Config file ```-c / --config``` path specifies a YAML file with configuration options including endpoints and credentials for Tackle APIs (```tackle-config.yml``` by default).
+
+Verbose output ```-v / --verbose``` option logs all API requests and responses providing more information for possible debugging (```off``` by default).
+
+Data directory ```-d / --data-dir``` specifies path to local directory with Tackle database records in JSON format (```./tackle-data``` by default).
+
+## Example
+
+```
+$ tackle --help
+usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [action ...]
+
+Konveyor Tackle maintenance tool.
+
+positional arguments:
+  action                One or more Tackle commands that should be executed, options: dump-tackle1 upload clean
+
+options:
+  -h, --help            show this help message and exit
+  -c [CONFIG], --config [CONFIG]
+                        A config file path (tackle-config.yml by default).
+  -d [DATA_DIR], --data-dir [DATA_DIR]
+                        Local Tackle data directory path (tackle-data by default).
+  -v, --verbose         Print verbose output (including all API requests).
+```
+
+API endpoints and credentials should be set in a config file (```tackle-config.yhml``` by default).
+
+```
+---
+# Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
+tackle1:
+  url: https://tackle-tackle.apps.mta01.cluster.local
+  username: tackle
+  password:
+# A default Tackle2 endpoint and credentials
+tackle2:
+  url: https://tackle-konveyor-tackle.apps.cluster.local
+  username: admin
+  password:
+```
+
+Unverified HTTPS warnings from Python could be hidden by ```export PYTHONWARNINGS="ignore:Unverified HTTPS request"```.

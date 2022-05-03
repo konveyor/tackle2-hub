@@ -1,4 +1,4 @@
 bin/
 vendor/
 .idea
-hack/migration/config-vars
+hack/tool/tackle-config.yml.example

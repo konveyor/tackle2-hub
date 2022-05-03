@@ -1,16 +1,23 @@
+#!/usr/bin/env python
+
 import argparse
 import copy
 import json
 import os
 import requests
+import yaml
 
 ###############################################################################
 
-parser = argparse.ArgumentParser(description='Migrate data from Tackle 1.2 to Tackle 2.')
-parser.add_argument('steps', type=str, nargs='*',
-                    help='One or more steps of migration that should be executed (dump and upload by default), options: dump  upload  clean')
-parser.add_argument('-d','--debug', dest='debug', action='store_const', const=True, default=False,
-                    help='Print debug output including all API requests')
+parser = argparse.ArgumentParser(description='Konveyor Tackle maintenance tool.')
+parser.add_argument('action', type=str, nargs='*',
+                    help='One or more Tackle commands that should be executed, options: dump-tackle1 upload clean')
+parser.add_argument('-c','--config', type=str, help='A config file path (tackle-config.yml by default).',
+                    nargs='?', default='./tackle-config.yml')
+parser.add_argument('-d','--data-dir', type=str, help='Local Tackle data directory path (tackle-data by default).',
+                    nargs='?', default='./tackle-data')
+parser.add_argument('-v','--verbose', dest='verbose', action='store_const', const=True, default=False,
+                    help='Print verbose output (including all API requests).')
 args = parser.parse_args()
 
 ###############################################################################
@@ -28,8 +35,17 @@ def checkConfig(expected_vars):
             print("ERROR: Missing required environment variable %s, define it first." % varKey)
             exit(1)
 
+def loadConfig(path):
+    debugPrint("Loading config from: %s" % path)
+    try:
+        data = open(path, 'r')
+        return yaml.safe_load(data)
+    except Exception as ex:
+        print("ERROR reading config file %s: %s" % (path, ex))
+        exit(1)
+
 def debugPrint(str):
-    if args.debug:
+    if args.verbose:
         print(str)
 
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
@@ -85,8 +101,8 @@ def saveJSON(path, jsonData):
     dumpFile.write(json.dumps(jsonData, indent=4, default=vars))
     dumpFile.close()
 
-def cmdWanted(args, step):
-    if step in args.steps:
+def cmdWanted(args, action):
+    if action in args.action:
         return True
     else:
         return False
@@ -381,34 +397,43 @@ class Tackle2Object:
 
 ###############################################################################
 
-dataDir = "./mig-data"
+# Load YAML config file (tackle-config.yml)
+c = loadConfig(args.config)
 
-print("Tackle 1.2 -> 2 data migration tool")
+cmdExecuted = False
 
 # Gather Keycloak access tokens for Tackle1&2
-token1 = getKeycloakToken(os.environ.get('TACKLE1_URL'), os.environ.get('TACKLE1_USERNAME'), os.environ.get('TACKLE1_PASSWORD'))
-token2 = getKeycloakToken(os.environ.get('TACKLE2_URL'), os.environ.get('TACKLE2_USERNAME'), os.environ.get('TACKLE2_PASSWORD'))
+token1 = getKeycloakToken(c['tackle1']['url'], c['tackle1']['username'], c['tackle1']['password'])
+token2 = getKeycloakToken(c['tackle2']['url'], c['tackle2']['username'], c['tackle2']['password'])
 
-# Tackle 2.0 objects to be imported
-tackle12import = Tackle12Import(dataDir, os.environ.get('TACKLE1_URL'), token1, os.environ.get('TACKLE2_URL'), token2)
+# Setup Tackle 1.2->2.0 data migration object
+tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['tackle2']['url'], token2)
 
 # Dump steps
-if cmdWanted(args, "dump"):
+if cmdWanted(args, "dump-tackle1"):
+    cmdExecuted = True
     print("Dumping Tackle objects")
     tackle12import.loadTackle2Seeds()
     tackle12import.dumpTackle1()
-    print("Writing JSON data files into %s" % dataDir)
+    print("Writing JSON data files into %s" % args.data_dir)
     tackle12import.store()
 
 # Upload steps
 if cmdWanted(args, "upload"):
+    cmdExecuted = True
     print("Uploading data to Tackle2")
     tackle12import.preImportCheck()
     tackle12import.uploadTackle2()
 
 # Clean uploaded objects
 if cmdWanted(args, "clean"):
+    cmdExecuted = True
     print("Cleaning data uploaded to Tackle2")
     tackle12import.cleanTackle2()
+
+# Print help if action was not specified
+if not cmdExecuted:
+    print("Unknown action, use tackle --help to see usage.")
+    exit(1)
 
 ###############################################################################
