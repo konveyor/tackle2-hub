@@ -14,6 +14,7 @@ type TaskReport struct {
 	Total     int
 	Completed int
 	Activity  JSON
+	Result    JSON
 	TaskID    uint `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -24,6 +25,7 @@ type Task struct {
 	Name          string `gorm:"index"`
 	Addon         string `gorm:"index"`
 	Locator       string `gorm:"index"`
+	Priority      int
 	Image         string
 	Variant       string
 	Policy        string

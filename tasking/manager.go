@@ -101,7 +101,8 @@ func (m *Manager) Run(ctx context.Context) {
 // startReady starts pending tasks.
 func (m *Manager) startReady() {
 	list := []model.Task{}
-	result := m.DB.Find(
+	db := m.DB.Order("priority DESC, id")
+	result := db.Find(
 		&list,
 		"state IN ?",
 		[]string{
@@ -144,7 +145,8 @@ func (m *Manager) startReady() {
 // updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
-	result := m.DB.Find(
+	db := m.DB.Order("priority DESC, id")
+	result := db.Find(
 		&list,
 		"state IN ?",
 		[]string{
@@ -438,6 +440,7 @@ func (r *Task) container() (container core.Container) {
 func (r *Task) secret() (secret core.Secret) {
 	data := Secret{}
 	data.Hub.Task = r.Task.ID
+	data.Hub.Variant = r.Task.Variant
 	data.Hub.Application = r.Task.ApplicationID
 	data.Hub.Encryption.Passphrase = Settings.Encryption.Passphrase
 	data.Hub.Token = Settings.Auth.AddonToken

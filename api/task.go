@@ -386,11 +386,12 @@ type Task struct {
 	Resource
 	Name        string      `json:"name"`
 	Locator     string      `json:"locator,omitempty"`
+	Priority    int         `json:"priority,omitempty"`
 	Variant     string      `json:"variant,omitempty"`
 	Policy      string      `json:"policy,omitempty"`
 	Addon       string      `json:"addon,omitempty" binding:"required"`
 	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Application *Ref        `json:"application"`
+	Application *Ref        `json:"application,omitempty"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
 	Bucket      string      `json:"bucket,omitempty"`
@@ -411,6 +412,7 @@ func (r *Task) With(m *model.Task) {
 	r.Image = m.Image
 	r.Addon = m.Addon
 	r.Locator = m.Locator
+	r.Priority = m.Priority
 	r.Policy = m.Policy
 	r.Variant = m.Variant
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
@@ -437,6 +439,7 @@ func (r *Task) Model() (m *model.Task) {
 		Addon:         r.Addon,
 		Locator:       r.Locator,
 		Variant:       r.Variant,
+		Priority:      r.Priority,
 		Policy:        r.Policy,
 		State:         r.State,
 		Retries:       r.Retries,
@@ -452,12 +455,13 @@ func (r *Task) Model() (m *model.Task) {
 // TaskReport REST resource.
 type TaskReport struct {
 	Resource
-	Status    string   `json:"status"`
-	Error     string   `json:"error"`
-	Total     int      `json:"total"`
-	Completed int      `json:"completed"`
-	Activity  []string `json:"activity"`
-	TaskID    uint     `json:"task"`
+	Status    string      `json:"status"`
+	Error     string      `json:"error"`
+	Total     int         `json:"total"`
+	Completed int         `json:"completed"`
+	Activity  []string    `json:"activity"`
+	Result    interface{} `json:"result,omitempty"`
+	TaskID    uint        `json:"task"`
 }
 
 //
@@ -469,12 +473,20 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	r.Total = m.Total
 	r.Completed = m.Completed
 	r.TaskID = m.TaskID
-	_ = json.Unmarshal(m.Activity, &r.Activity)
+	if m.Activity != nil {
+		_ = json.Unmarshal(m.Activity, &r.Activity)
+	}
+	if m.Result != nil {
+		_ = json.Unmarshal(m.Result, &r.Result)
+	}
 }
 
 //
 // Model builds a model.
 func (r *TaskReport) Model() (m *model.TaskReport) {
+	if r.Activity == nil {
+		r.Activity = []string{}
+	}
 	m = &model.TaskReport{
 		Status:    r.Status,
 		Error:     r.Error,
@@ -482,11 +494,12 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		Completed: r.Completed,
 		TaskID:    r.TaskID,
 	}
-	if r.Activity == nil {
-		r.Activity = []string{}
+	if r.Activity != nil {
+		m.Activity, _ = json.Marshal(r.Activity)
 	}
-	_ = json.Unmarshal(m.Activity, &r.Activity)
-	m.Activity, _ = json.Marshal(r.Activity)
+	if r.Result != nil {
+		m.Result, _ = json.Marshal(r.Result)
+	}
 	m.ID = r.ID
 
 	return

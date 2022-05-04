@@ -137,19 +137,6 @@ func (h *Task) Completed(n int) {
 }
 
 //
-// deleteReport deletes the task report.
-func (h *Task) deleteReport() {
-	params := Params{
-		api.ID: h.secret.Hub.Task,
-	}
-	path := params.inject(api.TaskReportRoot)
-	err := h.client.Delete(path)
-	if err != nil {
-		panic(err)
-	}
-}
-
-//
 // Bucket returns the bucket path.
 func (h *Task) Bucket() (b string) {
 	r := &api.Task{}
@@ -163,6 +150,28 @@ func (h *Task) Bucket() (b string) {
 	}
 	b = r.Bucket
 	return
+}
+
+//
+// Result report addon result.
+func (h *Task) Result(object interface{}) {
+	h.report.Result = object
+	h.pushReport()
+	Log.Info("Addon reported: result.")
+	return
+}
+
+//
+// deleteReport deletes the task report.
+func (h *Task) deleteReport() {
+	params := Params{
+		api.ID: h.secret.Hub.Task,
+	}
+	path := params.inject(api.TaskReportRoot)
+	err := h.client.Delete(path)
+	if err != nil {
+		panic(err)
+	}
 }
 
 //
