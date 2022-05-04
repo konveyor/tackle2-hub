@@ -34,7 +34,7 @@ const (
 //
 // Policies
 const (
-	Isolated = "Isolated"
+	Isolated = "isolated"
 )
 
 var (
