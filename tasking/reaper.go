@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"os/exec"
 	"path"
@@ -137,21 +136,8 @@ func (r *TaskReaper) deletePod(m *model.Task) (err error) {
 		return
 	}
 	pod := &core.Pod{}
-	err = r.Client.Get(
-		context.TODO(),
-		client.ObjectKey{
-			Namespace: path.Dir(m.Pod),
-			Name:      path.Base(m.Pod),
-		},
-		pod)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			err = nil
-		} else {
-			err = liberr.Wrap(err)
-		}
-		return
-	}
+	pod.Namespace = path.Dir(m.Pod)
+	pod.Name = path.Base(m.Pod)
 	err = r.Client.Delete(context.TODO(), pod)
 	if err == nil {
 		Log.Info(
