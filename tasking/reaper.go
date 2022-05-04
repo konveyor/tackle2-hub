@@ -133,6 +133,9 @@ func (r *TaskReaper) release(m *model.Task) {
 //
 // deletePod Deletes the associated pod as needed.
 func (r *TaskReaper) deletePod(m *model.Task) (err error) {
+	if m.Pod == "" {
+		return
+	}
 	pod := &core.Pod{}
 	err = r.Client.Get(
 		context.TODO(),
@@ -167,7 +170,11 @@ func (r *TaskReaper) deletePod(m *model.Task) (err error) {
 //
 // delete task.
 func (r *TaskReaper) delete(m *model.Task) {
-	err := r.DB.Delete(m).Error
+	err := r.deletePod(m)
+	if err != nil {
+		Log.Trace(err)
+	}
+	err = r.DB.Select(clause.Associations).Delete(m).Error
 	if err == nil {
 		Log.Info("Task deleted.", "id", m.ID)
 	} else {
