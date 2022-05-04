@@ -34,7 +34,7 @@ const (
 //
 // Policies
 const (
-	Isolated = "Isolated"
+	Isolated = "isolated"
 )
 
 var (
@@ -236,8 +236,31 @@ func (r *Task) Run() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	defer func() {
+		if err != nil {
+			_ = r.client.Delete(context.TODO(), &secret)
+		}
+	}()
 	pod := r.pod(&secret)
 	err = r.client.Create(context.TODO(), &pod)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = r.client.Delete(context.TODO(), &pod)
+		}
+	}()
+	secret.OwnerReferences = append(
+		secret.OwnerReferences,
+		meta.OwnerReference{
+			APIVersion: "v1",
+			Kind:       "Pod",
+			Name:       pod.Name,
+			UID:        pod.UID,
+		})
+	err = r.client.Update(context.TODO(), &secret)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

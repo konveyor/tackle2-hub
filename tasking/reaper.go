@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"os/exec"
 	"path"
@@ -133,22 +132,12 @@ func (r *TaskReaper) release(m *model.Task) {
 //
 // deletePod Deletes the associated pod as needed.
 func (r *TaskReaper) deletePod(m *model.Task) (err error) {
-	pod := &core.Pod{}
-	err = r.Client.Get(
-		context.TODO(),
-		client.ObjectKey{
-			Namespace: path.Dir(m.Pod),
-			Name:      path.Base(m.Pod),
-		},
-		pod)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			err = nil
-		} else {
-			err = liberr.Wrap(err)
-		}
+	if m.Pod == "" {
 		return
 	}
+	pod := &core.Pod{}
+	pod.Namespace = path.Dir(m.Pod)
+	pod.Name = path.Base(m.Pod)
 	err = r.Client.Delete(context.TODO(), pod)
 	if err == nil {
 		Log.Info(
@@ -167,7 +156,11 @@ func (r *TaskReaper) deletePod(m *model.Task) (err error) {
 //
 // delete task.
 func (r *TaskReaper) delete(m *model.Task) {
-	err := r.DB.Delete(m).Error
+	err := r.deletePod(m)
+	if err != nil {
+		Log.Trace(err)
+	}
+	err = r.DB.Select(clause.Associations).Delete(m).Error
 	if err == nil {
 		Log.Info("Task deleted.", "id", m.ID)
 	} else {
