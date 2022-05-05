@@ -1,17 +1,14 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/tasking"
 	"gorm.io/gorm/clause"
-	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
-	"path"
 	"time"
 )
 
@@ -164,18 +161,12 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 		h.deleteFailed(ctx, result.Error)
 		return
 	}
-	if task.Pod != "" {
-		pod := &core.Pod{}
-		pod.Namespace = path.Dir(task.Pod)
-		pod.Name = path.Base(task.Pod)
-		err := h.Client.Delete(
-			context.TODO(),
-			pod)
-		if err != nil {
-			if !k8serr.IsNotFound(err) {
-				h.deleteFailed(ctx, err)
-				return
-			}
+	rt := tasking.Task{Task: task}
+	err := rt.Delete(h.Client)
+	if err != nil {
+		if !k8serr.IsNotFound(err) {
+			h.deleteFailed(ctx, err)
+			return
 		}
 	}
 	result = h.DB.Select(clause.Associations).Delete(task)

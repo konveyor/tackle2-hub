@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"time"
 )
@@ -48,7 +48,7 @@ type Manager struct {
 	// DB
 	DB *gorm.DB
 	// k8s client.
-	Client client.Client
+	Client k8s.Client
 }
 
 //
@@ -116,10 +116,7 @@ func (m *Manager) startReady() {
 	}
 	for i := range list {
 		ready := &list[i]
-		task := Task{
-			client: m.Client,
-			Task:   ready,
-		}
+		task := Task{ready}
 		switch ready.State {
 		case Ready,
 			Postponed:
@@ -127,7 +124,7 @@ func (m *Manager) startReady() {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
 			} else {
-				err := task.Run()
+				err := task.Run(m.Client)
 				Log.Trace(err)
 				if err == nil {
 					Log.Info("Task started.", "id", ready.ID)
@@ -158,11 +155,8 @@ func (m *Manager) updateRunning() {
 		return
 	}
 	for _, running := range list {
-		task := Task{
-			client: m.Client,
-			Task:   &running,
-		}
-		err := task.Reflect()
+		task := Task{&running}
+		err := task.Reflect(m.Client)
 		Log.Trace(err)
 		if err != nil {
 			continue
@@ -208,15 +202,11 @@ func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) 
 type Task struct {
 	// model.
 	*model.Task
-	// k8s client.
-	client client.Client
-	// addon
-	addon *crd.Addon
 }
 
 //
 // Run the specified task.
-func (r *Task) Run() (err error) {
+func (r *Task) Run(client k8s.Client) (err error) {
 	mark := time.Now()
 	defer func() {
 		if err != nil {
@@ -225,31 +215,31 @@ func (r *Task) Run() (err error) {
 			r.State = Failed
 		}
 	}()
-	r.addon, err = r.findAddon(r.Addon)
+	addon, err := r.findAddon(client, r.Addon)
 	if err != nil {
 		return
 	}
-	r.Image = r.addon.Spec.Image
+	r.Image = addon.Spec.Image
 	secret := r.secret()
-	err = r.client.Create(context.TODO(), &secret)
+	err = client.Create(context.TODO(), &secret)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	defer func() {
 		if err != nil {
-			_ = r.client.Delete(context.TODO(), &secret)
+			_ = client.Delete(context.TODO(), &secret)
 		}
 	}()
-	pod := r.pod(&secret)
-	err = r.client.Create(context.TODO(), &pod)
+	pod := r.pod(addon, &secret)
+	err = client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	defer func() {
 		if err != nil {
-			_ = r.client.Delete(context.TODO(), &pod)
+			_ = client.Delete(context.TODO(), &pod)
 		}
 	}()
 	secret.OwnerReferences = append(
@@ -260,7 +250,7 @@ func (r *Task) Run() (err error) {
 			Name:       pod.Name,
 			UID:        pod.UID,
 		})
-	err = r.client.Update(context.TODO(), &secret)
+	err = client.Update(context.TODO(), &secret)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -275,18 +265,18 @@ func (r *Task) Run() (err error) {
 
 //
 // Reflect finds the associated pod and updates the task state.
-func (r *Task) Reflect() (err error) {
+func (r *Task) Reflect(client k8s.Client) (err error) {
 	pod := &core.Pod{}
-	err = r.client.Get(
+	err = client.Get(
 		context.TODO(),
-		client.ObjectKey{
+		k8s.ObjectKey{
 			Namespace: path.Dir(r.Pod),
 			Name:      path.Base(r.Pod),
 		},
 		pod)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			err = r.Run()
+			err = r.Run(client)
 		} else {
 			err = liberr.Wrap(err)
 		}
@@ -302,7 +292,7 @@ func (r *Task) Reflect() (err error) {
 		r.Terminated = &mark
 	case core.PodFailed:
 		if r.Retries < Settings.Hub.Task.Retries {
-			_ = r.client.Delete(context.TODO(), pod)
+			_ = client.Delete(context.TODO(), pod)
 			r.Pod = ""
 			r.Error = ""
 			r.State = Ready
@@ -318,12 +308,37 @@ func (r *Task) Reflect() (err error) {
 }
 
 //
+// Delete the associated pod as needed.
+func (r *Task) Delete(client k8s.Client) (err error) {
+	if r.Pod == "" {
+		return
+	}
+	pod := &core.Pod{}
+	pod.Namespace = path.Dir(r.Pod)
+	pod.Name = path.Base(r.Pod)
+	err = client.Delete(context.TODO(), pod)
+	if err == nil {
+		r.Pod = ""
+		Log.Info(
+			"Task pod deleted.",
+			"id",
+			r.ID,
+			"pod",
+			pod.Name)
+	} else {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+//
 // findAddon by name.
-func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
+func (r *Task) findAddon(client k8s.Client, name string) (addon *crd.Addon, err error) {
 	addon = &crd.Addon{}
-	err = r.client.Get(
+	err = client.Get(
 		context.TODO(),
-		client.ObjectKey{
+		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
 			Name:      name,
 		},
@@ -338,9 +353,9 @@ func (r *Task) findAddon(name string) (addon *crd.Addon, err error) {
 
 //
 // pod build the pod.
-func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
+func (r *Task) pod(addon *crd.Addon, secret *core.Secret) (pod core.Pod) {
 	pod = core.Pod{
-		Spec: r.specification(secret),
+		Spec: r.specification(addon, secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
 			GenerateName: r.k8sName(),
@@ -353,12 +368,12 @@ func (r *Task) pod(secret *core.Secret) (pod core.Pod) {
 
 //
 // specification builds a Pod specification.
-func (r *Task) specification(secret *core.Secret) (specification core.PodSpec) {
+func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specification core.PodSpec) {
 	specification = core.PodSpec{
 		ServiceAccountName: Settings.Hub.Task.SA,
 		RestartPolicy:      core.RestartPolicyNever,
 		Containers: []core.Container{
-			r.container(),
+			r.container(addon),
 		},
 		Volumes: []core.Volume{
 			{
@@ -385,7 +400,7 @@ func (r *Task) specification(secret *core.Secret) (specification core.PodSpec) {
 			},
 		},
 	}
-	mounts := r.addon.Spec.Mounts
+	mounts := addon.Spec.Mounts
 	for _, mnt := range mounts {
 		specification.Volumes = append(
 			specification.Volumes,
@@ -404,13 +419,13 @@ func (r *Task) specification(secret *core.Secret) (specification core.PodSpec) {
 
 //
 // container builds the pod container.
-func (r *Task) container() (container core.Container) {
+func (r *Task) container(addon *crd.Addon) (container core.Container) {
 	container = core.Container{
 		Name:            "main",
 		Image:           r.Image,
 		ImagePullPolicy: core.PullAlways,
 		WorkingDir:      Settings.Addon.Path.WorkingDir,
-		Resources:       r.addon.Spec.Resources,
+		Resources:       addon.Spec.Resources,
 		Env: []core.EnvVar{
 			{
 				Name:  settings.EnvBucketPath,
@@ -444,7 +459,7 @@ func (r *Task) container() (container core.Container) {
 			},
 		},
 	}
-	mounts := r.addon.Spec.Mounts
+	mounts := addon.Spec.Mounts
 	for _, mnt := range mounts {
 		container.VolumeMounts = append(
 			container.VolumeMounts,
