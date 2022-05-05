@@ -1,12 +1,10 @@
 package tasking
 
 import (
-	"context"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	core "k8s.io/api/core/v1"
 	"os"
 	"os/exec"
 	"path"
@@ -107,7 +105,8 @@ func (r *TaskReaper) Run() {
 func (r *TaskReaper) release(m *model.Task) {
 	nChanged := 0
 	if m.Pod != "" {
-		err := r.deletePod(m)
+		rt := Task{m}
+		err := rt.Delete(r.Client)
 		if err == nil {
 			m.Pod = ""
 			nChanged++
@@ -130,33 +129,10 @@ func (r *TaskReaper) release(m *model.Task) {
 }
 
 //
-// deletePod Deletes the associated pod as needed.
-func (r *TaskReaper) deletePod(m *model.Task) (err error) {
-	if m.Pod == "" {
-		return
-	}
-	pod := &core.Pod{}
-	pod.Namespace = path.Dir(m.Pod)
-	pod.Name = path.Base(m.Pod)
-	err = r.Client.Delete(context.TODO(), pod)
-	if err == nil {
-		Log.Info(
-			"Task pod deleted.",
-			"id",
-			m.ID,
-			"pod",
-			pod.Name)
-	} else {
-		err = liberr.Wrap(err)
-		return
-	}
-	return
-}
-
-//
 // delete task.
 func (r *TaskReaper) delete(m *model.Task) {
-	err := r.deletePod(m)
+	rt := Task{m}
+	err := rt.Delete(r.Client)
 	if err != nil {
 		Log.Trace(err)
 	}
