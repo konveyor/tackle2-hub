@@ -56,7 +56,7 @@ options:
   -v, --verbose         Print verbose output (including all API requests).
 ```
 
-API endpoints and credentials should be set in a config file (```tackle-config.yhml``` by default).
+API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).
 
 ```
 ---
