@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/tasking"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
@@ -372,6 +372,10 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 }
 
 //
+// TTL
+type TTL model.TTL
+
+//
 // Task REST resource.
 type Task struct {
 	Resource
@@ -380,6 +384,7 @@ type Task struct {
 	Priority    int         `json:"priority,omitempty"`
 	Variant     string      `json:"variant,omitempty"`
 	Policy      string      `json:"policy,omitempty"`
+	TTL         *TTL        `json:"ttl,omitempty"`
 	Addon       string      `json:"addon,omitempty" binding:"required"`
 	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref        `json:"application,omitempty"`
@@ -420,6 +425,9 @@ func (r *Task) With(m *model.Task) {
 		report.With(m.Report)
 		r.Report = report
 	}
+	if m.TTL != nil {
+		_ = json.Unmarshal(m.TTL, &r.TTL)
+	}
 }
 
 //
@@ -439,6 +447,9 @@ func (r *Task) Model() (m *model.Task) {
 	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.ID = r.ID
+	if r.TTL != nil {
+		m.TTL, _ = json.Marshal(r.TTL)
+	}
 	return
 }
 

@@ -17,6 +17,9 @@ const (
 	EnvTaskReapFailed    = "TASK_REAP_FAILED"
 	EnvTaskSA            = "TASK_SA"
 	EnvTaskRetries       = "TASK_RETRIES"
+	EnvFrequencyTask     = "FREQUENCY_TASK"
+	EnvFrequencyReaper   = "FREQUENCY_REAPER"
+	EnvFrequencyVolume   = "FREQUENCY_VOLUME"
 )
 
 type Hub struct {
@@ -45,6 +48,12 @@ type Hub struct {
 			Succeeded int
 			Failed    int
 		}
+	}
+	// Frequency
+	Frequency struct {
+		Task   int
+		Reaper int
+		Volume int
 	}
 }
 
@@ -105,6 +114,27 @@ func (r *Hub) Load() (err error) {
 		r.Task.Retries = n
 	} else {
 		r.Task.Retries = 1
+	}
+	s, found = os.LookupEnv(EnvFrequencyTask)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Task = n
+	} else {
+		r.Frequency.Task = 1 // 1 second.
+	}
+	s, found = os.LookupEnv(EnvFrequencyReaper)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Reaper = n
+	} else {
+		r.Frequency.Reaper = 1 // 1 minute.
+	}
+	s, found = os.LookupEnv(EnvFrequencyVolume)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Volume = n
+	} else {
+		r.Frequency.Volume = 5 // 5 minute.
 	}
 
 	return

@@ -9,6 +9,7 @@ var Settings TackleSettings
 
 type TackleSettings struct {
 	Hub
+	Metrics
 	Addon
 	Auth
 }

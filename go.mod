@@ -10,6 +10,7 @@ require (
 	github.com/konveyor/controller v0.8.0
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/onsi/gomega v1.7.0
+	github.com/prometheus/client_golang v1.1.0
 	github.com/swaggo/swag v1.7.8
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
 	gorm.io/datatypes v1.0.5
@@ -19,6 +20,7 @@ require (
 	gorm.io/gorm v1.22.5
 	k8s.io/api v0.17.4
 	k8s.io/apimachinery v0.17.4
+	k8s.io/apiserver v0.17.1
 	k8s.io/client-go v0.17.4
 	sigs.k8s.io/controller-runtime v0.1.11
 )

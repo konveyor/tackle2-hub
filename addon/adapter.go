@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/tasking"
+	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
 	"net/http"
 	"os"
@@ -52,6 +52,8 @@ type Adapter struct {
 	TagType TagType
 	// Tag API.
 	Tag Tag
+	// Volumes API.
+	Volume Volume
 	// client A REST client.
 	client *Client
 }
@@ -108,7 +110,7 @@ func (h *Adapter) Client() *Client {
 func newAdapter() (adapter *Adapter) {
 	//
 	// Load secret.
-	secret := &tasking.Secret{}
+	secret := &task.Secret{}
 	b, err := os.ReadFile(Settings.Addon.Path.Secret)
 	if err != nil {
 		panic(err)
@@ -147,6 +149,9 @@ func newAdapter() (adapter *Adapter) {
 			client: client,
 		},
 		Tag: Tag{
+			client: client,
+		},
+		Volume: Volume{
 			client: client,
 		},
 		client: client,

@@ -1,21 +1,82 @@
-package tasking
+package reaper
 
 import (
+	"context"
+	"encoding/json"
 	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/controller/pkg/logging"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"os"
 	"os/exec"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 )
 
 const (
-	ReaperUnit = time.Minute
+	Unit = time.Minute
 )
+
+var (
+	Settings = &settings.Settings
+	Log      = logging.WithName("reaper")
+)
+
+type Task = task.Task
+
+//
+// Manager provides task management.
+type Manager struct {
+	// DB
+	DB *gorm.DB
+	// k8s client.
+	Client k8s.Client
+}
+
+//
+// Run the manager.
+func (m *Manager) Run(ctx context.Context) {
+	registered := []Reaper{
+		&TaskReaper{
+			Client: m.Client,
+			DB:     m.DB,
+		},
+		&GroupReaper{
+			DB: m.DB,
+		},
+		&BucketReaper{
+			DB: m.DB,
+		},
+	}
+	go func() {
+		Log.Info("Started.")
+		defer Log.Info("Died.")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				for _, r := range registered {
+					r.Run()
+				}
+				m.pause()
+			}
+		}
+	}()
+}
+
+//
+// Pause.
+func (m *Manager) pause() {
+	d := Unit * time.Duration(Settings.Frequency.Reaper)
+	time.Sleep(d)
+}
 
 //
 // Reaper interface.
@@ -29,36 +90,43 @@ type TaskReaper struct {
 	// DB
 	DB *gorm.DB
 	// k8s client.
-	Client client.Client
+	Client k8s.Client
 }
 
 //
 // Run Executes the reaper.
 // Rules by state:
 //   Created
-//   - Deleted after the defined period.
+//   - Deleted after TTL.Created > created timestamp or
+//     settings.Task.Reaper.Created.
+//   Pending
+//   - Deleted after TTL.Pending > created timestamp or
+//     settings.Task.Reaper.Created.
+//   Postponed
+//   - Deleted after TTL.Postponed > created timestamp or
+//     settings.Task.Reaper.Created.
+//   Running
+//   - Deleted after TTL.Running > started timestamp.
 //   Succeeded
-//   - Deleted after the defined period when not associated with
-//     an application. Tasks associated with an application
-//     are deleted when the application is deleted.
+//   - Deleted after TTL > terminated timestamp or
+//     settings.Task.Reaper.Succeeded.
 //   - Bucket is released after the defined period.
 //   - Pod is deleted after the defined period.
 //   Failed
-//   - Deleted after the defined period when not associated with
-//     an application. Tasks associated with an application
-//     are deleted when the application is deleted.
+//   - Deleted after TTL > terminated timestamp or
+//     settings.Task.Reaper.Failed.
 //   - Bucket is released after the defined period.
 //   - Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
-	Log.V(1).Info("Reaping tasks.")
+	Log.Info("Reaping tasks.")
 	list := []model.Task{}
 	result := r.DB.Find(
 		&list,
 		"state IN ?",
 		[]string{
-			Created,
-			Succeeded,
-			Failed,
+			task.Created,
+			task.Succeeded,
+			task.Failed,
 		})
 	Log.Trace(result.Error)
 	if result.Error != nil {
@@ -66,33 +134,68 @@ func (r *TaskReaper) Run() {
 	}
 	for i := range list {
 		m := &list[i]
+		ttl := r.TTL(m)
 		switch m.State {
-		case Created:
+		case task.Created:
 			mark := m.CreateTime
-			d := time.Duration(
-				Settings.Hub.Task.Reaper.Created) * ReaperUnit
-			if time.Since(mark) > d {
-				r.delete(m)
-			}
-		case Succeeded:
-			mark := *m.Terminated
-			d := time.Duration(
-				Settings.Hub.Task.Reaper.Succeeded) * ReaperUnit
-			if time.Since(mark) > d {
-				if m.ApplicationID == nil {
+			if ttl.Created > 0 {
+				d := time.Duration(ttl.Created) * Unit
+				if time.Since(mark) > d {
 					r.delete(m)
-				} else {
+				}
+			} else {
+				d := time.Duration(Settings.Hub.Task.Reaper.Created) * Unit
+				if time.Since(mark) > d {
 					r.release(m)
 				}
 			}
-		case Failed:
-			mark := *m.Terminated
-			d := time.Duration(
-				Settings.Hub.Task.Reaper.Failed) * ReaperUnit
-			if time.Since(mark) > d {
-				if m.ApplicationID == nil {
+		case task.Pending:
+			mark := m.CreateTime
+			if ttl.Pending > 0 {
+				d := time.Duration(ttl.Pending) * Unit
+				if time.Since(mark) > d {
 					r.delete(m)
-				} else {
+				}
+			}
+		case task.Postponed:
+			mark := m.CreateTime
+			if ttl.Postponed > 0 {
+				d := time.Duration(ttl.Postponed) * Unit
+				if time.Since(mark) > d {
+					r.delete(m)
+				}
+			}
+		case task.Running:
+			mark := *m.Started
+			if ttl.Running > 0 {
+				d := time.Duration(ttl.Running) * Unit
+				if time.Since(mark) > d {
+					r.delete(m)
+				}
+			}
+		case task.Succeeded:
+			mark := *m.Terminated
+			if ttl.Succeeded > 0 {
+				d := time.Duration(ttl.Succeeded) * Unit
+				if time.Since(mark) > d {
+					r.delete(m)
+				}
+			} else {
+				d := time.Duration(Settings.Hub.Task.Reaper.Succeeded) * Unit
+				if time.Since(mark) > d {
+					r.release(m)
+				}
+			}
+		case task.Failed:
+			mark := *m.Terminated
+			if ttl.Succeeded > 0 {
+				d := time.Duration(ttl.Failed) * Unit
+				if time.Since(mark) > d {
+					r.delete(m)
+				}
+			} else {
+				d := time.Duration(Settings.Hub.Task.Reaper.Failed) * Unit
+				if time.Since(mark) > d {
 					r.release(m)
 				}
 			}
@@ -105,7 +208,7 @@ func (r *TaskReaper) Run() {
 func (r *TaskReaper) release(m *model.Task) {
 	nChanged := 0
 	if m.Pod != "" {
-		rt := Task{m}
+		rt := Task{Task:m}
 		err := rt.Delete(r.Client)
 		if err == nil {
 			m.Pod = ""
@@ -145,6 +248,19 @@ func (r *TaskReaper) delete(m *model.Task) {
 }
 
 //
+// TTL returns the task TTL.
+func (r *TaskReaper) TTL(m *model.Task) (ttl api.TTL) {
+	if m.TTL != nil {
+		_ = json.Unmarshal(m.TTL, &ttl)
+	}
+
+	return
+}
+
+//
+//
+
+//
 // GroupReaper reaps task groups.
 type GroupReaper struct {
 	// DB
@@ -170,14 +286,14 @@ func (r *GroupReaper) Run() {
 	for i := range list {
 		m := &list[i]
 		switch m.State {
-		case Created:
+		case task.Created:
 			mark := m.CreateTime
 			d := time.Duration(
-				Settings.Hub.Task.Reaper.Created) * ReaperUnit
+				Settings.Hub.Task.Reaper.Created) * Unit
 			if time.Since(mark) > d {
 				r.delete(m)
 			}
-		case Ready:
+		case task.Ready:
 			if len(m.Tasks) == 0 {
 				r.delete(m)
 				continue
