@@ -18,6 +18,8 @@ parser.add_argument('-d','--data-dir', type=str, help='Local Tackle data directo
                     nargs='?', default='./tackle-data')
 parser.add_argument('-v','--verbose', dest='verbose', action='store_const', const=True, default=False,
                     help='Print verbose output (including all API requests).')
+parser.add_argument('-s','--skip-destination-check', dest='skipDestCheck', action='store_const', const=True, default=False,
+                    help='Skip connection and data check of Tackle 2 destination.')
 args = parser.parse_args()
 
 ###############################################################################
@@ -425,8 +427,9 @@ if cmdWanted(args, "export-tackle1"):
     tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
 
     # Run the export
-    print("Loading seed objects from Tackle 2")
-    tackle12import.loadTackle2Seeds()
+    if not args.skipDestCheck:
+        print("Loading seed objects from Tackle 2")
+        tackle12import.loadTackle2Seeds()
     print("Exporting Tackle 1.2 objects")
     tackle12import.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
@@ -444,7 +447,8 @@ if cmdWanted(args, "import"):
 
     # Run the import
     print("Importing data to Tackle2")
-    tackle12import.preImportCheck()
+    if not args.skipDestCheck:
+        tackle12import.preImportCheck()
     tackle12import.uploadTackle2()
 
 # Clean created objects in Tackle2

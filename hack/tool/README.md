@@ -40,7 +40,7 @@ Data directory ```-d / --data-dir``` specifies path to local directory with Tack
 
 ```
 $ tackle --help
-usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [action ...]
+usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [action ...]
 
 Konveyor Tackle maintenance tool.
 
@@ -54,6 +54,8 @@ options:
   -d [DATA_DIR], --data-dir [DATA_DIR]
                         Local Tackle data directory path (tackle-data by default).
   -v, --verbose         Print verbose output (including all API requests).
+  -s, --skip-destination-check
+                        Skip connection and data check of Tackle 2 destination.
 ```
 
 API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).
