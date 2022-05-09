@@ -92,6 +92,11 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     else:
         return respData # raw return JSON (Tackle2, Pathfinder)
 
+def tackle2path(obj):
+    if 'assessment' in obj:
+        return "/pathfinder/"
+    return "/hub/"
+
 def loadDump(path):
     data = open(path)
     return json.load(data)
@@ -111,7 +116,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'applications', 'proxies', 'dependencies', 'assessments', 'assessmentrisks', 'reviews', 'identities', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', ]  # buckets
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessmentrisks', 'assessments', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -124,6 +129,7 @@ class Tackle12Import:
         self.data         = dict()
         for t in self.TYPES:
             self.data[t] = []
+        self.data['origin-tags'] = []   # temp storage for origin tags id remapping
         # Existing resources in destination
         self.destData        = dict()
         for t in self.TYPES:
@@ -131,8 +137,6 @@ class Tackle12Import:
 
     # Gather existing seeded objects from Tackle2
     def loadTackle2Seeds(self):
-        print("Checking Tackle 2 for seed objects..")
-
         # Tackle 2 TagTypes and Tags
         collection = apiJSON(tackle12import.tackle2Url + "/hub/tagtypes", tackle12import.tackle2Token)
         for tt2 in collection:
@@ -154,9 +158,11 @@ class Tackle12Import:
             self.destData['jobfunctions'][jf.name] = jf
 
     def findById(self, objType, id):
+        # Search in data to be imported
         for obj in self.data[objType]:
             if obj.id == id:
                 return obj
+        # Raise error if still not found
         print("ERROR: %s record ID %d not found." % (objType, id))
         exit(1)
 
@@ -173,6 +179,7 @@ class Tackle12Import:
                 tag.name        = tag1['name']
                 # TagType is injected from tagType processing few lines below
                 # Store Tag only if doesn't exist in Tackle2 destination already
+                self.add('origin-tags', tag)   # tmp tags for merge with seed tags lookup
                 if tag.name not in self.destData['tags']:
                     self.add('tags', tag)
                 tags.append(tag)
@@ -198,7 +205,7 @@ class Tackle12Import:
             debugPrint(app1)
             if app1['tags']:
                 for tagId in app1['tags']:
-                    appTag = self.findById('tags', int(tagId))
+                    appTag = self.findById('origin-tags', int(tagId))
                     # Check if Tag exists in Tackle2 destination
                     if appTag.name in self.destData['tags']:
                         # Re-map to existing Tackle2 Tag
@@ -213,14 +220,26 @@ class Tackle12Import:
             app                 = Tackle2Object(app1)
             app.name            = app1['name']
             app.description     = app1['description']
-            app.businessService = app1['businessService']
             app.tags            = tags
+            if app1['businessService']:
+                app.businessService = {'id':int(app1['businessService'])}
+            else:
+                print("Warning: Application %d %s has not businessService, which is required by Tackle2. Set it manually in %s/applications.json" % (app.id, app.name, self.dataDir))
+            ### APPLICATION REVIEW ###
+            if app1['review']:
+                rev                 = Tackle2Object(app1['review'])
+                rev.proposedAction      = app1['review']['proposedAction']
+                rev.effortEstimate      = app1['review']['effortEstimate']
+                rev.businessCriticality = app1['review']['businessCriticality']
+                rev.workPriority        = app1['review']['workPriority']
+                rev.comments            = app1['review']['comments']
+                rev.application         = {'id': app.id, 'name': app.name}
+                if app1['review']['copiedFromReviewId']:
+                    rev.copiedFromReviewId  = app1['review']['copiedFromReviewId']
+                self.add('reviews', rev)
             #app.repository      = app1['repository']   # Not part of 1.2 API 
             #app.binary          = app1['binary']
             #app.facts           = app1['facts']
-            if app1['review']:
-                app.review                = app1['review']
-                app.review['application'] = {'id': app.id, 'name': app.name}    # Cut Tags and other not needed parameters of the Application
             self.add('applications', app)
 
         ### PROXIES ###
@@ -259,20 +278,6 @@ class Tackle12Import:
             #     assmr.applicationId = assmr1['applicationId']
             #     assmr.risk          = assmr1['risk']
             #     self.add('assessmentrisks', assmr)
-
-        ### REVIEWS ### part of application
-        # collection = apiJSON(self.tackle1Url + "/api/application-inventory/review", self.tackle1Token)
-        # for rev1 in collection:
-        #     # Prepare Review
-        #     rev                 = Tackle2Object(rev1)
-        #     rev.proposedAction      = rev1['proposedAction']
-        #     rev.effortEstimate      = rev1['effortEstimate']
-        #     rev.businessCriticality = rev1['businessCriticality']
-        #     rev.workPriority        = rev1['workPriority']
-        #     rev.comments            = rev1['comments']
-        #     rev.copiedFromReviewId  = rev1['copiedFromReviewId']
-        #     rev.application         = {'id': rev1['application']['id'], 'name': rev1['application']['name']}
-        #     self.add('reviews', rev)
 
         ### IDENTITIES ###
         # collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
@@ -367,12 +372,14 @@ class Tackle12Import:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
                 debugPrint(dictObj)
-                apiJSON(self.tackle2Url + "/hub/" + t, self.tackle2Token, dictObj, method='POST')
+                apiJSON(self.tackle2Url + tackle2path(t) + t, self.tackle2Token, dictObj, method='POST')
 
     def preImportCheck(self):
         for t in self.TYPES:
+            if "assessment" in t:
+                continue    # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
             print("Checking %s in destination Tackle2.." % t)
-            destCollection = apiJSON(self.tackle2Url + "/hub/" + t, self.tackle2Token)
+            destCollection = apiJSON(self.tackle2Url + tackle2path(t) + t, self.tackle2Token)
             localCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for importObj in localCollection:
                 for destObj in destCollection:
@@ -385,8 +392,14 @@ class Tackle12Import:
         for t in self.TYPES:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
-                print("Deleting %s/%s" % (t, dictObj['id']))
-                apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE')
+                if "assessment" in t:
+                    # Pathfinder
+                    print("Deleting %s?applicationId=%s" % (t, dictObj['applicationId']))
+                    apiJSON("%s/pathfinder/%s?applicationId=%d" % (self.tackle2Url, t, dictObj['applicationId']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                else:
+                    # Hub
+                    print("Deleting %s/%s" % (t, dictObj['id']))
+                    apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
 
 class Tackle2Object:
     def __init__(self, initAttrs = {}):
@@ -412,11 +425,13 @@ if cmdWanted(args, "export-tackle1"):
     tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
 
     # Run the export
-    print("Exporting Tackle 1.2 objects")
+    print("Loading seed objects from Tackle 2")
     tackle12import.loadTackle2Seeds()
+    print("Exporting Tackle 1.2 objects")
     tackle12import.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
     tackle12import.store()
+    print("Done. The data could be imported to Tackle 2 using command \"tackle import\"")
 
 # Tackle 2 import steps
 if cmdWanted(args, "import"):

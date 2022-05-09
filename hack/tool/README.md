@@ -26,7 +26,7 @@ Check local JSON dump files in ```./tackle-data``` directory (if needed) and cre
 The import command connects to Tackle2 Hub, check existing objects for possible collisions (by IDs) and uploads resources from local JSON files.
 
 ### Delete uploaded objects
-To delete objects previously created by the ```import``` command, run ```tackle clean```.
+To delete objects previously created by the ```import``` command, run ```tackle clean```. This can address also existing Tackle 2 objects which are in collision with local JSON dump files.
 
 ### Command line options
 
