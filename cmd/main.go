@@ -31,7 +31,6 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 	"strings"
 	"syscall"
 )
@@ -185,8 +184,7 @@ func main() {
 		return
 	}
 	go func() {
-		done := signals.SetupSignalHandler()
-		err = addonManager.Start(done)
+		err = addonManager.Start(make(<-chan struct{}))
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

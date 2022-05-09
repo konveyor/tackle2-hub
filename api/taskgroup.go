@@ -6,8 +6,8 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 )
 
@@ -203,32 +203,34 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	err := h.DB.Transaction(
-		func(tx *gorm.DB) (err error) {
-			db := tx.Preload(clause.Associations)
-			result := db.First(m, id)
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			result = db.Delete(m)
-			if result.Error != nil {
-				err = result.Error
-				return
-			}
-			for i := range m.Tasks {
-				m := &m.Tasks[i]
-				result := tx.Delete(m)
-				if result.Error != nil {
-					err = result.Error
+	db := h.DB.Preload(clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		h.deleteFailed(ctx, err)
+		return
+	}
+	for _, task := range m.Tasks {
+		if task.Pod != "" {
+			rt := tasking.Task{Task: &task}
+			err := rt.Delete(h.Client)
+			if err != nil {
+				if !k8serr.IsNotFound(err) {
+					h.deleteFailed(ctx, err)
 					return
 				}
 			}
-
+		}
+		db := h.DB.Select(clause.Associations)
+		err = db.Delete(task).Error
+		if err != nil {
+			h.deleteFailed(ctx, err)
 			return
-		})
+		}
+	}
+	db = h.DB.Select(clause.Associations)
+	err = db.Delete(m).Error
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.deleteFailed(ctx, err)
 		return
 	}
 
