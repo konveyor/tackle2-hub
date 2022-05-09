@@ -47,7 +47,7 @@ type NotFound struct {
 }
 
 func (e NotFound) Error() string {
-	return fmt.Sprintf("GET: path:%s (not-found)", e.Path)
+	return fmt.Sprintf("HTTP path:%s (not-found)", e.Path)
 }
 
 func (e *NotFound) Is(err error) (matched bool) {

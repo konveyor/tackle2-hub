@@ -7,7 +7,7 @@ import (
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //
@@ -46,7 +46,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 	addon := &crd.Addon{}
 	err := h.Client.Get(
 		context.TODO(),
-		client.ObjectKey{
+		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
 			Name:      name,
 		},
@@ -77,7 +77,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 	list := &crd.AddonList{}
 	err := h.Client.List(
 		context.TODO(),
-		&client.ListOptions{
+		&k8s.ListOptions{
 			Namespace: Settings.Namespace,
 		},
 		list)

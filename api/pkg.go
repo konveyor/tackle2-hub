@@ -44,6 +44,7 @@ func All() []Handler {
 		&TagTypeHandler{},
 		&TaskHandler{},
 		&TaskGroupHandler{},
+		&VolumeHandler{},
 	}
 }
 

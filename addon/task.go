@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/tasking"
+	"github.com/konveyor/tackle2-hub/task"
 )
 
 //
@@ -13,7 +13,7 @@ type Task struct {
 	// hub API client.
 	client *Client
 	// Addon Secret
-	secret *tasking.Secret
+	secret *task.Secret
 	// Task report.
 	report api.TaskReport
 }
@@ -57,7 +57,7 @@ func (h *Task) Variant() string {
 // Started report addon started.
 func (h *Task) Started() {
 	h.deleteReport()
-	h.report.Status = tasking.Running
+	h.report.Status = task.Running
 	h.pushReport()
 	Log.Info("Addon reported started.")
 	return
@@ -66,7 +66,7 @@ func (h *Task) Started() {
 //
 // Succeeded report addon succeeded.
 func (h *Task) Succeeded() {
-	h.report.Status = tasking.Succeeded
+	h.report.Status = task.Succeeded
 	h.report.Completed = h.report.Total
 	h.pushReport()
 	Log.Info("Addon reported: succeeded.")
@@ -77,7 +77,7 @@ func (h *Task) Succeeded() {
 // Failed report addon failed.
 // The reason can be a printf style format.
 func (h *Task) Failed(reason string, x ...interface{}) {
-	h.report.Status = tasking.Failed
+	h.report.Status = task.Failed
 	h.report.Error = fmt.Sprintf(reason, x...)
 	h.pushReport()
 	Log.Info(

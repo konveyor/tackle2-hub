@@ -1,8 +1,9 @@
-package tasking
+package task
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
@@ -11,11 +12,12 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -37,10 +39,30 @@ const (
 	Isolated = "isolated"
 )
 
+const (
+	Unit = time.Second
+)
+
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("task")
+	Log      = logging.WithName("task-scheduler")
 )
+
+//
+// AddonNotFound used to report addon referenced
+// by a task but cannot be found.
+type AddonNotFound struct {
+	Name string
+}
+
+func (e *AddonNotFound) Error() (s string) {
+	return fmt.Sprintf("Addon: '%s' not-found.", e.Name)
+}
+
+func (e *AddonNotFound) Is(err error) (matched bool) {
+	_, matched = err.(*AddonNotFound)
+	return
+}
 
 //
 // Manager provides task management.
@@ -54,47 +76,27 @@ type Manager struct {
 //
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	scheduler := func() {
-		Log.Info("Scheduler started.")
+	go func() {
+		Log.Info("Started.")
+		defer Log.Info("Done.")
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				time.Sleep(time.Second)
 				m.updateRunning()
 				m.startReady()
+				m.pause()
 			}
 		}
-	}
-	reaper := func() {
-		reapers := []Reaper{
-			&TaskReaper{
-				Client: m.Client,
-				DB:     m.DB,
-			},
-			&GroupReaper{
-				DB: m.DB,
-			},
-			&BucketReaper{
-				DB: m.DB,
-			},
-		}
-		Log.Info("Reaper started.")
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				time.Sleep(ReaperUnit)
-				for _, r := range reapers {
-					r.Run()
-				}
-			}
-		}
-	}
-	go scheduler()
-	go reaper()
+	}()
+}
+
+//
+// Pause.
+func (m *Manager) pause() {
+	d := Unit * time.Duration(Settings.Frequency.Task)
+	time.Sleep(d)
 }
 
 //
@@ -107,33 +109,46 @@ func (m *Manager) startReady() {
 		"state IN ?",
 		[]string{
 			Ready,
-			Running,
 			Postponed,
+			Pending,
+			Running,
 		})
 	Log.Trace(result.Error)
 	if result.Error != nil {
 		return
 	}
 	for i := range list {
-		ready := &list[i]
-		task := Task{ready}
-		switch ready.State {
+		task := &list[i]
+		switch task.State {
 		case Ready,
 			Postponed:
+			ready := task
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-			} else {
-				err := task.Run(m.Client)
-				Log.Trace(err)
-				if err == nil {
-					Log.Info("Task started.", "id", ready.ID)
-				} else {
-					continue
-				}
+				sErr := m.DB.Save(ready).Error
+				Log.Trace(sErr)
+				continue
 			}
-			result := m.DB.Save(ready)
-			Log.Trace(result.Error)
+			rt := Task{ready}
+			err := rt.Run(m.Client)
+			if err != nil {
+				if errors.Is(err, &AddonNotFound{}) {
+					ready.Error = err.Error()
+					ready.State = Failed
+					sErr := m.DB.Save(ready).Error
+					Log.Trace(sErr)
+				}
+				Log.Trace(err)
+				continue
+			}
+			Log.Info("Task started.", "id", ready.ID)
+			err = m.DB.Save(ready).Error
+			Log.Trace(err)
+		default:
+			// Ignored.
+			// Other states included to support
+			// postpone rules.
 		}
 	}
 }
@@ -155,15 +170,15 @@ func (m *Manager) updateRunning() {
 		return
 	}
 	for _, running := range list {
-		task := Task{&running}
-		err := task.Reflect(m.Client)
-		Log.Trace(err)
+		rt := Task{&running}
+		err := rt.Reflect(m.Client)
 		if err != nil {
+			Log.Trace(err)
 			continue
 		}
-		result := m.DB.Save(&running)
-		Log.Trace(result.Error)
-		if result.Error != nil {
+		err = m.DB.Save(&running).Error
+		if err != nil {
+			Log.Trace(result.Error)
 			continue
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
@@ -171,26 +186,26 @@ func (m *Manager) updateRunning() {
 }
 
 //
-// postpone Postpones a task based on the following rules:
-//   - Tasks must be unique for an addon and application.
-//   - An isolated task must run by itself and will cause all
-//     other tasks to be postponed.
-func (m *Manager) postpone(pending *model.Task, list []model.Task) (found bool) {
+// postpone Postpones a task as needed based on rules.
+func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool) {
+	ruleSet := []Rule{
+		&RuleIsolated{},
+		&RuleUnique{},
+	}
 	for i := range list {
-		task := &list[i]
-		if task.ID == pending.ID {
+		other := &list[i]
+		if ready.ID == other.ID {
 			continue
 		}
-		if task.State != Running {
-			continue
-		}
-		if pending.ApplicationID == task.ApplicationID && pending.Addon == task.Addon {
-			found = true
-			return
-		}
-		if pending.Policy == Isolated || task.Policy == Isolated {
-			found = true
-			return
+		switch other.State {
+		case Running,
+			Pending:
+			for _, rule := range ruleSet {
+				if rule.Match(ready, other) {
+					postponed = true
+					return
+				}
+			}
 		}
 	}
 
@@ -275,7 +290,7 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 		},
 		pod)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serr.IsNotFound(err) {
 			err = r.Run(client)
 		} else {
 			err = liberr.Wrap(err)
@@ -344,7 +359,11 @@ func (r *Task) findAddon(client k8s.Client, name string) (addon *crd.Addon, err 
 		},
 		addon)
 	if err != nil {
-		err = liberr.Wrap(err)
+		if k8serr.IsNotFound(err) {
+			err = &AddonNotFound{name}
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 
@@ -525,4 +544,77 @@ type Secret struct {
 		}
 	}
 	Addon interface{}
+}
+
+//
+// Rule defines postpone rules.
+type Rule interface {
+	Match(candidate, other *model.Task) bool
+}
+
+//
+// RuleUnique running tasks must be unique by:
+//   - application
+//   - variant
+//   - addon.
+type RuleUnique struct {
+}
+
+//
+// Match determines the match.
+func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
+	if candidate.ApplicationID == nil || other.ApplicationID == nil {
+		return
+	}
+	if *candidate.ApplicationID != *other.ApplicationID {
+		return
+	}
+	if candidate.Addon != other.Addon {
+		return
+	}
+	matched = true
+	Log.Info(
+		"Rule:Unique matched.",
+		"candidate",
+		candidate.ID,
+		"by",
+		other.ID)
+
+	return
+}
+
+//
+// RuleIsolated policy.
+type RuleIsolated struct {
+}
+
+//
+// Match determines the match.
+func (r *RuleIsolated) Match(candidate, other *model.Task) (matched bool) {
+	matched = r.hasPolicy(candidate, Isolated) || r.hasPolicy(other, Isolated)
+	if matched {
+		Log.Info(
+			"Rule:Isolated matched.",
+			"candidate",
+			candidate.ID,
+			"by",
+			other.ID)
+	}
+
+	return
+}
+
+//
+// Returns true if the task policy includes: isolated
+func (r *RuleIsolated) hasPolicy(task *model.Task, name string) (matched bool) {
+	for _, p := range strings.Split(task.Policy, ";") {
+		p = strings.TrimSpace(p)
+		p = strings.ToLower(p)
+		if p == name {
+			matched = true
+			break
+		}
+	}
+
+	return
 }

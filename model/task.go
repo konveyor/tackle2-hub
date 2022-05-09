@@ -29,12 +29,13 @@ type Task struct {
 	Image         string
 	Variant       string
 	Policy        string
+	TTL           JSON
 	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
 	State         string `gorm:"index"`
 	Error         string
-	Pod           string
+	Pod           string `gorm:"index"`
 	Retries       int
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
@@ -145,3 +146,14 @@ func (m *TaskGroup) merge(a, b Map) (out Map) {
 //
 // Map alias.
 type Map = map[string]interface{}
+
+//
+// TTL time-to-live.
+type TTL struct {
+	Created   int `json:"created,omitempty"`
+	Pending   int `json:"pending,omitempty"`
+	Postponed int `json:"postponed,omitempty"`
+	Running   int `json:"running,omitempty"`
+	Succeeded int `json:"succeeded,omitempty"`
+	Failed    int `json:"failed,omitempty"`
+}
