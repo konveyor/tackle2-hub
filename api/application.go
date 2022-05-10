@@ -323,7 +323,7 @@ func (r *Application) Model() (m *model.Application) {
 // Repository REST nested resource.
 type Repository struct {
 	Kind   string `json:"kind"`
-	URL    string `json:"url" binding:"url"`
+	URL    string `json:"url"`
 	Branch string `json:"branch"`
 	Tag    string `json:"tag"`
 	Path   string `json:"path"`
