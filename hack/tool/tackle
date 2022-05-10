@@ -71,7 +71,7 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
             r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)
         case 'POST':
             debugPrint("POST data: %s" % json.dumps(data))
-            r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)
+            r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
         case _: # GET
             r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)  # add pagination?
 
@@ -118,7 +118,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessmentrisks', 'assessments', 'reviews', 'identities']
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessmentrisks', 'assessmentconfidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -272,14 +272,23 @@ class Tackle12Import:
                 assm.status        = assm1['status']
                 self.add('assessments', assm)
 
-            # collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
-            # for assmr1 in collection:
-            #     # Prepare Assessment Risk
-            #     assmr               = Tackle2Object()
-            #     assmr.assessmentId  = assmr1['assessmentId']
-            #     assmr.applicationId = assmr1['applicationId']
-            #     assmr.risk          = assmr1['risk']
-            #     self.add('assessmentrisks', assmr)
+            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
+            for assmr1 in collection:
+                # Prepare Assessment Risk
+                assmr               = Tackle2Object()
+                assmr.assessmentId  = assmr1['assessmentId']
+                assmr.applicationId = assmr1['applicationId']
+                assmr.risk          = assmr1['risk']
+                self.add('assessmentrisks', assmr)
+
+            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/confidence", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
+            for conf1 in collection:
+                # Prepare Confidence
+                conf               = Tackle2Object()
+                conf.assessmentId  = conf1['assessmentId']
+                conf.applicationId = conf1['applicationId']
+                conf.confidence    = conf1['confidence']
+                self.add('assessmentconfidence', conf)
 
         ### IDENTITIES ###
         # collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
@@ -358,7 +367,7 @@ class Tackle12Import:
 
     def add(self, type, item):
         for existingItem in self.data[type]:
-            if item.id == existingItem.id:
+            if hasattr(item, 'id') and item.id == existingItem.id:  # assessment links objects don't have primary key id
                 # The item is already present, skipping
                 return
         self.data[type].append(item)
