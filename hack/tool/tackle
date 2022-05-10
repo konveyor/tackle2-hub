@@ -118,7 +118,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--asessment-risk', 'assessments--confidence', 'reviews', 'identities']
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -279,7 +279,7 @@ class Tackle12Import:
                 assmr.assessmentId  = assmr1['assessmentId']
                 assmr.applicationId = assmr1['applicationId']
                 assmr.risk          = assmr1['risk']
-                self.add('assessments--asessment-risk', assmr)
+                self.add('assessments--assessment-risk', assmr)
 
             collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/confidence", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
             for conf1 in collection:
