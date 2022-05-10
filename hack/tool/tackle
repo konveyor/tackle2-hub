@@ -68,12 +68,12 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     debugPrint("Querying: %s" % url)
     match method:
         case 'DELETE':
-            r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)
+            r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
         case 'POST':
             debugPrint("POST data: %s" % json.dumps(data))
             r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
         case _: # GET
-            r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "text/json"}, verify=False)  # add pagination?
+            r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)  # add pagination?
 
     if not r.ok:
         if ignoreErrors:
@@ -96,8 +96,8 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
 
 def tackle2path(obj):
     if 'assessment' in obj:
-        return "/pathfinder/"
-    return "/hub/"
+        return "/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
+    return "/hub/%s" % obj
 
 def loadDump(path):
     data = open(path)
@@ -118,7 +118,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessmentrisks', 'assessmentconfidence', 'reviews', 'identities']
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--asessment-risk', 'assessments--confidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -279,7 +279,7 @@ class Tackle12Import:
                 assmr.assessmentId  = assmr1['assessmentId']
                 assmr.applicationId = assmr1['applicationId']
                 assmr.risk          = assmr1['risk']
-                self.add('assessmentrisks', assmr)
+                self.add('assessments--asessment-risk', assmr)
 
             collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/confidence", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
             for conf1 in collection:
@@ -288,7 +288,7 @@ class Tackle12Import:
                 conf.assessmentId  = conf1['assessmentId']
                 conf.applicationId = conf1['applicationId']
                 conf.confidence    = conf1['confidence']
-                self.add('assessmentconfidence', conf)
+                self.add('assessments--confidence', conf)
 
         ### IDENTITIES ###
         # collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
@@ -379,18 +379,20 @@ class Tackle12Import:
 
     def uploadTackle2(self):
         for t in self.TYPES:
-            print("Uploading %s.." % t)
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
+                if "assessment" in t:
+                    continue    # Pathfinder skip
+                print("Uploading %s.." % t)
                 debugPrint(dictObj)
-                apiJSON(self.tackle2Url + tackle2path(t) + t, self.tackle2Token, dictObj, method='POST')
+                apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST')
 
     def preImportCheck(self):
         for t in self.TYPES:
             if "assessment" in t:
                 continue    # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
             print("Checking %s in destination Tackle2.." % t)
-            destCollection = apiJSON(self.tackle2Url + tackle2path(t) + t, self.tackle2Token)
+            destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
             localCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for importObj in localCollection:
                 for destObj in destCollection:
@@ -404,9 +406,10 @@ class Tackle12Import:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
                 if "assessment" in t:
-                    # Pathfinder
-                    print("Deleting %s?applicationId=%s" % (t, dictObj['applicationId']))
-                    apiJSON("%s/pathfinder/%s?applicationId=%d" % (self.tackle2Url, t, dictObj['applicationId']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                    # Pathfinder skip
+                    #print("Deleting %s?applicationId=%s" % (t, dictObj['applicationId']))
+                    #apiJSON("%s/pathfinder/%s?applicationId=%d" % (self.tackle2Url, t, dictObj['applicationId']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                    continue
                 else:
                     # Hub
                     print("Deleting %s/%s" % (t, dictObj['id']))
@@ -439,7 +442,7 @@ if cmdWanted(args, "export-tackle1"):
     if not args.skipDestCheck:
         print("Loading seed objects from Tackle 2")
         tackle12import.loadTackle2Seeds()
-    print("Exporting Tackle 1.2 objects")
+    print("Exporting Tackle 1.2 objects (this might take a while..)")
     tackle12import.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
     tackle12import.store()
@@ -459,6 +462,7 @@ if cmdWanted(args, "import"):
     if not args.skipDestCheck:
         tackle12import.preImportCheck()
     tackle12import.uploadTackle2()
+    print("Done. Open your Tackle2 now!")
 
 # Clean created objects in Tackle2
 if cmdWanted(args, "clean"):
