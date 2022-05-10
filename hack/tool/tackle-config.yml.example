@@ -1,5 +1,5 @@
 ---
-# A default Tackle 2 endpoint and credentials
+# Default Tackle 2 endpoint and credentials
 url: https://tackle-konveyor-tackle.apps.cluster.local
 username: admin
 password:
