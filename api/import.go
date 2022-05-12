@@ -258,8 +258,8 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		var imp model.Import
 		switch row[0] {
 		case RecordTypeApplication:
-			// Check row format - length, expecting 13 fields + tags
-			if len(row) < 13 {
+			// Check row format - length, expecting 15 fields + tags
+			if len(row) < 15 {
 				ctx.JSON(http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
@@ -345,46 +345,50 @@ func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app mod
 // Col 4: Comments -- Additional comments on the application.
 // Col 5: Business Service -- The name of the business service this Application should belong to.
 //                            This business service must already exist.
+// Col 6: Dependency -- Optional dependency to another Application (by name)
+// Col 7: Dependency direction -- Either northbound or southbound
 //
 // Binary: Binary coordinates (like from <Group>:<Artifact>:<Version>:<Packaging>).
-// Col 6: Group
-// Col 7: Artifact
-// Col 8: Version
-// Col 9: Packaging (optional)
+// Col 8: Group
+// Col 9: Artifact
+// Col 10: Version
+// Col 11: Packaging (optional)
 //
 // Repository: The following columns are coordinates to a source repository.
-// Col 10: Kind (defaults to 'git' if empty)
-// Col 11: URL
-// Col 12: Branch
-// Col 13: Path
+// Col 12: Kind (defaults to 'git' if empty)
+// Col 13: URL
+// Col 14: Branch
+// Col 15: Path
 //
 // Following that are up to twenty pairs of Tag Types and Tags, specified by name. These are optional.
 // If a tag type and a tag are specified, they must already exist.
 //
 // Examples:
 //
-// 1,MyApplication,My cool app,No comment,Marketing,binarygrp,elfbin,v1,rpm,git,url,branch,path,TagType1,Tag1,TagType2,Tag2
-// 1,OtherApplication,,,,,,,,,,,MyBusinessService
+// 1,MyApplication,My cool app,No comment,Marketing,,,binarygrp,elfbin,v1,war,git,url,branch,path,TagType1,Tag1,TagType2,Tag2
+// 1,OtherApplication,,,Marketing,MyApplication,southbound
 func (h ImportHandler) applicationFromRow(fileName string, row []string) (app model.Import) {
 	app = model.Import{
-		Filename:         fileName,
-		RecordType1:      row[0],
-		ApplicationName:  row[1],
-		Description:      row[2],
-		Comments:         row[3],
-		BusinessService:  row[4],
-		BinaryGroup:      row[5],
-		BinaryArtifact:   row[6],
-		BinaryVersion:    row[7],
-		BinaryPackaging:  row[8],
-		RepositoryKind:   row[9],
-		RepositoryURL:    row[10],
-		RepositoryBranch: row[11],
-		RepositoryPath:   row[12],
+		Filename:            fileName,
+		RecordType1:         row[0],
+		ApplicationName:     row[1],
+		Description:         row[2],
+		Comments:            row[3],
+		BusinessService:     row[4],
+		Dependency:          row[5],
+		DependencyDirection: row[6],
+		BinaryGroup:         row[7],
+		BinaryArtifact:      row[8],
+		BinaryVersion:       row[9],
+		BinaryPackaging:     row[10],
+		RepositoryKind:      row[11],
+		RepositoryURL:       row[12],
+		RepositoryBranch:    row[13],
+		RepositoryPath:      row[14],
 	}
 
 	// Tags
-	for i := 13; i < len(row); i++ {
+	for i := 15; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
 				Name:    row[i],
