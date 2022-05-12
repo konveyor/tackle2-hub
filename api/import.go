@@ -260,7 +260,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		case RecordTypeApplication:
 			// Check row format - length, expecting 15 fields + tags
 			if len(row) < 15 {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Application Import CSV format."})
+				ctx.JSON(http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
 			imp = h.applicationFromRow(fileName, row)
