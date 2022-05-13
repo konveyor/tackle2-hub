@@ -313,8 +313,8 @@ func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 // Col 1: Record Type 1 -- This will always contain a "2" for a dependency
 // Col 2: Application Name -- The name of the application that has the dependency relationship.
 //                            This application must exist.
-// Col N-2: Dependency -- The name of the application on the other side of the dependency relationship.
-// Col N-1: Dependency Direction -- Whether this is a "northbound" or "southbound" dependency.
+// Col N-2 or 6: Dependency -- The name of the application on the other side of the dependency relationship.
+// Col N-1 or 7: Dependency Direction -- Whether this is a "northbound" or "southbound" dependency.
 //
 // Between the Application Name and the Dependency field there may be an arbitrary number of columns representing
 // tags or other fields that only pertain to an application import. The dependency and direction will always be
@@ -322,15 +322,23 @@ func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 //
 // Examples:
 //
-// 2,MyApplication,,,,,,,,,,,OtherApplication,NORTHBOUND
+// 2,MyApplication,,,,OtherApplication,NORTHBOUND,,,,,,,,
 // 2,MyApplication,OtherApplication,SOUTHBOUND
 func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app model.Import) {
+	// Dependency Application and direction are 2 last columns by default
+	depApplicatonPos := len(row) - 2
+	depDirectionPos := len(row) - 1
+	// If there is more columns (part of Application&dependency import in the same file), uset hardcoded positions
+	if len(row) > 7 {
+		depApplicatonPos = 5
+		depDirectionPos = 6
+	}
 	app = model.Import{
 		Filename:            fileName,
 		RecordType1:         row[0],
 		ApplicationName:     row[1],
-		Dependency:          row[len(row)-2],
-		DependencyDirection: row[len(row)-1],
+		Dependency:          row[depApplicatonPos],
+		DependencyDirection: row[depDirectionPos],
 	}
 	return
 }
