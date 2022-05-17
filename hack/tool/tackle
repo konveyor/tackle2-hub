@@ -20,14 +20,14 @@ parser.add_argument('-v','--verbose', dest='verbose', action='store_const', cons
                     help='Print verbose output (including all API requests).')
 parser.add_argument('-s','--skip-destination-check', dest='skipDestCheck', action='store_const', const=True, default=False,
                     help='Skip connection and data check of Tackle 2 destination.')
-parser.add_argument('-w','--disable-ssl-warnings', dest='skipSslCheck', action='store_const', const=True, default=False,
-                    help='Skip ssl check for api requests')
+parser.add_argument('-w','--disable-ssl-warnings', dest='disableSslWarnings', action='store_const', const=True, default=False,
+                    help='Do not display warnings during ssl check for api requests')
 args = parser.parse_args()
 
 ###############################################################################
 
-def disableSSlWarnings(skipSslCheck):
-    if skipSslCheck:
+def disableSSlWarnings(disableSslWarnings):
+    if disableSslWarnings:
         requests.packages.urllib3.disable_warnings()
 
 def ensureDataDir(dataDir):
@@ -430,7 +430,7 @@ class Tackle2Object:
 
 ###############################################################################
 # Disable SSL warnings if needed
-disableSSlWarnings(args.skipSslCheck)
+disableSSlWarnings(args.disableSslWarnings)
 
 # Load YAML config file (tackle-config.yml)
 c = loadConfig(args.config)
