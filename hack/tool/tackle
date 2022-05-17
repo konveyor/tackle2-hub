@@ -27,7 +27,7 @@ args = parser.parse_args()
 ###############################################################################
 
 def disableSSlWarnings(skipSslCheck):
-    if args.skipSslCheck:
+    if skipSslCheck:
         requests.packages.urllib3.disable_warnings()
 
 def ensureDataDir(dataDir):
