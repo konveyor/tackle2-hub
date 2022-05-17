@@ -36,6 +36,7 @@ Verbose output ```-v / --verbose``` option logs all API requests and responses p
 
 Data directory ```-d / --data-dir``` specifies path to local directory with Tackle database records in JSON format (```./tackle-data``` by default).
 
+SSL warnings ```-w / --disable-ssl-warnings``` optional suppress ssl warning for api requests.
 ## Example
 
 ```
@@ -56,6 +57,9 @@ options:
   -v, --verbose         Print verbose output (including all API requests).
   -s, --skip-destination-check
                         Skip connection and data check of Tackle 2 destination.
+  -w, --disable-ssl-warnings
+                        Do not display warnings during ssl check for api requests.
+
 ```
 
 API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).
