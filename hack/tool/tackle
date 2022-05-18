@@ -22,6 +22,8 @@ parser.add_argument('-s','--skip-destination-check', dest='skipDestCheck', actio
                     help='Skip connection and data check of Tackle 2 destination.')
 parser.add_argument('-w','--disable-ssl-warnings', dest='disableSslWarnings', action='store_const', const=True, default=False,
                     help='Do not display warnings during ssl check for api requests.')
+parser.add_argument('-i','--ignore-import-errors', dest='ignoreImportErrors', action='store_const', const=True, default=False,
+                    help='Skip to next item if an item fails load.')
 args = parser.parse_args()
 
 ###############################################################################
@@ -383,7 +385,7 @@ class Tackle12Import:
         for t in self.TYPES:
             saveJSON(os.path.join(self.dataDir, t), self.data[t])
 
-    def uploadTackle2(self):
+    def uploadTackle2(self, ignoreErrors=False):
         for t in self.TYPES:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
@@ -391,7 +393,8 @@ class Tackle12Import:
                     continue    # Pathfinder skip
                 print("Uploading %s.." % t)
                 debugPrint(dictObj)
-                apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST')
+                apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+
 
     def preImportCheck(self):
         for t in self.TYPES:
@@ -469,7 +472,7 @@ if cmdWanted(args, "import"):
     print("Importing data to Tackle2")
     if not args.skipDestCheck:
         tackle12import.preImportCheck()
-    tackle12import.uploadTackle2()
+    tackle12import.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
     print("Done. Open your Tackle2 now!")
 
 # Clean created objects in Tackle2
