@@ -59,6 +59,9 @@ options:
                         Skip connection and data check of Tackle 2 destination.
   -w, --disable-ssl-warnings
                         Do not display warnings during ssl check for api requests.
+  -i, --ignore-import-errors
+                        Skip to next item if an item fails load.
+
 
 ```
 
