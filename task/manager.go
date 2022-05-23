@@ -439,6 +439,7 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 //
 // container builds the pod container.
 func (r *Task) container(addon *crd.Addon) (container core.Container) {
+	userid := int64(0)
 	container = core.Container{
 		Name:            "main",
 		Image:           r.Image,
@@ -476,6 +477,9 @@ func (r *Task) container(addon *crd.Addon) (container core.Container) {
 				Name:      "bucket",
 				MountPath: Settings.Hub.Bucket.Path,
 			},
+		},
+		SecurityContext: &core.SecurityContext{
+			RunAsUser: &userid,
 		},
 	}
 	mounts := addon.Spec.Mounts
