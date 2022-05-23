@@ -3,7 +3,7 @@ ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
 RUN make docker
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 RUN microdnf -y install \
   sqlite \
