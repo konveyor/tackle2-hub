@@ -126,7 +126,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments','assessments-applications', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -252,14 +252,6 @@ class Tackle12Import:
             #app.facts           = app1['facts']
             self.add('applications', app)
 
-        ### PROXIES ###
-        # collection = apiJSON(self.tackle1Url + "/api/proxies", self.tackle1Token)
-        # for proxy1 in collection:
-        #     # Prepare Proxy
-        #     proxy                 = Tackle2Object(proxy1)
-        #     proxy.name            = proxy1['name']
-        #     self.add('proxies', proxy)
-
         ### DEPENDENCIES ###
         collection = apiJSON(self.tackle1Url + "/api/application-inventory/applications-dependency", self.tackle1Token)
         for dep1 in collection:
@@ -278,7 +270,19 @@ class Tackle12Import:
                 assm.id            = assm1['id']
                 assm.applicationId = assm1['applicationId']
                 assm.status        = assm1['status']
-                self.add('assessments', assm)
+                #? only if aasm.status == "COMPLETE" but want to keep also open assessments
+                # Prepare Assessment questions and answers
+                asqa1 = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/%d" % assm.id, self.tackle1Token)
+                if True: #non emtpy?
+                    asqa               = Tackle2Object()
+                    asqa.id                = asqa1['id']
+                    asqa.applicationId     = asqa1['applicationId']
+                    assm.status            = asqa1['status']
+                    assm.stakeholders      = asqa1['stakeholders']
+                    assm.stakeholderGroups = asqa1['stakeholderGroups']
+                    asqa.questionnaire     = asqa1['questionnaire']
+                    self.add('assessments', asqa)
+                self.add('assessments-applications', assm)
 
             collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
             for assmr1 in collection:
@@ -297,14 +301,6 @@ class Tackle12Import:
                 conf.applicationId = conf1['applicationId']
                 conf.confidence    = conf1['confidence']
                 self.add('assessments--confidence', conf)
-
-        ### IDENTITIES ###
-        # collection = apiJSON(self.tackle1Url + "/api/", self.tackle1Token)
-        # for id1 in collection:
-        #     # Prepare Review
-        #     id                 = Tackle2Object(id1)
-        #     id.name            = id1['name']
-        #     self.add('identities', id)
 
         ### STAKEHOLDER ###
         collection = apiJSON(self.tackle1Url + "/api/controls/stakeholder", self.tackle1Token)
@@ -386,14 +382,27 @@ class Tackle12Import:
             saveJSON(os.path.join(self.dataDir, t), self.data[t])
 
     def uploadTackle2(self, ignoreErrors=False):
+        # Hub objects
         for t in self.TYPES:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
                 if "assessment" in t:
-                    continue    # Pathfinder skip
+                    continue    # Pathfinder objects are imported separately
                 print("Uploading %s.." % t)
                 debugPrint(dictObj)
                 apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+
+        # Assessments / Pathfinder stuff import
+        dictCollection = loadDump(os.path.join(self.dataDir, 'assessments.json'))
+        print("Uploading assessments..")
+        for assmnt in dictCollection:
+            # Start the assessment
+            assmnt2 = apiJSON(self.tackle2Url + tackle2path('assessments'), self.tackle2Token, data={"applicationId": assmnt['applicationId']}, method='POST', ignoreErrors=ignoreErrors)
+            # Fill the assessment
+            apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt, method='PATCH', ignoreErrors=ignoreErrors) # id get ignored
+            # Optionally complete the assessment
+            if assmnt2['status'] == 'COMPLETE':
+                apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data={'status': 'COMPLETE'}, method='PATCH', ignoreErrors=ignoreErrors)
 
 
     def preImportCheck(self):
