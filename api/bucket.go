@@ -17,6 +17,10 @@ type BucketHandler struct {
 //
 // content at path.
 func (h *BucketHandler) content(ctx *gin.Context, owner *model.BucketOwner) {
+	if owner.Bucket == "" {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 	rPath := ctx.Param(Wildcard)
 	ctx.File(pathlib.Join(
 		owner.Bucket,
@@ -26,6 +30,10 @@ func (h *BucketHandler) content(ctx *gin.Context, owner *model.BucketOwner) {
 //
 // upload file at path.
 func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
+	if owner.Bucket == "" {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 	rPath := ctx.Param(Wildcard)
 	path := pathlib.Join(
 		owner.Bucket,
@@ -65,6 +73,26 @@ func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
 	}
 	err = os.Chmod(path, 0666)
 	if err != nil {
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+//
+// Delete from the bucket at path.
+func (h *BucketHandler) delete(ctx *gin.Context, owner *model.BucketOwner) {
+	if owner.Bucket == "" {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	rPath := ctx.Param(Wildcard)
+	path := pathlib.Join(
+		owner.Bucket,
+		rPath)
+	err := os.RemoveAll(path)
+	if err != nil {
+		ctx.Status(http.StatusInternalServerError)
 		return
 	}
 

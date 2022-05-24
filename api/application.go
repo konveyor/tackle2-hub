@@ -35,8 +35,10 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ApplicationRoot, h.Get)
 	routeGroup.PUT(ApplicationRoot, h.Update)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
-	routeGroup.POST(AppBucketRoot, h.Upload)
-	routeGroup.GET(AppBucketRoot, h.Content)
+	routeGroup.POST(AppBucketRoot, h.BucketUpload)
+	routeGroup.PUT(AppBucketRoot, h.BucketUpload)
+	routeGroup.GET(AppBucketRoot, h.BucketGet)
+	routeGroup.DELETE(AppBucketRoot, h.BucketDelete)
 }
 
 // Get godoc
@@ -191,7 +193,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// Content godoc
+// BucketGet godoc
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @tags get
@@ -199,7 +201,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @success 200
 // @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
 // @param id path string true "Task ID"
-func (h ApplicationHandler) Content(ctx *gin.Context) {
+func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	taskID := h.pk(ctx)
 	m := &model.Application{}
 	result := h.DB.First(m, taskID)
@@ -207,18 +209,19 @@ func (h ApplicationHandler) Content(ctx *gin.Context) {
 		h.getFailed(ctx, result.Error)
 		return
 	}
+
 	h.content(ctx, &m.BucketOwner)
 }
 
-// Upload godoc
-// @summary Upload bucket content by task ID and path.
-// @description Upload bucket content by task ID and path.
-// @tags get
+// BucketUpload godoc
+// @summary Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path.
+// @tags post
 // @produce json
 // @success 204
-// @router /bucket/{id}/content/{wildcard} [post]
-// @param id path string true "Bucket ID"
-func (h ApplicationHandler) Upload(ctx *gin.Context) {
+// @router /applications/{id}/bucket/{wildcard} [post, put]
+// @param id path string true "Application ID"
+func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Application{}
 	result := h.DB.First(m, id)
@@ -228,6 +231,26 @@ func (h ApplicationHandler) Upload(ctx *gin.Context) {
 	}
 
 	h.upload(ctx, &m.BucketOwner)
+}
+
+// BucketDelete godoc
+// @summary Delete bucket content by ID and path.
+// @description Delete bucket content by ID and path.
+// @tags delete
+// @produce json
+// @success 204
+// @router /applications/{id}/bucket/{wildcard} [delete]
+// @param id path string true "Application ID"
+func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Application{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+
+	h.delete(ctx, &m.BucketOwner)
 }
 
 //
