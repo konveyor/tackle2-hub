@@ -45,9 +45,10 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
-	routeGroup.GET(TaskBucketRoot, h.Content)
-	routeGroup.POST(TaskBucketRoot, h.Upload)
-	routeGroup.PUT(TaskBucketRoot, h.Upload)
+	routeGroup.GET(TaskBucketRoot, h.BucketGet)
+	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
+	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
+	routeGroup.DELETE(TaskBucketRoot, h.BucketDelete)
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
 	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)
@@ -251,7 +252,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 	ctx.Next()
 }
 
-// Content godoc
+// BucketGet godoc
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @tags get
@@ -259,7 +260,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // @success 200
 // @router /tasks/{id}/bucket/{wildcard} [get]
 // @param id path string true "Task ID"
-func (h TaskHandler) Content(ctx *gin.Context) {
+func (h TaskHandler) BucketGet(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Task{}
 	result := h.DB.First(m, id)
@@ -270,15 +271,15 @@ func (h TaskHandler) Content(ctx *gin.Context) {
 	h.content(ctx, &m.BucketOwner)
 }
 
-// Upload godoc
-// @summary Upload bucket content by task ID and path.
-// @description Upload bucket content by task ID and path.
-// @tags get
+// BucketUpload godoc
+// @summary Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path.
+// @tags post
 // @produce json
 // @success 204
-// @router /tasks/{id}/bucket/{wildcard} [post]
-// @param id path string true "Bucket ID"
-func (h TaskHandler) Upload(ctx *gin.Context) {
+// @router /tasks/{id}/bucket/{wildcard} [post,put]
+// @param id path string true "Task ID"
+func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
@@ -288,6 +289,26 @@ func (h TaskHandler) Upload(ctx *gin.Context) {
 	}
 
 	h.upload(ctx, &m.BucketOwner)
+}
+
+// BucketDelete godoc
+// @summary Delete bucket content by ID and path.
+// @description Delete bucket content by ID and path.
+// @tags delete
+// @produce json
+// @success 204
+// @router /tasks/{id}/bucket/{wildcard} [delete]
+// @param id path string true "Task ID"
+func (h TaskHandler) BucketDelete(ctx *gin.Context) {
+	m := &model.Task{}
+	id := h.pk(ctx)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.deleteFailed(ctx, result.Error)
+		return
+	}
+
+	h.delete(ctx, &m.BucketOwner)
 }
 
 // CreateReport godoc
