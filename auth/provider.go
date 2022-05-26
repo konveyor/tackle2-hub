@@ -39,6 +39,12 @@ func (r *NoAuth) Scopes(token string) (scopes []Scope, err error) {
 }
 
 //
+// GetUsername mocks username for NoAuth
+func (r *NoAuth) GetUsername(token string) (name string, err error) {
+	return "--admin--", nil
+}
+
+//
 // NoAuthScope always permits access.
 type NoAuthScope struct{}
 
