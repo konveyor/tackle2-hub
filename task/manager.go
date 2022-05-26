@@ -531,7 +531,9 @@ func (r *Task) k8sName() string {
 // labels builds k8s labels.
 func (r *Task) labels() map[string]string {
 	return map[string]string{
-		"Task": strconv.Itoa(int(r.ID)),
+		"task": strconv.Itoa(int(r.ID)),
+		"app":  "tackle",
+		"role": "task",
 	}
 }
 
