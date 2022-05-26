@@ -37,6 +37,9 @@ Verbose output ```-v / --verbose``` option logs all API requests and responses p
 Data directory ```-d / --data-dir``` specifies path to local directory with Tackle database records in JSON format (```./tackle-data``` by default).
 
 SSL warnings ```-w / --disable-ssl-warnings``` optional suppress ssl warning for api requests.
+
+Import errors could be skipped with ``` -i / --ignore-import-errors ``` -  not recommended - use with high attention to avoid data inconsistency. If the import has failed, it is recommended use ```tackle clean``` command to remove only imported resources.
+
 ## Example
 
 ```
