@@ -126,7 +126,7 @@ def cmdWanted(args, action):
 
 class Tackle12Import:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments','assessments-applications', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
+    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -273,16 +273,16 @@ class Tackle12Import:
                 #? only if aasm.status == "COMPLETE" but want to keep also open assessments
                 # Prepare Assessment questions and answers
                 asqa1 = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/%d" % assm.id, self.tackle1Token)
-                if True: #non emtpy?
-                    asqa               = Tackle2Object()
-                    asqa.id                = asqa1['id']
-                    asqa.applicationId     = asqa1['applicationId']
-                    assm.status            = asqa1['status']
-                    assm.stakeholders      = asqa1['stakeholders']
-                    assm.stakeholderGroups = asqa1['stakeholderGroups']
-                    asqa.questionnaire     = asqa1['questionnaire']
-                    self.add('assessments', asqa)
-                self.add('assessments-applications', assm)
+                #if True: #non emtpy?
+                asqa               = Tackle2Object()
+                asqa.id                = asqa1['id']
+                asqa.applicationId     = asqa1['applicationId']
+                asqa.status            = asqa1['status']
+                asqa.stakeholders      = asqa1['stakeholders']
+                asqa.stakeholderGroups = asqa1['stakeholderGroups']
+                asqa.questionnaire     = asqa1['questionnaire']
+                self.add('assessments', asqa)
+                #self.add('assessments-applications', assm)
 
             collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
             for assmr1 in collection:
@@ -407,15 +407,23 @@ class Tackle12Import:
 
     def preImportCheck(self):
         for t in self.TYPES:
+            # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
             if "assessment" in t:
-                continue    # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
+                continue
             print("Checking %s in destination Tackle2.." % t)
             destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
             localCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for importObj in localCollection:
+                # Pathfinder resources are dependent on Application, cheking it via applicationId
+                if t == "applications":
+                    # Check Application's Assessments first
+                    asmnts = apiJSON(self.tackle2Url + "/pathfinder/assessments?applicationId=%d" % importObj['id'], self.tackle2Token, ignoreErrors=True)
+                    if len(asmnts) > 0:
+                        print("ERROR: Pathfinder assessment for application ID %d already exists. Clean it before running the import with: tackle clean" % importObj['id'])
+                        exit(1)
                 for destObj in destCollection:
                     if importObj['id'] == destObj['id']:
-                        print("ERROR: Resource %s/%d \"%s\" already exists in Tackle2 destination as \"%s\". Clean it before running import." % (t, importObj['id'], importObj['name'], destObj['name']))
+                        print("ERROR: Resource %s/%d \"%s\" already exists in Tackle2 destination as \"%s\". Clean it before running the import with: tackle clean" % (t, importObj['id'], importObj['name'], destObj['name']))
                         exit(1)
 
     def cleanTackle2(self):
@@ -424,14 +432,17 @@ class Tackle12Import:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
                 if "assessment" in t:
-                    # Pathfinder skip
-                    #print("Deleting %s?applicationId=%s" % (t, dictObj['applicationId']))
-                    #apiJSON("%s/pathfinder/%s?applicationId=%d" % (self.tackle2Url, t, dictObj['applicationId']), self.tackle2Token, method='DELETE', ignoreErrors=True)
                     continue
-                else:
-                    # Hub
-                    print("Deleting %s/%s" % (t, dictObj['id']))
-                    apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                # Pathfinder resources are dependent on Application
+                if t == "applications":
+                    # Delete related Application's Assessment resources first
+                    collection = apiJSON(self.tackle2Url + "/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
+                    for assm in collection:
+                        print("Deleting assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
+                        apiJSON("%s/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                # Hub resources
+                print("Deleting %s/%s" % (t, dictObj['id']))
+                apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
 
 class Tackle2Object:
     def __init__(self, initAttrs = {}):
