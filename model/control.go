@@ -29,8 +29,8 @@ type Stakeholder struct {
 type JobFunction struct {
 	Model
 	Username     string
-	Name         string `gorm:"index;unique;not null"`
-	Stakeholders []Stakeholder
+	Name         string        `gorm:"index;unique;not null"`
+	Stakeholders []Stakeholder `gorm:"constraint:OnDelete:SET NULL"`
 }
 
 type Tag struct {
