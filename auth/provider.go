@@ -3,15 +3,19 @@ package auth
 import (
 	"context"
 	"errors"
-	"github.com/Nerzal/gocloak/v10"
-	"github.com/golang-jwt/jwt/v4"
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/Nerzal/gocloak/v10"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type Provider interface {
 	// Scopes decodes a list of scopes from the token.
 	Scopes(token string) ([]Scope, error)
+	// GetUsername resolves token to username using Keycloak service
+	GetUsername(token string) (name string, err error)
 }
 
 //
@@ -111,6 +115,26 @@ func (r *Keycloak) newScope(s string) (scope KeycloakScope) {
 	} else {
 		scope.resource = s
 	}
+	return
+}
+
+//
+// GetUsername resolves token to username using Keycloak service
+func (r *Keycloak) GetUsername(token string) (name string, err error) {
+	fmt.Printf("--------------------------- Getting userInfo with token: %v", token)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	//decoded, _, err := r.client.DecodeAccessToken(ctx, token, r.realm)
+
+	//fmt.Printf("DEBUG: token: %s, realm: %s", t2, r.realm)
+	userInfo, err := r.client.GetUserInfo(ctx, token, r.realm)
+	if err != nil {
+		fmt.Printf("------------------ failed get userInfo, err: %v", err)
+		return
+	}
+	fmt.Printf("-------------------------- userInfo: %v", userInfo)
+
+	name = *userInfo.Name
 	return
 }
 

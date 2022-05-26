@@ -2,11 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -79,6 +81,9 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		h.listFailed(ctx, result.Error)
 		return
 	}
+
+	fmt.Printf("|||||||||||||| current user: %s", h.CurrentUsername(ctx))
+
 	resources := []Application{}
 	for i := range list {
 		r := Application{}

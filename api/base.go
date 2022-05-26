@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"time"
 )
 
 //
@@ -252,6 +254,24 @@ func (h *BaseHandler) modBody(
 	b, _ := json.Marshal(r)
 	bfr := bytes.NewBuffer(b)
 	ctx.Request.Body = ioutil.NopCloser(bfr)
+	return
+}
+
+//tady dát volání auth providera pro username možná s cachováním
+//
+// Get user info from Keycloak
+func (h *BaseHandler) CurrentUsername(ctx *gin.Context) (username string) {
+	fmt.Printf("++++++++++++++ gin ctx: %v", ctx)
+	token := ctx.GetHeader("Authorization")
+
+	username, err := h.AuthProvider.GetUsername(token)
+	if err != nil {
+		fmt.Printf("+++++++++++++++ failed get userInfo, err: %v", err)
+		return ""
+	}
+
+	fmt.Printf("+++++++++++++++++++++ userName: %v", username)
+
 	return
 }
 
