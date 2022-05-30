@@ -2,10 +2,12 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
+	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 	"io/ioutil"
