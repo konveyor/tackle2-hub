@@ -2,22 +2,19 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
+	"github.com/mattn/go-sqlite3"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/mattn/go-sqlite3"
-	"gorm.io/gorm"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //
@@ -257,21 +254,16 @@ func (h *BaseHandler) modBody(
 	return
 }
 
-//tady dát volání auth providera pro username možná s cachováním
 //
-// Get user info from Keycloak
+// CurrentUsername gets username from Keycloak auth token
 func (h *BaseHandler) CurrentUsername(ctx *gin.Context) (username string) {
-	fmt.Printf("++++++++++++++ gin ctx: %v", ctx)
 	token := ctx.GetHeader("Authorization")
-
-	username, err := h.AuthProvider.GetUsername(token)
+	// Consider later add username to ctx and cache for single request?
+	username, err := h.AuthProvider.Username(token)
 	if err != nil {
-		fmt.Printf("+++++++++++++++ failed get userInfo, err: %v", err)
-		return ""
+		fmt.Printf("Failed get current username, err: %v\n", err)
+		username = ""
 	}
-
-	fmt.Printf("+++++++++++++++++++++ userName: %v", username)
-
 	return
 }
 

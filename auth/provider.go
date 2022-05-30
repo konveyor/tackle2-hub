@@ -3,19 +3,17 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
-	"time"
-
 	"github.com/Nerzal/gocloak/v10"
 	"github.com/golang-jwt/jwt/v4"
+	"strings"
+	"time"
 )
 
 type Provider interface {
 	// Scopes decodes a list of scopes from the token.
 	Scopes(token string) ([]Scope, error)
-	// GetUsername resolves token to username using Keycloak service
-	GetUsername(token string) (name string, err error)
+	// Username parses preffered_name field from the token.
+	Username(token string) (username string, err error)
 }
 
 //
@@ -39,9 +37,9 @@ func (r *NoAuth) Scopes(token string) (scopes []Scope, err error) {
 }
 
 //
-// GetUsername mocks username for NoAuth
-func (r *NoAuth) GetUsername(token string) (name string, err error) {
-	return "--admin--", nil
+// Username mocks username for NoAuth
+func (r *NoAuth) Username(token string) (name string, err error) {
+	return "admin.noauth", nil
 }
 
 //
@@ -125,22 +123,25 @@ func (r *Keycloak) newScope(s string) (scope KeycloakScope) {
 }
 
 //
-// GetUsername resolves token to username using Keycloak service
-func (r *Keycloak) GetUsername(token string) (name string, err error) {
-	fmt.Printf("--------------------------- Getting userInfo with token: %v", token)
+// Username resolves token to username using Keycloak service.
+func (r *Keycloak) Username(token string) (username string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
-	//decoded, _, err := r.client.DecodeAccessToken(ctx, token, r.realm)
-
-	//fmt.Printf("DEBUG: token: %s, realm: %s", t2, r.realm)
-	userInfo, err := r.client.GetUserInfo(ctx, token, r.realm)
+	decoded, claims, err := r.client.DecodeAccessToken(ctx, token, r.realm)
 	if err != nil {
-		fmt.Printf("------------------ failed get userInfo, err: %v", err)
+		err = errors.New("invalid token for username")
 		return
 	}
-	fmt.Printf("-------------------------- userInfo: %v", userInfo)
-
-	name = *userInfo.Name
+	if !decoded.Valid {
+		err = errors.New("invalid token for username")
+		return
+	}
+	// Get preferred_username from the token payload
+	username, ok := (*claims)["preferred_username"].(string)
+	if !ok {
+		err = errors.New("cannot parse preferred_username from token")
+		return
+	}
 	return
 }
 
