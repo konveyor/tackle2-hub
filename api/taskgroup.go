@@ -130,6 +130,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			})
 		return
 	}
+	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
 	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -166,6 +167,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	m := updated.Model()
 	m.ID = current.ID
 	m.Bucket = current.Bucket
+	m.UpdateUser = h.BaseHandler.CurrentUsername(ctx)
 	db := h.DB.Model(m)
 	switch updated.State {
 	case "", tasking.Created:

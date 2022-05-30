@@ -99,6 +99,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -152,6 +153,7 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.ID = id
+	m.UpdateUser = h.BaseHandler.CurrentUsername(ctx)
 	db := h.DB.Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))

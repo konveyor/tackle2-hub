@@ -137,6 +137,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -330,6 +331,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	}
 	report.TaskID = id
 	m := report.Model()
+	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -358,6 +360,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	}
 	report.TaskID = id
 	m := report.Model()
+	m.UpdateUser = h.BaseHandler.CurrentUsername(ctx)
 	db := h.DB.Model(m)
 	db = db.Where("taskid", id)
 	result := db.Updates(h.fields(m))

@@ -229,6 +229,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		ImportStatus: InProgress,
 		Content:      buf.Bytes(),
 	}
+	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
