@@ -100,7 +100,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := review.Model()
-	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -154,7 +154,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.ID = id
-	m.UpdateUser = h.BaseHandler.CurrentUsername(ctx)
+	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))

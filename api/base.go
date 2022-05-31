@@ -257,14 +257,14 @@ func (h *BaseHandler) modBody(
 }
 
 //
-// CurrentUsername gets username from Keycloak auth token
-func (h *BaseHandler) CurrentUsername(ctx *gin.Context) (username string) {
+// CurrentUser gets username from Keycloak auth token
+func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 	token := ctx.GetHeader("Authorization")
 	// Consider later add username to ctx and cache for single request?
-	username, err := h.AuthProvider.Username(token)
+	user, err := h.AuthProvider.User(token)
 	if err != nil {
-		fmt.Printf("Failed get current username, err: %v\n", err)
-		username = ""
+		fmt.Printf("Failed to get current user, err: %v\n", err)
+		user = ""
 	}
 	return
 }

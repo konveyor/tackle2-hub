@@ -3,17 +3,18 @@ package auth
 import (
 	"context"
 	"errors"
-	"github.com/Nerzal/gocloak/v10"
-	"github.com/golang-jwt/jwt/v4"
 	"strings"
 	"time"
+
+	"github.com/Nerzal/gocloak/v10"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type Provider interface {
 	// Scopes decodes a list of scopes from the token.
 	Scopes(token string) ([]Scope, error)
-	// Username parses preffered_name field from the token.
-	Username(token string) (username string, err error)
+	// User parses preffered_username field from the token.
+	User(token string) (user string, err error)
 }
 
 //
@@ -37,8 +38,8 @@ func (r *NoAuth) Scopes(token string) (scopes []Scope, err error) {
 }
 
 //
-// Username mocks username for NoAuth
-func (r *NoAuth) Username(token string) (name string, err error) {
+// User mocks username for NoAuth
+func (r *NoAuth) User(token string) (name string, err error) {
 	return "admin.noauth", nil
 }
 
@@ -123,21 +124,15 @@ func (r *Keycloak) newScope(s string) (scope KeycloakScope) {
 }
 
 //
-// Username resolves token to username using Keycloak service.
-func (r *Keycloak) Username(token string) (username string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+// User resolves token to Keycloak username.
+func (r *Keycloak) User(token string) (user string, err error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	decoded, claims, err := r.client.DecodeAccessToken(ctx, token, r.realm)
-	if err != nil {
-		err = errors.New("invalid token for username")
-		return
-	}
-	if !decoded.Valid {
-		err = errors.New("invalid token for username")
-		return
-	}
-	// Get preferred_username from the token payload
-	username, ok := (*claims)["preferred_username"].(string)
+	// Token validity should be checked before in Scopes method
+	_, claims, err := r.client.DecodeAccessToken(ctx, token, r.realm)
+
+	// Get preferred_username from the token payload as the user
+	user, ok := (*claims)["preferred_username"].(string)
 	if !ok {
 		err = errors.New("cannot parse preferred_username from token")
 		return

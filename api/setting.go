@@ -110,7 +110,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	}
 
 	m := setting.Model()
-	m.CreateUser = h.BaseHandler.CurrentUsername(ctx)
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
@@ -151,7 +151,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	}
 
 	m := updates.Model()
-	m.UpdateUser = h.BaseHandler.CurrentUsername(ctx)
+	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	db = db.Where("key", key)
 	result := db.Updates(h.fields(m))
