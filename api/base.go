@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
@@ -252,6 +253,19 @@ func (h *BaseHandler) modBody(
 	b, _ := json.Marshal(r)
 	bfr := bytes.NewBuffer(b)
 	ctx.Request.Body = ioutil.NopCloser(bfr)
+	return
+}
+
+//
+// CurrentUser gets username from Keycloak auth token
+func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
+	token := ctx.GetHeader("Authorization")
+	// Consider later add username to ctx and cache for single request?
+	user, err := h.AuthProvider.User(token)
+	if err != nil {
+		fmt.Printf("Failed to get current user, err: %v\n", err)
+		user = ""
+	}
 	return
 }
 

@@ -100,6 +100,7 @@ func (h VolumeHandler) Update(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.ID = id
+	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))

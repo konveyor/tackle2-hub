@@ -97,6 +97,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	ref := &model.Identity{}
 	err = m.Encrypt(ref)
 	if err != nil {
@@ -167,6 +168,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m.ID = id
+	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {
