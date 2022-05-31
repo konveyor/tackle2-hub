@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"time"
 )
+
+var Log = logging.WithName("api")
 
 //
 // BaseHandler base handler.
@@ -257,14 +259,12 @@ func (h *BaseHandler) modBody(
 }
 
 //
-// CurrentUser gets username from Keycloak auth token
+// CurrentUser gets username from Keycloak auth token.
 func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 	token := ctx.GetHeader("Authorization")
-	// Consider later add username to ctx and cache for single request?
-	user, err := h.AuthProvider.User(token)
+	user, err := auth.CurrentUser(h.AuthProvider, token)
 	if err != nil {
-		fmt.Printf("Failed to get current user, err: %v\n", err)
-		user = ""
+		Log.Error(err, "Failed to get current user.")
 	}
 	return
 }
