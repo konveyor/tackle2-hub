@@ -39,3 +39,14 @@ func AuthorizationRequired(p Provider, requiredScope string) func(*gin.Context) 
 		return
 	}
 }
+
+//
+// CurrentUser returns the current login user.
+func CurrentUser(p Provider, token string) (user string, err error) {
+	addonToken := settings.Settings.Auth.AddonToken
+	if token == addonToken {
+		return
+	}
+	user, err = p.User(token)
+	return
+}
