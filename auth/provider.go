@@ -3,11 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
-	"strings"
-	"time"
-
 	"github.com/Nerzal/gocloak/v10"
 	"github.com/golang-jwt/jwt/v4"
+	"strings"
+	"time"
 )
 
 type Provider interface {
