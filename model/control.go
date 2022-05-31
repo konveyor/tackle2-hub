@@ -4,7 +4,8 @@ type BusinessService struct {
 	Model
 	Name        string `gorm:"index;unique;not null"`
 	Description string
-	OwnerID     *uint `gorm:"index"`
+	Applications []Application `gorm:"constraint:OnDelete:CASCADE"`
+	OwnerID     *uint        `gorm:"index;not null"`
 	Owner       *Stakeholder
 }
 
@@ -21,7 +22,7 @@ type Stakeholder struct {
 	Name             string             `gorm:"not null;"`
 	Email            string             `gorm:"index;unique;not null"`
 	Groups           []StakeholderGroup `gorm:"many2many:sgStakeholder"`
-	BusinessServices []BusinessService  `gorm:"foreignKey:OwnerID"`
+	BusinessServices []BusinessService  `gorm:"foreignKey:OwnerID; constraint:OnDelete:SET NULL"`
 	JobFunctionID    *uint              `gorm:"index"`
 	JobFunction      *JobFunction
 }
@@ -47,5 +48,5 @@ type TagType struct {
 	Username string
 	Rank     uint
 	Color    string
-	Tags     []Tag
+	Tags     []Tag `gorm:"constraint:OnDelete:CASCADE"`
 }

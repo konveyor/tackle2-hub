@@ -16,7 +16,7 @@ type Identity struct {
 	Password    string
 	Key         string
 	Settings    string
-	Proxies     []Proxy
+	Proxies     []Proxy `gorm:"constraint:OnDelete:SET NULL"`
 }
 
 //
