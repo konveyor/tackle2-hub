@@ -9,7 +9,7 @@ type Proxy struct {
 	Kind       string `gorm:"uniqueIndex"`
 	Host       string `gorm:"not null"`
 	Port       int
-	Excluded   JSON      `json:"excluded"`
-	IdentityID *uint     `gorm:"index"`
+	Excluded   JSON  `json:"excluded"`
+	IdentityID *uint `gorm:"index"`
 	Identity   *Identity
 }
