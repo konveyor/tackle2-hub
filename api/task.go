@@ -171,7 +171,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 			return
 		}
 	}
-	result = h.DB.Select(clause.Associations).Delete(task)
+	result = h.DB.Delete(task)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return

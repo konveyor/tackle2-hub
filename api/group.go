@@ -125,7 +125,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 		h.deleteFailed(ctx, result.Error)
 		return
 	}
-	result = h.DB.Select(clause.Associations).Delete(m)
+	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
 		return

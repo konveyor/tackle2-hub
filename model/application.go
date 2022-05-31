@@ -12,10 +12,10 @@ type Application struct {
 	Binary            string
 	Facts             JSON
 	Comments          string
-	Tasks             []Task           `gorm:"constraint:OnDelete:CASCADE"`
-	Tags              []Tag            `gorm:"many2many:applicationTags;constraint:OnDelete:CASCADE"`
-	Identities        []Identity       `gorm:"many2many:appIdentity;constraint:OnDelete:CASCADE"`
-	BusinessServiceID uint             `gorm:"index"`
+	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
+	Tags              []Tag      `gorm:"many2many:ApplicationTags;constraint:OnDelete:CASCADE"`
+	Identities        []Identity `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
+	BusinessServiceID uint       `gorm:"index"`
 	BusinessService   *BusinessService
 }
 
@@ -34,7 +34,7 @@ type Review struct {
 	ProposedAction      string `gorm:"not null"`
 	WorkPriority        uint   `gorm:"not null"`
 	Comments            string
-	ApplicationID       uint         `gorm:"uniqueIndex"`
+	ApplicationID       uint `gorm:"uniqueIndex"`
 	Application         *Application
 }
 

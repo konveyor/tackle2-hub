@@ -171,7 +171,7 @@ type BusinessService struct {
 	Resource
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	Owner       *Ref   `json:"owner"`
+	Stakeholder *Ref   `json:"owner"`
 }
 
 //
@@ -180,7 +180,7 @@ func (r *BusinessService) With(m *model.BusinessService) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Owner = r.refPtr(m.OwnerID, m.Owner)
+	r.Stakeholder = r.refPtr(m.StakeholderID, m.Stakeholder)
 }
 
 //
@@ -191,8 +191,8 @@ func (r *BusinessService) Model() (m *model.BusinessService) {
 		Description: r.Description,
 	}
 	m.ID = r.ID
-	if r.Owner != nil {
-		m.OwnerID = &r.Owner.ID
+	if r.Stakeholder != nil {
+		m.StakeholderID = &r.Stakeholder.ID
 	}
 	return
 }
