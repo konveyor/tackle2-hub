@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path"
 )
 
 //
@@ -41,8 +42,23 @@ func (h PathfinderHandler) ReverseProxy(ctx *gin.Context) {
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
+			h.rewrite(req)
 		},
 	}
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
+}
+
+//
+// Rewrite the request as needed.
+func (h *PathfinderHandler) rewrite(req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		switch path.Base(req.URL.Path) {
+		case "assessment-risk",
+			"confidence",
+			"risks":
+			req.Method = http.MethodPost
+		}
+	}
 }
