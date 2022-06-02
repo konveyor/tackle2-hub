@@ -107,7 +107,7 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
 
 def tackle2path(obj):
     if 'assessment' in obj:
-        return "/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
+        return "/hub/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
     return "/hub/%s" % obj
 
 def loadDump(path):
@@ -613,7 +613,7 @@ class TackleTool:
                 # Pathfinder resources are dependent on Application, cheking it via applicationId
                 if t == "applications":
                     # Check Application's Assessments first
-                    asmnts = apiJSON(self.tackle2Url + "/pathfinder/assessments?applicationId=%d" % importObj['id'], self.tackle2Token, ignoreErrors=True)
+                    asmnts = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % importObj['id'], self.tackle2Token, ignoreErrors=True)
                     if len(asmnts) > 0:
                         print("ERROR: Pathfinder assessment for application ID %d already exists. Clean it before running the import with: tackle clean" % importObj['id'])
                         exit(1)
