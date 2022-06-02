@@ -107,7 +107,7 @@ func (h TagTypeHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, m)
+	ctx.JSON(http.StatusCreated, r)
 }
 
 // Delete godoc
