@@ -127,7 +127,7 @@ def cmdWanted(args, action):
 
 ###############################################################################
 
-class Tackle12Import:
+class TackleTool:
     # TYPES order matters for import/upload to Tackle2
     TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
     TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
@@ -151,7 +151,7 @@ class Tackle12Import:
     # Gather existing seeded objects from Tackle2
     def loadTackle2Seeds(self):
         # Tackle 2 TagTypes and Tags
-        collection = apiJSON(tackle12import.tackle2Url + "/hub/tagtypes", tackle12import.tackle2Token)
+        collection = apiJSON(tool.tackle2Url + "/hub/tagtypes", tool.tackle2Token)
         for tt2 in collection:
             tt  = Tackle2Object(tt2)
             tt.name = tt2['name']
@@ -164,7 +164,7 @@ class Tackle12Import:
                     self.destData['tags'][tag.name] = tag
 
         # Tackle 2 JobFunctions
-        collection = apiJSON(tackle12import.tackle2Url + "/hub/jobfunctions", tackle12import.tackle2Token)
+        collection = apiJSON(tool.tackle2Url + "/hub/jobfunctions", tool.tackle2Token)
         for jf2 in collection:
             jf              = Tackle2Object(jf2)
             jf.name         = jf2['name']
@@ -483,16 +483,16 @@ if cmdWanted(args, "export-tackle1"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
+    tool = TackleTool(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
 
     # Run the export
     if not args.skipDestCheck:
         print("Loading seed objects from Tackle 2")
-        tackle12import.loadTackle2Seeds()
+        tool.loadTackle2Seeds()
     print("Exporting Tackle 1.2 objects (this might take a while..)")
-    tackle12import.dumpTackle1()
+    tool.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
-    tackle12import.store()
+    tool.store()
     print("Done. The data could be imported to Tackle 2 using command \"tackle import\"")
 
 # Tackle 2 import steps
@@ -502,13 +502,13 @@ if cmdWanted(args, "import"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
 
     # Run the import
     print("Importing data to Tackle2")
     if not args.skipDestCheck:
-        tackle12import.preImportCheck()
-    tackle12import.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
+        tool.preImportCheck()
+    tool.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
     print("Done. Open your Tackle2 now!")
 
 # Clean created objects in Tackle2
@@ -518,11 +518,11 @@ if cmdWanted(args, "clean"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
 
     # Run the cleanup
     print("Cleaning data created in Tackle2")
-    tackle12import.cleanTackle2()
+    tool.cleanTackle2()
 
 # Print help if action was not specified
 if not cmdExecuted:
