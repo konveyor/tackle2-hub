@@ -452,12 +452,12 @@ class TackleTool:
                 # Pathfinder resources are dependent on Application
                 if t == "applications":
                     # Delete related Application's Assessment resources first
-                    collection = apiJSON(self.tackle2Url + "/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
+                    collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
                     for assm in collection:
-                        print("Deleting assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
-                        apiJSON("%s/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                        print("Trying delete assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
+                        apiJSON("%s/hub/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
                 # Hub resources
-                print("Deleting %s/%s" % (t, dictObj['id']))
+                print("Trying delete %s/%s" % (t, dictObj['id']))
                 apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
 
 class Tackle2Object:
@@ -523,6 +523,7 @@ if cmdWanted(args, "clean"):
     # Run the cleanup
     print("Cleaning data created in Tackle2")
     tool.cleanTackle2()
+    print("Done. Records from local JSON data files were removed from Tackle2 API.")
 
 # Print help if action was not specified
 if not cmdExecuted:
