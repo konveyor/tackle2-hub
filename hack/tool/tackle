@@ -746,6 +746,7 @@ if cmdWanted(args, "clean"):
     # Run the cleanup
     print("Cleaning data created in Tackle2")
     tool.cleanTackle2()
+    print("Done. Records from local JSON data files were removed from Tackle2 API.")
 
 # Clean ALL objects in Tackle2
 if cmdWanted(args, "clean-all"):
