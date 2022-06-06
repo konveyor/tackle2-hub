@@ -121,7 +121,7 @@ func (m *Manager) startReady() {
 	for i := range list {
 		task := &list[i]
 		if task.Canceled {
-			m.cancel(task)
+			m.canceled(task)
 			continue
 		}
 		switch task.State {
@@ -176,7 +176,7 @@ func (m *Manager) updateRunning() {
 	}
 	for _, running := range list {
 		if running.Canceled {
-			m.cancel(&running)
+			m.canceled(&running)
 			continue
 		}
 		rt := Task{&running}
@@ -222,8 +222,8 @@ func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool
 }
 
 //
-// cancel the task.
-func (m *Manager) cancel(task *model.Task) {
+// The task has been canceled.
+func (m *Manager) canceled(task *model.Task) {
 	rt := Task{task}
 	err := rt.Cancel(m.Client)
 	Log.Trace(err)

@@ -6,6 +6,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
@@ -46,7 +47,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
-	routeGroup.PUT(TaskSubmitRoot, h.Cancel)
+	routeGroup.PUT(TaskCancelRoot, h.Cancel)
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
 	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
@@ -140,7 +141,8 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	db := h.omitted(h.DB)
+	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
@@ -214,7 +216,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
 	db = db.Where("state", tasking.Created)
-	db = db.Omit("Bucket")
+	db = h.omitted(db)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -288,8 +290,9 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 		[]string{
 			tasking.Succeeded,
 			tasking.Failed,
+			tasking.Canceled,
 		})
-	err := db.Update("Canceled", true).Error
+	err := db.Update("Canceled", time.Now()).Error
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -441,6 +444,22 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 }
 
 //
+// Fields omitted by Create and Update.
+func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
+	db = db.Omit("Bucket")
+	db = db.Omit("Image")
+	db = db.Omit("Pod")
+	db = db.Omit("Started")
+	db = db.Omit("Terminated")
+	db = db.Omit("Canceled")
+	db = db.Omit("Error")
+	db = db.Omit("Report")
+	db = db.Omit("TaskGroupID")
+	out = db
+	return
+}
+
+//
 // TTL
 type TTL model.TTL
 
@@ -466,6 +485,7 @@ type Task struct {
 	Error       string      `json:"error,omitempty"`
 	Pod         string      `json:"pod,omitempty"`
 	Retries     int         `json:"retries,omitempty"`
+	Canceled    bool        `json:"canceled,omitempty"`
 	Report      *TaskReport `json:"report,omitempty"`
 }
 
@@ -488,6 +508,7 @@ func (r *Task) With(m *model.Task) {
 	r.Error = m.Error
 	r.Pod = m.Pod
 	r.Retries = m.Retries
+	r.Canceled = m.Canceled
 	_ = json.Unmarshal(m.Data, &r.Data)
 	if m.Report != nil {
 		report := &TaskReport{}
@@ -513,7 +534,6 @@ func (r *Task) Model() (m *model.Task) {
 		Retries:       r.Retries,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.ID = r.ID
 	if r.TTL != nil {

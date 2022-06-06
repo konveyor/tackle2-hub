@@ -35,9 +35,9 @@ type Task struct {
 	Terminated    *time.Time
 	State         string `gorm:"index"`
 	Error         string
-	Canceled      bool
 	Pod           string `gorm:"index"`
 	Retries       int
+	Canceled      bool
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
 	Application   *Application
