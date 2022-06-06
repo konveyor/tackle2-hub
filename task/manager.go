@@ -31,6 +31,7 @@ const (
 	Running   = "Running"
 	Succeeded = "Succeeded"
 	Failed    = "Failed"
+	Canceled  = "Canceled"
 )
 
 //
@@ -119,6 +120,10 @@ func (m *Manager) startReady() {
 	}
 	for i := range list {
 		task := &list[i]
+		if task.Canceled {
+			m.cancel(task)
+			continue
+		}
 		switch task.State {
 		case Ready,
 			Postponed:
@@ -170,6 +175,10 @@ func (m *Manager) updateRunning() {
 		return
 	}
 	for _, running := range list {
+		if running.Canceled {
+			m.cancel(&running)
+			continue
+		}
 		rt := Task{&running}
 		err := rt.Reflect(m.Client)
 		if err != nil {
@@ -209,6 +218,20 @@ func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool
 		}
 	}
 
+	return
+}
+
+//
+// cancel the task.
+func (m *Manager) cancel(task *model.Task) {
+	rt := Task{task}
+	err := rt.Cancel(m.Client)
+	Log.Trace(err)
+	if err != nil {
+		return
+	}
+	err = m.DB.Save(task).Error
+	Log.Trace(err)
 	return
 }
 
@@ -344,6 +367,25 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+//
+// Cancel the task.
+func (r *Task) Cancel(client k8s.Client) (err error) {
+	err = r.Delete(client)
+	if err != nil {
+		return
+	}
+	mark := time.Now()
+	r.State = Canceled
+	r.Terminated = &mark
+	r.Pod = ""
+	r.Bucket = ""
+	Log.Info(
+		"Task canceled.",
+		"id",
+		r.ID)
 	return
 }
 

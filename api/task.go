@@ -20,6 +20,7 @@ const (
 	TaskReportRoot = TaskRoot + "/report"
 	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
 	TaskSubmitRoot = TaskRoot + "/submit"
+	TaskCancelRoot = TaskRoot + "/cancel"
 )
 
 const (
@@ -45,6 +46,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
+	routeGroup.PUT(TaskSubmitRoot, h.Cancel)
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
 	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
@@ -132,7 +134,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		ctx.JSON(
 			http.StatusBadRequest,
 			gin.H{
-				"error": "state must be ('''|Created|Ready)",
+				"error": "state must be (''|Created|Ready)",
 			})
 		return
 	}
@@ -251,6 +253,49 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 		return
 	}
 	ctx.Next()
+}
+
+// Cancel godoc
+// @summary Cancel a task.
+// @description Cancel a task.
+// @tags delete
+// @success 204
+// @router /tasks/{id}/cancel [put]
+// @param id path string true "Task ID"
+func (h TaskHandler) Cancel(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Task{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.updateFailed(ctx, result.Error)
+		return
+	}
+	switch m.State {
+	case tasking.Succeeded,
+		tasking.Failed,
+		tasking.Canceled:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must not be (Succeeded|Failed|Canceled)",
+			})
+		return
+	}
+	db := h.DB.Model(m)
+	db = db.Where("id", id)
+	db = db.Where(
+		"state not IN ?",
+		[]string{
+			tasking.Succeeded,
+			tasking.Failed,
+		})
+	err := db.Update("Canceled", true).Error
+	if err != nil {
+		h.updateFailed(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // BucketGet godoc
