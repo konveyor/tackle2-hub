@@ -12,6 +12,24 @@ Use ```tackle-config.yml.example``` file as a template to set your Tackle endpoi
 - ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
 - ```import``` creates objects in Tackle 2 from local JSON files
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
+- ```clean-all``` deletes ALL data from Tackle 2 (including seeds)
+
+### Scenarios
+
+#### Migrate data from running Tackle 1.2 to running Tackle 2 instance
+
+With tags, tag-types and job functions automatic re-mapping.
+
+- ```tackle export-tackle1```
+- ```tackle import```
+
+#### Export data from Tackle 1.2 to be later imported to some Tackle 2 instance
+
+With full export and full cleanup of the Tackle 2 before running the import.
+
+- ```tackle --skip-destination-check export-tackle1``` (ensures that all seeds objects are exported too)
+- ```tackle clean-all```
+- ```tackle import```
 
 ### Export Tackle 1.2
 
