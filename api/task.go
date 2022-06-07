@@ -458,7 +458,6 @@ func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 		"Canceled",
 		"Error",
 		"Retries",
-		"TaskGroupID",
 	} {
 		out = out.Omit(f)
 	}
