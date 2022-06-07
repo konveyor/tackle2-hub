@@ -232,6 +232,9 @@ func (m *Manager) canceled(task *model.Task) {
 	}
 	err = m.DB.Save(task).Error
 	Log.Trace(err)
+	db := m.DB.Model(&model.TaskReport{})
+	err = db.Delete("taskid", task.ID).Error
+	Log.Trace(err)
 	return
 }
 
@@ -377,11 +380,14 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
-	mark := time.Now()
 	r.State = Canceled
-	r.Terminated = &mark
 	r.Pod = ""
 	r.Bucket = ""
+	switch r.State {
+	case Running:
+		mark := time.Now()
+		r.Terminated = &mark
+	}
 	Log.Info(
 		"Task canceled.",
 		"id",

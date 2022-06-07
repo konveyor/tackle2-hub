@@ -292,7 +292,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 			tasking.Failed,
 			tasking.Canceled,
 		})
-	err := db.Update("Canceled", time.Now()).Error
+	err := db.Update("Canceled", true).Error
 	if err != nil {
 		h.updateFailed(ctx, err)
 		return
@@ -444,7 +444,9 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 }
 
 //
-// Fields omitted by Create and Update.
+// Fields omitted by:
+//   - Create
+//   - Update.
 func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 	db = db.Omit("Bucket")
 	db = db.Omit("Image")
