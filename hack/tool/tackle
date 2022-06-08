@@ -129,8 +129,8 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tags', 'tagtypes', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
-    TACKLE2_SEED_TYPES = ['tags', 'tagtypes', 'jobfunctions']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
+    TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
         self.dataDir      = dataDir
