@@ -11,7 +11,7 @@ import yaml
 
 parser = argparse.ArgumentParser(description='Konveyor Tackle maintenance tool.')
 parser.add_argument('action', type=str, nargs='*',
-                    help='One or more Tackle commands that should be executed, options: export-tackle1 import clean')
+                    help='One or more Tackle commands that should be executed, options: export-tackle1 import clean clean-all')
 parser.add_argument('-c','--config', type=str, help='A config file path (tackle-config.yml by default).',
                     nargs='?', default='./tackle-config.yml')
 parser.add_argument('-d','--data-dir', type=str, help='Local Tackle data directory path (tackle-data by default).',
