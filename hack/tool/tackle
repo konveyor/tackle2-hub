@@ -11,7 +11,7 @@ import yaml
 
 parser = argparse.ArgumentParser(description='Konveyor Tackle maintenance tool.')
 parser.add_argument('action', type=str, nargs='*',
-                    help='One or more Tackle commands that should be executed, options: export-tackle1 import clean')
+                    help='One or more Tackle commands that should be executed, options: export-tackle1 import clean clean-all')
 parser.add_argument('-c','--config', type=str, help='A config file path (tackle-config.yml by default).',
                     nargs='?', default='./tackle-config.yml')
 parser.add_argument('-d','--data-dir', type=str, help='Local Tackle data directory path (tackle-data by default).',
@@ -615,11 +615,11 @@ class TackleTool:
                     # Check Application's Assessments first
                     asmnts = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % importObj['id'], self.tackle2Token, ignoreErrors=True)
                     if len(asmnts) > 0:
-                        print("ERROR: Pathfinder assessment for application ID %d already exists. Clean it before running the import with: tackle clean" % importObj['id'])
+                        print("ERROR: Pathfinder assessment for application ID %d already exists. Clean it before running the import with: tackle clean or tackle clean-all" % importObj['id'])
                         exit(1)
                 for destObj in destCollection:
                     if importObj['id'] == destObj['id']:
-                        print("ERROR: Resource %s/%d \"%s\" already exists in Tackle2 destination as \"%s\". Clean it before running the import with: tackle clean" % (t, importObj['id'], importObj['name'], destObj['name']))
+                        print("ERROR: Resource %s/%d \"%s\" already exists in Tackle2 destination as \"%s\". Clean it before running the import with: tackle clean or tackle clean-all" % (t, importObj['id'], importObj['name'], destObj['name']))
                         exit(1)
 
     def cleanTackle2(self):
