@@ -248,7 +248,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // @tags post
 // @produce json
 // @success 204
-// @router /applications/{id}/bucket/{wildcard} [post, put]
+// @router /applications/{id}/bucket/{wildcard} [post]
 // @param id path string true "Application ID"
 func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 	id := h.pk(ctx)

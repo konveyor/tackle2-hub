@@ -70,3 +70,7 @@ endif
 # Build SAMPLE ADDON
 addon: fmt vet
 	go build -o bin/addon github.com/konveyor/tackle2-hub/hack/cmd/addon
+
+# Build Swagger API spec into ./docs directory
+docs-swagger:
+	swag init -g api/base.go

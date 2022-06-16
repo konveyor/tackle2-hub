@@ -326,7 +326,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 // @tags post
 // @produce json
 // @success 204
-// @router /tasks/{id}/bucket/{wildcard} [post,put]
+// @router /tasks/{id}/bucket/{wildcard} [post]
 // @param id path string true "Task ID"
 func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 	m := &model.Task{}
