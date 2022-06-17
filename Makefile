@@ -73,4 +73,4 @@ addon: fmt vet
 
 # Build Swagger API spec into ./docs directory
 docs-swagger:
-	swag init -g api/base.go
+	${GOBIN}/swag init -g api/base.go

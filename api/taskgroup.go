@@ -148,7 +148,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /tasks/{id} [put]
+// @router /taskgroups/{id} [put]
 // @param id path string true "Task ID"
 // @param task body Task true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {

@@ -32,8 +32,9 @@ func (h PathfinderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.Any(AssessmentsRootX, h.ReverseProxy)
 }
 
-//
-// ReverseProxy - forward to pathfinder.
+// Get godoc
+// @summary ReverseProxy - forward to pathfinder.
+// @description ReverseProxy forwards API calls to pathfinder API.
 func (h PathfinderHandler) ReverseProxy(ctx *gin.Context) {
 	pathfinder := os.Getenv("PATHFINDER_URL")
 	target, _ := url.Parse(pathfinder)

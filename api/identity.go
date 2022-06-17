@@ -185,7 +185,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} []Identity
-// @router /application-inventory/application/{id}/identities [get]
+// @router /applications/{id}/identities [get]
 // @param id path int true "Application ID"
 func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 	id := h.pk(ctx)
