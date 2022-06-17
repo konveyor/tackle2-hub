@@ -322,7 +322,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 
 // BucketUpload godoc
 // @summary Upload bucket content by ID and path.
-// @description Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
 // @produce json
 // @success 204
