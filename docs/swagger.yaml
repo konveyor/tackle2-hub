@@ -91,6 +91,8 @@ definitions:
       updateUser:
         type: string
     type: object
+  api.DependencyGraph:
+    type: object
   api.Facts:
     additionalProperties: true
     type: object
@@ -512,155 +514,26 @@ paths:
       summary: Get an addon by name.
       tags:
       - get
-  /application-inventory/application-import:
-    get:
-      description: List imports.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Import'
-            type: array
-      summary: List imports.
-      tags:
-      - list
-  /application-inventory/application-import/{id}:
-    delete:
-      description: Delete an import. This leaves any created application or dependency.
-      parameters:
-      - description: Import ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: ""
-      summary: Delete an import.
-      tags:
-      - delete
-    get:
-      description: Get an import by ID.
-      parameters:
-      - description: Import ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.Import'
-      summary: Get an import by ID.
-      tags:
-      - get
-  /application-inventory/application/{id}/identities:
-    get:
-      description: List identities for an application.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Identity'
-            type: array
-      summary: List identities for an application.
-      tags:
-      - get
-  /application-inventory/csv-export:
-    get:
-      description: Export the source CSV for a particular import summary.
-      parameters:
-      - description: ImportSummary ID
-        in: query
-        name: importSummary.id
-        required: true
-        type: string
-      produces:
-      - text/csv
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: file
-      summary: Export the source CSV for a particular import summary.
-      tags:
-      - export
-  /application-inventory/file/upload:
+  /adoptionplans:
     post:
-      description: Upload a CSV containing applications and dependencies to import.
+      description: Graph generates an application dependency graph arranged in topological
+        order.
+      parameters:
+      - description: requested App IDs
+        in: path
+        name: requestedApps
+        required: true
+        type: array
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/api.ImportSummary'
-      summary: Upload a CSV containing applications and dependencies to import.
+            $ref: '#/definitions/api.DependencyGraph'
+      summary: Generate an application dependency graph arranged in topological order.
       tags:
       - post
-  /application-inventory/import-summary:
-    get:
-      description: List import summaries.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.ImportSummary'
-            type: array
-      summary: List import summaries.
-      tags:
-      - list
-  /application-inventory/import-summary/{id}:
-    delete:
-      description: Delete an import summary and associated import records.
-      parameters:
-      - description: ImportSummary ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: ""
-      summary: Delete an import summary and associated import records.
-      tags:
-      - delete
-    get:
-      description: Get an import by ID.
-      parameters:
-      - description: ImportSummary ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.ImportSummary'
-      summary: Get an import summary by ID.
-      tags:
-      - get
   /applications:
     get:
       description: List all applications.
@@ -785,6 +658,27 @@ paths:
       summary: Upload bucket content by ID and path.
       tags:
       - post
+  /applications/{id}/identities:
+    get:
+      description: List identities for an application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Identity'
+            type: array
+      summary: List identities for an application.
+      tags:
+      - get
   /applications/{id}/tasks/{id}/content/{wildcard}:
     get:
       description: Get bucket content by ID and path.
@@ -1053,6 +947,134 @@ paths:
       summary: Update an identity.
       tags:
       - update
+  /imports:
+    get:
+      description: List imports.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Import'
+            type: array
+      summary: List imports.
+      tags:
+      - list
+  /imports/{id}:
+    delete:
+      description: Delete an import. This leaves any created application or dependency.
+      parameters:
+      - description: Import ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an import.
+      tags:
+      - delete
+    get:
+      description: Get an import by ID.
+      parameters:
+      - description: Import ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Import'
+      summary: Get an import by ID.
+      tags:
+      - get
+  /importsummaries:
+    get:
+      description: List import summaries.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.ImportSummary'
+            type: array
+      summary: List import summaries.
+      tags:
+      - list
+  /importsummaries/{id}:
+    delete:
+      description: Delete an import summary and associated import records.
+      parameters:
+      - description: ImportSummary ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete an import summary and associated import records.
+      tags:
+      - delete
+    get:
+      description: Get an import by ID.
+      parameters:
+      - description: ImportSummary ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ImportSummary'
+      summary: Get an import summary by ID.
+      tags:
+      - get
+  /importsummaries/download:
+    get:
+      description: Export the source CSV for a particular import summary.
+      parameters:
+      - description: ImportSummary ID
+        in: query
+        name: importSummary.id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Export the source CSV for a particular import summary.
+      tags:
+      - export
+  /importsummaries/upload:
+    post:
+      description: Upload a CSV containing applications and dependencies to import.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ImportSummary'
+      summary: Upload a CSV containing applications and dependencies to import.
+      tags:
+      - post
   /jobfunctions:
     get:
       description: List all job functions.
@@ -1873,6 +1895,28 @@ paths:
       summary: Get a task group by ID.
       tags:
       - get
+    put:
+      consumes:
+      - application/json
+      description: Update a task group.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Task data
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/api.Task'
+      responses:
+        "204":
+          description: ""
+      summary: Update a task group.
+      tags:
+      - update
   /taskgroups/{id}/bucket/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -2011,7 +2055,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update a task group.
+      description: Update a task.
       parameters:
       - description: Task ID
         in: path
@@ -2027,7 +2071,7 @@ paths:
       responses:
         "204":
           description: ""
-      summary: Update a task group.
+      summary: Update a task.
       tags:
       - update
   /tasks/{id}/bucket/{wildcard}:

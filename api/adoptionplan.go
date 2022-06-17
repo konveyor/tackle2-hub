@@ -38,8 +38,14 @@ func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(AdoptionPlansRoot, h.Graph)
 }
 
-//
-// Graph generates an application dependency graph arranged in topological order.
+// Get godoc
+// @summary Generate an application dependency graph arranged in topological order.
+// @description Graph generates an application dependency graph arranged in topological order.
+// @tags post
+// @produce json
+// @success 200 {object} api.DependencyGraph
+// @router /adoptionplans [post]
+// @param requestedApps path array true "requested App IDs"
 func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	var requestedApps []struct {
 		ApplicationID uint `json:"applicationId"`

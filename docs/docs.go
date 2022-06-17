@@ -68,198 +68,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/application-inventory/application-import": {
-            "get": {
-                "description": "List imports.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "list"
-                ],
-                "summary": "List imports.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Import"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/application-import/{id}": {
-            "get": {
-                "description": "Get an import by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get an import by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Import ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.Import"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete an import. This leaves any created application or dependency.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete an import.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Import ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/application-inventory/application/{id}/identities": {
-            "get": {
-                "description": "List identities for an application.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List identities for an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Identity"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/csv-export": {
-            "get": {
-                "description": "Export the source CSV for a particular import summary.",
-                "produces": [
-                    "text/csv"
-                ],
-                "tags": [
-                    "export"
-                ],
-                "summary": "Export the source CSV for a particular import summary.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ImportSummary ID",
-                        "name": "importSummary.id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/file/upload": {
+        "/adoptionplans": {
             "post": {
-                "description": "Upload a CSV containing applications and dependencies to import.",
+                "description": "Graph generates an application dependency graph arranged in topological order.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "post"
                 ],
-                "summary": "Upload a CSV containing applications and dependencies to import.",
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.ImportSummary"
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/import-summary": {
-            "get": {
-                "description": "List import summaries.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "list"
-                ],
-                "summary": "List import summaries.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.ImportSummary"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/application-inventory/import-summary/{id}": {
-            "get": {
-                "description": "Get an import by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get an import summary by ID.",
+                "summary": "Generate an application dependency graph arranged in topological order.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "ImportSummary ID",
-                        "name": "id",
+                        "type": "array",
+                        "description": "requested App IDs",
+                        "name": "requestedApps",
                         "in": "path",
                         "required": true
                     }
@@ -268,29 +91,8 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.ImportSummary"
+                            "$ref": "#/definitions/api.DependencyGraph"
                         }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete an import summary and associated import records.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete an import summary and associated import records.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ImportSummary ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
                     }
                 }
             }
@@ -479,6 +281,38 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/applications/{id}/identities": {
+            "get": {
+                "description": "List identities for an application.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List identities for an application.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Identity"
+                            }
+                        }
                     }
                 }
             }
@@ -878,6 +712,201 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Identity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/imports": {
+            "get": {
+                "description": "List imports.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "list"
+                ],
+                "summary": "List imports.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Import"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/imports/{id}": {
+            "get": {
+                "description": "Get an import by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get an import by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Import ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Import"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an import. This leaves any created application or dependency.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete an import.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Import ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/importsummaries": {
+            "get": {
+                "description": "List import summaries.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "list"
+                ],
+                "summary": "List import summaries.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.ImportSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/importsummaries/download": {
+            "get": {
+                "description": "Export the source CSV for a particular import summary.",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "export"
+                ],
+                "summary": "Export the source CSV for a particular import summary.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ImportSummary ID",
+                        "name": "importSummary.id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/importsummaries/upload": {
+            "post": {
+                "description": "Upload a CSV containing applications and dependencies to import.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post"
+                ],
+                "summary": "Upload a CSV containing applications and dependencies to import.",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.ImportSummary"
+                        }
+                    }
+                }
+            }
+        },
+        "/importsummaries/{id}": {
+            "get": {
+                "description": "Get an import by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get an import summary by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ImportSummary ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ImportSummary"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an import summary and associated import records.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete an import summary and associated import records.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ImportSummary ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2110,6 +2139,39 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "description": "Update a task group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a task group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Task data",
+                        "name": "task",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Task"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete a task group.",
                 "tags": [
@@ -2316,14 +2378,14 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update a task group.",
+                "description": "Update a task.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
                     "update"
                 ],
-                "summary": "Update a task group.",
+                "summary": "Update a task.",
                 "parameters": [
                     {
                         "type": "string",
@@ -2821,6 +2883,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.DependencyGraph": {
+            "type": "object"
         },
         "api.Facts": {
             "type": "object",
