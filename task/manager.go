@@ -370,6 +370,8 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	mark := time.Now()
+	r.Terminated = &mark
 	return
 }
 
@@ -381,13 +383,7 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 		return
 	}
 	r.State = Canceled
-	r.Pod = ""
 	r.Bucket = ""
-	switch r.State {
-	case Running:
-		mark := time.Now()
-		r.Terminated = &mark
-	}
 	Log.Info(
 		"Task canceled.",
 		"id",
