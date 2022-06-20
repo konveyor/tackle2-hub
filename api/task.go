@@ -6,6 +6,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
@@ -20,6 +21,7 @@ const (
 	TaskReportRoot = TaskRoot + "/report"
 	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
 	TaskSubmitRoot = TaskRoot + "/submit"
+	TaskCancelRoot = TaskRoot + "/cancel"
 )
 
 const (
@@ -45,6 +47,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
+	routeGroup.PUT(TaskCancelRoot, h.Cancel)
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
 	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
@@ -132,13 +135,14 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		ctx.JSON(
 			http.StatusBadRequest,
 			gin.H{
-				"error": "state must be ('''|Created|Ready)",
+				"error": "state must be (''|Created|Ready)",
 			})
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	db := h.omitted(h.DB)
+	result := db.Create(&m)
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return
@@ -212,7 +216,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	db := h.DB.Model(m)
 	db = db.Where("id", id)
 	db = db.Where("state", tasking.Created)
-	db = db.Omit("Bucket")
+	db = h.omitted(db)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.updateFailed(ctx, result.Error)
@@ -251,6 +255,50 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 		return
 	}
 	ctx.Next()
+}
+
+// Cancel godoc
+// @summary Cancel a task.
+// @description Cancel a task.
+// @tags delete
+// @success 204
+// @router /tasks/{id}/cancel [put]
+// @param id path string true "Task ID"
+func (h TaskHandler) Cancel(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Task{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.updateFailed(ctx, result.Error)
+		return
+	}
+	switch m.State {
+	case tasking.Succeeded,
+		tasking.Failed,
+		tasking.Canceled:
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "state must not be (Succeeded|Failed|Canceled)",
+			})
+		return
+	}
+	db := h.DB.Model(m)
+	db = db.Where("id", id)
+	db = db.Where(
+		"state not IN ?",
+		[]string{
+			tasking.Succeeded,
+			tasking.Failed,
+			tasking.Canceled,
+		})
+	err := db.Update("Canceled", true).Error
+	if err != nil {
+		h.updateFailed(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // BucketGet godoc
@@ -396,6 +444,27 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 }
 
 //
+// Fields omitted by:
+//   - Create
+//   - Update.
+func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
+	out = db
+	for _, f := range []string{
+		"Bucket",
+		"Image",
+		"Pod",
+		"Started",
+		"Terminated",
+		"Canceled",
+		"Error",
+		"Retries",
+	} {
+		out = out.Omit(f)
+	}
+	return
+}
+
+//
 // TTL
 type TTL model.TTL
 
@@ -421,6 +490,7 @@ type Task struct {
 	Error       string      `json:"error,omitempty"`
 	Pod         string      `json:"pod,omitempty"`
 	Retries     int         `json:"retries,omitempty"`
+	Canceled    bool        `json:"canceled,omitempty"`
 	Report      *TaskReport `json:"report,omitempty"`
 }
 
@@ -443,6 +513,7 @@ func (r *Task) With(m *model.Task) {
 	r.Error = m.Error
 	r.Pod = m.Pod
 	r.Retries = m.Retries
+	r.Canceled = m.Canceled
 	_ = json.Unmarshal(m.Data, &r.Data)
 	if m.Report != nil {
 		report := &TaskReport{}
@@ -468,7 +539,6 @@ func (r *Task) Model() (m *model.Task) {
 		Retries:       r.Retries,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.ID = r.ID
 	if r.TTL != nil {
