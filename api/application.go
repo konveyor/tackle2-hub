@@ -34,6 +34,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(ApplicationsRoot, h.Create)
 	routeGroup.GET(ApplicationRoot, h.Get)
 	routeGroup.PUT(ApplicationRoot, h.Update)
+	routeGroup.DELETE(ApplicationsRoot, h.DeleteList)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
 	routeGroup.POST(AppBucketRoot, h.BucketUpload)
 	routeGroup.PUT(AppBucketRoot, h.BucketUpload)
@@ -145,6 +146,32 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+// DeleteList godoc
+// @summary Delete a applications.
+// @description Delete applications.
+// @tags delete
+// @success 204
+// @router /applications [delete]
+// @param application body []uint true "List of id"
+func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
+	ids := []uint{}
+	err := ctx.BindJSON(&ids)
+	if err != nil {
+		h.bindFailed(ctx, err)
+		return
+	}
+	err = h.DB.Delete(
+		&model.Application{},
+		"id IN ?",
+		ids).Error
+	if err != nil {
+		h.deleteFailed(ctx, err)
 		return
 	}
 
