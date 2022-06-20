@@ -31,6 +31,7 @@ const (
 	Running   = "Running"
 	Succeeded = "Succeeded"
 	Failed    = "Failed"
+	Canceled  = "Canceled"
 )
 
 //
@@ -119,6 +120,10 @@ func (m *Manager) startReady() {
 	}
 	for i := range list {
 		task := &list[i]
+		if task.Canceled {
+			m.canceled(task)
+			continue
+		}
 		switch task.State {
 		case Ready,
 			Postponed:
@@ -170,6 +175,10 @@ func (m *Manager) updateRunning() {
 		return
 	}
 	for _, running := range list {
+		if running.Canceled {
+			m.canceled(&running)
+			continue
+		}
 		rt := Task{&running}
 		err := rt.Reflect(m.Client)
 		if err != nil {
@@ -209,6 +218,23 @@ func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool
 		}
 	}
 
+	return
+}
+
+//
+// The task has been canceled.
+func (m *Manager) canceled(task *model.Task) {
+	rt := Task{task}
+	err := rt.Cancel(m.Client)
+	Log.Trace(err)
+	if err != nil {
+		return
+	}
+	err = m.DB.Save(task).Error
+	Log.Trace(err)
+	db := m.DB.Model(&model.TaskReport{})
+	err = db.Delete("taskid", task.ID).Error
+	Log.Trace(err)
 	return
 }
 
@@ -344,6 +370,24 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	mark := time.Now()
+	r.Terminated = &mark
+	return
+}
+
+//
+// Cancel the task.
+func (r *Task) Cancel(client k8s.Client) (err error) {
+	err = r.Delete(client)
+	if err != nil {
+		return
+	}
+	r.State = Canceled
+	r.Bucket = ""
+	Log.Info(
+		"Task canceled.",
+		"id",
+		r.ID)
 	return
 }
 

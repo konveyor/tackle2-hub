@@ -37,6 +37,7 @@ type Task struct {
 	Error         string
 	Pod           string `gorm:"index"`
 	Retries       int
+	Canceled      bool
 	Report        *TaskReport `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
 	Application   *Application
