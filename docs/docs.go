@@ -150,6 +150,32 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Delete applications.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a applications.",
+                "parameters": [
+                    {
+                        "description": "List of id",
+                        "name": "application",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
             }
         },
         "/applications/{id}": {
@@ -237,7 +263,7 @@ const docTemplate = `{
         },
         "/applications/{id}/bucket/{wildcard}": {
             "post": {
-                "description": "Upload bucket content by ID and path.",
+                "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
                 "produces": [
                     "application/json"
                 ],
@@ -2220,7 +2246,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Upload bucket content by ID and path.",
+                "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
                 "produces": [
                     "application/json"
                 ],
@@ -2458,7 +2484,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Upload bucket content by ID and path.",
+                "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
                 "produces": [
                     "application/json"
                 ],
@@ -2490,6 +2516,29 @@ const docTemplate = `{
                     "delete"
                 ],
                 "summary": "Delete bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/cancel": {
+            "put": {
+                "description": "Cancel a task.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Cancel a task.",
                 "parameters": [
                     {
                         "type": "string",
@@ -3298,6 +3347,9 @@ const docTemplate = `{
                 },
                 "bucket": {
                     "type": "string"
+                },
+                "canceled": {
+                    "type": "boolean"
                 },
                 "createTime": {
                     "type": "string"
