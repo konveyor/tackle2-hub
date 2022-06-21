@@ -363,6 +363,8 @@ definitions:
         $ref: '#/definitions/api.Ref'
       bucket:
         type: string
+      canceled:
+        type: boolean
       createTime:
         type: string
       createUser:
@@ -535,6 +537,23 @@ paths:
       tags:
       - post
   /applications:
+    delete:
+      description: Delete applications.
+      parameters:
+      - description: List of id
+        in: body
+        name: application
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      responses:
+        "204":
+          description: ""
+      summary: Delete a applications.
+      tags:
+      - delete
     get:
       description: List all applications.
       produces:
@@ -643,7 +662,8 @@ paths:
       tags:
       - delete
     post:
-      description: Upload bucket content by ID and path.
+      description: Upload bucket content by ID and path (handles both [post] and [put]
+        requests).
       parameters:
       - description: Application ID
         in: path
@@ -1951,7 +1971,8 @@ paths:
       tags:
       - get
     post:
-      description: Upload bucket content by ID and path.
+      description: Upload bucket content by ID and path (handles both [post] and [put]
+        requests).
       parameters:
       - description: TaskGroup ID
         in: path
@@ -2108,7 +2129,8 @@ paths:
       tags:
       - get
     post:
-      description: Upload bucket content by ID and path.
+      description: Upload bucket content by ID and path (handles both [post] and [put]
+        requests).
       parameters:
       - description: Task ID
         in: path
@@ -2123,6 +2145,21 @@ paths:
       summary: Upload bucket content by ID and path.
       tags:
       - post
+  /tasks/{id}/cancel:
+    put:
+      description: Cancel a task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Cancel a task.
+      tags:
+      - delete
   /tasks/{id}/report:
     delete:
       consumes:
