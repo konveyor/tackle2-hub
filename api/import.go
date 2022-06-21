@@ -64,7 +64,7 @@ func (h ImportHandler) AddRoutes(e *gin.Engine) {
 // @tags get
 // @produce json
 // @success 200 {object} api.Import
-// @router /application-inventory/application-import/{id} [get]
+// @router /imports/{id} [get]
 // @param id path string true "Import ID"
 func (h ImportHandler) GetImport(ctx *gin.Context) {
 	m := &model.Import{}
@@ -85,7 +85,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 // @tags list
 // @produce json
 // @success 200 {object} []api.Import
-// @router /application-inventory/application-import [get]
+// @router /imports [get]
 func (h ImportHandler) ListImports(ctx *gin.Context) {
 	var list []model.Import
 	db := h.DB
@@ -119,7 +119,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 // @description Delete an import. This leaves any created application or dependency.
 // @tags delete
 // @success 204
-// @router /application-inventory/application-import/{id} [delete]
+// @router /imports/{id} [delete]
 // @param id path string true "Import ID"
 func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -139,7 +139,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 // @tags get
 // @produce json
 // @success 200 {object} api.ImportSummary
-// @router /application-inventory/import-summary/{id} [get]
+// @router /importsummaries/{id} [get]
 // @param id path string true "ImportSummary ID"
 func (h ImportHandler) GetSummary(ctx *gin.Context) {
 	m := &model.ImportSummary{}
@@ -160,7 +160,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 // @tags list
 // @produce json
 // @success 200 {object} []api.ImportSummary
-// @router /application-inventory/import-summary [get]
+// @router /importsummaries [get]
 func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 	var list []model.ImportSummary
 	db := h.preLoad(h.DB, "Imports")
@@ -185,7 +185,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 // @description Delete an import summary and associated import records.
 // @tags delete
 // @success 204
-// @router /application-inventory/import-summary/{id} [delete]
+// @router /importsummaries/{id} [delete]
 // @param id path string true "ImportSummary ID"
 func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 	id := ctx.Param(ID)
@@ -205,7 +205,7 @@ func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 // @tags post
 // @success 201 {object} api.ImportSummary
 // @produce json
-// @router /application-inventory/file/upload [post]
+// @router /importsummaries/upload [post]
 func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	fileName, ok := ctx.GetPostForm("fileName")
 	if !ok {
@@ -293,7 +293,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 // @tags export
 // @produce text/csv
 // @success 200 file csv
-// @router /application-inventory/csv-export [get]
+// @router /importsummaries/download [get]
 // @param importSummary.id query string true "ImportSummary ID"
 func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 	id := ctx.Query("importSummary.id")

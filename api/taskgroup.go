@@ -148,7 +148,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @tags update
 // @accept json
 // @success 204
-// @router /tasks/{id} [put]
+// @router /taskgroups/{id} [put]
 // @param id path string true "Task ID"
 // @param task body Task true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
@@ -293,11 +293,11 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 
 // BucketUpload godoc
 // @summary Upload bucket content by ID and path.
-// @description Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
 // @produce json
 // @success 204
-// @router /taskgroups/{id}/bucket/{wildcard} [post,put]
+// @router /taskgroups/{id}/bucket/{wildcard} [post]
 // @param id path string true "TaskGroup ID"
 func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 	m := &model.TaskGroup{}
