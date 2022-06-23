@@ -143,11 +143,17 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		}
 	}
 
+	// Assign existing Business Service
 	businessService := &model.BusinessService{}
 	result := m.DB.Select("id").Where("name LIKE ?", imp.BusinessService).First(businessService)
 	if result.Error != nil {
-		imp.ErrorMessage = fmt.Sprintf("BusinessService '%s' could not be found.", imp.BusinessService)
-		return
+		// Create a new BusinessService if not existed
+		businessService.Name = imp.BusinessService
+		result := m.DB.Create(businessService)
+		if result.Error != nil {
+			imp.ErrorMessage = fmt.Sprintf("Invalid BusinessService '%s'.", imp.BusinessService)
+			return
+		}
 	}
 	app.BusinessService = businessService
 
