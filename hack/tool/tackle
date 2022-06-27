@@ -315,18 +315,18 @@ class TackleTool:
                 self.add('stakeholdergroups', shg)
                 shgs.append(shg)
             # Prepare StakeHolder
-            sh            = Tackle2Object(sh1)
-            sh.name       = sh1['displayName']
-            sh.email      = sh1['email']
-            sh.groups     = shgs
+            sh                   = Tackle2Object(sh1)
+            sh.name              = sh1['displayName']
+            sh.email             = sh1['email']
+            sh.stakeholderGroups = shgs
             if sh1['jobFunction']:
-                if sh1['jobFunction']['name'] in self.destData['jobfunctions']:
+                if sh1['jobFunction']['role'] in self.destData['jobfunctions']:
                     # Re-map to JobFunction existing in Tackle2 destination
-                    sh.jobFunction = self.destData['jobfunctions'][sh['jobFunction']['name']]
+                    sh.jobFunction = self.destData['jobfunctions'][sh1['jobFunction']['role']]
                 else:
                     # Prepare new JobFunction
-                    jf              = Tackle2Object(sh['jobFunction'])
-                    jf.name         = sh['jobFunction']['role']
+                    jf              = Tackle2Object(sh1['jobFunction'])
+                    jf.name         = sh1['jobFunction']['role']
                     self.add('jobfunctions', jf)
                     sh.jobFunction = jf
             self.add('stakeholders', sh)
@@ -565,10 +565,10 @@ class TackleTool:
         # Hub objects
         for t in self.TYPES:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
+            print("Uploading %s.." % t)
             for dictObj in dictCollection:
                 if "assessment" in t:
                     continue    # Pathfinder objects are imported separately
-                print("Uploading %s.." % t)
                 debugPrint(dictObj)
                 apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
 
