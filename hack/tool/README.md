@@ -31,9 +31,22 @@ Note on ```clean-all``` command, it deletes all resources from Tackle 2 Hub API,
 
 Caution: all clean actions might delete objects already present in the Tackle 2 and unrelated to the import data.
 
+## Requirements
+
+The tool requires Python >= 3.9 to be installed (which should be present by default on most systems) and PyYAML module (install with package manager ```dnf install python3-pyyaml``` or Python PIP tool ```python3 -m pip install pyyaml```).
+
 ## Usage
 
-Use ```tackle-config.yml.example``` file as a template to set your Tackle endpoints and credentials and save it as ```tackle-config.yml``` before running the ```tackle``` command.
+Clone Github repository:
+```git clone https://github.com/konveyor/tackle2-hub.git```
+
+Change to the tool directory:
+```cd hack/tool```
+
+Use ```tackle-config.yml.example``` file as a template to set your Tackle endpoints and credentials and save it as ```tackle-config.yml```.
+
+Run the tackle tool:
+```./tackle```
 
 ### Supported actions
 - ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files

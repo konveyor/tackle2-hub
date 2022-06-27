@@ -679,7 +679,9 @@ if cmdWanted(args, "export-tackle1"):
     cmdExecuted = True
     # Gather Keycloak access tokens for Tackle1&2
     token1 = getKeycloakToken(c['tackle1']['url'], c['tackle1']['username'], c['tackle1']['password'])
-    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+    token2 = ""
+    if not args.skipDestCheck:
+        token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
