@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import copy
@@ -74,17 +74,16 @@ def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tac
 
 def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     debugPrint("Querying: %s" % url)
-    match method:
-        case 'DELETE':
-            r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-        case 'POST':
-            debugPrint("POST data: %s" % json.dumps(data))
-            r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-        case 'PATCH':
-            debugPrint("PATCH data: %s" % json.dumps(data))
-            r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-        case _: # GET
-            r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    if method == 'DELETE':
+        r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    elif method == 'POST':
+        debugPrint("POST data: %s" % json.dumps(data))
+        r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    elif method == 'PATCH':
+        debugPrint("PATCH data: %s" % json.dumps(data))
+        r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    else: # GET
+        r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
 
     if not r.ok:
         if ignoreErrors:
