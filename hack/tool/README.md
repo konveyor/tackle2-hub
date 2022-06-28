@@ -33,9 +33,11 @@ Caution: all clean actions might delete objects already present in the Tackle 2 
 
 ## Requirements
 
-The tool requires Python3 to be installed, PyYAML module and git to get the source code, install it with  ```dnf install python39 python3-pyyaml git``` (for Red Hat-like Linux distros).
+The tool requires Python3 with YAML parser to be installed. A Python 3.6 (default in RHEL8) has YAML already included, but e.g. Python 3.9 (default in RHEL9) requires install a PyYAML module. Also git is needed to get the source code.
 
-Since git and python3 should be present on most systems, it might be enought just install PyYAML with Python PIP tool ```python3 -m pip install pyyaml``` without need to use your OS package manager.
+Install requirements with  ```dnf install python39 python3-pyyaml git``` for RHEL-like Linux or corresponding for your operating system.
+
+Since Python3 and git should be present on most developers/sysadmins systems, it might be enought just ensure there presence of PyYAML with Python PIP tool ```python3 -m pip install pyyaml``` without need to use operating system package manager.
 
 ## Usage
 
