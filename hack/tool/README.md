@@ -33,7 +33,9 @@ Caution: all clean actions might delete objects already present in the Tackle 2 
 
 ## Requirements
 
-The tool requires Python >= 3.9 to be installed (which should be present by default on most systems) and PyYAML module (install with package manager ```dnf install python3-pyyaml``` or Python PIP tool ```python3 -m pip install pyyaml```).
+The tool requires Python3 to be installed, PyYAML module and git to get the source code, install it with  ```dnf install python39 python3-pyyaml git``` (for Red Hat-like Linux distros).
+
+Since git and python3 should be present on most systems, it might be enought just install PyYAML with Python PIP tool ```python3 -m pip install pyyaml``` without need to use your OS package manager.
 
 ## Usage
 
