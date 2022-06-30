@@ -154,13 +154,13 @@ class TackleTool:
         for tt2 in collection:
             tt  = Tackle2Object(tt2)
             tt.name = tt2['name']
-            self.destData['tagtypes'][tt.name] = tt
+            self.destData['tagtypes'][tt.name.lower()] = tt
             if tt2['tags']:
                 for t2 in tt2['tags']:
                     tag             = Tackle2Object()
                     tag.id          = t2['id']
                     tag.name        = t2['name']
-                    self.destData['tags'][tag.name] = tag
+                    self.destData['tags'][tag.name.lower()] = tag
 
         # Tackle 2 JobFunctions
         collection = apiJSON(tool.tackle2Url + "/hub/jobfunctions", tool.tackle2Token)
@@ -192,7 +192,7 @@ class TackleTool:
                 # TagType is injected from tagType processing few lines below
                 # Store Tag only if doesn't exist in Tackle2 destination already
                 self.add('origin-tags', tag)   # tmp tags for merge with seed tags lookup
-                if tag.name not in self.destData['tags']:
+                if tag.name.lower() not in self.destData['tags']:
                     self.add('tags', tag)
                 tags.append(tag)
             # Prepare TagType
@@ -200,12 +200,12 @@ class TackleTool:
             tt.name       = tt1['name']
             tt.colour     = tt1['colour']
             tt.rank       = tt1['rank']
-            tt.username   = tt1['createUser'] # Is there another relevant user?
+            tt.username   = tt1['createUser']
             for tag in tags:
-                tag.tagType = copy.deepcopy(tt) # Is this doule-nesting needed?
+                tag.tagType = copy.deepcopy(tt)
             tt.tags = tags
             # Store only if doesn't exist in Tackle2 destination already
-            if tt.name not in self.destData['tagtypes']:
+            if tt.name.lower() not in self.destData['tagtypes']:
                 self.add('tagtypes', tt)
 
         ### APPLICATION ###
@@ -219,9 +219,9 @@ class TackleTool:
                 for tagId in app1['tags']:
                     appTag = self.findById('origin-tags', int(tagId))
                     # Check if Tag exists in Tackle2 destination
-                    if appTag.name in self.destData['tags']:
+                    if appTag.name.lower() in self.destData['tags']:
                         # Re-map to existing Tackle2 Tag
-                        tags.append(self.destData['tags'][appTag.name])
+                        tags.append(self.destData['tags'][appTag.name.lower()])
                     else:
                         # Use imported Tag, creating a new one to cut association to Tag type
                         tag             = Tackle2Object()
