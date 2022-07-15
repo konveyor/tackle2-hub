@@ -191,7 +191,6 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		// Or create TagType (if CreateEntities is enabled)
 		if appTagType.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
-				fmt.Println("PROCESSING IMPORTS 3.1")
 				appTagType.Name = impTag.TagType
 				result = m.DB.Create(&appTagType)
 				if result.Error != nil {
