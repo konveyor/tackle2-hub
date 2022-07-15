@@ -147,8 +147,16 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 	// Assign Business Service
 	businessService := &model.BusinessService{}
-	result := m.DB.Select("id").Where("name LIKE ?", imp.BusinessService).First(businessService)
-	if result.Error != nil {
+	businessServices := []model.BusinessService{}
+	m.DB.Find(&businessServices)
+	normBusinessServiceName := normalizedName(imp.BusinessService)
+	// Find existing BusinessService
+	for _, bs := range businessServices {
+		if normalizedName(bs.Name) == normBusinessServiceName {
+			businessService = &bs
+		}
+	}
+	if businessService.ID == 0 {
 		if imp.ImportSummary.CreateEntities {
 			// Create a new BusinessService if not existed
 			businessService.Name = imp.BusinessService
@@ -192,7 +200,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		if appTagType.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
 				appTagType.Name = impTag.TagType
-				result = m.DB.Create(&appTagType)
+				result := m.DB.Create(&appTagType)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("TagType '%s' cannot be created.", impTag.TagType)
 					return
@@ -216,7 +224,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 			if imp.ImportSummary.CreateEntities {
 				appTag.Name = impTag.Name
 				appTag.TagType = *appTagType
-				result = m.DB.Create(&appTag)
+				result := m.DB.Create(&appTag)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("Tag '%s' cannot be created.", impTag.Name)
 					return
@@ -231,7 +239,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		app.Tags = append(app.Tags, *appTag)
 	}
 
-	result = m.DB.Create(app)
+	result := m.DB.Create(app)
 	if result.Error != nil {
 		imp.ErrorMessage = result.Error.Error()
 		return
