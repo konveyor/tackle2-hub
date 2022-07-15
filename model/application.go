@@ -89,10 +89,11 @@ func (r *Import) AsMap() (m map[string]interface{}) {
 
 type ImportSummary struct {
 	Model
-	Content      []byte
-	Filename     string
-	ImportStatus string
-	Imports      []Import `gorm:"constraint:OnDelete:CASCADE"`
+	Content        []byte
+	Filename       string
+	ImportStatus   string
+	Imports        []Import `gorm:"constraint:OnDelete:CASCADE"`
+	CreateEntities bool
 }
 
 type ImportTag struct {
