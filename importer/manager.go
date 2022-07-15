@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"regexp"
 
 	liberr "github.com/konveyor/controller/pkg/error"
@@ -200,6 +201,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		if appTagType.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
 				appTagType.Name = impTag.TagType
+				appTagType.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
 				result := m.DB.Create(&appTagType)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("TagType '%s' cannot be created.", impTag.TagType)
