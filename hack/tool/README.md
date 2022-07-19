@@ -94,11 +94,12 @@ SSL warnings ```-w / --disable-ssl-warnings``` optional suppress ssl warning for
 
 Import errors could be skipped with ``` -i / --ignore-import-errors ``` -  not recommended - use with high attention to avoid data inconsistency. If the import has failed, it is recommended use ```tackle clean``` command to remove only imported resources.
 
+Tackle2 deployments without auth feature (```feature_auth_required: false```), should use ```-n / --no-auth``` flag to skip Keycloak auth token creation, using empty token for Tackle API calls.
+
 ## Example
 
 ```
-$ tackle --help
-usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [action ...]
+usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [action ...]
 
 Konveyor Tackle maintenance tool.
 
@@ -118,8 +119,7 @@ options:
                         Do not display warnings during ssl check for api requests.
   -i, --ignore-import-errors
                         Skip to next item if an item fails load.
-
-
+  -n, --no-auth         Skip Keycloak token creation, use empty auth token in Tackle API calls.
 ```
 
 API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).

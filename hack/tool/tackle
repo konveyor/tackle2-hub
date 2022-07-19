@@ -24,6 +24,8 @@ parser.add_argument('-w','--disable-ssl-warnings', dest='disableSslWarnings', ac
                     help='Do not display warnings during ssl check for api requests.')
 parser.add_argument('-i','--ignore-import-errors', dest='ignoreImportErrors', action='store_const', const=True, default=False,
                     help='Skip to next item if an item fails load.')
+parser.add_argument('-n','--no-auth', dest='noAuth', action='store_const', const=True, default=False,
+                    help='Skip Keycloak token creation, use empty Auth token in Tackle API calls.')
 args = parser.parse_args()
 
 ###############################################################################
@@ -59,6 +61,10 @@ def debugPrint(str):
         print(str)
 
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
+    if args.noAuth:
+        print("Skipping auth token creation for %s, using empty." % host)
+        return ""
+
     print("Getting auth token from %s" % host)
     url  = "%s/auth/realms/%s/protocol/openid-connect/token" % (host, realm)
     data = {'username': username, 'password': password, 'client_id': client_id, 'grant_type': 'password'}
