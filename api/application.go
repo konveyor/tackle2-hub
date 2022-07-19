@@ -143,6 +143,12 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 		h.deleteFailed(ctx, result.Error)
 		return
 	}
+	p := Pathfinder{}
+	err := p.DeleteAssessment([]uint{id}, ctx)
+	if err != nil {
+		h.deleteFailed(ctx, err)
+		return
+	}
 	result = h.DB.Delete(m)
 	if result.Error != nil {
 		h.deleteFailed(ctx, result.Error)
@@ -164,6 +170,12 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 	err := ctx.BindJSON(&ids)
 	if err != nil {
 		h.bindFailed(ctx, err)
+		return
+	}
+	p := Pathfinder{}
+	err = p.DeleteAssessment(ids, ctx)
+	if err != nil {
+		h.deleteFailed(ctx, err)
 		return
 	}
 	err = h.DB.Delete(

@@ -24,6 +24,14 @@ const (
 )
 
 //
+// Headers
+const (
+	Authorization = "Authorization"
+	ContentLength = "Content-Length"
+	ContentType   = "Content-Type"
+)
+
+//
 // All builds all handlers.
 func All() []Handler {
 	return []Handler{
