@@ -11,6 +11,13 @@ import (
 )
 
 //
+// Settings keys
+const (
+	HubDBSeeded  = ".hub.db.seeded"
+	HubDBVersion = ".hub.db.version"
+)
+
+//
 // Routes
 const (
 	SettingsRoot = "/settings"
