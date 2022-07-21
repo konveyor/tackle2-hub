@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"regexp"
+
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
@@ -40,7 +43,7 @@ func (m *Manager) Run(ctx context.Context) {
 // unprocessed imports.
 func (m *Manager) processImports() (err error) {
 	list := []model.Import{}
-	db := m.DB.Preload("ImportTags")
+	db := m.DB.Preload("ImportTags").Preload("ImportSummary")
 	result := db.Find(&list, "processed = ?", false)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
@@ -143,32 +146,117 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		}
 	}
 
+	// Assign Business Service
 	businessService := &model.BusinessService{}
-	result := m.DB.Select("id").Where("name LIKE ?", imp.BusinessService).First(businessService)
-	if result.Error != nil {
-		imp.ErrorMessage = fmt.Sprintf("BusinessService '%s' could not be found.", imp.BusinessService)
-		return
+	businessServices := []model.BusinessService{}
+	m.DB.Find(&businessServices)
+	normBusinessServiceName := normalizedName(imp.BusinessService)
+	// Find existing BusinessService
+	for _, bs := range businessServices {
+		if normalizedName(bs.Name) == normBusinessServiceName {
+			businessService = &bs
+		}
+	}
+	if businessService.ID == 0 {
+		if imp.ImportSummary.CreateEntities {
+			// Create a new BusinessService if not existed
+			businessService.Name = imp.BusinessService
+			result := m.DB.Create(businessService)
+			if result.Error != nil {
+				imp.ErrorMessage = fmt.Sprintf("BusinessService '%s' cannot be created.", imp.BusinessService)
+				return
+			}
+		} else {
+			imp.ErrorMessage = fmt.Sprintf("BusinessService '%s' could not be found.", imp.BusinessService)
+			return
+		}
 	}
 	app.BusinessService = businessService
+
+	// Process import Tags & TagTypes
+	tagTypes := []model.TagType{}
+	m.DB.Find(&tagTypes)
 
 	tags := []model.Tag{}
 	db := m.DB.Preload("TagType")
 	db.Find(&tags)
+
 	for _, impTag := range imp.ImportTags {
-		for _, tag := range tags {
-			if tag.Name == impTag.Name && tag.TagType.Name == impTag.TagType {
-				app.Tags = append(app.Tags, tag)
-				continue
+		// Prepare normalized names for importTag
+		normImpTagName := normalizedName(impTag.Name)
+		normImpTagType := normalizedName(impTag.TagType)
+		// Prepare vars for Tag and its TagType
+		appTag := &model.Tag{}
+		appTagType := &model.TagType{}
+
+		// Find existing TagType
+		for _, tagType := range tagTypes {
+			if normalizedName(tagType.Name) == normImpTagType {
+				appTagType = &tagType
+				break
 			}
 		}
+
+		// Or create TagType (if CreateEntities is enabled)
+		if appTagType.ID == 0 {
+			if imp.ImportSummary.CreateEntities {
+				appTagType.Name = impTag.TagType
+				appTagType.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
+				result := m.DB.Create(&appTagType)
+				if result.Error != nil {
+					imp.ErrorMessage = fmt.Sprintf("TagType '%s' cannot be created.", impTag.TagType)
+					return
+				}
+			} else {
+				imp.ErrorMessage = fmt.Sprintf("TagType '%s' could not be found.", impTag.TagType)
+				return
+			}
+		}
+		appTag.TagType = *appTagType
+
+		// Find existing tag
+		for _, tag := range tags {
+			if normalizedName(tag.Name) == normImpTagName && normalizedName(tag.TagType.Name) == normImpTagType {
+				appTag = &tag
+				break
+			}
+		}
+		// Or create new tag (if CreateEntities is enabled)
+		if appTag.ID == 0 {
+			if imp.ImportSummary.CreateEntities {
+				appTag.Name = impTag.Name
+				appTag.TagType = *appTagType
+				result := m.DB.Create(&appTag)
+				if result.Error != nil {
+					imp.ErrorMessage = fmt.Sprintf("Tag '%s' cannot be created.", impTag.Name)
+					return
+				}
+			} else {
+				imp.ErrorMessage = fmt.Sprintf("Tag '%s' could not be found.", impTag.Name)
+				return
+			}
+		}
+
+		// Assign the Tag to Application's Tags
+		app.Tags = append(app.Tags, *appTag)
 	}
 
-	result = m.DB.Create(app)
+	result := m.DB.Create(app)
 	if result.Error != nil {
 		imp.ErrorMessage = result.Error.Error()
 		return
 	}
 
 	ok = true
+	return
+}
+
+//
+// normalizedName transforms given name to be comparable as same with similar names
+// Example: normalizedName(" F oo-123 bar! ") returns "foo123bar"
+func normalizedName(name string) (normName string) {
+	invalidSymbols := regexp.MustCompile("[^a-z0-9]")
+	normName = strings.ToLower(name)
+	normName = invalidSymbols.ReplaceAllString(normName, "")
 	return
 }
