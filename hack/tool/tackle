@@ -132,9 +132,9 @@ def cmdWanted(args, action):
 
 ###############################################################################
 
-class Tackle12Import:
+class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'identities']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'assessments--assessment-risk', 'assessments--confidence', 'reviews', 'proxies', 'identities']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -156,7 +156,7 @@ class Tackle12Import:
     # Gather existing seeded objects from Tackle2
     def loadTackle2Seeds(self):
         # Tackle 2 TagTypes and Tags
-        collection = apiJSON(tackle12import.tackle2Url + "/hub/tagtypes", tackle12import.tackle2Token)
+        collection = apiJSON(tool.tackle2Url + "/hub/tagtypes", tool.tackle2Token)
         for tt2 in collection:
             tt  = Tackle2Object(tt2)
             tt.name = tt2['name']
@@ -169,7 +169,7 @@ class Tackle12Import:
                     self.destData['tags'][tag.name.lower()] = tag
 
         # Tackle 2 JobFunctions
-        collection = apiJSON(tackle12import.tackle2Url + "/hub/jobfunctions", tackle12import.tackle2Token)
+        collection = apiJSON(tool.tackle2Url + "/hub/jobfunctions", tool.tackle2Token)
         for jf2 in collection:
             jf              = Tackle2Object(jf2)
             jf.name         = jf2['name']
@@ -374,6 +374,164 @@ class Tackle12Import:
             bs.owner        = bs1['owner']  # Stakeholder
             self.add('businessservices', bs)
 
+    # Gather Tackle 2 API objects
+    def dumpTackle2(self):
+        ### TAG TYPES & TAGS ###
+        collection = apiJSON(self.tackle2Url + "/hub/tagtypes", self.tackle2Token)
+        for tt2 in collection:
+            # Temp holder for tags
+            tags = []
+            # Prepare TagTypes's Tags
+            for tag2 in tt2['tags']:
+                tag             = Tackle2Object()
+                tag.id          = tag2['id']
+                tag.name        = tag2['name']
+                # TagType is injected from tagType processing few lines below
+                self.add('tags', tag)
+                tags.append(tag)
+            # Prepare TagType
+            tt            = Tackle2Object()
+            tt.id         = tt2['id']
+            tt.name       = tt2['name']
+            tt.colour     = tt2['colour']
+            tt.rank       = tt2['rank']
+            tt.username   = tt2['username']
+            for tag in tags:
+                tag.tagType = copy.deepcopy(tt)
+            tt.tags = tags
+            self.add('tagtypes', tt)
+
+        # tags?
+
+        ### APPLICATION ###
+        collection = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
+        for app2 in collection:
+            # Temp holder for tags
+            tags = []
+            # Prepare Tags
+            debugPrint(app2)
+            if app2['tags']:
+                for tag2 in app2['tags']:
+                    appTag = self.findById('tags', int(tag2['id']))
+                    # Use imported Tag, creating a new one to cut association to Tag type
+                    tag             = Tackle2Object()
+                    tag.id          = appTag.id
+                    tag.name        = appTag.name
+                    tags.append(tag)
+            # Prepare Application
+            app                 = Tackle2Object(app2)
+            app.name            = app2['name']
+            app.description     = app2['description']
+            app.tags            = tags
+            app.businessService = app2['businessService']
+            app.repository      = app2['repository'] 
+            app.binary          = app2['binary']
+            app.facts           = app2['facts']
+            self.add('applications', app)
+
+        ### DEPENDENCIES ###
+        collection = apiJSON(self.tackle2Url + "/hub/dependencies", self.tackle2Token)
+        for dep2 in collection:
+            # Prepare Dependency
+            dep                 = Tackle2Object(dep2)
+            dep.to              = {'id': dep2['to']['id'], 'name': dep2['to']['name']}
+            setattr(dep, 'from', {'id': dep2['from']['id'], 'name': dep2['from']['name']})    # Cannot use "from" as an attribute name directly
+            self.add('dependencies', dep)
+
+
+        ### APPLICATION REVIEW ###
+        collection = apiJSON(self.tackle2Url + "/hub/reviews", self.tackle2Token)
+        for rew2 in collection:
+            rev                 = Tackle2Object(rew2)
+            rev.proposedAction      = rew2['proposedAction']
+            rev.effortEstimate      = rew2['effortEstimate']
+            rev.businessCriticality = rew2['businessCriticality']
+            rev.workPriority        = rew2['workPriority']
+            rev.comments            = rew2['comments']
+            rev.application         = rew2['application']
+            self.add('reviews', rev)
+
+        ### ASSESSMENTS & RISKS (per Application) ###
+        for app in self.data['applications']:
+            collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % app.id, self.tackle2Token)
+            for assm2 in collection:
+                # Prepare Assessment
+                assm               = Tackle2Object()
+                assm.id            = assm2['id']
+                assm.applicationId = assm2['applicationId']
+                assm.status        = assm2['status']
+                # Prepare Assessment questions and answers
+                asqa2 = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments/%d" % assm.id, self.tackle2Token)
+                asqa               = Tackle2Object()
+                asqa.id                = asqa2['id']
+                asqa.applicationId     = asqa2['applicationId']
+                asqa.status            = asqa2['status']
+                asqa.stakeholders      = asqa2['stakeholders']
+                asqa.stakeholderGroups = asqa2['stakeholderGroups']
+                asqa.questionnaire     = asqa2['questionnaire']
+                self.add('assessments', asqa)
+
+        ### STAKEHOLDER ###
+        collection = apiJSON(self.tackle2Url + "/hub/stakeholders", self.tackle2Token)
+        for sh2 in collection:
+            # Prepare StakeHolder
+            sh             = Tackle2Object(sh2)
+            sh.name        = sh2['name']
+            sh.email       = sh2['email']
+            sh.groups      = sh2['stakeholderGroups']
+            sh.jobFunction = sh2['jobFunction']
+            self.add('stakeholders', sh)
+
+        ### STAKEHOLDER GROUPS ###
+        collection = apiJSON(self.tackle2Url + "/hub/stakeholdergroups", self.tackle2Token)
+        for shg2 in collection:
+            # Prepare StakeholderGroup
+            shg             = Tackle2Object(shg2)
+            shg.name        = shg2['name']
+            shg.description = shg2['description']
+            self.add('stakeholdergroups', shg)
+
+        ### JOB FUNCTION ###
+        collection = apiJSON(self.tackle2Url + "/hub/jobfunctions", self.tackle2Token)
+        for jf2 in collection:
+            # Prepare JobFunction
+            jf              = Tackle2Object(jf2)
+            jf.name         = jf2['name']
+            jf.stakeholders = jf2['stakeholders']
+            self.add('jobfunctions', jf)
+
+        ### BUSINESS SERVICE ###
+        collection = apiJSON(self.tackle2Url + "/hub/businessservices", self.tackle2Token)
+        for bs2 in collection:
+            # Prepare JobFunction
+            bs              = Tackle2Object(bs2)
+            bs.name         = bs2['name']
+            bs.description  = bs2['description']
+            bs.owner        = bs2['owner']  # Stakeholder
+            self.add('businessservices', bs)
+
+        ### PROXY ###
+        collection = apiJSON(self.tackle2Url + "/hub/proxies", self.tackle2Token)
+        for pr2 in collection:
+            # Prepare JobFunction
+            pr          = Tackle2Object(pr2)
+            pr.enabled  = pr2['enabled']
+            pr.kind     = pr2['kind']
+            pr.host     = pr2['host']
+            pr.port     = pr2['port']
+            pr.excluded = pr2['excluded']
+            pr.identity = pr2['identity']
+            self.add('proxies', pr)
+
+        ### IDENTITY ###
+        collection = apiJSON(self.tackle2Url + "/hub/identities", self.tackle2Token)
+        for id2 in collection:
+            # Prepare JobFunction
+            id              = Tackle2Object(pr2)
+            id.name         = id2['name']
+            # nebo brát jen dict to objektu?
+            self.add('identities', id)
+
     def add(self, type, item):
         for existingItem in self.data[type]:
             if hasattr(item, 'id') and item.id == existingItem.id:  # assessment links objects don't have primary key id
@@ -459,10 +617,10 @@ class Tackle12Import:
                     # Delete related Application's Assessment resources first
                     collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
                     for assm in collection:
-                        print("Deleting assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
+                        print("Trying delete assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
                         apiJSON("%s/hub/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
                 # Hub resources
-                print("Deleting %s/%s" % (t, dictObj['id']))
+                print("Trying delete %s/%s" % (t, dictObj['id']))
                 apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
 
     def cleanAllTackle2(self):
@@ -509,17 +667,34 @@ if cmdWanted(args, "export-tackle1"):
         token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
+    tool = TackleTool(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
 
     # Run the export
     if not args.skipDestCheck:
         print("Loading seed objects from Tackle 2")
-        tackle12import.loadTackle2Seeds()
+        tool.loadTackle2Seeds()
     print("Exporting Tackle 1.2 objects (this might take a while..)")
-    tackle12import.dumpTackle1()
+    tool.dumpTackle1()
     print("Writing JSON data files into %s" % args.data_dir)
-    tackle12import.store()
+    tool.store()
     print("Done. The data could be imported to Tackle 2 using command \"tackle import\"")
+
+# Tackle 2 export steps
+if cmdWanted(args, "export"):
+    cmdExecuted = True
+    # Gather Keycloak access tokens for Tackle2
+    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+
+    # Setup data migration object
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+
+    # Run the export expecting clean destination
+    print("Exporting Tackle 2 objects (this might take a while..)")
+    tool.dumpTackle2()
+    print("Writing JSON data files into %s" % args.data_dir)
+    tool.store()
+    print("Done. The data could be imported to another Tackle 2 using command \"tackle clean-all && tackle import\"")
+
 
 # Tackle 2 import steps
 if cmdWanted(args, "import"):
@@ -528,13 +703,13 @@ if cmdWanted(args, "import"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
 
     # Run the import
     print("Importing data to Tackle2")
     if not args.skipDestCheck:
-        tackle12import.preImportCheck()
-    tackle12import.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
+        tool.preImportCheck()
+    tool.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
     print("Done. Open your Tackle2 now!")
 
 # Clean created objects in Tackle2
@@ -544,11 +719,12 @@ if cmdWanted(args, "clean"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
 
     # Run the cleanup
     print("Cleaning data created in Tackle2")
-    tackle12import.cleanTackle2()
+    tool.cleanTackle2()
+    print("Done. Records from local JSON data files were removed from Tackle2 API.")
 
 # Clean ALL objects in Tackle2
 if cmdWanted(args, "clean-all"):
@@ -557,11 +733,11 @@ if cmdWanted(args, "clean-all"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tackle12import = Tackle12Import(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
 
     # Run the cleanup including seeds
     print("Cleaning ALL data in Tackle2")
-    tackle12import.cleanAllTackle2()
+    tool.cleanAllTackle2()
 
 # Print help if action was not specified
 if not cmdExecuted:
