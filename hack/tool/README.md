@@ -21,6 +21,16 @@ Exports full data dump including seeds to be later imported to currently not ava
 - ```tackle clean-all```
 - ```tackle import```
 
+### Export and Import data between Tackle 2 instances
+
+Tackle 2 can be fully exported and imported to another Tackle 2 instance, expecting it is cleaned-up before import.
+
+In this case, two configuration files will be needed, one for exported Tackle 2 instance (```tackle-config-source.yml``` in example below) and other for Tackle 2 instance, where the dump should be imported to (```-c``` was ommitted so ```tackle-config.yml``` as the default config filename was used).
+
+- ```tackle -c tackle-config-source.yml export```
+- ```tackle clean-all```
+- ```tackle import```
+
 ### If the import failed
 
 The ```tackle import``` command could fail in a pre-import check phase which ensures there are no resources of given type with the same ID in the destination Tackle 2 (error after ```Checking tagtypes in destination Tackle2..``` etc.). In this case, run ```tackle clean``` command, which will remove such objects from the destination Tackle 2 API or remove it manually either from the destination Tackle 2 or from the JSON data files.
@@ -54,6 +64,7 @@ Run the tackle tool:
 
 ### Supported actions
 - ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
+- ```export``` exports Tackle 2 objects into local JSON files
 - ```import``` creates objects in Tackle 2 from local JSON files
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
 - ```clean-all``` deletes ALL data returned by Tackle 2 (including seeds, additional to ```clean```), skips some pathfinder stuff without index action
@@ -88,7 +99,7 @@ Verbose output ```-v / --verbose``` option logs all API requests and responses p
 
 Data directory ```-d / --data-dir``` specifies path to local directory with Tackle database records in JSON format (```./tackle-data``` by default).
 
-A full export without having access to the destination Tackle 2 and including all seed objects can be executed with ```-s / --skip-destination-check``` option. When importing such data, the destination Tackle 2 needs to be empty (run ```clean-all``` first).
+A full export without having access to the destination Tackle 2 and including all seed objects can be executed with ```-s / --skip-destination-check``` option. When importing such data, the destination Tackle 2 needs to be empty (run ```clean-all``` first). This is ```on``` by default in Tackle 2 ```export``` command.
 
 SSL warnings ```-w / --disable-ssl-warnings``` optional suppress ssl warning for api requests.
 
@@ -96,15 +107,17 @@ Import errors could be skipped with ``` -i / --ignore-import-errors ``` -  not r
 
 Tackle2 deployments without auth feature (```feature_auth_required: false```), should use ```-n / --no-auth``` flag to skip Keycloak auth token creation, using empty token for Tackle API calls.
 
+Tackle 2 export dumps buckets content which could be large, to skip it, use ```-b / --skip-buckets``` flag on export command.
+
 ## Example
 
 ```
-usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [action ...]
+usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [-b] [action ...]
 
 Konveyor Tackle maintenance tool.
 
 positional arguments:
-  action                One or more Tackle commands that should be executed, options: export-tackle1 import clean clean-all
+  action                One or more Tackle commands that should be executed, options: export export-tackle1 import clean clean-all
 
 options:
   -h, --help            show this help message and exit
@@ -119,7 +132,8 @@ options:
                         Do not display warnings during ssl check for api requests.
   -i, --ignore-import-errors
                         Skip to next item if an item fails load.
-  -n, --no-auth         Skip Keycloak token creation, use empty auth token in Tackle API calls.
+  -n, --no-auth         Skip Keycloak token creation, use empty Auth token in Tackle API calls.
+  -b, --skip-buckets    Skip Tackle 2 Buckets content export.
 ```
 
 API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).
