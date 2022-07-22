@@ -107,15 +107,17 @@ Import errors could be skipped with ``` -i / --ignore-import-errors ``` -  not r
 
 Tackle2 deployments without auth feature (```feature_auth_required: false```), should use ```-n / --no-auth``` flag to skip Keycloak auth token creation, using empty token for Tackle API calls.
 
+Tackle 2 export dumps buckets content which could be large, to skip it, use ```-b / --skip-buckets``` flag on export command.
+
 ## Example
 
 ```
-usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [action ...]
+usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [-b] [action ...]
 
 Konveyor Tackle maintenance tool.
 
 positional arguments:
-  action                One or more Tackle commands that should be executed, options: export-tackle1 import clean clean-all
+  action                One or more Tackle commands that should be executed, options: export export-tackle1 import clean clean-all
 
 options:
   -h, --help            show this help message and exit
@@ -130,7 +132,8 @@ options:
                         Do not display warnings during ssl check for api requests.
   -i, --ignore-import-errors
                         Skip to next item if an item fails load.
-  -n, --no-auth         Skip Keycloak token creation, use empty auth token in Tackle API calls.
+  -n, --no-auth         Skip Keycloak token creation, use empty Auth token in Tackle API calls.
+  -b, --skip-buckets    Skip Tackle 2 Buckets content export.
 ```
 
 API endpoints and credentials should be set in a config file (```tackle-config.yml``` by default).
