@@ -8,16 +8,17 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/google/uuid v1.1.2
 	github.com/konveyor/controller v0.8.0
-	github.com/mattn/go-sqlite3 v1.14.9
+	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/onsi/gomega v1.7.0
 	github.com/prometheus/client_golang v1.1.0
 	github.com/swaggo/swag v1.7.8
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
 	gorm.io/datatypes v1.0.5
+	gorm.io/driver/mysql v1.3.5 // indirect
 	gorm.io/driver/postgres v1.2.3 // indirect
-	gorm.io/driver/sqlite v1.2.4
+	gorm.io/driver/sqlite v1.3.6
 	gorm.io/driver/sqlserver v1.2.1 // indirect
-	gorm.io/gorm v1.22.5
+	gorm.io/gorm v1.23.8
 	k8s.io/api v0.17.4
 	k8s.io/apimachinery v0.17.4
 	k8s.io/apiserver v0.17.1

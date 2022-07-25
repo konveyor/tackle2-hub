@@ -15,7 +15,7 @@ type Application struct {
 	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:ApplicationTags;constraint:OnDelete:CASCADE"`
 	Identities        []Identity `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
-	BusinessServiceID uint       `gorm:"index"`
+	BusinessServiceID *uint      `gorm:"index"`
 	BusinessService   *BusinessService
 }
 

@@ -308,7 +308,7 @@ type Application struct {
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
 	Tags            []Ref       `json:"tags"`
-	BusinessService Ref         `json:"businessService"`
+	BusinessService *Ref        `json:"businessService"`
 }
 
 //
@@ -327,7 +327,7 @@ func (r *Application) With(m *model.Application) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
-	r.BusinessService = r.ref(m.BusinessServiceID, m.BusinessService)
+	r.BusinessService = r.refPtr(m.BusinessServiceID, m.BusinessService)
 	r.Identities = []Ref{}
 	for _, id := range m.Identities {
 		ref := Ref{}
@@ -347,15 +347,17 @@ func (r *Application) With(m *model.Application) {
 // Model builds a model.
 func (r *Application) Model() (m *model.Application) {
 	m = &model.Application{
-		Name:              r.Name,
-		Description:       r.Description,
-		Comments:          r.Comments,
-		BusinessServiceID: r.BusinessService.ID,
-		Binary:            r.Binary,
+		Name:        r.Name,
+		Description: r.Description,
+		Comments:    r.Comments,
+		Binary:      r.Binary,
 	}
 	m.ID = r.ID
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
+	}
+	if r.BusinessService != nil {
+		m.BusinessServiceID = &r.BusinessService.ID
 	}
 	if r.Facts == nil {
 		r.Facts = Facts{}
