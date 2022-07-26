@@ -257,6 +257,9 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		ctx.Status(http.StatusBadRequest)
 	}
 
+	// Counter for unknown RecordType rows (!=1 or !=2)
+	unknownRecordsCnt := 0
+
 	for {
 		row, err := csvReader.Read()
 		if err != nil {
@@ -278,15 +281,17 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		case RecordTypeDependency:
 			imp = h.dependencyFromRow(fileName, row)
 		default:
-			imp = model.Import{
-				Filename:    fileName,
-				RecordType1: row[0],
-			}
+			// Accept only known RecordTypes
+			unknownRecordsCnt += 1
 		}
 		imp.ImportSummary = m
 		result := h.DB.Create(&imp)
 		if result.Error != nil {
 			h.createFailed(ctx, result.Error)
+			return
+		}
+		if unknownRecordsCnt > 0 {
+			ctx.JSON(http.StatusBadRequest, gin.H{"errorMessage": fmt.Sprintf("Import CSV was successfully uploaded, but there was %d unknown records.", unknownRecordsCnt)})
 			return
 		}
 	}
