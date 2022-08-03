@@ -4,6 +4,7 @@ import argparse
 import copy
 import json
 import os
+import re
 import requests
 import shutil
 import yaml
@@ -120,6 +121,45 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
         return respData['_embedded'][url.rsplit('/')[-1].rsplit('?')[0]] # unwrap Tackle1 JSON response (e.g. _embedded -> application -> [{...}])
     else:
         return respData # raw return JSON (Tackle2, Pathfinder)
+
+def apiRaw(url, token, data=None, method='GET', ignoreErrors=False):
+    debugPrint("Querying: %s" % url)
+    if method == 'DELETE':
+        r = requests.delete(url, headers={"Authorization": "Bearer %s" % token}, verify=False)
+    elif method == 'POST':
+        debugPrint("POST data: %s" % json.dumps(data))
+        r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token}, verify=False)
+    elif method == 'PATCH':
+        debugPrint("PATCH data: %s" % json.dumps(data))
+        r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token}, verify=False)
+    else: # GET
+        r = requests.get(url, headers={"Authorization": "Bearer %s" % token}, verify=False)
+
+    if not r.ok:
+        if ignoreErrors:
+            debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
+        else:
+            print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
+            exit(1)
+
+    return r.text
+
+def apiFileGet(url, token, destinationPath, ignoreErrors=False):
+    debugPrint("Getting file from %s" % url)
+    # Get via streamed request
+    with requests.get(url, headers={"Authorization": "Bearer %s" % token}, verify=False, stream=True) as resp:
+        # Check for errors
+        if not resp.ok:
+            if ignoreErrors:
+                debugPrint("Got status %d for get file %s, ignoring" % (r.status_code, url))
+            else:
+                print("ERROR: File get API request failed with status %d for %s" % (r.status_code, url))
+                exit(1)
+        # Store to local destination file
+        with open(destinationPath, 'wb') as destFile:
+            shutil.copyfileobj(resp.raw, destFile)
+
+    return destFile.name
 
 def tackle2path(obj):
     if 'assessment' in obj:
@@ -547,9 +587,14 @@ class TackleTool:
     def dumpTackle2Buckets(self):
         for bucket in self.data['buckets']:
             debugPrint("Downloading bucket data for %s from owner %s" % (bucket['path'], bucket['owner']))
-            bucketDir = "%s/%s" % (self.dataDir, bucket['path'])
-            os.mkdir(bucketDir)
-            # TODO: dump file or files from the bucket here
+            bucketListing = apiRaw(self.tackle2Url + "/hub/" + bucket['owner'] + "/bucket/", self.tackle2Token)
+            bucketEntries = re.findall(("href=\"([^\"]+)\""), bucketListing)
+            debugPrint(bucketListing)
+            if len(bucketEntries):
+                bucketDir = "%s/%s" % (self.dataDir, bucket['path'])
+                os.mkdir(bucketDir)
+                for entry in bucketEntries:
+                    apiFileGet(self.tackle2Url + "/hub/" + bucket['owner'] + "/bucket/" + entry, self.tackle2Token, bucketDir + "/" + entry)
 
     def add(self, type, item):
         for existingItem in self.data[type]:
