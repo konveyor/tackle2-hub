@@ -151,15 +151,30 @@ def apiFileGet(url, token, destinationPath, ignoreErrors=False):
         # Check for errors
         if not resp.ok:
             if ignoreErrors:
-                debugPrint("Got status %d for get file %s, ignoring" % (r.status_code, url))
+                debugPrint("Got status %d for get file %s, ignoring" % (resp.status_code, url))
             else:
-                print("ERROR: File get API request failed with status %d for %s" % (r.status_code, url))
+                print("ERROR: File get API request failed with status %d for %s" % (resp.status_code, url))
                 exit(1)
         # Store to local destination file
         with open(destinationPath, 'wb') as destFile:
             shutil.copyfileobj(resp.raw, destFile)
 
     return destFile.name
+
+def apiFilePost(url, token, filePath, ignoreErrors=False):
+    debugPrint("Uploading file %s to %s" % (filePath, url))
+    # Open local file
+    with open(filePath, 'rb') as f:
+        # Upload the content
+        resp = requests.post(url, files={'file': f}, headers={"Authorization": "Bearer %s" % token}, verify=False)
+        # Check for errors
+        if not resp.ok:
+            if ignoreErrors:
+                debugPrint("Got status %d for post file %s, ignoring" % (resp.status_code, url))
+            else:
+                print("ERROR: File post API request failed with status %d for %s" % (resp.status_code, url))
+                exit(1)
+    return resp.text
 
 def tackle2path(obj):
     if 'assessment' in obj:
@@ -617,7 +632,7 @@ class TackleTool:
                 if "assessment" in t:
                     continue    # Pathfinder objects are imported separately
                 if "buckets" in t:
-                    continue
+                    continue    # Bucket objects are uploaded separately to their owner resources
                 debugPrint(dictObj)
                 apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
 
@@ -651,7 +666,15 @@ class TackleTool:
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
         # Buckets content
-        #TODO: upload content of buckets to their new path (new uuid) within owner (application) using buckets.json and buckets/* directory
+        dictCollection = loadDump(os.path.join(self.dataDir, 'buckets.json'))
+        for bucket in dictCollection:
+            # Check if there is directory with data for bucket/owners list
+            bucketDir = self.dataDir + bucket['path']
+            if os.path.exists(bucketDir):
+                print("Uploading bucket data for %s" % bucket['owner'])
+                for bucketEntry in os.listdir(bucketDir):
+                    # Upload each bucket entry using its owner path
+                    apiFilePost(self.tackle2Url + tackle2path(bucket['owner']) + "/bucket/" + bucketEntry, self.tackle2Token, bucketDir + "/" + bucketEntry)
 
     def preImportCheck(self):
         for t in self.TYPES:
