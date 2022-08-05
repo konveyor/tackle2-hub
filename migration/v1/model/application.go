@@ -64,11 +64,10 @@ type Import struct {
 
 type ImportSummary struct {
 	Model
-	Content        []byte
-	Filename       string
-	ImportStatus   string
-	Imports        []Import `gorm:"constraint:OnDelete:CASCADE"`
-	CreateEntities bool
+	Content      []byte
+	Filename     string
+	ImportStatus string
+	Imports      []Import `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type ImportTag struct {

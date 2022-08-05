@@ -8,7 +8,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -225,19 +224,10 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	if err != nil {
 		ctx.Status(http.StatusInternalServerError)
 	}
-	createEntitiesField, ok := ctx.GetPostForm("createEntities")
-	if !ok {
-		createEntitiesField = "1"
-	}
-	createEntities, err := strconv.ParseBool(createEntitiesField)
-	if err != nil {
-		createEntities = true
-	}
 	m := model.ImportSummary{
-		Filename:       fileName,
-		ImportStatus:   InProgress,
-		Content:        buf.Bytes(),
-		CreateEntities: createEntities,
+		Filename:     fileName,
+		ImportStatus: InProgress,
+		Content:      buf.Bytes(),
 	}
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(&m)
@@ -419,12 +409,11 @@ type Import map[string]interface{}
 // ImportSummary REST resource.
 type ImportSummary struct {
 	Resource
-	Filename       string    `json:"filename"`
-	ImportStatus   string    `json:"importStatus"`
-	ImportTime     time.Time `json:"importTime"`
-	ValidCount     int       `json:"validCount"`
-	InvalidCount   int       `json:"invalidCount"`
-	CreateEntities bool      `json:"createEntities"`
+	Filename     string    `json:"filename"`
+	ImportStatus string    `json:"importStatus"`
+	ImportTime   time.Time `json:"importTime"`
+	ValidCount   int       `json:"validCount"`
+	InvalidCount int       `json:"invalidCount"`
 }
 
 //
@@ -433,7 +422,6 @@ func (r *ImportSummary) With(m *model.ImportSummary) {
 	r.Resource.With(&m.Model)
 	r.Filename = m.Filename
 	r.ImportTime = m.CreateTime
-	r.CreateEntities = m.CreateEntities
 	for _, imp := range m.Imports {
 		if imp.Processed {
 			if imp.IsValid {
