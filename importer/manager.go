@@ -205,17 +205,6 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		// Prepare normalized names for importTag
 		normImpTagName := normalizedName(impTag.Name)
 		normImpTagType := normalizedName(impTag.TagType)
-
-		// skip if tag name normalizes to an empty string
-		if normImpTagName == "" {
-			continue
-		}
-		// fail if the tag name is ok but the tag type normalizes to an empty string
-		if normImpTagType == "" {
-			imp.ErrorMessage = fmt.Sprintf("Tag '%s' has missing or invalid TagType.", impTag.Name)
-			return
-		}
-
 		// Prepare vars for Tag and its TagType
 		appTag := &model.Tag{}
 		appTagType := &model.TagType{}
@@ -284,9 +273,9 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 //
 // normalizedName transforms given name to be comparable as same with similar names
-// Example: normalizedName(" F oo-123 bar! ") returns "foo123bar!"
+// Example: normalizedName(" F oo-123 bar! ") returns "foo123bar"
 func normalizedName(name string) (normName string) {
-	invalidSymbols := regexp.MustCompile("[-_\\s]")
+	invalidSymbols := regexp.MustCompile("[^a-z0-9]")
 	normName = strings.ToLower(name)
 	normName = invalidSymbols.ReplaceAllString(normName, "")
 	return
