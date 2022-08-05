@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"regexp"
 
 	liberr "github.com/konveyor/controller/pkg/error"
@@ -204,6 +205,17 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		// Prepare normalized names for importTag
 		normImpTagName := normalizedName(impTag.Name)
 		normImpTagType := normalizedName(impTag.TagType)
+
+		// skip if tag name normalizes to an empty string
+		if normImpTagName == "" {
+			continue
+		}
+		// fail if the tag name is ok but the tag type normalizes to an empty string
+		if normImpTagType == "" {
+			imp.ErrorMessage = fmt.Sprintf("Tag '%s' has missing or invalid TagType.", impTag.Name)
+			return
+		}
+
 		// Prepare vars for Tag and its TagType
 		appTag := &model.Tag{}
 		appTagType := &model.TagType{}
@@ -220,6 +232,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		if appTagType.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
 				appTagType.Name = impTag.TagType
+				appTagType.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
 				result := m.DB.Create(&appTagType)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("TagType '%s' cannot be created.", impTag.TagType)
@@ -271,9 +284,9 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 //
 // normalizedName transforms given name to be comparable as same with similar names
-// Example: normalizedName(" F oo-123 bar! ") returns "foo123bar"
+// Example: normalizedName(" F oo-123 bar! ") returns "foo123bar!"
 func normalizedName(name string) (normName string) {
-	invalidSymbols := regexp.MustCompile("[^a-z0-9]")
+	invalidSymbols := regexp.MustCompile("[-_\\s]")
 	normName = strings.ToLower(name)
 	normName = invalidSymbols.ReplaceAllString(normName, "")
 	return
