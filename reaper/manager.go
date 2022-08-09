@@ -208,7 +208,7 @@ func (r *TaskReaper) Run() {
 func (r *TaskReaper) release(m *model.Task) {
 	nChanged := 0
 	if m.Pod != "" {
-		rt := Task{Task:m}
+		rt := Task{Task: m}
 		err := rt.Delete(r.Client)
 		if err == nil {
 			m.Pod = ""
