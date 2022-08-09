@@ -4,9 +4,11 @@ PKG = ./addon/... \
       ./api/... \
       ./auth/... \
       ./cmd/... \
+      ./database/... \
       ./encryption/... \
       ./importer/... \
       ./k8s/... \
+      ./migration/... \
       ./model/... \
       ./settings/... \
       ./volume/... \

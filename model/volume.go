@@ -1,8 +1,1 @@
-package model
-
-type Volume struct {
-	Model
-	Name     string `gorm:"<-:create;unique"`
-	Capacity string
-	Used     string
-}
+../migration/v2/model/volume.go
