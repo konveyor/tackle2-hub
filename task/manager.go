@@ -260,6 +260,10 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
+	owner, err := r.findTackle(client)
+	if err != nil {
+		return
+	}
 	r.Image = addon.Spec.Image
 	secret := r.secret()
 	err = client.Create(context.TODO(), &secret)
@@ -272,7 +276,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 			_ = client.Delete(context.TODO(), &secret)
 		}
 	}()
-	pod := r.pod(addon, &secret)
+	pod := r.pod(addon, owner, &secret)
 	err = client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -415,8 +419,28 @@ func (r *Task) findAddon(client k8s.Client, name string) (addon *crd.Addon, err 
 }
 
 //
+// findTackle returns the tackle CR.
+func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
+	list := crd.TackleList{}
+	err = client.List(
+		context.TODO(),
+		&k8s.ListOptions{Namespace: Settings.Namespace},
+		&list)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if len(list.Items) == 0 {
+		err = liberr.New("Tackle CR not found.")
+		return
+	}
+	owner = &list.Items[0]
+	return
+}
+
+//
 // pod build the pod.
-func (r *Task) pod(addon *crd.Addon, secret *core.Secret) (pod core.Pod) {
+func (r *Task) pod(addon *crd.Addon, owner *crd.Tackle, secret *core.Secret) (pod core.Pod) {
 	pod = core.Pod{
 		Spec: r.specification(addon, secret),
 		ObjectMeta: meta.ObjectMeta{
@@ -425,6 +449,14 @@ func (r *Task) pod(addon *crd.Addon, secret *core.Secret) (pod core.Pod) {
 			Labels:       r.labels(),
 		},
 	}
+	pod.OwnerReferences = append(
+		pod.OwnerReferences,
+		meta.OwnerReference{
+			APIVersion: owner.APIVersion,
+			Kind:       owner.Kind,
+			Name:       owner.Name,
+			UID:        owner.UID,
+		})
 
 	return
 }
