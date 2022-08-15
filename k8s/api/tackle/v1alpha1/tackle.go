@@ -17,39 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/konveyor/controller/pkg/condition"
-	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-//
-// Mount specification.
-type Mount struct {
-	Name  string `json:"name"`
-	Claim string `json:"claim"`
-}
-
-//
-// AddonSpec defines the desired state of Addon
-type AddonSpec struct {
-	// Addon fqin.
-	Image string `json:"image"`
-	// Resource requirements.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
-	// Mounts optional.
-	Mounts []Mount `json:"mounts,omitempty"`
-}
-
-//
-// AddonStatus defines the observed state of Addon
-type AddonStatus struct {
-	//
-	// Conditions.
-	condition.Conditions `json:"conditions"`
-	// The most recent generation observed by the controller.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-}
 
 //
 // +genclient
@@ -57,22 +26,21 @@ type AddonStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="CONNECTED",type=string,JSONPath=".status.conditions[?(@.type=='ConnectionTestSucceeded')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-type Addon struct {
+type Tackle struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
 }
 
 //
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AddonList struct {
+type TackleList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Addon `json:"items"`
+	Items         []Tackle `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Addon{}, &AddonList{})
+	SchemeBuilder.Register(&TackleList{}, &Tackle{})
 }
