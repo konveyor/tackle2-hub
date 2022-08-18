@@ -73,16 +73,18 @@ func (m *Manager) processImports() (err error) {
 // a dependency import record.
 func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 	app := &model.Application{}
-	result := m.DB.Select("id").Where("name LIKE ?", imp.ApplicationName).First(app)
+	name := strings.TrimSpace(imp.ApplicationName)
+	result := m.DB.Select("id").Where("name LIKE ?", name).First(app)
 	if result.Error != nil {
-		imp.ErrorMessage = fmt.Sprintf("Application '%s' could not be found.", imp.ApplicationName)
+		imp.ErrorMessage = fmt.Sprintf("Application '%s' could not be found.", name)
 		return
 	}
 
 	dep := &model.Application{}
-	result = m.DB.Select("id").Where("name LIKE ?", imp.Dependency).First(dep)
+	name = strings.TrimSpace(imp.Dependency)
+	result = m.DB.Select("id").Where("name lIKE ?", name).First(dep)
 	if result.Error != nil {
-		imp.ErrorMessage = fmt.Sprintf("Application dependency '%s' could not be found.", imp.Dependency)
+		imp.ErrorMessage = fmt.Sprintf("Application dependency '%s' could not be found.", name)
 		return
 	}
 
@@ -111,7 +113,7 @@ func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 // application import record.
 func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	app := &model.Application{
-		Name:        imp.ApplicationName,
+		Name:        strings.TrimSpace(imp.ApplicationName),
 		Description: imp.Description,
 		Comments:    imp.Comments,
 	}
