@@ -2,27 +2,25 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/controller"
+	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
+	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/volume"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"io/ioutil"
 	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
@@ -33,12 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"strings"
 	"syscall"
-)
-
-//
-// DB constants
-const (
-	ConnectionString = "file:%s?_foreign_keys=yes"
 )
 
 var Settings = &settings.Settings
@@ -52,68 +44,15 @@ func init() {
 //
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
-	db, err = open()
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if seeded(db) {
-		log.Info("Database already seeded, skipping.")
-		return
-	}
-
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
+	err = migration.Migrate(migration.All())
 	if err != nil {
 		return
 	}
-	_ = sqlDB.Close()
-	err = os.Remove(Settings.DB.Path)
+	db, err = database.Open(true)
 	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	db, err = open()
-	if err != nil {
-		return
-	}
-	err = seed(db, model.All())
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-
-	return
-}
-
-//
-// Open and automigrate the DB.
-func open() (db *gorm.DB, err error) {
-	db, err = gorm.Open(
-		sqlite.Open(fmt.Sprintf(ConnectionString, Settings.DB.Path)),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = db.AutoMigrate(append(model.All())...)
-	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	return
-}
-
-//
-// Check whether the DB has been seeded.
-func seeded(db *gorm.DB) (seeded bool) {
-	result := db.Find(&model.Setting{Key: ".hub.db.seeded"})
-	return result.RowsAffected > 0
 }
 
 //
