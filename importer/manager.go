@@ -56,6 +56,14 @@ func (m *Manager) processImports() (err error) {
 			ok = m.createApplication(&imp)
 		case api.RecordTypeDependency:
 			ok = m.createDependency(&imp)
+		default:
+			errMsg := ""
+			if imp.RecordType1 == "" {
+				errMsg = "Empty Record Type."
+			} else {
+				errMsg = fmt.Sprintf("Invalid or unknown Record Type '%s'. Must be '1' for Application or '2' for Dependency.", imp.RecordType1)
+			}
+			imp.ErrorMessage = errMsg
 		}
 		imp.IsValid = ok
 		imp.Processed = true
