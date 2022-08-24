@@ -159,7 +159,8 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 			businessService = &bs
 		}
 	}
-	if businessService.ID == 0 {
+	// If not found business service in database and import specifies some non-empty business service, proceeed with create it
+	if businessService.ID == 0 && normBusinessServiceName != "" {
 		if imp.ImportSummary.CreateEntities {
 			// Create a new BusinessService if not existed
 			businessService.Name = imp.BusinessService
@@ -173,7 +174,10 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 			return
 		}
 	}
-	app.BusinessService = businessService
+	// Assign business service to the application if was specified
+	if businessService.ID != 0 {
+		app.BusinessService = businessService
+	}
 
 	// Process import Tags & TagTypes
 	tagTypes := []model.TagType{}
