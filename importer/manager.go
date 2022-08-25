@@ -128,6 +128,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 	if app.Name == "" {
 		imp.ErrorMessage = "Application Name is mandatory."
+		return
 	}
 
 	repository := api.Repository{
