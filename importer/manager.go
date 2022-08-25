@@ -125,6 +125,12 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		Description: imp.Description,
 		Comments:    imp.Comments,
 	}
+
+	if app.Name == "" {
+		imp.ErrorMessage = "Application Name is mandatory."
+		return
+	}
+
 	repository := api.Repository{
 		Kind:   imp.RepositoryKind,
 		URL:    imp.RepositoryURL,
