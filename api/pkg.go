@@ -38,6 +38,7 @@ func All() []Handler {
 		&AddonHandler{},
 		&AdoptionPlanHandler{},
 		&ApplicationHandler{},
+		&BucketHandler{},
 		&BusinessServiceHandler{},
 		&DependencyHandler{},
 		&ImportHandler{},
