@@ -9,6 +9,7 @@ host="localhost:8080"
 dir=`dirname $0`
 cd ${dir}
 
+./settings.sh
 ./tag.sh
 ./identity.sh
 ./job-function.sh
