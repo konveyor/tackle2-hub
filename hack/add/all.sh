@@ -16,6 +16,7 @@ cd ${dir}
 ./stakeholder.sh
 ./business-service.sh
 ./application.sh
+./task.sh
 ./taskgroup.sh
 ./bucket.sh
 ./review.sh
