@@ -62,11 +62,11 @@ spec:
         * **claim** - PVC name.
         * **name** - The name of the directory in `/mnt` to mount the volume.
 * **service** - Service (mode):
-*   * **command** - An *(optional)* standard k8s pod command specificaion.
-* **resources** - An *(optional)* standard k8s pod resources specificaion.
-* * **mounts** - An optional list of volumes to be mounted in the addon pod.
-    * **claim** - PVC name.
-    * **name** - The name of the directory in `/mnt` to mount the volume.
+  * **command** - An *(optional)* standard k8s pod command specificaion.
+  * **resources** - An *(optional)* standard k8s pod resources specificaion.
+  * **mounts** - An optional list of volumes to be mounted in the addon pod.
+     * **claim** - PVC name.
+     * **name** - The name of the directory in `/mnt` to mount the volume.
 * **rbac** - An *(optional)* specification of roles and scopes.
     * **role** - A role name.
     * **scopes** - A list of scopes included in the role.
