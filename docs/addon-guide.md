@@ -34,7 +34,7 @@ An Addon is defined and registered with the Hub using a Custom Resource (CR).
     * **claim** - PVC name.
     * **name** - The name of the directory in `/mnt` to mount the volume.
 
-2.x Example (short term):
+Example:
 ```
 apiVersion: tackle.konveyor.io/v1alpha1
 kind: Addon
@@ -53,6 +53,10 @@ spec:
 ```
 
 ### Future (Tackle 3)
+
+Notes:
+- _Adds support for both modes._
+- _Adds support for micro-frontend_.
 
 * **image** - The addon image.
 * **task** - Task (mode):
