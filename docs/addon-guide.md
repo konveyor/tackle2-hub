@@ -57,13 +57,13 @@ spec:
 * **image** - The addon image.
 * **task** - Task (mode):
     * **command** - An *(optional)* standard k8s pod command specificaion.
-    * **resources** - An *(optional)* standard k8s pod container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
+    * **resources** - An *(optional)* standard k8s container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
     * * **mounts** - An optional list of volumes to be mounted in the addon pod.
         * **claim** - PVC name.
         * **name** - The name of the directory in `/mnt` to mount the volume.
 * **service** - Service (mode):
   * **command** - An *(optional)* standard k8s pod command specificaion.
-  * **resources** - An *(optional)* standard k8s pod resources specificaion.
+  * **resources** - An *(optional)* standard k8s container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
   * **mounts** - An optional list of volumes to be mounted in the addon pod.
      * **claim** - PVC name.
      * **name** - The name of the directory in `/mnt` to mount the volume.
