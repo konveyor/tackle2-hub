@@ -145,6 +145,13 @@ Notes:
 - *The API will render decrypted data based on token*.
 - *The addon will GET the task as needed by ID*.
 - *The secret fields may be stored as ENVARs.*
+- *The current task API will deprecate PUT /task/:id/report and add:*
+  - PUT /task/:id/report/started - Report addon started.
+  - PUT /task/:id/report/activity - Report addon activity.  body=message
+  - PUT /task/:id/report/succeeded - Report addon succeeded.
+  - PUT /task/:id/report/failed - Report addon failed. body=reason
+  - PUT /task/:id/report/total - Report total items to be processed.
+  - PUT /task/:id/report/completed - Report completed items.
 
 The Addon is deployed by the Hub in one of (or both) two modes: *Task* & *Service*.
 In both modes, the addon container (image) is deployed in a Pod with the following
