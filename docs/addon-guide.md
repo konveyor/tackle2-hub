@@ -142,7 +142,7 @@ resources mounted:
 ### Future (Tackle 3)
 
 Notes:
-- *The API will render decrypted data based on token*.
+- *The API will render decrypted data based on token permission.
 - *The addon will GET the task as needed by ID*.
 - *The secret fields may be stored as ENVARs.*
 - *The current task API will deprecate PUT /task/:id/report and add:*
