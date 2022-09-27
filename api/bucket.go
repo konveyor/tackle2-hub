@@ -26,6 +26,10 @@ const (
 )
 
 //
+// Buckets directory filesystem path
+const BucketsDir = "/tmp/bucket/"
+
+//
 // BucketHandler provides bucket management.
 type BucketHandler struct {
 	BaseHandler
@@ -52,7 +56,7 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 func (h BucketHandler) Put(ctx *gin.Context) {
 	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
 	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
-	bucketPath := "/tmp/bucket" + bucketID
+	bucketPath := BucketsDir + bucketID
 
 	// Prepare to uncompress the uploaded data
 	file, err := ctx.FormFile("file")
@@ -145,7 +149,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
 	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
 
-	if _, err := os.Stat("/tmp/bucket/" + bucketID); os.IsNotExist(err) {
+	if _, err := os.Stat(BucketsDir + bucketID); os.IsNotExist(err) {
 		ctx.JSON(http.StatusNotFound, "Bucket doesn't exist.")
 		return
 	}
@@ -153,7 +157,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 	var tarOutput bytes.Buffer
 	tarWriter := tar.NewWriter(&tarOutput)
 
-	err := filepath.Walk("/tmp/bucket/"+bucketID, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(BucketsDir+bucketID, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err)
 			return err
