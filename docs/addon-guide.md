@@ -59,6 +59,7 @@ Notes:
 - _Adds support for micro-frontend_.
 
 * **image** - The addon image.
+* **scopes** - List of requested permissions (scopes) to be added to the Hub API token.
 * **task** - Task (mode):
     * **command** - An *(optional)* standard k8s pod command specificaion.
     * **resources** - An *(optional)* standard k8s container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
@@ -87,6 +88,11 @@ metadata:
   namespace: konveyor-tackle
 spec:
   image: quay.io/konveyor/tackle2-addon:latest
+  scopes:
+      - application:get
+      - application:put
+      - identities:get:decrypted
+      - proxies:get
   task:
       command: /usr/bin/addon
       mounts:
@@ -158,6 +164,5 @@ In both modes, the addon container (image) is deployed in a Pod with the followi
 resources mounted:
 - Hub secret `/tmp/secret.json` which includes:
   - **Token** - Hub (auth) API token.  `$TOKEN`
-  - **Application** - An *(optional)* application ID. `$APPLICATION`
   - **Task** - An *(optional)* Task ID. `$TASK`
 - Volumes defined in the Addon CR.
