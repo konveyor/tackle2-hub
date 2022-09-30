@@ -1,0 +1,48 @@
+package api
+
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+//
+// SchemaHandler providers schema (route) handler.
+type SchemaHandler struct {
+	BaseHandler
+	// The `gin` router.
+	router *gin.Engine
+	// Schema version
+	Version string
+}
+
+//
+// AddRoutes Adds routes.
+func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
+	h.router = r
+	//
+	// Routes
+	r.GET("/schema", h.Get)
+}
+
+// Get godoc
+// @summary Get the API schema.
+// @description Get the API schema.
+// @tags get
+// @produce json
+// @success 200 {object} Schema
+// @router /schema [get]
+func (h *SchemaHandler) Get(ctx *gin.Context) {
+	type Schema struct {
+		Version string   `json:"version,omitempty"`
+		Paths   []string `json:"paths"`
+	}
+	schema := Schema{
+		Version: h.Version,
+		Paths:   []string{},
+	}
+	for _, rte := range h.router.Routes() {
+		schema.Paths = append(schema.Paths, rte.Path)
+	}
+
+	ctx.JSON(http.StatusOK, schema)
+}
