@@ -144,7 +144,14 @@ func main() {
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 			settings.Settings.Auth.Keycloak.ClientID,
-			settings.Settings.Auth.Keycloak.ClientSecret)
+			settings.Settings.Auth.Keycloak.ClientSecret,
+			settings.Settings.Auth.Keycloak.Admin.User,
+			settings.Settings.Auth.Keycloak.Admin.Pass,
+			settings.Settings.Auth.Keycloak.Admin.Realm)
+		err = k.EnsureRoles()
+		if err != nil {
+			return
+		}
 		provider = &k
 	} else {
 		provider = &auth.NoAuth{}

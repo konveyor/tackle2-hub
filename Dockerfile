@@ -5,6 +5,7 @@ RUN make docker
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
+COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 RUN microdnf -y install \
   sqlite \
  && microdnf -y clean all
