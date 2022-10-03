@@ -1,7 +1,10 @@
 package model
 
 import (
+	"errors"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 type Application struct {
@@ -104,4 +107,25 @@ type ImportTag struct {
 	TagType  string
 	ImportID uint `gorm:"index"`
 	Import   *Import
+}
+
+//
+// Validation Hook to avoid cyclic dependencies.
+func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
+	var nextDeps []*Dependency
+	var nextAppsIDs []uint
+	nextAppsIDs = append(nextAppsIDs, dep.FromID)
+	for len(nextAppsIDs) != 0 {
+		db.Where("ToID IN ?", nextAppsIDs).Find(&nextDeps)
+		nextAppsIDs = nextAppsIDs[:0] // empty array, but keep capacity
+		for _, nextDep := range nextDeps {
+			if nextDep.FromID == dep.ToID {
+				err = errors.New("cyclic dependencies are not allowed")
+				return
+			}
+			nextAppsIDs = append(nextAppsIDs, nextDep.FromID)
+		}
+	}
+
+	return
 }
