@@ -17,9 +17,9 @@ var log = logging.WithName("db")
 var Settings = &settings.Settings
 
 const (
-	ConnectionString = "file:%s"
-	FKsOn            = "?_foreign_keys=yes"
-	FKsOff           = "?_foreign_keys=no"
+	ConnectionString = "file:%s?_journal=WAL"
+	FKsOn            = "&_foreign_keys=yes"
+	FKsOff           = "&_foreign_keys=no"
 )
 
 //
@@ -31,7 +31,6 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	} else {
 		connStr += FKsOff
 	}
-
 	db, err = gorm.Open(
 		sqlite.Open(connStr),
 		&gorm.Config{
@@ -44,6 +43,12 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	sqlDB.SetMaxOpenConns(1)
 	err = db.AutoMigrate(model.Setting{})
 	if err != nil {
 		err = liberr.Wrap(err)
