@@ -45,6 +45,7 @@ func All() []Handler {
 		&IdentityHandler{},
 		&ProxyHandler{},
 		&ReviewHandler{},
+		&SchemaHandler{},
 		&SettingHandler{},
 		&StakeholderHandler{},
 		&StakeholderGroupHandler{},
