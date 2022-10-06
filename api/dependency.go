@@ -111,7 +111,9 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	h.SyncHelper.DependencyMutex.Lock()
 	result := h.DB.Create(&m)
+	h.SyncHelper.DependencyMutex.Unlock()
 	if result.Error != nil {
 		h.createFailed(ctx, result.Error)
 		return

@@ -30,13 +30,16 @@ type BaseHandler struct {
 	Client client.Client
 	// Auth provider
 	AuthProvider auth.Provider
+	// Synchronization helpers (with mutex)
+	SyncHelper *model.SyncHelper
 }
 
 // With database and k8s client.
-func (h *BaseHandler) With(db *gorm.DB, client client.Client, provider auth.Provider) {
+func (h *BaseHandler) With(db *gorm.DB, client client.Client, provider auth.Provider, syncHelper *model.SyncHelper) {
 	h.DB = db.Debug()
 	h.Client = client
 	h.AuthProvider = provider
+	h.SyncHelper = syncHelper
 }
 
 //
@@ -101,6 +104,11 @@ func (h *BaseHandler) createFailed(ctx *gin.Context, err error) {
 			sqlite3.ErrConstraintPrimaryKey:
 			status = http.StatusConflict
 		}
+	}
+
+	depCyclicError := &model.DependencyCyclicError{}
+	if errors.As(err, depCyclicError) {
+		status = http.StatusConflict
 	}
 
 	ctx.JSON(

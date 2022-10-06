@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -120,7 +119,7 @@ func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 		nextAppsIDs = nextAppsIDs[:0] // empty array, but keep capacity
 		for _, nextDep := range nextDeps {
 			if nextDep.FromID == dep.ToID {
-				err = errors.New("cyclic dependencies are not allowed")
+				err = DependencyCyclicError{}
 				return
 			}
 			nextAppsIDs = append(nextAppsIDs, nextDep.FromID)
@@ -128,4 +127,12 @@ func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 	}
 
 	return
+}
+
+//
+// Custom error type to allow API recognize Cyclic Dependency error and assign proper status code
+type DependencyCyclicError struct{}
+
+func (err DependencyCyclicError) Error() string {
+	return "cyclic dependencies are not allowed"
 }
