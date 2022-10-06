@@ -97,6 +97,7 @@ func addonManager(db *gorm.DB, adminChanged chan int) (mgr manager.Manager, err 
 func main() {
 	log.Info("Started", "settings", Settings)
 	var err error
+	syncHelper := model.SyncHelper{}
 	defer func() {
 		if err != nil {
 			log.Trace(err)
@@ -175,14 +176,14 @@ func main() {
 	importManager := importer.Manager{
 		DB: db,
 	}
-	importManager.Run(context.Background())
+	importManager.Run(context.Background(), &syncHelper.DependencyMutex)
 	//
 	// Web
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	for _, h := range api.All() {
-		h.With(db, client, provider)
+		h.With(db, client, provider, &syncHelper)
 		h.AddRoutes(router)
 	}
 	err = router.Run()
