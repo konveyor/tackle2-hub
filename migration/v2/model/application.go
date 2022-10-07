@@ -4,7 +4,12 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"sync"
 )
+
+//
+// depMutex ensures Dependency.Create() is not executed concurrently.
+var depMutex sync.Mutex
 
 type Application struct {
 	Model
@@ -109,6 +114,19 @@ type ImportTag struct {
 }
 
 //
+// Create a dependency synchronized using a mutex.
+func (r *Dependency) Create(db *gorm.DB) (err error) {
+	depMutex.Lock()
+	defer depMutex.Unlock()
+	result := db.Create(r)
+	if result.Error != nil {
+		err = result.Error
+		return
+	}
+	return
+}
+
+//
 // Validation Hook to avoid cyclic dependencies.
 func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 	var nextDeps []*Dependency
@@ -130,7 +148,7 @@ func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 }
 
 //
-// Custom error type to allow API recognize Cyclic Dependency error and assign proper status code
+// Custom error type to allow API recognize Cyclic Dependency error and assign proper status code.
 type DependencyCyclicError struct{}
 
 func (err DependencyCyclicError) Error() string {
