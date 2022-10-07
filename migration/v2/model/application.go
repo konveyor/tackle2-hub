@@ -118,11 +118,7 @@ type ImportTag struct {
 func (r *Dependency) Create(db *gorm.DB) (err error) {
 	depMutex.Lock()
 	defer depMutex.Unlock()
-	result := db.Create(r)
-	if result.Error != nil {
-		err = result.Error
-		return
-	}
+	err = db.Create(r).Error
 	return
 }
 
