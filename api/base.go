@@ -103,6 +103,11 @@ func (h *BaseHandler) createFailed(ctx *gin.Context, err error) {
 		}
 	}
 
+	depCyclicError := &model.DependencyCyclicError{}
+	if errors.As(err, depCyclicError) {
+		status = http.StatusConflict
+	}
+
 	ctx.JSON(
 		status,
 		gin.H{

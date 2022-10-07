@@ -111,9 +111,9 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
-	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+	err = m.Create(h.DB)
+	if err != nil {
+		h.createFailed(ctx, err)
 		return
 	}
 

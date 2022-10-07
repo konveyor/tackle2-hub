@@ -106,9 +106,9 @@ func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 		dependency.ToID = dep.ID
 	}
 
-	result = m.DB.Create(dependency)
-	if result.Error != nil {
-		imp.ErrorMessage = result.Error.Error()
+	err := dependency.Create(m.DB)
+	if err != nil {
+		imp.ErrorMessage = err.Error()
 		return
 	}
 
