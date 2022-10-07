@@ -3,7 +3,6 @@ package model
 import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/datatypes"
-	"sync"
 )
 
 var (
@@ -39,8 +38,4 @@ func All() []interface{} {
 		Volume{},
 		Proxy{},
 	}
-}
-
-type SyncHelper struct {
-	DependencyMutex sync.Mutex
 }

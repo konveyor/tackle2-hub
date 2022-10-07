@@ -12,7 +12,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -25,7 +24,7 @@ type Manager struct {
 
 //
 // Run the manager.
-func (m *Manager) Run(ctx context.Context, mx *sync.Mutex) {
+func (m *Manager) Run(ctx context.Context) {
 	go func() {
 		for {
 			select {
@@ -33,7 +32,7 @@ func (m *Manager) Run(ctx context.Context, mx *sync.Mutex) {
 				return
 			default:
 				time.Sleep(time.Second)
-				_ = m.processImports(mx)
+				_ = m.processImports()
 			}
 		}
 	}()
@@ -42,7 +41,7 @@ func (m *Manager) Run(ctx context.Context, mx *sync.Mutex) {
 //
 // processImports creates applications and dependencies from
 // unprocessed imports.
-func (m *Manager) processImports(mx *sync.Mutex) (err error) {
+func (m *Manager) processImports() (err error) {
 	list := []model.Import{}
 	db := m.DB.Preload("ImportTags").Preload("ImportSummary")
 	result := db.Find(&list, "processed = ?", false)
@@ -56,7 +55,7 @@ func (m *Manager) processImports(mx *sync.Mutex) (err error) {
 		case api.RecordTypeApplication:
 			ok = m.createApplication(&imp)
 		case api.RecordTypeDependency:
-			ok = m.createDependency(&imp, mx)
+			ok = m.createDependency(&imp)
 		default:
 			errMsg := ""
 			if imp.RecordType1 == "" {
@@ -80,7 +79,7 @@ func (m *Manager) processImports(mx *sync.Mutex) (err error) {
 //
 // createDependency creates an application dependency from
 // a dependency import record.
-func (m *Manager) createDependency(imp *model.Import, mx *sync.Mutex) (ok bool) {
+func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 	app := &model.Application{}
 	name := strings.TrimSpace(imp.ApplicationName)
 	result := m.DB.Select("id").Where("name LIKE ?", name).First(app)
@@ -107,11 +106,9 @@ func (m *Manager) createDependency(imp *model.Import, mx *sync.Mutex) (ok bool) 
 		dependency.ToID = dep.ID
 	}
 
-	mx.Lock()
-	result = m.DB.Create(dependency)
-	mx.Unlock()
-	if result.Error != nil {
-		imp.ErrorMessage = result.Error.Error()
+	err := dependency.Create(m.DB)
+	if err != nil {
+		imp.ErrorMessage = err.Error()
 		return
 	}
 
