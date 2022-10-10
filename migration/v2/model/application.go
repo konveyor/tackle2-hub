@@ -2,7 +2,14 @@ package model
 
 import (
 	"fmt"
+
+	"gorm.io/gorm"
+	"sync"
 )
+
+//
+// depMutex ensures Dependency.Create() is not executed concurrently.
+var depMutex sync.Mutex
 
 type Application struct {
 	Model
@@ -104,4 +111,42 @@ type ImportTag struct {
 	TagType  string
 	ImportID uint `gorm:"index"`
 	Import   *Import
+}
+
+//
+// Create a dependency synchronized using a mutex.
+func (r *Dependency) Create(db *gorm.DB) (err error) {
+	depMutex.Lock()
+	defer depMutex.Unlock()
+	err = db.Create(r).Error
+	return
+}
+
+//
+// Validation Hook to avoid cyclic dependencies.
+func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
+	var nextDeps []*Dependency
+	var nextAppsIDs []uint
+	nextAppsIDs = append(nextAppsIDs, dep.FromID)
+	for len(nextAppsIDs) != 0 {
+		db.Where("ToID IN ?", nextAppsIDs).Find(&nextDeps)
+		nextAppsIDs = nextAppsIDs[:0] // empty array, but keep capacity
+		for _, nextDep := range nextDeps {
+			if nextDep.FromID == dep.ToID {
+				err = DependencyCyclicError{}
+				return
+			}
+			nextAppsIDs = append(nextAppsIDs, nextDep.FromID)
+		}
+	}
+
+	return
+}
+
+//
+// Custom error type to allow API recognize Cyclic Dependency error and assign proper status code.
+type DependencyCyclicError struct{}
+
+func (err DependencyCyclicError) Error() string {
+	return "cyclic dependencies are not allowed"
 }
