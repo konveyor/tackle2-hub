@@ -1,0 +1,268 @@
+- role: tackle-admin
+  resources:
+    - name: addons
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: adoptionplans
+      verbs:
+        - post
+    - name: applications
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: assessments
+      verbs:
+        - delete
+        - get
+        - patch
+        - post
+        - put
+    - name: businessservices
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: dependencies
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: identities
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: imports
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: jobfunctions
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: proxies
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: reviews
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: settings
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: stakeholdergroups
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: stakeholders
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tags
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tagtypes
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tasks
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: volumes
+      verbs:
+        - get
+        - post
+        - put
+- role: tackle-architect
+  resources:
+    - name: addons
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: adoptionplans
+      verbs:
+        - post
+    - name: applications
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: assessments
+      verbs:
+        - delete
+        - get
+        - patch
+        - post
+        - put
+    - name: businessservices
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: dependencies
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: identities
+      verbs:
+        - get
+    - name: imports
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: jobfunctions
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: proxies
+      verbs:
+        - get
+    - name: reviews
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: settings
+      verbs:
+        - get
+    - name: stakeholdergroups
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: stakeholders
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tags
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tagtypes
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tasks
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: volumes
+      verbs:
+        - get
+- role: tackle-migrator
+  resources:
+    - name: addons
+      verbs:
+        - get
+    - name: adoptionplans
+      verbs:
+        - post
+    - name: applications
+      verbs:
+        - get
+    - name: assessments
+      verbs:
+        - get
+        - post
+    - name: businessservices
+      verbs:
+        - get
+    - name: dependencies
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: identities
+      verbs:
+        - get
+    - name: imports
+      verbs:
+        - get
+    - name: jobfunctions
+      verbs:
+        - get
+    - name: proxies
+      verbs:
+        - get
+    - name: reviews
+      verbs:
+        - get
+        - post
+        - put
+    - name: settings
+      verbs:
+        - get
+    - name: stakeholdergroups
+      verbs:
+        - get
+    - name: stakeholders
+      verbs:
+        - get
+    - name: tags
+      verbs:
+        - get
+    - name: tagtypes
+      verbs:
+        - get
+    - name: tasks
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: volumes
+      verbs:
+        - get

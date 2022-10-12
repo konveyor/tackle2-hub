@@ -3,11 +3,16 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/Nerzal/gocloak/v10"
 	"github.com/golang-jwt/jwt/v4"
+	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/controller/pkg/logging"
 	"strings"
 	"time"
 )
+
+var log = logging.WithName("auth")
 
 type Provider interface {
 	// Scopes decodes a list of scopes from the token.
@@ -56,14 +61,17 @@ func (r *NoAuthScope) Allow(_ string, _ string) (ok bool) {
 
 //
 // NewKeycloak builds a new Keycloak auth provider.
-func NewKeycloak(host, realm, id, secret string) (k Keycloak) {
+func NewKeycloak(host, realm, id, secret, admin, pass, adminRealm string) (k Keycloak) {
 	client := gocloak.NewClient(host)
 	k = Keycloak{
-		host:   host,
-		realm:  realm,
-		id:     id,
-		secret: secret,
-		client: client,
+		host:       host,
+		realm:      realm,
+		id:         id,
+		secret:     secret,
+		client:     client,
+		admin:      admin,
+		pass:       pass,
+		adminRealm: adminRealm,
 	}
 	return
 }
@@ -71,11 +79,316 @@ func NewKeycloak(host, realm, id, secret string) (k Keycloak) {
 //
 // Keycloak auth provider
 type Keycloak struct {
-	client gocloak.GoCloak
-	host   string
-	realm  string
-	id     string
-	secret string
+	client     gocloak.GoCloak
+	host       string
+	realm      string
+	id         string
+	secret     string
+	admin      string
+	pass       string
+	adminRealm string
+	token      *gocloak.JWT
+}
+
+//
+// Realm is a container for the users,
+// scopes, and roles that exist in the
+// hub's keycloak realm.
+type Realm struct {
+	Users  map[string]gocloak.User
+	Scopes map[string]gocloak.ClientScope
+	Roles  map[string]gocloak.Role
+}
+
+//
+// Reconcile ensures that Keycloak is configured
+// with the scopes, roles, and users required by
+// the hub.
+func (r *Keycloak) Reconcile() (err error) {
+	err = r.login()
+	if err != nil {
+		return
+	}
+
+	realm, err := r.loadRealm()
+	if err != nil {
+		return
+	}
+
+	err = r.ensureRoles(realm)
+	if err != nil {
+		return
+	}
+
+	err = r.ensureUsers(realm)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+//
+// loadRealm loads all the scopes, roles, and users from
+// the hub keycloak realm and populates a Realm struct.
+func (r *Keycloak) loadRealm() (realm *Realm, err error) {
+	realm = &Realm{}
+	realm.Scopes, err = r.scopeMap()
+	if err != nil {
+		return
+	}
+	realm.Roles, err = r.realmRoleMap()
+	if err != nil {
+		return
+	}
+	realm.Users, err = r.userMap()
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+//
+// ensureUsers ensures that the hub users exist and have the necessary roles.
+func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
+	users, err := LoadUsers(Settings.Auth.UserPath)
+	if err != nil {
+		return
+	}
+
+	for _, user := range users {
+		if _, found := realm.Users[user.Name]; !found {
+			enabled := true
+			u := gocloak.User{
+				Username:        &user.Name,
+				Enabled:         &enabled,
+				RequiredActions: &[]string{"UPDATE_PASSWORD"},
+			}
+			userid, kErr := r.client.CreateUser(context.Background(), r.token.AccessToken, r.realm, u)
+			if kErr != nil {
+				err = liberr.Wrap(kErr)
+				return
+			}
+			u.ID = &userid
+			err = r.client.SetPassword(
+				context.Background(), r.token.AccessToken, userid, r.realm, user.Password, true,
+			)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+			realm.Users[user.Name] = u
+		}
+		var realmRoles []gocloak.Role
+		for _, role := range user.Roles {
+			realmRole, found := realm.Roles[role]
+			if !found {
+				continue
+			}
+			realmRoles = append(realmRoles, realmRole)
+		}
+		err = r.client.AddRealmRoleToUser(
+			context.Background(), r.token.AccessToken, r.realm, *realm.Users[user.Name].ID, realmRoles,
+		)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+
+	return
+}
+
+//
+// ensureRoles ensures that hub roles and scopes are present in keycloak by
+// creating them if they are missing and assigning scope mappings.
+func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
+	hubRoles, err := LoadRoles(Settings.Auth.RolePath)
+	if err != nil {
+		return
+	}
+
+	// create missing roles and scopes, and build mapping of scopes to roles
+	scopesToRoles := make(map[string][]gocloak.Role)
+	for _, role := range hubRoles {
+		if _, found := realm.Roles[role.Name]; !found {
+			realmRole := gocloak.Role{Name: &role.Name}
+			id, kErr := r.client.CreateRealmRole(
+				context.Background(), r.token.AccessToken, r.realm, realmRole,
+			)
+			if kErr != nil {
+				err = liberr.Wrap(kErr)
+				return
+			}
+			realmRole.ID = &id
+			realm.Roles[role.Name] = realmRole
+			log.Info("Created realm role.", "role", role.Name, "realm", r.realm)
+		}
+
+		for _, res := range role.Resources {
+			for _, verb := range res.Verbs {
+				scopeName := fmt.Sprintf("%s:%s", res.Name, verb)
+				protocol := "openid-connect"
+				if _, found := realm.Scopes[scopeName]; !found {
+					scope := gocloak.ClientScope{Name: &scopeName, Protocol: &protocol}
+					id, kErr := r.client.CreateClientScope(
+						context.Background(), r.token.AccessToken, r.realm, scope,
+					)
+					if kErr != nil {
+						err = liberr.Wrap(kErr)
+						return
+					}
+					scope.ID = &id
+					realm.Scopes[scopeName] = scope
+					log.Info("Created client scope.", "scope", scopeName, "realm", r.realm)
+				}
+				scopesToRoles[*realm.Scopes[scopeName].ID] = append(
+					scopesToRoles[*realm.Scopes[scopeName].ID], realm.Roles[role.Name],
+				)
+			}
+		}
+	}
+
+	idOfClient, err := r.idOfClient(r.id)
+	if err != nil {
+		return
+	}
+	for sid, roles := range scopesToRoles {
+		// get the roles that are already mapped to this client scope
+		var existingRoles []*gocloak.Role
+		existingRoles, err = r.client.GetClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		// delete the already mapped roles
+		var deleteRoles []gocloak.Role
+		for _, r := range existingRoles {
+			deleteRoles = append(deleteRoles, *r)
+		}
+		err = r.client.DeleteClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid, deleteRoles)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		// create new role mappings
+		err = r.client.CreateClientScopesScopeMappingsRealmRoles(
+			context.Background(), r.token.AccessToken, r.realm, sid, roles,
+		)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		// ensure that the scope will be on the token by default
+		err = r.client.AddDefaultScopeToClient(
+			context.Background(), r.token.AccessToken, r.realm, idOfClient, sid,
+		)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+
+	return
+}
+
+//
+// idOfClient takes a (realm specific) client-id and returns the global id of the client.
+func (r *Keycloak) idOfClient(clientId string) (id string, err error) {
+	max := 1
+	clientParams := gocloak.GetClientsParams{ClientID: &clientId, Max: &max}
+	clients, err := r.client.GetClients(
+		context.Background(), r.token.AccessToken, r.realm, clientParams,
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if len(clients) == 0 {
+		err = liberr.New("Could not find client.", "realm", r.realm, "client", r.id)
+		return
+	}
+	id = *clients[0].ID
+	return
+}
+
+//
+// userMap generates a mapping of usernames to user objects
+func (r *Keycloak) userMap() (userMap map[string]gocloak.User, err error) {
+	userMap = make(map[string]gocloak.User)
+	users, err := r.client.GetUsers(
+		context.Background(), r.token.AccessToken, r.realm, gocloak.GetUsersParams{},
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, user := range users {
+		userMap[*user.Username] = *user
+	}
+	return
+}
+
+//
+// realmRoleMap generates a mapping of realm role names to role objects
+func (r *Keycloak) realmRoleMap() (roleMap map[string]gocloak.Role, err error) {
+	roleMap = make(map[string]gocloak.Role)
+	realmRoles, err := r.client.GetRealmRoles(
+		context.Background(), r.token.AccessToken, r.realm, gocloak.GetRoleParams{},
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	for _, role := range realmRoles {
+		roleMap[*role.Name] = *role
+	}
+
+	return
+}
+
+//
+// scopeMap generates a mapping of client scope names to scope objects
+func (r *Keycloak) scopeMap() (scopeMap map[string]gocloak.ClientScope, err error) {
+	scopeMap = make(map[string]gocloak.ClientScope)
+	clientScopes, err := r.client.GetClientScopes(
+		context.Background(), r.token.AccessToken, r.realm,
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	for _, scope := range clientScopes {
+		scopeMap[*scope.Name] = *scope
+	}
+
+	return
+}
+
+//
+// login logs into the keycloak admin-cli client as the administrator.
+func (r *Keycloak) login() (err error) {
+	// retry for three minutes to allow for the possibility
+	// that the hub came up before keycloak did.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			r.token, err = r.client.LoginAdmin(ctx, r.admin, r.pass, r.adminRealm)
+			if err != nil {
+				log.Info("Login failed.", "reason", err.Error())
+				time.Sleep(time.Second)
+			} else {
+				return
+			}
+		}
+	}
 }
 
 //
