@@ -19,41 +19,15 @@ import (
 )
 
 //
-// Routes
-const (
-	BucketsRoot = "/buckets"
-	BucketRoot  = BucketsRoot + "/:" + ID
-)
-
-//
 // Buckets directory filesystem path
 const BucketsDir = "/tmp/bucket/"
 
 //
 // BucketHandler provides bucket management.
 type BucketHandler struct {
-	BaseHandler
 }
 
-//
-// AddRoutes adds routes.
-func (h BucketHandler) AddRoutes(e *gin.Engine) {
-	routeGroup := e.Group("/")
-	// TODO: add auth middleware when buckets scope added to the token
-	// routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "buckets"))
-	routeGroup.GET(BucketRoot, h.Get)
-	routeGroup.PUT(BucketRoot+"/:"+ID, h.Put)
-}
-
-// Get godoc
-// @summary Upload bucket content archive by ID.
-// @description Upload a bucket content .tar.gz archive by ID as PUT (replace all previous bucket content).
-// @tags put
-// @produce octet-stream
-// @success 200 {binary}
-// @router /buckets/{id} [put]
-// @param id path string true "Bucket ID"
-func (h BucketHandler) Put(ctx *gin.Context) {
+func (h *BucketHandler) Put(ctx *gin.Context, owner *model.BucketOwner) {
 	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
 	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
 	bucketPath := BucketsDir + bucketID
@@ -136,15 +110,7 @@ func (h BucketHandler) Put(ctx *gin.Context) {
 	ctx.Status(http.StatusAccepted)
 }
 
-// Get godoc
-// @summary Get a bucket content archive by ID.
-// @description Get a bucket content .tar.gz archive by ID.
-// @tags get
-// @produce octet-stream
-// @success 200 {binary}
-// @router /buckets/{id} [get]
-// @param id path string true "Bucket ID"
-func (h BucketHandler) Get(ctx *gin.Context) {
+func (h *BucketHandler) getArchive(ctx *gin.Context, owner *model.BucketOwner) {
 
 	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
 	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
