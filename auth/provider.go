@@ -382,6 +382,7 @@ func (r *Keycloak) login() (err error) {
 		default:
 			r.token, err = r.client.LoginAdmin(ctx, r.admin, r.pass, r.adminRealm)
 			if err != nil {
+				log.Info("Login failed.", "reason", err.Error())
 				time.Sleep(time.Second)
 			} else {
 				return
