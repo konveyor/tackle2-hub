@@ -211,18 +211,24 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 
 	// create missing roles and scopes, and build mapping of scopes to roles
 	scopesToRoles := make(map[string][]gocloak.Role)
-	for _, role := range hubRoles {
+	for i := range hubRoles {
+		role := hubRoles[i]
 		if _, found := realm.Roles[role.Name]; !found {
-			realmRole := gocloak.Role{Name: &role.Name}
-			id, kErr := r.client.CreateRealmRole(
-				context.Background(), r.token.AccessToken, r.realm, realmRole,
+			_, kErr := r.client.CreateRealmRole(
+				context.Background(), r.token.AccessToken, r.realm, gocloak.Role{Name: &role.Name},
 			)
 			if kErr != nil {
 				err = liberr.Wrap(kErr)
 				return
 			}
-			realmRole.ID = &id
-			realm.Roles[role.Name] = realmRole
+			realmRole, kErr := r.client.GetRealmRole(
+				context.Background(), r.token.AccessToken, r.realm, role.Name,
+			)
+			if kErr != nil {
+				err = liberr.Wrap(kErr)
+				return
+			}
+			realm.Roles[role.Name] = *realmRole
 			log.Info("Created realm role.", "role", role.Name, "realm", r.realm)
 		}
 
@@ -255,9 +261,12 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		return
 	}
 	for sid, roles := range scopesToRoles {
+		log.Info("Syncing scope mappings.", "scope", sid, "roles", roles)
 		// get the roles that are already mapped to this client scope
 		var existingRoles []*gocloak.Role
-		existingRoles, err = r.client.GetClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid)
+		existingRoles, err = r.client.GetClientScopesScopeMappingsRealmRoles(
+			context.Background(), r.token.AccessToken, r.realm, sid,
+		)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -267,12 +276,14 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		for _, r := range existingRoles {
 			deleteRoles = append(deleteRoles, *r)
 		}
-		err = r.client.DeleteClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid, deleteRoles)
+		err = r.client.DeleteClientScopesScopeMappingsRealmRoles(
+			context.Background(), r.token.AccessToken, r.realm, sid, deleteRoles,
+		)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		// create new role mappings
+		// create new scope mappings
 		err = r.client.CreateClientScopesScopeMappingsRealmRoles(
 			context.Background(), r.token.AccessToken, r.realm, sid, roles,
 		)
@@ -289,6 +300,8 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 			return
 		}
 	}
+
+	log.Info("Realm synced.")
 
 	return
 }
