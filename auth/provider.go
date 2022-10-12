@@ -229,8 +229,9 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		for _, res := range role.Resources {
 			for _, verb := range res.Verbs {
 				scopeName := fmt.Sprintf("%s:%s", res.Name, verb)
+				protocol := "openid-connect"
 				if _, found := realm.Scopes[scopeName]; !found {
-					scope := gocloak.ClientScope{Name: &scopeName}
+					scope := gocloak.ClientScope{Name: &scopeName, Protocol: &protocol}
 					id, kErr := r.client.CreateClientScope(
 						context.Background(), r.token.AccessToken, r.realm, scope,
 					)

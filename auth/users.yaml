@@ -1,4 +1,4 @@
 - name: admin
   password: Passw0rd!
   roles:
-    - admin
+    - tackle-admin
