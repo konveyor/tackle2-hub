@@ -1,4 +1,4 @@
-- role: admin
+- role: tackle-admin
   resources:
     - name: addons
       verbs:
@@ -105,7 +105,7 @@
         - get
         - post
         - put
-- role: architect
+- role: tackle-architect
   resources:
     - name: addons
       verbs:
@@ -201,7 +201,7 @@
     - name: volumes
       verbs:
         - get
-- role: migrator
+- role: tackle-migrator
   resources:
     - name: addons
       verbs:
