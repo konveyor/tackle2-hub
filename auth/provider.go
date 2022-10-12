@@ -249,12 +249,29 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		}
 	}
 
-	// create scope mappings and add default scopes to client
 	idOfClient, err := r.idOfClient(r.id)
 	if err != nil {
 		return
 	}
 	for sid, roles := range scopesToRoles {
+		// get the roles that are already mapped to this client scope
+		var existingRoles []*gocloak.Role
+		existingRoles, err = r.client.GetClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		// delete the already mapped roles
+		var deleteRoles []gocloak.Role
+		for _, r := range existingRoles {
+			deleteRoles = append(deleteRoles, *r)
+		}
+		err = r.client.DeleteClientScopesScopeMappingsRealmRoles(context.Background(), r.token.AccessToken, r.realm, sid, deleteRoles)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		// create new role mappings
 		err = r.client.CreateClientScopesScopeMappingsRealmRoles(
 			context.Background(), r.token.AccessToken, r.realm, sid, roles,
 		)
@@ -262,6 +279,7 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+		// ensure that the scope will be on the token by default
 		err = r.client.AddDefaultScopeToClient(
 			context.Background(), r.token.AccessToken, r.realm, idOfClient, sid,
 		)
@@ -352,11 +370,23 @@ func (r *Keycloak) scopeMap() (scopeMap map[string]gocloak.ClientScope, err erro
 //
 // login logs into the keycloak admin-cli client as the administrator.
 func (r *Keycloak) login() (err error) {
-	r.token, err = r.client.LoginAdmin(context.Background(), r.admin, r.pass, r.adminRealm)
-	if err != nil {
-		return
+	// retry for three minutes to allow for the possibility
+	// that the hub came up before keycloak did.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			r.token, err = r.client.LoginAdmin(ctx, r.admin, r.pass, r.adminRealm)
+			if err != nil {
+				time.Sleep(time.Second)
+			} else {
+				return
+			}
+		}
 	}
-	return
 }
 
 //
