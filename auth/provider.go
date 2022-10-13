@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/Nerzal/gocloak/v10"
@@ -63,6 +64,7 @@ func (r *NoAuthScope) Allow(_ string, _ string) (ok bool) {
 // NewKeycloak builds a new Keycloak auth provider.
 func NewKeycloak(host, realm, id, secret, admin, pass, adminRealm string) (k Keycloak) {
 	client := gocloak.NewClient(host)
+	client.RestyClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	k = Keycloak{
 		host:       host,
 		realm:      realm,
