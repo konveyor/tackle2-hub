@@ -103,11 +103,21 @@ type Realm struct {
 }
 
 //
-// Reconcile ensures that Keycloak is configured
-// with the scopes, roles, and users required by
-// the hub.
+// Reconcile ensures that the Hub realm
+// exists and the expected clients, roles, scopes,
+// and users are present in it.
 func (r *Keycloak) Reconcile() (err error) {
 	err = r.login()
+	if err != nil {
+		return
+	}
+
+	err = r.ensureRealm()
+	if err != nil {
+		return
+	}
+
+	err = r.ensureClient()
 	if err != nil {
 		return
 	}
@@ -126,6 +136,8 @@ func (r *Keycloak) Reconcile() (err error) {
 	if err != nil {
 		return
 	}
+
+	log.Info("Realm synced.")
 
 	return
 }
@@ -152,11 +164,73 @@ func (r *Keycloak) loadRealm() (realm *Realm, err error) {
 }
 
 //
+// ensureRealm ensures that the hub realm exists.
+func (r *Keycloak) ensureRealm() (err error) {
+	_, err = r.client.GetRealm(context.Background(), r.token.AccessToken, r.realm)
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "404") {
+			displayName := fmt.Sprintf("%s realm", r.realm)
+			enabled := true
+			realm := gocloak.RealmRepresentation{
+				Realm:       &r.realm,
+				DisplayName: &displayName,
+				Enabled:     &enabled,
+			}
+			log.Info("Creating realm.", "realm", r.realm)
+			_, err = r.client.CreateRealm(context.Background(), r.token.AccessToken, realm)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+			return
+		}
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+//
+// ensureClient ensures that the hub client exists.
+func (r *Keycloak) ensureClient() (err error) {
+	var found bool
+	_, found, err = r.getClient(r.id)
+	if err != nil {
+		return
+	}
+	if found {
+		return
+	}
+
+	enabled := true
+	newClient := gocloak.Client{
+		ClientID:                  &r.id,
+		StandardFlowEnabled:       &enabled,
+		DirectAccessGrantsEnabled: &enabled,
+		PublicClient:              &enabled,
+		RedirectURIs:              &[]string{"*"},
+		WebOrigins:                &[]string{"*"},
+	}
+	log.Info("Creating client.", "client", r.id)
+	_, err = r.client.CreateClient(context.Background(), r.token.AccessToken, r.realm, newClient)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+//
 // ensureUsers ensures that the hub users exist and have the necessary roles.
 func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 	users, err := LoadUsers(Settings.Auth.UserPath)
 	if err != nil {
 		return
+	}
+
+	var allRoles []gocloak.Role
+	for _, role := range realm.Roles {
+		allRoles = append(allRoles, role)
 	}
 
 	for _, user := range users {
@@ -167,6 +241,7 @@ func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 				Enabled:         &enabled,
 				RequiredActions: &[]string{"UPDATE_PASSWORD"},
 			}
+			log.Info("Creating user.", "user", user.Name)
 			userid, kErr := r.client.CreateUser(context.Background(), r.token.AccessToken, r.realm, u)
 			if kErr != nil {
 				err = liberr.Wrap(kErr)
@@ -181,7 +256,17 @@ func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 				return
 			}
 			realm.Users[user.Name] = u
+		} else {
+			log.Info("Removing any existing roles from user.", "user", user.Name)
+			err = r.client.DeleteRealmRoleFromUser(
+				context.Background(), r.token.AccessToken, r.realm, *realm.Users[user.Name].ID, allRoles,
+			)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
 		}
+
 		var realmRoles []gocloak.Role
 		for _, role := range user.Roles {
 			realmRole, found := realm.Roles[role]
@@ -190,6 +275,7 @@ func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 			}
 			realmRoles = append(realmRoles, realmRole)
 		}
+		log.Info("Applying roles to user.", "user", user.Name, "roles", user.Roles)
 		err = r.client.AddRealmRoleToUser(
 			context.Background(), r.token.AccessToken, r.realm, *realm.Users[user.Name].ID, realmRoles,
 		)
@@ -258,8 +344,12 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		}
 	}
 
-	idOfClient, err := r.idOfClient(r.id)
+	c, found, err := r.getClient(r.id)
 	if err != nil {
+		return
+	}
+	if !found {
+		err = liberr.New("Could not find client.", "realm", r.realm, "client", r.id)
 		return
 	}
 	for sid, roles := range scopesToRoles {
@@ -295,7 +385,7 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		}
 		// ensure that the scope will be on the token by default
 		err = r.client.AddDefaultScopeToClient(
-			context.Background(), r.token.AccessToken, r.realm, idOfClient, sid,
+			context.Background(), r.token.AccessToken, r.realm, *c.ID, sid,
 		)
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -303,14 +393,12 @@ func (r *Keycloak) ensureRoles(realm *Realm) (err error) {
 		}
 	}
 
-	log.Info("Realm synced.")
-
 	return
 }
 
 //
-// idOfClient takes a (realm specific) client-id and returns the global id of the client.
-func (r *Keycloak) idOfClient(clientId string) (id string, err error) {
+// getClient returns a keycloak realm client.
+func (r *Keycloak) getClient(clientId string) (client *gocloak.Client, found bool, err error) {
 	max := 1
 	clientParams := gocloak.GetClientsParams{ClientID: &clientId, Max: &max}
 	clients, err := r.client.GetClients(
@@ -321,10 +409,11 @@ func (r *Keycloak) idOfClient(clientId string) (id string, err error) {
 		return
 	}
 	if len(clients) == 0 {
-		err = liberr.New("Could not find client.", "realm", r.realm, "client", r.id)
 		return
 	}
-	id = *clients[0].ID
+
+	found = true
+	client = clients[0]
 	return
 }
 
