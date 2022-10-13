@@ -243,15 +243,15 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
 // @param id path string true "Task ID"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
-	taskID := h.pk(ctx)
+	id := h.pk(ctx)
 	m := &model.Application{}
-	result := h.DB.First(m, taskID)
+	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.getFailed(ctx, result.Error)
 		return
 	}
 
-	h.content(ctx, &m.BucketOwner)
+	h.serveBucketGet(ctx, &m.BucketOwner)
 }
 
 // BucketUpload godoc
@@ -271,7 +271,7 @@ func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.BucketOwner)
+	h.serveBucketUpload(ctx, &m.BucketOwner)
 }
 
 // BucketDelete godoc

@@ -29,6 +29,13 @@ const (
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
+	Accept        = "Accept"
+)
+
+//
+// Header Values
+const (
+	TarGzMimetype = "application/x-gzip"
 )
 
 //

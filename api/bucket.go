@@ -10,27 +10,37 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	pathlib "path"
 	"path/filepath"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 )
 
 //
-// Buckets directory filesystem path
-const BucketsDir = "/tmp/bucket/"
-
-//
 // BucketHandler provides bucket management.
 type BucketHandler struct {
 }
 
-func (h *BucketHandler) Put(ctx *gin.Context, owner *model.BucketOwner) {
-	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
-	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
-	bucketPath := BucketsDir + bucketID
+func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
+	if ctx.Request.Header.Get(Accept) == TarGzMimetype {
+		h.getDirArchive(ctx, owner)
+	} else {
+		h.content(ctx, owner)
+	}
+}
+
+func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
+	if ctx.Request.Header.Get(ContentType) == TarGzMimetype {
+		h.uploadDirArchive(ctx, owner)
+	} else {
+		h.upload(ctx, owner)
+	}
+}
+
+func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
+	bucketPath := owner.Bucket
 
 	// Prepare to uncompress the uploaded data
 	file, err := ctx.FormFile("file")
@@ -110,20 +120,21 @@ func (h *BucketHandler) Put(ctx *gin.Context, owner *model.BucketOwner) {
 	ctx.Status(http.StatusAccepted)
 }
 
-func (h *BucketHandler) getArchive(ctx *gin.Context, owner *model.BucketOwner) {
+func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
+	dir := owner.Bucket
+	// ^ + ctx.Params.Wildcard
+	// and ensure it is a directory
+	//bucketID := path.Base(dir)
 
-	invalidSymbols := regexp.MustCompile("[^a-zA-Z0-9-_]")
-	bucketID := invalidSymbols.ReplaceAllString(ctx.Param("ID"), "")
-
-	if _, err := os.Stat(BucketsDir + bucketID); os.IsNotExist(err) {
-		ctx.JSON(http.StatusNotFound, "Bucket doesn't exist.")
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		ctx.JSON(http.StatusNotFound, "Bucket (sub)directory doesn't exist.")
 		return
 	}
 
 	var tarOutput bytes.Buffer
 	tarWriter := tar.NewWriter(&tarOutput)
 
-	err := filepath.Walk(BucketsDir+bucketID, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err)
 			return err
@@ -136,11 +147,13 @@ func (h *BucketHandler) getArchive(ctx *gin.Context, owner *model.BucketOwner) {
 		}
 
 		switch hdr.Typeflag {
-		case tar.TypeDir:
+		case tar.TypeDir, tar.TypeSymlink:
+			// Add file/directory header to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				panic(err)
 			}
 		case tar.TypeReg:
+			// Add file&data to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				panic(err)
 			}
@@ -150,7 +163,8 @@ func (h *BucketHandler) getArchive(ctx *gin.Context, owner *model.BucketOwner) {
 				panic(err)
 			}
 		default:
-			// No symlinks, devices etc are added to the archive / add warning?
+			// Other file types like block/character device are skipped.
+			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
 		}
 
 		return nil
@@ -166,12 +180,12 @@ func (h *BucketHandler) getArchive(ctx *gin.Context, owner *model.BucketOwner) {
 
 	fromTar := bufio.NewReader(&tarOutput)
 
-	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", bucketID+".tar.gz"))
+	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", path.Base(dir)+".tar.gz"))
 
 	gzWriter := gzip.NewWriter(ctx.Writer)
 	defer gzWriter.Close()
 
-	gzWriter.Name = bucketID + ".tar.gz"
+	gzWriter.Name = path.Base(dir) + ".tar.gz"
 	gzWriter.Comment = "Tackle 2 bucket data archive"
 	if _, err := io.Copy(gzWriter, fromTar); err != nil {
 		fmt.Println(err)
