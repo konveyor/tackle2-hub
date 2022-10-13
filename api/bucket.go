@@ -13,6 +13,7 @@ import (
 	"path"
 	pathlib "path"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
@@ -121,13 +122,11 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 }
 
 func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
-	dir := owner.Bucket
-	// ^ + ctx.Params.Wildcard
-	// and ensure it is a directory
-	//bucketID := path.Base(dir)
-
+	dir := owner.Bucket + ctx.Param(Wildcard)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		ctx.JSON(http.StatusNotFound, "Bucket (sub)directory doesn't exist.")
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "Bucket (sub)directory doesn't exist.",
+		})
 		return
 	}
 
@@ -139,11 +138,16 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner
 			fmt.Println(err)
 			return err
 		}
-		fmt.Printf("dir: %v: name: %s\n", info.IsDir(), path)
 
 		hdr, err := tar.FileInfoHeader(info, path)
 		if err != nil {
 			panic(err)
+		}
+
+		// Scope path in archive to the given dir
+		hdr.Name = strings.Replace(path, dir, "", 1)
+		if hdr.Name == "" {
+			return nil
 		}
 
 		switch hdr.Typeflag {
