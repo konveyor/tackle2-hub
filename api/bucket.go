@@ -24,9 +24,10 @@ import (
 type BucketHandler struct {
 }
 
+// TODO: Validate Wildcard param to not allow access dirs outside of the bucket
 func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
 	if ctx.Request.Header.Get(Accept) == TarGzMimetype {
-		h.getDirArchive(ctx, owner)
+		h.getDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
 	} else {
 		h.content(ctx, owner)
 	}
@@ -34,15 +35,13 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 
 func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
 	if ctx.Request.Method == "PUT" {
-		h.uploadDirArchive(ctx, owner)
+		h.uploadDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
 	} else {
 		h.upload(ctx, owner)
 	}
 }
 
-func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
-	dir := owner.Bucket + ctx.Param(Wildcard)
-
+func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	// Prepare to uncompress the uploaded data
 	file, err := ctx.FormFile("file")
 	defer func() {
@@ -78,7 +77,7 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 		return
 	}
 	for _, bucketEntry := range bucketContent {
-		err = os.RemoveAll(dir + "/" + bucketEntry.Name())
+		err = os.RemoveAll(path.Join(dir, bucketEntry.Name()))
 		if err != nil {
 			log.Info("Cleaning bucket dir, cannot delete")
 		}
@@ -97,11 +96,9 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 				return
 			}
 		}
-		fmt.Printf("HDR: %v", &hdr)
-
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(dir+"/"+hdr.Name, hdr.FileInfo().Mode().Perm()); err != nil {
+			if err := os.Mkdir(path.Join(dir, hdr.Name), hdr.FileInfo().Mode().Perm()); err != nil {
 				log.Error(err, "create dir")
 				ctx.Status(http.StatusInternalServerError)
 				return
@@ -128,8 +125,7 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 	ctx.Status(http.StatusAccepted)
 }
 
-func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
-	dir := owner.Bucket + ctx.Param(Wildcard)
+func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "Bucket (sub)directory doesn't exist.",
@@ -158,13 +154,13 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner
 		}
 
 		switch hdr.Typeflag {
-		case tar.TypeDir:
-			// Add directory header to the archive
+		case tar.TypeDir, tar.TypeSymlink:
+			// Add directory or symlink header to the archive (no content)
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				panic(err)
 			}
 		case tar.TypeReg:
-			// Add file&data to the archive
+			// Add file with its content to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				panic(err)
 			}
@@ -174,7 +170,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner
 				panic(err)
 			}
 		default:
-			// Other file types like block/character device or tar.TypeSymlink are skipped.
+			// Other file types like block/character device are skipped.
 			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
 		}
 
