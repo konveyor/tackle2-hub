@@ -237,9 +237,11 @@ func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 		if _, found := realm.Users[user.Name]; !found {
 			enabled := true
 			u := gocloak.User{
-				Username:        &user.Name,
-				Enabled:         &enabled,
-				RequiredActions: &[]string{"UPDATE_PASSWORD"},
+				Username: &user.Name,
+				Enabled:  &enabled,
+			}
+			if Settings.Keycloak.RequirePasswordUpdate {
+				u.RequiredActions = &[]string{"UPDATE_PASSWORD"}
 			}
 			log.Info("Creating user.", "user", user.Name)
 			userid, kErr := r.client.CreateUser(context.Background(), r.token.AccessToken, r.realm, u)
@@ -249,7 +251,12 @@ func (r *Keycloak) ensureUsers(realm *Realm) (err error) {
 			}
 			u.ID = &userid
 			err = r.client.SetPassword(
-				context.Background(), r.token.AccessToken, userid, r.realm, user.Password, true,
+				context.Background(),
+				r.token.AccessToken,
+				userid,
+				r.realm,
+				user.Password,
+				Settings.Keycloak.RequirePasswordUpdate,
 			)
 			if err != nil {
 				err = liberr.Wrap(err)

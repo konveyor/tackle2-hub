@@ -7,17 +7,18 @@ import (
 //
 // Environment variables
 const (
-	EnvAuthRequired         = "AUTH_REQUIRED"
-	EnvKeycloakHost         = "KEYCLOAK_HOST"
-	EnvKeycloakRealm        = "KEYCLOAK_REALM"
-	EnvKeycloakClientID     = "KEYCLOAK_CLIENT_ID"
-	EnvKeycloakClientSecret = "KEYCLOAK_CLIENT_SECRET"
-	EnvKeycloakAdminUser    = "KEYCLOAK_ADMIN_USER"
-	EnvKeycloakAdminPass    = "KEYCLOAK_ADMIN_PASS"
-	EnvKeycloakAdminRealm   = "KEYCLOAK_ADMIN_REALM"
-	EnvAddonToken           = "ADDON_TOKEN"
-	EnvRolePath             = "ROLE_PATH"
-	EnvUserPath             = "USER_PATH"
+	EnvAuthRequired          = "AUTH_REQUIRED"
+	EnvKeycloakHost          = "KEYCLOAK_HOST"
+	EnvKeycloakRealm         = "KEYCLOAK_REALM"
+	EnvKeycloakClientID      = "KEYCLOAK_CLIENT_ID"
+	EnvKeycloakClientSecret  = "KEYCLOAK_CLIENT_SECRET"
+	EnvKeycloakAdminUser     = "KEYCLOAK_ADMIN_USER"
+	EnvKeycloakAdminPass     = "KEYCLOAK_ADMIN_PASS"
+	EnvKeycloakAdminRealm    = "KEYCLOAK_ADMIN_REALM"
+	EnvKeycloakReqPassUpdate = "KEYCLOAK_REQ_PASS_UPDATE"
+	EnvAddonToken            = "ADDON_TOKEN"
+	EnvRolePath              = "ROLE_PATH"
+	EnvUserPath              = "USER_PATH"
 )
 
 type Auth struct {
@@ -34,6 +35,7 @@ type Auth struct {
 			Pass  string
 			Realm string
 		}
+		RequirePasswordUpdate bool
 	}
 	// Addon API access token
 	AddonToken string
@@ -77,6 +79,7 @@ func (r *Auth) Load() (err error) {
 	if !found {
 		r.Keycloak.Admin.Realm = "master"
 	}
+	r.Keycloak.RequirePasswordUpdate = getEnvBool(EnvKeycloakReqPassUpdate, true)
 	r.AddonToken, found = os.LookupEnv(EnvAddonToken)
 	if !found {
 		r.AddonToken = "konveyor"
