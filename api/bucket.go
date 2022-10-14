@@ -33,7 +33,7 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 }
 
 func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
-	if ctx.Request.Header.Get(ContentType) == TarGzMimetype {
+	if ctx.Request.Method == "PUT" {
 		h.uploadDirArchive(ctx, owner)
 	} else {
 		h.upload(ctx, owner)
@@ -41,10 +41,18 @@ func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketO
 }
 
 func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOwner) {
-	bucketPath := owner.Bucket
+	dir := owner.Bucket + ctx.Param(Wildcard)
 
 	// Prepare to uncompress the uploaded data
 	file, err := ctx.FormFile("file")
+	defer func() {
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err,
+			})
+			return
+		}
+	}()
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
@@ -63,15 +71,14 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 	}
 	defer ungzReader.Close()
 
-	// Clean the destination bucket directory (or do an atomic way - extract to some temp directory and move when extreact finished successfully)
-	bucketContent, err := ioutil.ReadDir(bucketPath)
+	bucketContent, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Error(err, "read bucket dir")
 		ctx.Status(http.StatusInternalServerError)
 		return
 	}
 	for _, bucketEntry := range bucketContent {
-		err = os.RemoveAll(bucketPath + "/" + bucketEntry.Name())
+		err = os.RemoveAll(dir + "/" + bucketEntry.Name())
 		if err != nil {
 			log.Info("Cleaning bucket dir, cannot delete")
 		}
@@ -94,14 +101,14 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, owner *model.BucketOw
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(bucketPath+"/"+hdr.Name, hdr.FileInfo().Mode().Perm()); err != nil {
+			if err := os.Mkdir(dir+"/"+hdr.Name, hdr.FileInfo().Mode().Perm()); err != nil {
 				log.Error(err, "create dir")
 				ctx.Status(http.StatusInternalServerError)
 				return
 			}
-		case tar.TypeReg: // Regular file
+		case tar.TypeReg:
 			var file *os.File
-			if file, err = os.Create(bucketPath + "/" + hdr.Name); err != nil {
+			if file, err = os.Create(dir + "/" + hdr.Name); err != nil {
 				log.Error(err, "create file")
 				ctx.Status(http.StatusInternalServerError)
 				return
@@ -151,8 +158,8 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner
 		}
 
 		switch hdr.Typeflag {
-		case tar.TypeDir, tar.TypeSymlink:
-			// Add file/directory header to the archive
+		case tar.TypeDir:
+			// Add directory header to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				panic(err)
 			}
@@ -167,7 +174,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, owner *model.BucketOwner
 				panic(err)
 			}
 		default:
-			// Other file types like block/character device are skipped.
+			// Other file types like block/character device or tar.TypeSymlink are skipped.
 			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
 		}
 
