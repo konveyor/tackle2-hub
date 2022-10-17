@@ -42,16 +42,8 @@ func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketO
 }
 
 func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
-	// Prepare to uncompress the uploaded data
+	// Prepare to uncompress the uploaded data, report 4xx errors
 	file, err := ctx.FormFile("file")
-	defer func() {
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": err,
-			})
-			return
-		}
-	}()
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
@@ -70,16 +62,25 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	}
 	defer ungzReader.Close()
 
+	// Report 5xx errors in upcoming steps
+	defer func() {
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err,
+			})
+			return
+		}
+	}()
+
+	// Prepare destionation directory
 	bucketContent, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Error(err, "read bucket dir")
-		ctx.Status(http.StatusInternalServerError)
 		return
 	}
 	for _, bucketEntry := range bucketContent {
 		err = os.RemoveAll(path.Join(dir, bucketEntry.Name()))
 		if err != nil {
-			log.Info("Cleaning bucket dir, cannot delete")
+			return
 		}
 	}
 
@@ -91,34 +92,26 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 			if err == io.EOF {
 				break
 			} else {
-				log.Error(err, "read tar")
-				ctx.Status(http.StatusInternalServerError)
 				return
 			}
 		}
+
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			if err := os.Mkdir(path.Join(dir, hdr.Name), hdr.FileInfo().Mode().Perm()); err != nil {
-				log.Error(err, "create dir")
-				ctx.Status(http.StatusInternalServerError)
 				return
 			}
 		case tar.TypeReg:
 			var file *os.File
-			if file, err = os.Create(dir + "/" + hdr.Name); err != nil {
-				log.Error(err, "create file")
-				ctx.Status(http.StatusInternalServerError)
+			if file, err = os.Create(path.Join(dir, hdr.Name)); err != nil {
 				return
 			}
-			//os.Chmod / chown?
 			if _, err = io.Copy(file, untarReader); err != nil {
-				log.Error(err, "copy to tar")
-				ctx.Status(http.StatusInternalServerError)
 				return
 			}
 			file.Close()
 		default:
-			// types that are not files or dirs are skipped / add warning?
+			// types that are not files or dirs are skipped
 		}
 	}
 
@@ -135,16 +128,14 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 
 	var tarOutput bytes.Buffer
 	tarWriter := tar.NewWriter(&tarOutput)
-
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
 		hdr, err := tar.FileInfoHeader(info, path)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Scope path in archive to the given dir
@@ -154,35 +145,45 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 		}
 
 		switch hdr.Typeflag {
-		case tar.TypeDir, tar.TypeSymlink:
+		case tar.TypeDir:
 			// Add directory or symlink header to the archive (no content)
 			if err := tarWriter.WriteHeader(hdr); err != nil {
-				panic(err)
+				return err
 			}
 		case tar.TypeReg:
 			// Add file with its content to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
-				panic(err)
+				return err
 			}
 			file, _ := os.Open(path)
 
 			if _, err = io.Copy(tarWriter, file); err != nil {
-				panic(err)
+				return err
 			}
 		default:
-			// Other file types like block/character device are skipped.
+			// Other file types like block/character device or TypeSymlink are skipped.
 			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
 		}
 
 		return nil
 	})
 
-	if err := tarWriter.Close(); err != nil {
-		fmt.Println(err)
-	}
+	// Report 5xx errors in archive creation steps
+	defer func() {
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err,
+			})
+			return
+		}
+	}()
 
 	if err != nil {
-		fmt.Println(err)
+		return
+	}
+
+	if err := tarWriter.Close(); err != nil {
+		return
 	}
 
 	fromTar := bufio.NewReader(&tarOutput)
