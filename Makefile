@@ -55,19 +55,19 @@ generate: controller-gen
 
 # Find or download controller-gen.
 controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.5.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
+	ifeq (, $(shell which controller-gen))
+		@{ \
+		set -e ;\
+		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$CONTROLLER_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.5.0 ;\
+		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+		}
+		CONTROLLER_GEN=$(GOBIN)/controller-gen
+	else
+		CONTROLLER_GEN=$(shell which controller-gen)
+	endif
 
 # Build SAMPLE ADDON
 addon: fmt vet
