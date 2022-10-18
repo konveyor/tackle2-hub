@@ -5,3 +5,6 @@
 Tackle (2nd generation) hub component.
 
 <img src="https://github.com/konveyor/tackle2-hub/blob/main/arch.png" width="850" height="600">
+
+## Code of Conduct
+Refer to Konveyor's Code of Conduct [here](https://github.com/konveyor/community/blob/main/CODE_OF_CONDUCT.md).
