@@ -76,7 +76,7 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	if err != nil {
 		return
 	}
-	if err = os.Mkdir(dir, 0777); err != nil {
+	if err = os.MkdirAll(dir, 0777); err != nil {
 		return
 	}
 
