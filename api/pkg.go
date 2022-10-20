@@ -29,13 +29,14 @@ const (
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
-	Accept        = "Accept"
+	Directory     = "X-Directory"
 )
 
 //
 // Header Values
 const (
-	TarGzMimetype = "application/x-gzip"
+	DirectoryArchive = "archive"
+	DirectoryExpand  = "expand"
 )
 
 //

@@ -26,7 +26,7 @@ type BucketHandler struct {
 
 // TODO: Validate Wildcard param to not allow access dirs outside of the bucket
 func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
-	if ctx.Request.Header.Get(Accept) == TarGzMimetype {
+	if ctx.Request.Header.Get(Directory) == DirectoryArchive {
 		h.getDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
 	} else {
 		h.content(ctx, owner)
@@ -34,7 +34,7 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 }
 
 func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
-	if ctx.Request.Method == "PUT" {
+	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
 		h.uploadDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
 	} else {
 		h.upload(ctx, owner)
@@ -62,9 +62,10 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	}
 	defer ungzReader.Close()
 
-	// Report 5xx errors in upcoming steps
+	// Report 5xx errors for extraction process
 	defer func() {
 		if err != nil {
+			log.Error(err, "bucket archive expand action failed")
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": err,
 			})
@@ -75,7 +76,11 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	// Prepare destionation directory
 	bucketContent, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return
+		if os.IsNotExist(err) {
+			if err = os.Mkdir(dir, 0777); err != nil {
+				return
+			}
+		}
 	}
 	for _, bucketEntry := range bucketContent {
 		err = os.RemoveAll(path.Join(dir, bucketEntry.Name()))
@@ -98,7 +103,7 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(path.Join(dir, hdr.Name), hdr.FileInfo().Mode().Perm()); err != nil {
+			if err := os.Mkdir(path.Join(dir, hdr.Name), 0777); err != nil {
 				return
 			}
 		case tar.TypeReg:
@@ -119,16 +124,23 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 }
 
 func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	dirInfo, err := os.Stat(dir)
+	if os.IsNotExist(err) {
 		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Bucket (sub)directory doesn't exist.",
+			"error": "Provided directory path doesn't exist.",
+		})
+		return
+	}
+	if !dirInfo.IsDir() {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Provided path is not a directory.",
 		})
 		return
 	}
 
 	var tarOutput bytes.Buffer
 	tarWriter := tar.NewWriter(&tarOutput)
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -146,7 +158,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			// Add directory or symlink header to the archive (no content)
+			// Add directory header to the archive (no content)
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				return err
 			}
@@ -171,6 +183,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 	// Report 5xx errors in archive creation steps
 	defer func() {
 		if err != nil {
+			log.Error(err, "bucket archive get action failed")
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": err,
 			})
