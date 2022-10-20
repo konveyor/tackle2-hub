@@ -288,7 +288,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 		return
 	}
 
-	h.content(ctx, &m.BucketOwner)
+	h.serveBucketGet(ctx, &m.BucketOwner)
 }
 
 // BucketUpload godoc
@@ -308,7 +308,7 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.BucketOwner)
+	h.serveBucketUpload(ctx, &m.BucketOwner)
 }
 
 // BucketDelete godoc

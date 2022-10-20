@@ -29,6 +29,14 @@ const (
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
+	Directory     = "X-Directory"
+)
+
+//
+// Header Values
+const (
+	DirectoryArchive = "archive"
+	DirectoryExpand  = "expand"
 )
 
 //

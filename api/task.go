@@ -317,7 +317,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 		h.getFailed(ctx, result.Error)
 		return
 	}
-	h.content(ctx, &m.BucketOwner)
+	h.serveBucketGet(ctx, &m.BucketOwner)
 }
 
 // BucketUpload godoc
@@ -337,7 +337,7 @@ func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 		return
 	}
 
-	h.upload(ctx, &m.BucketOwner)
+	h.serveBucketUpload(ctx, &m.BucketOwner)
 }
 
 // BucketDelete godoc
