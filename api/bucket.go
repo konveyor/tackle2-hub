@@ -7,7 +7,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -24,7 +23,6 @@ import (
 type BucketHandler struct {
 }
 
-// TODO: Validate Wildcard param to not allow access dirs outside of the bucket
 func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
 	if ctx.Request.Header.Get(Directory) == DirectoryArchive {
 		h.getDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
@@ -73,20 +71,13 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 		}
 	}()
 
-	// Prepare destionation directory
-	bucketContent, err := ioutil.ReadDir(dir)
+	// Clean and prepare destination directory
+	err = os.RemoveAll(dir)
 	if err != nil {
-		if os.IsNotExist(err) {
-			if err = os.Mkdir(dir, 0777); err != nil {
-				return
-			}
-		}
+		return
 	}
-	for _, bucketEntry := range bucketContent {
-		err = os.RemoveAll(path.Join(dir, bucketEntry.Name()))
-		if err != nil {
-			return
-		}
+	if err = os.Mkdir(dir, 0777); err != nil {
+		return
 	}
 
 	// Extract the tar archive
