@@ -1,0 +1,57 @@
+name: Build Hub
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+      - run: make fmt
+  vet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+      - run: make vet
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+      - run: make cmd
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: make build-image
+
+  test-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: start-minikube
+        uses: konveyor/tackle2-operator/.github/actions/start-minikube@main
+      - name: Build image in minikube
+        run: |
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          make build-image
+      - name: install-tackle
+        uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
+        with:
+          tackle-hub-image: tackle2-hub:latest
+          tackle-image-pull-policy: IfNotPresent
