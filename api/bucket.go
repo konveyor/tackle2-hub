@@ -199,8 +199,8 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 
 	gzWriter.Name = path.Base(dir) + ".tar.gz"
 	gzWriter.Comment = "Tackle 2 bucket data archive"
-	if _, err := io.Copy(gzWriter, fromTar); err != nil {
-		fmt.Println(err)
+	if _, err = io.Copy(gzWriter, fromTar); err != nil {
+		return
 	}
 }
 
