@@ -45,29 +45,24 @@ run: fmt vet
 
 # Generate manifests e.g. CRD, Webhooks
 manifests: controller-gen
-	${CONTROLLER_GEN} ${CRD_OPTIONS} \
+	controller-gen ${CRD_OPTIONS} \
 		crd rbac:roleName=manager-role \
 		paths="./..." output:crd:artifacts:config=generated/crd/bases output:crd:dir=generated/crd
 
 # Generate code
 generate: controller-gen
-	${CONTROLLER_GEN} object:headerFile="./generated/boilerplate" paths="./..."
+	controller-gen object:headerFile="./generated/boilerplate" paths="./..."
 
 # Find or download controller-gen.
 controller-gen:
-	ifeq (, $(shell which controller-gen))
-		@{ \
-		set -e ;\
-		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-		cd $$CONTROLLER_GEN_TMP_DIR ;\
-		go mod init tmp ;\
-		go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.5.0 ;\
-		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-		}
-		CONTROLLER_GEN=$(GOBIN)/controller-gen
-	else
-		CONTROLLER_GEN=$(shell which controller-gen)
-	endif
+	if [ "$(shell which controller-gen)" = "" ]; then \
+	  set -e ;\
+	  CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+	  cd $$CONTROLLER_GEN_TMP_DIR ;\
+	  go mod init tmp ;\
+	  go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0 ;\
+	  rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	fi ;\
 
 # Build SAMPLE ADDON
 addon: fmt vet
