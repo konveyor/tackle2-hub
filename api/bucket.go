@@ -193,10 +193,9 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 		return
 	}
 
-	// Return empty response instead of empty tar.gz archive
+	// Indicate empty tar.gz archive with the 204 HTTP code
 	if entriesCount < 1 {
 		ctx.Status(http.StatusNoContent)
-		return
 	}
 
 	fromTar := bufio.NewReader(&tarOutput)
