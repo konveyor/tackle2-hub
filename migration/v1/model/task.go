@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/model"
 	"time"
 )
 
@@ -11,8 +10,8 @@ type TaskReport struct {
 	Error     string
 	Total     int
 	Completed int
-	Activity  model.JSON
-	Result    model.JSON
+	Activity  JSON
+	Result    JSON
 	TaskID    uint `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -27,8 +26,8 @@ type Task struct {
 	Image         string
 	Variant       string
 	Policy        string
-	TTL           model.JSON
-	Data          model.JSON
+	TTL           JSON
+	Data          JSON
 	Started       *time.Time
 	Terminated    *time.Time
 	State         string `gorm:"index"`
@@ -48,9 +47,9 @@ type TaskGroup struct {
 	BucketOwner
 	Name  string
 	Addon string
-	Data  model.JSON
+	Data  JSON
 	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
-	List  model.JSON
+	List  JSON
 	State string
 }
 
