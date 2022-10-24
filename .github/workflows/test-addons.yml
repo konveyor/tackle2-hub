@@ -17,7 +17,7 @@ jobs:
         run: |
           export SHELL=/bin/bash
           eval $(minikube -p minikube docker-env)
-          make build-image
+          make docker-build
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
@@ -25,4 +25,4 @@ jobs:
           tackle-image-pull-policy: IfNotPresent
 
       - name: test windup addon
-        uses: mundra-ankur/tackle2-addon-windup/.github/actions/test-e2e-windup@main
+        uses: konveyor/tackle2-addon-windup/.github/actions/test-e2e-windup@main

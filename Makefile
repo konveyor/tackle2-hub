@@ -1,6 +1,5 @@
 GOBIN ?= ${GOPATH}/bin
 IMG   ?= tackle2-hub:latest
-CONTAINER_RUNTIME := docker
 
 PKG = ./addon/... \
       ./api/... \
@@ -35,9 +34,12 @@ hub: generate fmt vet
 	go build ${BUILD}
 
 # Build image
-build-image:
-	${CONTAINER_RUNTIME} build -t ${IMG} .
+docker-build:
+	docker build -t ${IMG} .
 
+podman-build:
+	podman build -t ${IMG} .
+	
 # Build manager binary with compiler optimizations disabled
 debug: generate fmt vet
 	go build -gcflags=all="-N -l" ${BUILD}
