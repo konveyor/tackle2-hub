@@ -1,4 +1,5 @@
 GOBIN ?= ${GOPATH}/bin
+IMG   ?= tackle2-hub:latest
 
 PKG = ./addon/... \
       ./api/... \
@@ -32,6 +33,13 @@ vet:
 hub: generate fmt vet
 	go build ${BUILD}
 
+# Build image
+docker-build:
+	docker build -t ${IMG} .
+
+podman-build:
+	podman build -t ${IMG} .
+	
 # Build manager binary with compiler optimizations disabled
 debug: generate fmt vet
 	go build -gcflags=all="-N -l" ${BUILD}
