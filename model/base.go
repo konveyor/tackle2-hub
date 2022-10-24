@@ -1,1 +1,0 @@
-../migration/v2/model/base.go

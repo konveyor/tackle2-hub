@@ -1,18 +1,14 @@
 package model
 
-import (
-	"github.com/konveyor/tackle2-hub/model"
-)
-
 type Application struct {
 	Model
 	BucketOwner
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
 	Review            *Review `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        model.JSON
+	Repository        JSON
 	Binary            string
-	Facts             model.JSON
+	Facts             JSON
 	Comments          string
 	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:ApplicationTags;constraint:OnDelete:CASCADE"`
