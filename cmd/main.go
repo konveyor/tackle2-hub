@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
@@ -14,22 +13,16 @@ import (
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
 	"github.com/konveyor/tackle2-hub/migration"
-	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/volume"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
-	"io/ioutil"
 	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
-	"os"
-	"path"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"strings"
 	"syscall"
 )
 
@@ -143,12 +136,17 @@ func main() {
 		k := auth.NewKeycloak(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
+		)
+		r := auth.NewReconciler(
+			settings.Settings.Auth.Keycloak.Host,
+			settings.Settings.Auth.Keycloak.Realm,
 			settings.Settings.Auth.Keycloak.ClientID,
 			settings.Settings.Auth.Keycloak.ClientSecret,
 			settings.Settings.Auth.Keycloak.Admin.User,
 			settings.Settings.Auth.Keycloak.Admin.Pass,
-			settings.Settings.Auth.Keycloak.Admin.Realm)
-		err = k.Reconcile()
+			settings.Settings.Auth.Keycloak.Admin.Realm,
+		)
+		err = r.Reconcile()
 		if err != nil {
 			return
 		}
@@ -193,57 +191,4 @@ func main() {
 		h.AddRoutes(router)
 	}
 	err = router.Run()
-}
-
-//
-// Seed the database with the contents of json
-// files contained in DB_SEED_PATH.
-func seed(db *gorm.DB, models []interface{}) (err error) {
-	for _, m := range models {
-		err = func() (err error) {
-			kind := reflect.TypeOf(m).Name()
-			fileName := strings.ToLower(kind) + ".json"
-			filePath := path.Join(settings.Settings.DB.SeedPath, fileName)
-			file, err := os.Open(filePath)
-			if err != nil {
-				err = nil
-				return
-			}
-			defer file.Close()
-			jsonBytes, err := ioutil.ReadAll(file)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-
-			var unmarshalled []map[string]interface{}
-			err = json.Unmarshal(jsonBytes, &unmarshalled)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-			for i := range unmarshalled {
-				result := db.Model(&m).Create(unmarshalled[i])
-				if result.Error != nil {
-					err = result.Error
-					return
-				}
-			}
-			return
-		}()
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-
-	seeded, _ := json.Marshal(true)
-	setting := model.Setting{Key: ".hub.db.seeded", Value: seeded}
-	result := db.Create(&setting)
-	if result.Error != nil {
-		err = liberr.Wrap(result.Error)
-		return
-	}
-	log.Info("Database seeded.")
-	return
 }
