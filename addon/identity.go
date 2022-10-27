@@ -21,7 +21,6 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 		return
 	}
 	m := r.Model()
-	err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 	r.With(m)
 	return
 }
@@ -37,11 +36,7 @@ func (h *Identity) List() (list []api.Identity, err error) {
 	for i := range list {
 		r := &list[i]
 		m := r.Model()
-		err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 		r.With(m)
-		if err != nil {
-			return
-		}
 	}
 	return
 }

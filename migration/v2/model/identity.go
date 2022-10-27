@@ -58,7 +58,8 @@ func (r *Identity) Encrypt(ref *Identity) (err error) {
 
 //
 // Decrypt sensitive fields.
-func (r *Identity) Decrypt(passphrase string) (err error) {
+func (r *Identity) Decrypt() (err error) {
+	passphrase := Settings.Encryption.Passphrase
 	aes := encryption.New(passphrase)
 	if r.Password != "" {
 		r.Password, err = aes.Decrypt(r.Password)

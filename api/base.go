@@ -28,15 +28,12 @@ type BaseHandler struct {
 	DB *gorm.DB
 	// k8s Client
 	Client client.Client
-	// Auth provider
-	AuthProvider auth.Provider
 }
 
 // With database and k8s client.
-func (h *BaseHandler) With(db *gorm.DB, client client.Client, provider auth.Provider) {
+func (h *BaseHandler) With(db *gorm.DB, client client.Client) {
 	h.DB = db.Debug()
 	h.Client = client
-	h.AuthProvider = provider
 }
 
 //
@@ -266,10 +263,21 @@ func (h *BaseHandler) modBody(
 //
 // CurrentUser gets username from Keycloak auth token.
 func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
-	token := ctx.GetHeader("Authorization")
-	user, err := auth.CurrentUser(h.AuthProvider, token)
-	if err != nil {
-		Log.Error(err, "Failed to get current user.")
+	user = ctx.GetString(auth.TokenUser)
+	if user == "" {
+		Log.Info("Failed to get current user.")
+	}
+
+	return
+}
+
+//
+// HasModifier returns the matched scope has the specified modifier.
+func (h *BaseHandler) HasModifier(ctx *gin.Context, mod string) (b bool) {
+	if object, found := ctx.Get(auth.MatchedScope); found {
+		if scope, cast := object.(auth.Scope); cast {
+			b = scope.HasModifier(mod)
+		}
 	}
 	return
 }

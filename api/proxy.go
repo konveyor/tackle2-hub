@@ -24,7 +24,7 @@ type ProxyHandler struct {
 
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "proxies"))
+	routeGroup.Use(auth.Required("proxies"))
 	routeGroup.GET(ProxiesRoot, h.List)
 	routeGroup.GET(ProxiesRoot+"/", h.List)
 	routeGroup.POST(ProxiesRoot, h.Create)

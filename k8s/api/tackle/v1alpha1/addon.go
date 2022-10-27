@@ -38,6 +38,15 @@ type AddonSpec struct {
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
 	// Mounts optional.
 	Mounts []Mount `json:"mounts,omitempty"`
+	// Requested resource grants.
+	Scopes []Scope `json:"scopes,omitempty"`
+}
+
+//
+// Scope
+type Scope struct {
+	Resource string   `json:"resource"`
+	Verbs    []string `json:"verbs"`
 }
 
 //
@@ -63,6 +72,25 @@ type Addon struct {
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	Spec            AddonSpec   `json:"spec,omitempty"`
 	Status          AddonStatus `json:"status,omitempty"`
+}
+
+//
+// Scopes returns scopes requested by the addon.
+func (r *Addon) Scopes() (scopes []string) {
+	scopes = append(
+		[]string{
+			"tasks:get",
+			"tasks.report:*",
+			"settings:get",
+		})
+	for _, scope := range r.Spec.Scopes {
+		for _, verb := range scope.Verbs {
+			scopes = append(
+				scopes,
+				scope.Resource+":"+verb)
+		}
+	}
+	return
 }
 
 //

@@ -15,6 +15,11 @@ const (
 	AppIdentitiesRoot = ApplicationRoot + IdentitiesRoot
 )
 
+const (
+	// Decrypted auth modifier.
+	Decrypted = "decrypted"
+)
+
 //
 // IdentityHandler handles identity resource routes.
 type IdentityHandler struct {
@@ -23,7 +28,7 @@ type IdentityHandler struct {
 
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "identities"))
+	routeGroup.Use(auth.Required("identities"))
 	routeGroup.GET(IdentitiesRoot, h.List)
 	routeGroup.GET(IdentitiesRoot+"/", h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)
@@ -51,6 +56,13 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
+	if h.HasModifier(ctx, Decrypted) {
+		err := m.Decrypt()
+		if err != nil {
+			ctx.Status(http.StatusInternalServerError)
+			return
+		}
+	}
 	r.With(m)
 
 	ctx.JSON(http.StatusOK, r)
@@ -73,7 +85,15 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	resources := []Identity{}
 	for i := range list {
 		r := Identity{}
-		r.With(&list[i])
+		m := &list[i]
+		if h.HasModifier(ctx, Decrypted) {
+			err := m.Decrypt()
+			if err != nil {
+				ctx.Status(http.StatusInternalServerError)
+				return
+			}
+		}
+		r.With(m)
 		resources = append(resources, r)
 	}
 
@@ -189,6 +209,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 // @param id path int true "Application ID"
 func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 	id := h.pk(ctx)
+	kind := ctx.Param("kind")
 	m := &model.Application{}
 	db := h.preLoad(h.DB, "Identities")
 	result := db.First(m, id)
@@ -198,11 +219,24 @@ func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 	}
 	resources := []Identity{}
 	for i := range m.Identities {
-		id := Identity{}
-		id.With(&m.Identities[i])
+		r := Identity{}
+		id := &m.Identities[i]
+		if kind != "" {
+			if kind != id.Kind {
+				continue
+			}
+		}
+		if h.HasModifier(ctx, Decrypted) {
+			err := id.Decrypt()
+			if err != nil {
+				ctx.Status(http.StatusInternalServerError)
+				return
+			}
+		}
+		r.With(id)
 		resources = append(
 			resources,
-			id)
+			r)
 	}
 
 	ctx.JSON(http.StatusOK, resources)

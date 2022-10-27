@@ -55,11 +55,7 @@ func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found
 		r = &list[i]
 		if r.Kind == kind {
 			m := r.Model()
-			err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 			r.With(m)
-			if err != nil {
-				return
-			}
 			found = true
 			break
 		}

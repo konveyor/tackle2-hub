@@ -25,7 +25,7 @@ type StakeholderHandler struct {
 // AddRoutes adds routes.
 func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "stakeholders"))
+	routeGroup.Use(auth.Required("stakeholders"))
 	routeGroup.GET(StakeholdersRoot, h.List)
 	routeGroup.GET(StakeholdersRoot+"/", h.List)
 	routeGroup.POST(StakeholdersRoot, h.Create)

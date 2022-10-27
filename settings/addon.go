@@ -3,12 +3,14 @@ package settings
 import (
 	"net/url"
 	"os"
+	"strconv"
 )
 
 const (
-	EnvAddonSecretPath = "ADDON_SECRET_PATH"
 	EnvAddonWorkingDir = "ADDON_WORKING_DIR"
 	EnvHubBaseURL      = "HUB_BASE_URL"
+	EnvHubToken        = "TOKEN"
+	EnvTask            = "TASK"
 )
 
 //
@@ -18,14 +20,16 @@ type Addon struct {
 	Hub struct {
 		// URL for the hub API.
 		URL string
+		// Token for the hub API.
+		Token string
 	}
 	// Path.
 	Path struct {
 		// Working directory path.
 		WorkingDir string
-		// Secret path.
-		Secret string
 	}
+	//
+	Task int
 }
 
 func (r *Addon) Load() (err error) {
@@ -38,13 +42,13 @@ func (r *Addon) Load() (err error) {
 	if err != nil {
 		panic(err)
 	}
-	r.Path.Secret, found = os.LookupEnv(EnvAddonSecretPath)
-	if !found {
-		r.Path.Secret = "/tmp/secret.json"
-	}
+	r.Hub.Token, found = os.LookupEnv(EnvHubToken)
 	r.Path.WorkingDir, found = os.LookupEnv(EnvAddonWorkingDir)
 	if !found {
 		r.Path.WorkingDir = "/tmp"
+	}
+	if s, found := os.LookupEnv(EnvTask); found {
+		r.Task, _ = strconv.Atoi(s)
 	}
 
 	return

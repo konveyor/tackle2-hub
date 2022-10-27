@@ -1,23 +1,60 @@
 package auth
 
 import (
-	"context"
-	"crypto/tls"
-	"errors"
-	"github.com/Nerzal/gocloak/v10"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/konveyor/controller/pkg/logging"
 	"strings"
-	"time"
 )
 
-var log = logging.WithName("auth")
+var (
+	// Log logger.
+	Log = logging.WithName("auth")
+	// Hub provider.
+	Hub = &Builtin{}
+	// Remote provider.
+	Remote Provider
+)
 
+//
+// Provider provides RBAC.
 type Provider interface {
-	// Scopes decodes a list of scopes from the token.
-	Scopes(token string) ([]Scope, error)
-	// User parses preffered_username field from the token.
-	User(token string) (user string, err error)
+	// Authenticate authenticates and validates the token.
+	Authenticate(token string) (jwToken *jwt.Token, err error)
+	// Scopes extracts a list of scopes from the token.
+	Scopes(jwToken *jwt.Token) []Scope
+	// User extracts the user from token.
+	User(jwToken *jwt.Token) (user string)
+}
+
+//
+// NotAuthenticated is returned when a token cannot be authenticated.
+type NotAuthenticated struct {
+	Token string
+}
+
+func (e *NotAuthenticated) Error() (s string) {
+	return fmt.Sprintf("Token %s not-valid.", e.Token)
+}
+
+func (e *NotAuthenticated) Is(err error) (matched bool) {
+	_, matched = err.(*NotAuthenticated)
+	return
+}
+
+//
+// NotValid is returned when a token is not valid.
+type NotValid struct {
+	Token string
+}
+
+func (e *NotValid) Error() (s string) {
+	return fmt.Sprintf("Token %s not-valid.", e.Token)
+}
+
+func (e *NotValid) Is(err error) (matched bool) {
+	_, matched = err.(*NotValid)
+	return
 }
 
 //
@@ -25,132 +62,54 @@ type Provider interface {
 type Scope interface {
 	// Allow determines whether the scope gives access to the resource with the method.
 	Allow(resource string, method string) bool
+	// HasModifier determines if the matched scopes include the
+	// specified modifier.
+	HasModifier(name string) bool
 }
 
 //
-// NoAuth provider always permits access.
-type NoAuth struct{}
-
-//
-// Scopes decodes a list of scopes from the token.
-// For the NoAuth provider, this just returns a single instance
-// of the NoAuthScope.
-func (r *NoAuth) Scopes(token string) (scopes []Scope, err error) {
-	scopes = append(scopes, &NoAuthScope{})
-	return
-}
-
-//
-// User mocks username for NoAuth
-func (r *NoAuth) User(token string) (name string, err error) {
-	name = "admin.noauth"
-	return
-}
-
-//
-// NoAuthScope always permits access.
-type NoAuthScope struct{}
-
-//
-// Check whether the scope gives access to the resource with the method.
-func (r *NoAuthScope) Allow(_ string, _ string) (ok bool) {
-	ok = true
-	return
-}
-
-//
-// NewKeycloak builds a new Keycloak auth provider.
-func NewKeycloak(host, realm string) (k Keycloak) {
-	client := gocloak.NewClient(host)
-	client.RestyClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	k = Keycloak{
-		host:   host,
-		realm:  realm,
-		client: client,
-	}
-	return
-}
-
-//
-// Keycloak auth provider
-type Keycloak struct {
-	client gocloak.GoCloak
-	host   string
-	realm  string
-}
-
-//
-// Scopes decodes a list of scopes from the token.
-func (r *Keycloak) Scopes(token string) (scopes []Scope, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
-	decoded, _, err := r.client.DecodeAccessToken(ctx, token, r.realm)
-	if err != nil {
-		err = errors.New("invalid token")
-		return
-	}
-	if !decoded.Valid {
-		err = errors.New("invalid token")
-		return
-	}
-	claims, ok := decoded.Claims.(*jwt.MapClaims)
-	if !ok || claims == nil {
-		err = errors.New("invalid token")
-		return
-	}
-	rawClaimScopes, ok := (*claims)["scope"].(string)
-	if !ok {
-		err = errors.New("invalid token")
-		return
-	}
-	claimScopes := strings.Split(rawClaimScopes, " ")
-	for _, s := range claimScopes {
-		scope := r.newScope(s)
-		scopes = append(scopes, &scope)
-	}
-	return
-}
-
-//
-// NewKeycloakScope builds a Scope object from a string.
-func (r *Keycloak) newScope(s string) (scope KeycloakScope) {
-	if strings.Contains(s, ":") {
-		segments := strings.Split(s, ":")
-		scope.resource = segments[0]
-		scope.method = segments[1]
-	} else {
-		scope.resource = s
-	}
-	return
-}
-
-//
-// User resolves token to Keycloak username.
-func (r *Keycloak) User(token string) (user string, err error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	_, claims, err := r.client.DecodeAccessToken(ctx, token, r.realm)
-	if err != nil {
-		return
-	}
-	user, found := (*claims)["preferred_username"].(string)
-	if !found {
-		err = errors.New("preferred_username not found in token")
-		return
-	}
-	return
-}
-
-//
-// KeycloakScope is a scope decoded from a Keycloak token.
-type KeycloakScope struct {
+// BaseScope.
+type BaseScope struct {
 	resource string
 	method   string
+	mods     []string
+}
+
+//
+// With parses a scope and populate fields.
+// Format: <resource>:<method>:<modifier>:...
+func (r *BaseScope) With(s string) {
+	part := strings.Split(s, ":")
+	n := len(part)
+	if n > 0 {
+		r.resource = part[0]
+	}
+	if n > 1 {
+		r.method = part[1]
+	}
+	if n > 2 {
+		r.mods = part[2:]
+	}
+	return
 }
 
 //
 // Allow determines whether the scope gives access to the resource with the method.
-func (r *KeycloakScope) Allow(resource string, method string) (ok bool) {
-	ok = r.resource == resource && r.method == method
+func (r *BaseScope) Allow(resource string, method string) (b bool) {
+	b = (r.resource == "*" || r.resource == resource) &&
+		(r.method == "*" || r.method == method)
+	return
+}
+
+//
+//HasModifier determines if the matched scopes include the
+// specified modifier.
+func (r *BaseScope) HasModifier(name string) (b bool) {
+	for _, m := range r.mods {
+		if strings.ToLower(m) == strings.ToLower(name) {
+			b = true
+			break
+		}
+	}
 	return
 }

@@ -28,7 +28,7 @@ type ApplicationHandler struct {
 // AddRoutes adds routes.
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "applications"))
+	routeGroup.Use(auth.Required("applications"))
 	routeGroup.GET(ApplicationsRoot, h.List)
 	routeGroup.GET(ApplicationsRoot+"/", h.List)
 	routeGroup.POST(ApplicationsRoot, h.Create)

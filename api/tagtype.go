@@ -25,7 +25,7 @@ type TagTypeHandler struct {
 // AddRoutes adds routes.
 func (h TagTypeHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tagtypes"))
+	routeGroup.Use(auth.Required("tagtypes"))
 	routeGroup.GET(TagTypesRoot, h.List)
 	routeGroup.GET(TagTypesRoot+"/", h.List)
 	routeGroup.POST(TagTypesRoot, h.Create)

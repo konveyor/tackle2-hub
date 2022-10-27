@@ -25,7 +25,7 @@ type JobFunctionHandler struct {
 // AddRoutes adds routes.
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "jobfunctions"))
+	routeGroup.Use(auth.Required("jobfunctions"))
 	routeGroup.GET(JobFunctionsRoot, h.List)
 	routeGroup.GET(JobFunctionsRoot+"/", h.List)
 	routeGroup.POST(JobFunctionsRoot, h.Create)

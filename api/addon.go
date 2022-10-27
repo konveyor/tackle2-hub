@@ -27,7 +27,7 @@ type AddonHandler struct {
 // AddRoutes adds routes.
 func (h AddonHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "addons"))
+	routeGroup.Use(auth.Required("addons"))
 	routeGroup.GET(AddonsRoot, h.List)
 	routeGroup.GET(AddonsRoot+"/", h.List)
 	routeGroup.GET(AddonRoot, h.Get)

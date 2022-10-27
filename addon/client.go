@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/auth"
 	"io"
@@ -213,6 +214,12 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 			Log.Info(err.Error())
 			time.Sleep(time.Second * 10)
 		} else {
+			Log.Info(
+				fmt.Sprintf(
+					"|%d|  %s %s",
+					response.StatusCode,
+					request.Method,
+					request.URL.Path))
 			break
 		}
 	}

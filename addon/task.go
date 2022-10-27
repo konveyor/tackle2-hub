@@ -12,22 +12,37 @@ import (
 type Task struct {
 	// hub API client.
 	client *Client
-	// Addon Secret
-	secret *task.Secret
+	// Task
+	task *api.Task
 	// Task report.
 	report api.TaskReport
 }
 
 //
+// Load a task by ID.
+func (h *Task) Load() {
+	var err error
+	defer func() {
+		if err != nil {
+			panic(err)
+		}
+	}()
+	h.task = &api.Task{}
+	path := Params{api.ID: Settings.Addon.Task}.inject(api.TaskRoot)
+	err = h.client.Get(path, h.task)
+	return
+}
+
+//
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
-	id := h.secret.Hub.Application
-	if id == nil {
+	appRef := h.task.Application
+	if appRef == nil {
 		err = NotFound{}
 		return
 	}
 	r = &api.Application{}
-	path := Params{api.ID: *id}.inject(api.ApplicationRoot)
+	path := Params{api.ID: appRef.ID}.inject(api.ApplicationRoot)
 	err = h.client.Get(path, r)
 	return
 }
@@ -35,14 +50,14 @@ func (h *Task) Application() (r *api.Application, err error) {
 //
 // Data returns the addon data.
 func (h *Task) Data() (d map[string]interface{}) {
-	d = h.secret.Addon.(map[string]interface{})
+	d = h.task.Data.(map[string]interface{})
 	return
 }
 
 //
 // DataWith populates the addon data object.
 func (h *Task) DataWith(object interface{}) (err error) {
-	b, _ := json.Marshal(h.secret.Addon)
+	b, _ := json.Marshal(h.task.Data)
 	err = json.Unmarshal(b, object)
 	return
 }
@@ -50,12 +65,13 @@ func (h *Task) DataWith(object interface{}) (err error) {
 //
 // Variant returns the task variant.
 func (h *Task) Variant() string {
-	return h.secret.Hub.Variant
+	return h.task.Variant
 }
 
 //
 // Started report addon started.
 func (h *Task) Started() {
+	h.Load()
 	h.deleteReport()
 	h.report.Status = task.Running
 	h.pushReport()
@@ -141,7 +157,7 @@ func (h *Task) Completed(n int) {
 func (h *Task) Bucket() (b string) {
 	r := &api.Task{}
 	params := Params{
-		api.ID: h.secret.Hub.Task,
+		api.ID: h.task.ID,
 	}
 	path := params.inject(api.TaskRoot)
 	err := h.client.Get(path, r)
@@ -165,7 +181,7 @@ func (h *Task) Result(object interface{}) {
 // deleteReport deletes the task report.
 func (h *Task) deleteReport() {
 	params := Params{
-		api.ID: h.secret.Hub.Task,
+		api.ID: h.task.ID,
 	}
 	path := params.inject(api.TaskReportRoot)
 	err := h.client.Delete(path)
@@ -184,7 +200,7 @@ func (h *Task) pushReport() {
 		}
 	}()
 	params := Params{
-		api.ID: h.secret.Hub.Task,
+		api.ID: h.task.ID,
 	}
 	path := params.inject(api.TaskReportRoot)
 	if h.report.ID == 0 {

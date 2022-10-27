@@ -2,11 +2,12 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
+	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -77,6 +78,7 @@ type Manager struct {
 //
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	auth.Validators = append(auth.Validators, &Validator{DB: m.DB})
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Done.")
@@ -265,7 +267,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 		return
 	}
 	r.Image = addon.Spec.Image
-	secret := r.secret()
+	secret := r.secret(addon)
 	err = client.Create(context.TODO(), &secret)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -468,21 +470,13 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 		ServiceAccountName: Settings.Hub.Task.SA,
 		RestartPolicy:      core.RestartPolicyNever,
 		Containers: []core.Container{
-			r.container(addon),
+			r.container(addon, secret),
 		},
 		Volumes: []core.Volume{
 			{
 				Name: "working",
 				VolumeSource: core.VolumeSource{
 					EmptyDir: &core.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: "secret",
-				VolumeSource: core.VolumeSource{
-					Secret: &core.SecretVolumeSource{
-						SecretName: secret.Name,
-					},
 				},
 			},
 			{
@@ -514,7 +508,7 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 
 //
 // container builds the pod container.
-func (r *Task) container(addon *crd.Addon) (container core.Container) {
+func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.Container) {
 	userid := int64(0)
 	container = core.Container{
 		Name:            "main",
@@ -532,22 +526,29 @@ func (r *Task) container(addon *crd.Addon) (container core.Container) {
 				Value: Settings.Addon.Hub.URL,
 			},
 			{
-				Name:  settings.EnvAddonSecretPath,
-				Value: Settings.Addon.Path.Secret,
-			},
-			{
 				Name:  settings.EnvAddonWorkingDir,
 				Value: Settings.Addon.Path.WorkingDir,
+			},
+			{
+				Name:  settings.EnvTask,
+				Value: strconv.Itoa(int(r.Task.ID)),
+			},
+			{
+				Name: settings.EnvHubToken,
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						Key: settings.EnvHubToken,
+						LocalObjectReference: core.LocalObjectReference{
+							Name: secret.Name,
+						},
+					},
+				},
 			},
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
 				Name:      "working",
 				MountPath: Settings.Addon.Path.WorkingDir,
-			},
-			{
-				Name:      "secret",
-				MountPath: path.Dir(Settings.Addon.Path.Secret),
 			},
 			{
 				Name:      "bucket",
@@ -574,15 +575,14 @@ func (r *Task) container(addon *crd.Addon) (container core.Container) {
 
 //
 // secret builds the pod secret.
-func (r *Task) secret() (secret core.Secret) {
-	data := Secret{}
-	data.Hub.Task = r.Task.ID
-	data.Hub.Variant = r.Task.Variant
-	data.Hub.Application = r.Task.ApplicationID
-	data.Hub.Encryption.Passphrase = Settings.Encryption.Passphrase
-	data.Hub.Token = Settings.Auth.AddonToken
-	data.Addon = r.Task.Data
-	encoded, _ := json.Marshal(data)
+func (r *Task) secret(addon *crd.Addon) (secret core.Secret) {
+	user := "addon:" + addon.Name
+	token, _ := auth.Hub.NewToken(
+		user,
+		addon.Scopes(),
+		jwt.MapClaims{
+			"task": r.ID,
+		})
 	secret = core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
@@ -590,7 +590,7 @@ func (r *Task) secret() (secret core.Secret) {
 			Labels:       r.labels(),
 		},
 		Data: map[string][]byte{
-			path.Base(Settings.Addon.Path.Secret): encoded,
+			settings.EnvHubToken: []byte(token),
 		},
 	}
 
@@ -611,21 +611,6 @@ func (r *Task) labels() map[string]string {
 		"app":  "tackle",
 		"role": "task",
 	}
-}
-
-//
-// Secret payload.
-type Secret struct {
-	Hub struct {
-		Token       string
-		Application *uint
-		Task        uint
-		Variant     string
-		Encryption  struct {
-			Passphrase string
-		}
-	}
-	Addon interface{}
 }
 
 //
@@ -698,5 +683,26 @@ func (r *RuleIsolated) hasPolicy(task *model.Task, name string) (matched bool) {
 		}
 	}
 
+	return
+}
+
+//
+// Validator token validator.
+type Validator struct {
+	DB *gorm.DB
+}
+
+//
+// Valid token if task exists.
+func (r *Validator) Valid(token *jwt.Token) (valid bool) {
+	claims := token.Claims.(jwt.MapClaims)
+	v, found := claims["task"]
+	id, cast := v.(float64)
+	if found && cast {
+		task := &model.Task{}
+		valid = r.DB.First(task, id).Error == nil
+	} else {
+		valid = true
+	}
 	return
 }

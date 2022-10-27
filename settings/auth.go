@@ -43,6 +43,10 @@ type Auth struct {
 	RolePath string
 	// Path to user yaml
 	UserPath string
+	// Token settings for builtin provider.
+	Token struct {
+		Key string
+	}
 }
 
 func (r *Auth) Load() (err error) {
@@ -91,6 +95,7 @@ func (r *Auth) Load() (err error) {
 	r.UserPath, found = os.LookupEnv(EnvUserPath)
 	if !found {
 		r.UserPath = "/tmp/users.yaml"
+
 	}
 	return
 }
