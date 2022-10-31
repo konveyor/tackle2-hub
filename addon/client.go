@@ -16,6 +16,13 @@ import (
 )
 
 //
+// Param.
+type Param struct {
+	Key   string
+	Value string
+}
+
+//
 // Client provides a REST client.
 type Client struct {
 	// baseURL for the nub.
@@ -30,7 +37,7 @@ type Client struct {
 
 //
 // Get a resource.
-func (r *Client) Get(path string, object interface{}) (err error) {
+func (r *Client) Get(path string, object interface{}, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		request = &http.Request{
 			Header: http.Header{},
@@ -38,6 +45,13 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 			URL:    r.join(path),
 		}
 		request.Header.Set(auth.Header, r.token)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
 		return
 	}
 	reply, err := r.send(request)

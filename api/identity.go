@@ -5,19 +5,21 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
+	"strconv"
 )
 
 //
 // Routes
 const (
-	IdentitiesRoot    = "/identities"
-	IdentityRoot      = IdentitiesRoot + "/:" + ID
-	AppIdentitiesRoot = ApplicationRoot + IdentitiesRoot
+	IdentitiesRoot = "/identities"
+	IdentityRoot   = IdentitiesRoot + "/:" + ID
 )
 
+//
+// Params.
 const (
-	// Decrypted auth scope.
-	Decrypted = "identities:decrypt"
+	Decrypted = "decrypted"
+	AppId     = "application"
 )
 
 //
@@ -29,14 +31,12 @@ type IdentityHandler struct {
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(auth.Required("identities"))
-	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.GET(IdentitiesRoot+"/", h.List)
+	routeGroup.GET(IdentitiesRoot, h.setDecrypted, h.List)
+	routeGroup.GET(IdentitiesRoot+"/", h.setDecrypted, h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)
 	routeGroup.GET(IdentityRoot, h.Get)
 	routeGroup.PUT(IdentityRoot, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
-	routeGroup.GET(AppIdentitiesRoot, h.ListByApplication)
-	routeGroup.GET(AppIdentitiesRoot+"/", h.ListByApplication)
 }
 
 // Get godoc
@@ -56,7 +56,8 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
-	if h.HasScope(ctx, Decrypted) {
+	decrypted := ctx.GetBool(Decrypted)
+	if decrypted {
 		err := m.Decrypt()
 		if err != nil {
 			ctx.Status(http.StatusInternalServerError)
@@ -77,16 +78,28 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @router /identities [get]
 func (h IdentityHandler) List(ctx *gin.Context) {
 	var list []model.Identity
-	result := h.DB.Find(&list)
+	appId := ctx.Query(AppId)
+	kind := ctx.Query(Kind)
+	db := h.DB
+	if appId != "" {
+		db = db.Where(
+			"id IN (SELECT identityID from ApplicationIdentity WHERE applicationID = ?)",
+			appId)
+	}
+	if kind != "" {
+		db = db.Where(Kind, kind)
+	}
+	result := db.Find(&list)
 	if result.Error != nil {
 		h.listFailed(ctx, result.Error)
 		return
 	}
+	decrypted := ctx.GetBool(Decrypted)
 	resources := []Identity{}
 	for i := range list {
 		r := Identity{}
 		m := &list[i]
-		if h.HasScope(ctx, Decrypted) {
+		if decrypted {
 			err := m.Decrypt()
 			if err != nil {
 				ctx.Status(http.StatusInternalServerError)
@@ -199,47 +212,21 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// ListByApplication  godoc
-// @summary List identities for an application.
-// @description List identities for an application.
-// @tags get
-// @produce json
-// @success 200 {object} []Identity
-// @router /applications/{id}/identities [get]
-// @param id path int true "Application ID"
-func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
-	id := h.pk(ctx)
-	kind := ctx.Param("kind")
-	m := &model.Application{}
-	db := h.preLoad(h.DB, "Identities")
-	result := db.First(m, id)
-	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
-		return
-	}
-	resources := []Identity{}
-	for i := range m.Identities {
-		r := Identity{}
-		id := &m.Identities[i]
-		if kind != "" {
-			if kind != id.Kind {
-				continue
-			}
+//
+// Set `decrypted` in the context.
+// Results in 403 when the token does not have the required scope.
+func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
+	q := ctx.Query(Decrypted)
+	requested, _ := strconv.ParseBool(q)
+	ctx.Set(Decrypted, requested)
+	if requested {
+		if !h.HasScope(ctx, "identities:decrypt") {
+			ctx.Status(http.StatusForbidden)
+		} else {
+			ctx.Next()
 		}
-		if h.HasScope(ctx, Decrypted) {
-			err := id.Decrypt()
-			if err != nil {
-				ctx.Status(http.StatusInternalServerError)
-				return
-			}
-		}
-		r.With(id)
-		resources = append(
-			resources,
-			r)
 	}
-
-	ctx.JSON(http.StatusOK, resources)
+	return
 }
 
 //
