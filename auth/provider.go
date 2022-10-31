@@ -60,56 +60,45 @@ func (e *NotValid) Is(err error) (matched bool) {
 //
 // Scope represents an authorization scope.
 type Scope interface {
-	// Allow determines whether the scope gives access to the resource with the method.
-	Allow(resource string, method string) bool
-	// HasModifier determines if the matched scopes include the
-	// specified modifier.
-	HasModifier(name string) bool
+	// Match returns whether the scope is a match.
+	Match(resource string, method string) bool
+	//String representations of the scope.
+	String() (s string)
 }
 
 //
-// BaseScope.
+// BaseScope provides base behavior.
 type BaseScope struct {
-	resource string
-	method   string
-	mods     []string
+	Resource string
+	Method   string
 }
 
 //
 // With parses a scope and populate fields.
-// Format: <resource>:<method>:<modifier>:...
+// Format: <resource>:<method>
 func (r *BaseScope) With(s string) {
 	part := strings.Split(s, ":")
 	n := len(part)
 	if n > 0 {
-		r.resource = part[0]
+		r.Resource = part[0]
 	}
 	if n > 1 {
-		r.method = part[1]
-	}
-	if n > 2 {
-		r.mods = part[2:]
+		r.Method = part[1]
 	}
 	return
 }
 
 //
-// Allow determines whether the scope gives access to the resource with the method.
-func (r *BaseScope) Allow(resource string, method string) (b bool) {
-	b = (r.resource == "*" || r.resource == resource) &&
-		(r.method == "*" || r.method == method)
+// Match returns whether the scope is a match.
+func (r *BaseScope) Match(resource string, method string) (b bool) {
+	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&
+		(r.Method == "*" || strings.EqualFold(r.Method, method))
 	return
 }
 
 //
-//HasModifier determines if the matched scopes include the
-// specified modifier.
-func (r *BaseScope) HasModifier(name string) (b bool) {
-	for _, m := range r.mods {
-		if strings.ToLower(m) == strings.ToLower(name) {
-			b = true
-			break
-		}
-	}
+// String representations of the scope.
+func (r *BaseScope) String() (s string) {
+	s = strings.Join([]string{r.Resource, r.Method}, ":")
 	return
 }

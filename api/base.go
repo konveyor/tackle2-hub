@@ -272,11 +272,18 @@ func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 }
 
 //
-// HasModifier returns the matched scope has the specified modifier.
-func (h *BaseHandler) HasModifier(ctx *gin.Context, mod string) (b bool) {
-	if object, found := ctx.Get(auth.MatchedScope); found {
-		if scope, cast := object.(auth.Scope); cast {
-			b = scope.HasModifier(mod)
+// HasScope determines if the token has the specified scope.
+func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
+	in := auth.BaseScope{}
+	in.With(scope)
+	if object, found := ctx.Get(auth.TokenScopes); found {
+		if scopes, cast := object.([]auth.Scope); cast {
+			for _, s := range scopes {
+				b = s.Match(in.Resource, in.Method)
+				if b {
+					return
+				}
+			}
 		}
 	}
 	return

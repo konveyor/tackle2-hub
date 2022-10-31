@@ -11,6 +11,23 @@ import (
 var Settings = &settings.Settings
 
 //
+// AddonRole defines the addon scopes.
+var AddonRole = []string{
+	"applications:get",
+	"applications:put",
+	"identities:get",
+	"identities:decrypt",
+	"proxies:get",
+	"settings:get",
+	"tags:*",
+	"tagtypes:*",
+	"tasks:get",
+	"tasks.report:*",
+	"volumes:get",
+	"volumes:put",
+}
+
+//
 // Role represents a RBAC role which grants
 // access to particular resources in the hub.
 type Role struct {

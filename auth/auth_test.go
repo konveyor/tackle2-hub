@@ -29,8 +29,8 @@ func TestValid(t *testing.T) {
 	tokenScopes := p.Scopes(jwToken)
 	g.Expect(tokenScopes).To(
 		gomega.Equal([]Scope{
-			&BaseScope{resource: "things", method: "get"},
-			&BaseScope{resource: "things", method: "post"},
+			&BaseScope{Resource: "things", Method: "get"},
+			&BaseScope{Resource: "things", Method: "post"},
 		}))
 	//
 	// User
@@ -69,29 +69,32 @@ func TestScope(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	scope := BaseScope{}
 	//
-	// Parsing.
-	scope.With("things:get:a:b")
-	g.Expect(scope.resource).To(gomega.Equal("things"))
-	g.Expect(scope.method).To(gomega.Equal("get"))
-	g.Expect(scope.mods).To(gomega.Equal([]string{"a", "b"}))
-	g.Expect(scope.Allow("things", "get")).To(gomega.BeTrue())
-	g.Expect(scope.Allow("xx", "get")).To(gomega.BeFalse())
-	g.Expect(scope.Allow("things", "xx")).To(gomega.BeFalse())
+	// Parsing & match.
+	scope.With("things:get")
+	g.Expect(scope.Resource).To(gomega.Equal("things"))
+	g.Expect(scope.Method).To(gomega.Equal("get"))
+	g.Expect(scope.Match("things", "get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("Things", "Get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("xx", "get")).To(gomega.BeFalse())
+	g.Expect(scope.Match("things", "xx")).To(gomega.BeFalse())
+	scope.With("things")
+	g.Expect(scope.Resource).To(gomega.Equal("things"))
+
 	//
 	// Wildcard.
 	scope.With("things:*")
-	g.Expect(scope.Allow("things", "get")).To(gomega.BeTrue())
-	g.Expect(scope.Allow("things", "xx")).To(gomega.BeTrue())
-	g.Expect(scope.Allow("xx", "get")).To(gomega.BeFalse())
+	g.Expect(scope.Match("things", "get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("things", "xx")).To(gomega.BeTrue())
+	g.Expect(scope.Match("xx", "get")).To(gomega.BeFalse())
 	//
 	// Wildcard.
 	scope.With("*:get")
-	g.Expect(scope.Allow("things", "get")).To(gomega.BeTrue())
-	g.Expect(scope.Allow("things", "xx")).To(gomega.BeFalse())
-	g.Expect(scope.Allow("xx", "get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("things", "get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("things", "xx")).To(gomega.BeFalse())
+	g.Expect(scope.Match("xx", "get")).To(gomega.BeTrue())
 	//
 	// Wildcard.
 	scope.With("*:*")
-	g.Expect(scope.Allow("things", "get")).To(gomega.BeTrue())
-	g.Expect(scope.Allow("xx", "xx")).To(gomega.BeTrue())
+	g.Expect(scope.Match("things", "get")).To(gomega.BeTrue())
+	g.Expect(scope.Match("xx", "xx")).To(gomega.BeTrue())
 }

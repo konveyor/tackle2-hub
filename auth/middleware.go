@@ -5,13 +5,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
-	"strings"
 )
 
 const (
-	Header       = "Authorization"
-	MatchedScope = "Scope"
-	TokenUser    = "User"
+	Header      = "Authorization"
+	TokenScopes = "Scopes"
+	TokenUser   = "User"
 )
 
 //
@@ -37,10 +36,11 @@ func Required(requiredScope string) func(*gin.Context) {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
-			for _, scope := range p.Scopes(jwToken) {
-				if scope.Allow(requiredScope, strings.ToLower(c.Request.Method)) {
+			scopes := p.Scopes(jwToken)
+			for _, scope := range scopes {
+				if scope.Match(requiredScope, c.Request.Method) {
 					c.Set(TokenUser, p.User(jwToken))
-					c.Set(MatchedScope, scope)
+					c.Set(TokenScopes, scopes)
 					matched = true
 					break
 				}

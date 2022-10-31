@@ -73,6 +73,8 @@ type Manager struct {
 	DB *gorm.DB
 	// k8s client.
 	Client k8s.Client
+	// Addon token scopes.
+	Scopes []string
 }
 
 //
@@ -579,7 +581,7 @@ func (r *Task) secret(addon *crd.Addon) (secret core.Secret) {
 	user := "addon:" + addon.Name
 	token, _ := auth.Hub.NewToken(
 		user,
-		addon.Scopes(),
+		auth.AddonRole,
 		jwt.MapClaims{
 			"task": r.ID,
 		})

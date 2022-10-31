@@ -33,7 +33,7 @@ func (r *NoAuth) Authenticate(token string) (jwToken *jwt.Token, err error) {
 // For the NoAuth provider, this just returns a single instance
 // of the NoAuthScope.
 func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
-	scopes = append(scopes, &NoAuthScope{})
+	scopes = append(scopes, &BaseScope{"*", "*"})
 	return
 }
 
@@ -41,24 +41,6 @@ func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 // User mocks username for NoAuth
 func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 	name = "admin.noauth"
-	return
-}
-
-//
-// NoAuthScope always permits access.
-type NoAuthScope struct{}
-
-//
-// Allow checks whether the scope gives access to the resource with the method.
-func (r *NoAuthScope) Allow(_ string, _ string) (ok bool) {
-	ok = true
-	return
-}
-
-//
-// HasModifier determines if the matched scopes include the
-// specified modifier.
-func (r *NoAuthScope) HasModifier(_ string) (b bool) {
 	return
 }
 

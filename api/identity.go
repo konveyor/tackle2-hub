@@ -16,8 +16,8 @@ const (
 )
 
 const (
-	// Decrypted auth modifier.
-	Decrypted = "decrypted"
+	// Decrypted auth scope.
+	Decrypted = "identities:decrypt"
 )
 
 //
@@ -56,7 +56,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
-	if h.HasModifier(ctx, Decrypted) {
+	if h.HasScope(ctx, Decrypted) {
 		err := m.Decrypt()
 		if err != nil {
 			ctx.Status(http.StatusInternalServerError)
@@ -86,7 +86,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	for i := range list {
 		r := Identity{}
 		m := &list[i]
-		if h.HasModifier(ctx, Decrypted) {
+		if h.HasScope(ctx, Decrypted) {
 			err := m.Decrypt()
 			if err != nil {
 				ctx.Status(http.StatusInternalServerError)
@@ -226,7 +226,7 @@ func (h IdentityHandler) ListByApplication(ctx *gin.Context) {
 				continue
 			}
 		}
-		if h.HasModifier(ctx, Decrypted) {
+		if h.HasScope(ctx, Decrypted) {
 			err := id.Decrypt()
 			if err != nil {
 				ctx.Status(http.StatusInternalServerError)
