@@ -48,11 +48,11 @@ func (h *Application) Update(r *api.Application) (err error) {
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
 	p1 := Param{
-		Key: api.AppId,
+		Key:   api.AppId,
 		Value: strconv.Itoa(int(id)),
 	}
 	p2 := Param{
-		Key: api.Decrypted,
+		Key:   api.Decrypted,
 		Value: "1",
 	}
 	path := Params{api.ID: id}.inject(api.IdentitiesRoot)

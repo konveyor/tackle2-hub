@@ -16,7 +16,7 @@ type Identity struct {
 func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 	r = &api.Identity{}
 	p := Param{
-		Key: api.Decrypted,
+		Key:   api.Decrypted,
 		Value: "1",
 	}
 	path := Params{api.ID: id}.inject(api.IdentityRoot)
@@ -34,7 +34,7 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 func (h *Identity) List() (list []api.Identity, err error) {
 	list = []api.Identity{}
 	p := Param{
-		Key: api.Decrypted,
+		Key:   api.Decrypted,
 		Value: "1",
 	}
 	err = h.client.Get(api.IdentitiesRoot, &list, p)

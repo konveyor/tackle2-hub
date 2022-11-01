@@ -30,8 +30,8 @@ func (r *NoAuth) Authenticate(token string) (jwToken *jwt.Token, err error) {
 
 //
 // Scopes decodes a list of scopes from the token.
-// For the NoAuth provider, this just returns a single instance
-// of the NoAuthScope.
+// For the NoAuth provider, this just returns a single
+// wildcard scope matching everything.
 func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	scopes = append(scopes, &BaseScope{"*", "*"})
 	return
