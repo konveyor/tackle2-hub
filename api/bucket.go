@@ -130,6 +130,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 	}
 
 	var tarOutput bytes.Buffer
+	entriesCount := 0
 	tarWriter := tar.NewWriter(&tarOutput)
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -153,6 +154,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 			if err := tarWriter.WriteHeader(hdr); err != nil {
 				return err
 			}
+			entriesCount += 1
 		case tar.TypeReg:
 			// Add file with its content to the archive
 			if err := tarWriter.WriteHeader(hdr); err != nil {
@@ -163,6 +165,7 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 			if _, err = io.Copy(tarWriter, file); err != nil {
 				return err
 			}
+			entriesCount += 1
 		default:
 			// Other file types like block/character device or TypeSymlink are skipped.
 			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
@@ -188,6 +191,11 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 
 	if err := tarWriter.Close(); err != nil {
 		return
+	}
+
+	// Indicate empty tar.gz archive with the 204 HTTP code
+	if entriesCount < 1 {
+		ctx.Writer.WriteHeader(http.StatusNoContent)
 	}
 
 	fromTar := bufio.NewReader(&tarOutput)
