@@ -182,8 +182,13 @@ def tackle2path(obj):
     return "/hub/%s" % obj
 
 def loadDump(path):
-    data = open(path)
-    return json.load(data)
+    try:
+        data = open(path)
+        return json.load(data)
+    except:
+        print("ERROR opening dump file %s, assuming empty data." % path)
+        return []
+
 
 def saveJSON(path, jsonData):
     dumpFile = open(path + ".json", 'w')
@@ -200,7 +205,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'buckets']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'tasks', 'taskgroups', 'buckets']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -589,7 +594,7 @@ class TackleTool:
         ### IDENTITY ###
         collection = apiJSON(self.tackle2Url + "/hub/identities", self.tackle2Token)
         for id2 in collection:
-            id             = Tackle2Object(pr2)
+            id             = Tackle2Object(id2)
             id.kind        = id2['kind']
             id.name        = id2['name']
             id.description = id2['description']
@@ -598,6 +603,32 @@ class TackleTool:
             id.key         = id2['key']
             id.settings    = id2['settings']
             self.add('identities', id)
+
+        ### TASKS ###
+        collection = apiJSON(self.tackle2Url + "/hub/tasks", self.tackle2Token)
+        # filter only relevant state ?
+        for t2 in collection:
+            task          = Tackle2Object(t2)
+            task.addon    = t2['addon']
+            task.name     = t2['name']
+            task.state    = t2['state']
+            task.data     = t2['data']
+            self.add('tasks', task)
+            self.add('buckets', {'owner': "tasks/%s" % task.id})
+
+        ### TASKGROUPS ###
+        collection = apiJSON(self.tackle2Url + "/hub/taskgroups", self.tackle2Token)
+        # filter only relevant state ?
+        for tg2 in collection:
+            tg          = Tackle2Object(tg2)
+            tg.addon    = tg2['addon']
+            tg.name     = tg2['name']
+            tg.state    = tg2['state']
+            tg.data     = tg2['data']
+            tg.tasks    = tg2['tasks']
+            self.add('taskgroups', tg)
+            self.add('buckets', {'owner': "taskgroups/%s" % tg.id})
+
 
     def dumpTackle2Buckets(self):
         bucketDir = "%s/buckets" % self.dataDir
