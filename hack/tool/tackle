@@ -205,7 +205,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'tasks', 'taskgroups', 'buckets']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'tasks', 'buckets']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
@@ -496,6 +496,7 @@ class TackleTool:
             app.repository      = app2['repository'] 
             app.binary          = app2['binary']
             app.facts           = app2['facts']
+            app.identities      = app2['identities']
             self.add('buckets', {'owner': "applications/%s" % app.id})
             self.add('applications', app)
 
@@ -615,20 +616,6 @@ class TackleTool:
             task.data     = t2['data']
             self.add('tasks', task)
             self.add('buckets', {'owner': "tasks/%s" % task.id})
-
-        ### TASKGROUPS ###
-        collection = apiJSON(self.tackle2Url + "/hub/taskgroups", self.tackle2Token)
-        # filter only relevant state ?
-        for tg2 in collection:
-            tg          = Tackle2Object(tg2)
-            tg.addon    = tg2['addon']
-            tg.name     = tg2['name']
-            tg.state    = tg2['state']
-            tg.data     = tg2['data']
-            tg.tasks    = tg2['tasks']
-            self.add('taskgroups', tg)
-            self.add('buckets', {'owner': "taskgroups/%s" % tg.id})
-
 
     def dumpTackle2Buckets(self):
         bucketDir = "%s/buckets" % self.dataDir
