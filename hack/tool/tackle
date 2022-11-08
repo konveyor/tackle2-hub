@@ -84,6 +84,7 @@ def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tac
     r = requests.post(url, data=data, verify=False)
     if r.ok:
         respData = json.loads(r.text)
+        debugPrint("Got access token: %s" % respData['access_token'])
         return respData['access_token']
     else:
         print("ERROR getting auth token from %s" % url)
@@ -166,7 +167,7 @@ def apiFilePost(url, token, filePath, ignoreErrors=False):
     # Open local file
     with open(filePath, 'rb') as f:
         # Upload the content
-        resp = requests.post(url, files={'file': f}, headers={"Authorization": "Bearer %s" % token}, verify=False)
+        resp = requests.post(url, files={'file': f}, headers={"Authorization": "Bearer %s" % token, "X-Directory": "expand"}, verify=False)
         # Check for errors
         if not resp.ok:
             if ignoreErrors:
@@ -626,6 +627,13 @@ class TackleTool:
             bucketFilename = bucket['owner'].replace("/", "--")
             apiFileGet(self.tackle2Url + "/hub/" + bucket['owner'] + "/bucket/", self.tackle2Token, bucketDir + "/%s.tar.gz" % bucketFilename)
 
+    def uploadTackle2Buckets(self):
+        bucketDir = "%s/buckets/" % self.dataDir
+        for bucketArchive in os.listdir(bucketDir):
+            ownerPath = bucketArchive.replace("--", "/").replace(".tar.gz", "")
+            print("Uploading bucket archive for %s.." % ownerPath)
+            apiFilePost(self.tackle2Url + "/hub/" + ownerPath + "/bucket/", self.tackle2Token, bucketDir + bucketArchive)
+
     def add(self, type, item):
         for existingItem in self.data[type]:
             if hasattr(item, 'id') and item.id == existingItem.id:  # assessment links objects don't have primary key id
@@ -809,7 +817,7 @@ if cmdWanted(args, "export"):
     if args.skipBuckets:
         print("Skipping Buckets file content export.")
     else:
-        print("Downloading Bucket files into %s/buckets" % args.data_dir)
+        print("Downloading Bucket content into %s/buckets" % args.data_dir)
         tool.dumpTackle2Buckets()
     print("Done. The data could be imported to another Tackle 2 using command \"tackle clean-all && tackle import\"")
 
@@ -828,6 +836,12 @@ if cmdWanted(args, "import"):
     if not args.skipDestCheck:
         tool.preImportCheck()
     tool.uploadTackle2(ignoreErrors=args.ignoreImportErrors)
+
+    if args.skipBuckets:
+        print("Skipping Buckets content content import.")
+    else:
+        print("Uploading Bucket content into %s/buckets" % args.data_dir)
+        tool.uploadTackle2Buckets()
     print("Done. Open your Tackle2 now!")
 
 # Clean created objects in Tackle2
