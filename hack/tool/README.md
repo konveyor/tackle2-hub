@@ -31,6 +31,19 @@ In this case, two configuration files will be needed, one for exported Tackle 2 
 - ```tackle clean-all```
 - ```tackle import```
 
+### Backup/restore (export and import data on the same Tackle 2 instance)
+
+Tackle 2 can be fully exported and imported, that can be used also as a backup/restore solution for your Tackle 2 installation.
+
+Backup
+- ```tackle export```
+- store the ```tackle-data``` directory on a safe place
+
+Restore
+- place the ```tackle-data``` directory backup to the current directory
+- ```tackle clean-all```
+- ```tackle import```
+
 ### If the import failed
 
 The ```tackle import``` command could fail in a pre-import check phase which ensures there are no resources of given type with the same ID in the destination Tackle 2 (error after ```Checking tagtypes in destination Tackle2..``` etc.). In this case, run ```tackle clean``` command, which will remove such objects from the destination Tackle 2 API or remove it manually either from the destination Tackle 2 or from the JSON data files.
