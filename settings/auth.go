@@ -16,7 +16,7 @@ const (
 	EnvKeycloakAdminPass     = "KEYCLOAK_ADMIN_PASS"
 	EnvKeycloakAdminRealm    = "KEYCLOAK_ADMIN_REALM"
 	EnvKeycloakReqPassUpdate = "KEYCLOAK_REQ_PASS_UPDATE"
-	EnvAddonToken            = "ADDON_TOKEN"
+	EnvBuiltinTokenKey       = "ADDON_TOKEN"
 	EnvRolePath              = "ROLE_PATH"
 	EnvUserPath              = "USER_PATH"
 )
@@ -37,8 +37,6 @@ type Auth struct {
 		}
 		RequirePasswordUpdate bool
 	}
-	// Addon API access token
-	AddonToken string
 	// Path to role yaml
 	RolePath string
 	// Path to user yaml
@@ -84,9 +82,9 @@ func (r *Auth) Load() (err error) {
 		r.Keycloak.Admin.Realm = "master"
 	}
 	r.Keycloak.RequirePasswordUpdate = getEnvBool(EnvKeycloakReqPassUpdate, true)
-	r.AddonToken, found = os.LookupEnv(EnvAddonToken)
+	r.Token.Key, found = os.LookupEnv(EnvBuiltinTokenKey)
 	if !found {
-		r.AddonToken = "konveyor"
+		r.Token.Key = "konveyor"
 	}
 	r.RolePath, found = os.LookupEnv(EnvRolePath)
 	if !found {
