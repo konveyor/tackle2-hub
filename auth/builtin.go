@@ -23,6 +23,12 @@ type NoAuth struct {
 }
 
 //
+// NewToken creates a new signed token.
+func (r NoAuth) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
+	return
+}
+
+//
 // Authenticate the token
 func (r *NoAuth) Authenticate(token string) (jwToken *jwt.Token, err error) {
 	return

@@ -11,14 +11,21 @@ var (
 	// Log logger.
 	Log = logging.WithName("auth")
 	// Hub provider.
-	Hub = &Builtin{}
+	Hub Provider
 	// Remote provider.
 	Remote Provider
 )
 
+func init() {
+	Hub = &NoAuth{}
+	Remote = &NoAuth{}
+}
+
 //
 // Provider provides RBAC.
 type Provider interface {
+	// NewToken creates a signed token.
+	NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error)
 	// Authenticate authenticates and validates the token.
 	Authenticate(token string) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.

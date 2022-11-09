@@ -145,12 +145,11 @@ func main() {
 		if err != nil {
 			return
 		}
+		auth.Hub = &auth.Builtin{}
 		auth.Remote = auth.NewKeycloak(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 		)
-	} else {
-		auth.Remote = &auth.NoAuth{}
 	}
 	//
 	// Task

@@ -32,6 +32,12 @@ type Keycloak struct {
 }
 
 //
+// NewToken creates a new signed token.
+func (r Keycloak) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
+	return
+}
+
+//
 // Authenticate the token
 func (r *Keycloak) Authenticate(token string) (jwToken *jwt.Token, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
