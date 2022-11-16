@@ -18,7 +18,6 @@ import (
 	"path"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -80,7 +79,12 @@ type Manager struct {
 //
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	auth.Validators = append(auth.Validators, &Validator{DB: m.DB})
+	auth.Validators = append(
+		auth.Validators,
+		&Validator{
+			Client: m.Client,
+			DB:     m.DB,
+		})
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Done.")
@@ -613,98 +617,4 @@ func (r *Task) labels() map[string]string {
 		"app":  "tackle",
 		"role": "task",
 	}
-}
-
-//
-// Rule defines postpone rules.
-type Rule interface {
-	Match(candidate, other *model.Task) bool
-}
-
-//
-// RuleUnique running tasks must be unique by:
-//   - application
-//   - variant
-//   - addon.
-type RuleUnique struct {
-}
-
-//
-// Match determines the match.
-func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
-	if candidate.ApplicationID == nil || other.ApplicationID == nil {
-		return
-	}
-	if *candidate.ApplicationID != *other.ApplicationID {
-		return
-	}
-	if candidate.Addon != other.Addon {
-		return
-	}
-	matched = true
-	Log.Info(
-		"Rule:Unique matched.",
-		"candidate",
-		candidate.ID,
-		"by",
-		other.ID)
-
-	return
-}
-
-//
-// RuleIsolated policy.
-type RuleIsolated struct {
-}
-
-//
-// Match determines the match.
-func (r *RuleIsolated) Match(candidate, other *model.Task) (matched bool) {
-	matched = r.hasPolicy(candidate, Isolated) || r.hasPolicy(other, Isolated)
-	if matched {
-		Log.Info(
-			"Rule:Isolated matched.",
-			"candidate",
-			candidate.ID,
-			"by",
-			other.ID)
-	}
-
-	return
-}
-
-//
-// Returns true if the task policy includes: isolated
-func (r *RuleIsolated) hasPolicy(task *model.Task, name string) (matched bool) {
-	for _, p := range strings.Split(task.Policy, ";") {
-		p = strings.TrimSpace(p)
-		p = strings.ToLower(p)
-		if p == name {
-			matched = true
-			break
-		}
-	}
-
-	return
-}
-
-//
-// Validator token validator.
-type Validator struct {
-	DB *gorm.DB
-}
-
-//
-// Valid token if task exists.
-func (r *Validator) Valid(token *jwt.Token) (valid bool) {
-	claims := token.Claims.(jwt.MapClaims)
-	v, found := claims["task"]
-	id, cast := v.(float64)
-	if found && cast {
-		task := &model.Task{}
-		valid = r.DB.First(task, id).Error == nil
-	} else {
-		valid = true
-	}
-	return
 }
