@@ -16,6 +16,10 @@ const (
 	ProxyRoot   = ProxiesRoot + "/:" + ID
 )
 
+const (
+	Kind = "kind"
+)
+
 //
 // ProxyHandler handles proxy resource routes.
 type ProxyHandler struct {
@@ -24,7 +28,7 @@ type ProxyHandler struct {
 
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "proxies"))
+	routeGroup.Use(auth.Required("proxies"))
 	routeGroup.GET(ProxiesRoot, h.List)
 	routeGroup.GET(ProxiesRoot+"/", h.List)
 	routeGroup.POST(ProxiesRoot, h.Create)
@@ -65,10 +69,10 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 // @router /proxies [get]
 func (h ProxyHandler) List(ctx *gin.Context) {
 	var list []model.Proxy
-	kind := ctx.Query("kind")
+	kind := ctx.Query(Kind)
 	db := h.preLoad(h.DB, clause.Associations)
 	if kind != "" {
-		db = db.Where("kind", kind)
+		db = db.Where(Kind, kind)
 	}
 	result := db.Find(&list)
 	if result.Error != nil {

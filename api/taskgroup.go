@@ -31,7 +31,7 @@ type TaskGroupHandler struct {
 // AddRoutes adds routes.
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "tasks"))
+	routeGroup.Use(auth.Required("tasks"))
 	routeGroup.GET(TaskGroupsRoot, h.List)
 	routeGroup.GET(TaskGroupsRoot+"/", h.List)
 	routeGroup.POST(TaskGroupsRoot, h.Create)

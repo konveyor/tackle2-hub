@@ -5,11 +5,9 @@ Tackle hub/addon integration.
 package addon
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
 	"net/http"
 	"os"
@@ -109,29 +107,17 @@ func (h *Adapter) Client() *Client {
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
 	//
-	// Load secret.
-	secret := &task.Secret{}
-	b, err := os.ReadFile(Settings.Addon.Path.Secret)
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(b, secret)
-	if err != nil {
-		panic(err)
-	}
-	//
 	// Build REST client.
 	client := &Client{
 		baseURL: Settings.Addon.Hub.URL,
 		http:    &http.Client{},
-		token:   secret.Hub.Token,
+		token:   Settings.Addon.Hub.Token,
 	}
 	//
 	// Build Adapter.
 	adapter = &Adapter{
 		Task: Task{
 			client: client,
-			secret: secret,
 		},
 		Setting: Setting{
 			client: client,
@@ -157,10 +143,7 @@ func newAdapter() (adapter *Adapter) {
 		client: client,
 	}
 
-	Log.Info(
-		"Addon created.",
-		"data",
-		adapter.Data())
+	Log.Info("Addon (adapter) created.")
 
 	return
 }

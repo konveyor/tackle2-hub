@@ -34,7 +34,7 @@ type AdoptionPlanHandler struct {
 // AddRoutes adds routes.
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "adoptionplans"))
+	routeGroup.Use(auth.Required("adoptionplans"))
 	routeGroup.POST(AdoptionPlansRoot, h.Graph)
 }
 

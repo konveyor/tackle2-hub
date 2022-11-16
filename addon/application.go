@@ -2,6 +2,7 @@ package addon
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
+	"strconv"
 )
 
 //
@@ -46,8 +47,16 @@ func (h *Application) Update(r *api.Application) (err error) {
 // FindIdentity by kind.
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	path := Params{api.ID: id}.inject(api.AppIdentitiesRoot)
-	err = h.client.Get(path, &list)
+	p1 := Param{
+		Key:   api.AppId,
+		Value: strconv.Itoa(int(id)),
+	}
+	p2 := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	path := Params{api.ID: id}.inject(api.IdentitiesRoot)
+	err = h.client.Get(path, &list, p1, p2)
 	if err != nil {
 		return
 	}
@@ -55,11 +64,7 @@ func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found
 		r = &list[i]
 		if r.Kind == kind {
 			m := r.Model()
-			err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 			r.With(m)
-			if err != nil {
-				return
-			}
 			found = true
 			break
 		}

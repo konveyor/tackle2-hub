@@ -25,7 +25,7 @@ type BusinessServiceHandler struct {
 // AddRoutes adds routes.
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "businessservices"))
+	routeGroup.Use(auth.Required("businessservices"))
 	routeGroup.GET(BusinessServicesRoot, h.List)
 	routeGroup.GET(BusinessServicesRoot+"/", h.List)
 	routeGroup.POST(BusinessServicesRoot, h.Create)

@@ -131,12 +131,7 @@ func main() {
 	}
 	//
 	// Auth
-	var provider auth.Provider
 	if settings.Settings.Auth.Required {
-		k := auth.NewKeycloak(
-			settings.Settings.Auth.Keycloak.Host,
-			settings.Settings.Auth.Keycloak.Realm,
-		)
 		r := auth.NewReconciler(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
@@ -150,9 +145,11 @@ func main() {
 		if err != nil {
 			return
 		}
-		provider = &k
-	} else {
-		provider = &auth.NoAuth{}
+		auth.Hub = &auth.Builtin{}
+		auth.Remote = auth.NewKeycloak(
+			settings.Settings.Auth.Keycloak.Host,
+			settings.Settings.Auth.Keycloak.Realm,
+		)
 	}
 	//
 	// Task
@@ -187,7 +184,7 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	for _, h := range api.All() {
-		h.With(db, client, provider)
+		h.With(db, client)
 		h.AddRoutes(router)
 	}
 	err = router.Run()

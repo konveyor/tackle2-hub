@@ -25,7 +25,7 @@ type DependencyHandler struct {
 // AddRoutes adds routes.
 func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "dependencies"))
+	routeGroup.Use(auth.Required("dependencies"))
 	routeGroup.GET(DependenciesRoot, h.List)
 	routeGroup.GET(DependenciesRoot+"/", h.List)
 	routeGroup.POST(DependenciesRoot, h.Create)

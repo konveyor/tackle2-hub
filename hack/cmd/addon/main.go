@@ -201,37 +201,31 @@ func tag(d *Data, application *api.Application) (err error) {
 	tag.TagType.ID = 1
 	err = addon.Tag.Create(tag)
 	if err != nil {
-		if !errors.Is(err, &hub.Conflict{}) {
-			return
-		} else {
+		if errors.Is(err, &hub.Conflict{}) {
 			err = nil
+		} else {
+			return
 		}
 	}
 	//
-	// append tag.
+	// add tag.
+	for _, ref := range application.Tags {
+		if ref.Name == tag.Name {
+			return
+		}
+	}
 	application.Tags = append(
 		application.Tags,
 		api.Ref{ID: tag.ID})
 	//
 	// Update application.
-	_ = addon.Application.Update(application)
+	err = addon.Application.Update(application)
 	return
 }
 
 //
-// Data Addon data passed in the secret.
+// Data Addon input.
 type Data struct {
 	// Path to be listed.
 	Path string `json:"path"`
-	// Delay on error (minutes).
-	Delay int `json:"delay"`
-}
-
-//
-// Delay as specified.
-func (d *Data) delay() {
-	if d.Delay > 0 {
-		duration := time.Minute * time.Duration(d.Delay)
-		time.Sleep(duration)
-	}
 }

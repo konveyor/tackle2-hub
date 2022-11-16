@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/auth"
 	"io"
@@ -13,6 +14,13 @@ import (
 	"net/url"
 	"time"
 )
+
+//
+// Param.
+type Param struct {
+	Key   string
+	Value string
+}
 
 //
 // Client provides a REST client.
@@ -29,7 +37,7 @@ type Client struct {
 
 //
 // Get a resource.
-func (r *Client) Get(path string, object interface{}) (err error) {
+func (r *Client) Get(path string, object interface{}, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		request = &http.Request{
 			Header: http.Header{},
@@ -37,6 +45,13 @@ func (r *Client) Get(path string, object interface{}) (err error) {
 			URL:    r.join(path),
 		}
 		request.Header.Set(auth.Header, r.token)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
 		return
 	}
 	reply, err := r.send(request)
@@ -213,6 +228,12 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 			Log.Info(err.Error())
 			time.Sleep(time.Second * 10)
 		} else {
+			Log.Info(
+				fmt.Sprintf(
+					"|%d|  %s %s",
+					response.StatusCode,
+					request.Method,
+					request.URL.Path))
 			break
 		}
 	}

@@ -15,13 +15,16 @@ type Identity struct {
 // Get an identity by ID.
 func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 	r = &api.Identity{}
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
 	path := Params{api.ID: id}.inject(api.IdentityRoot)
-	err = h.client.Get(path, r)
+	err = h.client.Get(path, r, p)
 	if err != nil {
 		return
 	}
 	m := r.Model()
-	err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 	r.With(m)
 	return
 }
@@ -30,18 +33,18 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 // List identities.
 func (h *Identity) List() (list []api.Identity, err error) {
 	list = []api.Identity{}
-	err = h.client.Get(api.IdentitiesRoot, &list)
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	err = h.client.Get(api.IdentitiesRoot, &list, p)
 	if err != nil {
 		return
 	}
 	for i := range list {
 		r := &list[i]
 		m := r.Model()
-		err = m.Decrypt(Addon.secret.Hub.Encryption.Passphrase)
 		r.With(m)
-		if err != nil {
-			return
-		}
 	}
 	return
 }

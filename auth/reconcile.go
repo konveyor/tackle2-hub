@@ -85,7 +85,7 @@ func (r *Reconciler) Reconcile() (err error) {
 		return
 	}
 
-	log.Info("Realm synced.")
+	Log.Info("Realm synced.")
 
 	return
 }
@@ -124,7 +124,7 @@ func (r *Reconciler) ensureRealm() (err error) {
 				DisplayName: &displayName,
 				Enabled:     &enabled,
 			}
-			log.Info("Creating realm.", "realm", r.realm)
+			Log.Info("Creating realm.", "realm", r.realm)
 			_, err = r.client.CreateRealm(context.Background(), r.token.AccessToken, realm)
 			if err != nil {
 				err = liberr.Wrap(err)
@@ -159,7 +159,7 @@ func (r *Reconciler) ensureClient() (err error) {
 		RedirectURIs:              &[]string{"*"},
 		WebOrigins:                &[]string{"*"},
 	}
-	log.Info("Creating client.", "client", r.id)
+	Log.Info("Creating client.", "client", r.id)
 	_, err = r.client.CreateClient(context.Background(), r.token.AccessToken, r.realm, newClient)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -191,7 +191,7 @@ func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 			if Settings.Keycloak.RequirePasswordUpdate {
 				u.RequiredActions = &[]string{"UPDATE_PASSWORD"}
 			}
-			log.Info("Creating user.", "user", user.Name)
+			Log.Info("Creating user.", "user", user.Name)
 			userid, kErr := r.client.CreateUser(context.Background(), r.token.AccessToken, r.realm, u)
 			if kErr != nil {
 				err = liberr.Wrap(kErr)
@@ -212,7 +212,7 @@ func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 			}
 			realm.Users[user.Name] = u
 		} else {
-			log.Info("Removing any existing roles from user.", "user", user.Name)
+			Log.Info("Removing any existing roles from user.", "user", user.Name)
 			err = r.client.DeleteRealmRoleFromUser(
 				context.Background(), r.token.AccessToken, r.realm, *realm.Users[user.Name].ID, allRoles,
 			)
@@ -230,7 +230,7 @@ func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 			}
 			realmRoles = append(realmRoles, realmRole)
 		}
-		log.Info("Applying roles to user.", "user", user.Name, "roles", user.Roles)
+		Log.Info("Applying roles to user.", "user", user.Name, "roles", user.Roles)
 		err = r.client.AddRealmRoleToUser(
 			context.Background(), r.token.AccessToken, r.realm, *realm.Users[user.Name].ID, realmRoles,
 		)
@@ -272,7 +272,7 @@ func (r *Reconciler) ensureRoles(realm *Realm) (err error) {
 				return
 			}
 			realm.Roles[role.Name] = *realmRole
-			log.Info("Created realm role.", "role", role.Name, "realm", r.realm)
+			Log.Info("Created realm role.", "role", role.Name, "realm", r.realm)
 		}
 
 		for _, res := range role.Resources {
@@ -290,7 +290,7 @@ func (r *Reconciler) ensureRoles(realm *Realm) (err error) {
 					}
 					scope.ID = &id
 					realm.Scopes[scopeName] = scope
-					log.Info("Created client scope.", "scope", scopeName, "realm", r.realm)
+					Log.Info("Created client scope.", "scope", scopeName, "realm", r.realm)
 				}
 				scopesToRoles[*realm.Scopes[scopeName].ID] = append(
 					scopesToRoles[*realm.Scopes[scopeName].ID], realm.Roles[role.Name],
@@ -308,7 +308,7 @@ func (r *Reconciler) ensureRoles(realm *Realm) (err error) {
 		return
 	}
 	for sid, roles := range scopesToRoles {
-		log.Info("Syncing scope mappings.", "scope", sid, "roles", roles)
+		Log.Info("Syncing scope mappings.", "scope", sid, "roles", roles)
 		// get the roles that are already mapped to this client scope
 		var existingRoles []*gocloak.Role
 		existingRoles, err = r.client.GetClientScopesScopeMappingsRealmRoles(
@@ -441,7 +441,7 @@ func (r *Reconciler) login() (err error) {
 		default:
 			r.token, err = r.client.LoginAdmin(ctx, r.admin, r.pass, r.adminRealm)
 			if err != nil {
-				log.Info("Login failed.", "reason", err.Error())
+				Log.Info("Login failed.", "reason", err.Error())
 				time.Sleep(time.Second)
 			} else {
 				return

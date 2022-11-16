@@ -26,7 +26,7 @@ type ReviewHandler struct {
 // AddRoutes adds routes.
 func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "reviews"))
+	routeGroup.Use(auth.Required("reviews"))
 	routeGroup.GET(ReviewsRoot, h.List)
 	routeGroup.GET(ReviewsRoot+"/", h.List)
 	routeGroup.POST(ReviewsRoot, h.Create)

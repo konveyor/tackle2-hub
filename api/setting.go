@@ -27,7 +27,7 @@ type SettingHandler struct {
 // AddRoutes add routes.
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "settings"))
+	routeGroup.Use(auth.Required("settings"))
 	routeGroup.GET(SettingsRoot, h.List)
 	routeGroup.GET(SettingsRoot+"/", h.List)
 	routeGroup.GET(SettingRoot, h.Get)

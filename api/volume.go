@@ -27,7 +27,7 @@ type VolumeHandler struct {
 // AddRoutes adds routes.
 func (h VolumeHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, "volumes"))
+	routeGroup.Use(auth.Required("volumes"))
 	routeGroup.GET(VolumesRoot, h.List)
 	routeGroup.GET(VolumesRoot+"/", h.List)
 	routeGroup.GET(VolumeRoot, h.Get)

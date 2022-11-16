@@ -33,7 +33,7 @@ type PathfinderHandler struct {
 // AddRoutes adds routes.
 func (h PathfinderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group(PathfinderRoot)
-	routeGroup.Use(auth.AuthorizationRequired(h.AuthProvider, AssessmentsRoot))
+	routeGroup.Use(auth.Required(AssessmentsRoot))
 	routeGroup.Any(AssessmentsRoot, h.ReverseProxy)
 	routeGroup.Any(AssessmentsRootX, h.ReverseProxy)
 }

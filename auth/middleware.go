@@ -1,52 +1,65 @@
 package auth
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/golang-jwt/jwt/v4"
 	"net/http"
-	"strings"
 )
 
 const (
-	Header = "Authorization"
+	Header      = "Authorization"
+	TokenScopes = "Scopes"
+	TokenUser   = "User"
 )
 
 //
-// AuthorizationRequired enforces that the user (identified by a token) has
+// Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
-func AuthorizationRequired(p Provider, requiredScope string) func(*gin.Context) {
+func Required(requiredScope string) func(*gin.Context) {
 	return func(c *gin.Context) {
+		var (
+			matched bool
+			err     error
+		)
 		token := c.GetHeader(Header)
-		addonToken := settings.Settings.Auth.AddonToken
-		if addonToken != "" && token == addonToken {
-			c.Next()
-			return
-		}
-
-		scopes, err := p.Scopes(token)
-		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		for _, s := range scopes {
-			if s.Allow(requiredScope, strings.ToLower(c.Request.Method)) {
-				c.Next()
+		var jwToken *jwt.Token
+		for _, p := range []Provider{Hub, Remote} {
+			jwToken, err = p.Authenticate(token)
+			if err != nil {
+				if errors.Is(err, &NotAuthenticated{}) {
+					continue
+				}
+				if errors.Is(err, &NotValid{}) {
+					break
+				}
+				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
+			scopes := p.Scopes(jwToken)
+			for _, scope := range scopes {
+				if scope.Match(requiredScope, c.Request.Method) {
+					c.Set(TokenUser, p.User(jwToken))
+					c.Set(TokenScopes, scopes)
+					matched = true
+					break
+				}
+			}
+			break
 		}
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-}
+		switch {
+		case errors.Is(err, &NotValid{}):
+			c.AbortWithStatus(http.StatusForbidden)
+		case errors.Is(err, &NotAuthenticated{}):
+			c.AbortWithStatus(http.StatusUnauthorized)
+		default:
+			if !matched {
+				c.AbortWithStatus(http.StatusForbidden)
+			} else {
+				c.Next()
+			}
+		}
 
-//
-// CurrentUser returns the current login user.
-func CurrentUser(p Provider, token string) (user string, err error) {
-	addonToken := settings.Settings.Auth.AddonToken
-	if token == addonToken {
 		return
 	}
-	user, err = p.User(token)
-	return
 }
