@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v2/model"
+	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"gorm.io/datatypes"
 )
 
@@ -30,7 +30,12 @@ type TagType = model.TagType
 type Task = model.Task
 type TaskGroup = model.TaskGroup
 type TaskReport = model.TaskReport
+type Ticket = model.Ticket
+type Tracker = model.Tracker
 type TTL = model.TTL
+type Metadata = model.Metadata
+type Project = model.Project
+type IssueType = model.IssueType
 
 //
 // Errors
