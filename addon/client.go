@@ -12,7 +12,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	pathlib "path"
 	"time"
+)
+
+const (
+	Accept  = "Accept"
+	AppJson = "application/json"
 )
 
 //
@@ -44,7 +50,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -96,7 +102,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			Body:   ioutil.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
 		return
 	}
 	reply, err := r.send(request)
@@ -143,7 +149,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 			Body:   ioutil.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, AppJson)
 		return
 	}
 	reply, err := r.send(request)
@@ -183,7 +189,7 @@ func (r *Client) Delete(path string) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(Accept, "")
 		return
 	}
 	reply, err := r.send(request)
@@ -221,12 +227,19 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
+		request.Header.Set(auth.Header, r.token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
-		netErr := &net.OpError{}
-		if errors.As(err, &netErr) {
-			Log.Info(err.Error())
-			time.Sleep(time.Second * 10)
+		if err != nil {
+			netErr := &net.OpError{}
+			if errors.As(err, &netErr) {
+				Log.Info(err.Error())
+				time.Sleep(time.Second * 10)
+				continue
+			} else {
+				err = liberr.Wrap(err)
+				return
+			}
 		} else {
 			Log.Info(
 				fmt.Sprintf(
@@ -237,7 +250,6 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 			break
 		}
 	}
-	err = liberr.Wrap(err)
 	return
 }
 
@@ -265,6 +277,6 @@ func (r *Client) buildTransport() (err error) {
 // Join the URL.
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
-	parsedURL.Path = path
+	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
 	return
 }
