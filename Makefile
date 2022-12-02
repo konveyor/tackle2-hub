@@ -51,6 +51,9 @@ docker: vet
 run: fmt vet
 	go run ./cmd/main.go
 
+run-addon:
+	go run ./hack/cmd/addon/main.go
+
 # Generate manifests e.g. CRD, Webhooks
 manifests: controller-gen
 	controller-gen ${CRD_OPTIONS} \
