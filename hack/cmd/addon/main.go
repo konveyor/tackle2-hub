@@ -60,8 +60,8 @@ func main() {
 			return
 		}
 		//
-		// Tag
-		err = tag(d, application)
+		// Add tags.
+		err = addTags(application, "LISTED", "TEST")
 		if err != nil {
 			return
 		}
@@ -192,34 +192,121 @@ func find(path string, max int) (paths []string, err error) {
 }
 
 //
-// Tag application.
-func tag(d *Data, application *api.Application) (err error) {
+// addTags ensure tags created and associated with application.
+// Ensure tag exists and associated with the application.
+func addTags(application *api.Application, names ...string) (err error) {
+	addon.Activity("Adding tags: %v", names)
+	appTags := appTags(application)
 	//
-	// Create tag.
-	tag := &api.Tag{}
-	tag.Name = "LISTED"
-	tag.TagType.ID = 1
-	err = addon.Tag.Create(tag)
+	// Fetch
+	tpMap, err := tpMap()
 	if err != nil {
-		if errors.Is(err, &hub.Conflict{}) {
-			err = nil
+		return
+	}
+	tagMap, err := tagMap()
+	if err != nil {
+		return
+	}
+	//
+	// Ensure type exists.
+	wanted := api.TagType{
+		Name: "DIRECTORY",
+		Color: "#2b9af3",
+		Rank: 3,
+	}
+	tp, found := tpMap[wanted.Name]
+	if !found {
+		tp = wanted
+		err = addon.TagType.Create(&tp)
+		if err == nil {
+			tpMap[tp.Name] = tp
 		} else {
 			return
 		}
-	}
-	//
-	// add tag.
-	for _, ref := range application.Tags {
-		if ref.Name == tag.Name {
+	} else {
+		if wanted.Rank != tp.Rank || wanted.Color != tp.Color {
+			err = &SoftError{
+				Reason: "Tag (TYPE) conflict detected.",
+			}
 			return
 		}
 	}
-	application.Tags = append(
-		application.Tags,
-		api.Ref{ID: tag.ID})
+	//
+	// Add tags.
+	for _, name := range names {
+		_, found := appTags[name]
+		if found {
+			continue
+		}
+		wanted := api.Tag{
+			Name: name,
+			TagType: api.Ref{
+				ID: tp.ID,
+			},
+		}
+		tg, found := tagMap[wanted.Name]
+		if !found {
+			tg = wanted
+			err = addon.Tag.Create(&tg)
+			if err != nil {
+				return
+			}
+		} else {
+			if wanted.TagType != tg.TagType {
+				err = &SoftError{
+					Reason: "Tag conflict detected.",
+				}
+				return
+			}
+		}
+		addon.Activity("[TAG] Associated: %s.", tg.Name)
+		application.Tags = append(
+			application.Tags,
+			api.Ref{
+				ID: tg.ID,
+			})
+	}
 	//
 	// Update application.
 	err = addon.Application.Update(application)
+	return
+}
+
+//
+// tagMap builds a map of tags by name.
+func tagMap() (m map[string]api.Tag, err error) {
+	list, err := addon.Tag.List()
+	if err != nil {
+		return
+	}
+	m = map[string]api.Tag{}
+	for _, tag := range list {
+		m[tag.Name] = tag
+	}
+	return
+}
+
+//
+// tpMap builds a map of tag types by name.
+func tpMap() (m map[string]api.TagType, err error) {
+	list, err := addon.TagType.List()
+	if err != nil {
+		return
+	}
+	m = map[string]api.TagType{}
+	for _, t := range list {
+		m[t.Name] = t
+	}
+	return
+}
+
+//
+// appTags builds map of associated tags.
+func appTags(application *api.Application) (m map[string]uint) {
+	m = map[string]uint{}
+	for _, ref := range application.Tags {
+		m[ref.Name] = ref.ID
+	}
 	return
 }
 
