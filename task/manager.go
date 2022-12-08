@@ -18,6 +18,7 @@ import (
 	"path"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -516,10 +517,14 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 // container builds the pod container.
 func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.Container) {
 	userid := int64(0)
+	policy := core.PullNever
+	if strings.ContainsAny(r.Image, "/") {
+		policy = core.PullAlways
+	}
 	container = core.Container{
 		Name:            "main",
 		Image:           r.Image,
-		ImagePullPolicy: core.PullAlways,
+		ImagePullPolicy: policy,
 		WorkingDir:      Settings.Addon.Path.WorkingDir,
 		Resources:       addon.Spec.Resources,
 		Env: []core.EnvVar{
