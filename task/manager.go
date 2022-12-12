@@ -516,10 +516,14 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 // container builds the pod container.
 func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.Container) {
 	userid := int64(0)
+	policy := core.PullIfNotPresent
+	if addon.Spec.ImagePullPolicy != "" {
+		policy = addon.Spec.ImagePullPolicy
+	}
 	container = core.Container{
 		Name:            "main",
 		Image:           r.Image,
-		ImagePullPolicy: core.PullAlways,
+		ImagePullPolicy: policy,
 		WorkingDir:      Settings.Addon.Path.WorkingDir,
 		Resources:       addon.Spec.Resources,
 		Env: []core.EnvVar{

@@ -34,6 +34,10 @@ type Mount struct {
 type AddonSpec struct {
 	// Addon fqin.
 	Image string `json:"image"`
+	// ImagePullPolicy an optional image pull policy.
+	// +kubebuilder:default=IfNotPresent
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Resource requirements.
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
 	// Mounts optional.

@@ -41,6 +41,14 @@ spec:
               image:
                 description: Addon fqin.
                 type: string
+              imagePullPolicy:
+                default: IfNotPresent
+                description: ImagePullPolicy an optional image pull policy.
+                enum:
+                - IfNotPresent
+                - Always
+                - Never
+                type: string
               mounts:
                 description: Mounts optional.
                 items:
