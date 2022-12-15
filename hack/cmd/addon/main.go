@@ -252,7 +252,7 @@ func addTags(application *api.Application, names ...string) (err error) {
 				return
 			}
 		} else {
-			if wanted.TagType != tg.TagType {
+			if wanted.TagType.ID != tg.TagType.ID {
 				err = &SoftError{
 					Reason: "Tag conflict detected.",
 				}
