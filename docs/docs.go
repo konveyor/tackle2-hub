@@ -1393,6 +1393,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/schema": {
+            "get": {
+                "description": "Get the API schema.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get the API schema.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Schema"
+                        }
+                    }
+                }
+            }
+        },
         "/settings": {
             "get": {
                 "description": "List all settings.",
@@ -2311,6 +2331,14 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "TaskGroup data (optional)",
+                        "name": "taskgroup",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.TaskGroup"
+                        }
                     }
                 ],
                 "responses": {
@@ -2679,6 +2707,14 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Task data (optional)",
+                        "name": "task",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.Task"
+                        }
                     }
                 ],
                 "responses": {
@@ -2989,6 +3025,9 @@ const docTemplate = `{
         "api.ImportSummary": {
             "type": "object",
             "properties": {
+                "createEntities": {
+                    "type": "boolean"
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -3158,6 +3197,20 @@ const docTemplate = `{
                 },
                 "workPriority": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.Schema": {
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },

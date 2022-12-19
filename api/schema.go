@@ -32,10 +32,6 @@ func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 // @success 200 {object} Schema
 // @router /schema [get]
 func (h *SchemaHandler) Get(ctx *gin.Context) {
-	type Schema struct {
-		Version string   `json:"version,omitempty"`
-		Paths   []string `json:"paths"`
-	}
 	schema := Schema{
 		Version: h.Version,
 		Paths:   []string{},
@@ -45,4 +41,9 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, schema)
+}
+
+type Schema struct {
+	Version string   `json:"version,omitempty"`
+	Paths   []string `json:"paths"`
 }
