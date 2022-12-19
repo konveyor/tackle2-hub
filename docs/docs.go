@@ -2342,7 +2342,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "202": {
+                    "204": {
                         "description": ""
                     }
                 }
@@ -2718,7 +2718,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "202": {
+                    "204": {
                         "description": ""
                     }
                 }

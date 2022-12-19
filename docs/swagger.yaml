@@ -2028,7 +2028,7 @@ paths:
         schema:
           $ref: '#/definitions/api.TaskGroup'
       responses:
-        "202":
+        "204":
           description: ""
       summary: Submit a task group.
       tags:
@@ -2277,7 +2277,7 @@ paths:
         schema:
           $ref: '#/definitions/api.Task'
       responses:
-        "202":
+        "204":
           description: ""
       summary: Submit a task.
       tags:

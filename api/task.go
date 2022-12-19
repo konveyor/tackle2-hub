@@ -231,7 +231,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @description Submit a task.
 // @tags update
 // @accept json
-// @success 202
+// @success 204
 // @router /tasks/{id}/submit [put]
 // @param id path string true "Task ID"
 // @param task body Task false "Task data (optional)"
