@@ -149,7 +149,7 @@ func buildIndex(output string) (err error) {
 	for _, name := range list {
 		body = append(
 			body,
-			"<li><a href=\""+name.Name()+"\">"+name.Name()+"</a>")
+			"<li><a href=\""+name.Name()+"\">"+name.Name()+"</a></li>")
 	}
 
 	body = append(body, "</ul>")
