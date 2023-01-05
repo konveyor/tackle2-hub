@@ -129,6 +129,8 @@ definitions:
     type: object
   api.ImportSummary:
     properties:
+      createEntities:
+        type: boolean
       createTime:
         type: string
       createUser:
@@ -241,6 +243,15 @@ definitions:
         type: integer
     required:
     - application
+    type: object
+  api.Schema:
+    properties:
+      paths:
+        items:
+          type: string
+        type: array
+      version:
+        type: string
     type: object
   api.Setting:
     properties:
@@ -1390,6 +1401,19 @@ paths:
       summary: Copy a review from one application to others.
       tags:
       - copy
+  /schema:
+    get:
+      description: Get the API schema.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Schema'
+      summary: Get the API schema.
+      tags:
+      - get
   /settings:
     get:
       description: List all settings.
@@ -1998,8 +2022,13 @@ paths:
         name: id
         required: true
         type: string
+      - description: TaskGroup data (optional)
+        in: body
+        name: taskgroup
+        schema:
+          $ref: '#/definitions/api.TaskGroup'
       responses:
-        "202":
+        "204":
           description: ""
       summary: Submit a task group.
       tags:
@@ -2242,8 +2271,13 @@ paths:
         name: id
         required: true
         type: string
+      - description: Task data (optional)
+        in: body
+        name: task
+        schema:
+          $ref: '#/definitions/api.Task'
       responses:
-        "202":
+        "204":
           description: ""
       summary: Submit a task.
       tags:
