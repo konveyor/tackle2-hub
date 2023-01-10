@@ -1,0 +1,272 @@
+package addon // import "github.com/konveyor/tackle2-hub/addon"
+
+
+CONSTANTS
+
+const (
+	Accept  = "Accept"
+	AppJson = "application/json"
+)
+
+VARIABLES
+
+var (
+	Settings = settings.Settings
+	Log      = logging.WithName("addon")
+)
+
+TYPES
+
+type Adapter struct {
+	// Task API.
+	Task
+	// Settings API
+	Setting Setting
+	// Application API.
+	Application Application
+	// Identity API.
+	Identity Identity
+	// Proxy API.
+	Proxy Proxy
+	// TagType API.
+	TagType TagType
+	// Tag API.
+	Tag Tag
+	// Volumes API.
+	Volume Volume
+
+	// Has unexported fields.
+}
+    The Adapter provides hub/addon integration.
+
+var Addon *Adapter
+    Addon An addon adapter configured for a task execution.
+
+func (h *Adapter) Client() *Client
+    Client provides the REST client.
+
+func (h *Adapter) Run(addon func() error)
+    Run addon. Reports:
+
+        - Started
+        - Succeeded
+        - Failed (when addon returns error).
+
+type Application struct {
+	// Has unexported fields.
+}
+    Application API.
+
+func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error)
+    FindIdentity by kind.
+
+func (h *Application) Get(id uint) (r *api.Application, err error)
+    Get an application by ID.
+
+func (h *Application) List() (list []api.Application, err error)
+    List applications.
+
+func (h *Application) Update(r *api.Application) (err error)
+    Update an application by ID.
+
+type Client struct {
+	// Has unexported fields.
+}
+    Client provides a REST client.
+
+func (r *Client) Delete(path string) (err error)
+    Delete a resource.
+
+func (r *Client) Get(path string, object interface{}, params ...Param) (err error)
+    Get a resource.
+
+func (r *Client) Post(path string, object interface{}) (err error)
+    Post a resource.
+
+func (r *Client) Put(path string, object interface{}) (err error)
+    Put a resource.
+
+type Conflict struct {
+	SoftError
+	Path string
+}
+    Conflict reports 409 error.
+
+func (e Conflict) Error() string
+
+func (e *Conflict) Is(err error) (matched bool)
+
+type Identity struct {
+	// Has unexported fields.
+}
+    Identity API.
+
+func (h *Identity) Get(id uint) (r *api.Identity, err error)
+    Get an identity by ID.
+
+func (h *Identity) List() (list []api.Identity, err error)
+    List identities.
+
+type NotFound struct {
+	SoftError
+	Path string
+}
+    NotFound reports 404 error.
+
+func (e NotFound) Error() string
+
+func (e *NotFound) Is(err error) (matched bool)
+
+type Param struct {
+	Key   string
+	Value string
+}
+    Param.
+
+type Params map[string]interface{}
+    Params mapping.
+
+type Proxy struct {
+	// Has unexported fields.
+}
+    Proxy API.
+
+func (h *Proxy) Find(kind string) (r *api.Proxy, err error)
+    Find by Kind. Returns nil when not found.
+
+func (h *Proxy) Get(id uint) (r *api.Proxy, err error)
+    Get a proxy by ID.
+
+func (h *Proxy) List() (list []api.Proxy, err error)
+    List proxies.
+
+func (h *Proxy) Update(r *api.Proxy) (err error)
+    Update a proxy by ID.
+
+type Setting struct {
+	// Has unexported fields.
+}
+    Setting API.
+
+func (h *Setting) Bool(key string) (b bool, err error)
+    Bool setting value.
+
+func (h *Setting) Get(key string, v interface{}) (err error)
+    Get a setting by key.
+
+func (h *Setting) Int(key string) (n int, err error)
+    Int setting value.
+
+func (h *Setting) Str(key string) (s string, err error)
+    Str setting value.
+
+type SoftError struct {
+	Reason string
+}
+    SoftError A "soft" anticipated error.
+
+func (e *SoftError) Error() (s string)
+
+func (e *SoftError) Is(err error) (matched bool)
+
+func (e *SoftError) Soft() *SoftError
+
+type Tag struct {
+	// Has unexported fields.
+}
+    Tag API.
+
+func (h *Tag) Create(r *api.Tag) (err error)
+    Create a tag.
+
+func (h *Tag) Delete(r *api.Tag) (err error)
+    Delete a tag.
+
+func (h *Tag) Get(id uint) (r *api.Tag, err error)
+    Get a tag by ID.
+
+func (h *Tag) List() (list []api.Tag, err error)
+    List tags.
+
+type TagType struct {
+	// Has unexported fields.
+}
+    TagType API.
+
+func (h *TagType) Create(m *api.TagType) (err error)
+    Create a tag-type.
+
+func (h *TagType) Delete(r *api.TagType) (err error)
+    Delete a tag-type.
+
+func (h *TagType) Get(id uint) (r *api.TagType, err error)
+    Get a tag-type by ID.
+
+func (h *TagType) List() (list []api.TagType, err error)
+    List tag-types.
+
+type Task struct {
+	// Has unexported fields.
+}
+    Task API.
+
+func (h *Task) Activity(entry string, x ...interface{})
+    Activity report addon activity. The description can be a printf style
+    format.
+
+func (h *Task) Application() (r *api.Application, err error)
+    Application returns the application associated with the task.
+
+func (h *Task) Bucket() (b string)
+    Bucket returns the bucket path.
+
+func (h *Task) Completed(n int)
+    Completed report addon completed (N) items.
+
+func (h *Task) Data() (d map[string]interface{})
+    Data returns the addon data.
+
+func (h *Task) DataWith(object interface{}) (err error)
+    DataWith populates the addon data object.
+
+func (h *Task) Failed(reason string, x ...interface{})
+    Failed report addon failed. The reason can be a printf style format.
+
+func (h *Task) Increment()
+    Increment report addon completed (+1) items.
+
+func (h *Task) Load()
+    Load a task by ID.
+
+func (h *Task) Result(object interface{})
+    Result report addon result.
+
+func (h *Task) Started()
+    Started report addon started.
+
+func (h *Task) Succeeded()
+    Succeeded report addon succeeded.
+
+func (h *Task) Total(n int)
+    Total report addon total items.
+
+func (h *Task) Variant() string
+    Variant returns the task variant.
+
+type Volume struct {
+	// Has unexported fields.
+}
+    Volume API.
+
+func (h *Volume) Find(name string) (r *api.Volume, err error)
+    Find by name. Returns nil when not found.
+
+func (h *Volume) Get(id uint) (r *api.Volume, err error)
+    Get a volume by ID.
+
+func (h *Volume) List() (list []api.Volume, err error)
+    List proxies.
+
+func (h *Volume) Update(r *api.Volume) (err error)
+    Update a volume by ID.
+
