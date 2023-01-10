@@ -30,7 +30,7 @@ An Addon is defined and registered with the Hub using a Custom Resource (CR).
 * **image** - The addon image.
 * **imagePullPolicy** - An (optional) image pull policy. Defaults to `IfNotPresent`.
 * **resources** - An *(optional)* standard k8s pod container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
-* **mounts** - An optional list of volumes to be mounted in the addon pod.
+* **mounts** - An optional list of volumes to be mounted in the addon pod. **DEPRECATED**
     * **claim** - PVC name.
     * **name** - The name of the directory in `/mnt` to mount the volume.
 
@@ -69,8 +69,8 @@ The addon container must have the default entry point set.
 ### Go Binding
 
 The addon is expected to integrate with the Hub inventory using the
-Hub REST API. The secret includes an auth token. For convenience,
-the Hub (package)provides a `Go` [binding](https://github.com/konveyor/tackle2-hub/tree/main/docs/binding.txt) simplifies integration.
+Hub REST API. For convenience, the Hub (package)provides 
+a `Go` [binding](https://github.com/konveyor/tackle2-hub/tree/main/docs/binding.txt) that simplifies integration.
 
 #### Run API.
 
