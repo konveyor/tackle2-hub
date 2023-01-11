@@ -82,3 +82,7 @@ addon: fmt vet
 # Build Swagger API spec into ./docs directory
 docs-swagger:
 	${GOBIN}/swag init -g api/base.go
+
+# Build binding doc.
+docs-binding:
+	go doc --all addon > docs/binding.txt
