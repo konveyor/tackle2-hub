@@ -150,7 +150,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @success 204
 // @router /taskgroups/{id} [put]
 // @param id path string true "Task ID"
-// @param task body Task true "Task data"
+// @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	updated := &TaskGroup{}

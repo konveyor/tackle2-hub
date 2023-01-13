@@ -311,38 +311,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/identities": {
-            "get": {
-                "description": "List identities for an application.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List identities for an application.",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Identity"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/applications/{id}/tasks/{id}/content/{wildcard}": {
             "get": {
                 "description": "Get bucket content by ID and path.",
@@ -2208,7 +2176,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/api.TaskGroup"
                         }
                     }
                 ],
