@@ -689,27 +689,6 @@ paths:
       summary: Upload bucket content by ID and path.
       tags:
       - post
-  /applications/{id}/identities:
-    get:
-      description: List identities for an application.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Identity'
-            type: array
-      summary: List identities for an application.
-      tags:
-      - get
   /applications/{id}/tasks/{id}/content/{wildcard}:
     get:
       description: Get bucket content by ID and path.
@@ -1954,7 +1933,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.Task'
+          $ref: '#/definitions/api.TaskGroup'
       responses:
         "204":
           description: ""
