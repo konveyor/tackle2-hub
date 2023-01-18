@@ -4,14 +4,15 @@ package addon // import "github.com/konveyor/tackle2-hub/addon"
 CONSTANTS
 
 const (
-	Accept  = "Accept"
-	AppJson = "application/json"
+	Accept   = "Accept"
+	AppJson  = "application/json"
+	AppOctet = "application/octet-stream"
 )
 
 VARIABLES
 
 var (
-	Settings = settings.Settings
+	Settings = &settings.Settings
 	Log      = logging.WithName("addon")
 )
 
@@ -32,8 +33,6 @@ type Adapter struct {
 	TagType TagType
 	// Tag API.
 	Tag Tag
-	// Volumes API.
-	Volume Volume
 
 	// Has unexported fields.
 }
@@ -57,6 +56,9 @@ type Application struct {
 }
     Application API.
 
+func (h *Application) Bucket(id uint) (b *Bucket)
+    Bucket returns the bucket API.
+
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error)
     FindIdentity by kind.
 
@@ -69,10 +71,34 @@ func (h *Application) List() (list []api.Application, err error)
 func (h *Application) Update(r *api.Application) (err error)
     Update an application by ID.
 
+type Bucket struct {
+	// Has unexported fields.
+}
+    Bucket API.
+
+func (h *Bucket) Delete(path string) (err error)
+    Delete deletes content at the specified path. The path is relative to the
+    bucket root.
+
+func (h *Bucket) Get(source, destination string) (err error)
+    Get reads from the bucket. The source (path) is relative to the bucket root.
+
+func (h *Bucket) Put(source, destination string) (err error)
+    Put writes to the bucket. The destination (path) is relative to the bucket
+    root.
+
 type Client struct {
 	// Has unexported fields.
 }
     Client provides a REST client.
+
+func (r *Client) BucketGet(source, destination string) (err error)
+    BucketGet downloads a file/directory. The source (path) is relative to the
+    bucket root.
+
+func (r *Client) BucketPut(source, destination string) (err error)
+    BucketPut uploads a file/directory. The destination (path) is relative to
+    the bucket root.
 
 func (r *Client) Delete(path string) (err error)
     Delete a resource.
@@ -217,8 +243,8 @@ func (h *Task) Activity(entry string, x ...interface{})
 func (h *Task) Application() (r *api.Application, err error)
     Application returns the application associated with the task.
 
-func (h *Task) Bucket() (b string)
-    Bucket returns the bucket path.
+func (h *Task) Bucket() (b *Bucket)
+    Bucket returns the bucket API.
 
 func (h *Task) Completed(n int)
     Completed report addon completed (N) items.
@@ -252,21 +278,4 @@ func (h *Task) Total(n int)
 
 func (h *Task) Variant() string
     Variant returns the task variant.
-
-type Volume struct {
-	// Has unexported fields.
-}
-    Volume API.
-
-func (h *Volume) Find(name string) (r *api.Volume, err error)
-    Find by name. Returns nil when not found.
-
-func (h *Volume) Get(id uint) (r *api.Volume, err error)
-    Get a volume by ID.
-
-func (h *Volume) List() (list []api.Volume, err error)
-    List proxies.
-
-func (h *Volume) Update(r *api.Volume) (err error)
-    Update a volume by ID.
 

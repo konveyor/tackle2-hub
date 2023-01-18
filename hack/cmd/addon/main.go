@@ -24,6 +24,11 @@ var (
 	Log   = hub.Log
 )
 
+const (
+	BucketDir = "list"
+	TmpDir = "/tmp/list"
+)
+
 type SoftError = hub.SoftError
 
 //
@@ -78,7 +83,7 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 	addon.Total(len(paths))
 	//
 	// List directory.
-	output := pathlib.Join(application.Bucket, "list")
+	output := TmpDir
 	_ = os.RemoveAll(output)
 	_ = os.MkdirAll(output, 0777)
 	//
@@ -122,8 +127,57 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 		return
 	}
 	//
+	// Upload list directory.
+	addon.Activity("[BUCKET] uploading %s => bucket/%s.", output, BucketDir)
+	bucket := addon.Application.Bucket(application.ID)
+	err = bucket.Put(output, BucketDir)
+	if err != nil {
+		return
+	}
+	//
+	// play with buckets.
+	err = playWithBucket(bucket)
+	if err != nil {
+		return
+	}
+	//
 	// Task update: update the current addon activity.
 	addon.Activity("done")
+	return
+}
+
+//
+// playWithBucket
+func playWithBucket(bucket *hub.Bucket) (err error) {
+	tmpDir2 := "/tmp/list2"
+	_ = os.MkdirAll(tmpDir2, 0777)
+	//
+	// Download list directory.
+	err = bucket.Get(BucketDir, tmpDir2)
+	if err != nil {
+		return
+	}
+	//
+	// Delete the index.
+	err = bucket.Delete(BucketDir + "/index.html")
+	if err != nil {
+		return
+	}
+	//
+	// Upload the index.
+	err = bucket.Put(TmpDir + "/index.html", BucketDir + "/index.html")
+	if err != nil {
+		return
+	}
+	//
+	// Add file.
+	elmer := tmpDir2 + "/elmer"
+	_, _ = os.Create(elmer)
+	err = bucket.Put(elmer, BucketDir + "/networks")
+	if err != nil {
+		return
+	}
+
 	return
 }
 

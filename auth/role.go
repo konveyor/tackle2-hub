@@ -4,7 +4,7 @@ import (
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -23,8 +23,6 @@ var AddonRole = []string{
 	"tagtypes:*",
 	"tasks:get",
 	"tasks.report:*",
-	"volumes:get",
-	"volumes:put",
 }
 
 //
@@ -64,7 +62,7 @@ func LoadRoles(path string) (roles []Role, err error) {
 	}
 	defer roleFile.Close()
 
-	yamlBytes, err := ioutil.ReadAll(roleFile)
+	yamlBytes, err := io.ReadAll(roleFile)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -89,7 +87,7 @@ func LoadUsers(path string) (users []User, err error) {
 	}
 	defer userFile.Close()
 
-	yamlBytes, err := ioutil.ReadAll(userFile)
+	yamlBytes, err := io.ReadAll(userFile)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

@@ -71,3 +71,18 @@ func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found
 	}
 	return
 }
+
+//
+// Bucket returns the bucket API.
+func (h *Application) Bucket(id uint) (b *Bucket) {
+	params := Params{
+		api.Wildcard: "",
+		api.ID:       id,
+	}
+	path := params.inject(api.AppBucketRoot)
+	b = &Bucket{
+		path:   path,
+		client: h.client,
+	}
+	return
+}

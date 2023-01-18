@@ -3,10 +3,8 @@ package controller
 import (
 	"context"
 	libcnd "github.com/konveyor/controller/pkg/condition"
-	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -34,11 +32,10 @@ var Settings = &settings.Settings
 
 //
 // Add the controller.
-func Add(mgr manager.Manager, db *gorm.DB, adminChanged chan int) error {
+func Add(mgr manager.Manager, db *gorm.DB) error {
 	reconciler := &Reconciler{
 		EventRecorder: mgr.GetRecorder(Name),
 		Client:        mgr.GetClient(),
-		AdminChanged:  adminChanged,
 		Log:           log,
 		DB:            db,
 	}
@@ -132,50 +129,12 @@ func (r Reconciler) Reconcile(request reconcile.Request) (result reconcile.Resul
 
 //
 // addonChanged an addon has been created/updated.
-// After the "admin" addon has reconciled, the volumes need
-// be re-populated and the volume manager notified.
 func (r *Reconciler) addonChanged(addon *api.Addon) (err error) {
-	if addon.Name != "admin" {
-		return
-	}
-	err = r.addonDeleted(addon.Name)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	for _, mount := range addon.Spec.Mounts {
-		m := &model.Volume{}
-		m.Name = mount.Name
-		err = r.DB.Create(m).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	func() { // send
-		defer func() {
-			recover()
-		}()
-		select {
-		case r.AdminChanged <- 1:
-		default:
-		}
-	}()
-
 	return
 }
 
 //
 // addonDeleted an addon has been deleted.
-// The volumes need to be deleted.
 func (r *Reconciler) addonDeleted(name string) (err error) {
-	if name != "admin" {
-		return
-	}
-	err = r.DB.Delete(&model.Volume{}, "id > 0").Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }

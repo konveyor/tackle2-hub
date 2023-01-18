@@ -7,12 +7,12 @@ import (
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"os"
-	"os/exec"
 	"path"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -395,11 +395,10 @@ func (r *BucketReaper) busy(bucket string) (busy bool, err error) {
 //
 // Delete bucket.
 func (r *BucketReaper) delete(path string) (err error) {
-	cmd := exec.Command("/usr/bin/rm", "-rf", path)
-	b, err := cmd.CombinedOutput()
+	err = nas.RmDir(path)
 	if err != nil {
-		err = liberr.New(
-			string(b),
+		err = liberr.Wrap(
+			err,
 			"path",
 			path)
 	} else {

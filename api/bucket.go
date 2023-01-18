@@ -6,16 +6,15 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
 	"io"
 	"net/http"
 	"os"
-	"path"
 	pathlib "path"
 	"path/filepath"
 	"strings"
-
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
 )
 
 //
@@ -24,8 +23,14 @@ type BucketHandler struct {
 }
 
 func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
-	if ctx.Request.Header.Get(Directory) == DirectoryArchive {
-		h.getDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
+	path := pathlib.Join(owner.Bucket, ctx.Param(Wildcard))
+	st, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	if st.IsDir() && ctx.Request.Header.Get(Directory) == DirectoryArchive {
+		h.getDirArchive(ctx, path)
 	} else {
 		h.content(ctx, owner)
 	}
@@ -33,7 +38,7 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 
 func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
 	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
-		h.uploadDirArchive(ctx, path.Join(owner.Bucket, ctx.Param(Wildcard)))
+		h.uploadDirArchive(ctx, pathlib.Join(owner.Bucket, ctx.Param(Wildcard)))
 	} else {
 		h.upload(ctx, owner)
 	}
@@ -41,7 +46,7 @@ func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketO
 
 func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	// Prepare to uncompress the uploaded data, report 4xx errors
-	file, err := ctx.FormFile("file")
+	file, err := ctx.FormFile(File)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
@@ -72,7 +77,7 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	}()
 
 	// Clean and prepare destination directory
-	err = os.RemoveAll(dir)
+	err = nas.RmDir(dir)
 	if err != nil {
 		return
 	}
@@ -94,12 +99,12 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(path.Join(dir, hdr.Name), 0777); err != nil {
+			if err := os.Mkdir(pathlib.Join(dir, hdr.Name), 0777); err != nil {
 				return
 			}
 		case tar.TypeReg:
 			var file *os.File
-			if file, err = os.Create(path.Join(dir, hdr.Name)); err != nil {
+			if file, err = os.Create(pathlib.Join(dir, hdr.Name)); err != nil {
 				return
 			}
 			if _, err = io.Copy(file, untarReader); err != nil {
@@ -115,26 +120,12 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 }
 
 func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
-	dirInfo, err := os.Stat(dir)
-	if os.IsNotExist(err) {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Provided directory path doesn't exist.",
-		})
-		return
-	}
-	if !dirInfo.IsDir() {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Provided path is not a directory.",
-		})
-		return
-	}
-
 	var tarOutput bytes.Buffer
 	entriesCount := 0
 	tarWriter := tar.NewWriter(&tarOutput)
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, wErr error) error {
+		if wErr != nil {
+			return wErr
 		}
 
 		hdr, err := tar.FileInfoHeader(info, path)
@@ -200,12 +191,13 @@ func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
 
 	fromTar := bufio.NewReader(&tarOutput)
 
-	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", path.Base(dir)+".tar.gz"))
+	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", pathlib.Base(dir)+".tar.gz"))
+	ctx.Writer.Header().Set(Directory, DirectoryExpand)
 
 	gzWriter := gzip.NewWriter(ctx.Writer)
 	defer gzWriter.Close()
 
-	gzWriter.Name = path.Base(dir) + ".tar.gz"
+	gzWriter.Name = pathlib.Base(dir) + ".tar.gz"
 	gzWriter.Comment = "Tackle 2 bucket data archive"
 	if _, err = io.Copy(gzWriter, fromTar); err != nil {
 		return
@@ -236,7 +228,7 @@ func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
 	path := pathlib.Join(
 		owner.Bucket,
 		rPath)
-	input, err := ctx.FormFile("file")
+	input, err := ctx.FormFile(File)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
@@ -288,7 +280,7 @@ func (h *BucketHandler) delete(ctx *gin.Context, owner *model.BucketOwner) {
 	path := pathlib.Join(
 		owner.Bucket,
 		rPath)
-	err := os.RemoveAll(path)
+	err := nas.RmDir(path)
 	if err != nil {
 		ctx.Status(http.StatusInternalServerError)
 		return

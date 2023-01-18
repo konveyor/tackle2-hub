@@ -212,7 +212,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	if !ok {
 		ctx.Status(http.StatusBadRequest)
 	}
-	file, err := ctx.FormFile("file")
+	file, err := ctx.FormFile(File)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 	}

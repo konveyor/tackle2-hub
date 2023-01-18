@@ -10,7 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"reflect"
@@ -256,7 +256,7 @@ func (h *BaseHandler) modBody(
 	}
 	b, _ := json.Marshal(r)
 	bfr := bytes.NewBuffer(b)
-	ctx.Request.Body = ioutil.NopCloser(bfr)
+	ctx.Request.Body = io.NopCloser(bfr)
 	return
 }
 

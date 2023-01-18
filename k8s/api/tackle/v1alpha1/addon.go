@@ -23,13 +23,6 @@ import (
 )
 
 //
-// Mount specification.
-type Mount struct {
-	Name  string `json:"name"`
-	Claim string `json:"claim"`
-}
-
-//
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
 	// Addon fqin.
@@ -40,8 +33,6 @@ type AddonSpec struct {
 	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Resource requirements.
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
-	// Mounts optional.
-	Mounts []Mount `json:"mounts,omitempty"`
 }
 
 //
