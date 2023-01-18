@@ -20,6 +20,7 @@ const (
 	Key      = "key"
 	Name     = "name"
 	Wildcard = "wildcard"
+	File     = "file"
 )
 
 //
@@ -46,6 +47,7 @@ func All() []Handler {
 		&AdoptionPlanHandler{},
 		&ApplicationHandler{},
 		&BusinessServiceHandler{},
+		&CacheHandler{},
 		&DependencyHandler{},
 		&ImportHandler{},
 		&JobFunctionHandler{},
@@ -60,7 +62,6 @@ func All() []Handler {
 		&TagTypeHandler{},
 		&TaskHandler{},
 		&TaskGroupHandler{},
-		&VolumeHandler{},
 		&PathfinderHandler{},
 	}
 }

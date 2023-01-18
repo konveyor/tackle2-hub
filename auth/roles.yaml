@@ -100,11 +100,10 @@
         - get
         - post
         - put
-    - name: volumes
+    - name: cache
       verbs:
         - get
-        - post
-        - put
+        - delete
 - role: tackle-architect
   resources:
     - name: addons
@@ -198,7 +197,7 @@
         - get
         - post
         - put
-    - name: volumes
+    - name: cache
       verbs:
         - get
 - role: tackle-migrator
@@ -263,6 +262,6 @@
         - get
         - post
         - put
-    - name: volumes
+    - name: cache
       verbs:
         - get

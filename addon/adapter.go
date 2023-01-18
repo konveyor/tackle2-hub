@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Settings = settings.Settings
+	Settings = &settings.Settings
 	Log      = logging.WithName("addon")
 )
 
@@ -50,8 +50,6 @@ type Adapter struct {
 	TagType TagType
 	// Tag API.
 	Tag Tag
-	// Volumes API.
-	Volume Volume
 	// client A REST client.
 	client *Client
 }
@@ -135,9 +133,6 @@ func newAdapter() (adapter *Adapter) {
 			client: client,
 		},
 		Tag: Tag{
-			client: client,
-		},
-		Volume: Volume{
 			client: client,
 		},
 		client: client,

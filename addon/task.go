@@ -153,18 +153,17 @@ func (h *Task) Completed(n int) {
 }
 
 //
-// Bucket returns the bucket path.
-func (h *Task) Bucket() (b string) {
-	r := &api.Task{}
+// Bucket returns the bucket API.
+func (h *Task) Bucket() (b *Bucket) {
 	params := Params{
-		api.ID: h.task.ID,
+		api.ID:       h.task.ID,
+		api.Wildcard: "",
 	}
-	path := params.inject(api.TaskRoot)
-	err := h.client.Get(path, r)
-	if err != nil {
-		panic(err)
+	path := params.inject(api.TaskBucketRoot)
+	b = &Bucket{
+		path:   path,
+		client: h.client,
 	}
-	b = r.Bucket
 	return
 }
 

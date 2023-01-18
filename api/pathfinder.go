@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/auth"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -75,7 +75,7 @@ func (r *Pathfinder) DeleteAssessment(ids []uint, ctx *gin.Context) (err error) 
 		"bulkDelete",
 		header)
 	reader := bytes.NewReader(b)
-	request.Body = ioutil.NopCloser(reader)
+	request.Body = io.NopCloser(reader)
 	result, err := client.Do(request)
 	if err != nil {
 		return

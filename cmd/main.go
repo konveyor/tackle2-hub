@@ -16,7 +16,6 @@ import (
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
-	"github.com/konveyor/tackle2-hub/volume"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -57,7 +56,7 @@ func buildScheme() (err error) {
 
 //
 // addonManager
-func addonManager(db *gorm.DB, adminChanged chan int) (mgr manager.Manager, err error) {
+func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		_ = http.ListenAndServe(":2112", nil)
@@ -77,7 +76,7 @@ func addonManager(db *gorm.DB, adminChanged chan int) (mgr manager.Manager, err 
 		err = liberr.Wrap(err)
 		return
 	}
-	err = controller.Add(mgr, db, adminChanged)
+	err = controller.Add(mgr, db)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -110,8 +109,7 @@ func main() {
 	}
 	//
 	// Add controller.
-	adminChanged := make(chan int, 1)
-	addonManager, err := addonManager(db, adminChanged)
+	addonManager, err := addonManager(db)
 	if err != nil {
 		return
 	}
@@ -165,13 +163,6 @@ func main() {
 		DB:     db,
 	}
 	reaperManager.Run(context.Background())
-	//
-	// Volumes.
-	volumeManager := volume.Manager{
-		Client: client,
-		DB:     db,
-	}
-	volumeManager.Run(adminChanged)
 	//
 	// Application import.
 	importManager := importer.Manager{

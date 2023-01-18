@@ -10,7 +10,9 @@ const (
 	EnvDbPath            = "DB_PATH"
 	EnvDbSeedPath        = "DB_SEED_PATH"
 	EnvBucketPath        = "BUCKET_PATH"
-	EnvBucketPVC         = "BUCKET_PVC"
+	EnvRwxSupported      = "RWX_SUPPORTED"
+	EnvCachePath         = "CACHE_PATH"
+	EnvCachePvc          = "CACHE_PVC"
 	EnvPassphrase        = "ENCRYPTION_PASSPHRASE"
 	EnvTaskReapCreated   = "TASK_REAP_CREATED"
 	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
@@ -19,7 +21,6 @@ const (
 	EnvTaskRetries       = "TASK_RETRIES"
 	EnvFrequencyTask     = "FREQUENCY_TASK"
 	EnvFrequencyReaper   = "FREQUENCY_REAPER"
-	EnvFrequencyVolume   = "FREQUENCY_VOLUME"
 )
 
 type Hub struct {
@@ -32,6 +33,11 @@ type Hub struct {
 	}
 	// Bucket settings.
 	Bucket struct {
+		Path string
+	}
+	// Cache settings.
+	Cache struct {
+		RWX  bool
 		Path string
 		PVC  string
 	}
@@ -75,15 +81,26 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.Bucket.Path = "/tmp/bucket"
 	}
-	r.Bucket.PVC, found = os.LookupEnv(EnvBucketPVC)
+	s, found := os.LookupEnv(EnvRwxSupported)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Cache.RWX = b
+	} else {
+		r.Cache.RWX = true
+	}
+	r.Cache.PVC, found = os.LookupEnv(EnvCachePvc)
 	if !found {
-		r.Bucket.PVC = "bucket"
+		r.Cache.PVC = "cache"
+	}
+	r.Cache.Path, found = os.LookupEnv(EnvCachePath)
+	if !found {
+		r.Cache.Path = "/cache"
 	}
 	r.Encryption.Passphrase, found = os.LookupEnv(EnvPassphrase)
 	if !found {
 		r.Encryption.Passphrase = "tackle"
 	}
-	s, found := os.LookupEnv(EnvTaskReapCreated)
+	s, found = os.LookupEnv(EnvTaskReapCreated)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Created = n
@@ -128,13 +145,6 @@ func (r *Hub) Load() (err error) {
 		r.Frequency.Reaper = n
 	} else {
 		r.Frequency.Reaper = 1 // 1 minute.
-	}
-	s, found = os.LookupEnv(EnvFrequencyVolume)
-	if found {
-		n, _ := strconv.Atoi(s)
-		r.Frequency.Volume = n
-	} else {
-		r.Frequency.Volume = 5 // 5 minute.
 	}
 
 	return

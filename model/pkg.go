@@ -31,7 +31,6 @@ type Task = model.Task
 type TaskGroup = model.TaskGroup
 type TaskReport = model.TaskReport
 type TTL = model.TTL
-type Volume = model.Volume
 
 //
 // Errors

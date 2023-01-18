@@ -472,6 +472,26 @@ func (r *Task) pod(addon *crd.Addon, owner *crd.Tackle, secret *core.Secret) (po
 //
 // specification builds a Pod specification.
 func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specification core.PodSpec) {
+	working := core.Volume{
+		Name: "working",
+		VolumeSource: core.VolumeSource{
+			EmptyDir: &core.EmptyDirVolumeSource{},
+		},
+	}
+	cache := core.Volume{
+		Name: "cache",
+	}
+	if Settings.Cache.RWX {
+		cache.VolumeSource = core.VolumeSource{
+			PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+				ClaimName: Settings.Cache.PVC,
+			},
+		}
+	} else {
+		cache.VolumeSource = core.VolumeSource{
+			EmptyDir: &core.EmptyDirVolumeSource{},
+		}
+	}
 	specification = core.PodSpec{
 		ServiceAccountName: Settings.Hub.Task.SA,
 		RestartPolicy:      core.RestartPolicyNever,
@@ -479,34 +499,9 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 			r.container(addon, secret),
 		},
 		Volumes: []core.Volume{
-			{
-				Name: "working",
-				VolumeSource: core.VolumeSource{
-					EmptyDir: &core.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: "bucket",
-				VolumeSource: core.VolumeSource{
-					PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-						ClaimName: Settings.Hub.Bucket.PVC,
-					},
-				},
-			},
+			working,
+			cache,
 		},
-	}
-	mounts := addon.Spec.Mounts
-	for _, mnt := range mounts {
-		specification.Volumes = append(
-			specification.Volumes,
-			core.Volume{
-				Name: mnt.Name,
-				VolumeSource: core.VolumeSource{
-					PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-						ClaimName: mnt.Claim,
-					},
-				},
-			})
 	}
 
 	return
@@ -527,10 +522,6 @@ func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.
 		WorkingDir:      Settings.Addon.Path.WorkingDir,
 		Resources:       addon.Spec.Resources,
 		Env: []core.EnvVar{
-			{
-				Name:  settings.EnvBucketPath,
-				Value: Settings.Hub.Bucket.Path,
-			},
 			{
 				Name:  settings.EnvHubBaseURL,
 				Value: Settings.Addon.Hub.URL,
@@ -561,23 +552,13 @@ func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.
 				MountPath: Settings.Addon.Path.WorkingDir,
 			},
 			{
-				Name:      "bucket",
-				MountPath: Settings.Hub.Bucket.Path,
+				Name:      "cache",
+				MountPath: Settings.Cache.Path,
 			},
 		},
 		SecurityContext: &core.SecurityContext{
 			RunAsUser: &userid,
 		},
-	}
-	mounts := addon.Spec.Mounts
-	for _, mnt := range mounts {
-		container.VolumeMounts = append(
-			container.VolumeMounts,
-			core.VolumeMount{
-				Name:      mnt.Name,
-				MountPath: "/mnt/" + mnt.Name,
-			},
-		)
 	}
 
 	return

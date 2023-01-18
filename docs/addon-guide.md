@@ -30,9 +30,6 @@ An Addon is defined and registered with the Hub using a Custom Resource (CR).
 * **image** - The addon image.
 * **imagePullPolicy** - An (optional) image pull policy. Defaults to `IfNotPresent`.
 * **resources** - An *(optional)* standard k8s pod container [resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers) specification.
-* **mounts** - An optional list of volumes to be mounted in the addon pod. **DEPRECATED**
-    * **claim** - PVC name.
-    * **name** - The name of the directory in `/mnt` to mount the volume.
 
 Example:
 ```
@@ -43,9 +40,6 @@ metadata:
   namespace: konveyor-tackle
 spec:
   image: quay.io/konveyor/tackle2-addon:latest
-  mounts:
-  - claim: tackle-maven-volume-claim
-    name: m2
   resources:
     requests:
       cpu: 50m

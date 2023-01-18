@@ -35,7 +35,6 @@ func All() []interface{} {
 		Task{},
 		TaskGroup{},
 		TaskReport{},
-		Volume{},
 		Proxy{},
 	}
 }

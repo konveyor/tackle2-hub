@@ -12,7 +12,6 @@ PKG = ./addon/... \
       ./migration/... \
       ./model/... \
       ./settings/... \
-      ./volume/... \
       ./controller/... \
       ./task/... 
 
