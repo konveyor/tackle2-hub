@@ -15,6 +15,7 @@ var Settings = &settings.Settings
 var AddonRole = []string{
 	"applications:get",
 	"applications:put",
+	"applications.bucket:*",
 	"identities:get",
 	"identities:decrypt",
 	"proxies:get",
@@ -23,6 +24,7 @@ var AddonRole = []string{
 	"tagtypes:*",
 	"tasks:get",
 	"tasks.report:*",
+	"tasks.bucket:get",
 }
 
 //

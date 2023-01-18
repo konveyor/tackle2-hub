@@ -15,6 +15,12 @@
         - get
         - post
         - put
+    - name: applications.bucket
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: assessments
       verbs:
         - delete
@@ -95,6 +101,12 @@
         - post
         - put
     - name: tasks
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tasks.bucket
       verbs:
         - delete
         - get
@@ -121,6 +133,12 @@
         - get
         - post
         - put
+    - name: applications.bucket
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: assessments
       verbs:
         - delete
@@ -197,6 +215,12 @@
         - get
         - post
         - put
+    - name: tasks.bucket
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: cache
       verbs:
         - get
@@ -209,6 +233,9 @@
       verbs:
         - post
     - name: applications
+      verbs:
+        - get
+    - name: applications.bucket
       verbs:
         - get
     - name: assessments
@@ -257,6 +284,12 @@
       verbs:
         - get
     - name: tasks
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tasks.bucket
       verbs:
         - delete
         - get

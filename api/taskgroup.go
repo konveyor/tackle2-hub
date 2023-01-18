@@ -38,11 +38,13 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskGroupRoot, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
 	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
+	routeGroup.DELETE(TaskGroupRoot, h.Delete)
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("tasks.bucket"))
 	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
 	routeGroup.POST(TaskGroupBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskGroupBucketRoot, h.BucketUpload)
 	routeGroup.DELETE(TaskGroupBucketRoot, h.BucketDelete)
-	routeGroup.DELETE(TaskGroupRoot, h.Delete)
 }
 
 // Get godoc
