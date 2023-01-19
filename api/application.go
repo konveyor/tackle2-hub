@@ -36,6 +36,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(ApplicationRoot, h.Update)
 	routeGroup.DELETE(ApplicationsRoot, h.DeleteList)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("applications.bucket"))
 	routeGroup.POST(AppBucketRoot, h.BucketUpload)
 	routeGroup.PUT(AppBucketRoot, h.BucketUpload)
 	routeGroup.GET(AppBucketRoot, h.BucketGet)

@@ -48,6 +48,8 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("tasks.bucket"))
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
 	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
 	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
