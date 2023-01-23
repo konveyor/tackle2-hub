@@ -606,18 +606,6 @@ class TackleTool:
             id.settings    = id2['settings']
             self.add('identities', id)
 
-        ### TASKS ###
-        collection = apiJSON(self.tackle2Url + "/hub/tasks", self.tackle2Token)
-        # filter only relevant state ?
-        for t2 in collection:
-            task          = Tackle2Object(t2)
-            task.addon    = t2['addon']
-            task.name     = t2['name']
-            task.state    = t2['state']
-            task.data     = t2['data']
-            self.add('tasks', task)
-            self.add('buckets', {'owner': "tasks/%s" % task.id})
-
     def dumpTackle2Buckets(self):
         bucketDir = "%s/buckets" % self.dataDir
         if not os.path.exists(bucketDir):
