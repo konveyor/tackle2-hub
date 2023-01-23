@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
 import copy
+from Crypto import Random
+from Crypto.Cipher import AES
+import hashlib
 import json
 import os
 import re
@@ -209,12 +213,14 @@ class TackleTool:
     TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'tasks', 'buckets']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
-    def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token):
+    def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
         self.dataDir      = dataDir
         self.tackle1Url   = tackle1Url
         self.tackle1Token = tackle1Token
         self.tackle2Url   = tackle2Url
         self.tackle2Token = tackle2Token
+        if encKey != "":
+            self.encKey = hashlib.sha256(encKey.encode('utf-8')).digest()
         # Dump data
         self.data         = dict()
         for t in self.TYPES:
@@ -594,16 +600,18 @@ class TackleTool:
             self.add('proxies', pr)
 
         ### IDENTITY ###
-        collection = apiJSON(self.tackle2Url + "/hub/identities", self.tackle2Token)
+        collection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
         for id2 in collection:
             id             = Tackle2Object(id2)
             id.kind        = id2['kind']
             id.name        = id2['name']
             id.description = id2['description']
             id.user        = id2['user']
-            id.password    = id2['password']
-            id.key         = id2['key']
+            id.password    = self.encrypt(id2['password'])
+            id.key         = self.encrypt(id2['key'])
             id.settings    = id2['settings']
+            #print("ID pw: %s" % self.decrypt(id.password))
+            #print("ID key: %s" % self.decrypt(id.key))
             self.add('identities', id)
 
     def dumpTackle2Buckets(self):
@@ -640,10 +648,17 @@ class TackleTool:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             print("Uploading %s.." % t)
             for dictObj in dictCollection:
+                # Skip separated imported objects   ### TODO move up
                 if "assessment" in t:
                     continue    # Pathfinder objects are imported separately
                 if "buckets" in t:
                     continue    # Bucket objects are uploaded separately to their owner resources
+
+                # Decrypt Identity fields
+                if "identities" in t:
+                    dictObj['key'] = self.decrypt(dictObj['key'])
+                    dictObj['password'] = self.decrypt(dictObj['password'])
+
                 debugPrint(dictObj)
                 apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
 
@@ -750,6 +765,21 @@ class TackleTool:
                 print("Deleting %s/%s" % (t, dictObj['id']))
                 apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
 
+    def encrypt(self, plain):
+        if plain == "":
+            return ""
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
+        return base64.b64encode(iv + cipher.encrypt(plain)).decode('ascii')
+
+    def decrypt(self, encrypted):
+        # TODO detect wrong password - try/except catches errors from utf decode, not from decrypt(), UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte
+        encrypted = base64.b64decode(encrypted)
+        if encrypted == b'':
+            return ""
+        iv = encrypted[:AES.block_size]
+        cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
+        return cipher.decrypt(encrypted[AES.block_size:]).decode('utf-8')
 
 class Tackle2Object:
     def __init__(self, initAttrs = {}):
@@ -795,7 +825,7 @@ if cmdWanted(args, "export"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
 
     # Run the export expecting clean destination
     print("Exporting Tackle 2 objects (this might take a while..)")
@@ -817,7 +847,7 @@ if cmdWanted(args, "import"):
     token2 = getKeycloakToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
 
     # Run the import
     print("Importing data to Tackle2")
