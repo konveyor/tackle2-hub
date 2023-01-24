@@ -5,6 +5,7 @@ import base64
 import copy
 from Crypto import Random
 from Crypto.Cipher import AES
+import datetime
 import hashlib
 import json
 import os
@@ -35,6 +36,10 @@ parser.add_argument('-n','--no-auth', dest='noAuth', action='store_const', const
 parser.add_argument('-b','--skip-buckets', dest='skipBuckets', action='store_const', const=True, default=False,
                     help='Skip Tackle 2 Buckets content export.')
 args = parser.parse_args()
+
+###############################################################################
+
+KNOWN_CRYPT_STRING = "tackle-cli-DFRWrubD5wkCr82gro5m"
 
 ###############################################################################
 
@@ -210,7 +215,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'tasks', 'buckets']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'buckets']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
@@ -781,6 +786,16 @@ class TackleTool:
         cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
         return cipher.decrypt(encrypted[AES.block_size:]).decode('utf-8')
 
+    def saveManifest(self, filename = "_manifest"):
+        mf = dict()
+        mf['timestamp_utc'] = datetime.datetime.utcnow().isoformat()
+        mf['command_options'] =  args
+        mf['known_string'] = KNOWN_CRYPT_STRING
+        mf['crypted_known_string'] = self.encrypt(KNOWN_CRYPT_STRING)
+        debugPrint("Saving manifest as %s" % filename)
+        saveJSON(os.path.join(self.dataDir, filename), mf)
+
+
 class Tackle2Object:
     def __init__(self, initAttrs = {}):
         if initAttrs:
@@ -832,6 +847,7 @@ if cmdWanted(args, "export"):
     tool.dumpTackle2()
     print("Writing JSON data files into %s" % args.data_dir)
     tool.store()
+    tool.saveManifest()
     if args.skipBuckets:
         print("Skipping Buckets file content export.")
     else:
