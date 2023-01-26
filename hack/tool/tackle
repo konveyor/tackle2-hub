@@ -218,7 +218,8 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews']
+    NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
@@ -599,18 +600,6 @@ class TackleTool:
             bs.owner        = bs2['owner']  # Stakeholder
             self.add('businessservices', bs)
 
-        ### PROXY ###
-        collection = apiJSON(self.tackle2Url + "/hub/proxies", self.tackle2Token)
-        for pr2 in collection:
-            pr          = Tackle2Object(pr2)
-            pr.enabled  = pr2['enabled']
-            pr.kind     = pr2['kind']
-            pr.host     = pr2['host']
-            pr.port     = pr2['port']
-            pr.excluded = pr2['excluded']
-            pr.identity = pr2['identity']
-            self.add('proxies', pr)
-
         ### IDENTITY ###
         collection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
         for id2 in collection:
@@ -623,6 +612,19 @@ class TackleTool:
             id.key         = self.encrypt(id2['key'])
             id.settings    = self.encrypt(id2['settings'])
             self.add('identities', id)
+
+        ### PROXY ###
+        collection = apiJSON(self.tackle2Url + "/hub/proxies", self.tackle2Token)
+        for pr2 in collection:
+            pr          = Tackle2Object(pr2)
+            pr.enabled  = pr2['enabled']
+            pr.kind     = pr2['kind']
+            pr.host     = pr2['host']
+            pr.port     = pr2['port']
+            pr.excluded = pr2['excluded']
+            pr.identity = pr2['identity']
+            self.add('proxies', pr)
+
 
     def dumpTackle2Buckets(self):
         bucketDir = "%s/buckets" % self.dataDir
@@ -658,13 +660,13 @@ class TackleTool:
     def uploadTackle2(self, ignoreErrors=False):
         # Hub objects
         for t in self.TYPES:
+            # Skip separated imported objects
+            if "assessment" in t:
+                continue    # Pathfinder objects are imported separately
+
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             print("Uploading %s.." % t)
             for dictObj in dictCollection:
-                # Skip separated imported objects   ### TODO move up
-                if "assessment" in t:
-                    continue    # Pathfinder objects are imported separately
-
                 # Decrypt Identity fields
                 if "identities" in t:
                     dictObj['key'] = self.decrypt(dictObj['key'])
@@ -744,7 +746,7 @@ class TackleTool:
 
     def cleanAllTackle2(self):
         self.TYPES.reverse()
-        for t in self.TYPES:
+        for t in self.NOT_IMPORTED_TYPES + self.TYPES:
             # Pathfinder resources are dependent on Application, skip it
             if "assessment" in t:
                 continue
