@@ -192,13 +192,14 @@ def tackle2path(obj):
         return "/hub/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
     return "/hub/%s" % obj
 
-def loadDump(path):
+def loadDump(path, fallback_value = []):
     try:
         data = open(path)
         return json.load(data)
-    except:
-        print("ERROR opening dump file %s, assuming empty data." % path)
-        return []
+    except Exception as ex:
+        print("WARNING: Cannot open dump file %s, assuming empty data." % path)
+        debugPrint(ex)
+        return fallback_value
 
 
 def saveJSON(path, jsonData):
@@ -780,36 +781,36 @@ class TackleTool:
         cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
         return base64.b64encode(iv + cipher.encrypt(plain)).decode('ascii')
 
-    def decrypt(self, encrypted):
+    def decrypt(self, encrypted, verifyEncKey = True):
         # Check key from config file to be matching to key from export manifest to ensure decryption consistency
-        if not self.encKeyVerified:
+        if verifyEncKey and not self.encKeyVerified:
             if self.verifyManifestEncryptKey():
                 self.encKeyVerified = True
             else:
                 print("Decryption failure: inconsistent encryption_passphase in config, get more details with -v / --verbose option.")
                 exit(1)
         # Decrypt the input
-        encrypted = base64.b64decode(encrypted)
-        if encrypted == b'':
+        encrypted_bytes = base64.b64decode(encrypted)
+        if encrypted_bytes == b'':
             return ""
-        iv = encrypted[:AES.block_size]
+        iv = encrypted_bytes[:AES.block_size]
         cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
-        return cipher.decrypt(encrypted[AES.block_size:]).decode('utf-8')
+        return cipher.decrypt(encrypted_bytes[AES.block_size:]).decode('utf-8')
 
     def saveManifest(self):
         mf = dict()
         mf['timestamp_utc'] = datetime.datetime.utcnow().isoformat()
-        mf['command_options'] =  args
+        mf['command_options'] = args
         mf['known_string'] = KNOWN_CRYPT_STRING
         mf['crypted_known_string'] = self.encrypt(KNOWN_CRYPT_STRING)
         debugPrint("Saving manifest as %s" % EXPORT_MANIFEST_FILENAME)
         saveJSON(os.path.join(self.dataDir, EXPORT_MANIFEST_FILENAME), mf)
 
     def verifyManifestEncryptKey(self):
-        debugPrint("Loading manifest from %s" % EXPORT_MANIFEST_FILENAME)
-        mf = loadDump(os.path.join(self.dataDir, EXPORT_MANIFEST_FILENAME + ".json"))
-        if mf['known_string'] and mf['crypted_known_string'] and mf['crypted_known_string'] != "":
-            if self.decrypt(mf['crypted_known_string']) == mf['known_string']:
+        debugPrint("Verifying manifest from %s" % EXPORT_MANIFEST_FILENAME)
+        mf = loadDump(os.path.join(self.dataDir, EXPORT_MANIFEST_FILENAME + ".json"), {})
+        if 'known_string' in mf and 'crypted_known_string' in mf and mf['crypted_known_string'] != "":
+            if self.decrypt(mf['crypted_known_string'], False) == mf['known_string']:
                 debugPrint("Encryption key check succeessful.")
                 return True
             else:
