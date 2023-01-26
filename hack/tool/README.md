@@ -6,6 +6,22 @@ For more details about the Tackle project, see [Tackle2-Hub README](https://gith
 
 ## Scenarios
 
+### Export and Import data between Tackle 2 instances
+
+Tackle 2 can be exported and imported to another Tackle 2 instance, expecting it is cleaned-up before import. This focuses on application inventory, but exports and imports most of Tackle 2 objects except TaskGroups&Tasks and Keycloak identitty provider data.
+
+Export/imported entities:
+- Applications, Dependencies, Assessments, Reviews, Tag Types, Tags, Job Functions, Stakeholder Groups, Stakeholders, Business Services, Proxies, Identities (sensitive data are encrypted with ```encryption_passphase``` config file field)
+- Application's Buckets data (e.g. app binaries or windup reports)
+
+Steps for export (tackle-config.yml file points to source Tackle 2 installation)
+- ```tackle export```
+
+Steps for import (tackle-config.yml file points to destination Tackle 2, existing data will be removed)
+
+- ```tackle clean-all```
+- ```tackle import```
+
 ### Migrate data from running Tackle 1.2 to running Tackle 2 instance
 
 Migrate data updating refs to the seed objects matching to the destination Tackle 2 (tags, tag-types and job functions seeded).
@@ -18,29 +34,6 @@ Migrate data updating refs to the seed objects matching to the destination Tackl
 Exports full data dump including seeds to be later imported to currently not available Tackle 2 instance, which needs a cleanup before running the import.
 
 - ```tackle --skip-destination-check export-tackle1```
-- ```tackle clean-all```
-- ```tackle import```
-
-### Export and Import data between Tackle 2 instances
-
-Tackle 2 can be fully exported and imported to another Tackle 2 instance, expecting it is cleaned-up before import.
-
-In this case, two configuration files will be needed, one for exported Tackle 2 instance (```tackle-config-source.yml``` in example below) and other for Tackle 2 instance, where the dump should be imported to (```-c``` was ommitted so ```tackle-config.yml``` as the default config filename was used).
-
-- ```tackle -c tackle-config-source.yml export```
-- ```tackle clean-all```
-- ```tackle import```
-
-### Backup/restore (export and import data on the same Tackle 2 instance)
-
-Tackle 2 can be fully exported and imported, that can be used also as a backup/restore solution for your Tackle 2 installation.
-
-Backup
-- ```tackle export```
-- store the ```tackle-data``` directory on a safe place
-
-Restore
-- place the ```tackle-data``` directory backup to the current directory
 - ```tackle clean-all```
 - ```tackle import```
 
@@ -77,8 +70,8 @@ Run the tackle tool:
 
 ### Supported actions
 - ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
-- ```export``` exports Tackle 2 objects into local JSON files
-- ```import``` creates objects in Tackle 2 from local JSON files
+- ```export``` exports Tackle 2 objects into local JSON files and bucket data directory
+- ```import``` creates objects in Tackle 2 from local JSON files and buckets data
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
 - ```clean-all``` deletes ALL data returned by Tackle 2 (including seeds, additional to ```clean```), skips some pathfinder stuff without index action
 
@@ -157,6 +150,9 @@ API endpoints and credentials should be set in a config file (```tackle-config.y
 url: https://tackle-konveyor-tackle.apps.cluster.local
 username: admin
 password:
+
+# Export of Identitiy (credentials) password and key fields should be encrypted, set the passphase
+encryption_passphase:
 
 # Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
 tackle1:
