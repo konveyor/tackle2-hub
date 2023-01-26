@@ -169,6 +169,7 @@ def apiFileGet(url, token, destinationPath, ignoreErrors=False):
         # Store to local destination file
         with open(destinationPath, 'wb') as destFile:
             shutil.copyfileobj(resp.raw, destFile)
+        destFile.close
 
     return destFile.name
 
@@ -217,7 +218,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities', 'buckets']
+    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews', 'proxies', 'identities']
     TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
@@ -236,6 +237,7 @@ class TackleTool:
         for t in self.TYPES:
             self.data[t] = []
         self.data['origin-tags'] = []   # temp storage for origin tags id remapping
+        self.data['temp-buckets'] = []  # temp storage for bucket owner's refs during export
         # Existing resources in destination
         self.destData        = dict()
         for t in self.TYPES:
@@ -514,7 +516,7 @@ class TackleTool:
             app.binary          = app2['binary']
             app.facts           = app2['facts']
             app.identities      = app2['identities']
-            self.add('buckets', {'owner': "applications/%s" % app.id})
+            self.add('temp-buckets', {'owner': "applications/%s" % app.id})
             self.add('applications', app)
 
         ### DEPENDENCIES ###
@@ -626,7 +628,7 @@ class TackleTool:
         bucketDir = "%s/buckets" % self.dataDir
         if not os.path.exists(bucketDir):
             os.mkdir(bucketDir)
-        for bucket in self.data['buckets']:
+        for bucket in self.data['temp-buckets']:
             debugPrint("Downloading bucket content for %s" % bucket['owner'])
             bucketFilename = bucket['owner'].replace("/", "--")
             apiFileGet(self.tackle2Url + "/hub/" + bucket['owner'] + "/bucket/", self.tackle2Token, bucketDir + "/%s.tar.gz" % bucketFilename)
@@ -635,8 +637,11 @@ class TackleTool:
         bucketDir = "%s/buckets/" % self.dataDir
         for bucketArchive in os.listdir(bucketDir):
             ownerPath = bucketArchive.replace("--", "/").replace(".tar.gz", "")
-            print("Uploading bucket archive for %s.." % ownerPath)
-            apiFilePost(self.tackle2Url + "/hub/" + ownerPath + "/bucket/", self.tackle2Token, bucketDir + bucketArchive)
+            if os.path.getsize(bucketDir + bucketArchive) > 0:
+                print("Uploading bucket archive for %s.." % ownerPath)
+                apiFilePost(self.tackle2Url + "/hub/" + ownerPath + "/bucket/", self.tackle2Token, bucketDir + bucketArchive)
+            else:
+                debugPrint("Skipping empty bucket archive upload %s" % bucketArchive)
 
     def add(self, type, item):
         for existingItem in self.data[type]:
@@ -659,8 +664,6 @@ class TackleTool:
                 # Skip separated imported objects   ### TODO move up
                 if "assessment" in t:
                     continue    # Pathfinder objects are imported separately
-                if "buckets" in t:
-                    continue    # Bucket objects are uploaded separately to their owner resources
 
                 # Decrypt Identity fields
                 if "identities" in t:
@@ -700,23 +703,10 @@ class TackleTool:
             # Push the updated assessment
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
-        # Buckets content
-        dictCollection = loadDump(os.path.join(self.dataDir, 'buckets.json'))
-        for bucket in dictCollection:
-            # Check if there is directory with data for bucket/owners list
-            bucketDir = self.dataDir + "/buckets/" + bucket['path']
-            if os.path.exists(bucketDir):
-                print("Uploading bucket data for %s" % bucket['owner'])
-                for bucketEntry in os.listdir(bucketDir):
-                    # Upload each bucket entry using its owner path
-                    apiFilePost(self.tackle2Url + tackle2path(bucket['owner']) + "/bucket/" + bucketEntry, self.tackle2Token, bucketDir + "/" + bucketEntry)
-
     def preImportCheck(self):
         for t in self.TYPES:
             # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
             if "assessment" in t:
-                continue
-            if "buckets" in t:
                 continue
             print("Checking %s in destination Tackle2.." % t)
             destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
@@ -741,8 +731,6 @@ class TackleTool:
             for dictObj in dictCollection:
                 if "assessment" in t:
                     continue
-                if "buckets" in t:
-                    continue
                 # Pathfinder resources are dependent on Application
                 if t == "applications":
                     # Delete related Application's Assessment resources first
@@ -759,8 +747,6 @@ class TackleTool:
         for t in self.TYPES:
             # Pathfinder resources are dependent on Application, skip it
             if "assessment" in t:
-                continue
-            if "buckets" in t:
                 continue
             destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
             for dictObj in destCollection:
