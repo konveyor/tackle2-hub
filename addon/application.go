@@ -86,3 +86,49 @@ func (h *Application) Bucket(id uint) (b *Bucket) {
 	}
 	return
 }
+
+//
+// Tags returns the tags API.
+func (h *Application) Tags(id uint) (tg AppTags) {
+	tg = AppTags{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+//
+// AppTags sub-resource API.
+// Provides association management of tags to applications by name.
+type AppTags struct {
+	client *Client
+	appId  uint
+}
+
+//
+// List associated tags.
+// Returns a list of tag names.
+func (h *AppTags) List() (list []api.Ref, err error) {
+	list = []api.Ref{}
+	path := Params{api.ID: h.appId}.inject(api.ApplicationTagsRoot)
+	err = h.client.Get(path, &list)
+	return
+}
+
+//
+// Add ensures tag is associated with the application.
+func (h *AppTags) Add(id uint) (err error) {
+	path := Params{api.ID: h.appId}.inject(api.ApplicationTagsRoot)
+	err = h.client.Post(path, &api.Ref{ID: id})
+	return
+}
+
+//
+// Delete ensures the tag is not associated with the application.
+func (h *AppTags) Delete(id uint) (err error) {
+	path := Params{
+		api.ID:  h.appId,
+		api.ID2: id}.inject(api.ApplicationTagRoot)
+	err = h.client.Delete(path)
+	return
+}

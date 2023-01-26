@@ -56,6 +56,39 @@ func (h *Tag) Delete(r *api.Tag) (err error) {
 }
 
 //
+// Find by name and type.
+func (h *Tag) Find(name string, tp uint) (r *api.Tag, found bool, err error) {
+	list := []api.Tag{}
+	err = h.client.Get(api.TagsRoot, &list)
+	if err != nil {
+		return
+	}
+	for i := range list {
+		if name == list[i].Name && tp == list[i].TagType.ID {
+			r = &list[i]
+			found = true
+			break
+		}
+	}
+	return
+}
+
+//
+// Ensure a tag exists.
+func (h *Tag) Ensure(wanted *api.Tag) (err error) {
+	tag, found, err := h.Find(wanted.Name, wanted.TagType.ID)
+	if err != nil {
+		return
+	}
+	if !found {
+		err = h.Create(wanted)
+	} else {
+		*wanted = *tag
+	}
+	return
+}
+
+//
 // TagType API.
 type TagType struct {
 	// hub API client.
@@ -102,6 +135,39 @@ func (h *TagType) Delete(r *api.TagType) (err error) {
 			"Addon deleted: tag(type).",
 			"object",
 			r)
+	}
+	return
+}
+
+//
+// Find by name.
+func (h *TagType) Find(name string) (r *api.TagType, found bool, err error) {
+	list := []api.TagType{}
+	err = h.client.Get(api.TagTypesRoot, &list)
+	if err != nil {
+		return
+	}
+	for i := range list {
+		if name == list[i].Name {
+			r = &list[i]
+			found = true
+			break
+		}
+	}
+	return
+}
+
+//
+// Ensure a tag-type exists.
+func (h *TagType) Ensure(wanted *api.TagType) (err error) {
+	tp, found, err := h.Find(wanted.Name)
+	if err != nil {
+		return
+	}
+	if !found {
+		err = h.Create(wanted)
+	} else {
+		*wanted = *tp
 	}
 	return
 }
