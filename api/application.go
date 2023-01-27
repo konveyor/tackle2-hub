@@ -7,14 +7,17 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"strconv"
 )
 
 //
 // Routes
 const (
-	ApplicationsRoot = "/applications"
-	ApplicationRoot  = ApplicationsRoot + "/:" + ID
-	AppBucketRoot    = ApplicationRoot + "/bucket/*" + Wildcard
+	ApplicationsRoot    = "/applications"
+	ApplicationRoot     = ApplicationsRoot + "/:" + ID
+	ApplicationTagsRoot = ApplicationRoot + "/tags"
+	ApplicationTagRoot  = ApplicationTagsRoot + "/:" + ID2
+	AppBucketRoot       = ApplicationRoot + "/bucket/*" + Wildcard
 )
 
 //
@@ -36,6 +39,12 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(ApplicationRoot, h.Update)
 	routeGroup.DELETE(ApplicationsRoot, h.DeleteList)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
+	// Tags
+	routeGroup.GET(ApplicationTagsRoot, h.TagList)
+	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
+	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
+	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
+	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.bucket"))
 	routeGroup.POST(AppBucketRoot, h.BucketUpload)
@@ -294,6 +303,102 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	}
 
 	h.delete(ctx, &m.BucketOwner)
+}
+
+// TagList godoc
+// @summary List tag references.
+// @description List tag references.
+// @tags get
+// @produce json
+// @success 200 {object} []api.Ref
+// @router /applications/{id}/tags/id [get]
+// @param id path string true "Application ID"
+func (h ApplicationHandler) TagList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	db := h.DB.Model(app).Association("Tags")
+	list := []model.Tag{}
+	err := db.Find(&list)
+	if err != nil {
+		h.listFailed(ctx, err)
+		return
+	}
+	resources := []Ref{}
+	for i := range list {
+		r := Ref{}
+		r.With(list[i].ID, list[i].Name)
+		resources = append(resources, r)
+	}
+	ctx.JSON(http.StatusOK, resources)
+}
+
+// TagAdd godoc
+// @summary Add tag association.
+// @description Ensure tag is associated with the application.
+// @tags create
+// @accept json
+// @produce json
+// @success 201 {object} api.Ref
+// @router /tags [post]
+// @param tag body Ref true "Tag data"
+func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
+	id := h.pk(ctx)
+	ref := &Ref{}
+	err := ctx.BindJSON(ref)
+	if err != nil {
+		h.bindFailed(ctx, err)
+		return
+	}
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	db := h.DB.Model(app).Association("Tags")
+	tag := &model.Tag{}
+	tag.ID = ref.ID
+	err = db.Append(tag)
+	if err != nil {
+		h.createFailed(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, ref)
+}
+
+// TagDelete godoc
+// @summary Delete tag association.
+// @description Ensure tag is not associated with the application.
+// @tags delete
+// @success 204
+// @router /applications/{id}/tags/{sid} [delete]
+// @param id path string true "Application ID"
+// @param sid path string true "Tag ID"
+func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.getFailed(ctx, result.Error)
+		return
+	}
+	db := h.DB.Model(app).Association("Tags")
+	id2 := ctx.Param(ID2)
+	n, _ := strconv.Atoi(id2)
+	tag := &model.Tag{}
+	tag.ID = uint(n)
+	err := db.Delete(tag)
+	if err != nil {
+		h.deleteFailed(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 //

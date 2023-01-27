@@ -17,6 +17,7 @@ var (
 // Params
 const (
 	ID       = "id"
+	ID2      = "id2"
 	Key      = "key"
 	Name     = "name"
 	Wildcard = "wildcard"
