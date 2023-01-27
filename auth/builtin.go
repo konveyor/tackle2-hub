@@ -50,6 +50,11 @@ func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 	return
 }
 
+// Login and obtain a token.
+func (r *NoAuth) Login(user, password string) (token string, err error) {
+	return
+}
+
 //
 // Builtin auth provider.
 type Builtin struct {
@@ -130,6 +135,11 @@ func (r *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 func (r *Builtin) User(jwToken *jwt.Token) (user string) {
 	claims := jwToken.Claims.(jwt.MapClaims)
 	user = claims["user"].(string)
+	return
+}
+
+// Login and obtain a token.
+func (r *Builtin) Login(user, password string) (token string, err error) {
 	return
 }
 

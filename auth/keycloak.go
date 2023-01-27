@@ -37,6 +37,22 @@ func (r Keycloak) NewToken(user string, scopes []string, claims jwt.MapClaims) (
 	return
 }
 
+// Login and obtain a token.
+func (r *Keycloak) Login(user, password string) (token string, err error) {
+	jwt, err := r.client.Login(
+		context.TODO(),
+		Settings.Auth.Keycloak.ClientID,
+		Settings.Auth.Keycloak.ClientSecret,
+		Settings.Auth.Keycloak.Realm,
+		user,
+		password,
+	)
+	if err == nil {
+		token = jwt.AccessToken
+	}
+	return
+}
+
 //
 // Authenticate the token
 func (r *Keycloak) Authenticate(token string) (jwToken *jwt.Token, err error) {
