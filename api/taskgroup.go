@@ -61,7 +61,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	db := h.DB.Preload(clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	r := TaskGroup{}
@@ -82,7 +82,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 	db := h.DB.Preload(clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []TaskGroup{}
@@ -108,7 +108,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 	r := &TaskGroup{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	db := h.DB
@@ -135,7 +135,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := db.Create(&m)
 	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -163,7 +163,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	current := &model.TaskGroup{}
 	err = h.DB.First(current, id).Error
 	if err != nil {
-		h.getFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := updated.Model()
@@ -191,7 +191,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	db = db.Where("state IN ?", []string{"", tasking.Created})
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -211,7 +211,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	db := h.DB.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	for _, task := range m.Tasks {
@@ -220,7 +220,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 			err := rt.Delete(h.Client)
 			if err != nil {
 				if !k8serr.IsNotFound(err) {
-					h.deleteFailed(ctx, err)
+					h.reportError(ctx, err)
 					return
 				}
 			}
@@ -228,14 +228,14 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 		db := h.DB.Select(clause.Associations)
 		err = db.Delete(task).Error
 		if err != nil {
-			h.deleteFailed(ctx, err)
+			h.reportError(ctx, err)
 			return
 		}
 	}
 	db = h.DB.Select(clause.Associations)
 	err = db.Delete(m).Error
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -268,7 +268,7 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	}
 	err := h.modBody(ctx, r, mod)
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	ctx.Next()
@@ -287,7 +287,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -307,7 +307,7 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -327,7 +327,7 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 

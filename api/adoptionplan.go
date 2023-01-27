@@ -53,7 +53,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 
 	err := ctx.BindJSON(&requestedApps)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 	}
 
 	var ids []uint
@@ -65,14 +65,14 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Where("applicationId IN ?", ids).Find(&reviews)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
 	var deps []model.Dependency
 	result = h.DB.Where("toId IN ? AND fromId IN ?", ids, ids).Find(&deps)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 

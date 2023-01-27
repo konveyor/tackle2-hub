@@ -47,7 +47,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	r := Dependency{}
@@ -79,7 +79,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 	db = h.preLoad(db, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -106,14 +106,14 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 	r := Dependency{}
 	err := ctx.BindJSON(&r)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = m.Create(h.DB)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -133,12 +133,12 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 	m := &model.Dependency{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	result = h.DB.Delete(m)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
