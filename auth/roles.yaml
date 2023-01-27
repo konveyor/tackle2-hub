@@ -112,6 +112,18 @@
         - get
         - post
         - put
+    - name: trackers
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: tickets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: cache
       verbs:
         - get
@@ -221,6 +233,15 @@
         - get
         - post
         - put
+    - name: trackers
+      verbs:
+          - get
+    - name: tickets
+      verbs:
+          - delete
+          - get
+          - post
+          - put
     - name: cache
       verbs:
         - get
@@ -295,6 +316,12 @@
         - get
         - post
         - put
+    - name: trackers
+      verbs:
+        - get
+    - name: tickets
+      verbs:
+        - get
     - name: cache
       verbs:
         - get

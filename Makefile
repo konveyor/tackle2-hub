@@ -13,7 +13,8 @@ PKG = ./addon/... \
       ./model/... \
       ./settings/... \
       ./controller/... \
-      ./task/... 
+      ./task/...  \
+      ./tracker/...
 
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 

@@ -1,10 +1,12 @@
 package model
 
 import (
+	"fmt"
+
+	"gorm.io/gorm"
 	"sync"
 )
 
-//
 // depMutex ensures Dependency.Create() is not executed concurrently.
 var depMutex sync.Mutex
 
@@ -70,6 +72,29 @@ type Import struct {
 	RepositoryPath      string
 }
 
+func (r *Import) AsMap() (m map[string]interface{}) {
+	m = make(map[string]interface{})
+	m["filename"] = r.Filename
+	m["applicationName"] = r.ApplicationName
+	// "Application Name" is necessary in order for
+	// the UI to display the error report correctly.
+	m["Application Name"] = r.ApplicationName
+	m["businessService"] = r.BusinessService
+	m["comments"] = r.Comments
+	m["dependency"] = r.Dependency
+	m["dependencyDirection"] = r.DependencyDirection
+	m["description"] = r.Description
+	m["errorMessage"] = r.ErrorMessage
+	m["isValid"] = r.IsValid
+	m["processed"] = r.Processed
+	m["recordType1"] = r.RecordType1
+	for i, tag := range r.ImportTags {
+		m[fmt.Sprintf("tagType%v", i+1)] = tag.TagType
+		m[fmt.Sprintf("tag%v", i+1)] = tag.Name
+	}
+	return
+}
+
 type ImportSummary struct {
 	Model
 	Content        []byte
@@ -87,7 +112,34 @@ type ImportTag struct {
 	Import   *Import
 }
 
-//
+// Create a dependency synchronized using a mutex.
+func (r *Dependency) Create(db *gorm.DB) (err error) {
+	depMutex.Lock()
+	defer depMutex.Unlock()
+	err = db.Create(r).Error
+	return
+}
+
+// Validation Hook to avoid cyclic dependencies.
+func (dep *Dependency) BeforeCreate(db *gorm.DB) (err error) {
+	var nextDeps []*Dependency
+	var nextAppsIDs []uint
+	nextAppsIDs = append(nextAppsIDs, dep.FromID)
+	for len(nextAppsIDs) != 0 {
+		db.Where("ToID IN ?", nextAppsIDs).Find(&nextDeps)
+		nextAppsIDs = nextAppsIDs[:0] // empty array, but keep capacity
+		for _, nextDep := range nextDeps {
+			if nextDep.FromID == dep.ToID {
+				err = DependencyCyclicError{}
+				return
+			}
+			nextAppsIDs = append(nextAppsIDs, nextDep.FromID)
+		}
+	}
+
+	return
+}
+
 // Custom error type to allow API recognize Cyclic Dependency error and assign proper status code.
 type DependencyCyclicError struct{}
 

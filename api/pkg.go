@@ -64,6 +64,8 @@ func All() []Handler {
 		&TaskHandler{},
 		&TaskGroupHandler{},
 		&PathfinderHandler{},
+                &TicketHandler{},
+                &TrackerHandler{},
 	}
 }
 

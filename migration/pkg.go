@@ -4,6 +4,7 @@ import (
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/migration/v1"
 	"github.com/konveyor/tackle2-hub/migration/v2"
+	"github.com/konveyor/tackle2-hub/migration/v3"
 	"gorm.io/gorm"
 )
 
@@ -32,5 +33,6 @@ func All() []Migration {
 	return []Migration{
 		v1.Migration{},
 		v2.Migration{},
+		v3.Migration{},
 	}
 }

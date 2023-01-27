@@ -16,6 +16,7 @@ import (
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
+	"github.com/konveyor/tackle2-hub/tracker"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -169,6 +170,12 @@ func main() {
 		DB: db,
 	}
 	importManager.Run(context.Background())
+	//
+	// Ticket trackers.
+	trackerManager := tracker.Manager{
+		DB: db,
+	}
+	trackerManager.Run(context.Background())
 	//
 	// Web
 	router := gin.Default()
