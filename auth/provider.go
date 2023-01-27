@@ -32,6 +32,8 @@ type Provider interface {
 	Scopes(jwToken *jwt.Token) []Scope
 	// User extracts the user from token.
 	User(jwToken *jwt.Token) (user string)
+	// Login and obtain a token.
+	Login(user, password string) (token string, err error)
 }
 
 //

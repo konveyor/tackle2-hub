@@ -47,6 +47,7 @@ func All() []Handler {
 		&AddonHandler{},
 		&AdoptionPlanHandler{},
 		&ApplicationHandler{},
+		&AuthHandler{},
 		&BusinessServiceHandler{},
 		&CacheHandler{},
 		&DependencyHandler{},
