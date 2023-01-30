@@ -311,6 +311,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/tags/id": {
+            "get": {
+                "description": "List tag references.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List tag references.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Ref"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/tags/{sid}": {
+            "delete": {
+                "description": "Ensure tag is not associated with the application.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete tag association.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "sid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/applications/{id}/tasks/{id}/content/{wildcard}": {
             "get": {
                 "description": "Get bucket content by ID and path.",
@@ -333,6 +395,26 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Login and obtain a bearer token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post"
+                ],
+                "summary": "Login and obtain a bearer token.",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -468,6 +550,52 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/cache": {
+            "delete": {
+                "description": "Delete a directory within the cache.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a directory within the cache.",
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/caches/{id}": {
+            "get": {
+                "description": "Get the cache.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get the cache.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cache DIR",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Cache"
+                        }
                     }
                 }
             }
@@ -2692,62 +2820,76 @@ const docTemplate = `{
                 }
             }
         },
-        "/volumes": {
+        "/tickets": {
             "get": {
-                "description": "List all volumes.",
+                "description": "List all tickets.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "get"
                 ],
-                "summary": "List all volumes.",
+                "summary": "List all tickets.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Volume"
+                                "$ref": "#/definitions/api.Ticket"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Clean the volume.",
+                "description": "Create a ticket.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "create"
                 ],
-                "summary": "Clean the volume.",
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
+                "summary": "Create a ticket.",
+                "parameters": [
+                    {
+                        "description": "Ticket data",
+                        "name": "ticket",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/api.Ticket"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Ticket"
                         }
                     }
                 }
             }
         },
-        "/volumes/{id}": {
+        "/tickets/{id}": {
             "get": {
-                "description": "Get an volume by ID.",
+                "description": "Get a ticket by ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "get"
                 ],
-                "summary": "Get an volume by ID.",
+                "summary": "Get a ticket by ID.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Volume ID",
-                        "name": "name",
+                        "description": "Ticket ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -2756,36 +2898,162 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Volume"
+                            "$ref": "#/definitions/api.Ticket"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a ticket.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a ticket.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Ticket id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/trackers": {
+            "get": {
+                "description": "List all trackers.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all trackers.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Tracker"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a tracker.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a tracker.",
+                "parameters": [
+                    {
+                        "description": "Tracker data",
+                        "name": "tracker",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Tracker"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Tracker"
+                        }
+                    }
+                }
+            }
+        },
+        "/trackers/{id}": {
+            "get": {
+                "description": "Get a tracker by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a tracker by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Tracker"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a volume.",
+                "description": "Update a tracker.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
                     "update"
                 ],
-                "summary": "Update a volume.",
+                "summary": "Update a tracker.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Volume ID",
+                        "type": "integer",
+                        "description": "Tracker id",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Volume data",
-                        "name": "job_function",
+                        "description": "Tracker data",
+                        "name": "application",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Volume"
+                            "$ref": "#/definitions/api.Tracker"
                         }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a tracker.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a tracker.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tracker id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -2896,6 +3164,23 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Cache": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "string"
+                },
+                "exists": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "used": {
+                    "type": "string"
+                }
+            }
+        },
         "api.CopyRequest": {
             "type": "object",
             "required": [
@@ -2941,6 +3226,10 @@ const docTemplate = `{
             "type": "object"
         },
         "api.Facts": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "api.Fields": {
             "type": "object",
             "additionalProperties": true
         },
@@ -3053,6 +3342,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.Metadata": {
+            "type": "object",
+            "additionalProperties": true
         },
         "api.Proxy": {
             "type": "object",
@@ -3514,11 +3807,73 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Volume": {
+        "api.Ticket": {
             "type": "object",
+            "required": [
+                "application",
+                "kind",
+                "parent",
+                "tracker"
+            ],
             "properties": {
-                "capacity": {
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "createTime": {
                     "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "fields": {
+                    "$ref": "#/definitions/api.Fields"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tracker": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Tracker": {
+            "type": "object",
+            "required": [
+                "identity",
+                "kind",
+                "name",
+                "url"
+            ],
+            "properties": {
+                "connected": {
+                    "type": "boolean"
                 },
                 "createTime": {
                     "type": "string"
@@ -3529,13 +3884,33 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "identity": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "jira-cloud",
+                        "jira-server",
+                        "jira-datacenter"
+                    ]
+                },
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api.Metadata"
+                },
                 "name": {
                     "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
                 },
-                "used": {
+                "url": {
                     "type": "string"
                 }
             }
