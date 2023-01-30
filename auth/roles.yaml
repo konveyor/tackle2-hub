@@ -15,6 +15,12 @@
         - get
         - post
         - put
+    - name: applications.tags
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications.bucket
       verbs:
         - delete
@@ -145,6 +151,12 @@
         - get
         - post
         - put
+    - name: applications.tags
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications.bucket
       verbs:
         - delete
@@ -254,6 +266,9 @@
       verbs:
         - post
     - name: applications
+      verbs:
+        - get
+    - name: applications.tags
       verbs:
         - get
     - name: applications.bucket
