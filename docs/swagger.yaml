@@ -64,6 +64,17 @@ definitions:
     required:
     - name
     type: object
+  api.Cache:
+    properties:
+      capacity:
+        type: string
+      exists:
+        type: boolean
+      path:
+        type: string
+      used:
+        type: string
+    type: object
   api.CopyRequest:
     properties:
       sourceReview:
@@ -94,6 +105,9 @@ definitions:
   api.DependencyGraph:
     type: object
   api.Facts:
+    additionalProperties: true
+    type: object
+  api.Fields:
     additionalProperties: true
     type: object
   api.Identity:
@@ -168,6 +182,9 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Metadata:
+    additionalProperties: true
     type: object
   api.Proxy:
     properties:
@@ -473,22 +490,79 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.Volume:
+  api.Ticket:
     properties:
-      capacity:
+      application:
+        $ref: '#/definitions/api.Ref'
+      createTime:
         type: string
+      createUser:
+        type: string
+      error:
+        type: boolean
+      fields:
+        $ref: '#/definitions/api.Fields'
+      id:
+        type: integer
+      kind:
+        type: string
+      lastUpdated:
+        type: string
+      link:
+        type: string
+      message:
+        type: string
+      parent:
+        type: string
+      reference:
+        type: string
+      status:
+        type: string
+      tracker:
+        $ref: '#/definitions/api.Ref'
+      updateUser:
+        type: string
+    required:
+    - application
+    - kind
+    - parent
+    - tracker
+    type: object
+  api.Tracker:
+    properties:
+      connected:
+        type: boolean
       createTime:
         type: string
       createUser:
         type: string
       id:
         type: integer
+      identity:
+        $ref: '#/definitions/api.Ref'
+      kind:
+        enum:
+        - jira-cloud
+        - jira-server
+        - jira-datacenter
+        type: string
+      lastUpdated:
+        type: string
+      message:
+        type: string
+      metadata:
+        $ref: '#/definitions/api.Metadata'
       name:
         type: string
       updateUser:
         type: string
-      used:
+      url:
         type: string
+    required:
+    - identity
+    - kind
+    - name
+    - url
     type: object
 info:
   contact: {}
@@ -689,6 +763,47 @@ paths:
       summary: Upload bucket content by ID and path.
       tags:
       - post
+  /applications/{id}/tags/{sid}:
+    delete:
+      description: Ensure tag is not associated with the application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: sid
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete tag association.
+      tags:
+      - delete
+  /applications/{id}/tags/id:
+    get:
+      description: List tag references.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Ref'
+            type: array
+      summary: List tag references.
+      tags:
+      - get
   /applications/{id}/tasks/{id}/content/{wildcard}:
     get:
       description: Get bucket content by ID and path.
@@ -706,6 +821,19 @@ paths:
       summary: Get bucket content by ID and path.
       tags:
       - get
+  /auth/login:
+    post:
+      description: Login and obtain a bearer token.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+      summary: Login and obtain a bearer token.
+      tags:
+      - post
   /businessservices:
     get:
       description: List all business services.
@@ -795,6 +923,36 @@ paths:
       summary: Update a business service.
       tags:
       - update
+  /cache:
+    delete:
+      description: Delete a directory within the cache.
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Delete a directory within the cache.
+      tags:
+      - delete
+  /caches/{id}:
+    get:
+      description: Get the cache.
+      parameters:
+      - description: Cache DIR
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Cache'
+      summary: Get the cache.
+      tags:
+      - get
   /dependencies:
     get:
       description: List all dependencies.
@@ -2261,9 +2419,9 @@ paths:
       summary: Submit a task.
       tags:
       - update
-  /volumes:
+  /tickets:
     get:
-      description: List all volumes.
+      description: List all tickets.
       produces:
       - application/json
       responses:
@@ -2271,30 +2429,53 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Volume'
+              $ref: '#/definitions/api.Ticket'
             type: array
-      summary: List all volumes.
+      summary: List all tickets.
       tags:
       - get
     post:
-      description: Clean the volume.
+      consumes:
+      - application/json
+      description: Create a ticket.
+      parameters:
+      - description: Ticket data
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/api.Ticket'
       produces:
       - application/json
       responses:
-        "202":
-          description: Accepted
+        "201":
+          description: Created
           schema:
-            $ref: '#/definitions/api.Task'
-      summary: Clean the volume.
+            $ref: '#/definitions/api.Ticket'
+      summary: Create a ticket.
       tags:
-      - post
-  /volumes/{id}:
-    get:
-      description: Get an volume by ID.
+      - create
+  /tickets/{id}:
+    delete:
+      description: Delete a ticket.
       parameters:
-      - description: Volume ID
+      - description: Ticket id
         in: path
-        name: name
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: ""
+      summary: Delete a ticket.
+      tags:
+      - delete
+    get:
+      description: Get a ticket by ID.
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
@@ -2303,30 +2484,99 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Volume'
-      summary: Get an volume by ID.
+            $ref: '#/definitions/api.Ticket'
+      summary: Get a ticket by ID.
+      tags:
+      - get
+  /trackers:
+    get:
+      description: List all trackers.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Tracker'
+            type: array
+      summary: List all trackers.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a tracker.
+      parameters:
+      - description: Tracker data
+        in: body
+        name: tracker
+        required: true
+        schema:
+          $ref: '#/definitions/api.Tracker'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Tracker'
+      summary: Create a tracker.
+      tags:
+      - create
+  /trackers/{id}:
+    delete:
+      description: Delete a tracker.
+      parameters:
+      - description: Tracker id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: ""
+      summary: Delete a tracker.
+      tags:
+      - delete
+    get:
+      description: Get a tracker by ID.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Tracker'
+      summary: Get a tracker by ID.
       tags:
       - get
     put:
       consumes:
       - application/json
-      description: Update a volume.
+      description: Update a tracker.
       parameters:
-      - description: Volume ID
+      - description: Tracker id
         in: path
         name: id
         required: true
-        type: string
-      - description: Volume data
+        type: integer
+      - description: Tracker data
         in: body
-        name: job_function
+        name: application
         required: true
         schema:
-          $ref: '#/definitions/api.Volume'
+          $ref: '#/definitions/api.Tracker'
       responses:
         "204":
           description: ""
-      summary: Update a volume.
+      summary: Update a tracker.
       tags:
       - update
 swagger: "2.0"
