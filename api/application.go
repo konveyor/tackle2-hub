@@ -318,14 +318,14 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB.First(app, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	db := h.DB.Model(app).Association("Tags")
 	list := []model.Tag{}
 	err := db.Find(&list)
 	if err != nil {
-		h.listFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	resources := []Ref{}
@@ -351,13 +351,13 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	ref := &Ref{}
 	err := ctx.BindJSON(ref)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	app := &model.Application{}
 	result := h.DB.First(app, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	db := h.DB.Model(app).Association("Tags")
@@ -365,7 +365,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	tag.ID = ref.ID
 	err = db.Append(tag)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	ctx.JSON(http.StatusCreated, ref)
@@ -384,7 +384,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB.First(app, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	db := h.DB.Model(app).Association("Tags")
@@ -394,7 +394,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	tag.ID = uint(n)
 	err := db.Delete(tag)
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
