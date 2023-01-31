@@ -48,7 +48,7 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h StakeholderHandler) List(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []Stakeholder{}
@@ -95,14 +95,14 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 	r := &Stakeholder{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(m)
 	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	r.With(m)
@@ -122,12 +122,12 @@ func (h StakeholderHandler) Delete(ctx *gin.Context) {
 	m := &model.Stakeholder{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	result = h.DB.Delete(m)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 	r := &Stakeholder{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := r.Model()
@@ -158,13 +158,13 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	db = h.DB.Model(m)
 	err = db.Association("Groups").Replace(m.Groups)
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 

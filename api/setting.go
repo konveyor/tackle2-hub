@@ -49,7 +49,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	result := h.DB.Where(&model.Setting{Key: key}).First(setting)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	r := Setting{}
@@ -69,7 +69,7 @@ func (h SettingHandler) List(ctx *gin.Context) {
 	var list []model.Setting
 	result := h.DB.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []Setting{}
@@ -95,7 +95,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	setting := Setting{}
 	err := ctx.BindJSON(&setting)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(&m)
 	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	setting.With(m)
@@ -146,7 +146,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	updates.Key = key
 	err := ctx.BindJSON(&updates.Value)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	db = db.Where("key", key)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -183,7 +183,7 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 
 	result := h.DB.Delete(&model.Setting{}, Key, key)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 

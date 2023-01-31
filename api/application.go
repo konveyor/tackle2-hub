@@ -67,7 +67,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	r := Application{}
@@ -88,7 +88,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []Application{}
@@ -114,24 +114,24 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	r := &Application{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(m)
 	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	err = h.DB.Model(m).Association("Identities").Replace("Identities", m.Identities)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	err = h.DB.Model(m).Association("Tags").Replace("Tags", m.Tags)
 	if err != nil {
-		h.createFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	r.With(m)
@@ -151,18 +151,18 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	m := &model.Application{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	p := Pathfinder{}
 	err := p.DeleteAssessment([]uint{id}, ctx)
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	result = h.DB.Delete(m)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -180,13 +180,13 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 	ids := []uint{}
 	err := ctx.BindJSON(&ids)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	p := Pathfinder{}
 	err = p.DeleteAssessment(ids, ctx)
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	err = h.DB.Delete(
@@ -194,7 +194,7 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 		"id IN ?",
 		ids).Error
 	if err != nil {
-		h.deleteFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -215,7 +215,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	r := &Application{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.bindFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	m := r.Model()
@@ -226,19 +226,19 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	db = db.Omit("Bucket")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.updateFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	db = h.DB.Model(m)
 	err = db.Association("Identities").Replace(m.Identities)
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 	db = h.DB.Model(m)
 	err = db.Association("Tags").Replace(m.Tags)
 	if err != nil {
-		h.updateFailed(ctx, err)
+		h.reportError(ctx, err)
 		return
 	}
 
@@ -258,7 +258,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Application{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -278,7 +278,7 @@ func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 	m := &model.Application{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -298,7 +298,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Application{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 

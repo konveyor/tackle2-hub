@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
@@ -37,9 +38,23 @@ func (h *BaseHandler) With(db *gorm.DB, client client.Client) {
 }
 
 //
-// getFailed handles Get() errors.
-func (h *BaseHandler) getFailed(ctx *gin.Context, err error) {
+// reportError reports hub errors as http statuses.
+func (h *BaseHandler) reportError(ctx *gin.Context, err error) {
+	// gin binding errors
+	if errors.Is(err, validator.ValidationErrors{}) {
+		ctx.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": err.Error(),
+			})
+		return
+	}
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if ctx.Request.Method == http.MethodDelete {
+			ctx.Status(http.StatusNoContent)
+			return
+		}
 		ctx.JSON(
 			http.StatusNotFound,
 			gin.H{
@@ -47,6 +62,7 @@ func (h *BaseHandler) getFailed(ctx *gin.Context, err error) {
 			})
 		return
 	}
+
 	if errors.Is(err, os.ErrNotExist) {
 		ctx.JSON(
 			http.StatusNotFound,
@@ -55,104 +71,30 @@ func (h *BaseHandler) getFailed(ctx *gin.Context, err error) {
 			})
 		return
 	}
-	ctx.JSON(
-		http.StatusInternalServerError,
-		gin.H{
-			"error": err.Error(),
-		})
 
-	url := ctx.Request.URL.String()
-	log.Error(
-		err,
-		"Get failed.",
-		"url",
-		url)
-}
+	if errors.Is(err, model.DependencyCyclicError{}) {
+		ctx.JSON(
+			http.StatusConflict,
+			gin.H{
+				"error": err.Error(),
+			})
+		return
+	}
 
-//
-// listFailed handles List() errors.
-func (h *BaseHandler) listFailed(ctx *gin.Context, err error) {
-	ctx.JSON(
-		http.StatusInternalServerError,
-		gin.H{
-			"error": err.Error(),
-		})
-
-	url := ctx.Request.URL.String()
-	log.Error(
-		err,
-		"List failed.",
-		"url",
-		url)
-}
-
-//
-// createFailed handles Create() errors.
-func (h *BaseHandler) createFailed(ctx *gin.Context, err error) {
-	status := http.StatusInternalServerError
 	sqliteErr := &sqlite3.Error{}
-
 	if errors.As(err, sqliteErr) {
 		switch sqliteErr.ExtendedCode {
 		case sqlite3.ErrConstraintUnique,
 			sqlite3.ErrConstraintPrimaryKey:
-			status = http.StatusConflict
+			ctx.JSON(
+				http.StatusConflict,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
 		}
 	}
 
-	depCyclicError := &model.DependencyCyclicError{}
-	if errors.As(err, depCyclicError) {
-		status = http.StatusConflict
-	}
-
-	ctx.JSON(
-		status,
-		gin.H{
-			"error": err.Error(),
-		})
-
-	url := ctx.Request.URL.String()
-	log.Error(
-		err,
-		"Create failed.",
-		"url",
-		url)
-}
-
-//
-// updateFailed handles Update() errors.
-func (h *BaseHandler) updateFailed(ctx *gin.Context, err error) {
-	status := http.StatusInternalServerError
-	sqliteErr := &sqlite3.Error{}
-
-	if errors.As(err, sqliteErr) {
-		switch sqliteErr.ExtendedCode {
-		case sqlite3.ErrConstraintUnique:
-			status = http.StatusConflict
-		}
-	}
-
-	ctx.JSON(
-		status,
-		gin.H{
-			"error": err.Error(),
-		})
-
-	url := ctx.Request.URL.String()
-	log.Error(
-		err,
-		"Update failed.",
-		"url",
-		url)
-}
-
-//
-// deleteFailed handles Delete() errors.
-func (h *BaseHandler) deleteFailed(ctx *gin.Context, err error) {
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.Status(http.StatusOK)
-		return
-	}
 	ctx.JSON(
 		http.StatusInternalServerError,
 		gin.H{
@@ -162,19 +104,11 @@ func (h *BaseHandler) deleteFailed(ctx *gin.Context, err error) {
 	url := ctx.Request.URL.String()
 	log.Error(
 		err,
-		"Delete failed.",
+		"Request failed.",
+		"method",
+		ctx.Request.Method,
 		"url",
 		url)
-}
-
-//
-// bindFailed handles errors from BindJSON().
-func (h *BaseHandler) bindFailed(ctx *gin.Context, err error) {
-	ctx.JSON(
-		http.StatusBadRequest,
-		gin.H{
-			"error": err.Error(),
-		})
 }
 
 //

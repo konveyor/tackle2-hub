@@ -73,7 +73,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 	db := h.preLoad(h.DB, "ImportTags")
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	ctx.JSON(http.StatusOK, m.AsMap())
@@ -103,7 +103,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 	db = h.preLoad(db, "ImportTags")
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []Import{}
@@ -126,7 +126,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB.Delete(&model.Import{}, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 	db := h.preLoad(h.DB, "Imports")
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	ctx.JSON(http.StatusOK, m)
@@ -167,7 +167,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 	db := h.preLoad(h.DB, "Imports")
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.listFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	resources := []ImportSummary{}
@@ -192,7 +192,7 @@ func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB.Delete(&model.ImportSummary{}, id)
 	if result.Error != nil {
-		h.deleteFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 
@@ -242,7 +242,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB.Create(&m)
 	if result.Error != nil {
-		h.createFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	_, err = fileReader.Seek(0, 0)
@@ -286,7 +286,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		imp.ImportSummary = m
 		result := h.DB.Create(&imp)
 		if result.Error != nil {
-			h.createFailed(ctx, result.Error)
+			h.reportError(ctx, result.Error)
 			return
 		}
 	}
@@ -310,7 +310,7 @@ func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 	m := &model.ImportSummary{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
-		h.getFailed(ctx, result.Error)
+		h.reportError(ctx, result.Error)
 		return
 	}
 	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", m.Filename))
