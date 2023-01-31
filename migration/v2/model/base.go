@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+//
 // Model Base model.
 type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
