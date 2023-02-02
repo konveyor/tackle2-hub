@@ -21,6 +21,7 @@ const (
 	EnvTaskRetries       = "TASK_RETRIES"
 	EnvFrequencyTask     = "FREQUENCY_TASK"
 	EnvFrequencyReaper   = "FREQUENCY_REAPER"
+	EnvDevelopment       = "DEVELOPMENT"
 )
 
 type Hub struct {
@@ -61,6 +62,8 @@ type Hub struct {
 		Reaper int
 		Volume int
 	}
+	// Development environment
+	Development bool
 }
 
 func (r *Hub) Load() (err error) {
@@ -146,7 +149,13 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Frequency.Reaper = 1 // 1 minute.
 	}
-
+	s, found = os.LookupEnv(EnvDevelopment)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Development = b
+	} else {
+		r.Development = false
+	}
 	return
 }
 

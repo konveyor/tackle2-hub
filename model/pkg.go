@@ -23,6 +23,7 @@ type ImportTag = model.ImportTag
 type JobFunction = model.JobFunction
 type Proxy = model.Proxy
 type Review = model.Review
+type Setting = model.Setting
 type Stakeholder = model.Stakeholder
 type StakeholderGroup = model.StakeholderGroup
 type Tag = model.Tag

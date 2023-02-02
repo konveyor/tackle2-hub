@@ -12,7 +12,8 @@ var log = logging.WithName("migration|v3")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-	err = db.AutoMigrate(model.All()...)
+	// Create tables for Trackers and Tickets
+	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -21,6 +22,6 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-func (r Migration) Name() string {
-	return "v2.2.0"
+func (r Migration) Models() []interface{} {
+	return model.All()
 }

@@ -12,7 +12,7 @@ var log = logging.WithName("migration|v2")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-	err = db.AutoMigrate(model.All()...)
+	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -30,9 +30,11 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		return
 	}
 
+	model.Seed(db)
+
 	return
 }
 
-func (r Migration) Name() string {
-	return "v2.1.0"
+func (r Migration) Models() []interface{} {
+	return model.All()
 }

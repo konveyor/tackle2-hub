@@ -28,6 +28,7 @@ type ImportTag = v2.ImportTag
 type JobFunction = v2.JobFunction
 type Proxy = v2.Proxy
 type Review = v2.Review
+type Setting = v2.Setting
 type Stakeholder = v2.Stakeholder
 type StakeholderGroup = v2.StakeholderGroup
 type Tag = v2.Tag
