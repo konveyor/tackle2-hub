@@ -637,6 +637,9 @@ class TackleTool:
 
     def uploadTackle2Buckets(self):
         bucketDir = "%s/buckets/" % self.dataDir
+        if not os.path.exists(bucketDir):
+            print("Warning: Buckets directory %s doesn't exist, skipping." % bucketDir)
+            return
         for bucketArchive in os.listdir(bucketDir):
             ownerPath = bucketArchive.replace("--", "/").replace(".tar.gz", "")
             if os.path.getsize(bucketDir + bucketArchive) > 0:
