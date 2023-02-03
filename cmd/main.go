@@ -37,7 +37,7 @@ func init() {
 //
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
-	err = migration.Migrate(migration.All())
+	err = migration.Migrate(migration.All(), migration.SupportedFrom)
 	if err != nil {
 		return
 	}
