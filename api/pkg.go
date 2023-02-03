@@ -16,12 +16,12 @@ var (
 //
 // Params
 const (
-	ID       = "id"
-	ID2      = "id2"
-	Key      = "key"
-	Name     = "name"
-	Wildcard = "wildcard"
-	File     = "file"
+	ID        = "id"
+	ID2       = "id2"
+	Key       = "key"
+	Name      = "name"
+	Wildcard  = "wildcard"
+	FileField = "file"
 )
 
 //
@@ -67,6 +67,7 @@ func All() []Handler {
 		&PathfinderHandler{},
 		&TicketHandler{},
 		&TrackerHandler{},
+		&FileHandler{},
 	}
 }
 

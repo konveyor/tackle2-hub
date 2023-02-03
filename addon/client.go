@@ -279,7 +279,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		defer func() {
 			_ = writer.Close()
 		}()
-		part, nErr := writer.CreateFormFile(api.File, pathlib.Base(source))
+		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
 		if err != nil {
 			err = liberr.Wrap(nErr)
 			return

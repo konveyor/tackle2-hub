@@ -53,6 +53,9 @@ func (m *Manager) Run(ctx context.Context) {
 		&BucketReaper{
 			DB: m.DB,
 		},
+		&FileReaper{
+			DB: m.DB,
+		},
 	}
 	go func() {
 		Log.Info("Started.")
