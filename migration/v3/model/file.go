@@ -12,7 +12,7 @@ import (
 type File struct {
 	Model
 	Name       string
-	Path       string
+	Path       string `gorm:"<-:create;uniqueIndex"`
 	Expiration *time.Time
 }
 

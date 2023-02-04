@@ -185,13 +185,3 @@ func (r *File) With(m *model.File) {
 	r.Path = m.Path
 	r.Expiration = m.Expiration
 }
-
-//
-// Model builds a model.
-func (r *File) Model() (m *model.File) {
-	m = &model.File{
-		Name: r.Name,
-		Path: r.Path,
-	}
-	return
-}
