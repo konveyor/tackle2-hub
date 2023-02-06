@@ -5,8 +5,10 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"io"
+	"mime"
 	"net/http"
 	"os"
+	pathlib "path"
 	"time"
 )
 
@@ -133,6 +135,10 @@ func (h FileHandler) Get(ctx *gin.Context) {
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
+	}
+	header := ctx.Writer.Header()
+	header[ContentType] = []string{
+		mime.TypeByExtension(pathlib.Ext(m.Name)),
 	}
 	ctx.File(m.Path)
 }
