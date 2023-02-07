@@ -1,20 +1,9 @@
 package model
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
-
-type TaskReport struct {
-	Model
-	Status    string
-	Error     string
-	Total     int
-	Completed int
-	Activity  JSON
-	Result    JSON
-	TaskID    uint `gorm:"<-:create;uniqueIndex"`
-	Task      *Task
-}
 
 type Task struct {
 	Model
@@ -42,15 +31,18 @@ type Task struct {
 	TaskGroup     *TaskGroup
 }
 
-type TaskGroup struct {
-	Model
-	BucketOwner
-	Name  string
-	Addon string
-	Data  JSON
-	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
-	List  JSON
-	State string
+func (m *Task) Reset() {
+	m.Started = nil
+	m.Terminated = nil
+	m.Report = nil
+}
+
+func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
+	if m.TaskGroupID == nil {
+		err = m.BucketOwner.BeforeCreate(db)
+	}
+	m.Reset()
+	return
 }
 
 //

@@ -1,18 +1,17 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 )
 
 //
 // Seed the database with models.
 func Seed(db *gorm.DB) {
-	settings := []model.Setting{
-		{Key: "git.insecure.enabled", Value: model.JSON("false")},
-		{Key: "svn.insecure.enabled", Value: model.JSON("false")},
-		{Key: "mvn.insecure.enabled", Value: model.JSON("false")},
-		{Key: "mvn.dependencies.update.forced", Value: model.JSON("false")},
+	settings := []Setting{
+		{Key: "git.insecure.enabled", Value: JSON("false")},
+		{Key: "svn.insecure.enabled", Value: JSON("false")},
+		{Key: "mvn.insecure.enabled", Value: JSON("false")},
+		{Key: "mvn.dependencies.update.forced", Value: JSON("false")},
 	}
 	_ = db.Create(settings)
 
