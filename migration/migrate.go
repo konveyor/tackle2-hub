@@ -123,7 +123,7 @@ func autoMigrate(db *gorm.DB, models []interface{}) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.AutoMigrate(models)
+	err = db.AutoMigrate(models...)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

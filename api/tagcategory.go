@@ -11,40 +11,40 @@ import (
 //
 // Routes
 const (
-	TagTypesRoot = "/tagtypes"
-	TagTypeRoot  = TagTypesRoot + "/:" + ID
+	TagCategoriesRoot = "/tagcategories"
+	TagCategoryRoot   = TagCategoriesRoot + "/:" + ID
 )
 
 //
-// TagTypeHandler handles the tag-type route.
-type TagTypeHandler struct {
+// TagCategoryHandler handles the tag-type route.
+type TagCategoryHandler struct {
 	BaseHandler
 }
 
 //
 // AddRoutes adds routes.
-func (h TagTypeHandler) AddRoutes(e *gin.Engine) {
+func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tagtypes"))
-	routeGroup.GET(TagTypesRoot, h.List)
-	routeGroup.GET(TagTypesRoot+"/", h.List)
-	routeGroup.POST(TagTypesRoot, h.Create)
-	routeGroup.GET(TagTypeRoot, h.Get)
-	routeGroup.PUT(TagTypeRoot, h.Update)
-	routeGroup.DELETE(TagTypeRoot, h.Delete)
+	routeGroup.Use(auth.Required("tagcategories"))
+	routeGroup.GET(TagCategoriesRoot, h.List)
+	routeGroup.GET(TagCategoriesRoot+"/", h.List)
+	routeGroup.POST(TagCategoriesRoot, h.Create)
+	routeGroup.GET(TagCategoryRoot, h.Get)
+	routeGroup.PUT(TagCategoryRoot, h.Update)
+	routeGroup.DELETE(TagCategoryRoot, h.Delete)
 }
 
 // Get godoc
-// @summary Get a tag type by ID.
-// @description Get a tag type by ID.
+// @summary Get a tag category by ID.
+// @description Get a tag category by ID.
 // @tags get
 // @produce json
-// @success 200 {object} api.TagType
-// @router /tagtypes/{id} [get]
-// @param id path string true "Tag Type ID"
-func (h TagTypeHandler) Get(ctx *gin.Context) {
+// @success 200 {object} api.TagCategory
+// @router /tagcategories/{id} [get]
+// @param id path string true "Tag Category ID"
+func (h TagCategoryHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.TagType{}
+	m := &model.TagCategory{}
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
@@ -52,29 +52,29 @@ func (h TagTypeHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	resource := TagType{}
+	resource := TagCategory{}
 	resource.With(m)
 	ctx.JSON(http.StatusOK, resource)
 }
 
 // List godoc
-// @summary List all tag types.
-// @description List all tag types.
+// @summary List all tag categorys.
+// @description List all tag categorys.
 // @tags get
 // @produce json
-// @success 200 {object} []api.TagType
-// @router /tagtypes [get]
-func (h TagTypeHandler) List(ctx *gin.Context) {
-	var list []model.TagType
+// @success 200 {object} []api.TagCategory
+// @router /tagcategories [get]
+func (h TagCategoryHandler) List(ctx *gin.Context) {
+	var list []model.TagCategory
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	resources := []TagType{}
+	resources := []TagCategory{}
 	for i := range list {
-		r := TagType{}
+		r := TagCategory{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -83,16 +83,16 @@ func (h TagTypeHandler) List(ctx *gin.Context) {
 }
 
 // Create godoc
-// @summary Create a tag type.
-// @description Create a tag type.
+// @summary Create a tag category.
+// @description Create a tag category.
 // @tags create
 // @accept json
 // @produce json
-// @success 201 {object} api.TagType
-// @router /tagtypes [post]
-// @param tag_type body api.TagType true "Tag Type data"
-func (h TagTypeHandler) Create(ctx *gin.Context) {
-	r := TagType{}
+// @success 201 {object} api.TagCategory
+// @router /tagcategories [post]
+// @param tag_type body api.TagCategory true "Tag Category data"
+func (h TagCategoryHandler) Create(ctx *gin.Context) {
+	r := TagCategory{}
 	err := ctx.BindJSON(&r)
 	if err != nil {
 		h.reportError(ctx, err)
@@ -111,15 +111,15 @@ func (h TagTypeHandler) Create(ctx *gin.Context) {
 }
 
 // Delete godoc
-// @summary Delete a tag type.
-// @description Delete a tag type.
+// @summary Delete a tag category.
+// @description Delete a tag category.
 // @tags delete
 // @success 204
-// @router /tagtypes/{id} [delete]
-// @param id path string true "Tag Type ID"
-func (h TagTypeHandler) Delete(ctx *gin.Context) {
+// @router /tagcategories/{id} [delete]
+// @param id path string true "Tag Category ID"
+func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.TagType{}
+	m := &model.TagCategory{}
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -135,17 +135,17 @@ func (h TagTypeHandler) Delete(ctx *gin.Context) {
 }
 
 // Update godoc
-// @summary Update a tag type.
-// @description Update a tag type.
+// @summary Update a tag category.
+// @description Update a tag category.
 // @tags update
 // @accept json
 // @success 204
-// @router /tagtypes/{id} [put]
-// @param id path string true "Tag Type ID"
-// @param tag_type body api.TagType true "Tag Type data"
-func (h TagTypeHandler) Update(ctx *gin.Context) {
+// @router /tagcategories/{id} [put]
+// @param id path string true "Tag Category ID"
+// @param tag_type body api.TagCategory true "Tag Category data"
+func (h TagCategoryHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &TagType{}
+	r := &TagCategory{}
 	err := ctx.BindJSON(r)
 	if err != nil {
 		h.reportError(ctx, err)
@@ -166,8 +166,8 @@ func (h TagTypeHandler) Update(ctx *gin.Context) {
 }
 
 //
-// TagType REST resource.
-type TagType struct {
+// TagCategory REST resource.
+type TagCategory struct {
 	Resource
 	Name     string `json:"name" binding:"required"`
 	Username string `json:"username"`
@@ -178,7 +178,7 @@ type TagType struct {
 
 //
 // With updates the resource with the model.
-func (r *TagType) With(m *model.TagType) {
+func (r *TagCategory) With(m *model.TagCategory) {
 	r.Resource.With(&m.Model)
 	r.ID = m.ID
 	r.Name = m.Name
@@ -194,8 +194,8 @@ func (r *TagType) With(m *model.TagType) {
 
 //
 // Model builds a model.
-func (r *TagType) Model() (m *model.TagType) {
-	m = &model.TagType{
+func (r *TagCategory) Model() (m *model.TagCategory) {
+	m = &model.TagCategory{
 		Name:     r.Name,
 		Username: r.Username,
 		Rank:     r.Rank,

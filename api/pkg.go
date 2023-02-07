@@ -70,7 +70,7 @@ func All() []Handler {
 		&StakeholderHandler{},
 		&StakeholderGroupHandler{},
 		&TagHandler{},
-		&TagTypeHandler{},
+		&TagCategoryHandler{},
 		&TaskHandler{},
 		&TaskGroupHandler{},
 		&PathfinderHandler{},
