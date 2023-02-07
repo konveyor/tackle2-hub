@@ -134,6 +134,12 @@
       verbs:
         - get
         - delete
+    - name: files
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -257,6 +263,12 @@
     - name: cache
       verbs:
         - get
+    - name: files
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-migrator
   resources:
     - name: addons
@@ -338,5 +350,8 @@
       verbs:
         - get
     - name: cache
+      verbs:
+        - get
+    - name: files
       verbs:
         - get
