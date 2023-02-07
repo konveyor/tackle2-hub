@@ -43,7 +43,7 @@ func (h FileHandler) AddRoutes(e *gin.Engine) {
 // @description List all files.
 // @tags get
 // @produce json
-// @success 200 {object} []api.FileField
+// @success 200 {object} []api.File
 // @router /files [get]
 func (h FileHandler) List(ctx *gin.Context) {
 	var list []model.File
@@ -68,9 +68,9 @@ func (h FileHandler) List(ctx *gin.Context) {
 // @tags create
 // @accept json
 // @produce json
-// @success 201 {object} api.FileField
+// @success 201 {object} api.File
 // @router /files [post]
-// @param name path string true "FileField name"
+// @param name path string true "File name"
 func (h FileHandler) Create(ctx *gin.Context) {
 	var err error
 	input, err := ctx.FormFile(FileField)
@@ -127,7 +127,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /files/{id} [get]
-// @param id path string true "FileField ID"
+// @param id path string true "File ID"
 func (h FileHandler) Get(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)
@@ -149,7 +149,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 // @tags delete
 // @success 204
 // @router /files/{id} [delete]
-// @param id path string true "FileField ID"
+// @param id path string true "File ID"
 func (h FileHandler) Delete(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)
