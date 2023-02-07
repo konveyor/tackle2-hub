@@ -16,13 +16,15 @@ func TestFreshInstall(t *testing.T) {
 	Settings.DB.Path = "/tmp/freshinstall.db"
 	_ = os.Remove(Settings.DB.Path)
 
+	MinimumVersion = 2
 	migrations := []Migration{
 		&TestMigration{Version: 3, ShouldRun: true},
 		&TestMigration{Version: 4, ShouldRun: true},
 		&TestMigration{Version: 5, ShouldRun: true},
 	}
 
-	err := Migrate(migrations, 2)
+
+	err := Migrate(migrations)
 	g.Expect(err).To(gomega.BeNil())
 
 	for _, m := range migrations {
@@ -41,13 +43,14 @@ func TestUpgrade(t *testing.T) {
 	_ = os.Remove(Settings.DB.Path)
 	setup(g, 3)
 
+	MinimumVersion = 2
 	migrations := []Migration{
 		&TestMigration{Version: 3, ShouldRun: false},
 		&TestMigration{Version: 4, ShouldRun: true},
 		&TestMigration{Version: 5, ShouldRun: true},
 	}
 
-	err := Migrate(migrations, 2)
+	err := Migrate(migrations)
 	g.Expect(err).To(gomega.BeNil())
 	for _, m := range migrations {
 		migration := m.(*TestMigration)
@@ -60,7 +63,7 @@ func TestUpgrade(t *testing.T) {
 		&TestMigration{Version: 4, ShouldRun: false},
 		&TestMigration{Version: 5, ShouldRun: false},
 	}
-	err = Migrate(migrations, 2)
+	err = Migrate(migrations)
 	g.Expect(err).To(gomega.BeNil())
 	for _, m := range migrations {
 		migration := m.(*TestMigration)
@@ -78,12 +81,13 @@ func TestUnsupportedVersion(t *testing.T) {
 	_ = os.Remove(Settings.DB.Path)
 	setup(g, 1)
 
+	MinimumVersion = 2
 	migrations := []Migration{
 		&TestMigration{Version: 3, ShouldRun: false},
 		&TestMigration{Version: 4, ShouldRun: false},
 		&TestMigration{Version: 5, ShouldRun: false},
 	}
-	err := Migrate(migrations, 2)
+	err := Migrate(migrations)
 	g.Expect(err.Error()).To(gomega.Equal("unsupported database version"))
 	for _, m := range migrations {
 		migration := m.(*TestMigration)

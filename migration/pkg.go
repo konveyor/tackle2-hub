@@ -16,9 +16,9 @@ var Settings = &settings.Settings
 const VersionKey = ".migration.version"
 
 //
-// SupportedFrom is the index of the
+// MinimumVersion is the index of the
 // earliest version that we can migrate from.
-const SupportedFrom = 1
+var MinimumVersion = 1
 
 //
 // Version represents the value of the .migration.version setting.
@@ -37,7 +37,6 @@ type Migration interface {
 // All migrations in order.
 func All() []Migration {
 	return []Migration{
-		nil, // v1
 		v2.Migration{},
 		v3.Migration{},
 	}

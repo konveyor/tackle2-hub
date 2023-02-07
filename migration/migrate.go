@@ -11,7 +11,7 @@ import (
 
 //
 // Migrate the hub by applying all necessary Migrations.
-func Migrate(migrations []Migration, supportedFrom int) (err error) {
+func Migrate(migrations []Migration) (err error) {
 	var db *gorm.DB
 
 	db, err = database.Open(false)
@@ -47,19 +47,16 @@ func Migrate(migrations []Migration, supportedFrom int) (err error) {
 	}
 
 	var start = v.Version
-	if start != 0 && start < supportedFrom {
+	if start != 0 && start < MinimumVersion {
 		err = errors.New("unsupported database version")
 		return
-	} else if start >= supportedFrom {
-		start -= supportedFrom
+	} else if start >= MinimumVersion {
+		start -= MinimumVersion
 	}
 
-	// Version is the index of the last successful migration,
-	// so we want to start iteration at the next index.
-	//migrations = append([]Migration{nil}, migrations...)
 	for i := start; i < len(migrations); i++ {
 		m := migrations[i]
-		ver := i + supportedFrom + 1
+		ver := i + MinimumVersion + 1
 
 		db, err = database.Open(false)
 		if err != nil {
