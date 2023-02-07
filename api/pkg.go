@@ -27,10 +27,18 @@ const (
 //
 // Headers
 const (
+	Accept        = "Accept"
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
 	Directory     = "X-Directory"
+)
+
+//
+// Accepted (mime)
+const (
+	AppJson  = "application/json"
+	AppOctet = "application/octet-stream"
 )
 
 //

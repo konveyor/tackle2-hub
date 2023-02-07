@@ -50,6 +50,8 @@ type Adapter struct {
 	TagType TagType
 	// Tag API.
 	Tag Tag
+	// File API.
+	File File
 	// client A REST client.
 	client *Client
 }
@@ -133,6 +135,9 @@ func newAdapter() (adapter *Adapter) {
 			client: client,
 		},
 		Tag: Tag{
+			client: client,
+		},
+		File: File{
 			client: client,
 		},
 		client: client,

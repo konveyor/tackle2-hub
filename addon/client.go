@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	Accept   = "Accept"
-	AppJson  = "application/json"
-	AppOctet = "application/octet-stream"
+	Accept   = api.Accept
+	AppJson  = api.AppJson
+	AppOctet = api.AppOctet
 )
 
 //
@@ -313,6 +313,102 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 }
 
 //
+// FileGet downloads a file.
+func (r *Client) FileGet(path, destination string) (err error) {
+	request := func() (request *http.Request, err error) {
+		request = &http.Request{
+			Header: http.Header{},
+			Method: http.MethodGet,
+			URL:    r.join(path),
+		}
+		request.Header.Set(Accept, AppOctet)
+		return
+	}
+	reply, err := r.send(request)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = reply.Body.Close()
+	}()
+	status := reply.StatusCode
+	switch status {
+	case http.StatusNoContent:
+		// Empty.
+	case http.StatusOK:
+		err = r.getFile(reply.Body, "", destination)
+	case http.StatusNotFound:
+		err = &NotFound{Path: path}
+	default:
+		err = errors.New(http.StatusText(status))
+	}
+	return
+}
+
+//
+// FilePut uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePut(path, source string, object interface{}) (err error) {
+	isDir, err := r.isDir(source, true)
+	if err != nil {
+		return
+	}
+	if isDir {
+		err = liberr.New("Source cannot be directory.")
+		return
+	}
+	request := func() (request *http.Request, err error) {
+		buf := new(bytes.Buffer)
+		request = &http.Request{
+			Header: http.Header{},
+			Method: http.MethodPut,
+			Body:   io.NopCloser(buf),
+			URL:    r.join(path),
+		}
+		request.Header.Set(Accept, AppJson)
+		writer := multipart.NewWriter(buf)
+		defer func() {
+			_ = writer.Close()
+		}()
+		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
+		if err != nil {
+			err = liberr.Wrap(nErr)
+			return
+		}
+		request.Header.Add(
+			api.ContentType,
+			writer.FormDataContentType())
+		err = r.putFile(part, source)
+		return
+	}
+	reply, err := r.send(request)
+	if err != nil {
+		return
+	}
+	status := reply.StatusCode
+	switch status {
+	case http.StatusOK,
+		http.StatusCreated:
+		var body []byte
+		body, err = io.ReadAll(reply.Body)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = json.Unmarshal(body, object)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	case http.StatusConflict:
+		err = &Conflict{Path: path}
+	default:
+		err = errors.New(http.StatusText(status))
+	}
+	return
+}
+
+//
 // getDir downloads and expands a directory.
 func (r *Client) getDir(body io.Reader, output string) (err error) {
 	gzReader, err := gzip.NewReader(body)
@@ -459,17 +555,20 @@ func (r *Client) putFile(writer io.Writer, input string) (err error) {
 
 //
 // isDir determines if the path is a directory.
-// The `must` specifies if the path just exist.
+// The `must` specifies if the path must exist.
 func (r *Client) isDir(path string, must bool) (b bool, err error) {
 	st, err := os.Stat(path)
-	switch err {
-	case nil:
+	if err == nil {
 		b = st.IsDir()
-	case os.ErrNotExist:
+		return
+	}
+	if os.IsNotExist(err) {
 		if must {
 			err = liberr.Wrap(err)
+		} else {
+			err = nil
 		}
-	default:
+	} else {
 		err = liberr.Wrap(err)
 	}
 	return

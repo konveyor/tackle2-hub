@@ -141,6 +141,12 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 		return
 	}
 	//
+	// play with files.
+	err = playWithFiles()
+	if err != nil {
+		return
+	}
+	//
 	// Task update: update the current addon activity.
 	addon.Activity("done")
 	return
@@ -285,6 +291,28 @@ func addTags(application *api.Application, names ...string) (err error) {
 		if err != nil {
 			return
 		}
+	}
+	return
+}
+
+//
+// Play with files.
+func playWithFiles() (err error) {
+	f, err := addon.File.Put("/etc/hosts")
+	if err != nil {
+		return
+	}
+	err = addon.File.Get(f.ID, "/tmp/hosts2")
+	if err != nil {
+		return
+	}
+	err = addon.File.Get(f.ID, "/tmp")
+	if err != nil {
+		return
+	}
+	err = addon.File.Delete(f.ID)
+	if err != nil {
+		return
 	}
 	return
 }

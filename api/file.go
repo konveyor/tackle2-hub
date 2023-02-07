@@ -122,10 +122,10 @@ func (h FileHandler) Create(ctx *gin.Context) {
 
 // Get godoc
 // @summary Get a file by ID.
-// @description Get a file by ID.
+// @description Get a file by ID. Returns api.File when Accept=application/json else the file content.
 // @tags get
-// @produce octet-stream
-// @success 200
+// @produce json octet-stream
+// @success 200 {object} api.File
 // @router /files/{id} [get]
 // @param id path string true "File ID"
 func (h FileHandler) Get(ctx *gin.Context) {
@@ -136,11 +136,18 @@ func (h FileHandler) Get(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	header := ctx.Writer.Header()
-	header[ContentType] = []string{
-		mime.TypeByExtension(pathlib.Ext(m.Name)),
+	switch ctx.GetHeader(Accept) {
+	case AppJson:
+		r := File{}
+		r.With(m)
+		ctx.JSON(http.StatusOK, r)
+	default:
+		header := ctx.Writer.Header()
+		header[ContentType] = []string{
+			mime.TypeByExtension(pathlib.Ext(m.Name)),
+		}
+		ctx.File(m.Path)
 	}
-	ctx.File(m.Path)
 }
 
 // Delete godoc
