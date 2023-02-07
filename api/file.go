@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
-	"github.com/konveyor/tackle2-hub/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"mime"
 	"net/http"
