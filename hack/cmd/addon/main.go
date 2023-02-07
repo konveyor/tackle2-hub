@@ -264,7 +264,7 @@ func addTags(application *api.Application, names ...string) (err error) {
 		Color: "#2b9af3",
 		Rank: 3,
 	}
-	err = addon.TagType.Ensure(tp)
+	err = addon.TagCategory.Ensure(tp)
 	if err != nil {
 		return
 	}

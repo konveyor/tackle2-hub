@@ -89,15 +89,15 @@ func (h *Tag) Ensure(wanted *api.Tag) (err error) {
 }
 
 //
-// TagType API.
-type TagType struct {
+// TagCategory API.
+type TagCategory struct {
 	// hub API client.
 	client *Client
 }
 
 //
 // Create a tag-type.
-func (h *TagType) Create(m *api.TagCategory) (err error) {
+func (h *TagCategory) Create(m *api.TagCategory) (err error) {
 	err = h.client.Post(api.TagCategoriesRoot, m)
 	if err == nil {
 		Log.Info(
@@ -110,7 +110,7 @@ func (h *TagType) Create(m *api.TagCategory) (err error) {
 
 //
 // Get a tag-type by ID.
-func (h *TagType) Get(id uint) (r *api.TagCategory, err error) {
+func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
 	path := Params{api.ID: id}.inject(api.TagCategoryRoot)
 	err = h.client.Get(path, r)
@@ -119,7 +119,7 @@ func (h *TagType) Get(id uint) (r *api.TagCategory, err error) {
 
 //
 // List tag-types.
-func (h *TagType) List() (list []api.TagCategory, err error) {
+func (h *TagCategory) List() (list []api.TagCategory, err error) {
 	list = []api.TagCategory{}
 	err = h.client.Get(api.TagCategoriesRoot, &list)
 	return
@@ -127,7 +127,7 @@ func (h *TagType) List() (list []api.TagCategory, err error) {
 
 //
 // Delete a tag-type.
-func (h *TagType) Delete(r *api.TagCategory) (err error) {
+func (h *TagCategory) Delete(r *api.TagCategory) (err error) {
 	path := Params{api.ID: r.ID}.inject(api.TagCategoryRoot)
 	err = h.client.Delete(path)
 	if err == nil {
@@ -141,7 +141,7 @@ func (h *TagType) Delete(r *api.TagCategory) (err error) {
 
 //
 // Find by name.
-func (h *TagType) Find(name string) (r *api.TagCategory, found bool, err error) {
+func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err error) {
 	list := []api.TagCategory{}
 	err = h.client.Get(api.TagCategoriesRoot, &list)
 	if err != nil {
@@ -159,7 +159,7 @@ func (h *TagType) Find(name string) (r *api.TagCategory, found bool, err error) 
 
 //
 // Ensure a tag-type exists.
-func (h *TagType) Ensure(wanted *api.TagCategory) (err error) {
+func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 	tp, found, err := h.Find(wanted.Name)
 	if err != nil {
 		return

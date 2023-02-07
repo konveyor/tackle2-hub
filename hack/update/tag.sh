@@ -10,5 +10,5 @@ curl -X PUT ${host}/tags/2 -d \
 '{
    "username": "tackle",
    "name":"Windows",
-   "tagType": {"id":1}
+   "category": {"id":1}
 }' | jq -M .

@@ -58,8 +58,8 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 }
 
 // List godoc
-// @summary List all tag categorys.
-// @description List all tag categorys.
+// @summary List all tag categories.
+// @description List all tag categories.
 // @tags get
 // @produce json
 // @success 200 {object} []api.TagCategory
