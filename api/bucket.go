@@ -46,7 +46,7 @@ func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketO
 
 func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 	// Prepare to uncompress the uploaded data, report 4xx errors
-	file, err := ctx.FormFile(File)
+	file, err := ctx.FormFile(FileField)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
@@ -228,7 +228,7 @@ func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
 	path := pathlib.Join(
 		owner.Bucket,
 		rPath)
-	input, err := ctx.FormFile(File)
+	input, err := ctx.FormFile(FileField)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return

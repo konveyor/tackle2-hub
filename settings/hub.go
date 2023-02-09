@@ -22,6 +22,7 @@ const (
 	EnvFrequencyTask     = "FREQUENCY_TASK"
 	EnvFrequencyReaper   = "FREQUENCY_REAPER"
 	EnvDevelopment       = "DEVELOPMENT"
+	EnvFileTTL           = "FILE_TTL"
 )
 
 type Hub struct {
@@ -35,6 +36,10 @@ type Hub struct {
 	// Bucket settings.
 	Bucket struct {
 		Path string
+	}
+	// File settings.
+	File struct {
+		TTL int
 	}
 	// Cache settings.
 	Cache struct {
@@ -156,6 +161,14 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Development = false
 	}
+	s, found = os.LookupEnv(EnvFileTTL)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.File.TTL = n
+	} else {
+		r.File.TTL = 720 // 12 hours.
+	}
+
 	return
 }
 

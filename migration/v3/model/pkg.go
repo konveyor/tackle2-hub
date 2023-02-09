@@ -67,5 +67,6 @@ func All() []interface{} {
 		Proxy{},
 		Tracker{},
 		Ticket{},
+		File{},
 	}
 }
