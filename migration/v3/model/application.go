@@ -8,8 +8,8 @@ type Application struct {
 	Review            *Review `gorm:"constraint:OnDelete:CASCADE"`
 	Repository        JSON
 	Binary            string
+	Facts             []Fact
 	Comments          string
-	Facts             JSON
 	Tasks             []Task     `gorm:"constraint:OnDelete:CASCADE"`
 	Tags              []Tag      `gorm:"many2many:ApplicationTags;constraint:OnDelete:CASCADE"`
 	Identities        []Identity `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`

@@ -132,3 +132,64 @@ func (h *AppTags) Delete(id uint) (err error) {
 	err = h.client.Delete(path)
 	return
 }
+
+//
+// Facts returns the tags API.
+func (h *Application) Facts(id uint) (f AppFacts) {
+	f = AppFacts{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+//
+// AppFacts sub-resource API.
+// Provides association management of facts.
+type AppFacts struct {
+	client *Client
+	appId  uint
+}
+
+//
+// List associated tags.
+// Returns a list of tag names.
+func (h *AppFacts) List() (list []api.Fact, err error) {
+	list = []api.Fact{}
+	path := Params{api.ID: h.appId}.inject(api.ApplicationFactsRoot)
+	err = h.client.Get(path, &list)
+	return
+}
+
+//
+// Get a fact.
+func (h *AppFacts) Get(key string, valuePtr interface{}) (err error) {
+	path := Params{
+		api.ID:  h.appId,
+		api.Key: key,
+	}.inject(api.ApplicationFactRoot)
+	err = h.client.Get(path, valuePtr)
+	return
+}
+
+//
+// Set a fact (created as needed).
+func (h *AppFacts) Set(key string, value interface{}) (err error) {
+	path := Params{
+		api.ID:  h.appId,
+		api.Key: key,
+	}.inject(api.ApplicationFactRoot)
+	err = h.client.Put(path, value)
+	return
+}
+
+//
+// Delete a fact.
+func (h *AppFacts) Delete(key string) (err error) {
+	path := Params{
+		api.ID:  h.appId,
+		api.Key: key,
+	}.inject(api.ApplicationFactRoot)
+	err = h.client.Delete(path)
+	return
+}

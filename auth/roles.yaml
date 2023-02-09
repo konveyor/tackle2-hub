@@ -15,6 +15,12 @@
         - get
         - post
         - put
+    - name: applications.facts
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications.tags
       verbs:
         - delete
@@ -157,6 +163,12 @@
         - get
         - post
         - put
+    - name: applications.facts
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications.tags
       verbs:
         - delete
@@ -278,6 +290,9 @@
       verbs:
         - post
     - name: applications
+      verbs:
+        - get
+    - name: applications.facts
       verbs:
         - get
     - name: applications.tags

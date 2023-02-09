@@ -59,8 +59,8 @@ func main() {
 		}
 		//
 		// Set fact.
-		application.Facts["Listed"] = true
-		err = addon.Application.Update(application)
+		facts := addon.Application.Facts(application.ID)
+		err = facts.Set("Listed", true)
 		if err != nil {
 			return
 		}

@@ -43,6 +43,7 @@ curl -X POST ${host}/applications -d \
       "branch": "1.2.0"
     },
     "facts": {
+      "author": {"first":"Elmer","Last":"Fudd"},
       "analysed": true
     },
     "businessService": {"id":1}
