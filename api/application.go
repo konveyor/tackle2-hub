@@ -725,7 +725,6 @@ type FactMap map[string]interface{}
 //
 // Fact REST nested resource.
 type Fact struct {
-	Resource
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
 }
