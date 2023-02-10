@@ -49,6 +49,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
 	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
 	// Facts
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("applications.facts"))
 	routeGroup.GET(ApplicationFactsRoot, h.FactList)
 	routeGroup.GET(ApplicationFactsRoot+"/", h.FactList)
 	routeGroup.GET(ApplicationFactRoot, h.FactGet)
