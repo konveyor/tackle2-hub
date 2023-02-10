@@ -55,7 +55,7 @@ The tool requires Python3 with YAML parser and PyCrypto package (or its successo
 
 Install system requirements with  ```dnf install python3 python3-pip git``` for RHEL-like Linux or corresponding for your operating system.
 
-Then install required Python libraries PyYAML and pycryptodome with PIP tool ```python3 -m pip install pyyaml pycryptodome```.
+Then install required Python libraries PyYAML and pycryptodome with PIP tool ```python3 -m pip install pyyaml pycryptodome```. Note: Install ```pycryptodome``` only if there is no library providing PyCrypto features already present on your system.
 
 ## Usage
 
