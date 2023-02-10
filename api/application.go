@@ -221,6 +221,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		h.reportError(ctx, err)
 		return
 	}
+	//
+	// Delete unwanted facts.
 	m := &model.Application{}
 	db := h.preLoad(h.DB, clause.Associations)
 	result := db.First(m, id)
@@ -237,6 +239,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 			}
 		}
 	}
+	//
+	// Update the application.
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
@@ -261,10 +265,21 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	db = h.DB.Model(m)
-	err = db.Association("Facts").Append(m.Facts)
+	err = db.Association("Facts").Replace(m.Facts)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
+	}
+	//
+	// Update facts.
+	for _, m := range m.Facts {
+		db = h.DB.Model(&model.Fact{})
+		db = db.Where("ApplicationID = ? AND Key = ?", m.ApplicationID, m.Key)
+		err := db.Updates(h.fields(m)).Error
+		if err != nil {
+			h.reportError(ctx, err)
+			return
+		}
 	}
 
 	ctx.Status(http.StatusNoContent)

@@ -11,6 +11,10 @@ curl -X POST ${host}/applications -d \
       {"id":1},
       {"id":2}
     ],
+    "facts": {
+      "A": "1",
+      "B": "2"
+    },
     "tags":[
       {"id":1}
     ]
