@@ -219,13 +219,29 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		h.reportError(ctx, err)
 		return
 	}
-	m := r.Model()
+	m := &model.Application{}
+	db := h.preLoad(h.DB, clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	for _, fact := range m.Facts {
+		if _, found := r.Facts[fact.Key]; !found {
+			h.DB.Delete(fact)
+			if err != nil {
+				h.reportError(ctx, err)
+				return
+			}
+		}
+	}
+	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db = h.DB.Model(m)
 	db = db.Omit(clause.Associations)
 	db = db.Omit("Bucket")
-	result := db.Updates(h.fields(m))
+	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -243,26 +259,10 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	db = h.DB.Model(m)
-	err = db.Association("Facts").Replace(m.Facts)
+	err = db.Association("Facts").Append(m.Facts)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
-	}
-	m = &model.Application{}
-	db = h.preLoad(h.DB, clause.Associations)
-	result = db.First(m, id)
-	if result.Error != nil {
-		h.reportError(ctx, result.Error)
-		return
-	}
-	for _, fact := range m.Facts {
-		if _, found := r.Facts[fact.Key]; !found {
-			h.DB.Delete(fact)
-			if err != nil {
-				h.reportError(ctx, err)
-				return
-			}
-		}
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -563,6 +563,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		result = db.Updates(h.fields(m))
 		if result.Error != nil {
 			h.reportError(ctx, result.Error)
+			return
 		}
 		ctx.Status(http.StatusNoContent)
 		return
