@@ -24,6 +24,6 @@ jobs:
         image_name: "tackle2-hub"
         image_namespace: "konveyor"
         image_registry: "quay.io"
-        quay_robot: ${{ secrets.QUAY_PUBLISH_ROBOT }}
-        quay_token: ${{ secrets.QUAY_PUBLISH_TOKEN }}
+        quay_publish_robot: ${{ secrets.QUAY_PUBLISH_ROBOT }}
+        quay_publish_token: ${{ secrets.QUAY_PUBLISH_TOKEN }}
         ref: ${{ github.ref }}
