@@ -23,7 +23,6 @@ func TestFreshInstall(t *testing.T) {
 		&TestMigration{Version: 5, ShouldRun: true},
 	}
 
-
 	err := Migrate(migrations)
 	g.Expect(err).To(gomega.BeNil())
 

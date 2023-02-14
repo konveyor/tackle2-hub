@@ -11,6 +11,10 @@ curl -X POST ${host}/applications -d \
       {"id":1},
       {"id":2}
     ],
+    "facts": {
+      "A": "1",
+      "B": "2"
+    },
     "tags":[
       {"id":1}
     ]
@@ -43,6 +47,7 @@ curl -X POST ${host}/applications -d \
       "branch": "1.2.0"
     },
     "facts": {
+      "author": {"first":"Elmer","Last":"Fudd"},
       "analysed": true
     },
     "businessService": {"id":1}

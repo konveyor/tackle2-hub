@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 	"strconv"
@@ -13,11 +15,13 @@ import (
 //
 // Routes
 const (
-	ApplicationsRoot    = "/applications"
-	ApplicationRoot     = ApplicationsRoot + "/:" + ID
-	ApplicationTagsRoot = ApplicationRoot + "/tags"
-	ApplicationTagRoot  = ApplicationTagsRoot + "/:" + ID2
-	AppBucketRoot       = ApplicationRoot + "/bucket/*" + Wildcard
+	ApplicationsRoot     = "/applications"
+	ApplicationRoot      = ApplicationsRoot + "/:" + ID
+	ApplicationTagsRoot  = ApplicationRoot + "/tags"
+	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
+	ApplicationFactsRoot = ApplicationRoot + "/facts"
+	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
+	AppBucketRoot        = ApplicationRoot + "/bucket/*" + Wildcard
 )
 
 //
@@ -44,6 +48,15 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
 	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
+	// Facts
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("applications.facts"))
+	routeGroup.GET(ApplicationFactsRoot, h.FactList)
+	routeGroup.GET(ApplicationFactsRoot+"/", h.FactList)
+	routeGroup.GET(ApplicationFactRoot, h.FactGet)
+	routeGroup.POST(ApplicationFactRoot, h.FactCreate)
+	routeGroup.PUT(ApplicationFactRoot, h.FactPut)
+	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.bucket"))
@@ -122,16 +135,6 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	result := h.DB.Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
-		return
-	}
-	err = h.DB.Model(m).Association("Identities").Replace("Identities", m.Identities)
-	if err != nil {
-		h.reportError(ctx, err)
-		return
-	}
-	err = h.DB.Model(m).Association("Tags").Replace("Tags", m.Tags)
-	if err != nil {
-		h.reportError(ctx, err)
 		return
 	}
 	r.With(m)
@@ -218,13 +221,33 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		h.reportError(ctx, err)
 		return
 	}
-	m := r.Model()
+	//
+	// Delete unwanted facts.
+	m := &model.Application{}
+	db := h.preLoad(h.DB, clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	for _, fact := range m.Facts {
+		if _, found := r.Facts[fact.Key]; !found {
+			h.DB.Delete(fact)
+			if err != nil {
+				h.reportError(ctx, err)
+				return
+			}
+		}
+	}
+	//
+	// Update the application.
+	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db = h.DB.Model(m)
 	db = db.Omit(clause.Associations)
 	db = db.Omit("Bucket")
-	result := db.Updates(h.fields(m))
+	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -240,6 +263,23 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		h.reportError(ctx, err)
 		return
+	}
+	db = h.DB.Model(m)
+	err = db.Association("Facts").Replace(m.Facts)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	//
+	// Update facts.
+	for _, m := range m.Facts {
+		db = h.DB.Model(&model.Fact{})
+		db = db.Where("ApplicationID = ? AND Key = ?", m.ApplicationID, m.Key)
+		err := db.Updates(h.fields(m)).Error
+		if err != nil {
+			h.reportError(ctx, err)
+			return
+		}
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -402,6 +442,194 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// FactList godoc
+// @summary List facts.
+// @description List facts.
+// @tags get
+// @produce json
+// @success 200 {object} []api.Fact
+// @router /applications/{id}/facts [get]
+// @param id path string true "Application ID"
+func (h ApplicationHandler) FactList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	db := h.DB.Model(app).Association("Facts")
+	list := []model.Fact{}
+	err := db.Find(&list)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	resources := []Fact{}
+	for i := range list {
+		r := Fact{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+	ctx.JSON(http.StatusOK, resources)
+}
+
+// FactGet godoc
+// @summary Get fact by name.
+// @description Get fact by name.
+// @tags get
+// @produce json
+// @success 200 {object} api.Fact
+// @router /applications/{id}/facts/{name} [get]
+// @param id path string true "Application ID"
+// @param key path string true "Fact key"
+func (h ApplicationHandler) FactGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	key := ctx.Param(Key)
+	list := []model.Fact{}
+	result = h.DB.Find(&list, "ApplicationID = ? AND Key = ?", id, key)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	if len(list) < 1 {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	r := Fact{}
+	r.With(&list[0])
+	ctx.JSON(http.StatusOK, r)
+}
+
+// FactCreate godoc
+// @summary Create a fact.
+// @description Create a fact.
+// @tags create
+// @accept json
+// @produce json
+// @success 201
+// @router /applications/{id}/facts/{key} [post]
+// @param id path string true "Application ID"
+// @param key path string true "Fact key"
+// @param fact body api.Fact true "Fact data"
+func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
+	id := h.pk(ctx)
+	var v interface{}
+	err := ctx.BindJSON(&v)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	key := ctx.Param(Key)
+	m := &model.Fact{}
+	m.Key = key
+	m.Value, _ = json.Marshal(v)
+	m.ApplicationID = id
+	result = h.DB.Create(m)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	r := &Fact{}
+	r.With(m)
+	ctx.JSON(http.StatusCreated, r)
+}
+
+// FactPut godoc
+// @summary Update (or create) a fact.
+// @description Update (or create) a fact.
+// @tags update create
+// @accept json
+// @produce json
+// @success 204 201
+// @router /applications/{id}/facts/{key} [put post]
+// @param id path string true "Application ID"
+// @param key path string true "Fact key"
+// @param fact body api.Fact true "Fact data"
+func (h ApplicationHandler) FactPut(ctx *gin.Context) {
+	id := h.pk(ctx)
+	var v interface{}
+	err := ctx.BindJSON(&v)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	key := ctx.Param(Key)
+	m := &model.Fact{}
+	result = h.DB.First(m, "ApplicationID = ? AND Key = ?", id, key)
+	if result.Error == nil {
+		m.Value, _ = json.Marshal(v)
+		db := h.DB.Model(m)
+		result = db.Updates(h.fields(m))
+		if result.Error != nil {
+			h.reportError(ctx, result.Error)
+			return
+		}
+		ctx.Status(http.StatusNoContent)
+		return
+	}
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		m.Key = key
+		m.Value, _ = json.Marshal(v)
+		m.ApplicationID = id
+		result = h.DB.Create(m)
+		if result.Error != nil {
+			h.reportError(ctx, result.Error)
+			return
+		}
+		r := &Fact{}
+		r.With(m)
+		ctx.JSON(http.StatusCreated, r)
+	} else {
+		h.reportError(ctx, result.Error)
+	}
+}
+
+// FactDelete godoc
+// @summary Delete a fact.
+// @description Delete a fact.
+// @tags delete
+// @success 204
+// @router /applications/{id}/facts/{key} [delete]
+// @param id path string true "Application ID"
+// @param key path string true "Fact key"
+func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	app := &model.Application{}
+	result := h.DB.First(app, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	fact := &model.Fact{}
+	key := ctx.Param(Key)
+	result = h.DB.Delete(fact, "ApplicationID = ? AND Key = ?", id, key)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
 //
 // Application REST resource.
 type Application struct {
@@ -411,7 +639,7 @@ type Application struct {
 	Bucket          string      `json:"bucket"`
 	Repository      *Repository `json:"repository"`
 	Binary          string      `json:"binary"`
-	Facts           Facts       `json:"facts"`
+	Facts           FactMap     `json:"facts"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
@@ -429,7 +657,12 @@ func (r *Application) With(m *model.Application) {
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	_ = json.Unmarshal(m.Repository, &r.Repository)
-	_ = json.Unmarshal(m.Facts, &r.Facts)
+	r.Facts = FactMap{}
+	for i := range m.Facts {
+		f := Fact{}
+		f.With(&m.Facts[i])
+		r.Facts[f.Key] = f.Value
+	}
 	if m.Review != nil {
 		ref := &Ref{}
 		ref.With(m.Review.ID, "")
@@ -467,10 +700,11 @@ func (r *Application) Model() (m *model.Application) {
 	if r.BusinessService != nil {
 		m.BusinessServiceID = &r.BusinessService.ID
 	}
-	if r.Facts == nil {
-		r.Facts = Facts{}
+	m.Facts = []model.Fact{}
+	for k, v := range r.Facts {
+		f := Fact{Key: k, Value: v}
+		m.Facts = append(m.Facts, *f.Model())
 	}
-	m.Facts, _ = json.Marshal(r.Facts)
 	for _, ref := range r.Identities {
 		m.Identities = append(
 			m.Identities,
@@ -504,5 +738,24 @@ type Repository struct {
 }
 
 //
-// Facts about the application.
-type Facts map[string]interface{}
+// FactMap REST nested resource.
+type FactMap map[string]interface{}
+
+//
+// Fact REST nested resource.
+type Fact struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
+}
+
+func (r *Fact) With(m *model.Fact) {
+	r.Key = m.Key
+	_ = json.Unmarshal(m.Value, &r.Value)
+}
+
+func (r *Fact) Model() (m *model.Fact) {
+	m = &model.Fact{}
+	m.Key = r.Key
+	m.Value, _ = json.Marshal(r.Value)
+	return
+}

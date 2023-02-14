@@ -17,7 +17,6 @@ type JSON = datatypes.JSON
 //
 // Unchanged models imported from previous migration.
 type Model = v2.Model
-type Application = v2.Application
 type BucketOwner = v2.BucketOwner
 type BusinessService = v2.BusinessService
 type Dependency = v2.Dependency
@@ -68,5 +67,6 @@ func All() []interface{} {
 		Tracker{},
 		Ticket{},
 		File{},
+		Fact{},
 	}
 }

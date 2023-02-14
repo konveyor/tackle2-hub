@@ -17,6 +17,7 @@ type BucketOwner = model.BucketOwner
 type BusinessService = model.BusinessService
 type Dependency = model.Dependency
 type File = model.File
+type Fact = model.Fact
 type Identity = model.Identity
 type Import = model.Import
 type ImportSummary = model.ImportSummary
