@@ -22,6 +22,8 @@ Steps for import (tackle-config.yml file points to destination Tackle 2, existin
 - ```tackle clean-all```
 - ```tackle import```
 
+**Note: This export/import functionality doesn't aim to be a backup/restore tool. E.g. it doesn't dump Keycloak data and it requires have the Tackle installation to be running on the destination cluster before importing the data.**
+
 ### Migrate data from running Tackle 1.2 to running Tackle 2 instance
 
 Migrate data updating refs to the seed objects matching to the destination Tackle 2 (tags, tag-types and job functions seeded).
@@ -49,11 +51,11 @@ Caution: all clean actions might delete objects already present in the Tackle 2 
 
 ## Requirements
 
-The tool requires Python3 with YAML parser to be installed. A Python 3.6 (default in RHEL8) has YAML already included, but e.g. Python 3.9 (default in RHEL9) requires install a PyYAML module. Also git is needed to get the source code.
+The tool requires Python3 with YAML parser and PyCrypto package (or its successors like pycroyptodome) to be installed. A Python 3.6 (default in RHEL8) has YAML already included, but e.g. Python 3.9 (default in RHEL9) requires install a PyYAML module. Also git is needed to get the source code.
 
-Install requirements with  ```dnf install python39 python3-pyyaml git``` for RHEL-like Linux or corresponding for your operating system.
+Install system requirements with  ```dnf install python3 python3-pip git``` for RHEL-like Linux or corresponding for your operating system.
 
-Since Python3 and git should be present on most developers/sysadmins systems, it might be enought just ensure there presence of PyYAML with Python PIP tool ```python3 -m pip install pyyaml``` without need to use operating system package manager.
+Then install required Python libraries PyYAML and pycryptodome with PIP tool ```python3 -m pip install pyyaml pycryptodome```. Note: Install ```pycryptodome``` only if there is no library providing PyCrypto features already present on your system.
 
 ## Usage
 
@@ -69,11 +71,19 @@ Run the tackle tool:
 ```./tackle```
 
 ### Supported actions
-- ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
 - ```export``` exports Tackle 2 objects into local JSON files and bucket data directory
+- ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
 - ```import``` creates objects in Tackle 2 from local JSON files and buckets data
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
 - ```clean-all``` deletes ALL data returned by Tackle 2 (including seeds, additional to ```clean```), skips some pathfinder stuff without index action
+
+### Export Tackle 2
+
+Run ```tackle export``` to get dump of Tackle 2 objects into JSON files in local directory ```./tackle-data``` and buckets data dump to ```./tackle-data/buckets``` directory.
+
+The export dommand connects to Tackle2 Hub API and dumps relevant resources to local JSON files. For credentials/identities resources, their sensitive fields are encrypted with ```encryption_passphase``` from config file. Application's bucket data are gathered from API and stored locally as .tar.gz archives.
+
+**Note: the encryption_passphase needs to be the same when running the import.**
 
 ### Export Tackle 1.2
 
@@ -81,7 +91,7 @@ Run ```tackle export-tackle1``` to get dump of Tackle 1.2 objects into JSON file
 
 The ```export-tackle1``` command looks into Tackle2 to grab seed resources first, then downloads all resources from Tackle 1.2 API, transforms it to format expected by the Tackle 2 Hub and re-map resources to seeds already existing in destination Tackle2 Hub API. The result is serialized and stored into local JSON files.
 
-### Import to Tackle 2 Hub
+### Import to Tackle 2
 
 Check local JSON dump files in ```./tackle-data``` directory (if needed) and create objects in Tackle 2 Hub running ```tackle import```.
 
