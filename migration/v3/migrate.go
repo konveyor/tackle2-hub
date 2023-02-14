@@ -28,6 +28,13 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	err = db.Migrator().RenameColumn(model.Tag{}, "TagTypeID", "CategoryID")
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
+	}
+
+	err = db.Migrator().RenameColumn(model.ImportTag{}, "TagType", "Category")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 
 	// Create tables for Trackers and Tickets

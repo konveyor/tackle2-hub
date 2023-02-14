@@ -370,8 +370,8 @@ func (h ImportHandler) dependencyFromRow(fileName string, row []string) (app mod
 // Col 14: Branch
 // Col 15: Path
 //
-// Following that are up to twenty pairs of Tag Types and Tags, specified by name. These are optional.
-// If a tag type and a tag are specified, they must already exist.
+// Following that are up to twenty pairs of Tag Categories and Tags, specified by name. These are optional.
+// If a tag category and a tag are specified, they must already exist.
 //
 // Examples:
 //
@@ -401,8 +401,8 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 	for i := 15; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
-				Name:    row[i],
-				TagType: row[i-1],
+				Name:     row[i],
+				Category: row[i-1],
 			}
 			app.ImportTags = append(app.ImportTags, tag)
 		}

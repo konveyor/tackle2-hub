@@ -204,14 +204,14 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	for _, impTag := range imp.ImportTags {
 		// Prepare normalized names for importTag
 		normImpTagName := normalizedName(impTag.Name)
-		normImpTagType := normalizedName(impTag.TagType)
+		normImpCategory := normalizedName(impTag.Category)
 
 		// skip if tag name normalizes to an empty string
 		if normImpTagName == "" {
 			continue
 		}
-		// fail if the tag name is ok but the tag type normalizes to an empty string
-		if normImpTagType == "" {
+		// fail if the tag name is ok but the tag category normalizes to an empty string
+		if normImpCategory == "" {
 			imp.ErrorMessage = fmt.Sprintf("Tag '%s' has missing or invalid TagCategory.", impTag.Name)
 			return
 		}
@@ -222,7 +222,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 		// Find existing TagCategory
 		for _, tagType := range tagCategories {
-			if normalizedName(tagType.Name) == normImpTagType {
+			if normalizedName(tagType.Name) == normImpCategory {
 				appTagCategory = &tagType
 				break
 			}
@@ -231,15 +231,15 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		// Or create TagCategory (if CreateEntities is enabled)
 		if appTagCategory.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
-				appTagCategory.Name = impTag.TagType
+				appTagCategory.Name = impTag.Category
 				appTagCategory.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
 				result := m.DB.Create(&appTagCategory)
 				if result.Error != nil {
-					imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' cannot be created.", impTag.TagType)
+					imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' cannot be created.", impTag.Category)
 					return
 				}
 			} else {
-				imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' could not be found.", impTag.TagType)
+				imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' could not be found.", impTag.Category)
 				return
 			}
 		}
@@ -247,7 +247,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 		// Find existing tag
 		for _, tag := range tags {
-			if normalizedName(tag.Name) == normImpTagName && normalizedName(tag.Category.Name) == normImpTagType {
+			if normalizedName(tag.Name) == normImpTagName && normalizedName(tag.Category.Name) == normImpCategory {
 				appTag = &tag
 				break
 			}
