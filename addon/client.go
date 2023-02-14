@@ -229,7 +229,6 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(source),
 		}
-		request.Header.Set(api.Directory, api.DirectoryArchive)
 		request.Header.Set(Accept, AppOctet)
 		return
 	}

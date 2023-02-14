@@ -248,6 +248,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // BucketGet godoc
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
+// @description Returns index.html for directories when Accept=text/html else a tarball.
 // @tags get
 // @produce octet-stream
 // @success 200
