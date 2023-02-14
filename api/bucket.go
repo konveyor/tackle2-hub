@@ -29,11 +29,16 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 		ctx.Status(http.StatusNotFound)
 		return
 	}
-	if st.IsDir() && ctx.Request.Header.Get(Directory) == DirectoryArchive {
-		h.getDirArchive(ctx, path)
-	} else {
-		h.content(ctx, owner)
+	if st.IsDir() {
+		if h.accepted(ctx, TextHTML) {
+			h.content(ctx, owner)
+		} else {
+			h.getDirArchive(ctx, path)
+		}
+		return
 	}
+
+	h.content(ctx, owner)
 }
 
 func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
@@ -287,4 +292,17 @@ func (h *BucketHandler) delete(ctx *gin.Context, owner *model.BucketOwner) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+//
+// accepted determines if the mime is accepted.
+func (h *BucketHandler) accepted(ctx *gin.Context, mime string) (b bool) {
+	accept := ctx.Request.Header.Get(Accept)
+	for _, s := range strings.Split(accept, ",") {
+		if s == mime {
+			b = true
+			break
+		}
+	}
+	return
 }

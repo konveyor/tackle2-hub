@@ -39,6 +39,7 @@ const (
 const (
 	AppJson  = "application/json"
 	AppOctet = "application/octet-stream"
+	TextHTML = "text/html"
 )
 
 //
