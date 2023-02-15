@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
-	"strconv"
 )
 
 //
@@ -23,6 +22,12 @@ const (
 	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
 	AppBucketRoot        = ApplicationRoot + "/bucket"
 	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
+)
+
+//
+// Params
+const (
+	Source = "source"
 )
 
 //
@@ -48,6 +53,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
 	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
+	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace)
 	// Facts
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.facts"))
@@ -84,8 +90,17 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
+
+	tags := []model.ApplicationTag{}
+	db = h.preLoad(h.DB, clause.Associations)
+	result = db.Find(&tags, "ApplicationID = ?", id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+
 	r := Application{}
-	r.With(m)
+	r.With(m, tags)
 
 	ctx.JSON(http.StatusOK, r)
 }
@@ -107,8 +122,16 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	}
 	resources := []Application{}
 	for i := range list {
+		tags := []model.ApplicationTag{}
+		db = h.preLoad(h.DB, clause.Associations)
+		result = db.Find(&tags, "ApplicationID = ?", list[i].ID)
+		if result.Error != nil {
+			h.reportError(ctx, result.Error)
+			return
+		}
+
 		r := Application{}
-		r.With(&list[i])
+		r.With(&list[i], tags)
 		resources = append(resources, r)
 	}
 
@@ -133,12 +156,25 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB.Omit("Tags").Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	r.With(m)
+
+	tags := []model.ApplicationTag{}
+	if len(r.Tags) > 0 {
+		for _, t := range r.Tags {
+			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+		}
+		result = h.DB.Create(&tags)
+		if result.Error != nil {
+			h.reportError(ctx, result.Error)
+			return
+		}
+	}
+
+	r.With(m, tags)
 
 	ctx.JSON(http.StatusCreated, r)
 }
@@ -260,12 +296,6 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	db = h.DB.Model(m)
-	err = db.Association("Tags").Replace(m.Tags)
-	if err != nil {
-		h.reportError(ctx, err)
-		return
-	}
-	db = h.DB.Model(m)
 	err = db.Association("Facts").Replace(m.Facts)
 	if err != nil {
 		h.reportError(ctx, err)
@@ -279,6 +309,24 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		err := db.Updates(h.fields(m)).Error
 		if err != nil {
 			h.reportError(ctx, err)
+			return
+		}
+	}
+
+	// delete existing tag associations and create new ones
+	err = h.DB.Delete(&model.ApplicationTag{}, "ApplicationID = ?", id).Error
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	if len(r.Tags) > 0 {
+		tags := []model.ApplicationTag{}
+		for _, t := range r.Tags {
+			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+		}
+		result = h.DB.Create(&tags)
+		if result.Error != nil {
+			h.reportError(ctx, result.Error)
 			return
 		}
 	}
@@ -375,17 +423,23 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db := h.DB.Model(app).Association("Tags")
-	list := []model.Tag{}
-	err := db.Find(&list)
-	if err != nil {
-		h.reportError(ctx, err)
+	db := h.preLoad(h.DB, clause.Associations)
+	source, found := ctx.GetQuery(Source)
+	if found {
+		condition := h.DB.Where("source = ?", source)
+		db = db.Where(condition)
+	}
+
+	list := []model.ApplicationTag{}
+	result = db.Find(&list, "ApplicationID = ?", id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
 		return
 	}
-	resources := []Ref{}
+	resources := []TagRef{}
 	for i := range list {
-		r := Ref{}
-		r.With(list[i].ID, list[i].Name)
+		r := TagRef{}
+		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source)
 		resources = append(resources, r)
 	}
 	ctx.JSON(http.StatusOK, resources)
@@ -402,7 +456,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 // @param tag body Ref true "Tag data"
 func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	id := h.pk(ctx)
-	ref := &Ref{}
+	ref := &TagRef{}
 	err := ctx.BindJSON(ref)
 	if err != nil {
 		h.reportError(ctx, err)
@@ -414,15 +468,70 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db := h.DB.Model(app).Association("Tags")
-	tag := &model.Tag{}
-	tag.ID = ref.ID
-	err = db.Append(tag)
+	tag := &model.ApplicationTag{
+		ApplicationID: id,
+		TagID:         ref.ID,
+		Source:        ref.Source,
+	}
+	err = h.DB.Create(tag).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
 	}
 	ctx.JSON(http.StatusCreated, ref)
+}
+
+// TagReplace godoc
+// @summary Replace tag associations.
+// @description Replace tag associations.
+// @tags update
+// @accept json
+// @success 204
+// @router /applications/{id}/tags [patch]
+// @param id path string true "Application ID"
+// @param source query string false "Source"
+// @param tags body []TagRef true "Tag references"
+func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
+	id := h.pk(ctx)
+	refs := []TagRef{}
+	err := ctx.BindJSON(&refs)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+
+	// remove all the existing tag associations for that source and app id.
+	// if source is not provided, all tag associations will be removed.
+	db := h.DB.Where("ApplicationID = ?", id)
+	source, found := ctx.GetQuery(Source)
+	if found {
+		condition := h.DB.Where("source = ?", source)
+		db = db.Where(condition)
+	}
+	err = db.Delete(&model.ApplicationTag{}).Error
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+
+	// create new associations
+	if len(refs) > 0 {
+		appTags := []model.ApplicationTag{}
+		for _, ref := range refs {
+			appTags = append(appTags, model.ApplicationTag{
+				ApplicationID: id,
+				TagID:         ref.ID,
+				Source:        source,
+			})
+		}
+		err = db.Create(&appTags).Error
+		if err != nil {
+			h.reportError(ctx, err)
+			return
+		}
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // TagDelete godoc
@@ -435,18 +544,21 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 // @param sid path string true "Tag ID"
 func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
+	id2 := ctx.Param(ID2)
 	app := &model.Application{}
 	result := h.DB.First(app, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db := h.DB.Model(app).Association("Tags")
-	id2 := ctx.Param(ID2)
-	n, _ := strconv.Atoi(id2)
-	tag := &model.Tag{}
-	tag.ID = uint(n)
-	err := db.Delete(tag)
+
+	db := h.DB.Where("ApplicationID = ?", id).Where("TagID = ?", id2)
+	source, found := ctx.GetQuery(Source)
+	if found {
+		condition := h.DB.Where("source = ?", source)
+		db = db.Where(condition)
+	}
+	err := db.Delete(&model.ApplicationTag{}).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -654,13 +766,13 @@ type Application struct {
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
-	Tags            []Ref       `json:"tags"`
+	Tags            []TagRef    `json:"tags"`
 	BusinessService *Ref        `json:"businessService"`
 }
 
 //
 // With updates the resource using the model.
-func (r *Application) With(m *model.Application) {
+func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
@@ -688,9 +800,9 @@ func (r *Application) With(m *model.Application) {
 			r.Identities,
 			ref)
 	}
-	for _, tag := range m.Tags {
-		ref := Ref{}
-		ref.With(tag.ID, tag.Name)
+	for i := range tags {
+		ref := TagRef{}
+		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source)
 		r.Tags = append(r.Tags, ref)
 	}
 }

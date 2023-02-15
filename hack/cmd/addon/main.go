@@ -66,7 +66,13 @@ func main() {
 		}
 		//
 		// Add tags.
-		err = addTags(application, "LISTED", "TEST", "OTHER")
+		err = addTags(application, "addon", "LISTED", "TEST", "OTHER")
+		if err != nil {
+			return
+		}
+		//
+		// Replace tags.
+		err = replaceTags(application, "addon", "TEST", "EXAMPLE", "REPLACED")
 		if err != nil {
 			return
 		}
@@ -252,50 +258,6 @@ func find(path string, max int) (paths []string, err error) {
 }
 
 //
-// addTags ensure tags created and associated with application.
-// Ensure tag exists and associated with the application.
-func addTags(application *api.Application, names ...string) (err error) {
-	addon.Activity("Adding tags: %v", names)
-	var wanted []uint
-	//
-	// Ensure type exists.
-	tp := &api.TagCategory{
-		Name: "DIRECTORY",
-		Color: "#2b9af3",
-		Rank: 3,
-	}
-	err = addon.TagCategory.Ensure(tp)
-	if err != nil {
-		return
-	}
-	//
-	// Ensure tags exist.
-	for _, name := range names {
-		tag := &api.Tag{
-			Name: name,
-			Category: api.Ref{
-				ID: tp.ID,
-			}}
-		err = addon.Tag.Ensure(tag)
-		if err == nil {
-			wanted = append(wanted, tag.ID)
-		} else {
-			return
-		}
-	}
-	//
-	// Associate tags.
-	tags := addon.Application.Tags(application.ID)
-	for _, id := range wanted {
-		err = tags.Add(id)
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
-//
 // Play with files.
 func playWithFiles() (err error) {
 	f, err := addon.File.Put("/etc/hosts")
@@ -313,6 +275,94 @@ func playWithFiles() (err error) {
 	err = addon.File.Delete(f.ID)
 	if err != nil {
 		return
+	}
+	return
+}
+
+//
+// addTags ensure tags created and associated with application.
+// Ensure tag exists and associated with the application.
+func addTags(application *api.Application, source string, names ...string) (err error) {
+	addon.Activity("Adding tags: %v", names)
+	var wanted []uint
+	//
+	// Ensure type exists.
+	tp := &api.TagCategory{
+		Name: "DIRECTORY",
+		Color: "#2b9af3",
+		Rank: 3,
+	}
+	err = addon.TagCategory.Ensure(tp)
+	if err != nil {
+		return
+	}
+	//
+	// Ensure tags exist.
+	wanted, err = ensureTags(tp.ID, names...)
+	if err != nil {
+		return
+	}
+	//
+	// Associate tags.
+	tags := addon.Application.Tags(application.ID)
+	tags.Source(source)
+	for _, id := range wanted {
+		err = tags.Add(id)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+//
+// replaceTags replaces current set of tags for the source with a new set.
+// Ensures desired tags exist before replacing.
+func replaceTags(application *api.Application, source string, names ...string) (err error) {
+	addon.Activity("Replacing tags: %v", names)
+	var wanted []uint
+	//
+	// Ensure type exists.
+	tp := &api.TagCategory{
+		Name: "DIRECTORY",
+		Color: "#2b9af3",
+		Rank: 3,
+	}
+	err = addon.TagCategory.Ensure(tp)
+	if err != nil {
+		return
+	}
+	//
+	// Ensure tags exist.
+	wanted, err = ensureTags(tp.ID, names...)
+	if err != nil {
+		return
+	}
+	//
+	// Associate tags.
+	tags := addon.Application.Tags(application.ID)
+	tags.Source(source)
+	err = tags.Replace(wanted)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func ensureTags(category uint, names ...string) (ids []uint, err error) {
+	for _, name := range names {
+		tag := &api.Tag{
+			Name: name,
+			Category: api.Ref{
+				ID: category,
+			}}
+		err = addon.Tag.Ensure(tag)
+		if err == nil {
+			ids = append(ids, tag.ID)
+		} else {
+			return
+		}
 	}
 	return
 }

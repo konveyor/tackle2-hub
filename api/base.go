@@ -309,3 +309,20 @@ func (r *Ref) With(id uint, name string) {
 	r.ID = id
 	r.Name = name
 }
+
+//
+// TagRef represents a reference to a Tag.
+// Contains the tag ID, name, tag source.
+type TagRef struct {
+	ID     uint   `json:"id" binding:"required"`
+	Name   string `json:"name"`
+	Source string `json:"source"`
+}
+
+//
+// With id and named model.
+func (r *TagRef) With(id uint, name string, source string) {
+	r.ID = id
+	r.Name = name
+	r.Source = source
+}
