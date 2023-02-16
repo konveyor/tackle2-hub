@@ -15,8 +15,8 @@ type Task struct {
 	Image         string
 	Variant       string
 	Policy        string
-	TTL           JSON
-	Data          JSON
+	TTL           JSON `gorm:"type:json"`
+	Data          JSON `gorm:"type:json"`
 	Started       *time.Time
 	Terminated    *time.Time
 	State         string `gorm:"index"`

@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/settings"
-	"gorm.io/datatypes"
 )
 
 var (
@@ -10,8 +9,8 @@ var (
 )
 
 //
-// Field (data) types.
-type JSON = datatypes.JSON
+// JSON field (data) type.
+type JSON = []byte
 
 //
 // All builds all models.

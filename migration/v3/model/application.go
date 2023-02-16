@@ -6,7 +6,7 @@ type Application struct {
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
 	Review            *Review `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        JSON
+	Repository        JSON    `gorm:"type:json"`
 	Binary            string
 	Facts             []Fact
 	Comments          string

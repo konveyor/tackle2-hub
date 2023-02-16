@@ -8,7 +8,7 @@ type RuleBundle struct {
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description string
 	Custom      bool
-	Repository  JSON
+	Repository  JSON `gorm:"type:json"`
 	ImageID     uint `gorm:"index" ref:"file"`
 	Image       *File
 	IdentityID  *uint `gorm:"index"`
