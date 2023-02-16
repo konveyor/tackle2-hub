@@ -52,6 +52,8 @@ type Adapter struct {
 	Tag Tag
 	// File API.
 	File File
+	// RuleBundle API
+	RuleBundle RuleBundle
 	// client A REST client.
 	client *Client
 }
@@ -138,6 +140,9 @@ func newAdapter() (adapter *Adapter) {
 			client: client,
 		},
 		File: File{
+			client: client,
+		},
+		RuleBundle: RuleBundle{
 			client: client,
 		},
 		client: client,

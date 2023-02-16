@@ -65,7 +65,8 @@ func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	var n int64
 	ref := RefCounter{DB: r.DB}
 	for _, m := range []interface{}{
-		// ADD MODELS HERE
+		model.RuleBundle{},
+		model.RuleSet{},
 	} {
 		n, err = ref.Count(m, "file", file.ID)
 		if err != nil {

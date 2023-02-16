@@ -65,6 +65,7 @@ func All() []Handler {
 		&IdentityHandler{},
 		&ProxyHandler{},
 		&ReviewHandler{},
+		&RuleBundleHandler{},
 		&SchemaHandler{},
 		&SettingHandler{},
 		&StakeholderHandler{},

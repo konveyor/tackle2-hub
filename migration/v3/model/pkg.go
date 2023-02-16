@@ -68,5 +68,7 @@ func All() []interface{} {
 		Ticket{},
 		File{},
 		Fact{},
+		RuleBundle{},
+		RuleSet{},
 	}
 }

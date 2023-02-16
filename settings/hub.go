@@ -23,6 +23,7 @@ const (
 	EnvFrequencyReaper   = "FREQUENCY_REAPER"
 	EnvDevelopment       = "DEVELOPMENT"
 	EnvFileTTL           = "FILE_TTL"
+	EnvAppName           = "APP_NAME"
 )
 
 type Hub struct {
@@ -69,6 +70,8 @@ type Hub struct {
 	}
 	// Development environment
 	Development bool
+	// Product - deployed as product.
+	Product bool
 }
 
 func (r *Hub) Load() (err error) {
@@ -167,6 +170,12 @@ func (r *Hub) Load() (err error) {
 		r.File.TTL = n
 	} else {
 		r.File.TTL = 720 // 12 hours.
+	}
+	s, found = os.LookupEnv(EnvAppName)
+	if found {
+		r.Product = !(s == "" || s == "tackle")
+	} else {
+		r.Product = false
 	}
 
 	return

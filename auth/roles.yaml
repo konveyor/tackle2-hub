@@ -146,6 +146,12 @@
         - get
         - post
         - put
+    - name: rulebundles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -281,6 +287,12 @@
         - get
         - post
         - put
+    - name: rulebundles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-migrator
   resources:
     - name: addons
@@ -368,5 +380,8 @@
       verbs:
         - get
     - name: files
+      verbs:
+        - get
+    - name: rulebundles
       verbs:
         - get
