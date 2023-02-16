@@ -6,6 +6,7 @@ import (
 	"github.com/konveyor/controller/pkg/logging"
 	v2 "github.com/konveyor/tackle2-hub/migration/v2/model"
 	"github.com/konveyor/tackle2-hub/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/migration/v3/seed"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +24,9 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	//
+	// Seed.
+	seed.Seed(db)
 
 	return
 }
