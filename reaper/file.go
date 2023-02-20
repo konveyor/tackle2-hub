@@ -41,6 +41,7 @@ func (r *FileReaper) Run() {
 			continue
 		}
 		if file.Expiration == nil {
+			Log.Info("File (orphan) found.", "id", file.ID, "path", file.Path)
 			mark := time.Now().Add(time.Minute * time.Duration(Settings.File.TTL))
 			file.Expiration = &mark
 			err = r.DB.Save(&file).Error
@@ -65,8 +66,8 @@ func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	var n int64
 	ref := RefCounter{DB: r.DB}
 	for _, m := range []interface{}{
-		model.RuleBundle{},
-		model.RuleSet{},
+		&model.RuleBundle{},
+		&model.RuleSet{},
 	} {
 		n, err = ref.Count(m, "file", file.ID)
 		if err != nil {
@@ -106,6 +107,6 @@ func (r *FileReaper) delete(file *model.File) (err error) {
 			file.Path)
 		return
 	}
-	Log.Info("File deleted.", "id", file.ID, "path", file.Path)
+	Log.Info("File (orphan) deleted.", "id", file.ID, "path", file.Path)
 	return
 }
