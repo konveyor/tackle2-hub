@@ -32,7 +32,7 @@ func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err
 	for i := 0; i < mt.NumField(); i++ {
 		ft := mt.Field(i)
 		fv := mv.Field(i)
-		if !fv.CanSet() {
+		if !ft.IsExported() {
 			continue
 		}
 		switch fv.Kind() {

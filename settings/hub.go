@@ -169,7 +169,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.File.TTL = n
 	} else {
-		r.File.TTL = 720 // 12 hours.
+		r.File.TTL = 720 // minutes: 12 hours.
 	}
 	s, found = os.LookupEnv(EnvAppName)
 	if found {
