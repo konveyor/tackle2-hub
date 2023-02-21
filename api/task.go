@@ -19,7 +19,7 @@ const (
 	TasksRoot      = "/tasks"
 	TaskRoot       = TasksRoot + "/:" + ID
 	TaskReportRoot = TaskRoot + "/report"
-	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
+	TaskBucketRoot = TaskRoot + "/bucket" + "/*" + Wildcard
 	TaskSubmitRoot = TaskRoot + "/submit"
 	TaskCancelRoot = TaskRoot + "/cancel"
 )
@@ -31,8 +31,7 @@ const (
 //
 // TaskHandler handles task routes.
 type TaskHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -46,14 +45,17 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
+	// Actions
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
+	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
+	routeGroup.POST(TaskBucketRoot, h.BucketPut)
+	routeGroup.PUT(TaskBucketRoot, h.BucketPut)
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
-	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
-	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
 	routeGroup.DELETE(TaskBucketRoot, h.BucketDelete)
+	// Report
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.report"))
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
@@ -316,25 +318,29 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 // @router /tasks/{id}/bucket/{wildcard} [get]
 // @param id path string true "Task ID"
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Task{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketGet(ctx, bucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [post]
-// @param id path string true "Task ID"
-func (h TaskHandler) BucketUpload(ctx *gin.Context) {
+// @param id path string true "Bucket ID"
+func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
@@ -342,8 +348,11 @@ func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketPut(ctx, bucketID)
 }
 
 // BucketDelete godoc
@@ -353,7 +362,7 @@ func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Task ID"
+// @param id path string true "Bucket ID"
 func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
@@ -362,8 +371,11 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.delete(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketDelete(ctx, bucketID)
 }
 
 // CreateReport godoc
@@ -489,7 +501,7 @@ type Task struct {
 	Application *Ref        `json:"application,omitempty"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
-	Bucket      string      `json:"bucket,omitempty"`
+	Bucket      *Ref        `json:"bucket,omitempty"`
 	Purged      bool        `json:"purged,omitempty"`
 	Started     *time.Time  `json:"started,omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty"`
@@ -512,7 +524,7 @@ func (r *Task) With(m *model.Task) {
 	r.Policy = m.Policy
 	r.Variant = m.Variant
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated

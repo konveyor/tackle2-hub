@@ -16,15 +16,14 @@ import (
 const (
 	TaskGroupsRoot      = "/taskgroups"
 	TaskGroupRoot       = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot = TaskGroupRoot + "/bucket/*" + Wildcard
+	TaskGroupBucketRoot = TaskGroupRoot + "/bucket" + "/*" + Wildcard
 	TaskGroupSubmitRoot = TaskGroupRoot + "/submit"
 )
 
 //
 // TaskGroupHandler handles task group routes.
 type TaskGroupHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -39,11 +38,12 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskGroupRoot, h.Get)
 	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
+	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
+	routeGroup.POST(TaskGroupBucketRoot, h.BucketPut)
+	routeGroup.PUT(TaskGroupBucketRoot, h.BucketPut)
 	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
-	routeGroup.POST(TaskGroupBucketRoot, h.BucketUpload)
-	routeGroup.PUT(TaskGroupBucketRoot, h.BucketUpload)
 	routeGroup.DELETE(TaskGroupBucketRoot, h.BucketDelete)
 }
 
@@ -168,7 +168,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	}
 	m := updated.Model()
 	m.ID = current.ID
-	m.Bucket = current.Bucket
+	m.BucketID = current.BucketID
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	switch updated.State {
@@ -282,28 +282,31 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /taskgroups/{id}/bucket/{wildcard} [get]
-// @param id path string true "TaskGroup ID"
+// @param id path string true "Task ID"
 func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.TaskGroup{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketGet(ctx, bucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [post]
-// @param id path string true "TaskGroup ID"
-func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
+// @param id path string true "Bucket ID"
+func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
@@ -311,8 +314,11 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketPut(ctx, bucketID)
 }
 
 // BucketDelete godoc
@@ -322,7 +328,7 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Task ID"
+// @param id path string true "Bucket ID"
 func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
@@ -331,8 +337,11 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.delete(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketDelete(ctx, bucketID)
 }
 
 //
@@ -342,7 +351,7 @@ type TaskGroup struct {
 	Name   string      `json:"name"`
 	Addon  string      `json:"addon"`
 	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Bucket string      `json:"bucket,omitempty"`
+	Bucket *Ref        `json:"bucket,omitempty"`
 	State  string      `json:"state"`
 	Tasks  []Task      `json:"tasks"`
 }
@@ -354,7 +363,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Name = m.Name
 	r.Addon = m.Addon
 	r.State = m.State
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
 	_ = json.Unmarshal(m.Data, &r.Data)
 	switch m.State {
@@ -380,7 +389,6 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		State: r.State,
 	}
 	m.ID = r.ID
-	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.List, _ = json.Marshal(r.Tasks)
 	for _, task := range r.Tasks {

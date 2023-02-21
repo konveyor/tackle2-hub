@@ -133,12 +133,12 @@ func Seed(db *gorm.DB) {
 					" to JBoss EAP from other Enterprise Application Server (e.g. Oracle WebLogic Server).",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Boss EAP 7",
+						Name:        "Boss EAP 7",
 						Description: "Boss EAP 7",
 						Metadata:    Target("eap7"),
 					},
 					{
-						Name: "Boss EAP 6",
+						Name:        "Boss EAP 6",
 						Description: "Boss EAP 6",
 						Metadata:    Target("eap6"),
 					},
@@ -153,7 +153,7 @@ func Seed(db *gorm.DB) {
 					" assess applications for suitability for deployment on Kubernetes.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Containerization",
+						Name:     "Containerization",
 						Metadata: Target("cloud-readiness"),
 					},
 				},
@@ -166,7 +166,7 @@ func Seed(db *gorm.DB) {
 				Description: "Rules to support the migration of Spring Boot applications to Quarkus.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Quarkus",
+						Name:     "Quarkus",
 						Metadata: Target("quarkus"),
 					},
 				},
@@ -179,7 +179,7 @@ func Seed(db *gorm.DB) {
 				Description: "Rules to support the migration to OpenJDK from OracleJDK.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "OpenJDK",
+						Name:     "OpenJDK",
 						Metadata: Target("openjdk"),
 					},
 				},
@@ -193,12 +193,12 @@ func Seed(db *gorm.DB) {
 				Description: "Rules to support upgrading the version of OpenJDK. Migrate to OpenJDK 11 or OpenJDK 17.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "OpenJDK 11",
+						Name:        "OpenJDK 11",
 						Description: "OpenJDK 11",
 						Metadata:    Target("openjdk11"),
 					},
 					{
-						Name: "OpenJDK 17",
+						Name:        "OpenJDK 17",
 						Description: "OpenJDK 17",
 						Metadata:    Target("openjdk17"),
 					},
@@ -212,7 +212,7 @@ func Seed(db *gorm.DB) {
 				Description: "Ensure there are no Microsoft Windows paths hard coded into your applications.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Linux",
+						Name:     "Linux",
 						Metadata: Target("linux"),
 					},
 				},
@@ -228,7 +228,7 @@ func Seed(db *gorm.DB) {
 					" configuration properties and bootstraping files.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Jakarta",
+						Name:     "Jakarta",
 						Metadata: Target("jakarta-ee"),
 					},
 				},
@@ -242,7 +242,7 @@ func Seed(db *gorm.DB) {
 					" against the versions of Spring Boot libraries supported by Red Hat Runtimes.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Spring Boot",
+						Name:     "Spring Boot",
 						Metadata: Target("rhr"),
 					},
 				},
@@ -256,7 +256,7 @@ func Seed(db *gorm.DB) {
 					" applications to Open Liberty.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Open Liberty",
+						Name:     "Open Liberty",
 						Metadata: Target("openliberty"),
 					},
 				},
@@ -269,7 +269,7 @@ func Seed(db *gorm.DB) {
 				Description: "A comprehensive set of rules for migration from Apache Camel 2 to Apache Camel 3.",
 				RuleSets: []model.RuleSet{
 					{
-						Name: "Camel",
+						Name:     "Camel",
 						Metadata: Target("camel"),
 					},
 				},
@@ -284,12 +284,12 @@ func Seed(db *gorm.DB) {
 				Description: "Upgrade your Java application so it can be deployed in different flavors of Azure.",
 				RuleSets: []model.RuleSet{
 					{
-						Name:  "Azure App Service",
+						Name:        "Azure App Service",
 						Description: "Azure App Service",
 						Metadata:    Target("azure-appservice"),
 					},
 					{
-						Name: "Azure Kubernetes Service",
+						Name:        "Azure Kubernetes Service",
 						Description: "Azure Kubernetes Service",
 						Metadata:    Target("azure-aks"),
 					},
@@ -304,7 +304,7 @@ func Seed(db *gorm.DB) {
 				Description: "Upgrade your Java application so it can be deployed in different flavors of Azure.",
 				RuleSets: []model.RuleSet{
 					{
-						Name:  "Azure App Service",
+						Name:        "Azure App Service",
 						Description: "Azure App Service",
 						Metadata:    Target("azure-appservice"),
 					},

@@ -4,6 +4,12 @@ host="${HOST:-localhost:8080}"
 
 path="/etc/hosts"
 
+echo "______________________ BUCKET ______________________"
+curl -F 'file=@/etc/hosts' http://${host}/buckets/1/${path}
+curl -X GET http://${host}/buckets/1/${path}
+curl -X DELETE http://${host}/buckets/1/${path}
+curl -X GET http://${host}/buckets/1/${path}
+
 echo "______________________ APP ______________________"
 curl -F 'file=@/etc/hosts' http://${host}/applications/1/bucket/${path}
 curl -X GET http://${host}/applications/1/bucket/${path}

@@ -15,30 +15,35 @@ var log = logging.WithName("migration|v3")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
+	//
+	// Facts.
 	err = r.factMigration(db)
 	if err != nil {
 		return
 	}
-
+	//
+	// Buckets.
+	err = r.bucketMigration(db)
+	if err != nil {
+		return
+	}
+	//
+	// Tags/Categories.
 	err = db.Migrator().RenameTable(model.TagType{}, model.TagCategory{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-
 	err = db.Migrator().RenameColumn(model.Tag{}, "TagTypeID", "CategoryID")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-
 	err = db.Migrator().RenameColumn(model.ImportTag{}, "TagType", "Category")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-
-	// Create tables for Trackers and Tickets
 	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -93,5 +98,146 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 		err = liberr.Wrap(result.Error)
 		return
 	}
+	return
+}
+
+//
+// bucketMigration migrates buckets.
+func (r Migration) bucketMigration(db *gorm.DB) (err error) {
+	migrator := db.Migrator()
+	err = migrator.AutoMigrate(&model.Bucket{})
+	if err != nil {
+		return
+	}
+	err = r.appBucketMigration(db)
+	if err != nil {
+		return
+	}
+	err = r.taskBucketMigration(db)
+	if err != nil {
+		return
+	}
+	err = r.taskGroupBucketMigration(db)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+//
+// appBucketMigration migrates application buckets.
+func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
+	migrator := db.Migrator()
+	err = migrator.AutoMigrate(&model.Application{})
+	if err != nil {
+		return
+	}
+	list := []v2.Application{}
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		bucket := &model.Bucket{}
+		bucket.Path = m.Bucket
+		err = db.Create(bucket).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		db := db.Model(&model.Application{})
+		db = db.Where("ID = ?", m.ID)
+		result := db.Update("BucketID", &bucket.ID)
+		if result.Error != nil {
+			err = liberr.Wrap(result.Error)
+			return
+		}
+	}
+	err = migrator.DropColumn(&v2.Application{}, "Bucket")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	return
+}
+
+//
+// taskBucketMigration migrates task buckets.
+func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
+	migrator := db.Migrator()
+	err = migrator.AutoMigrate(&model.Task{})
+	if err != nil {
+		return
+	}
+	list := []v2.Task{}
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		bucket := &model.Bucket{}
+		bucket.Path = m.Bucket
+		err = db.Create(bucket).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		db := db.Model(&model.Task{})
+		db = db.Where("ID = ?", m.ID)
+		result := db.Update("BucketID", &bucket.ID)
+		if result.Error != nil {
+			err = liberr.Wrap(result.Error)
+			return
+		}
+	}
+	err = migrator.DropColumn(&v2.Task{}, "Bucket")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	return
+}
+
+//
+// taskGroupBucketMigration migrates task group buckets.
+func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
+	migrator := db.Migrator()
+	err = migrator.AutoMigrate(&model.TaskGroup{})
+	if err != nil {
+		return
+	}
+	list := []v2.TaskGroup{}
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		bucket := &model.Bucket{}
+		bucket.Path = m.Bucket
+		err = db.Create(bucket).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		db := db.Model(&model.TaskGroup{})
+		db = db.Where("ID = ?", m.ID)
+		result := db.Update("BucketID", &bucket.ID)
+		if result.Error != nil {
+			err = liberr.Wrap(result.Error)
+			return
+		}
+	}
+	err = migrator.DropColumn(&v2.TaskGroup{}, "Bucket")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
 	return
 }

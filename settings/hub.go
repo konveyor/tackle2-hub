@@ -22,6 +22,7 @@ const (
 	EnvFrequencyTask     = "FREQUENCY_TASK"
 	EnvFrequencyReaper   = "FREQUENCY_REAPER"
 	EnvDevelopment       = "DEVELOPMENT"
+	EnvBucketTTL         = "BUCKET_TTL"
 	EnvFileTTL           = "FILE_TTL"
 	EnvAppName           = "APP_NAME"
 )
@@ -37,6 +38,7 @@ type Hub struct {
 	// Bucket settings.
 	Bucket struct {
 		Path string
+		TTL  int
 	}
 	// File settings.
 	File struct {
@@ -163,6 +165,13 @@ func (r *Hub) Load() (err error) {
 		r.Development = b
 	} else {
 		r.Development = false
+	}
+	s, found = os.LookupEnv(EnvBucketTTL)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Bucket.TTL = n
+	} else {
+		r.Bucket.TTL = 1 // minutes.
 	}
 	s, found = os.LookupEnv(EnvFileTTL)
 	if found {

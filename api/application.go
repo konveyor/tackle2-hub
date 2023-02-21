@@ -27,8 +27,7 @@ const (
 //
 // ApplicationHandler handles application resource routes.
 type ApplicationHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -60,8 +59,8 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.bucket"))
-	routeGroup.POST(AppBucketRoot, h.BucketUpload)
-	routeGroup.PUT(AppBucketRoot, h.BucketUpload)
+	routeGroup.POST(AppBucketRoot, h.BucketPut)
+	routeGroup.PUT(AppBucketRoot, h.BucketPut)
 	routeGroup.GET(AppBucketRoot, h.BucketGet)
 	routeGroup.DELETE(AppBucketRoot, h.BucketDelete)
 }
@@ -295,35 +294,41 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
 // @param id path string true "Task ID"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketGet(ctx, bucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
-// @param id path string true "Application ID"
-func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
-	id := h.pk(ctx)
+// @param id path string true "Bucket ID"
+func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketPut(ctx, bucketID)
 }
 
 // BucketDelete godoc
@@ -333,17 +338,20 @@ func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Application ID"
+// @param id path string true "Bucket ID"
 func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-
-	h.delete(ctx, &m.BucketOwner)
+	bucketID := uint(0)
+	if m.BucketID != nil {
+		bucketID = *m.BucketID
+	}
+	h.bucketDelete(ctx, bucketID)
 }
 
 // TagList godoc
@@ -636,7 +644,7 @@ type Application struct {
 	Resource
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
-	Bucket          string      `json:"bucket"`
+	Bucket          *Ref        `json:"bucket"`
 	Repository      *Repository `json:"repository"`
 	Binary          string      `json:"binary"`
 	Facts           FactMap     `json:"facts"`
@@ -653,7 +661,7 @@ func (r *Application) With(m *model.Application) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	_ = json.Unmarshal(m.Repository, &r.Repository)
