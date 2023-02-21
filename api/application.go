@@ -245,7 +245,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db = h.DB.Model(m)
 	db = db.Omit(clause.Associations)
-	db = db.Omit("Bucket")
+	db = db.Omit("BucketID")
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -301,11 +301,12 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketGet(ctx, bucketID)
+
+	h.bucketGet(ctx, *m.BucketID)
 }
 
 // BucketPut godoc
@@ -324,11 +325,12 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketPut(ctx, bucketID)
+
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -347,11 +349,12 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketDelete(ctx, bucketID)
+
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 // TagList godoc

@@ -12,6 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,7 +140,8 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				sErr := m.DB.Save(ready).Error
+				db := m.DB.Omit(clause.Associations)
+				sErr := db.Save(ready).Error
 				Log.Trace(sErr)
 				continue
 			}
@@ -149,14 +151,16 @@ func (m *Manager) startReady() {
 				if errors.Is(err, &AddonNotFound{}) {
 					ready.Error = err.Error()
 					ready.State = Failed
-					sErr := m.DB.Save(ready).Error
+					db := m.DB.Omit(clause.Associations)
+					sErr := db.Save(ready).Error
 					Log.Trace(sErr)
 				}
 				Log.Trace(err)
 				continue
 			}
 			Log.Info("Task started.", "id", ready.ID)
-			err = m.DB.Save(ready).Error
+			db := m.DB.Omit(clause.Associations)
+			err = db.Save(ready).Error
 			Log.Trace(err)
 		default:
 			// Ignored.
@@ -193,7 +197,8 @@ func (m *Manager) updateRunning() {
 			Log.Trace(err)
 			continue
 		}
-		err = m.DB.Save(&running).Error
+		db := m.DB.Omit(clause.Associations)
+		err = db.Save(&running).Error
 		if err != nil {
 			Log.Trace(result.Error)
 			continue
@@ -238,9 +243,10 @@ func (m *Manager) canceled(task *model.Task) {
 	if err != nil {
 		return
 	}
-	err = m.DB.Save(task).Error
+	db := m.DB.Omit(clause.Associations)
+	err = db.Save(task).Error
 	Log.Trace(err)
-	db := m.DB.Model(&model.TaskReport{})
+	db = m.DB.Model(&model.TaskReport{})
 	err = db.Delete("taskid", task.ID).Error
 	Log.Trace(err)
 	return
@@ -395,7 +401,7 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 		return
 	}
 	r.State = Canceled
-	r.BucketID = nil
+	r.SetBucket(nil)
 	Log.Info(
 		"Task canceled.",
 		"id",

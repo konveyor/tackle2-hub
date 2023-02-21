@@ -144,9 +144,9 @@ func (r *TaskReaper) release(m *model.Task) {
 			Log.Trace(err)
 		}
 	}
-	if m.BucketID != nil {
+	if m.HasBucket() {
 		Log.Info("Task bucket released.", "id", m.ID)
-		m.BucketID = nil
+		m.SetBucket(nil)
 		nChanged++
 	}
 	if nChanged > 0 {
@@ -225,7 +225,7 @@ func (r *GroupReaper) Run() {
 				r.delete(m)
 				continue
 			}
-			if m.BucketID != nil {
+			if m.HasBucket() {
 				r.release(m)
 			}
 		}
@@ -235,7 +235,7 @@ func (r *GroupReaper) Run() {
 //
 // release resources.
 func (r *GroupReaper) release(m *model.TaskGroup) {
-	m.BucketID = nil
+	m.SetBucket(nil)
 	err := r.DB.Save(m).Error
 	if err == nil {
 		Log.Info("Group bucket released.", "id", m.ID)

@@ -38,10 +38,19 @@ type BucketOwner struct {
 }
 
 func (m *BucketOwner) BeforeCreate(db *gorm.DB) (err error) {
-	if m.BucketID == nil {
+	if !m.HasBucket() {
 		b := &Bucket{}
 		err = db.Create(b).Error
-		m.BucketID = &b.ID
+		m.SetBucket(&b.ID)
 	}
 	return
+}
+
+func (m *BucketOwner) SetBucket(id *uint) {
+	m.BucketID = id
+	m.Bucket = nil
+}
+
+func (m *BucketOwner) HasBucket() (b bool) {
+	return m.BucketID != nil
 }

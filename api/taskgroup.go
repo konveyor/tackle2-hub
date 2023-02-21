@@ -16,7 +16,7 @@ import (
 const (
 	TaskGroupsRoot      = "/taskgroups"
 	TaskGroupRoot       = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot = TaskGroupRoot + "/bucket" + "/*" + Wildcard
+	TaskGroupBucketRoot = TaskGroupRoot + "/bucket/*" + Wildcard
 	TaskGroupSubmitRoot = TaskGroupRoot + "/submit"
 )
 
@@ -168,7 +168,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	}
 	m := updated.Model()
 	m.ID = current.ID
-	m.BucketID = current.BucketID
+	m.SetBucket(current.BucketID)
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	switch updated.State {
@@ -187,6 +187,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
+	db = db.Omit("BucketID")
 	db = db.Omit("Bucket")
 	db = db.Where("state IN ?", []string{"", tasking.Created})
 	err = db.Updates(h.fields(m)).Error
@@ -291,11 +292,12 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketGet(ctx, bucketID)
+
+	h.bucketGet(ctx, *m.BucketID)
 }
 
 // BucketPut godoc
@@ -314,11 +316,12 @@ func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketPut(ctx, bucketID)
+
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -337,11 +340,12 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketDelete(ctx, bucketID)
+
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 //

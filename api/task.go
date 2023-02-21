@@ -19,7 +19,7 @@ const (
 	TasksRoot      = "/tasks"
 	TaskRoot       = TasksRoot + "/:" + ID
 	TaskReportRoot = TaskRoot + "/report"
-	TaskBucketRoot = TaskRoot + "/bucket" + "/*" + Wildcard
+	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
 	TaskSubmitRoot = TaskRoot + "/submit"
 	TaskCancelRoot = TaskRoot + "/cancel"
 )
@@ -325,11 +325,12 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketGet(ctx, bucketID)
+
+	h.bucketGet(ctx, *m.BucketID)
 }
 
 // BucketPut godoc
@@ -348,11 +349,12 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketPut(ctx, bucketID)
+
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -371,11 +373,12 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	bucketID := uint(0)
-	if m.BucketID != nil {
-		bucketID = *m.BucketID
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
 	}
-	h.bucketDelete(ctx, bucketID)
+
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 // CreateReport godoc
@@ -468,6 +471,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 	out = db
 	for _, f := range []string{
+		"BucketID",
 		"Bucket",
 		"Image",
 		"Pod",

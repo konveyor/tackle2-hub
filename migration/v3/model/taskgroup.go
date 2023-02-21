@@ -22,7 +22,7 @@ func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
 		task.State = m.State
-		task.BucketID = m.BucketID
+		task.SetBucket(m.BucketID)
 		if task.Addon == "" {
 			task.Addon = m.Addon
 		}

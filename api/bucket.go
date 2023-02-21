@@ -115,11 +115,6 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	if h.accepted(ctx, TextHTML) {
-		ctx.Request.URL.Path = ctx.Request.URL.Path + "/"
-		ctx.File(m.Path)
-		return
-	}
 	if h.accepted(ctx, AppJson) {
 		r := Bucket{}
 		r.With(m)
@@ -227,7 +222,6 @@ type BucketOwner struct {
 // When path is FILE:
 //    Streams FILE content.
 func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
-	var n int
 	var err error
 	m := &model.Bucket{}
 	result := h.DB.First(m, id)
@@ -244,22 +238,29 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	if st.IsDir() {
 		if h.accepted(ctx, TextHTML) {
 			err = h.getFile(ctx, m)
+			if err != nil {
+				h.reportError(ctx, err)
+			}
+			return
 		} else {
-			n, err = h.getDir(ctx, path)
+			n, err := h.getDir(ctx, path)
+			if err != nil {
+				h.reportError(ctx, err)
+				return
+			}
+			if n == 0 {
+				ctx.Status(http.StatusNoContent)
+				return
+			} else {
+				ctx.Status(http.StatusOK)
+			}
 		}
 	} else {
-		n = 1
 		err = h.getFile(ctx, m)
-	}
-	if err != nil {
-		h.reportError(ctx, err)
+		if err != nil {
+			h.reportError(ctx, err)
+		}
 		return
-	}
-	if n == 0 {
-		ctx.Status(http.StatusNoContent)
-		return
-	} else {
-		ctx.Status(http.StatusOK)
 	}
 }
 
@@ -298,16 +299,13 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 		return
 	}
 	rPath := ctx.Param(Wildcard)
-	path := pathlib.Join(
-		m.Path,
-		rPath)
+	path := pathlib.Join(m.Path, rPath)
 	err := nas.RmDir(path)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
 	}
 	ctx.Status(http.StatusNoContent)
-	return
 }
 
 //
@@ -326,13 +324,13 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	defer func() {
 		_ = fileReader.Close()
 	}()
-	gzReader, err := gzip.NewReader(fileReader)
+	zipReader, err := gzip.NewReader(fileReader)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
 	defer func() {
-		_ = gzReader.Close()
+		_ = zipReader.Close()
 	}()
 	err = nas.RmDir(output)
 	if err != nil {
@@ -343,7 +341,7 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	tarReader := tar.NewReader(gzReader)
+	tarReader := tar.NewReader(zipReader)
 	for {
 		header, nErr := tarReader.Next()
 		if nErr != nil {
@@ -447,12 +445,12 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, er
 		"Content-Disposition",
 		fmt.Sprintf("attachment; filename=\"%s\"", pathlib.Base(input)+".tar.gz"))
 	ctx.Writer.Header().Set(Directory, DirectoryExpand)
-	gzReader := bufio.NewReader(&tarOutput)
-	gzWriter := gzip.NewWriter(ctx.Writer)
+	zipReader := bufio.NewReader(&tarOutput)
+	zipWriter := gzip.NewWriter(ctx.Writer)
 	defer func() {
-		_ = gzWriter.Close()
+		_ = zipWriter.Close()
 	}()
-	_, err = io.Copy(gzWriter, gzReader)
+	_, err = io.Copy(zipWriter, zipReader)
 	return
 }
 
