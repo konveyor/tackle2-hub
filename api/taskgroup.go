@@ -168,7 +168,6 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	}
 	m := updated.Model()
 	m.ID = current.ID
-	m.SetBucket(current.BucketID)
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	switch updated.State {
