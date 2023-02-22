@@ -140,7 +140,6 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				db := m.DB.Omit(clause.Associations)
 				sErr := db.Save(ready).Error
 				Log.Trace(sErr)
 				continue
@@ -151,7 +150,6 @@ func (m *Manager) startReady() {
 				if errors.Is(err, &AddonNotFound{}) {
 					ready.Error = err.Error()
 					ready.State = Failed
-					db := m.DB.Omit(clause.Associations)
 					sErr := db.Save(ready).Error
 					Log.Trace(sErr)
 				}
@@ -159,7 +157,6 @@ func (m *Manager) startReady() {
 				continue
 			}
 			Log.Info("Task started.", "id", ready.ID)
-			db := m.DB.Omit(clause.Associations)
 			err = db.Save(ready).Error
 			Log.Trace(err)
 		default:
@@ -197,7 +194,6 @@ func (m *Manager) updateRunning() {
 			Log.Trace(err)
 			continue
 		}
-		db := m.DB.Omit(clause.Associations)
 		err = db.Save(&running).Error
 		if err != nil {
 			Log.Trace(result.Error)
@@ -243,7 +239,6 @@ func (m *Manager) canceled(task *model.Task) {
 	if err != nil {
 		return
 	}
-	db := m.DB.Omit(clause.Associations)
 	err = db.Save(task).Error
 	Log.Trace(err)
 	db = m.DB.Model(&model.TaskReport{})
