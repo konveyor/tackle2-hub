@@ -128,6 +128,15 @@ func (m *Manager) startReady() {
 	}
 	for i := range list {
 		task := &list[i]
+		if Settings.Disconnected {
+			mark := time.Now()
+			task.State = Failed
+			task.Terminated = &mark
+			task.Error = "Hub is disconnected."
+			sErr := m.DB.Save(task).Error
+			Log.Trace(sErr)
+			continue
+		}
 		if task.Canceled {
 			m.canceled(task)
 			continue
