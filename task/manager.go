@@ -12,7 +12,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -239,9 +238,9 @@ func (m *Manager) canceled(task *model.Task) {
 	if err != nil {
 		return
 	}
-	err = db.Save(task).Error
+	err = m.DB.Save(task).Error
 	Log.Trace(err)
-	db = m.DB.Model(&model.TaskReport{})
+	db := m.DB.Model(&model.TaskReport{})
 	err = db.Delete("taskid", task.ID).Error
 	Log.Trace(err)
 	return
