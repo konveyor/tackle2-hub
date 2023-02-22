@@ -139,7 +139,7 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				sErr := db.Save(ready).Error
+				sErr := m.DB.Save(ready).Error
 				Log.Trace(sErr)
 				continue
 			}
@@ -149,14 +149,14 @@ func (m *Manager) startReady() {
 				if errors.Is(err, &AddonNotFound{}) {
 					ready.Error = err.Error()
 					ready.State = Failed
-					sErr := db.Save(ready).Error
+					sErr := m.DB.Save(ready).Error
 					Log.Trace(sErr)
 				}
 				Log.Trace(err)
 				continue
 			}
 			Log.Info("Task started.", "id", ready.ID)
-			err = db.Save(ready).Error
+			err = m.DB.Save(ready).Error
 			Log.Trace(err)
 		default:
 			// Ignored.
@@ -193,7 +193,7 @@ func (m *Manager) updateRunning() {
 			Log.Trace(err)
 			continue
 		}
-		err = db.Save(&running).Error
+		err = m.DB.Save(&running).Error
 		if err != nil {
 			Log.Trace(result.Error)
 			continue
