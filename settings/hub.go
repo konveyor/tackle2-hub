@@ -24,6 +24,7 @@ const (
 	EnvDevelopment       = "DEVELOPMENT"
 	EnvFileTTL           = "FILE_TTL"
 	EnvAppName           = "APP_NAME"
+	EnvDisconnected      = "DISCONNECTED"
 )
 
 type Hub struct {
@@ -72,6 +73,8 @@ type Hub struct {
 	Development bool
 	// Product - deployed as product.
 	Product bool
+	// Disconnected indicates no cluster.
+	Disconnected bool
 }
 
 func (r *Hub) Load() (err error) {
@@ -161,8 +164,6 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Development = b
-	} else {
-		r.Development = false
 	}
 	s, found = os.LookupEnv(EnvFileTTL)
 	if found {
@@ -174,8 +175,11 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvAppName)
 	if found {
 		r.Product = !(s == "" || s == "tackle")
-	} else {
-		r.Product = false
+	}
+	s, found = os.LookupEnv(EnvDisconnected)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Disconnected = b
 	}
 
 	return
