@@ -340,7 +340,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [post]
-// @param id path string true "Bucket ID"
+// @param id path string true "Task ID"
 func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
@@ -364,7 +364,7 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Bucket ID"
+// @param id path string true "Task ID"
 func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)

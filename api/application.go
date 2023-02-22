@@ -291,8 +291,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @tags get
 // @produce octet-stream
 // @success 200
-// @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
-// @param id path string true "Task ID"
+// @router /applications/{id}/bucket/{wildcard} [get]
+// @param id path string true "Application ID"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -316,7 +316,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
-// @param id path string true "Bucket ID"
+// @param id path string true "Application ID"
 func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -340,7 +340,7 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Bucket ID"
+// @param id path string true "Application ID"
 func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
