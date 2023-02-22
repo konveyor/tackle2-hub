@@ -9,7 +9,6 @@ import (
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
 	"golang.org/x/sys/unix"
-	"net/http"
 	"os"
 	"strings"
 )
@@ -112,7 +111,6 @@ func newAdapter() (adapter *Adapter) {
 	// Build REST client.
 	client := &Client{
 		baseURL: Settings.Addon.Hub.URL,
-		http:    &http.Client{},
 		token:   Settings.Addon.Hub.Token,
 	}
 	//

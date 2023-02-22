@@ -30,17 +30,16 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 // @description Login and obtain a bearer token.
 // @tags post
 // @produce json
-// @success 201 {string} token
+// @success 201 {object} api.Login
 // @router /auth/login [post]
 func (h AuthHandler) Login(ctx *gin.Context) {
-	token := ""
 	r := &Login{}
 	err := ctx.BindJSON(r)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
 	}
-	token, err = auth.Remote.Login(r.User, r.Password)
+	r.Token, err = auth.Remote.Login(r.User, r.Password)
 	if err != nil {
 		ctx.JSON(
 			http.StatusUnauthorized,
@@ -49,12 +48,14 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 			})
 		return
 	}
-	ctx.JSON(http.StatusCreated, token)
+	r.Password = "" // Clear out password from response
+	ctx.JSON(http.StatusCreated, r)
 }
 
 //
 // Login REST resource.
 type Login struct {
 	User     string `json:"user"`
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
+	Token    string `json:"token"`
 }
