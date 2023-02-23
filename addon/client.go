@@ -40,12 +40,25 @@ type Param struct {
 type Client struct {
 	// baseURL for the nub.
 	baseURL string
-	// http client.
-	http *http.Client
 	// addon API token
 	token string
 	// transport
 	transport http.RoundTripper
+}
+
+//
+// Construct a new client
+func NewClient(url, token string) *Client {
+	return &Client{
+		baseURL: url,
+		token:   token,
+	}
+}
+
+//
+// Set hub token on client
+func (r *Client) SetToken(token string) {
+	r.token = token
 }
 
 //
