@@ -394,6 +394,9 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m.ID = r.ID
 	m.Data, _ = json.Marshal(r.Data)
 	m.List, _ = json.Marshal(r.Tasks)
+	if r.Bucket != nil {
+		m.BucketID = &r.Bucket.ID
+	}
 	for _, task := range r.Tasks {
 		member := task.Model()
 		m.Tasks = append(
