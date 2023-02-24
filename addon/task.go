@@ -159,7 +159,7 @@ func (h *Task) Bucket() (b *Bucket) {
 		api.ID:       h.task.ID,
 		api.Wildcard: "",
 	}
-	path := params.inject(api.TaskBucketRoot)
+	path := params.inject(api.TaskBucketContentRoot)
 	b = &Bucket{
 		path:   path,
 		client: h.client,

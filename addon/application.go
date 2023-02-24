@@ -79,7 +79,7 @@ func (h *Application) Bucket(id uint) (b *Bucket) {
 		api.Wildcard: "",
 		api.ID:       id,
 	}
-	path := params.inject(api.AppBucketRoot)
+	path := params.inject(api.AppBucketContentRoot)
 	b = &Bucket{
 		path:   path,
 		client: h.client,

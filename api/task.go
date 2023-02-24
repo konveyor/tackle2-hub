@@ -16,12 +16,13 @@ import (
 //
 // Routes
 const (
-	TasksRoot      = "/tasks"
-	TaskRoot       = TasksRoot + "/:" + ID
-	TaskReportRoot = TaskRoot + "/report"
-	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
-	TaskSubmitRoot = TaskRoot + "/submit"
-	TaskCancelRoot = TaskRoot + "/cancel"
+	TasksRoot             = "/tasks"
+	TaskRoot              = TasksRoot + "/:" + ID
+	TaskReportRoot        = TaskRoot + "/report"
+	TaskBucketRoot        = TaskRoot + "/bucket"
+	TaskBucketContentRoot = TaskBucketRoot + "/*" + Wildcard
+	TaskSubmitRoot        = TaskRoot + "/submit"
+	TaskCancelRoot        = TaskRoot + "/cancel"
 )
 
 const (
@@ -51,10 +52,11 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
-	routeGroup.POST(TaskBucketRoot, h.BucketPut)
-	routeGroup.PUT(TaskBucketRoot, h.BucketPut)
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
-	routeGroup.DELETE(TaskBucketRoot, h.BucketDelete)
+	routeGroup.GET(TaskBucketContentRoot, h.BucketGet)
+	routeGroup.POST(TaskBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(TaskBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(TaskBucketContentRoot, h.BucketDelete)
 	// Report
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.report"))

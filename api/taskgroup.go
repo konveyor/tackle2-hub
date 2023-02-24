@@ -14,10 +14,11 @@ import (
 //
 // Routes
 const (
-	TaskGroupsRoot      = "/taskgroups"
-	TaskGroupRoot       = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot = TaskGroupRoot + "/bucket/*" + Wildcard
-	TaskGroupSubmitRoot = TaskGroupRoot + "/submit"
+	TaskGroupsRoot             = "/taskgroups"
+	TaskGroupRoot              = TaskGroupsRoot + "/:" + ID
+	TaskGroupBucketRoot        = TaskGroupRoot + "/bucket"
+	TaskGroupBucketContentRoot = TaskGroupBucketRoot + "/*" + Wildcard
+	TaskGroupSubmitRoot        = TaskGroupRoot + "/submit"
 )
 
 //
@@ -41,10 +42,11 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
-	routeGroup.POST(TaskGroupBucketRoot, h.BucketPut)
-	routeGroup.PUT(TaskGroupBucketRoot, h.BucketPut)
 	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
-	routeGroup.DELETE(TaskGroupBucketRoot, h.BucketDelete)
+	routeGroup.GET(TaskGroupBucketContentRoot, h.BucketGet)
+	routeGroup.POST(TaskGroupBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(TaskGroupBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(TaskGroupBucketContentRoot, h.BucketDelete)
 }
 
 // Get godoc

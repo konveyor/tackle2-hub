@@ -97,10 +97,14 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			return
 		}
 		err = json.Unmarshal(body, object)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	case http.StatusNotFound:
 		err = &NotFound{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 
 	return
@@ -147,7 +151,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	case http.StatusConflict:
 		err = &Conflict{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 
 	return
@@ -179,7 +183,8 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 	status := reply.StatusCode
 	switch status {
 	case http.StatusNoContent:
-	case http.StatusOK:
+	case http.StatusOK,
+		http.StatusCreated:
 		var body []byte
 		body, err = io.ReadAll(reply.Body)
 		if err != nil {
@@ -194,7 +199,7 @@ func (r *Client) Put(path string, object interface{}) (err error) {
 	case http.StatusNotFound:
 		err = &NotFound{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 
 	return
@@ -226,7 +231,7 @@ func (r *Client) Delete(path string) (err error) {
 	case http.StatusNotFound:
 		err = &NotFound{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 
 	return
@@ -265,7 +270,7 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 	case http.StatusNotFound:
 		err = &NotFound{Path: source}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 	return
 }
@@ -313,13 +318,14 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 	}
 	status := reply.StatusCode
 	switch status {
-	case http.StatusNoContent,
-		http.StatusOK,
+	case http.StatusOK,
+		http.StatusNoContent,
+		http.StatusCreated,
 		http.StatusAccepted:
 	case http.StatusNotFound:
 		err = &NotFound{Path: destination}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 	return
 }
@@ -352,7 +358,7 @@ func (r *Client) FileGet(path, destination string) (err error) {
 	case http.StatusNotFound:
 		err = &NotFound{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 	return
 }
@@ -415,7 +421,7 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 	case http.StatusConflict:
 		err = &Conflict{Path: path}
 	default:
-		err = errors.New(http.StatusText(status))
+		err = liberr.New(http.StatusText(status))
 	}
 	return
 }
@@ -423,15 +429,15 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 //
 // getDir downloads and expands a directory.
 func (r *Client) getDir(body io.Reader, output string) (err error) {
-	gzReader, err := gzip.NewReader(body)
+	zipReader, err := gzip.NewReader(body)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	defer func() {
-		_ = gzReader.Close()
+		_ = zipReader.Close()
 	}()
-	tarReader := tar.NewReader(gzReader)
+	tarReader := tar.NewReader(zipReader)
 	for {
 		header, nErr := tarReader.Next()
 		if nErr != nil {
@@ -517,12 +523,12 @@ func (r *Client) putDir(writer io.Writer, input string) (err error) {
 	if err != nil {
 		return
 	}
-	gzReader := bufio.NewReader(&tarOutput)
-	gzWriter := gzip.NewWriter(writer)
+	zipReader := bufio.NewReader(&tarOutput)
+	zipWriter := gzip.NewWriter(writer)
 	defer func() {
-		_ = gzWriter.Close()
+		_ = zipWriter.Close()
 	}()
-	_, err = io.Copy(gzWriter, gzReader)
+	_, err = io.Copy(zipWriter, zipReader)
 	return
 }
 

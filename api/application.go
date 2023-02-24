@@ -21,7 +21,8 @@ const (
 	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
 	ApplicationFactsRoot = ApplicationRoot + "/facts"
 	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
-	AppBucketRoot        = ApplicationRoot + "/bucket/*" + Wildcard
+	AppBucketRoot        = ApplicationRoot + "/bucket"
+	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
 )
 
 //
@@ -59,10 +60,11 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.bucket"))
-	routeGroup.POST(AppBucketRoot, h.BucketPut)
-	routeGroup.PUT(AppBucketRoot, h.BucketPut)
 	routeGroup.GET(AppBucketRoot, h.BucketGet)
-	routeGroup.DELETE(AppBucketRoot, h.BucketDelete)
+	routeGroup.GET(AppBucketContentRoot, h.BucketGet)
+	routeGroup.POST(AppBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(AppBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(AppBucketContentRoot, h.BucketDelete)
 }
 
 // Get godoc
@@ -564,7 +566,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @tags update create
 // @accept json
 // @produce json
-// @success 204 201
+// @success 204
 // @router /applications/{id}/facts/{key} [put post]
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
@@ -606,9 +608,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 			h.reportError(ctx, result.Error)
 			return
 		}
-		r := &Fact{}
-		r.With(m)
-		ctx.JSON(http.StatusCreated, r)
+		ctx.Status(http.StatusNoContent)
 	} else {
 		h.reportError(ctx, result.Error)
 	}
