@@ -22,3 +22,4 @@ cd ${dir}
 ./bucket.sh
 ./review.sh
 ./proxy.sh
+./applicationtags.sh

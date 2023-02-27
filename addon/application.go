@@ -1,6 +1,7 @@
 package addon
 
 import (
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"strconv"
 )
@@ -103,15 +104,49 @@ func (h *Application) Tags(id uint) (tg AppTags) {
 type AppTags struct {
 	client *Client
 	appId  uint
+	source *string
+}
+
+//
+// Source sets the source for other operations on the associated tags.
+func (h *AppTags) Source(name string) {
+	h.source = &name
+}
+
+//
+// Replace the associated tags for the source with a new set.
+// Returns an error if the source is not set.
+func (h *AppTags) Replace(ids []uint) (err error) {
+	if h.source == nil {
+		err = liberr.New("`source` must be set")
+		return
+	}
+	path := Params{api.ID: h.appId}.inject(api.ApplicationTagsRoot)
+	query := []Param{}
+	if h.source != nil {
+		query = append(query, Param{Key: api.Source, Value: *h.source})
+	}
+
+	tags := []api.TagRef{}
+	for _, id := range ids {
+		tags = append(tags, api.TagRef{ID: id})
+	}
+
+	err = h.client.Put(path, tags, query...)
+	return
 }
 
 //
 // List associated tags.
 // Returns a list of tag names.
-func (h *AppTags) List() (list []api.Ref, err error) {
-	list = []api.Ref{}
+func (h *AppTags) List() (list []api.TagRef, err error) {
+	list = []api.TagRef{}
 	path := Params{api.ID: h.appId}.inject(api.ApplicationTagsRoot)
-	err = h.client.Get(path, &list)
+	query := []Param{}
+	if h.source != nil {
+		query = append(query, Param{Key: api.Source, Value: *h.source})
+	}
+	err = h.client.Get(path, &list, query...)
 	return
 }
 
@@ -119,7 +154,12 @@ func (h *AppTags) List() (list []api.Ref, err error) {
 // Add ensures tag is associated with the application.
 func (h *AppTags) Add(id uint) (err error) {
 	path := Params{api.ID: h.appId}.inject(api.ApplicationTagsRoot)
-	err = h.client.Post(path, &api.Ref{ID: id})
+
+	tag := api.TagRef{ID: id}
+	if h.source != nil {
+		tag.Source = *h.source
+	}
+	err = h.client.Post(path, &tag)
 	return
 }
 
@@ -129,7 +169,11 @@ func (h *AppTags) Delete(id uint) (err error) {
 	path := Params{
 		api.ID:  h.appId,
 		api.ID2: id}.inject(api.ApplicationTagRoot)
-	err = h.client.Delete(path)
+	query := []Param{}
+	if h.source != nil {
+		query = append(query, Param{Key: api.Source, Value: *h.source})
+	}
+	err = h.client.Delete(path, query...)
 	return
 }
 

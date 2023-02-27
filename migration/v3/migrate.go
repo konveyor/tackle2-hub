@@ -45,6 +45,29 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		return
 	}
 	//
+	// Altering the primary key requires constructing a new table, so rename the old one,
+	// create the new one, copy over the rows, and then drop the old one.
+	err = db.Migrator().RenameTable("ApplicationTags", "ApplicationTags__old")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Migrator().CreateTable(model.ApplicationTag{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	result := db.Exec("INSERT INTO ApplicationTags (ApplicationID, TagID, Source) SELECT ApplicationID, TagID, '' FROM ApplicationTags__old;")
+	if result.Error != nil {
+		err = liberr.Wrap(result.Error)
+		return
+	}
+	err = db.Migrator().DropTable("ApplicationTags__old")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	//
 	// Models.
 	err = db.AutoMigrate(r.Models()...)
 	if err != nil {

@@ -49,6 +49,7 @@ func All() []interface{} {
 		BusinessService{},
 		Bucket{},
 		Application{},
+		ApplicationTag{},
 		Dependency{},
 		Review{},
 		Identity{},
