@@ -57,14 +57,14 @@ func (h *Tag) Delete(r *api.Tag) (err error) {
 
 //
 // Find by name and type.
-func (h *Tag) Find(name string, tp uint) (r *api.Tag, found bool, err error) {
+func (h *Tag) Find(name string, category uint) (r *api.Tag, found bool, err error) {
 	list := []api.Tag{}
 	err = h.client.Get(api.TagsRoot, &list)
 	if err != nil {
 		return
 	}
 	for i := range list {
-		if name == list[i].Name && tp == list[i].Category.ID {
+		if name == list[i].Name && category == list[i].Category.ID {
 			r = &list[i]
 			found = true
 			break
