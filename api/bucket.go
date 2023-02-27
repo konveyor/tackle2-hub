@@ -166,12 +166,14 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @description Get bucket content by ID and path.
 // @description When path is FILE, returns file content.
 // @description When path is DIRECTORY and Accept=text/html returns index.html.
+// @description ?filter=glob supports directory content filtering.
 // @description Else returns a tarball.
 // @tags get
 // @produce octet-stream
 // @success 200
 // @router /buckets/{id}/{wildcard} [get]
 // @param id path string true "Task ID"
+// @param filter query string false "Filter"
 func (h BucketHandler) BucketGet(ctx *gin.Context) {
 	h.bucketGet(ctx, h.pk(ctx))
 }
