@@ -259,12 +259,12 @@ func addTags(application *api.Application, names ...string) (err error) {
 	var wanted []uint
 	//
 	// Ensure type exists.
-	tp := &api.TagType{
+	tp := &api.TagCategory{
 		Name: "DIRECTORY",
 		Color: "#2b9af3",
 		Rank: 3,
 	}
-	err = addon.TagType.Ensure(tp)
+	err = addon.TagCategory.Ensure(tp)
 	if err != nil {
 		return
 	}
@@ -273,7 +273,7 @@ func addTags(application *api.Application, names ...string) (err error) {
 	for _, name := range names {
 		tag := &api.Tag{
 			Name: name,
-			TagType: api.Ref{
+			Category: api.Ref{
 				ID: tp.ID,
 			}}
 		err = addon.Tag.Ensure(tag)

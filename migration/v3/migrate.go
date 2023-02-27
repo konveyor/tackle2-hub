@@ -19,6 +19,26 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
+
+	err = db.Migrator().RenameTable(model.TagType{}, model.TagCategory{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	err = db.Migrator().RenameColumn(model.Tag{}, "TagTypeID", "CategoryID")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	err = db.Migrator().RenameColumn(model.ImportTag{}, "TagType", "Category")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	// Create tables for Trackers and Tickets
 	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)

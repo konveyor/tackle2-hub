@@ -3,7 +3,7 @@ package migration
 import (
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/migration/v2"
-	"github.com/konveyor/tackle2-hub/migration/v3"
+	v3 "github.com/konveyor/tackle2-hub/migration/v3"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )

@@ -57,14 +57,14 @@ func (h *Tag) Delete(r *api.Tag) (err error) {
 
 //
 // Find by name and type.
-func (h *Tag) Find(name string, tp uint) (r *api.Tag, found bool, err error) {
+func (h *Tag) Find(name string, category uint) (r *api.Tag, found bool, err error) {
 	list := []api.Tag{}
 	err = h.client.Get(api.TagsRoot, &list)
 	if err != nil {
 		return
 	}
 	for i := range list {
-		if name == list[i].Name && tp == list[i].TagType.ID {
+		if name == list[i].Name && category == list[i].Category.ID {
 			r = &list[i]
 			found = true
 			break
@@ -76,7 +76,7 @@ func (h *Tag) Find(name string, tp uint) (r *api.Tag, found bool, err error) {
 //
 // Ensure a tag exists.
 func (h *Tag) Ensure(wanted *api.Tag) (err error) {
-	tag, found, err := h.Find(wanted.Name, wanted.TagType.ID)
+	tag, found, err := h.Find(wanted.Name, wanted.Category.ID)
 	if err != nil {
 		return
 	}
@@ -89,16 +89,16 @@ func (h *Tag) Ensure(wanted *api.Tag) (err error) {
 }
 
 //
-// TagType API.
-type TagType struct {
+// TagCategory API.
+type TagCategory struct {
 	// hub API client.
 	client *Client
 }
 
 //
 // Create a tag-type.
-func (h *TagType) Create(m *api.TagType) (err error) {
-	err = h.client.Post(api.TagTypesRoot, m)
+func (h *TagCategory) Create(m *api.TagCategory) (err error) {
+	err = h.client.Post(api.TagCategoriesRoot, m)
 	if err == nil {
 		Log.Info(
 			"Addon created: tag(type).",
@@ -110,25 +110,25 @@ func (h *TagType) Create(m *api.TagType) (err error) {
 
 //
 // Get a tag-type by ID.
-func (h *TagType) Get(id uint) (r *api.TagType, err error) {
-	r = &api.TagType{}
-	path := Params{api.ID: id}.inject(api.TagTypeRoot)
+func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
+	r = &api.TagCategory{}
+	path := Params{api.ID: id}.inject(api.TagCategoryRoot)
 	err = h.client.Get(path, r)
 	return
 }
 
 //
 // List tag-types.
-func (h *TagType) List() (list []api.TagType, err error) {
-	list = []api.TagType{}
-	err = h.client.Get(api.TagTypesRoot, &list)
+func (h *TagCategory) List() (list []api.TagCategory, err error) {
+	list = []api.TagCategory{}
+	err = h.client.Get(api.TagCategoriesRoot, &list)
 	return
 }
 
 //
 // Delete a tag-type.
-func (h *TagType) Delete(r *api.TagType) (err error) {
-	path := Params{api.ID: r.ID}.inject(api.TagTypeRoot)
+func (h *TagCategory) Delete(r *api.TagCategory) (err error) {
+	path := Params{api.ID: r.ID}.inject(api.TagCategoryRoot)
 	err = h.client.Delete(path)
 	if err == nil {
 		Log.Info(
@@ -141,9 +141,9 @@ func (h *TagType) Delete(r *api.TagType) (err error) {
 
 //
 // Find by name.
-func (h *TagType) Find(name string) (r *api.TagType, found bool, err error) {
-	list := []api.TagType{}
-	err = h.client.Get(api.TagTypesRoot, &list)
+func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err error) {
+	list := []api.TagCategory{}
+	err = h.client.Get(api.TagCategoriesRoot, &list)
 	if err != nil {
 		return
 	}
@@ -159,7 +159,7 @@ func (h *TagType) Find(name string) (r *api.TagType, found bool, err error) {
 
 //
 // Ensure a tag-type exists.
-func (h *TagType) Ensure(wanted *api.TagType) (err error) {
+func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 	tp, found, err := h.Find(wanted.Name)
 	if err != nil {
 		return

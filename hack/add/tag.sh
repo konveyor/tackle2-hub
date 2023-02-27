@@ -3,10 +3,10 @@
 host="${HOST:-localhost:8080}"
 
 #
-# Types
+# Categories
 #
 
-curl -X POST ${host}/tagtypes -d \
+curl -X POST ${host}/tagcategories -d \
 '{
     "name":"Testing",
     "colour": "#807ded",
@@ -21,6 +21,6 @@ curl -X POST ${host}/tags -d \
 '{
     "username": "tackle",
     "name":"RHEL",
-    "tagType": {"id":1}
+    "category": {"id":1}
 }' | jq -M .
 
