@@ -16,18 +16,6 @@ type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	//
-	// Facts.
-	err = r.factMigration(db)
-	if err != nil {
-		return
-	}
-	//
-	// Buckets.
-	err = r.bucketMigration(db)
-	if err != nil {
-		return
-	}
-	//
 	// Tags/Categories.
 	err = db.Migrator().RenameTable(model.TagType{}, model.TagCategory{})
 	if err != nil {
@@ -44,6 +32,20 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	//
+	// Facts.
+	err = r.factMigration(db)
+	if err != nil {
+		return
+	}
+	//
+	// Buckets.
+	err = r.bucketMigration(db)
+	if err != nil {
+		return
+	}
+	//
+	// Models.
 	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)
