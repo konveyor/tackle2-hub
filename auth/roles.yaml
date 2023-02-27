@@ -146,6 +146,12 @@
         - get
         - post
         - put
+    - name: buckets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: rulebundles
       verbs:
         - delete
@@ -287,6 +293,12 @@
         - get
         - post
         - put
+    - name: buckets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: rulebundles
       verbs:
         - delete
@@ -380,6 +392,9 @@
       verbs:
         - get
     - name: files
+      verbs:
+        - get
+    - name: buckets
       verbs:
         - get
     - name: rulebundles

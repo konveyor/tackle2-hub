@@ -11,10 +11,16 @@ curl -X POST ${host}/taskgroups -d \
     },
     "tasks": [
       {
-        "name": "Test",
+        "name": "Test-1",
 	"application": {"id": 1},
         "data": {
 	}
+      },
+      {
+        "name": "Test-2",
+        "application": {"id": 1},
+        "data": {
+        }
       }
     ]
 }' | jq -M .

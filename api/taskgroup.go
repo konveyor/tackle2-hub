@@ -14,17 +14,17 @@ import (
 //
 // Routes
 const (
-	TaskGroupsRoot      = "/taskgroups"
-	TaskGroupRoot       = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot = TaskGroupRoot + "/bucket/*" + Wildcard
-	TaskGroupSubmitRoot = TaskGroupRoot + "/submit"
+	TaskGroupsRoot             = "/taskgroups"
+	TaskGroupRoot              = TaskGroupsRoot + "/:" + ID
+	TaskGroupBucketRoot        = TaskGroupRoot + "/bucket"
+	TaskGroupBucketContentRoot = TaskGroupBucketRoot + "/*" + Wildcard
+	TaskGroupSubmitRoot        = TaskGroupRoot + "/submit"
 )
 
 //
 // TaskGroupHandler handles task group routes.
 type TaskGroupHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -39,12 +39,14 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskGroupRoot, h.Get)
 	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
+	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
 	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
-	routeGroup.POST(TaskGroupBucketRoot, h.BucketUpload)
-	routeGroup.PUT(TaskGroupBucketRoot, h.BucketUpload)
-	routeGroup.DELETE(TaskGroupBucketRoot, h.BucketDelete)
+	routeGroup.GET(TaskGroupBucketContentRoot, h.BucketGet)
+	routeGroup.POST(TaskGroupBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(TaskGroupBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(TaskGroupBucketContentRoot, h.BucketDelete)
 }
 
 // Get godoc
@@ -168,7 +170,6 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	}
 	m := updated.Model()
 	m.ID = current.ID
-	m.Bucket = current.Bucket
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
 	switch updated.State {
@@ -187,6 +188,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
+	db = db.Omit("BucketID")
 	db = db.Omit("Bucket")
 	db = db.Where("state IN ?", []string{"", tasking.Created})
 	err = db.Updates(h.fields(m)).Error
@@ -284,18 +286,22 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 // @router /taskgroups/{id}/bucket/{wildcard} [get]
 // @param id path string true "TaskGroup ID"
 func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.TaskGroup{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	h.bucketGet(ctx, *m.BucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
@@ -303,7 +309,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [post]
 // @param id path string true "TaskGroup ID"
-func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
+func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
@@ -311,8 +317,12 @@ func (h TaskGroupHandler) BucketUpload(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -331,8 +341,12 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.delete(ctx, &m.BucketOwner)
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 //
@@ -342,7 +356,7 @@ type TaskGroup struct {
 	Name   string      `json:"name"`
 	Addon  string      `json:"addon"`
 	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Bucket string      `json:"bucket,omitempty"`
+	Bucket *Ref        `json:"bucket,omitempty"`
 	State  string      `json:"state"`
 	Tasks  []Task      `json:"tasks"`
 }
@@ -354,7 +368,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Name = m.Name
 	r.Addon = m.Addon
 	r.State = m.State
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
 	_ = json.Unmarshal(m.Data, &r.Data)
 	switch m.State {
@@ -380,9 +394,11 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		State: r.State,
 	}
 	m.ID = r.ID
-	m.Bucket = r.Bucket
 	m.Data, _ = json.Marshal(r.Data)
 	m.List, _ = json.Marshal(r.Tasks)
+	if r.Bucket != nil {
+		m.BucketID = &r.Bucket.ID
+	}
 	for _, task := range r.Tasks {
 		member := task.Model()
 		m.Tasks = append(

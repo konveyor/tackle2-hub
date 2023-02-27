@@ -77,6 +77,7 @@ func All() []Handler {
 		&PathfinderHandler{},
 		&TicketHandler{},
 		&TrackerHandler{},
+		&BucketHandler{},
 		&FileHandler{},
 	}
 }

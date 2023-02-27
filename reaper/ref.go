@@ -17,34 +17,49 @@ type RefCounter struct {
 //
 // Count find & count references.
 func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err error) {
-	mt := reflect.TypeOf(m)
-	mv := reflect.ValueOf(m)
-	if mt.Kind() == reflect.Ptr {
-		mt = mt.Elem()
-		mv = mv.Elem()
-	}
-	if mv.Kind() != reflect.Struct {
-		err = liberr.New("Must be object.")
-		return
-	}
 	db := r.DB.Model(m)
 	fields := 0
-	for i := 0; i < mt.NumField(); i++ {
-		ft := mt.Field(i)
-		fv := mv.Field(i)
-		if !ft.IsExported() {
-			continue
-		}
-		switch fv.Kind() {
-		case reflect.Uint:
-			tag, found := ft.Tag.Lookup("ref")
-			if !found || tag != kind {
-				continue
-			}
+	add := func(ft reflect.StructField) {
+		tag, found := ft.Tag.Lookup("ref")
+		if found && tag == kind {
 			db = db.Or(ft.Name, pk)
 			fields++
 		}
 	}
+	var find func(interface{})
+	find = func(object interface{}) {
+		mt := reflect.TypeOf(object)
+		mv := reflect.ValueOf(object)
+		if mt.Kind() == reflect.Ptr {
+			mt = mt.Elem()
+			mv = mv.Elem()
+		}
+		if mv.Kind() != reflect.Struct {
+			return
+		}
+		for i := 0; i < mt.NumField(); i++ {
+			ft := mt.Field(i)
+			fv := mv.Field(i)
+			if !ft.IsExported() {
+				continue
+			}
+			switch fv.Kind() {
+			case reflect.Struct:
+				find(fv.Interface())
+			case reflect.Ptr:
+				inst := fv.Interface()
+				switch inst.(type) {
+				case *uint:
+					add(ft)
+				default:
+					find(fv.Interface())
+				}
+			case reflect.Uint:
+				add(ft)
+			}
+		}
+	}
+	find(m)
 	if fields == 0 {
 		return
 	}
@@ -53,10 +68,9 @@ func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err
 		err = liberr.Wrap(
 			err,
 			"object",
-			mt.Name(),
+			reflect.TypeOf(m).Name(),
 		)
 	}
 
 	return
 }
-

@@ -7,6 +7,8 @@ import (
 	"compress/gzip"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"io"
@@ -15,15 +17,219 @@ import (
 	pathlib "path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //
-// BucketHandler provides bucket management.
+// Routes
+const (
+	BucketsRoot       = "/buckets"
+	BucketRoot        = BucketsRoot + "/:" + ID
+	BucketContentRoot = BucketRoot + "/*" + Wildcard
+)
+
+//
+// BucketHandler handles bucket routes.
 type BucketHandler struct {
+	BucketOwner
 }
 
-func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwner) {
-	path := pathlib.Join(owner.Bucket, ctx.Param(Wildcard))
+//
+// AddRoutes adds routes.
+func (h BucketHandler) AddRoutes(e *gin.Engine) {
+	routeGroup := e.Group("/")
+	routeGroup.Use(auth.Required("buckets"))
+	routeGroup.GET(BucketsRoot, h.List)
+	routeGroup.GET(BucketsRoot+"/", h.List)
+	routeGroup.POST(BucketsRoot, h.Create)
+	routeGroup.GET(BucketRoot, h.Get)
+	routeGroup.DELETE(BucketRoot, h.Delete)
+	routeGroup.POST(BucketContentRoot, h.BucketPut)
+	routeGroup.PUT(BucketContentRoot, h.BucketPut)
+	routeGroup.GET(BucketContentRoot, h.BucketGet)
+	routeGroup.DELETE(BucketContentRoot, h.BucketDelete)
+}
+
+// List godoc
+// @summary List all buckets.
+// @description List all buckets.
+// @tags get
+// @produce json
+// @success 200 {object} []api.Bucket
+// @router /buckets [get]
+func (h BucketHandler) List(ctx *gin.Context) {
+	var list []model.Bucket
+	result := h.DB.Find(&list)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	resources := []Bucket{}
+	for i := range list {
+		r := Bucket{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	ctx.JSON(http.StatusOK, resources)
+}
+
+// Create godoc
+// @summary Create a bucket.
+// @description Create a bucket.
+// @tags create
+// @accept json
+// @produce json
+// @success 201 {object} api.Bucket
+// @router /buckets [post]
+// @param name path string true "Bucket name"
+func (h BucketHandler) Create(ctx *gin.Context) {
+	m := &model.Bucket{}
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	result := h.DB.Create(&m)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	r := Bucket{}
+	r.With(m)
+	ctx.JSON(http.StatusCreated, r)
+}
+
+// Get godoc
+// @summary Get a bucket by ID.
+// @description Get a bucket by ID.
+// @description Returns api.Bucket when Accept=application/json.
+// @description Else returns index.html when Accept=text/html.
+// @description Else returns tarball.
+// @tags get
+// @produce json octet-stream
+// @success 200 {object} api.Bucket
+// @router /buckets/{id} [get]
+// @param id path string true "Bucket ID"
+func (h BucketHandler) Get(ctx *gin.Context) {
+	m := &model.Bucket{}
+	id := h.pk(ctx)
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	if h.accepted(ctx, AppJson) {
+		r := Bucket{}
+		r.With(m)
+		ctx.JSON(http.StatusOK, r)
+		return
+	}
+	h.bucketGet(ctx, id)
+}
+
+// Delete godoc
+// @summary Delete a bucket.
+// @description Delete a bucket.
+// @tags delete
+// @success 204
+// @router /buckets/{id} [delete]
+// @param id path string true "Bucket ID"
+func (h BucketHandler) Delete(ctx *gin.Context) {
+	m := &model.Bucket{}
+	id := h.pk(ctx)
+	err := h.DB.First(m, id).Error
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	err = os.Remove(m.Path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			h.reportError(ctx, err)
+			return
+		}
+	}
+	err = h.DB.Delete(m).Error
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+// BucketGet godoc
+// @summary Get bucket content by ID and path.
+// @description Get bucket content by ID and path.
+// @description When path is FILE, returns file content.
+// @description When path is DIRECTORY and Accept=text/html returns index.html.
+// @description Else returns a tarball.
+// @tags get
+// @produce octet-stream
+// @success 200
+// @router /buckets/{id}/{wildcard} [get]
+// @param id path string true "Task ID"
+func (h BucketHandler) BucketGet(ctx *gin.Context) {
+	h.bucketGet(ctx, h.pk(ctx))
+}
+
+// BucketPut godoc
+// @summary Upload bucket content by ID and path.
+// @description Upload bucket content by ID and path (handles both [post] and [put] requests).
+// @tags post
+// @produce json
+// @success 204
+// @router //buckets/{id}/{wildcard} [post]
+// @param id path string true "Bucket ID"
+func (h BucketHandler) BucketPut(ctx *gin.Context) {
+	h.bucketPut(ctx, h.pk(ctx))
+}
+
+// BucketDelete godoc
+// @summary Delete bucket content by ID and path.
+// @description Delete bucket content by ID and path.
+// @tags delete
+// @produce json
+// @success 204
+// @router /buckets/{id}/{wildcard} [delete]
+// @param id path string true "Bucket ID"
+func (h BucketHandler) BucketDelete(ctx *gin.Context) {
+	h.bucketDelete(ctx, h.pk(ctx))
+}
+
+//
+// Bucket REST resource.
+type Bucket struct {
+	Resource
+	Path       string     `json:"path"`
+	Expiration *time.Time `json:"expiration,omitempty"`
+}
+
+//
+// With updates the resource with the model.
+func (r *Bucket) With(m *model.Bucket) {
+	r.Resource.With(&m.Model)
+	r.Path = m.Path
+	r.Expiration = m.Expiration
+}
+
+type BucketOwner struct {
+	BaseHandler
+}
+
+//
+// bucketGet reads bucket content.
+// When path is DIRECTORY:
+//    Accept=text/html return body is index.html.
+//    Else streams tarball.
+// When path is FILE:
+//    Streams FILE content.
+func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
+	var err error
+	m := &model.Bucket{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	st, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		ctx.Status(http.StatusNotFound)
@@ -31,26 +237,80 @@ func (h *BucketHandler) serveBucketGet(ctx *gin.Context, owner *model.BucketOwne
 	}
 	if st.IsDir() {
 		if h.accepted(ctx, TextHTML) {
-			h.content(ctx, owner)
+			err = h.getFile(ctx, m)
+			if err != nil {
+				h.reportError(ctx, err)
+			}
+			return
 		} else {
-			h.getDirArchive(ctx, path)
+			n, err := h.getDir(ctx, path)
+			if err != nil {
+				h.reportError(ctx, err)
+				return
+			}
+			if n == 0 {
+				ctx.Status(http.StatusNoContent)
+				return
+			} else {
+				ctx.Status(http.StatusOK)
+			}
+		}
+	} else {
+		err = h.getFile(ctx, m)
+		if err != nil {
+			h.reportError(ctx, err)
 		}
 		return
 	}
-
-	h.content(ctx, owner)
 }
 
-func (h *BucketHandler) serveBucketUpload(ctx *gin.Context, owner *model.BucketOwner) {
-	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
-		h.uploadDirArchive(ctx, pathlib.Join(owner.Bucket, ctx.Param(Wildcard)))
-	} else {
-		h.upload(ctx, owner)
+//
+// bucketPut write a file to the bucket.
+// The `Directory` header determines how the uploaded file is to be handled.
+// When `Directory`=Expand, the file (TARBALL) is extracted into the bucket.
+// Else the file is stored.
+func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
+	var err error
+	m := &model.Bucket{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
 	}
+	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
+		err = h.putDir(ctx, pathlib.Join(m.Path, ctx.Param(Wildcard)))
+	} else {
+		err = h.putFile(ctx, m)
+	}
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
 }
 
-func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
-	// Prepare to uncompress the uploaded data, report 4xx errors
+//
+// bucketDelete content from the bucket.
+func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
+	m := &model.Bucket{}
+	result := h.DB.First(m, id)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+	rPath := ctx.Param(Wildcard)
+	path := pathlib.Join(m.Path, rPath)
+	err := nas.RmDir(path)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+//
+// putDir write a directory into bucket.
+func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
@@ -61,189 +321,157 @@ func (h *BucketHandler) uploadDirArchive(ctx *gin.Context, dir string) {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
-	defer fileReader.Close()
-
-	ungzReader, err := gzip.NewReader(fileReader)
+	defer func() {
+		_ = fileReader.Close()
+	}()
+	zipReader, err := gzip.NewReader(fileReader)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
-	defer ungzReader.Close()
-
-	// Report 5xx errors for extraction process
 	defer func() {
-		if err != nil {
-			log.Error(err, "bucket archive expand action failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": err,
-			})
-			return
-		}
+		_ = zipReader.Close()
 	}()
-
-	// Clean and prepare destination directory
-	err = nas.RmDir(dir)
+	err = nas.RmDir(output)
 	if err != nil {
 		return
 	}
-	if err = os.MkdirAll(dir, 0777); err != nil {
+	err = os.MkdirAll(output, 0777)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
-
-	// Extract the tar archive
-	untarReader := tar.NewReader(ungzReader)
+	tarReader := tar.NewReader(zipReader)
 	for {
-		hdr, err := untarReader.Next()
-		if err != nil {
-			if err == io.EOF {
+		header, nErr := tarReader.Next()
+		if nErr != nil {
+			if nErr == io.EOF {
 				break
 			} else {
+				err = liberr.Wrap(nErr)
 				return
 			}
 		}
-
-		switch hdr.Typeflag {
+		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(pathlib.Join(dir, hdr.Name), 0777); err != nil {
+			path := pathlib.Join(output, header.Name)
+			err = os.Mkdir(path, 0777)
+			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 		case tar.TypeReg:
-			var file *os.File
-			if file, err = os.Create(pathlib.Join(dir, hdr.Name)); err != nil {
+			path := pathlib.Join(output, header.Name)
+			file, nErr := os.Create(path)
+			if nErr != nil {
+				err = liberr.Wrap(nErr)
 				return
 			}
-			if _, err = io.Copy(file, untarReader); err != nil {
+			_, err = io.Copy(file, tarReader)
+			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
-			file.Close()
-		default:
-			// types that are not files or dirs are skipped
+			_ = file.Close()
 		}
 	}
-
-	ctx.Status(http.StatusAccepted)
+	return
 }
 
-func (h *BucketHandler) getDirArchive(ctx *gin.Context, dir string) {
+//
+// getDir reads a directory from the bucket.
+func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, err error) {
 	var tarOutput bytes.Buffer
-	entriesCount := 0
 	tarWriter := tar.NewWriter(&tarOutput)
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, wErr error) error {
-		if wErr != nil {
-			return wErr
-		}
-
-		hdr, err := tar.FileInfoHeader(info, path)
-		if err != nil {
-			return err
-		}
-
-		// Scope path in archive to the given dir
-		hdr.Name = strings.Replace(path, dir, "", 1)
-		if hdr.Name == "" {
-			return nil
-		}
-
-		switch hdr.Typeflag {
-		case tar.TypeDir:
-			// Add directory header to the archive (no content)
-			if err := tarWriter.WriteHeader(hdr); err != nil {
-				return err
+	err = filepath.Walk(
+		input,
+		func(path string, info os.FileInfo, wErr error) (err error) {
+			if wErr != nil {
+				err = liberr.Wrap(wErr)
+				return
 			}
-			entriesCount += 1
-		case tar.TypeReg:
-			// Add file with its content to the archive
-			if err := tarWriter.WriteHeader(hdr); err != nil {
-				return err
+			if path == input {
+				return
 			}
-			file, _ := os.Open(path)
-
-			if _, err = io.Copy(tarWriter, file); err != nil {
-				return err
+			header, err := tar.FileInfoHeader(info, path)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
 			}
-			entriesCount += 1
-		default:
-			// Other file types like block/character device or TypeSymlink are skipped.
-			// Complete list of types: https://pkg.go.dev/archive/tar#pkg-constants
-		}
-
-		return nil
-	})
-
-	// Report 5xx errors in archive creation steps
-	defer func() {
-		if err != nil {
-			log.Error(err, "bucket archive get action failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": err,
-			})
+			header.Name = strings.Replace(path, input, "", 1)
+			switch header.Typeflag {
+			case tar.TypeDir:
+				err = tarWriter.WriteHeader(header)
+				if err != nil {
+					err = liberr.Wrap(err)
+					return
+				}
+				entryCount += 1
+			case tar.TypeReg:
+				err = tarWriter.WriteHeader(header)
+				if err != nil {
+					err = liberr.Wrap(err)
+					return
+				}
+				file, nErr := os.Open(path)
+				if err != nil {
+					err = liberr.Wrap(nErr)
+					return
+				}
+				defer func() {
+					_ = file.Close()
+				}()
+				_, err = io.Copy(tarWriter, file)
+				if err != nil {
+					err = liberr.Wrap(err)
+					return
+				}
+				entryCount += 1
+			}
 			return
-		}
-	}()
-
+		})
 	if err != nil {
 		return
 	}
-
-	if err := tarWriter.Close(); err != nil {
+	err = tarWriter.Close()
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
-
-	// Indicate empty tar.gz archive with the 204 HTTP code
-	if entriesCount < 1 {
-		ctx.Writer.WriteHeader(http.StatusNoContent)
+	if entryCount < 1 {
+		return
 	}
-
-	fromTar := bufio.NewReader(&tarOutput)
-
-	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", pathlib.Base(dir)+".tar.gz"))
+	ctx.Writer.Header().Set(
+		"Content-Disposition",
+		fmt.Sprintf("attachment; filename=\"%s\"", pathlib.Base(input)+".tar.gz"))
 	ctx.Writer.Header().Set(Directory, DirectoryExpand)
-
-	gzWriter := gzip.NewWriter(ctx.Writer)
-	defer gzWriter.Close()
-
-	gzWriter.Name = pathlib.Base(dir) + ".tar.gz"
-	gzWriter.Comment = "Tackle 2 bucket data archive"
-	if _, err = io.Copy(gzWriter, fromTar); err != nil {
-		return
-	}
+	zipReader := bufio.NewReader(&tarOutput)
+	zipWriter := gzip.NewWriter(ctx.Writer)
+	defer func() {
+		_ = zipWriter.Close()
+	}()
+	_, err = io.Copy(zipWriter, zipReader)
+	return
 }
 
 //
-// content at path.
-func (h *BucketHandler) content(ctx *gin.Context, owner *model.BucketOwner) {
-	if owner.Bucket == "" {
-		ctx.Status(http.StatusNotFound)
-		return
-	}
+// getFile reads a file from the bucket.
+func (h *BucketOwner) getFile(ctx *gin.Context, m *model.Bucket) (err error) {
 	rPath := ctx.Param(Wildcard)
-	ctx.File(pathlib.Join(
-		owner.Bucket,
-		rPath))
+	path := pathlib.Join(m.Path, rPath)
+	ctx.File(path)
+	return
 }
 
 //
-// upload file at path.
-func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
-	if owner.Bucket == "" {
-		ctx.Status(http.StatusNotFound)
-		return
-	}
-	rPath := ctx.Param(Wildcard)
-	path := pathlib.Join(
-		owner.Bucket,
-		rPath)
+// putFile writes a file to the bucket.
+func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
+	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
 		ctx.Status(http.StatusBadRequest)
 		return
 	}
-	defer func() {
-		if err != nil {
-			ctx.Status(http.StatusInternalServerError)
-			return
-		}
-	}()
 	reader, err := input.Open()
 	if err != nil {
 		return
@@ -267,36 +495,12 @@ func (h *BucketHandler) upload(ctx *gin.Context, owner *model.BucketOwner) {
 		return
 	}
 	err = os.Chmod(path, 0666)
-	if err != nil {
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
-}
-
-//
-// Delete from the bucket at path.
-func (h *BucketHandler) delete(ctx *gin.Context, owner *model.BucketOwner) {
-	if owner.Bucket == "" {
-		ctx.Status(http.StatusNotFound)
-		return
-	}
-	rPath := ctx.Param(Wildcard)
-	path := pathlib.Join(
-		owner.Bucket,
-		rPath)
-	err := nas.RmDir(path)
-	if err != nil {
-		ctx.Status(http.StatusInternalServerError)
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
+	return
 }
 
 //
 // accepted determines if the mime is accepted.
-func (h *BucketHandler) accepted(ctx *gin.Context, mime string) (b bool) {
+func (h *BucketOwner) accepted(ctx *gin.Context, mime string) (b bool) {
 	accept := ctx.Request.Header.Get(Accept)
 	for _, s := range strings.Split(accept, ",") {
 		if s == mime {

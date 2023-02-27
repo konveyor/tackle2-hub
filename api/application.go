@@ -21,14 +21,14 @@ const (
 	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
 	ApplicationFactsRoot = ApplicationRoot + "/facts"
 	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
-	AppBucketRoot        = ApplicationRoot + "/bucket/*" + Wildcard
+	AppBucketRoot        = ApplicationRoot + "/bucket"
+	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
 )
 
 //
 // ApplicationHandler handles application resource routes.
 type ApplicationHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -60,10 +60,11 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.bucket"))
-	routeGroup.POST(AppBucketRoot, h.BucketUpload)
-	routeGroup.PUT(AppBucketRoot, h.BucketUpload)
 	routeGroup.GET(AppBucketRoot, h.BucketGet)
-	routeGroup.DELETE(AppBucketRoot, h.BucketDelete)
+	routeGroup.GET(AppBucketContentRoot, h.BucketGet)
+	routeGroup.POST(AppBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(AppBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(AppBucketContentRoot, h.BucketDelete)
 }
 
 // Get godoc
@@ -246,7 +247,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db = h.DB.Model(m)
 	db = db.Omit(clause.Associations)
-	db = db.Omit("Bucket")
+	db = db.Omit("BucketID")
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -292,21 +293,25 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @tags get
 // @produce octet-stream
 // @success 200
-// @router /applications/{id}/tasks/{id}/content/{wildcard} [get]
-// @param id path string true "Task ID"
+// @router /applications/{id}/bucket/{wildcard} [get]
+// @param id path string true "Application ID"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	h.bucketGet(ctx, *m.BucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
@@ -314,16 +319,20 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
 // @param id path string true "Application ID"
-func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
-	id := h.pk(ctx)
+func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -335,15 +344,19 @@ func (h ApplicationHandler) BucketUpload(ctx *gin.Context) {
 // @router /applications/{id}/bucket/{wildcard} [delete]
 // @param id path string true "Application ID"
 func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Application{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.delete(ctx, &m.BucketOwner)
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 // TagList godoc
@@ -553,7 +566,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @tags update create
 // @accept json
 // @produce json
-// @success 204 201
+// @success 204
 // @router /applications/{id}/facts/{key} [put post]
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
@@ -595,9 +608,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 			h.reportError(ctx, result.Error)
 			return
 		}
-		r := &Fact{}
-		r.With(m)
-		ctx.JSON(http.StatusCreated, r)
+		ctx.Status(http.StatusNoContent)
 	} else {
 		h.reportError(ctx, result.Error)
 	}
@@ -636,7 +647,7 @@ type Application struct {
 	Resource
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
-	Bucket          string      `json:"bucket"`
+	Bucket          *Ref        `json:"bucket"`
 	Repository      *Repository `json:"repository"`
 	Binary          string      `json:"binary"`
 	Facts           FactMap     `json:"facts"`
@@ -653,7 +664,7 @@ func (r *Application) With(m *model.Application) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	_ = json.Unmarshal(m.Repository, &r.Repository)

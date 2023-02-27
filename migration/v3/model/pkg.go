@@ -16,7 +16,6 @@ type JSON = []byte
 //
 // Unchanged models imported from previous migration.
 type Model = v2.Model
-type BucketOwner = v2.BucketOwner
 type BusinessService = v2.BusinessService
 type Dependency = v2.Dependency
 type Identity = v2.Identity
@@ -27,10 +26,7 @@ type Setting = v2.Setting
 type Stakeholder = v2.Stakeholder
 type StakeholderGroup = v2.StakeholderGroup
 type TagType = v2.TagType
-type Task = v2.Task
-type TaskGroup = v2.TaskGroup
 type TaskReport = v2.TaskReport
-type TTL = v2.TTL
 
 //
 // Errors
@@ -51,6 +47,7 @@ func All() []interface{} {
 		StakeholderGroup{},
 		Stakeholder{},
 		BusinessService{},
+		Bucket{},
 		Application{},
 		Dependency{},
 		Review{},

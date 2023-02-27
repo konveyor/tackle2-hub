@@ -16,12 +16,13 @@ import (
 //
 // Routes
 const (
-	TasksRoot      = "/tasks"
-	TaskRoot       = TasksRoot + "/:" + ID
-	TaskReportRoot = TaskRoot + "/report"
-	TaskBucketRoot = TaskRoot + "/bucket/*" + Wildcard
-	TaskSubmitRoot = TaskRoot + "/submit"
-	TaskCancelRoot = TaskRoot + "/cancel"
+	TasksRoot             = "/tasks"
+	TaskRoot              = TasksRoot + "/:" + ID
+	TaskReportRoot        = TaskRoot + "/report"
+	TaskBucketRoot        = TaskRoot + "/bucket"
+	TaskBucketContentRoot = TaskBucketRoot + "/*" + Wildcard
+	TaskSubmitRoot        = TaskRoot + "/submit"
+	TaskCancelRoot        = TaskRoot + "/cancel"
 )
 
 const (
@@ -31,8 +32,7 @@ const (
 //
 // TaskHandler handles task routes.
 type TaskHandler struct {
-	BaseHandler
-	BucketHandler
+	BucketOwner
 }
 
 //
@@ -46,14 +46,18 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
+	// Actions
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
+	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.bucket"))
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
-	routeGroup.POST(TaskBucketRoot, h.BucketUpload)
-	routeGroup.PUT(TaskBucketRoot, h.BucketUpload)
-	routeGroup.DELETE(TaskBucketRoot, h.BucketDelete)
+	routeGroup.GET(TaskBucketContentRoot, h.BucketGet)
+	routeGroup.POST(TaskBucketContentRoot, h.BucketPut)
+	routeGroup.PUT(TaskBucketContentRoot, h.BucketPut)
+	routeGroup.DELETE(TaskBucketContentRoot, h.BucketDelete)
+	// Report
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("tasks.report"))
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
@@ -316,17 +320,22 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 // @router /tasks/{id}/bucket/{wildcard} [get]
 // @param id path string true "Task ID"
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
-	id := h.pk(ctx)
 	m := &model.Task{}
+	id := h.pk(ctx)
 	result := h.DB.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	h.serveBucketGet(ctx, &m.BucketOwner)
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+
+	h.bucketGet(ctx, *m.BucketID)
 }
 
-// BucketUpload godoc
+// BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
 // @tags post
@@ -334,7 +343,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [post]
 // @param id path string true "Task ID"
-func (h TaskHandler) BucketUpload(ctx *gin.Context) {
+func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
 	result := h.DB.First(m, id)
@@ -342,8 +351,12 @@ func (h TaskHandler) BucketUpload(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.serveBucketUpload(ctx, &m.BucketOwner)
+	h.bucketPut(ctx, *m.BucketID)
 }
 
 // BucketDelete godoc
@@ -362,8 +375,12 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
+	if !m.HasBucket() {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
-	h.delete(ctx, &m.BucketOwner)
+	h.bucketDelete(ctx, *m.BucketID)
 }
 
 // CreateReport godoc
@@ -456,6 +473,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 	out = db
 	for _, f := range []string{
+		"BucketID",
 		"Bucket",
 		"Image",
 		"Pod",
@@ -489,7 +507,7 @@ type Task struct {
 	Application *Ref        `json:"application,omitempty"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty"`
-	Bucket      string      `json:"bucket,omitempty"`
+	Bucket      *Ref        `json:"bucket,omitempty"`
 	Purged      bool        `json:"purged,omitempty"`
 	Started     *time.Time  `json:"started,omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty"`
@@ -512,7 +530,7 @@ func (r *Task) With(m *model.Task) {
 	r.Policy = m.Policy
 	r.Variant = m.Variant
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	r.Bucket = m.Bucket
+	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated

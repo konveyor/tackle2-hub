@@ -395,7 +395,7 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 		return
 	}
 	r.State = Canceled
-	r.Bucket = ""
+	r.SetBucket(nil)
 	Log.Info(
 		"Task canceled.",
 		"id",
