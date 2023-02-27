@@ -127,6 +127,9 @@ func (r Migration) bucketMigration(db *gorm.DB) (err error) {
 
 //
 // appBucketMigration migrates application buckets.
+// The (v2) Application.Bucket (string) contains the bucket storage path. Migration needs to
+// build a `Bucket` object using this path for each and set v3 BucketID.
+// The Application.Bucket becomes virtual.
 func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
 	err = migrator.AutoMigrate(&model.Application{})
@@ -140,6 +143,9 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		if m.Bucket == "" {
+			continue
+		}
 		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
@@ -166,6 +172,9 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 
 //
 // taskBucketMigration migrates task buckets.
+// The (v2) Task.Bucket (string) contains the bucket storage path. Migration needs to
+// build a `Bucket` object using this path for each and set v3 BucketID.
+// The Task.Bucket becomes virtual.
 func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
 	err = migrator.AutoMigrate(&model.Task{})
@@ -179,6 +188,9 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		if m.Bucket == "" {
+			continue
+		}
 		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
@@ -205,6 +217,9 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 
 //
 // taskGroupBucketMigration migrates task group buckets.
+// The (v2) TaskGroup.Bucket (string) contains the bucket storage path. Migration needs to
+// build a `Bucket` object using this path for each and set v3 BucketID.
+// The TaskGroup.Bucket becomes virtual.
 func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
 	err = migrator.AutoMigrate(&model.TaskGroup{})
@@ -218,6 +233,9 @@ func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		if m.Bucket == "" {
+			continue
+		}
 		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
