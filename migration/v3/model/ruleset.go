@@ -6,7 +6,7 @@ type RuleSet struct {
 	Model
 	Name         string `gorm:"uniqueIndex:RuleSetA;not null"`
 	Description  string
-	Metadata     JSON
+	Metadata     JSON `gorm:"type:json"`
 	RuleBundleID uint `gorm:"uniqueIndex:RuleSetA;not null"`
 	RuleBundle   *RuleBundle
 	FileID       *uint `gorm:"index" ref:"file"`

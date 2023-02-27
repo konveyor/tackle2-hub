@@ -10,9 +10,9 @@ type TaskGroup struct {
 	BucketOwner
 	Name  string
 	Addon string
-	Data  JSON
+	Data  JSON   `gorm:"type:json"`
 	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
-	List  JSON
+	List  JSON   `gorm:"type:json"`
 	State string
 }
 

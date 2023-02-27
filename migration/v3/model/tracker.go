@@ -9,7 +9,7 @@ type Tracker struct {
 	Kind        string
 	Identity    *Identity
 	IdentityID  uint
-	Metadata    JSON
+	Metadata    JSON `gorm:"type:json"`
 	Connected   bool
 	LastUpdated time.Time
 	Message     string

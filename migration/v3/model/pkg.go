@@ -3,7 +3,6 @@ package model
 import (
 	v2 "github.com/konveyor/tackle2-hub/migration/v2/model"
 	"github.com/konveyor/tackle2-hub/settings"
-	"gorm.io/datatypes"
 )
 
 var (
@@ -11,8 +10,8 @@ var (
 )
 
 //
-// Field (data) types.
-type JSON = datatypes.JSON
+// JSON field (data) type.
+type JSON = []byte
 
 //
 // Unchanged models imported from previous migration.

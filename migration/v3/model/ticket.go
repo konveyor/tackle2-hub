@@ -9,7 +9,7 @@ type Ticket struct {
 	// Parent resource that this ticket should belong to in the tracker. (e.g. Jira project)
 	Parent string `gorm:"not null"`
 	// Custom fields to send to the tracker when creating the ticket
-	Fields JSON
+	Fields JSON `gorm:"type:json"`
 	// Whether the last attempt to do something with the ticket reported an error
 	Error bool
 	// Error message, if any
