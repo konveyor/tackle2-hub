@@ -32,6 +32,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(SettingsRoot+"/", h.List)
 	routeGroup.GET(SettingRoot, h.Get)
 	routeGroup.POST(SettingsRoot, h.Create)
+	routeGroup.POST(SettingRoot, h.CreateByKey)
 	routeGroup.PUT(SettingRoot, h.Update)
 	routeGroup.DELETE(SettingRoot, h.Delete)
 }
@@ -119,6 +120,44 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	setting.With(m)
 
 	ctx.JSON(http.StatusCreated, setting)
+}
+
+// CreateByKey godoc
+// @summary Create a setting.
+// @description Create a setting.
+// @tags create, setting
+// @accept json
+// @success 201
+// @router /settings/{key} [post]
+// @param setting body {object} true "Setting value"
+func (h SettingHandler) CreateByKey(ctx *gin.Context) {
+	key := ctx.Param(Key)
+	if strings.HasPrefix(key, ".") {
+		ctx.JSON(
+			http.StatusForbidden,
+			gin.H{
+				"error": fmt.Sprintf("%s is read-only.", key),
+			})
+
+		return
+	}
+
+	setting := Setting{}
+	setting.Key = key
+	err := ctx.BindJSON(&setting.Value)
+	if err != nil {
+		h.reportError(ctx, err)
+		return
+	}
+	m := setting.Model()
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	result := h.DB.Create(&m)
+	if result.Error != nil {
+		h.reportError(ctx, result.Error)
+		return
+	}
+
+	ctx.Status(http.StatusCreated)
 }
 
 // Update godoc
