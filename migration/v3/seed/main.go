@@ -406,9 +406,10 @@ func Seed(db *gorm.DB) {
 			{Name: "JDBC datasources"},
 			{Name: "JDBC XA datasources"}},
 		},
-		{Name: "HTTP", Rank: 29, Color: "#F3D23C", Tags: []model.Tag{{Name: "JAX-WS"},
-			{Name: "Servlet"}}},
-		{Name: "Http", Rank: 38, Color: "#5F3CF3", Tags: []model.Tag{{Name: "Web Services Metadata"}}},
+		{Name: "HTTP", Rank: 29, Color: "#F3D23C", Tags: []model.Tag{
+			{Name: "JAX-WS"},
+			{Name: "Servlet"},
+			{Name: "Web Services Metadata"}}},
 		{Name: "Integration", Rank: 9, Color: "#B43CF3", Tags: []model.Tag{
 			{Name: "3scale"},
 			{Name: "Apache Camel"},
@@ -758,7 +759,22 @@ func Seed(db *gorm.DB) {
 			{Name: "WebSphere Web XML"}},
 		},
 	}
-	_ = db.Create(categories)
+
+	for i := range categories {
+		category := &model.TagCategory{}
+		result := db.First(category, "name = ?", categories[i].Name)
+		// category doesn't already exist, so create the category and tags all at once.
+		if result.RowsAffected == 0 {
+			_ = db.Create(&categories[i])
+		} else {
+			// add tags to category one by one
+			for j := range categories[i].Tags {
+				tag := categories[i].Tags[j]
+				tag.CategoryID = category.ID
+				_ = db.Create(&tag)
+			}
+		}
+	}
 
 	return
 }
