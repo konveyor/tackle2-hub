@@ -338,11 +338,13 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
+// @description ?filter=glob supports directory content filtering.
 // @tags get
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/bucket/{wildcard} [get]
 // @param id path string true "Application ID"
+// @param filter query string false "Filter"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)

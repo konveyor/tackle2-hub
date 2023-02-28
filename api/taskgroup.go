@@ -280,11 +280,13 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
+// @description ?filter=glob supports directory content filtering.
 // @tags get
 // @produce octet-stream
 // @success 200
 // @router /taskgroups/{id}/bucket/{wildcard} [get]
 // @param id path string true "TaskGroup ID"
+// @param filter query string false "Filter"
 func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)

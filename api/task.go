@@ -314,11 +314,13 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 // @summary Get bucket content by ID and path.
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
+// @description ?filter=glob supports directory content filtering.
 // @tags get
 // @produce octet-stream
 // @success 200
 // @router /tasks/{id}/bucket/{wildcard} [get]
 // @param id path string true "Task ID"
+// @param filter query string false "Filter"
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)

@@ -29,6 +29,12 @@ const (
 )
 
 //
+// Params
+const (
+	Filter = "filter"
+)
+
+//
 // BucketHandler handles bucket routes.
 type BucketHandler struct {
 	BucketOwner
@@ -160,12 +166,14 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @description Get bucket content by ID and path.
 // @description When path is FILE, returns file content.
 // @description When path is DIRECTORY and Accept=text/html returns index.html.
+// @description ?filter=glob supports directory content filtering.
 // @description Else returns a tarball.
 // @tags get
 // @produce octet-stream
 // @success 200
 // @router /buckets/{id}/{wildcard} [get]
 // @param id path string true "Task ID"
+// @param filter query string false "Filter"
 func (h BucketHandler) BucketGet(ctx *gin.Context) {
 	h.bucketGet(ctx, h.pk(ctx))
 }
@@ -236,6 +244,10 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		return
 	}
 	if st.IsDir() {
+		filter := DirFilter{
+			pattern: ctx.Query(Filter),
+			root:    path,
+		}
 		if h.accepted(ctx, TextHTML) {
 			err = h.getFile(ctx, m)
 			if err != nil {
@@ -243,17 +255,12 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 			}
 			return
 		} else {
-			n, err := h.getDir(ctx, path)
+			err := h.getDir(ctx, path, filter)
 			if err != nil {
 				h.reportError(ctx, err)
 				return
 			}
-			if n == 0 {
-				ctx.Status(http.StatusNoContent)
-				return
-			} else {
-				ctx.Status(http.StatusOK)
-			}
+			ctx.Status(http.StatusOK)
 		}
 	} else {
 		err = h.getFile(ctx, m)
@@ -380,7 +387,7 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 
 //
 // getDir reads a directory from the bucket.
-func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, err error) {
+func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter DirFilter) (err error) {
 	var tarOutput bytes.Buffer
 	tarWriter := tar.NewWriter(&tarOutput)
 	err = filepath.Walk(
@@ -391,6 +398,9 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, er
 				return
 			}
 			if path == input {
+				return
+			}
+			if !filter.Match(path) {
 				return
 			}
 			header, err := tar.FileInfoHeader(info, path)
@@ -406,7 +416,6 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, er
 					err = liberr.Wrap(err)
 					return
 				}
-				entryCount += 1
 			case tar.TypeReg:
 				err = tarWriter.WriteHeader(header)
 				if err != nil {
@@ -426,7 +435,6 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, er
 					err = liberr.Wrap(err)
 					return
 				}
-				entryCount += 1
 			}
 			return
 		})
@@ -436,9 +444,6 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string) (entryCount int, er
 	err = tarWriter.Close()
 	if err != nil {
 		err = liberr.Wrap(err)
-		return
-	}
-	if entryCount < 1 {
 		return
 	}
 	ctx.Writer.Header().Set(
@@ -508,5 +513,31 @@ func (h *BucketOwner) accepted(ctx *gin.Context, mime string) (b bool) {
 			break
 		}
 	}
+	return
+}
+
+//
+// DirFilter supports glob-style filtering.
+type DirFilter struct {
+	root    string
+	pattern string
+	cache   map[string]bool
+}
+
+//
+// Match determines if path matches the filter.
+func (r *DirFilter) Match(path string) (b bool) {
+	if r.pattern == "" {
+		b = true
+		return
+	}
+	if r.cache == nil {
+		r.cache = map[string]bool{}
+		matches, _ := filepath.Glob(pathlib.Join(r.root, r.pattern))
+		for _, p := range matches {
+			r.cache[p] = true
+		}
+	}
+	_, b = r.cache[path]
 	return
 }
