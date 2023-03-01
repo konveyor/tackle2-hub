@@ -118,8 +118,8 @@ const imgVirt = `
 func Seed(db *gorm.DB) {
 	settings := []model.Setting{
 		{Key: "review.assessment.required", Value: []byte("true")},
-		{Key: "download.html.enabled", Value: []byte("true")},
-		{Key: "download.csv.enabled", Value: []byte("true")},
+		{Key: "download.html.enabled", Value: []byte("false")},
+		{Key: "download.csv.enabled", Value: []byte("false")},
 	}
 	_ = db.Create(settings)
 
