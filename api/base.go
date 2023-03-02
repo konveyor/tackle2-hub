@@ -147,6 +147,8 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 				if ft.Anonymous {
 					inspect(fv.Addr().Interface())
 				}
+			case reflect.Array, reflect.Slice:
+				continue
 			default:
 				mp[ft.Name] = fv.Interface()
 			}
