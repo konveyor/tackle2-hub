@@ -279,6 +279,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	//
 	// Update the application.
 	m = r.Model()
+	m.Tags = nil
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db = h.DB.Model(m)
