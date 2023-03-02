@@ -4,11 +4,11 @@ package model
 // ApplicationTag represents a row in the join table for the
 // many-to-many relationship between Applications and Tags.
 type ApplicationTag struct {
-	ApplicationID uint   `gorm:"primaryKey"`
-	TagID         uint   `gorm:"primaryKey"`
-	Source        string `gorm:"primaryKey;not null"`
-	Application   *Application
-	Tag           *Tag
+	ApplicationID uint        `gorm:"primaryKey"`
+	TagID         uint        `gorm:"primaryKey"`
+	Source        string      `gorm:"primaryKey;not null"`
+	Application   Application `gorm:"constraint:OnDelete:CASCADE"`
+	Tag           Tag         `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 //

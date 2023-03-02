@@ -17,6 +17,7 @@ curl -X PUT ${host}/applications/1 -d \
     },
     "tags":[
       {"id":1},
-      {"id":2}
+      {"id":2},
+      {"id":3}
     ]
 }' | jq -M .
