@@ -154,14 +154,15 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	s := &model.Stakeholder{Model: model.Model{ID: id}}
+	db := h.DB.Model(s)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db = h.DB.Model(m)
+	db = h.DB.Model(s)
 	err = db.Association("Groups").Replace(m.Groups)
 	if err != nil {
 		h.reportError(ctx, err)

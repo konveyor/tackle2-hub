@@ -187,14 +187,15 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db = h.DB.Model(m)
+	rb := &model.RuleBundle{Model: model.Model{ID: id}}
+	db = h.DB.Model(rb)
 	db = db.Omit(clause.Associations)
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	err = h.DB.Model(m).Association("RuleSets").Replace(m.RuleSets)
+	err = h.DB.Model(rb).Association("RuleSets").Replace(m.RuleSets)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -203,7 +204,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	// Update ruleSets.
 	for i := range m.RuleSets {
 		m := &m.RuleSets[i]
-		db = h.DB.Model(m)
+		db = h.DB.Model(&model.RuleSet{Model: model.Model{ID: m.ID}})
 		err = db.Updates(h.fields(m)).Error
 		if err != nil {
 			h.reportError(ctx, err)

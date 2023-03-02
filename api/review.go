@@ -155,7 +155,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB.Model(&model.Review{Model: model.Model{ID: id}})
 	db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {

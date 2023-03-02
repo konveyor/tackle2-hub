@@ -279,10 +279,10 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	//
 	// Update the application.
 	m = r.Model()
-	m.Tags = nil
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db = h.DB.Model(m)
+	a := &model.Application{Model: model.Model{ID: id}}
+	db = h.DB.Model(a)
 	db = db.Omit(clause.Associations)
 	db = db.Omit("BucketID")
 	result = db.Updates(h.fields(m))
@@ -290,13 +290,13 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db = h.DB.Model(m)
+	db = h.DB.Model(a)
 	err = db.Association("Identities").Replace(m.Identities)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
 	}
-	db = h.DB.Model(m)
+	db = h.DB.Model(a)
 	err = db.Association("Facts").Replace(m.Facts)
 	if err != nil {
 		h.reportError(ctx, err)
@@ -323,7 +323,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	if len(r.Tags) > 0 {
 		tags := []model.ApplicationTag{}
 		for _, t := range r.Tags {
-			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: id, Source: t.Source})
 		}
 		result = h.DB.Create(&tags)
 		if result.Error != nil {
