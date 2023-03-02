@@ -42,7 +42,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 // @description Get a setting by its key.
 // @tags get, setting
 // @produce json
-// @success 200 {object} interface{}
+// @success 200 {object} api.Setting
 // @router /settings/{key} [get]
 // @param key path string true "Key"
 func (h SettingHandler) Get(ctx *gin.Context) {
@@ -129,7 +129,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 // @accept json
 // @success 201
 // @router /settings/{key} [post]
-// @param setting body {object} true "Setting value"
+// @param setting body api.Setting true "Setting value"
 func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	if strings.HasPrefix(key, ".") {

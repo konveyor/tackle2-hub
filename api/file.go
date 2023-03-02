@@ -124,7 +124,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 // @summary Get a file by ID.
 // @description Get a file by ID. Returns api.File when Accept=application/json else the file content.
 // @tags get
-// @produce json octet-stream
+// @produce octet-stream
 // @success 200 {object} api.File
 // @router /files/{id} [get]
 // @param id path string true "File ID"

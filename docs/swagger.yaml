@@ -11,7 +11,7 @@ definitions:
       binary:
         type: string
       bucket:
-        type: string
+        $ref: '#/definitions/api.Ref'
       businessService:
         $ref: '#/definitions/api.Ref'
       comments:
@@ -23,7 +23,7 @@ definitions:
       description:
         type: string
       facts:
-        $ref: '#/definitions/api.Facts'
+        $ref: '#/definitions/api.FactMap'
       id:
         type: integer
       identities:
@@ -38,12 +38,27 @@ definitions:
         $ref: '#/definitions/api.Ref'
       tags:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/api.TagRef'
         type: array
       updateUser:
         type: string
     required:
     - name
+    type: object
+  api.Bucket:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      path:
+        type: string
+      updateUser:
+        type: string
     type: object
   api.BusinessService:
     properties:
@@ -104,11 +119,34 @@ definitions:
     type: object
   api.DependencyGraph:
     type: object
-  api.Facts:
+  api.Fact:
+    properties:
+      key:
+        type: string
+      value: {}
+    type: object
+  api.FactMap:
     additionalProperties: true
     type: object
   api.Fields:
     additionalProperties: true
+    type: object
+  api.File:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      path:
+        type: string
+      updateUser:
+        type: string
     type: object
   api.Identity:
     properties:
@@ -182,6 +220,15 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Login:
+    properties:
+      password:
+        type: string
+      token:
+        type: string
+      user:
+        type: string
     type: object
   api.Metadata:
     additionalProperties: true
@@ -260,6 +307,53 @@ definitions:
         type: integer
     required:
     - application
+    type: object
+  api.RuleBundle:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      custom:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/api.Ref'
+      image:
+        $ref: '#/definitions/api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      repository:
+        $ref: '#/definitions/api.Repository'
+      rulesets:
+        items:
+          $ref: '#/definitions/api.RuleSet'
+        type: array
+      updateUser:
+        type: string
+    type: object
+  api.RuleSet:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      file:
+        $ref: '#/definitions/api.Ref'
+      id:
+        type: integer
+      metadata: {}
+      name:
+        type: string
+      updateUser:
+        type: string
     type: object
   api.Schema:
     properties:
@@ -342,6 +436,8 @@ definitions:
     type: object
   api.Tag:
     properties:
+      category:
+        $ref: '#/definitions/api.Ref'
       createTime:
         type: string
       createUser:
@@ -350,15 +446,13 @@ definitions:
         type: integer
       name:
         type: string
-      tagType:
-        $ref: '#/definitions/api.Ref'
       updateUser:
         type: string
     required:
+    - category
     - name
-    - tagType
     type: object
-  api.TagType:
+  api.TagCategory:
     properties:
       colour:
         type: string
@@ -383,6 +477,17 @@ definitions:
     required:
     - name
     type: object
+  api.TagRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+    required:
+    - id
+    type: object
   api.Task:
     properties:
       addon:
@@ -390,7 +495,7 @@ definitions:
       application:
         $ref: '#/definitions/api.Ref'
       bucket:
-        type: string
+        $ref: '#/definitions/api.Ref'
       canceled:
         type: boolean
       createTime:
@@ -442,7 +547,7 @@ definitions:
       addon:
         type: string
       bucket:
-        type: string
+        $ref: '#/definitions/api.Ref'
       createTime:
         type: string
       createUser:
@@ -567,6 +672,24 @@ definitions:
 info:
   contact: {}
 paths:
+  //buckets/{id}/{wildcard}:
+    post:
+      description: Upload bucket content by ID and path (handles both [post] and [put]
+        requests).
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Upload bucket content by ID and path.
+      tags:
+      - post
   /addons:
     get:
       description: List all addons.
@@ -746,6 +869,29 @@ paths:
       summary: Delete bucket content by ID and path.
       tags:
       - delete
+    get:
+      description: |-
+        Get bucket content by ID and path.
+        Returns index.html for directories when Accept=text/html else a tarball.
+        ?filter=glob supports directory content filtering.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Filter
+        in: query
+        name: filter
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: ""
+      summary: Get bucket content by ID and path.
+      tags:
+      - get
     post:
       description: Upload bucket content by ID and path (handles both [post] and [put]
         requests).
@@ -763,6 +909,158 @@ paths:
       summary: Upload bucket content by ID and path.
       tags:
       - post
+  /applications/{id}/facts:
+    get:
+      description: List facts.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Fact'
+            type: array
+      summary: List facts.
+      tags:
+      - get
+  /applications/{id}/facts/{key}:
+    delete:
+      description: Delete a fact.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a fact.
+      tags:
+      - delete
+    post:
+      consumes:
+      - application/json
+      description: Create a fact.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Fact data
+        in: body
+        name: fact
+        required: true
+        schema:
+          $ref: '#/definitions/api.Fact'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ""
+      summary: Create a fact.
+      tags:
+      - create
+    put:
+      consumes:
+      - application/json
+      description: Update (or create) a fact.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Fact data
+        in: body
+        name: fact
+        required: true
+        schema:
+          $ref: '#/definitions/api.Fact'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Update (or create) a fact.
+      tags:
+      - update create
+  /applications/{id}/facts/{name}:
+    get:
+      description: Get fact by name.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Fact'
+      summary: Get fact by name.
+      tags:
+      - get
+  /applications/{id}/tags:
+    patch:
+      consumes:
+      - application/json
+      description: Replace tag associations.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Source
+        in: query
+        name: source
+        type: string
+      - description: Tag references
+        in: body
+        name: tags
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/api.TagRef'
+          type: array
+      responses:
+        "204":
+          description: ""
+      summary: Replace tag associations.
+      tags:
+      - update
   /applications/{id}/tags/{sid}:
     delete:
       description: Ensure tag is not associated with the application.
@@ -804,23 +1102,6 @@ paths:
       summary: List tag references.
       tags:
       - get
-  /applications/{id}/tasks/{id}/content/{wildcard}:
-    get:
-      description: Get bucket content by ID and path.
-      parameters:
-      - description: Task ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: ""
-      summary: Get bucket content by ID and path.
-      tags:
-      - get
   /auth/login:
     post:
       description: Login and obtain a bearer token.
@@ -830,10 +1111,124 @@ paths:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/api.Login'
       summary: Login and obtain a bearer token.
       tags:
       - post
+  /buckets:
+    get:
+      description: List all buckets.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Bucket'
+            type: array
+      summary: List all buckets.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a bucket.
+      parameters:
+      - description: Bucket name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Create a bucket.
+      tags:
+      - create
+  /buckets/{id}:
+    delete:
+      description: Delete a bucket.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a bucket.
+      tags:
+      - delete
+    get:
+      description: |-
+        Get a bucket by ID.
+        Returns api.Bucket when Accept=application/json.
+        Else returns index.html when Accept=text/html.
+        Else returns tarball.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Bucket'
+      summary: Get a bucket by ID.
+      tags:
+      - get
+  /buckets/{id}/{wildcard}:
+    delete:
+      description: Delete bucket content by ID and path.
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Delete bucket content by ID and path.
+      tags:
+      - delete
+    get:
+      description: |-
+        Get bucket content by ID and path.
+        When path is FILE, returns file content.
+        When path is DIRECTORY and Accept=text/html returns index.html.
+        ?filter=glob supports directory content filtering.
+        Else returns a tarball.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Filter
+        in: query
+        name: filter
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: ""
+      summary: Get bucket content by ID and path.
+      tags:
+      - get
   /businessservices:
     get:
       description: List all business services.
@@ -1022,6 +1417,75 @@ paths:
           schema:
             $ref: '#/definitions/api.Dependency'
       summary: Get a dependency by ID.
+      tags:
+      - get
+  /files:
+    get:
+      description: List all files.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.File'
+            type: array
+      summary: List all files.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a file.
+      parameters:
+      - description: File name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.File'
+      summary: Create a file.
+      tags:
+      - create
+  /files/{id}:
+    delete:
+      description: Delete a file.
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a file.
+      tags:
+      - delete
+    get:
+      description: Get a file by ID. Returns api.File when Accept=application/json
+        else the file content.
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.File'
+      summary: Get a file by ID.
       tags:
       - get
   /identities:
@@ -1538,6 +2002,97 @@ paths:
       summary: Copy a review from one application to others.
       tags:
       - copy
+  /rulebundles:
+    get:
+      description: List all bindings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.RuleBundle'
+            type: array
+      summary: List all bindings.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a bundle.
+      parameters:
+      - description: RuleBundle data
+        in: body
+        name: ruleBundle
+        required: true
+        schema:
+          $ref: '#/definitions/api.RuleBundle'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.RuleBundle'
+      summary: Create a bundle.
+      tags:
+      - create
+  /rulebundles/{id}:
+    delete:
+      description: Delete a bundle.
+      parameters:
+      - description: RuleBundle ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a bundle.
+      tags:
+      - delete
+    get:
+      description: Get a RuleBundle by ID.
+      parameters:
+      - description: RuleBundle ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.RuleBundle'
+      summary: Get a RuleBundle by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a bundle.
+      parameters:
+      - description: RuleBundle ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: RuleBundle data
+        in: body
+        name: ruleBundle
+        required: true
+        schema:
+          $ref: '#/definitions/api.RuleBundle'
+      responses:
+        "204":
+          description: ""
+      summary: Update a bundle.
+      tags:
+      - update
   /schema:
     get:
       description: Get the API schema.
@@ -1619,10 +2174,28 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/api.Setting'
       summary: Get a setting by its key.
       tags:
       - get
+      - setting
+    post:
+      consumes:
+      - application/json
+      description: Create a setting.
+      parameters:
+      - description: Setting value
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/api.Setting'
+      responses:
+        "201":
+          description: ""
+      summary: Create a setting.
+      tags:
+      - create
       - setting
     put:
       consumes:
@@ -1825,6 +2398,97 @@ paths:
       summary: Update a stakeholder.
       tags:
       - update
+  /tagcategories:
+    get:
+      description: List all tag categories.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TagCategory'
+            type: array
+      summary: List all tag categories.
+      tags:
+      - get
+    post:
+      consumes:
+      - application/json
+      description: Create a tag category.
+      parameters:
+      - description: Tag Category data
+        in: body
+        name: tag_type
+        required: true
+        schema:
+          $ref: '#/definitions/api.TagCategory'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.TagCategory'
+      summary: Create a tag category.
+      tags:
+      - create
+  /tagcategories/{id}:
+    delete:
+      description: Delete a tag category.
+      parameters:
+      - description: Tag Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+      summary: Delete a tag category.
+      tags:
+      - delete
+    get:
+      description: Get a tag category by ID.
+      parameters:
+      - description: Tag Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagCategory'
+      summary: Get a tag category by ID.
+      tags:
+      - get
+    put:
+      consumes:
+      - application/json
+      description: Update a tag category.
+      parameters:
+      - description: Tag Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag Category data
+        in: body
+        name: tag_type
+        required: true
+        schema:
+          $ref: '#/definitions/api.TagCategory'
+      responses:
+        "204":
+          description: ""
+      summary: Update a tag category.
+      tags:
+      - update
   /tags:
     get:
       description: List all tags.
@@ -1914,97 +2578,6 @@ paths:
         "204":
           description: ""
       summary: Update a tag.
-      tags:
-      - update
-  /tagtypes:
-    get:
-      description: List all tag types.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.TagType'
-            type: array
-      summary: List all tag types.
-      tags:
-      - get
-    post:
-      consumes:
-      - application/json
-      description: Create a tag type.
-      parameters:
-      - description: Tag Type data
-        in: body
-        name: tag_type
-        required: true
-        schema:
-          $ref: '#/definitions/api.TagType'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/api.TagType'
-      summary: Create a tag type.
-      tags:
-      - create
-  /tagtypes/{id}:
-    delete:
-      description: Delete a tag type.
-      parameters:
-      - description: Tag Type ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: ""
-      summary: Delete a tag type.
-      tags:
-      - delete
-    get:
-      description: Get a tag type by ID.
-      parameters:
-      - description: Tag Type ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.TagType'
-      summary: Get a tag type by ID.
-      tags:
-      - get
-    put:
-      consumes:
-      - application/json
-      description: Update a tag type.
-      parameters:
-      - description: Tag Type ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Tag Type data
-        in: body
-        name: tag_type
-        required: true
-        schema:
-          $ref: '#/definitions/api.TagType'
-      responses:
-        "204":
-          description: ""
-      summary: Update a tag type.
       tags:
       - update
   /taskgroups:
@@ -2116,12 +2689,19 @@ paths:
       tags:
       - delete
     get:
-      description: Get bucket content by ID and path.
+      description: |-
+        Get bucket content by ID and path.
+        Returns index.html for directories when Accept=text/html else a tarball.
+        ?filter=glob supports directory content filtering.
       parameters:
       - description: TaskGroup ID
         in: path
         name: id
         required: true
+        type: string
+      - description: Filter
+        in: query
+        name: filter
         type: string
       produces:
       - application/octet-stream
@@ -2279,12 +2859,19 @@ paths:
       tags:
       - delete
     get:
-      description: Get bucket content by ID and path.
+      description: |-
+        Get bucket content by ID and path.
+        Returns index.html for directories when Accept=text/html else a tarball.
+        ?filter=glob supports directory content filtering.
       parameters:
       - description: Task ID
         in: path
         name: id
         required: true
+        type: string
+      - description: Filter
+        in: query
+        name: filter
         type: string
       produces:
       - application/octet-stream
