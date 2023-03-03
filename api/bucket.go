@@ -109,7 +109,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 // @description Else returns index.html when Accept=text/html.
 // @description Else returns tarball.
 // @tags get
-// @produce json octet-stream
+// @produce octet-stream
 // @success 200 {object} api.Bucket
 // @router /buckets/{id} [get]
 // @param id path string true "Bucket ID"

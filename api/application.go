@@ -682,7 +682,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 204
-// @router /applications/{id}/facts/{key} [put post]
+// @router /applications/{id}/facts/{key} [put]
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
 // @param fact body api.Fact true "Fact data"

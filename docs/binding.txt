@@ -4,9 +4,9 @@ package addon // import "github.com/konveyor/tackle2-hub/addon"
 CONSTANTS
 
 const (
-	Accept   = "Accept"
-	AppJson  = "application/json"
-	AppOctet = "application/octet-stream"
+	Accept   = api.Accept
+	AppJson  = api.AppJson
+	AppOctet = api.AppOctet
 )
 
 VARIABLES
@@ -29,10 +29,14 @@ type Adapter struct {
 	Identity Identity
 	// Proxy API.
 	Proxy Proxy
-	// TagType API.
-	TagType TagType
+	// TagCategory API.
+	TagCategory TagCategory
 	// Tag API.
 	Tag Tag
+	// File API.
+	File File
+	// RuleBundle API
+	RuleBundle RuleBundle
 
 	// Has unexported fields.
 }
@@ -46,10 +50,48 @@ func (h *Adapter) Client() *Client
 
 func (h *Adapter) Run(addon func() error)
     Run addon. Reports:
+      - Started
+      - Succeeded
+      - Failed (when addon returns error).
 
-        - Started
-        - Succeeded
-        - Failed (when addon returns error).
+type AppFacts struct {
+	// Has unexported fields.
+}
+    AppFacts sub-resource API. Provides association management of facts.
+
+func (h *AppFacts) Delete(key string) (err error)
+    Delete a fact.
+
+func (h *AppFacts) Get(key string, valuePtr interface{}) (err error)
+    Get a fact.
+
+func (h *AppFacts) List() (list []api.Fact, err error)
+    List associated tags. Returns a list of tag names.
+
+func (h *AppFacts) Set(key string, value interface{}) (err error)
+    Set a fact (created as needed).
+
+type AppTags struct {
+	// Has unexported fields.
+}
+    AppTags sub-resource API. Provides association management of tags to
+    applications by name.
+
+func (h *AppTags) Add(id uint) (err error)
+    Add ensures tag is associated with the application.
+
+func (h *AppTags) Delete(id uint) (err error)
+    Delete ensures the tag is not associated with the application.
+
+func (h *AppTags) List() (list []api.TagRef, err error)
+    List associated tags. Returns a list of tag names.
+
+func (h *AppTags) Replace(ids []uint) (err error)
+    Replace the associated tags for the source with a new set. Returns an error
+    if the source is not set.
+
+func (h *AppTags) Source(name string)
+    Source sets the source for other operations on the associated tags.
 
 type Application struct {
 	// Has unexported fields.
@@ -59,6 +101,9 @@ type Application struct {
 func (h *Application) Bucket(id uint) (b *Bucket)
     Bucket returns the bucket API.
 
+func (h *Application) Facts(id uint) (f AppFacts)
+    Facts returns the tags API.
+
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error)
     FindIdentity by kind.
 
@@ -67,6 +112,9 @@ func (h *Application) Get(id uint) (r *api.Application, err error)
 
 func (h *Application) List() (list []api.Application, err error)
     List applications.
+
+func (h *Application) Tags(id uint) (tg AppTags)
+    Tags returns the tags API.
 
 func (h *Application) Update(r *api.Application) (err error)
     Update an application by ID.
@@ -92,6 +140,9 @@ type Client struct {
 }
     Client provides a REST client.
 
+func NewClient(url, token string) *Client
+    Construct a new client
+
 func (r *Client) BucketGet(source, destination string) (err error)
     BucketGet downloads a file/directory. The source (path) is relative to the
     bucket root.
@@ -100,8 +151,14 @@ func (r *Client) BucketPut(source, destination string) (err error)
     BucketPut uploads a file/directory. The destination (path) is relative to
     the bucket root.
 
-func (r *Client) Delete(path string) (err error)
+func (r *Client) Delete(path string, params ...Param) (err error)
     Delete a resource.
+
+func (r *Client) FileGet(path, destination string) (err error)
+    FileGet downloads a file.
+
+func (r *Client) FilePut(path, source string, object interface{}) (err error)
+    FilePut uploads a file. Returns the created File resource.
 
 func (r *Client) Get(path string, object interface{}, params ...Param) (err error)
     Get a resource.
@@ -109,8 +166,11 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 func (r *Client) Post(path string, object interface{}) (err error)
     Post a resource.
 
-func (r *Client) Put(path string, object interface{}) (err error)
+func (r *Client) Put(path string, object interface{}, params ...Param) (err error)
     Put a resource.
+
+func (r *Client) SetToken(token string)
+    Set hub token on client
 
 type Conflict struct {
 	SoftError
@@ -121,6 +181,20 @@ type Conflict struct {
 func (e Conflict) Error() string
 
 func (e *Conflict) Is(err error) (matched bool)
+
+type File struct {
+	// Has unexported fields.
+}
+    File API.
+
+func (h *File) Delete(id uint) (err error)
+    Delete a file.
+
+func (h *File) Get(id uint, destination string) (err error)
+    Get downloads a file.
+
+func (h *File) Put(source string) (r *api.File, err error)
+    Put uploads a file.
 
 type Identity struct {
 	// Has unexported fields.
@@ -169,6 +243,23 @@ func (h *Proxy) List() (list []api.Proxy, err error)
 func (h *Proxy) Update(r *api.Proxy) (err error)
     Update a proxy by ID.
 
+type RuleBundle struct {
+	// Has unexported fields.
+}
+    RuleBundle API.
+
+func (h *RuleBundle) Delete(id uint) (err error)
+    Delete a bundle.
+
+func (h *RuleBundle) Get(id uint) (r *api.RuleBundle, err error)
+    Get a bundle by ID.
+
+func (h *RuleBundle) List() (list []api.RuleBundle, err error)
+    List bundles.
+
+func (h *RuleBundle) Update(r *api.RuleBundle) (err error)
+    Update a bundle by ID.
+
 type Setting struct {
 	// Has unexported fields.
 }
@@ -208,27 +299,39 @@ func (h *Tag) Create(r *api.Tag) (err error)
 func (h *Tag) Delete(r *api.Tag) (err error)
     Delete a tag.
 
+func (h *Tag) Ensure(wanted *api.Tag) (err error)
+    Ensure a tag exists.
+
+func (h *Tag) Find(name string, category uint) (r *api.Tag, found bool, err error)
+    Find by name and type.
+
 func (h *Tag) Get(id uint) (r *api.Tag, err error)
     Get a tag by ID.
 
 func (h *Tag) List() (list []api.Tag, err error)
     List tags.
 
-type TagType struct {
+type TagCategory struct {
 	// Has unexported fields.
 }
-    TagType API.
+    TagCategory API.
 
-func (h *TagType) Create(m *api.TagType) (err error)
+func (h *TagCategory) Create(m *api.TagCategory) (err error)
     Create a tag-type.
 
-func (h *TagType) Delete(r *api.TagType) (err error)
+func (h *TagCategory) Delete(r *api.TagCategory) (err error)
     Delete a tag-type.
 
-func (h *TagType) Get(id uint) (r *api.TagType, err error)
+func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error)
+    Ensure a tag-type exists.
+
+func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err error)
+    Find by name.
+
+func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error)
     Get a tag-type by ID.
 
-func (h *TagType) List() (list []api.TagType, err error)
+func (h *TagCategory) List() (list []api.TagCategory, err error)
     List tag-types.
 
 type Task struct {

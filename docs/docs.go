@@ -16,6 +16,32 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "//buckets/{id}/{wildcard}": {
+            "post": {
+                "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post"
+                ],
+                "summary": "Upload bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/addons": {
             "get": {
                 "description": "List all addons.",
@@ -262,6 +288,36 @@ const docTemplate = `{
             }
         },
         "/applications/{id}/bucket/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
             "post": {
                 "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
                 "produces": [
@@ -302,6 +358,234 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/applications/{id}/facts": {
+            "get": {
+                "description": "List facts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List facts.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Fact"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/facts/{key}": {
+            "put": {
+                "description": "Update (or create) a fact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update create"
+                ],
+                "summary": "Update (or create) a fact.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact data",
+                        "name": "fact",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Fact"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a fact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a fact.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact data",
+                        "name": "fact",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Fact"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a fact.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a fact.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/applications/{id}/facts/{name}": {
+            "get": {
+                "description": "Get fact by name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get fact by name.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Fact"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/tags": {
+            "patch": {
+                "description": "Replace tag associations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Replace tag associations.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Tag references",
+                        "name": "tags",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.TagRef"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -373,32 +657,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/tasks/{id}/content/{wildcard}": {
-            "get": {
-                "description": "Get bucket content by ID and path.",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get bucket content by ID and path.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Task ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/auth/login": {
             "post": {
                 "description": "Login and obtain a bearer token.",
@@ -413,8 +671,167 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/api.Login"
                         }
+                    }
+                }
+            }
+        },
+        "/buckets": {
+            "get": {
+                "description": "List all buckets.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all buckets.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Bucket"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a bucket.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a bucket.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Bucket"
+                        }
+                    }
+                }
+            }
+        },
+        "/buckets/{id}": {
+            "get": {
+                "description": "Get a bucket by ID.\nReturns api.Bucket when Accept=application/json.\nElse returns index.html when Accept=text/html.\nElse returns tarball.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a bucket by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Bucket"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a bucket.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a bucket.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/buckets/{id}/{wildcard}": {
+            "get": {
+                "description": "Get bucket content by ID and path.\nWhen path is FILE, returns file content.\nWhen path is DIRECTORY and Accept=text/html returns index.html.\n?filter=glob supports directory content filtering.\nElse returns a tarball.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete bucket content by ID and path.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete bucket content by ID and path.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
                     }
                 }
             }
@@ -696,6 +1113,109 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Dependency id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/files": {
+            "get": {
+                "description": "List all files.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all files.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.File"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a file.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.File"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{id}": {
+            "get": {
+                "description": "Get a file by ID. Returns api.File when Accept=application/json else the file content.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a file by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.File"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a file.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a file.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1489,6 +2009,144 @@ const docTemplate = `{
                 }
             }
         },
+        "/rulebundles": {
+            "get": {
+                "description": "List all bindings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all bindings.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.RuleBundle"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a bundle.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a bundle.",
+                "parameters": [
+                    {
+                        "description": "RuleBundle data",
+                        "name": "ruleBundle",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RuleBundle"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.RuleBundle"
+                        }
+                    }
+                }
+            }
+        },
+        "/rulebundles/{id}": {
+            "get": {
+                "description": "Get a RuleBundle by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a RuleBundle by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RuleBundle ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.RuleBundle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a bundle.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a bundle.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RuleBundle ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RuleBundle data",
+                        "name": "ruleBundle",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RuleBundle"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a bundle.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a bundle.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RuleBundle ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/schema": {
             "get": {
                 "description": "Get the API schema.",
@@ -1590,7 +2248,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/api.Setting"
                         }
                     }
                 }
@@ -1619,6 +2277,33 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a setting.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create",
+                    "setting"
+                ],
+                "summary": "Create a setting.",
+                "parameters": [
+                    {
+                        "description": "Setting value",
+                        "name": "setting",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Setting"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
                         "description": ""
                     }
                 }
@@ -1922,6 +2607,144 @@ const docTemplate = `{
                 }
             }
         },
+        "/tagcategories": {
+            "get": {
+                "description": "List all tag categories.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "List all tag categories.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.TagCategory"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a tag category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create"
+                ],
+                "summary": "Create a tag category.",
+                "parameters": [
+                    {
+                        "description": "Tag Category data",
+                        "name": "tag_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCategory"
+                        }
+                    }
+                }
+            }
+        },
+        "/tagcategories/{id}": {
+            "get": {
+                "description": "Get a tag category by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get"
+                ],
+                "summary": "Get a tag category by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCategory"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a tag category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "update"
+                ],
+                "summary": "Update a tag category.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag Category data",
+                        "name": "tag_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a tag category.",
+                "tags": [
+                    "delete"
+                ],
+                "summary": "Delete a tag category.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "description": "List all tags.",
@@ -2048,144 +2871,6 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Tag ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/tagtypes": {
-            "get": {
-                "description": "List all tag types.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "List all tag types.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.TagType"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a tag type.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "create"
-                ],
-                "summary": "Create a tag type.",
-                "parameters": [
-                    {
-                        "description": "Tag Type data",
-                        "name": "tag_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                }
-            }
-        },
-        "/tagtypes/{id}": {
-            "get": {
-                "description": "Get a tag type by ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "get"
-                ],
-                "summary": "Get a tag type by ID.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a tag type.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "update"
-                ],
-                "summary": "Update a tag type.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Tag Type data",
-                        "name": "tag_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.TagType"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a tag type.",
-                "tags": [
-                    "delete"
-                ],
-                "summary": "Delete a tag type.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tag Type ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2338,7 +3023,7 @@ const docTemplate = `{
         },
         "/taskgroups/{id}/bucket/{wildcard}": {
             "get": {
-                "description": "Get bucket content by ID and path.",
+                "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -2353,6 +3038,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2584,7 +3275,7 @@ const docTemplate = `{
         },
         "/tasks/{id}/bucket/{wildcard}": {
             "get": {
-                "description": "Get bucket content by ID and path.",
+                "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -2599,6 +3290,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3086,7 +3783,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bucket": {
-                    "type": "string"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "businessService": {
                     "$ref": "#/definitions/api.Ref"
@@ -3104,7 +3801,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "facts": {
-                    "$ref": "#/definitions/api.Facts"
+                    "$ref": "#/definitions/api.FactMap"
                 },
                 "id": {
                     "type": "integer"
@@ -3127,8 +3824,31 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/api.TagRef"
                     }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Bucket": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -3225,13 +3945,48 @@ const docTemplate = `{
         "api.DependencyGraph": {
             "type": "object"
         },
-        "api.Facts": {
+        "api.Fact": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "api.FactMap": {
             "type": "object",
             "additionalProperties": true
         },
         "api.Fields": {
             "type": "object",
             "additionalProperties": true
+        },
+        "api.File": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
         },
         "api.Identity": {
             "type": "object",
@@ -3339,6 +4094,20 @@ const docTemplate = `{
                     }
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Login": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {
                     "type": "string"
                 }
             }
@@ -3458,6 +4227,77 @@ const docTemplate = `{
                 },
                 "workPriority": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.RuleBundle": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "custom": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "image": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "repository": {
+                    "$ref": "#/definitions/api.Repository"
+                },
+                "rulesets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.RuleSet"
+                    }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RuleSet": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "file": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {},
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
                 }
             }
         },
@@ -3584,10 +4424,13 @@ const docTemplate = `{
         "api.Tag": {
             "type": "object",
             "required": [
-                "name",
-                "tagType"
+                "category",
+                "name"
             ],
             "properties": {
+                "category": {
+                    "$ref": "#/definitions/api.Ref"
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -3600,15 +4443,12 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "tagType": {
-                    "$ref": "#/definitions/api.Ref"
-                },
                 "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "api.TagType": {
+        "api.TagCategory": {
             "type": "object",
             "required": [
                 "name"
@@ -3646,6 +4486,23 @@ const docTemplate = `{
                 }
             }
         },
+        "api.TagRef": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Task": {
             "type": "object",
             "required": [
@@ -3660,7 +4517,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/api.Ref"
                 },
                 "bucket": {
-                    "type": "string"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "canceled": {
                     "type": "boolean"
@@ -3737,7 +4594,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bucket": {
-                    "type": "string"
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "createTime": {
                     "type": "string"
