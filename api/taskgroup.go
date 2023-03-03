@@ -172,9 +172,11 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	m.ID = current.ID
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB.Model(m)
+
+	omit := []string{"BucketID", "Bucket"}
 	switch updated.State {
 	case "", tasking.Created:
-		db = db.Omit(clause.Associations)
+		omit = append(omit, clause.Associations)
 	case tasking.Ready:
 		err := m.Propagate()
 		if err != nil {
@@ -188,8 +190,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
-	db = db.Omit("BucketID")
-	db = db.Omit("Bucket")
+	db = db.Omit(omit...)
 	db = db.Where("state IN ?", []string{"", tasking.Created})
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {

@@ -283,8 +283,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db = h.DB.Model(m)
-	db = db.Omit(clause.Associations)
-	db = db.Omit("BucketID")
+	db = db.Omit(clause.Associations, "BucketID")
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
