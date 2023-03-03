@@ -125,9 +125,6 @@ func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 //
 // fields builds a map of fields.
 func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
-	isExported := func(ft reflect.StructField) bool {
-		return ft.PkgPath == ""
-	}
 	var inspect func(r interface{})
 	inspect = func(r interface{}) {
 		mt := reflect.TypeOf(r)
@@ -139,14 +136,24 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 		for i := 0; i < mt.NumField(); i++ {
 			ft := mt.Field(i)
 			fv := mv.Field(i)
-			if !isExported(ft) {
+			if !ft.IsExported() {
 				continue
 			}
 			switch fv.Kind() {
+			case reflect.Pointer:
+				pt := ft.Type.Elem()
+				switch pt.Kind() {
+				case reflect.Struct, reflect.Slice, reflect.Array:
+					continue
+				default:
+					mp[ft.Name] = fv.Interface()
+				}
 			case reflect.Struct:
 				if ft.Anonymous {
 					inspect(fv.Addr().Interface())
 				}
+			case reflect.Array, reflect.Slice:
+				continue
 			default:
 				mp[ft.Name] = fv.Interface()
 			}
