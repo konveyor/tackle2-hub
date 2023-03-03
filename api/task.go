@@ -473,8 +473,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 //   - Create
 //   - Update.
 func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
-	out = db
-	for _, f := range []string{
+	out = db.Omit([]string{
 		"BucketID",
 		"Bucket",
 		"Image",
@@ -484,9 +483,7 @@ func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 		"Canceled",
 		"Error",
 		"Retries",
-	} {
-		out = out.Omit(f)
-	}
+	}...)
 	return
 }
 
