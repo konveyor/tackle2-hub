@@ -140,7 +140,7 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 				continue
 			}
 			switch fv.Kind() {
-			case reflect.Pointer:
+			case reflect.Ptr:
 				pt := ft.Type.Elem()
 				switch pt.Kind() {
 				case reflect.Struct, reflect.Slice, reflect.Array:
@@ -152,8 +152,14 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 				if ft.Anonymous {
 					inspect(fv.Addr().Interface())
 				}
-			case reflect.Array, reflect.Slice:
+			case reflect.Array:
 				continue
+			case reflect.Slice:
+				inst := fv.Interface()
+				switch inst.(type) {
+				case []byte:
+					mp[ft.Name] = fv.Interface()
+				}
 			default:
 				mp[ft.Name] = fv.Interface()
 			}
