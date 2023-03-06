@@ -194,13 +194,14 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	}
 
 	// Process import Tags & TagCategories
-	tagCategories := []model.TagCategory{}
-	m.DB.Find(&tagCategories)
+	allCategories := []model.TagCategory{}
+	m.DB.Find(&allCategories)
 
-	tags := []model.Tag{}
-	db := m.DB.Preload("TagCategory")
-	db.Find(&tags)
+	allTags := []model.Tag{}
+	db := m.DB.Preload("Category")
+	db.Find(&allTags)
 
+	appTags := []model.ApplicationTag{}
 	for _, impTag := range imp.ImportTags {
 		// Prepare normalized names for importTag
 		normImpTagName := normalizedName(impTag.Name)
@@ -217,23 +218,23 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		}
 
 		// Prepare vars for Tag and its TagCategory
-		appTag := &model.Tag{}
-		appTagCategory := &model.TagCategory{}
+		tag := &model.Tag{}
+		category := &model.TagCategory{}
 
 		// Find existing TagCategory
-		for _, tagType := range tagCategories {
-			if normalizedName(tagType.Name) == normImpCategory {
-				appTagCategory = &tagType
+		for _, c := range allCategories {
+			if normalizedName(c.Name) == normImpCategory {
+				category = &c
 				break
 			}
 		}
 
 		// Or create TagCategory (if CreateEntities is enabled)
-		if appTagCategory.ID == 0 {
+		if category.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
-				appTagCategory.Name = impTag.Category
-				appTagCategory.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
-				result := m.DB.Create(&appTagCategory)
+				category.Name = impTag.Category
+				category.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
+				result := m.DB.Create(&category)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' cannot be created.", impTag.Category)
 					return
@@ -243,21 +244,21 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 				return
 			}
 		}
-		appTag.Category = *appTagCategory
+		tag.Category = *category
 
 		// Find existing tag
-		for _, tag := range tags {
-			if normalizedName(tag.Name) == normImpTagName && normalizedName(tag.Category.Name) == normImpCategory {
-				appTag = &tag
+		for _, t := range allTags {
+			if normalizedName(t.Name) == normImpTagName && normalizedName(t.Category.Name) == normImpCategory {
+				tag = &t
 				break
 			}
 		}
 		// Or create new tag (if CreateEntities is enabled)
-		if appTag.ID == 0 {
+		if tag.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
-				appTag.Name = impTag.Name
-				appTag.Category = *appTagCategory
-				result := m.DB.Create(&appTag)
+				tag.Name = impTag.Name
+				tag.Category = *category
+				result := m.DB.Create(&tag)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("Tag '%s' cannot be created.", impTag.Name)
 					return
@@ -268,11 +269,18 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 			}
 		}
 
-		// Assign the Tag to Application's Tags
-		app.Tags = append(app.Tags, *appTag)
+		appTags = append(appTags, model.ApplicationTag{TagID: tag.ID, Source: ""})
 	}
 
 	result := m.DB.Create(app)
+	if result.Error != nil {
+		imp.ErrorMessage = result.Error.Error()
+		return
+	}
+	for i := range appTags {
+		appTags[i].ApplicationID = app.ID
+	}
+	result = m.DB.Create(&appTags)
 	if result.Error != nil {
 		imp.ErrorMessage = result.Error.Error()
 		return
