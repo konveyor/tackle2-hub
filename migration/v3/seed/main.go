@@ -133,13 +133,18 @@ func Seed(db *gorm.DB) {
 					" to JBoss EAP from other Enterprise Application Server (e.g. Oracle WebLogic Server).",
 				RuleSets: []model.RuleSet{
 					{
-						Name:        "Boss EAP 7",
-						Description: "Boss EAP 7",
+						Name:        "JBoss EAP 8",
+						Description: "JBoss EAP 8",
+						Metadata:    Target("eap8"),
+					},
+					{
+						Name:        "JBoss EAP 7",
+						Description: "JBoss EAP 7",
 						Metadata:    Target("eap7"),
 					},
 					{
-						Name:        "Boss EAP 6",
-						Description: "Boss EAP 6",
+						Name:        "JBoss EAP 6",
+						Description: "JBoss EAP 6",
 						Metadata:    Target("eap6"),
 					},
 				},
