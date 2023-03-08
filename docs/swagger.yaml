@@ -16,6 +16,10 @@ definitions:
         $ref: '#/definitions/api.Ref'
       comments:
         type: string
+      contributors:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       createTime:
         type: string
       createUser:
@@ -30,8 +34,12 @@ definitions:
         items:
           $ref: '#/definitions/api.Ref'
         type: array
+      migrationWave:
+        $ref: '#/definitions/api.Ref'
       name:
         type: string
+      owner:
+        $ref: '#/definitions/api.Ref'
       repository:
         $ref: '#/definitions/api.Repository'
       review:
@@ -233,6 +241,35 @@ definitions:
   api.Metadata:
     additionalProperties: true
     type: object
+  api.MigrationWave:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      endDate:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      startDate:
+        type: string
+      updateUser:
+        type: string
+    type: object
   api.Proxy:
     properties:
       createTime:
@@ -376,6 +413,10 @@ definitions:
         items:
           $ref: '#/definitions/api.Ref'
         type: array
+      contributes:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       createTime:
         type: string
       createUser:
@@ -386,8 +427,16 @@ definitions:
         type: integer
       jobFunction:
         $ref: '#/definitions/api.Ref'
+      migrationWaves:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       name:
         type: string
+      owns:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       stakeholderGroups:
         items:
           $ref: '#/definitions/api.Ref'
@@ -408,6 +457,10 @@ definitions:
         type: string
       id:
         type: integer
+      migrationWaves:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       name:
         type: string
       stakeholders:
@@ -418,6 +471,15 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Stakeholders:
+    properties:
+      contributors:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      owner:
+        $ref: '#/definitions/api.Ref'
     type: object
   api.TTL:
     properties:
@@ -585,7 +647,8 @@ definitions:
         type: string
       id:
         type: integer
-      result: {}
+      result:
+        type: object
       status:
         type: string
       task:
@@ -686,10 +749,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Upload bucket content by ID and path.
       tags:
-      - post
+      - buckets
   /addons:
     get:
       description: List all addons.
@@ -704,7 +767,7 @@ paths:
             type: array
       summary: List all addons.
       tags:
-      - get
+      - addons
   /addons/{name}:
     get:
       description: Get an addon by name.
@@ -723,7 +786,7 @@ paths:
             $ref: '#/definitions/api.Addon'
       summary: Get an addon by name.
       tags:
-      - get
+      - addons
   /adoptionplans:
     post:
       description: Graph generates an application dependency graph arranged in topological
@@ -743,7 +806,7 @@ paths:
             $ref: '#/definitions/api.DependencyGraph'
       summary: Generate an application dependency graph arranged in topological order.
       tags:
-      - post
+      - adoptionplans
   /applications:
     delete:
       description: Delete applications.
@@ -758,10 +821,10 @@ paths:
           type: array
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a applications.
       tags:
-      - delete
+      - applications
     get:
       description: List all applications.
       produces:
@@ -775,7 +838,7 @@ paths:
             type: array
       summary: List all applications.
       tags:
-      - list
+      - applications
     post:
       consumes:
       - application/json
@@ -796,7 +859,7 @@ paths:
             $ref: '#/definitions/api.Application'
       summary: Create an application.
       tags:
-      - create
+      - applications
   /applications/{id}:
     delete:
       description: Delete an application.
@@ -808,10 +871,10 @@ paths:
         type: integer
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete an application.
       tags:
-      - delete
+      - applications
     get:
       description: Get an application by ID.
       parameters:
@@ -829,7 +892,7 @@ paths:
             $ref: '#/definitions/api.Application'
       summary: Get an application by ID.
       tags:
-      - get
+      - applications
     put:
       consumes:
       - application/json
@@ -848,10 +911,10 @@ paths:
           $ref: '#/definitions/api.Application'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update an application.
       tags:
-      - update
+      - applications
   /applications/{id}/bucket/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -865,10 +928,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete bucket content by ID and path.
       tags:
-      - delete
+      - applications
     get:
       description: |-
         Get bucket content by ID and path.
@@ -888,10 +951,10 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: ""
+          description: OK
       summary: Get bucket content by ID and path.
       tags:
-      - get
+      - applications
     post:
       description: Upload bucket content by ID and path (handles both [post] and [put]
         requests).
@@ -905,10 +968,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Upload bucket content by ID and path.
       tags:
-      - post
+      - applications
   /applications/{id}/facts:
     get:
       description: List facts.
@@ -929,7 +992,7 @@ paths:
             type: array
       summary: List facts.
       tags:
-      - get
+      - applications
   /applications/{id}/facts/{key}:
     delete:
       description: Delete a fact.
@@ -946,10 +1009,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a fact.
       tags:
-      - delete
+      - applications
     post:
       consumes:
       - application/json
@@ -975,10 +1038,10 @@ paths:
       - application/json
       responses:
         "201":
-          description: ""
+          description: Created
       summary: Create a fact.
       tags:
-      - create
+      - applications
     put:
       consumes:
       - application/json
@@ -1004,10 +1067,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update (or create) a fact.
       tags:
-      - update create
+      - applications
   /applications/{id}/facts/{name}:
     get:
       description: Get fact by name.
@@ -1031,7 +1094,28 @@ paths:
             $ref: '#/definitions/api.Fact'
       summary: Get fact by name.
       tags:
-      - get
+      - applications
+  /applications/{id}/stakeholders:
+    patch:
+      description: Update the owner and contributors of an Application.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Application stakeholders
+        in: body
+        name: application
+        required: true
+        schema:
+          $ref: '#/definitions/api.Stakeholders'
+      responses:
+        "204":
+          description: No Content
+      summary: Update the owner and contributors of an Application.
+      tags:
+      - applications
   /applications/{id}/tags:
     patch:
       consumes:
@@ -1057,10 +1141,10 @@ paths:
           type: array
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Replace tag associations.
       tags:
-      - update
+      - applications
   /applications/{id}/tags/{sid}:
     delete:
       description: Ensure tag is not associated with the application.
@@ -1077,10 +1161,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete tag association.
       tags:
-      - delete
+      - applications
   /applications/{id}/tags/id:
     get:
       description: List tag references.
@@ -1101,7 +1185,7 @@ paths:
             type: array
       summary: List tag references.
       tags:
-      - get
+      - applications
   /auth/login:
     post:
       description: Login and obtain a bearer token.
@@ -1114,7 +1198,7 @@ paths:
             $ref: '#/definitions/api.Login'
       summary: Login and obtain a bearer token.
       tags:
-      - post
+      - auth
   /buckets:
     get:
       description: List all buckets.
@@ -1129,7 +1213,7 @@ paths:
             type: array
       summary: List all buckets.
       tags:
-      - get
+      - buckets
     post:
       consumes:
       - application/json
@@ -1149,7 +1233,7 @@ paths:
             $ref: '#/definitions/api.Bucket'
       summary: Create a bucket.
       tags:
-      - create
+      - buckets
   /buckets/{id}:
     delete:
       description: Delete a bucket.
@@ -1161,10 +1245,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a bucket.
       tags:
-      - delete
+      - buckets
     get:
       description: |-
         Get a bucket by ID.
@@ -1186,7 +1270,7 @@ paths:
             $ref: '#/definitions/api.Bucket'
       summary: Get a bucket by ID.
       tags:
-      - get
+      - buckets
   /buckets/{id}/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -1200,10 +1284,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete bucket content by ID and path.
       tags:
-      - delete
+      - buckets
     get:
       description: |-
         Get bucket content by ID and path.
@@ -1225,10 +1309,10 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: ""
+          description: OK
       summary: Get bucket content by ID and path.
       tags:
-      - get
+      - buckets
   /businessservices:
     get:
       description: List all business services.
@@ -1241,7 +1325,7 @@ paths:
             $ref: '#/definitions/api.BusinessService'
       summary: List all business services.
       tags:
-      - list
+      - businessservices
     post:
       consumes:
       - application/json
@@ -1262,7 +1346,7 @@ paths:
             $ref: '#/definitions/api.BusinessService'
       summary: Create a business service.
       tags:
-      - create
+      - businessservices
   /businessservices/{id}:
     delete:
       description: Delete a business service.
@@ -1274,10 +1358,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a business service.
       tags:
-      - delete
+      - businessservices
     get:
       description: Get a business service by ID.
       parameters:
@@ -1295,7 +1379,7 @@ paths:
             $ref: '#/definitions/api.BusinessService'
       summary: Get a business service by ID.
       tags:
-      - get
+      - businessservices
     put:
       consumes:
       - application/json
@@ -1314,10 +1398,10 @@ paths:
           $ref: '#/definitions/api.BusinessService'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a business service.
       tags:
-      - update
+      - businessservices
   /cache:
     delete:
       description: Delete a directory within the cache.
@@ -1325,10 +1409,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a directory within the cache.
       tags:
-      - delete
+      - cache
   /caches/{id}:
     get:
       description: Get the cache.
@@ -1347,7 +1431,7 @@ paths:
             $ref: '#/definitions/api.Cache'
       summary: Get the cache.
       tags:
-      - get
+      - cache
   /dependencies:
     get:
       description: List all dependencies.
@@ -1362,7 +1446,7 @@ paths:
             type: array
       summary: List all dependencies.
       tags:
-      - list
+      - dependencies
     post:
       consumes:
       - application/json
@@ -1383,7 +1467,7 @@ paths:
             $ref: '#/definitions/api.Dependency'
       summary: Create a dependency.
       tags:
-      - create
+      - dependencies
   /dependencies/{id}:
     delete:
       consumes:
@@ -1397,10 +1481,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a dependency.
       tags:
-      - delete
+      - dependencies
     get:
       description: Get a dependency by ID.
       parameters:
@@ -1418,7 +1502,7 @@ paths:
             $ref: '#/definitions/api.Dependency'
       summary: Get a dependency by ID.
       tags:
-      - get
+      - dependencies
   /files:
     get:
       description: List all files.
@@ -1433,7 +1517,7 @@ paths:
             type: array
       summary: List all files.
       tags:
-      - get
+      - file
     post:
       consumes:
       - application/json
@@ -1453,7 +1537,7 @@ paths:
             $ref: '#/definitions/api.File'
       summary: Create a file.
       tags:
-      - create
+      - file
   /files/{id}:
     delete:
       description: Delete a file.
@@ -1465,10 +1549,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a file.
       tags:
-      - delete
+      - file
     get:
       description: Get a file by ID. Returns api.File when Accept=application/json
         else the file content.
@@ -1487,7 +1571,7 @@ paths:
             $ref: '#/definitions/api.File'
       summary: Get a file by ID.
       tags:
-      - get
+      - file
   /identities:
     get:
       description: List all identities.
@@ -1502,7 +1586,7 @@ paths:
             type: array
       summary: List all identities.
       tags:
-      - get
+      - identities
     post:
       consumes:
       - application/json
@@ -1523,7 +1607,7 @@ paths:
             $ref: '#/definitions/api.Identity'
       summary: Create an identity.
       tags:
-      - create
+      - identities
   /identities/{id}:
     delete:
       description: Delete an identity.
@@ -1535,10 +1619,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete an identity.
       tags:
-      - delete
+      - identities
     get:
       description: Get an identity by ID.
       parameters:
@@ -1556,7 +1640,7 @@ paths:
             $ref: '#/definitions/api.Identity'
       summary: Get an identity by ID.
       tags:
-      - get
+      - identities
     put:
       consumes:
       - application/json
@@ -1575,10 +1659,10 @@ paths:
           $ref: '#/definitions/api.Identity'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update an identity.
       tags:
-      - update
+      - identities
   /imports:
     get:
       description: List imports.
@@ -1593,7 +1677,7 @@ paths:
             type: array
       summary: List imports.
       tags:
-      - list
+      - imports
   /imports/{id}:
     delete:
       description: Delete an import. This leaves any created application or dependency.
@@ -1605,10 +1689,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete an import.
       tags:
-      - delete
+      - imports
     get:
       description: Get an import by ID.
       parameters:
@@ -1626,7 +1710,7 @@ paths:
             $ref: '#/definitions/api.Import'
       summary: Get an import by ID.
       tags:
-      - get
+      - imports
   /importsummaries:
     get:
       description: List import summaries.
@@ -1641,7 +1725,7 @@ paths:
             type: array
       summary: List import summaries.
       tags:
-      - list
+      - imports
   /importsummaries/{id}:
     delete:
       description: Delete an import summary and associated import records.
@@ -1653,10 +1737,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete an import summary and associated import records.
       tags:
-      - delete
+      - imports
     get:
       description: Get an import by ID.
       parameters:
@@ -1674,7 +1758,7 @@ paths:
             $ref: '#/definitions/api.ImportSummary'
       summary: Get an import summary by ID.
       tags:
-      - get
+      - imports
   /importsummaries/download:
     get:
       description: Export the source CSV for a particular import summary.
@@ -1693,7 +1777,7 @@ paths:
             type: file
       summary: Export the source CSV for a particular import summary.
       tags:
-      - export
+      - imports
   /importsummaries/upload:
     post:
       description: Upload a CSV containing applications and dependencies to import.
@@ -1706,7 +1790,7 @@ paths:
             $ref: '#/definitions/api.ImportSummary'
       summary: Upload a CSV containing applications and dependencies to import.
       tags:
-      - post
+      - imports
   /jobfunctions:
     get:
       description: List all job functions.
@@ -1721,7 +1805,7 @@ paths:
             type: array
       summary: List all job functions.
       tags:
-      - get
+      - jobfunctions
     post:
       consumes:
       - application/json
@@ -1742,7 +1826,7 @@ paths:
             $ref: '#/definitions/api.JobFunction'
       summary: Create a job function.
       tags:
-      - create
+      - jobfunctions
   /jobfunctions/{id}:
     delete:
       description: Delete a job function.
@@ -1754,10 +1838,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a job function.
       tags:
-      - delete
+      - jobfunctions
     get:
       description: Get a job function by ID.
       parameters:
@@ -1777,7 +1861,7 @@ paths:
             type: array
       summary: Get a job function by ID.
       tags:
-      - get
+      - jobfunctions
     put:
       consumes:
       - application/json
@@ -1796,10 +1880,101 @@ paths:
           $ref: '#/definitions/api.JobFunction'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a job function.
       tags:
-      - update
+      - jobfunctions
+  /migrationwaves:
+    get:
+      description: List all migration waves.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.MigrationWave'
+            type: array
+      summary: List all migration waves.
+      tags:
+      - migrationwaves
+    post:
+      consumes:
+      - application/json
+      description: Create a migration wave.
+      parameters:
+      - description: Migration Wave data
+        in: body
+        name: migrationwave
+        required: true
+        schema:
+          $ref: '#/definitions/api.MigrationWave'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.MigrationWave'
+      summary: Create a migration wave.
+      tags:
+      - migrationwaves
+  /migrationwaves/{id}:
+    delete:
+      description: Delete a migration wave.
+      parameters:
+      - description: MigrationWave id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a migration wave.
+      tags:
+      - migrationwaves
+    get:
+      description: Get a migration wave by ID.
+      parameters:
+      - description: Migration Wave ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MigrationWave'
+      summary: Get aa migration wave by ID.
+      tags:
+      - migrationwaves
+    put:
+      consumes:
+      - application/json
+      description: Update a migration wave.
+      parameters:
+      - description: MigrationWave id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: MigrationWave data
+        in: body
+        name: migrationWave
+        required: true
+        schema:
+          $ref: '#/definitions/api.MigrationWave'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a migration wave.
+      tags:
+      - migrationwaves
   /proxies:
     get:
       description: List all proxies.
@@ -1814,7 +1989,7 @@ paths:
             type: array
       summary: List all proxies.
       tags:
-      - get
+      - proxies
     post:
       consumes:
       - application/json
@@ -1835,7 +2010,7 @@ paths:
             $ref: '#/definitions/api.Proxy'
       summary: Create an proxy.
       tags:
-      - create
+      - proxies
   /proxies/{id}:
     delete:
       description: Delete an proxy.
@@ -1847,10 +2022,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete an proxy.
       tags:
-      - delete
+      - proxies
     get:
       description: Get an proxy by ID.
       parameters:
@@ -1868,7 +2043,7 @@ paths:
             $ref: '#/definitions/api.Proxy'
       summary: Get an proxy by ID.
       tags:
-      - get
+      - proxies
     put:
       consumes:
       - application/json
@@ -1887,10 +2062,10 @@ paths:
           $ref: '#/definitions/api.Proxy'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update an proxy.
       tags:
-      - update
+      - proxies
   /reviews:
     get:
       description: List all reviews.
@@ -1905,7 +2080,7 @@ paths:
             type: array
       summary: List all reviews.
       tags:
-      - get
+      - reviews
     post:
       consumes:
       - application/json
@@ -1926,7 +2101,7 @@ paths:
             $ref: '#/definitions/api.Review'
       summary: Create a review.
       tags:
-      - create
+      - reviews
   /reviews/{id}:
     delete:
       description: Delete a review.
@@ -1938,10 +2113,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a review.
       tags:
-      - delete
+      - reviews
     get:
       description: Get a review by ID.
       parameters:
@@ -1961,7 +2136,7 @@ paths:
             type: array
       summary: Get a review by ID.
       tags:
-      - get
+      - reviews
     put:
       consumes:
       - application/json
@@ -1980,10 +2155,10 @@ paths:
           $ref: '#/definitions/api.Review'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a review.
       tags:
-      - update
+      - reviews
   /reviews/copy:
     post:
       consumes:
@@ -1998,10 +2173,10 @@ paths:
           $ref: '#/definitions/api.CopyRequest'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Copy a review from one application to others.
       tags:
-      - copy
+      - reviews
   /rulebundles:
     get:
       description: List all bindings.
@@ -2016,7 +2191,7 @@ paths:
             type: array
       summary: List all bindings.
       tags:
-      - get
+      - rulebundles
     post:
       consumes:
       - application/json
@@ -2037,7 +2212,7 @@ paths:
             $ref: '#/definitions/api.RuleBundle'
       summary: Create a bundle.
       tags:
-      - create
+      - rulebundles
   /rulebundles/{id}:
     delete:
       description: Delete a bundle.
@@ -2049,10 +2224,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a bundle.
       tags:
-      - delete
+      - rulebundles
     get:
       description: Get a RuleBundle by ID.
       parameters:
@@ -2070,7 +2245,7 @@ paths:
             $ref: '#/definitions/api.RuleBundle'
       summary: Get a RuleBundle by ID.
       tags:
-      - get
+      - rulebundles
     put:
       consumes:
       - application/json
@@ -2089,10 +2264,10 @@ paths:
           $ref: '#/definitions/api.RuleBundle'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a bundle.
       tags:
-      - update
+      - rulebundles
   /schema:
     get:
       description: Get the API schema.
@@ -2105,7 +2280,7 @@ paths:
             $ref: '#/definitions/api.Schema'
       summary: Get the API schema.
       tags:
-      - get
+      - schema
   /settings:
     get:
       description: List all settings.
@@ -2120,8 +2295,7 @@ paths:
             type: array
       summary: List all settings.
       tags:
-      - list
-      - setting
+      - settings
     post:
       consumes:
       - application/json
@@ -2142,8 +2316,7 @@ paths:
             $ref: '#/definitions/api.Setting'
       summary: Create a setting.
       tags:
-      - create
-      - setting
+      - settings
   /settings/{key}:
     delete:
       description: Delete a setting.
@@ -2155,11 +2328,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a setting.
       tags:
-      - delete
-      - setting
+      - settings
     get:
       description: Get a setting by its key.
       parameters:
@@ -2177,8 +2349,7 @@ paths:
             $ref: '#/definitions/api.Setting'
       summary: Get a setting by its key.
       tags:
-      - get
-      - setting
+      - settings
     post:
       consumes:
       - application/json
@@ -2192,11 +2363,10 @@ paths:
           $ref: '#/definitions/api.Setting'
       responses:
         "201":
-          description: ""
+          description: Created
       summary: Create a setting.
       tags:
-      - create
-      - setting
+      - settings
     put:
       consumes:
       - application/json
@@ -2211,11 +2381,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a setting.
       tags:
-      - update
-      - setting
+      - settings
   /stakeholdergroups:
     get:
       description: List all stakeholder groups.
@@ -2230,7 +2399,7 @@ paths:
             type: array
       summary: List all stakeholder groups.
       tags:
-      - get
+      - stakeholdergroups
     post:
       consumes:
       - application/json
@@ -2251,7 +2420,7 @@ paths:
             $ref: '#/definitions/api.StakeholderGroup'
       summary: Create a stakeholder group.
       tags:
-      - create
+      - stakeholdergroups
   /stakeholdergroups/{id}:
     delete:
       description: Delete a stakeholder group.
@@ -2263,10 +2432,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a stakeholder group.
       tags:
-      - delete
+      - stakeholdergroups
     get:
       description: Get a stakeholder group by ID.
       parameters:
@@ -2284,7 +2453,7 @@ paths:
             $ref: '#/definitions/api.StakeholderGroup'
       summary: Get a stakeholder group by ID.
       tags:
-      - get
+      - stakeholdergroups
     put:
       consumes:
       - application/json
@@ -2303,10 +2472,10 @@ paths:
           $ref: '#/definitions/api.StakeholderGroup'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a stakeholder group.
       tags:
-      - update
+      - stakeholdergroups
   /stakeholders:
     get:
       description: List all stakeholders.
@@ -2321,7 +2490,7 @@ paths:
             type: array
       summary: List all stakeholders.
       tags:
-      - get
+      - stakeholders
     post:
       consumes:
       - application/json
@@ -2342,7 +2511,7 @@ paths:
             $ref: '#/definitions/api.Stakeholder'
       summary: Create a stakeholder.
       tags:
-      - create
+      - stakeholders
   /stakeholders/{id}:
     delete:
       description: Delete a stakeholder.
@@ -2354,10 +2523,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a stakeholder.
       tags:
-      - delete
+      - stakeholders
     get:
       description: Get a stakeholder by ID.
       parameters:
@@ -2375,7 +2544,7 @@ paths:
             $ref: '#/definitions/api.Stakeholder'
       summary: Get a stakeholder by ID.
       tags:
-      - get
+      - stakeholders
     put:
       consumes:
       - application/json
@@ -2394,10 +2563,10 @@ paths:
           $ref: '#/definitions/api.Stakeholder'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a stakeholder.
       tags:
-      - update
+      - stakeholders
   /tagcategories:
     get:
       description: List all tag categories.
@@ -2412,7 +2581,7 @@ paths:
             type: array
       summary: List all tag categories.
       tags:
-      - get
+      - tagcategories
     post:
       consumes:
       - application/json
@@ -2433,7 +2602,7 @@ paths:
             $ref: '#/definitions/api.TagCategory'
       summary: Create a tag category.
       tags:
-      - create
+      - tagcategories
   /tagcategories/{id}:
     delete:
       description: Delete a tag category.
@@ -2445,10 +2614,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a tag category.
       tags:
-      - delete
+      - tagcategories
     get:
       description: Get a tag category by ID.
       parameters:
@@ -2466,7 +2635,7 @@ paths:
             $ref: '#/definitions/api.TagCategory'
       summary: Get a tag category by ID.
       tags:
-      - get
+      - tagcategories
     put:
       consumes:
       - application/json
@@ -2485,10 +2654,10 @@ paths:
           $ref: '#/definitions/api.TagCategory'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a tag category.
       tags:
-      - update
+      - tagcategories
   /tags:
     get:
       description: List all tags.
@@ -2503,7 +2672,7 @@ paths:
             type: array
       summary: List all tags.
       tags:
-      - get
+      - tags
     post:
       consumes:
       - application/json
@@ -2524,7 +2693,7 @@ paths:
             $ref: '#/definitions/api.Tag'
       summary: Create a tag.
       tags:
-      - create
+      - tags
   /tags/{id}:
     delete:
       description: Delete a tag.
@@ -2536,10 +2705,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a tag.
       tags:
-      - delete
+      - tags
     get:
       description: Get a tag by ID.
       parameters:
@@ -2557,7 +2726,7 @@ paths:
             $ref: '#/definitions/api.Tag'
       summary: Get a tag by ID.
       tags:
-      - get
+      - tags
     put:
       consumes:
       - application/json
@@ -2576,10 +2745,10 @@ paths:
           $ref: '#/definitions/api.Tag'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a tag.
       tags:
-      - update
+      - tags
   /taskgroups:
     get:
       description: List all task groups.
@@ -2594,7 +2763,7 @@ paths:
             type: array
       summary: List all task groups.
       tags:
-      - get
+      - taskgroups
     post:
       consumes:
       - application/json
@@ -2615,7 +2784,7 @@ paths:
             $ref: '#/definitions/api.TaskGroup'
       summary: Create a task group.
       tags:
-      - create
+      - taskgroups
   /taskgroups/{id}:
     delete:
       description: Delete a task group.
@@ -2627,10 +2796,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a task group.
       tags:
-      - delete
+      - taskgroups
     get:
       description: Get a task group by ID.
       parameters:
@@ -2648,7 +2817,7 @@ paths:
             $ref: '#/definitions/api.TaskGroup'
       summary: Get a task group by ID.
       tags:
-      - get
+      - taskgroups
     put:
       consumes:
       - application/json
@@ -2667,10 +2836,10 @@ paths:
           $ref: '#/definitions/api.TaskGroup'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a task group.
       tags:
-      - update
+      - taskgroups
   /taskgroups/{id}/bucket/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -2684,10 +2853,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete bucket content by ID and path.
       tags:
-      - delete
+      - taskgroups
     get:
       description: |-
         Get bucket content by ID and path.
@@ -2707,10 +2876,10 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: ""
+          description: OK
       summary: Get bucket content by ID and path.
       tags:
-      - get
+      - taskgroups
     post:
       description: Upload bucket content by ID and path (handles both [post] and [put]
         requests).
@@ -2724,10 +2893,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Upload bucket content by ID and path.
       tags:
-      - post
+      - taskgroups
   /taskgroups/{id}/submit:
     put:
       consumes:
@@ -2746,10 +2915,10 @@ paths:
           $ref: '#/definitions/api.TaskGroup'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Submit a task group.
       tags:
-      - update
+      - taskgroups
   /tasks:
     get:
       description: List all tasks.
@@ -2764,7 +2933,7 @@ paths:
             type: array
       summary: List all tasks.
       tags:
-      - get
+      - tasks
     post:
       consumes:
       - application/json
@@ -2785,7 +2954,7 @@ paths:
             $ref: '#/definitions/api.Task'
       summary: Create a task.
       tags:
-      - create
+      - tasks
   /tasks/{id}:
     delete:
       description: Delete a task.
@@ -2797,10 +2966,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a task.
       tags:
-      - delete
+      - tasks
     get:
       description: Get a task by ID.
       parameters:
@@ -2818,7 +2987,7 @@ paths:
             $ref: '#/definitions/api.Task'
       summary: Get a task by ID.
       tags:
-      - get
+      - tasks
     put:
       consumes:
       - application/json
@@ -2837,10 +3006,10 @@ paths:
           $ref: '#/definitions/api.Task'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a task.
       tags:
-      - update
+      - tasks
   /tasks/{id}/bucket/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -2854,10 +3023,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete bucket content by ID and path.
       tags:
-      - delete
+      - tasks
     get:
       description: |-
         Get bucket content by ID and path.
@@ -2877,10 +3046,10 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: ""
+          description: OK
       summary: Get bucket content by ID and path.
       tags:
-      - get
+      - tasks
     post:
       description: Upload bucket content by ID and path (handles both [post] and [put]
         requests).
@@ -2894,10 +3063,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Upload bucket content by ID and path.
       tags:
-      - post
+      - tasks
   /tasks/{id}/cancel:
     put:
       description: Cancel a task.
@@ -2909,10 +3078,10 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Cancel a task.
       tags:
-      - delete
+      - tasks
   /tasks/{id}/report:
     delete:
       consumes:
@@ -2928,10 +3097,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a task report.
       tags:
-      - update
+      - tasks
     post:
       consumes:
       - application/json
@@ -2957,7 +3126,7 @@ paths:
             $ref: '#/definitions/api.TaskReport'
       summary: Create a task report.
       tags:
-      - update
+      - tasks
     put:
       consumes:
       - application/json
@@ -2983,7 +3152,7 @@ paths:
             $ref: '#/definitions/api.TaskReport'
       summary: Update a task report.
       tags:
-      - update
+      - tasks
   /tasks/{id}/submit:
     put:
       consumes:
@@ -3002,10 +3171,10 @@ paths:
           $ref: '#/definitions/api.Task'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Submit a task.
       tags:
-      - update
+      - tasks
   /tickets:
     get:
       description: List all tickets.
@@ -3020,7 +3189,7 @@ paths:
             type: array
       summary: List all tickets.
       tags:
-      - get
+      - tickets
     post:
       consumes:
       - application/json
@@ -3041,7 +3210,7 @@ paths:
             $ref: '#/definitions/api.Ticket'
       summary: Create a ticket.
       tags:
-      - create
+      - tickets
   /tickets/{id}:
     delete:
       description: Delete a ticket.
@@ -3053,10 +3222,10 @@ paths:
         type: integer
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a ticket.
       tags:
-      - delete
+      - tickets
     get:
       description: Get a ticket by ID.
       parameters:
@@ -3074,7 +3243,7 @@ paths:
             $ref: '#/definitions/api.Ticket'
       summary: Get a ticket by ID.
       tags:
-      - get
+      - tickets
   /trackers:
     get:
       description: List all trackers.
@@ -3089,7 +3258,7 @@ paths:
             type: array
       summary: List all trackers.
       tags:
-      - get
+      - trackers
     post:
       consumes:
       - application/json
@@ -3110,7 +3279,7 @@ paths:
             $ref: '#/definitions/api.Tracker'
       summary: Create a tracker.
       tags:
-      - create
+      - trackers
   /trackers/{id}:
     delete:
       description: Delete a tracker.
@@ -3122,10 +3291,10 @@ paths:
         type: integer
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Delete a tracker.
       tags:
-      - delete
+      - trackers
     get:
       description: Get a tracker by ID.
       parameters:
@@ -3143,7 +3312,7 @@ paths:
             $ref: '#/definitions/api.Tracker'
       summary: Get a tracker by ID.
       tags:
-      - get
+      - trackers
     put:
       consumes:
       - application/json
@@ -3162,8 +3331,8 @@ paths:
           $ref: '#/definitions/api.Tracker'
       responses:
         "204":
-          description: ""
+          description: No Content
       summary: Update a tracker.
       tags:
-      - update
+      - trackers
 swagger: "2.0"

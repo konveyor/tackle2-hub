@@ -36,7 +36,7 @@ func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a tag category by ID.
 // @description Get a tag category by ID.
-// @tags get
+// @tags tagcategories
 // @produce json
 // @success 200 {object} api.TagCategory
 // @router /tagcategories/{id} [get]
@@ -59,7 +59,7 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tag categories.
 // @description List all tag categories.
-// @tags get
+// @tags tagcategories
 // @produce json
 // @success 200 {object} []api.TagCategory
 // @router /tagcategories [get]
@@ -84,7 +84,7 @@ func (h TagCategoryHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a tag category.
 // @description Create a tag category.
-// @tags create
+// @tags tagcategories
 // @accept json
 // @produce json
 // @success 201 {object} api.TagCategory
@@ -112,7 +112,7 @@ func (h TagCategoryHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a tag category.
 // @description Delete a tag category.
-// @tags delete
+// @tags tagcategories
 // @success 204
 // @router /tagcategories/{id} [delete]
 // @param id path string true "Tag Category ID"
@@ -136,7 +136,7 @@ func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a tag category.
 // @description Update a tag category.
-// @tags update
+// @tags tagcategories
 // @accept json
 // @success 204
 // @router /tagcategories/{id} [put]

@@ -40,7 +40,7 @@ func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Generate an application dependency graph arranged in topological order.
 // @description Graph generates an application dependency graph arranged in topological order.
-// @tags post
+// @tags adoptionplans
 // @produce json
 // @success 200 {object} api.DependencyGraph
 // @router /adoptionplans [post]

@@ -41,7 +41,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get an identity by ID.
 // @description Get an identity by ID.
-// @tags get
+// @tags identities
 // @produce json
 // @success 200 {object} Identity
 // @router /identities/{id} [get]
@@ -71,7 +71,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all identities.
 // @description List all identities.
-// @tags get
+// @tags identities
 // @produce json
 // @success 200 {object} []Identity
 // @router /identities [get]
@@ -115,7 +115,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create an identity.
 // @description Create an identity.
-// @tags create
+// @tags identities
 // @accept json
 // @produce json
 // @success 201 {object} Identity
@@ -149,7 +149,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete an identity.
 // @description Delete an identity.
-// @tags delete
+// @tags identities
 // @success 204
 // @router /identities/{id} [delete]
 // @param id path string true "Identity ID"
@@ -173,7 +173,7 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update an identity.
 // @description Update an identity.
-// @tags update
+// @tags identities
 // @accept json
 // @success 204
 // @router /identities/{id} [put]

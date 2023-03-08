@@ -35,7 +35,7 @@ func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a dependency by ID.
 // @description Get a dependency by ID.
-// @tags get
+// @tags dependencies
 // @produce json
 // @success 200 {object} api.Dependency
 // @router /dependencies/{id} [get]
@@ -59,7 +59,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all dependencies.
 // @description List all dependencies.
-// @tags list
+// @tags dependencies
 // @produce json
 // @success 200 {object} []api.Dependency
 // @router /dependencies [get]
@@ -95,7 +95,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a dependency.
 // @description Create a dependency.
-// @tags create
+// @tags dependencies
 // @accept json
 // @produce json
 // @success 201 {object} api.Dependency
@@ -122,7 +122,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a dependency.
 // @description Delete a dependency.
-// @tags delete
+// @tags dependencies
 // @accept json
 // @success 204
 // @router /dependencies/{id} [delete]

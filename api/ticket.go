@@ -39,7 +39,7 @@ func (h TicketHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a ticket by ID.
 // @description Get a ticket by ID.
-// @tags get
+// @tags tickets
 // @produce json
 // @success 200 {object} api.Ticket
 // @router /tickets/{id} [get]
@@ -62,7 +62,7 @@ func (h TicketHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tickets.
 // @description List all tickets.
-// @tags get
+// @tags tickets
 // @produce json
 // @success 200 {object} []api.Ticket
 // @router /tickets [get]
@@ -95,7 +95,7 @@ func (h TicketHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a ticket.
 // @description Create a ticket.
-// @tags create
+// @tags tickets
 // @accept json
 // @produce json
 // @success 201 {object} api.Ticket
@@ -123,7 +123,7 @@ func (h TicketHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a ticket.
 // @description Delete a ticket.
-// @tags delete
+// @tags tickets
 // @success 204
 // @router /tickets/{id} [delete]
 // @param id path int true "Ticket id"

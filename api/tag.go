@@ -36,7 +36,7 @@ func (h TagHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a tag by ID.
 // @description Get a tag by ID.
-// @tags get
+// @tags tags
 // @produce json
 // @success 200 {object} api.Tag
 // @router /tags/{id} [get]
@@ -59,7 +59,7 @@ func (h TagHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tags.
 // @description List all tags.
-// @tags get
+// @tags tags
 // @produce json
 // @success 200 {object} []api.Tag
 // @router /tags [get]
@@ -84,7 +84,7 @@ func (h TagHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a tag.
 // @description Create a tag.
-// @tags create
+// @tags tags
 // @accept json
 // @produce json
 // @success 201 {object} api.Tag
@@ -112,7 +112,7 @@ func (h TagHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a tag.
 // @description Delete a tag.
-// @tags delete
+// @tags tags
 // @success 204
 // @router /tags/{id} [delete]
 // @param id path string true "Tag ID"
@@ -136,7 +136,7 @@ func (h TagHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a tag.
 // @description Update a tag.
-// @tags update
+// @tags tags
 // @accept json
 // @success 204
 // @router /tags/{id} [put]

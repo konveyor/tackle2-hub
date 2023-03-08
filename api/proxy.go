@@ -39,7 +39,7 @@ func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get an proxy by ID.
 // @description Get an proxy by ID.
-// @tags get
+// @tags proxies
 // @produce json
 // @success 200 {object} Proxy
 // @router /proxies/{id} [get]
@@ -62,7 +62,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all proxies.
 // @description List all proxies.
-// @tags get
+// @tags proxies
 // @produce json
 // @success 200 {object} []Proxy
 // @router /proxies [get]
@@ -91,7 +91,7 @@ func (h ProxyHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create an proxy.
 // @description Create an proxy.
-// @tags create
+// @tags proxies
 // @accept json
 // @produce json
 // @success 201 {object} Proxy
@@ -118,7 +118,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete an proxy.
 // @description Delete an proxy.
-// @tags delete
+// @tags proxies
 // @success 204
 // @router /proxies/{id} [delete]
 // @param id path string true "Proxy ID"
@@ -142,7 +142,7 @@ func (h ProxyHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update an proxy.
 // @description Update an proxy.
-// @tags update
+// @tags proxies
 // @accept json
 // @success 204
 // @router /proxies/{id} [put]

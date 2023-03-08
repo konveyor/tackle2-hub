@@ -28,7 +28,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 // Login godoc
 // @summary Login and obtain a bearer token.
 // @description Login and obtain a bearer token.
-// @tags post
+// @tags auth
 // @produce json
 // @success 201 {object} api.Login
 // @router /auth/login [post]

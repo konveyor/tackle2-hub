@@ -36,7 +36,7 @@ func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a job function by ID.
 // @description Get a job function by ID.
-// @tags get
+// @tags jobfunctions
 // @produce json
 // @success 200 {object} []api.JobFunction
 // @router /jobfunctions/{id} [get]
@@ -59,7 +59,7 @@ func (h JobFunctionHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all job functions.
 // @description List all job functions.
-// @tags get
+// @tags jobfunctions
 // @produce json
 // @success 200 {object} []api.JobFunction
 // @router /jobfunctions [get]
@@ -84,7 +84,7 @@ func (h JobFunctionHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a job function.
 // @description Create a job function.
-// @tags create
+// @tags jobfunctions
 // @accept json
 // @produce json
 // @success 200 {object} api.JobFunction
@@ -112,7 +112,7 @@ func (h JobFunctionHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a job function.
 // @description Delete a job function.
-// @tags delete
+// @tags jobfunctions
 // @success 204
 // @router /jobfunctions/{id} [delete]
 // @param id path string true "Job Function ID"
@@ -136,7 +136,7 @@ func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a job function.
 // @description Update a job function.
-// @tags update
+// @tags jobfunctions
 // @accept json
 // @success 204
 // @router /jobfunctions/{id} [put]

@@ -35,7 +35,7 @@ func (h AddonHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get an addon by name.
 // @description Get an addon by name.
-// @tags get
+// @tags addons
 // @produce json
 // @success 200 {object} api.Addon
 // @router /addons/{name} [get]
@@ -68,7 +68,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all addons.
 // @description List all addons.
-// @tags get
+// @tags addons
 // @produce json
 // @success 200 {object} []api.Addon
 // @router /addons [get]

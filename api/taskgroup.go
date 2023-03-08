@@ -51,7 +51,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a task group by ID.
 // @description Get a task group by ID.
-// @tags get
+// @tags taskgroups
 // @produce json
 // @success 200 {object} api.TaskGroup
 // @router /taskgroups/{id} [get]
@@ -74,7 +74,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all task groups.
 // @description List all task groups.
-// @tags get
+// @tags taskgroups
 // @produce json
 // @success 200 {object} []api.TaskGroup
 // @router /taskgroups [get]
@@ -99,7 +99,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a task group.
 // @description Create a task group.
-// @tags create
+// @tags taskgroups
 // @accept json
 // @produce json
 // @success 201 {object} api.TaskGroup
@@ -148,7 +148,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // Update godoc
 // @summary Update a task group.
 // @description Update a task group.
-// @tags update
+// @tags taskgroups
 // @accept json
 // @success 204
 // @router /taskgroups/{id} [put]
@@ -203,7 +203,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a task group.
 // @description Delete a task group.
-// @tags delete
+// @tags taskgroups
 // @success 204
 // @router /taskgroups/{id} [delete]
 // @param id path string true "TaskGroup ID"
@@ -247,7 +247,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // Submit godoc
 // @summary Submit a task group.
 // @description Submit a task group.
-// @tags update
+// @tags taskgroups
 // @accept json
 // @success 204
 // @router /taskgroups/{id}/submit [put]
@@ -281,7 +281,7 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
 // @description ?filter=glob supports directory content filtering.
-// @tags get
+// @tags taskgroups
 // @produce octet-stream
 // @success 200
 // @router /taskgroups/{id}/bucket/{wildcard} [get]
@@ -306,7 +306,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 // BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
-// @tags post
+// @tags taskgroups
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [post]
@@ -330,7 +330,7 @@ func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 // BucketDelete godoc
 // @summary Delete bucket content by ID and path.
 // @description Delete bucket content by ID and path.
-// @tags delete
+// @tags taskgroups
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [delete]

@@ -23,7 +23,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "buckets"
                 ],
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
@@ -37,7 +37,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -49,7 +49,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "addons"
                 ],
                 "summary": "List all addons.",
                 "responses": {
@@ -72,7 +72,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "addons"
                 ],
                 "summary": "Get an addon by name.",
                 "parameters": [
@@ -101,7 +101,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "adoptionplans"
                 ],
                 "summary": "Generate an application dependency graph arranged in topological order.",
                 "parameters": [
@@ -130,7 +130,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "applications"
                 ],
                 "summary": "List all applications.",
                 "responses": {
@@ -154,7 +154,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "applications"
                 ],
                 "summary": "Create an application.",
                 "parameters": [
@@ -180,7 +180,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete applications.",
                 "tags": [
-                    "delete"
+                    "applications"
                 ],
                 "summary": "Delete a applications.",
                 "parameters": [
@@ -199,7 +199,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -211,7 +211,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "applications"
                 ],
                 "summary": "Get an application by ID.",
                 "parameters": [
@@ -238,7 +238,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "applications"
                 ],
                 "summary": "Update an application.",
                 "parameters": [
@@ -261,14 +261,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete an application.",
                 "tags": [
-                    "delete"
+                    "applications"
                 ],
                 "summary": "Delete an application.",
                 "parameters": [
@@ -282,7 +282,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -294,7 +294,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "applications"
                 ],
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
@@ -314,7 +314,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -324,7 +324,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "applications"
                 ],
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
@@ -338,7 +338,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -348,7 +348,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "applications"
                 ],
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
@@ -362,7 +362,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -374,7 +374,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "applications"
                 ],
                 "summary": "List facts.",
                 "parameters": [
@@ -409,7 +409,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update create"
+                    "applications"
                 ],
                 "summary": "Update (or create) a fact.",
                 "parameters": [
@@ -439,7 +439,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -452,7 +452,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "applications"
                 ],
                 "summary": "Create a fact.",
                 "parameters": [
@@ -482,14 +482,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": ""
+                        "description": "Created"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a fact.",
                 "tags": [
-                    "delete"
+                    "applications"
                 ],
                 "summary": "Delete a fact.",
                 "parameters": [
@@ -510,7 +510,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -522,7 +522,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "applications"
                 ],
                 "summary": "Get fact by name.",
                 "parameters": [
@@ -551,6 +551,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/stakeholders": {
+            "patch": {
+                "description": "Update the owner and contributors of an Application.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Update the owner and contributors of an Application.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Application stakeholders",
+                        "name": "application",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Stakeholders"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/applications/{id}/tags": {
             "patch": {
                 "description": "Replace tag associations.",
@@ -558,7 +590,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "applications"
                 ],
                 "summary": "Replace tag associations.",
                 "parameters": [
@@ -590,7 +622,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -602,7 +634,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "applications"
                 ],
                 "summary": "List tag references.",
                 "parameters": [
@@ -631,7 +663,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Ensure tag is not associated with the application.",
                 "tags": [
-                    "delete"
+                    "applications"
                 ],
                 "summary": "Delete tag association.",
                 "parameters": [
@@ -652,7 +684,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -664,7 +696,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "auth"
                 ],
                 "summary": "Login and obtain a bearer token.",
                 "responses": {
@@ -684,7 +716,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "buckets"
                 ],
                 "summary": "List all buckets.",
                 "responses": {
@@ -708,7 +740,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "buckets"
                 ],
                 "summary": "Create a bucket.",
                 "parameters": [
@@ -737,7 +769,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "buckets"
                 ],
                 "summary": "Get a bucket by ID.",
                 "parameters": [
@@ -761,7 +793,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete a bucket.",
                 "tags": [
-                    "delete"
+                    "buckets"
                 ],
                 "summary": "Delete a bucket.",
                 "parameters": [
@@ -775,7 +807,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -787,7 +819,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "buckets"
                 ],
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
@@ -807,7 +839,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -817,7 +849,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "buckets"
                 ],
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
@@ -831,7 +863,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -843,7 +875,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "businessservices"
                 ],
                 "summary": "List all business services.",
                 "responses": {
@@ -864,7 +896,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "businessservices"
                 ],
                 "summary": "Create a business service.",
                 "parameters": [
@@ -895,7 +927,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "businessservices"
                 ],
                 "summary": "Get a business service by ID.",
                 "parameters": [
@@ -922,7 +954,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "businessservices"
                 ],
                 "summary": "Update a business service.",
                 "parameters": [
@@ -945,14 +977,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a business service.",
                 "tags": [
-                    "delete"
+                    "businessservices"
                 ],
                 "summary": "Delete a business service.",
                 "parameters": [
@@ -966,7 +998,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -978,12 +1010,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "cache"
                 ],
                 "summary": "Delete a directory within the cache.",
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -995,7 +1027,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "cache"
                 ],
                 "summary": "Get the cache.",
                 "parameters": [
@@ -1024,7 +1056,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "dependencies"
                 ],
                 "summary": "List all dependencies.",
                 "responses": {
@@ -1048,7 +1080,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "dependencies"
                 ],
                 "summary": "Create a dependency.",
                 "parameters": [
@@ -1079,7 +1111,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "dependencies"
                 ],
                 "summary": "Get a dependency by ID.",
                 "parameters": [
@@ -1106,7 +1138,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "dependencies"
                 ],
                 "summary": "Delete a dependency.",
                 "parameters": [
@@ -1120,7 +1152,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1132,7 +1164,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "file"
                 ],
                 "summary": "List all files.",
                 "responses": {
@@ -1156,7 +1188,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "file"
                 ],
                 "summary": "Create a file.",
                 "parameters": [
@@ -1185,7 +1217,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "file"
                 ],
                 "summary": "Get a file by ID.",
                 "parameters": [
@@ -1209,7 +1241,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete a file.",
                 "tags": [
-                    "delete"
+                    "file"
                 ],
                 "summary": "Delete a file.",
                 "parameters": [
@@ -1223,7 +1255,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1235,7 +1267,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "identities"
                 ],
                 "summary": "List all identities.",
                 "responses": {
@@ -1259,7 +1291,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "identities"
                 ],
                 "summary": "Create an identity.",
                 "parameters": [
@@ -1290,7 +1322,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "identities"
                 ],
                 "summary": "Get an identity by ID.",
                 "parameters": [
@@ -1317,7 +1349,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "identities"
                 ],
                 "summary": "Update an identity.",
                 "parameters": [
@@ -1340,14 +1372,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete an identity.",
                 "tags": [
-                    "delete"
+                    "identities"
                 ],
                 "summary": "Delete an identity.",
                 "parameters": [
@@ -1361,7 +1393,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1373,7 +1405,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "imports"
                 ],
                 "summary": "List imports.",
                 "responses": {
@@ -1396,7 +1428,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "imports"
                 ],
                 "summary": "Get an import by ID.",
                 "parameters": [
@@ -1420,7 +1452,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete an import. This leaves any created application or dependency.",
                 "tags": [
-                    "delete"
+                    "imports"
                 ],
                 "summary": "Delete an import.",
                 "parameters": [
@@ -1434,7 +1466,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1446,7 +1478,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list"
+                    "imports"
                 ],
                 "summary": "List import summaries.",
                 "responses": {
@@ -1469,7 +1501,7 @@ const docTemplate = `{
                     "text/csv"
                 ],
                 "tags": [
-                    "export"
+                    "imports"
                 ],
                 "summary": "Export the source CSV for a particular import summary.",
                 "parameters": [
@@ -1498,7 +1530,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "imports"
                 ],
                 "summary": "Upload a CSV containing applications and dependencies to import.",
                 "responses": {
@@ -1518,7 +1550,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "imports"
                 ],
                 "summary": "Get an import summary by ID.",
                 "parameters": [
@@ -1542,7 +1574,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete an import summary and associated import records.",
                 "tags": [
-                    "delete"
+                    "imports"
                 ],
                 "summary": "Delete an import summary and associated import records.",
                 "parameters": [
@@ -1556,7 +1588,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1568,7 +1600,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "jobfunctions"
                 ],
                 "summary": "List all job functions.",
                 "responses": {
@@ -1592,7 +1624,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "jobfunctions"
                 ],
                 "summary": "Create a job function.",
                 "parameters": [
@@ -1623,7 +1655,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "jobfunctions"
                 ],
                 "summary": "Get a job function by ID.",
                 "parameters": [
@@ -1653,7 +1685,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "jobfunctions"
                 ],
                 "summary": "Update a job function.",
                 "parameters": [
@@ -1676,14 +1708,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a job function.",
                 "tags": [
-                    "delete"
+                    "jobfunctions"
                 ],
                 "summary": "Delete a job function.",
                 "parameters": [
@@ -1697,7 +1729,145 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/migrationwaves": {
+            "get": {
+                "description": "List all migration waves.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "migrationwaves"
+                ],
+                "summary": "List all migration waves.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.MigrationWave"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a migration wave.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "migrationwaves"
+                ],
+                "summary": "Create a migration wave.",
+                "parameters": [
+                    {
+                        "description": "Migration Wave data",
+                        "name": "migrationwave",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.MigrationWave"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.MigrationWave"
+                        }
+                    }
+                }
+            }
+        },
+        "/migrationwaves/{id}": {
+            "get": {
+                "description": "Get a migration wave by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "migrationwaves"
+                ],
+                "summary": "Get aa migration wave by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Migration Wave ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MigrationWave"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a migration wave.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "migrationwaves"
+                ],
+                "summary": "Update a migration wave.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MigrationWave id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MigrationWave data",
+                        "name": "migrationWave",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.MigrationWave"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a migration wave.",
+                "tags": [
+                    "migrationwaves"
+                ],
+                "summary": "Delete a migration wave.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MigrationWave id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -1709,7 +1879,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "proxies"
                 ],
                 "summary": "List all proxies.",
                 "responses": {
@@ -1733,7 +1903,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "proxies"
                 ],
                 "summary": "Create an proxy.",
                 "parameters": [
@@ -1764,7 +1934,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "proxies"
                 ],
                 "summary": "Get an proxy by ID.",
                 "parameters": [
@@ -1791,7 +1961,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "proxies"
                 ],
                 "summary": "Update an proxy.",
                 "parameters": [
@@ -1814,14 +1984,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete an proxy.",
                 "tags": [
-                    "delete"
+                    "proxies"
                 ],
                 "summary": "Delete an proxy.",
                 "parameters": [
@@ -1835,7 +2005,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1847,7 +2017,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "reviews"
                 ],
                 "summary": "List all reviews.",
                 "responses": {
@@ -1871,7 +2041,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "reviews"
                 ],
                 "summary": "Create a review.",
                 "parameters": [
@@ -1902,7 +2072,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "copy"
+                    "reviews"
                 ],
                 "summary": "Copy a review from one application to others.",
                 "parameters": [
@@ -1918,7 +2088,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1930,7 +2100,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "reviews"
                 ],
                 "summary": "Get a review by ID.",
                 "parameters": [
@@ -1960,7 +2130,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "reviews"
                 ],
                 "summary": "Update a review.",
                 "parameters": [
@@ -1983,14 +2153,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a review.",
                 "tags": [
-                    "delete"
+                    "reviews"
                 ],
                 "summary": "Delete a review.",
                 "parameters": [
@@ -2004,7 +2174,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2016,7 +2186,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "rulebundles"
                 ],
                 "summary": "List all bindings.",
                 "responses": {
@@ -2040,7 +2210,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "rulebundles"
                 ],
                 "summary": "Create a bundle.",
                 "parameters": [
@@ -2071,7 +2241,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "rulebundles"
                 ],
                 "summary": "Get a RuleBundle by ID.",
                 "parameters": [
@@ -2098,7 +2268,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "rulebundles"
                 ],
                 "summary": "Update a bundle.",
                 "parameters": [
@@ -2121,14 +2291,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a bundle.",
                 "tags": [
-                    "delete"
+                    "rulebundles"
                 ],
                 "summary": "Delete a bundle.",
                 "parameters": [
@@ -2142,7 +2312,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2154,7 +2324,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "schema"
                 ],
                 "summary": "Get the API schema.",
                 "responses": {
@@ -2174,8 +2344,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "list",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "List all settings.",
                 "responses": {
@@ -2199,8 +2368,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "Create a setting.",
                 "parameters": [
@@ -2231,8 +2399,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "Get a setting by its key.",
                 "parameters": [
@@ -2262,8 +2429,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "Update a setting.",
                 "parameters": [
@@ -2277,7 +2443,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2287,8 +2453,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "Create a setting.",
                 "parameters": [
@@ -2304,15 +2469,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": ""
+                        "description": "Created"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a setting.",
                 "tags": [
-                    "delete",
-                    "setting"
+                    "settings"
                 ],
                 "summary": "Delete a setting.",
                 "parameters": [
@@ -2326,7 +2490,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2338,7 +2502,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "stakeholdergroups"
                 ],
                 "summary": "List all stakeholder groups.",
                 "responses": {
@@ -2362,7 +2526,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "stakeholdergroups"
                 ],
                 "summary": "Create a stakeholder group.",
                 "parameters": [
@@ -2393,7 +2557,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "stakeholdergroups"
                 ],
                 "summary": "Get a stakeholder group by ID.",
                 "parameters": [
@@ -2420,7 +2584,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "stakeholdergroups"
                 ],
                 "summary": "Update a stakeholder group.",
                 "parameters": [
@@ -2443,14 +2607,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a stakeholder group.",
                 "tags": [
-                    "delete"
+                    "stakeholdergroups"
                 ],
                 "summary": "Delete a stakeholder group.",
                 "parameters": [
@@ -2464,7 +2628,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2476,7 +2640,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "stakeholders"
                 ],
                 "summary": "List all stakeholders.",
                 "responses": {
@@ -2500,7 +2664,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "stakeholders"
                 ],
                 "summary": "Create a stakeholder.",
                 "parameters": [
@@ -2531,7 +2695,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "stakeholders"
                 ],
                 "summary": "Get a stakeholder by ID.",
                 "parameters": [
@@ -2558,7 +2722,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "stakeholders"
                 ],
                 "summary": "Update a stakeholder.",
                 "parameters": [
@@ -2581,14 +2745,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a stakeholder.",
                 "tags": [
-                    "delete"
+                    "stakeholders"
                 ],
                 "summary": "Delete a stakeholder.",
                 "parameters": [
@@ -2602,7 +2766,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2614,7 +2778,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tagcategories"
                 ],
                 "summary": "List all tag categories.",
                 "responses": {
@@ -2638,7 +2802,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "tagcategories"
                 ],
                 "summary": "Create a tag category.",
                 "parameters": [
@@ -2669,7 +2833,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tagcategories"
                 ],
                 "summary": "Get a tag category by ID.",
                 "parameters": [
@@ -2696,7 +2860,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tagcategories"
                 ],
                 "summary": "Update a tag category.",
                 "parameters": [
@@ -2719,14 +2883,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a tag category.",
                 "tags": [
-                    "delete"
+                    "tagcategories"
                 ],
                 "summary": "Delete a tag category.",
                 "parameters": [
@@ -2740,7 +2904,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2752,7 +2916,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tags"
                 ],
                 "summary": "List all tags.",
                 "responses": {
@@ -2776,7 +2940,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "tags"
                 ],
                 "summary": "Create a tag.",
                 "parameters": [
@@ -2807,7 +2971,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tags"
                 ],
                 "summary": "Get a tag by ID.",
                 "parameters": [
@@ -2834,7 +2998,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tags"
                 ],
                 "summary": "Update a tag.",
                 "parameters": [
@@ -2857,14 +3021,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a tag.",
                 "tags": [
-                    "delete"
+                    "tags"
                 ],
                 "summary": "Delete a tag.",
                 "parameters": [
@@ -2878,7 +3042,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2890,7 +3054,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "taskgroups"
                 ],
                 "summary": "List all task groups.",
                 "responses": {
@@ -2914,7 +3078,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "taskgroups"
                 ],
                 "summary": "Create a task group.",
                 "parameters": [
@@ -2945,7 +3109,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "taskgroups"
                 ],
                 "summary": "Get a task group by ID.",
                 "parameters": [
@@ -2972,7 +3136,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "taskgroups"
                 ],
                 "summary": "Update a task group.",
                 "parameters": [
@@ -2995,14 +3159,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a task group.",
                 "tags": [
-                    "delete"
+                    "taskgroups"
                 ],
                 "summary": "Delete a task group.",
                 "parameters": [
@@ -3016,7 +3180,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3028,7 +3192,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "taskgroups"
                 ],
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
@@ -3048,7 +3212,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -3058,7 +3222,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "taskgroups"
                 ],
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
@@ -3072,7 +3236,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3082,7 +3246,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "taskgroups"
                 ],
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
@@ -3096,7 +3260,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3108,7 +3272,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "taskgroups"
                 ],
                 "summary": "Submit a task group.",
                 "parameters": [
@@ -3130,7 +3294,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3142,7 +3306,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tasks"
                 ],
                 "summary": "List all tasks.",
                 "responses": {
@@ -3166,7 +3330,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "tasks"
                 ],
                 "summary": "Create a task.",
                 "parameters": [
@@ -3197,7 +3361,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tasks"
                 ],
                 "summary": "Get a task by ID.",
                 "parameters": [
@@ -3224,7 +3388,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tasks"
                 ],
                 "summary": "Update a task.",
                 "parameters": [
@@ -3247,14 +3411,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a task.",
                 "tags": [
-                    "delete"
+                    "tasks"
                 ],
                 "summary": "Delete a task.",
                 "parameters": [
@@ -3268,7 +3432,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3280,7 +3444,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "get"
+                    "tasks"
                 ],
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
@@ -3300,7 +3464,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -3310,7 +3474,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "post"
+                    "tasks"
                 ],
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
@@ -3324,7 +3488,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3334,7 +3498,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "delete"
+                    "tasks"
                 ],
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
@@ -3348,7 +3512,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3357,7 +3521,7 @@ const docTemplate = `{
             "put": {
                 "description": "Cancel a task.",
                 "tags": [
-                    "delete"
+                    "tasks"
                 ],
                 "summary": "Cancel a task.",
                 "parameters": [
@@ -3371,7 +3535,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3386,7 +3550,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tasks"
                 ],
                 "summary": "Update a task report.",
                 "parameters": [
@@ -3425,7 +3589,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tasks"
                 ],
                 "summary": "Create a task report.",
                 "parameters": [
@@ -3464,7 +3628,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tasks"
                 ],
                 "summary": "Delete a task report.",
                 "parameters": [
@@ -3478,7 +3642,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3490,7 +3654,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "tasks"
                 ],
                 "summary": "Submit a task.",
                 "parameters": [
@@ -3512,7 +3676,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3524,7 +3688,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tickets"
                 ],
                 "summary": "List all tickets.",
                 "responses": {
@@ -3548,7 +3712,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "tickets"
                 ],
                 "summary": "Create a ticket.",
                 "parameters": [
@@ -3579,7 +3743,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "tickets"
                 ],
                 "summary": "Get a ticket by ID.",
                 "parameters": [
@@ -3603,7 +3767,7 @@ const docTemplate = `{
             "delete": {
                 "description": "Delete a ticket.",
                 "tags": [
-                    "delete"
+                    "tickets"
                 ],
                 "summary": "Delete a ticket.",
                 "parameters": [
@@ -3617,7 +3781,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3629,7 +3793,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "trackers"
                 ],
                 "summary": "List all trackers.",
                 "responses": {
@@ -3653,7 +3817,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "create"
+                    "trackers"
                 ],
                 "summary": "Create a tracker.",
                 "parameters": [
@@ -3684,7 +3848,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "get"
+                    "trackers"
                 ],
                 "summary": "Get a tracker by ID.",
                 "parameters": [
@@ -3711,7 +3875,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "update"
+                    "trackers"
                 ],
                 "summary": "Update a tracker.",
                 "parameters": [
@@ -3734,14 +3898,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
                 "description": "Delete a tracker.",
                 "tags": [
-                    "delete"
+                    "trackers"
                 ],
                 "summary": "Delete a tracker.",
                 "parameters": [
@@ -3755,7 +3919,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3791,6 +3955,12 @@ const docTemplate = `{
                 "comments": {
                     "type": "string"
                 },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -3812,8 +3982,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.Ref"
                     }
                 },
+                "migrationWave": {
+                    "$ref": "#/definitions/api.Ref"
+                },
                 "name": {
                     "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "repository": {
                     "$ref": "#/definitions/api.Repository"
@@ -4116,6 +4292,50 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": true
         },
+        "api.MigrationWave": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Proxy": {
             "type": "object",
             "properties": {
@@ -4337,6 +4557,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.Ref"
                     }
                 },
+                "contributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -4352,8 +4578,20 @@ const docTemplate = `{
                 "jobFunction": {
                     "$ref": "#/definitions/api.Ref"
                 },
+                "migrationWaves": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
                 "name": {
                     "type": "string"
+                },
+                "owns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
                 },
                 "stakeholderGroups": {
                     "type": "array",
@@ -4384,6 +4622,12 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "migrationWaves": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4395,6 +4639,20 @@ const docTemplate = `{
                 },
                 "updateUser": {
                     "type": "string"
+                }
+            }
+        },
+        "api.Stakeholders": {
+            "type": "object",
+            "properties": {
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "owner": {
+                    "$ref": "#/definitions/api.Ref"
                 }
             }
         },
@@ -4649,7 +4907,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "result": {},
+                "result": {
+                    "type": "object"
+                },
                 "status": {
                     "type": "string"
                 },

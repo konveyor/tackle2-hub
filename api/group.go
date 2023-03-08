@@ -36,7 +36,7 @@ func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a stakeholder group by ID.
 // @description Get a stakeholder group by ID.
-// @tags get
+// @tags stakeholdergroups
 // @produce json
 // @success 200 {object} api.StakeholderGroup
 // @router /stakeholdergroups/{id} [get]
@@ -59,7 +59,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all stakeholder groups.
 // @description List all stakeholder groups.
-// @tags get
+// @tags stakeholdergroups
 // @produce json
 // @success 200 {object} []api.StakeholderGroup
 // @router /stakeholdergroups [get]
@@ -84,7 +84,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a stakeholder group.
 // @description Create a stakeholder group.
-// @tags create
+// @tags stakeholdergroups
 // @accept json
 // @produce json
 // @success 201 {object} api.StakeholderGroup
@@ -112,7 +112,7 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a stakeholder group.
 // @description Delete a stakeholder group.
-// @tags delete
+// @tags stakeholdergroups
 // @success 204
 // @router /stakeholdergroups/{id} [delete]
 // @param id path string true "Stakeholder Group ID"
@@ -136,7 +136,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a stakeholder group.
 // @description Update a stakeholder group.
-// @tags update
+// @tags stakeholdergroups
 // @accept json
 // @success 204
 // @router /stakeholdergroups/{id} [put]
@@ -166,6 +166,12 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("MigrationWaves").Replace(m.MigrationWaves)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	ctx.Status(http.StatusNoContent)
 }
@@ -174,9 +180,10 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 // StakeholderGroup REST resource.
 type StakeholderGroup struct {
 	Resource
-	Name         string `json:"name" binding:"required"`
-	Description  string `json:"description"`
-	Stakeholders []Ref  `json:"stakeholders"`
+	Name           string `json:"name" binding:"required"`
+	Description    string `json:"description"`
+	Stakeholders   []Ref  `json:"stakeholders"`
+	MigrationWaves []Ref  `json:"migrationWaves"`
 }
 
 //
@@ -185,10 +192,17 @@ func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
+	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
 		ref := Ref{}
 		ref.With(s.ID, s.Name)
 		r.Stakeholders = append(r.Stakeholders, ref)
+	}
+	r.MigrationWaves = []Ref{}
+	for _, w := range m.MigrationWaves {
+		ref := Ref{}
+		ref.With(w.ID, w.Name)
+		r.MigrationWaves = append(r.MigrationWaves, ref)
 	}
 }
 
@@ -202,6 +216,9 @@ func (r *StakeholderGroup) Model() (m *model.StakeholderGroup) {
 	m.ID = r.ID
 	for _, s := range r.Stakeholders {
 		m.Stakeholders = append(m.Stakeholders, model.Stakeholder{Model: model.Model{ID: s.ID}})
+	}
+	for _, w := range r.MigrationWaves {
+		m.MigrationWaves = append(m.MigrationWaves, model.MigrationWave{Model: model.Model{ID: w.ID}})
 	}
 	return
 }

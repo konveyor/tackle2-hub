@@ -40,7 +40,7 @@ func (h FileHandler) AddRoutes(e *gin.Engine) {
 // List godoc
 // @summary List all files.
 // @description List all files.
-// @tags get
+// @tags file
 // @produce json
 // @success 200 {object} []api.File
 // @router /files [get]
@@ -64,7 +64,7 @@ func (h FileHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a file.
 // @description Create a file.
-// @tags create
+// @tags file
 // @accept json
 // @produce json
 // @success 201 {object} api.File
@@ -122,7 +122,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 // Get godoc
 // @summary Get a file by ID.
 // @description Get a file by ID. Returns api.File when Accept=application/json else the file content.
-// @tags get
+// @tags file
 // @produce octet-stream
 // @success 200 {object} api.File
 // @router /files/{id} [get]
@@ -152,7 +152,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a file.
 // @description Delete a file.
-// @tags delete
+// @tags file
 // @success 204
 // @router /files/{id} [delete]
 // @param id path string true "File ID"

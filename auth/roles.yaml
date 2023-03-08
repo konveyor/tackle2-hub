@@ -33,6 +33,9 @@
         - get
         - post
         - put
+    - name: applications.stakeholders
+      verbs:
+        - put
     - name: assessments
       verbs:
         - delete
@@ -158,6 +161,12 @@
         - get
         - post
         - put
+    - name: migrationwaves
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -192,6 +201,9 @@
         - delete
         - get
         - post
+        - put
+    - name: applications.stakeholders
+      verbs:
         - put
     - name: assessments
       verbs:
@@ -305,6 +317,12 @@
         - get
         - post
         - put
+    - name: migrationwaves
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-migrator
   resources:
     - name: addons
@@ -400,3 +418,98 @@
     - name: rulebundles
       verbs:
         - get
+    - name: migrationwaves
+      verbs:
+        - get
+- role: tackle-project-manager
+  resources:
+    - name: addons
+      verbs:
+        - get
+    - name: adoptionplans
+      verbs:
+        - post
+    - name: applications
+      verbs:
+        - get
+    - name: applications.facts
+      verbs:
+        - get
+    - name: applications.tags
+      verbs:
+        - get
+    - name: applications.bucket
+      verbs:
+        - get
+    - name: applications.stakeholders
+      verbs:
+        - put
+    - name: assessments
+      verbs:
+        - get
+    - name: businessservices
+      verbs:
+        - get
+    - name: dependencies
+      verbs:
+        - get
+    - name: identities
+      verbs:
+        - get
+    - name: imports
+      verbs:
+        - get
+    - name: jobfunctions
+      verbs:
+        - get
+    - name: proxies
+      verbs:
+        - get
+    - name: reviews
+      verbs:
+        - get
+    - name: settings
+      verbs:
+        - get
+    - name: stakeholdergroups
+      verbs:
+        - get
+    - name: stakeholders
+      verbs:
+        - get
+    - name: tags
+      verbs:
+        - get
+    - name: tagcategories
+      verbs:
+        - get
+    - name: tasks
+      verbs:
+        - get
+    - name: tasks.bucket
+      verbs:
+        - get
+    - name: trackers
+      verbs:
+        - get
+    - name: tickets
+      verbs:
+        - get
+    - name: cache
+      verbs:
+        - get
+    - name: files
+      verbs:
+        - get
+    - name: buckets
+      verbs:
+        - get
+    - name: rulebundles
+      verbs:
+        - get
+    - name: migrationwaves
+      verbs:
+        - delete
+        - get
+        - post
+        - put
