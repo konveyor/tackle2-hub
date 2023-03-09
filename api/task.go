@@ -149,8 +149,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.omitted(h.DB)
-	result := db.Create(&m)
+	result := h.DB.Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -559,7 +558,6 @@ func (r *Task) Model() (m *model.Task) {
 		Priority:      r.Priority,
 		Policy:        r.Policy,
 		State:         r.State,
-		Retries:       r.Retries,
 		ApplicationID: r.idPtr(r.Application),
 	}
 	m.Data, _ = json.Marshal(r.Data)
