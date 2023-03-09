@@ -87,7 +87,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	db = h.preLoad(h.DB(ctx), clause.Associations)
 	result = db.Find(&tags, "ApplicationID = ?", id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []Application{}
@@ -126,7 +126,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		db = h.preLoad(h.DB(ctx), clause.Associations)
 		result = db.Find(&tags, "ApplicationID = ?", list[i].ID)
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 
@@ -151,14 +151,14 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	r := &Application{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Omit("Tags").Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -169,7 +169,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		}
 		result = h.DB(ctx).Create(&tags)
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 	}
@@ -191,18 +191,18 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	m := &model.Application{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	p := Pathfinder{}
 	err := p.DeleteAssessment([]uint{id}, ctx)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -220,13 +220,13 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 	ids := []uint{}
 	err := ctx.BindJSON(&ids)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	p := Pathfinder{}
 	err = p.DeleteAssessment(ids, ctx)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	err = h.DB(ctx).Delete(
@@ -234,7 +234,7 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 		"id IN ?",
 		ids).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -255,7 +255,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	r := &Application{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	//
@@ -264,14 +264,14 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	for _, fact := range m.Facts {
 		if _, found := r.Facts[fact.Key]; !found {
 			h.DB(ctx).Delete(fact)
 			if err != nil {
-				h.reportError(ctx, err)
+				_ = ctx.Error(err)
 				return
 			}
 		}
@@ -286,19 +286,19 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	db = db.Omit(clause.Associations, "BucketID")
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	db = h.DB(ctx).Model(m)
 	err = db.Association("Identities").Replace(m.Identities)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	db = h.DB(ctx).Model(m)
 	err = db.Association("Facts").Replace(m.Facts)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	//
@@ -308,7 +308,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		db = db.Where("ApplicationID = ? AND Key = ?", m.ApplicationID, m.Key)
 		err := db.Updates(h.fields(m)).Error
 		if err != nil {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
@@ -316,7 +316,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	// delete existing tag associations and create new ones
 	err = h.DB(ctx).Delete(&model.ApplicationTag{}, "ApplicationID = ?", id).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	if len(r.Tags) > 0 {
@@ -326,7 +326,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 		result = h.DB(ctx).Create(&tags)
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 	}
@@ -350,7 +350,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if !m.HasBucket() {
@@ -374,7 +374,7 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if !m.HasBucket() {
@@ -398,7 +398,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if !m.HasBucket() {
@@ -422,7 +422,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
@@ -435,7 +435,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	list := []model.ApplicationTag{}
 	result = db.Find(&list, "ApplicationID = ?", id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []TagRef{}
@@ -461,13 +461,13 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	ref := &TagRef{}
 	err := ctx.BindJSON(ref)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	tag := &model.ApplicationTag{
@@ -477,7 +477,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	}
 	err = h.DB(ctx).Create(tag).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.JSON(http.StatusCreated, ref)
@@ -498,7 +498,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 	refs := []TagRef{}
 	err := ctx.BindJSON(&refs)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -512,7 +512,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 	}
 	err = db.Delete(&model.ApplicationTag{}).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -528,7 +528,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 		}
 		err = db.Create(&appTags).Error
 		if err != nil {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
@@ -550,7 +550,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -562,7 +562,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	}
 	err := db.Delete(&model.ApplicationTag{}).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -582,14 +582,14 @@ func (h ApplicationHandler) FactList(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	db := h.DB(ctx).Model(app).Association("Facts")
 	list := []model.Fact{}
 	err := db.Find(&list)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	resources := []Fact{}
@@ -615,14 +615,14 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	key := ctx.Param(Key)
 	list := []model.Fact{}
 	result = h.DB(ctx).Find(&list, "ApplicationID = ? AND Key = ?", id, key)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if len(list) < 1 {
@@ -650,13 +650,13 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	var v interface{}
 	err := ctx.BindJSON(&v)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	key := ctx.Param(Key)
@@ -666,7 +666,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	m.ApplicationID = id
 	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := &Fact{}
@@ -690,13 +690,13 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	var v interface{}
 	err := ctx.BindJSON(&v)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	key := ctx.Param(Key)
@@ -707,7 +707,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		db := h.DB(ctx).Model(m)
 		result = db.Updates(h.fields(m))
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 		ctx.Status(http.StatusNoContent)
@@ -719,12 +719,12 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		m.ApplicationID = id
 		result = h.DB(ctx).Create(m)
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 		ctx.Status(http.StatusNoContent)
 	} else {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 	}
 }
 
@@ -741,14 +741,14 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	fact := &model.Fact{}
 	key := ctx.Param(Key)
 	result = h.DB(ctx).Delete(fact, "ApplicationID = ? AND Key = ?", id, key)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 

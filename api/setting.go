@@ -50,7 +50,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	result := h.DB(ctx).Where(&model.Setting{Key: key}).First(setting)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := Setting{}
@@ -70,7 +70,7 @@ func (h SettingHandler) List(ctx *gin.Context) {
 	var list []model.Setting
 	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []Setting{}
@@ -96,7 +96,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	setting := Setting{}
 	err := ctx.BindJSON(&setting)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	setting.With(m)
@@ -146,14 +146,14 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 	setting.Key = key
 	err := ctx.BindJSON(&setting.Value)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := setting.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -185,7 +185,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	updates.Key = key
 	err := ctx.BindJSON(&updates.Value)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -195,7 +195,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 	db = db.Where("key", key)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 	}
 
 	ctx.Status(http.StatusNoContent)
@@ -222,7 +222,7 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 
 	result := h.DB(ctx).Delete(&model.Setting{}, Key, key)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 

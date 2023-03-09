@@ -49,7 +49,7 @@ func (h FileHandler) List(ctx *gin.Context) {
 	var list []model.File
 	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []File{}
@@ -83,7 +83,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	defer func() {
@@ -133,7 +133,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	switch ctx.GetHeader(Accept) {
@@ -162,19 +162,19 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	err = os.Remove(m.Path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
 	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 

@@ -50,7 +50,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 		"RuleSets.File")
 	result := db.First(bundle, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := RuleBundle{}
@@ -74,7 +74,7 @@ func (h RuleBundleHandler) List(ctx *gin.Context) {
 		"RuleSets.File")
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []RuleBundle{}
@@ -106,7 +106,7 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	db := h.preLoad(
@@ -115,7 +115,7 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 		"RuleSets.File")
 	result = db.First(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	bundle.With(m)
@@ -135,12 +135,12 @@ func (h RuleBundleHandler) Delete(ctx *gin.Context) {
 	bundle := &model.RuleBundle{}
 	result := h.DB(ctx).First(bundle, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	result = h.DB(ctx).Delete(bundle, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	r := &RuleBundle{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	//
@@ -170,14 +170,14 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	for _, ruleset := range m.RuleSets {
 		if !r.HasRuleSet(ruleset.ID) {
 			err := h.DB(ctx).Delete(ruleset).Error
 			if err != nil {
-				h.reportError(ctx, err)
+				_ = ctx.Error(err)
 				return
 			}
 		}
@@ -191,12 +191,12 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	db = db.Omit(clause.Associations)
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	err = h.DB(ctx).Model(m).Association("RuleSets").Replace(m.RuleSets)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	//
@@ -206,7 +206,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 		db = h.DB(ctx).Model(m)
 		err = db.Updates(h.fields(m)).Error
 		if err != nil {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
