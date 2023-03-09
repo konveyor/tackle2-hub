@@ -47,7 +47,7 @@ func (h FileHandler) AddRoutes(e *gin.Engine) {
 // @router /files [get]
 func (h FileHandler) List(ctx *gin.Context) {
 	var list []model.File
-	result := h.DB.Find(&list)
+	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -81,7 +81,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	m := &model.File{}
 	m.Name = ctx.Param(ID)
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -89,7 +89,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	defer func() {
 		if err != nil {
 			ctx.Status(http.StatusInternalServerError)
-			_ = h.DB.Delete(&m)
+			_ = h.DB(ctx).Delete(&m)
 			return
 		}
 	}()
@@ -131,7 +131,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 func (h FileHandler) Get(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -160,7 +160,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 func (h FileHandler) Delete(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)
-	err := h.DB.First(m, id).Error
+	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -172,7 +172,7 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 			return
 		}
 	}
-	err = h.DB.Delete(m).Error
+	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return

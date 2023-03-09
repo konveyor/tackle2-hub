@@ -70,7 +70,7 @@ func (h ImportHandler) AddRoutes(e *gin.Engine) {
 func (h ImportHandler) GetImport(ctx *gin.Context) {
 	m := &model.Import{}
 	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "ImportTags")
+	db := h.preLoad(h.DB(ctx), "ImportTags")
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -89,7 +89,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 // @router /imports [get]
 func (h ImportHandler) ListImports(ctx *gin.Context) {
 	var list []model.Import
-	db := h.DB
+	db := h.DB(ctx)
 	summaryId := ctx.Query("importSummary.id")
 	if summaryId != "" {
 		db = db.Where("importsummaryid = ?", summaryId)
@@ -124,7 +124,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 // @param id path string true "Import ID"
 func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.Import{}, id)
+	result := h.DB(ctx).Delete(&model.Import{}, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -145,7 +145,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 func (h ImportHandler) GetSummary(ctx *gin.Context) {
 	m := &model.ImportSummary{}
 	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, "Imports")
+	db := h.preLoad(h.DB(ctx), "Imports")
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -164,7 +164,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 // @router /importsummaries [get]
 func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 	var list []model.ImportSummary
-	db := h.preLoad(h.DB, "Imports")
+	db := h.preLoad(h.DB(ctx), "Imports")
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -190,7 +190,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 // @param id path string true "ImportSummary ID"
 func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 	id := ctx.Param(ID)
-	result := h.DB.Delete(&model.ImportSummary{}, id)
+	result := h.DB(ctx).Delete(&model.ImportSummary{}, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -240,7 +240,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		CreateEntities: createEntities,
 	}
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -284,7 +284,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 			}
 		}
 		imp.ImportSummary = m
-		result := h.DB.Create(&imp)
+		result := h.DB(ctx).Create(&imp)
 		if result.Error != nil {
 			h.reportError(ctx, result.Error)
 			return
@@ -308,7 +308,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 	id := ctx.Query("importSummary.id")
 	m := &model.ImportSummary{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

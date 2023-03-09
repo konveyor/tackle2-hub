@@ -76,7 +76,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 func (h TaskHandler) Get(ctx *gin.Context) {
 	task := &model.Task{}
 	id := h.pk(ctx)
-	db := h.DB.Preload(clause.Associations)
+	db := h.DB(ctx).Preload(clause.Associations)
 	result := db.First(task, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -97,7 +97,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
 	var list []model.Task
-	db := h.DB
+	db := h.DB(ctx)
 	locator := ctx.Query(LocatorParam)
 	if locator != "" {
 		db = db.Where("locator", locator)
@@ -149,7 +149,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -169,20 +169,20 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 func (h TaskHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	task := &model.Task{}
-	result := h.DB.First(task, id)
+	result := h.DB(ctx).First(task, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
 	rt := tasking.Task{Task: task}
-	err := rt.Delete(h.Client)
+	err := rt.Delete(h.Client(ctx))
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
 			h.reportError(ctx, err)
 			return
 		}
 	}
-	result = h.DB.Delete(task)
+	result = h.DB(ctx).Delete(task)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -220,7 +220,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.Reset()
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Where("id", id)
 	db = db.Where("state", tasking.Created)
 	db = h.omitted(db)
@@ -248,7 +248,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 	mod := func(withBody bool) (err error) {
 		if !withBody {
 			m := r.Model()
-			err = h.DB.First(m, id).Error
+			err = h.DB(ctx).First(m, id).Error
 			if err != nil {
 				return
 			}
@@ -275,7 +275,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Task{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -291,7 +291,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 			})
 		return
 	}
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Where("id", id)
 	db = db.Where(
 		"state not IN ?",
@@ -323,7 +323,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -347,7 +347,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -371,7 +371,7 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -404,7 +404,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	report.TaskID = id
 	m := report.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 	}
@@ -433,7 +433,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	report.TaskID = id
 	m := report.Model()
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Where("taskid", id)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
@@ -457,7 +457,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TaskReport{}
 	m.ID = id
-	db := h.DB.Where("taskid", id)
+	db := h.DB(ctx).Where("taskid", id)
 	result := db.Delete(&model.TaskReport{})
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)

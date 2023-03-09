@@ -45,7 +45,7 @@ func (h TagHandler) AddRoutes(e *gin.Engine) {
 func (h TagHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tag{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -66,7 +66,7 @@ func (h TagHandler) Get(ctx *gin.Context) {
 // @router /tags [get]
 func (h TagHandler) List(ctx *gin.Context) {
 	var list []model.Tag
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -100,7 +100,7 @@ func (h TagHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -120,12 +120,12 @@ func (h TagHandler) Create(ctx *gin.Context) {
 func (h TagHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tag{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -154,7 +154,7 @@ func (h TagHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {

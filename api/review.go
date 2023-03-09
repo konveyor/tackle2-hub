@@ -47,7 +47,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 func (h ReviewHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Review{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -68,7 +68,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 // @router /reviews [get]
 func (h ReviewHandler) List(ctx *gin.Context) {
 	var list []model.Review
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -101,7 +101,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 	}
 	m := review.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -121,12 +121,12 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 func (h ReviewHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Review{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -155,7 +155,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
@@ -182,7 +182,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 	}
 
 	m := model.Review{}
-	result := h.DB.First(&m, c.SourceReview)
+	result := h.DB(ctx).First(&m, c.SourceReview)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -197,21 +197,21 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 			ApplicationID:       id,
 		}
 		existing := []model.Review{}
-		result = h.DB.Find(&existing, "applicationid = ?", id)
+		result = h.DB(ctx).Find(&existing, "applicationid = ?", id)
 		if result.Error != nil {
 			h.reportError(ctx, result.Error)
 			return
 		}
 		// if the application doesn't already have a review, create one.
 		if len(existing) == 0 {
-			result = h.DB.Create(copied)
+			result = h.DB(ctx).Create(copied)
 			if result.Error != nil {
 				h.reportError(ctx, result.Error)
 				return
 			}
 			// if the application already has a review, replace it with the copied review.
 		} else {
-			result = h.DB.Model(&existing[0]).Updates(h.fields(copied))
+			result = h.DB(ctx).Model(&existing[0]).Updates(h.fields(copied))
 			if result.Error != nil {
 				h.reportError(ctx, result.Error)
 				return

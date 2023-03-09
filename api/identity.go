@@ -50,7 +50,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 func (h IdentityHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Identity{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -80,7 +80,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	var list []model.Identity
 	appId := ctx.Query(AppId)
 	kind := ctx.Query(Kind)
-	db := h.DB
+	db := h.DB(ctx)
 	if appId != "" {
 		db = db.Where(
 			"id IN (SELECT identityID from ApplicationIdentity WHERE applicationID = ?)",
@@ -137,7 +137,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		h.reportError(ctx, err)
 		return
 	}
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -157,12 +157,12 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 func (h IdentityHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	identity := &model.Identity{}
-	result := h.DB.First(identity, id)
+	result := h.DB(ctx).First(identity, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(identity)
+	result = h.DB(ctx).Delete(identity)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -189,7 +189,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	ref := &model.Identity{}
-	err = h.DB.First(ref, id).Error
+	err = h.DB(ctx).First(ref, id).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -202,7 +202,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	}
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {
 		h.reportError(ctx, err)

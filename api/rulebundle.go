@@ -45,7 +45,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	bundle := &model.RuleBundle{}
 	db := h.preLoad(
-		h.DB,
+		h.DB(ctx),
 		clause.Associations,
 		"RuleSets.File")
 	result := db.First(bundle, id)
@@ -69,7 +69,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 func (h RuleBundleHandler) List(ctx *gin.Context) {
 	var list []model.RuleBundle
 	db := h.preLoad(
-		h.DB,
+		h.DB(ctx),
 		clause.Associations,
 		"RuleSets.File")
 	result := db.Find(&list)
@@ -104,13 +104,13 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 	}
 	m := bundle.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
 	db := h.preLoad(
-		h.DB,
+		h.DB(ctx),
 		clause.Associations,
 		"RuleSets.File")
 	result = db.First(m)
@@ -133,12 +133,12 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 func (h RuleBundleHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	bundle := &model.RuleBundle{}
-	result := h.DB.First(bundle, id)
+	result := h.DB(ctx).First(bundle, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(bundle, id)
+	result = h.DB(ctx).Delete(bundle, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -167,7 +167,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	//
 	// Delete unwanted ruleSets.
 	m := &model.RuleBundle{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -175,7 +175,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	}
 	for _, ruleset := range m.RuleSets {
 		if !r.HasRuleSet(ruleset.ID) {
-			err := h.DB.Delete(ruleset).Error
+			err := h.DB(ctx).Delete(ruleset).Error
 			if err != nil {
 				h.reportError(ctx, err)
 				return
@@ -187,14 +187,14 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db = h.DB.Model(m)
+	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result = db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	err = h.DB.Model(m).Association("RuleSets").Replace(m.RuleSets)
+	err = h.DB(ctx).Model(m).Association("RuleSets").Replace(m.RuleSets)
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -203,7 +203,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	// Update ruleSets.
 	for i := range m.RuleSets {
 		m := &m.RuleSets[i]
-		db = h.DB.Model(m)
+		db = h.DB(ctx).Model(m)
 		err = db.Updates(h.fields(m)).Error
 		if err != nil {
 			h.reportError(ctx, err)
