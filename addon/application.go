@@ -128,7 +128,7 @@ func (h *AppTags) Replace(ids []uint) (err error) {
 	}
 
 	tags := []api.TagRef{}
-	for _, id := range ids {
+	for _, id := range h.unique(ids) {
 		tags = append(tags, api.TagRef{ID: id})
 	}
 
@@ -174,6 +174,19 @@ func (h *AppTags) Delete(id uint) (err error) {
 		query = append(query, Param{Key: api.Source, Value: *h.source})
 	}
 	err = h.client.Delete(path, query...)
+	return
+}
+
+//
+// unique ensures unique ids.
+func (h *AppTags) unique(ids []uint) (u []uint) {
+	mp := map[uint]int{}
+	for _, id := range ids {
+		mp[id] = 0
+	}
+	for id := range mp {
+		u = append(u, id)
+	}
 	return
 }
 
