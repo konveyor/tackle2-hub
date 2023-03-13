@@ -1,0 +1,34 @@
+name: Test Addons
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+      
+jobs:
+  test-addons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Start minikube
+        uses: konveyor/tackle2-operator/.github/actions/start-minikube@main
+      - name: Build image in minikube
+        run: |
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          make docker-build
+      - name: Install Tackle
+        uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
+        with:
+          tackle-hub-image: tackle2-hub:latest
+          tackle-image-pull-policy: IfNotPresent
+      - name: Set host and namespace
+        run: |
+          echo "host=$(minikube ip)/hub" >> $GITHUB_ENV
+          echo "namespace=$(kubectl get tackles.tackle.konveyor.io --all-namespaces --no-headers | awk '{print $1}')" >> $GITHUB_ENV
+      - name: Test execution
+        run: |
+          make test
+        with:
+          host: ${{ env.host }}
