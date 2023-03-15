@@ -1,4 +1,4 @@
-package restapi
+package api
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-func TestApplicationsCreate(t *testing.T) {
+func NoTestApplicationsCreate(t *testing.T) {
 	tests := []util.Test{
 		{
 			Name: "Create sample Pathfinder application",

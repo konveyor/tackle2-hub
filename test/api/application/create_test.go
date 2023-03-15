@@ -1,19 +1,19 @@
-package restapi
+package application
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
-	"github.com/konveyor/go-konveyor-tests/pkg/util"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/test/api/testclient"
 )
 
-func TestApplicationsCRUD(t *testing.T) {
-	tests := []util.Test{
+func TestApplicationCreate(t *testing.T) {
+	tests := []testclient.TestCase{
 		{
 			Name: "Create sample Pathfinder application",
-
-			Application: api.Application{
+			Application: &api.Application{
 				Name:        "Pathfinder",
 				Description: "Tackle Pathfinder application.",
 				Repository: &api.Repository{
@@ -26,15 +26,22 @@ func TestApplicationsCRUD(t *testing.T) {
 		},
 		{
 			Name: "Create minimalist application",
-			Application: api.Application{
+			Application: &api.Application{
 				Name: "App1",
 			},
 			ShouldError: false,
 		},
+		//		{
+		//			Name: "Not Create application without name",
+		//			Application: &api.Application{
+		//				Name: "",
+		//			},
+		//			ShouldError: true,
+		//		},
 	}
 
 	// Setup Hub API client
-	hub, err := util.NewHubClient()
+	hub, err := testclient.NewHubClient()
 	if err != nil {
 		t.Fatalf("Unable connect to Hub API: %v", err.Error())
 	}
@@ -44,6 +51,7 @@ func TestApplicationsCRUD(t *testing.T) {
 		t.Log(tc.Name)
 
 		// Create the application
+		//err = hub.Create(&tc.Subject)
 		err = hub.Post(api.ApplicationsRoot, &tc.Application)
 		if err != nil && !tc.ShouldError {
 			t.Errorf("Unexpected application create error: %v", err.Error())
@@ -52,6 +60,18 @@ func TestApplicationsCRUD(t *testing.T) {
 			t.Errorf("Expected application create error and didn't get it")
 		}
 		t.Log(tc.Application)
+
+		// Get the application
+		var testApplication *api.Application
+		err = hub.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, tc.Application.ID), &testApplication)
+		if err != nil && !tc.ShouldError {
+			t.Errorf("Error getting application: %v", err.Error())
+		} else {
+			// Assert the application
+			if !reflect.DeepEqual(tc.Application, testApplication) {
+				t.Errorf("Got different application than expected: %v\n%v", tc.Application, testApplication)
+			}
+		}
 
 		// Clean the application
 		if err == nil && !tc.ShouldError {
