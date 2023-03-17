@@ -2,83 +2,70 @@ package application
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/testclient"
 )
 
 func TestApplicationCreate(t *testing.T) {
-	tests := []testclient.TestCase{
-		{
-			Name: "Create sample Pathfinder application",
-			Application: &api.Application{
-				Name:        "Pathfinder",
-				Description: "Tackle Pathfinder application.",
-				Repository: &api.Repository{
-					Kind:   "git",
-					URL:    "https://github.com/konveyor/tackle-pathfinder.git",
-					Branch: "1.2.0",
-				},
-			},
-			ShouldError: false,
-		},
-		{
-			Name: "Create minimalist application",
-			Application: &api.Application{
-				Name: "App1",
-			},
-			ShouldError: false,
-		},
-		//		{
-		//			Name: "Not Create application without name",
-		//			Application: &api.Application{
-		//				Name: "",
-		//			},
-		//			ShouldError: true,
-		//		},
-	}
+	//
+	// vykašlat se na shoulderror, hodit aplikace do fixtures a tady mit jen nachsytánní dat z fixtures a skutečný test
+	//
+	samples := Samples()
+	// Create on array of Applications calls subtest
+	for _, application := range samples {
+		t.Run(fmt.Sprintf("Create application %s", application.Name), func(t *testing.T) {
 
-	// Setup Hub API client
-	hub, err := testclient.NewHubClient()
+			err = Client.Post(api.ApplicationsRoot, &application)
+			if err != nil {
+				t.Errorf("Create error: %v", err.Error()) // Error for standard test failure or failed assertion
+			}
+
+			// The Get test not included here, but in get_test.go
+
+			// Clean the app
+			EnsureDelete(t, application)
+		})
+	}
+}
+
+func TestApplicationNotCreateDuplicates(t *testing.T) {
+	// Create sample Application.
+	err = Client.Post(api.ApplicationsRoot, &Sample)
 	if err != nil {
-		t.Fatalf("Unable connect to Hub API: %v", err.Error())
+		t.Errorf("Create error: %v", err.Error())
 	}
 
-	// Execute test steps
-	for _, tc := range tests {
-		t.Log(tc.Name)
+	// Prepare Application with duplicate Name.
+	dupApplication := &api.Application{
+		Name: Sample.Name,
+	}
 
-		// Create the application
-		//err = hub.Create(&tc.Subject)
-		err = hub.Post(api.ApplicationsRoot, &tc.Application)
-		if err != nil && !tc.ShouldError {
-			t.Errorf("Unexpected application create error: %v", err.Error())
-		}
-		if err == nil && tc.ShouldError {
-			t.Errorf("Expected application create error and didn't get it")
-		}
-		t.Log(tc.Application)
+	// Try create the duplicate Application.
+	err = Client.Post(api.ApplicationsRoot, &dupApplication)
+	if err == nil {
+		t.Errorf("Created duplicate application: %v", dupApplication)
 
-		// Get the application
-		var testApplication *api.Application
-		err = hub.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, tc.Application.ID), &testApplication)
-		if err != nil && !tc.ShouldError {
-			t.Errorf("Error getting application: %v", err.Error())
-		} else {
-			// Assert the application
-			if !reflect.DeepEqual(tc.Application, testApplication) {
-				t.Errorf("Got different application than expected: %v\n%v", tc.Application, testApplication)
-			}
-		}
+		// Clean the app
+		EnsureDelete(t, dupApplication)
+	}
 
-		// Clean the application
-		if err == nil && !tc.ShouldError {
-			err = hub.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, tc.Application.ID))
-			if err != nil && !tc.ShouldError {
-				t.Errorf("Unexpected application delete error: %v", err.Error())
-			}
-		}
+	// Clean the application.
+	EnsureDelete(t, Sample)
+}
+
+func TestApplicationNotCreateWithoutName(t *testing.T) {
+	// Prepare Application without Name.
+	emptyApplication := &api.Application{
+		Name: "",
+	}
+
+	// Try create the duplicate Application.
+	err = Client.Post(api.ApplicationsRoot, &emptyApplication)
+	if err == nil {
+		t.Errorf("Created duplicate application: %v", emptyApplication)
+
+		// Clean the application.
+		EnsureDelete(t, emptyApplication)
 	}
 }
