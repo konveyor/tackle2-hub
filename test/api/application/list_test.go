@@ -32,6 +32,6 @@ func TestApplicationList(t *testing.T) {
 
 	// Clean the application.
 	for _, application := range samples {
-		EnsureDelete(t, application)
+		Delete(t, application)
 	}
 }

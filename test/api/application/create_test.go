@@ -8,9 +8,6 @@ import (
 )
 
 func TestApplicationCreate(t *testing.T) {
-	//
-	// vykašlat se na shoulderror, hodit aplikace do fixtures a tady mit jen nachsytánní dat z fixtures a skutečný test
-	//
 	samples := Samples()
 	// Create on array of Applications calls subtest
 	for _, application := range samples {
@@ -24,21 +21,23 @@ func TestApplicationCreate(t *testing.T) {
 			// The Get test not included here, but in get_test.go
 
 			// Clean the app
-			EnsureDelete(t, application)
+			Delete(t, application)
 		})
 	}
 }
 
 func TestApplicationNotCreateDuplicates(t *testing.T) {
+	application := Samples()[0]
+
 	// Create sample Application.
-	err = Client.Post(api.ApplicationsRoot, &Sample)
+	err = Client.Post(api.ApplicationsRoot, &application)
 	if err != nil {
 		t.Errorf("Create error: %v", err.Error())
 	}
 
 	// Prepare Application with duplicate Name.
 	dupApplication := &api.Application{
-		Name: Sample.Name,
+		Name: application.Name,
 	}
 
 	// Try create the duplicate Application.
@@ -47,11 +46,11 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 		t.Errorf("Created duplicate application: %v", dupApplication)
 
 		// Clean the app
-		EnsureDelete(t, dupApplication)
+		Delete(t, dupApplication)
 	}
 
 	// Clean the application.
-	EnsureDelete(t, Sample)
+	Delete(t, application)
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
@@ -63,9 +62,9 @@ func TestApplicationNotCreateWithoutName(t *testing.T) {
 	// Try create the duplicate Application.
 	err = Client.Post(api.ApplicationsRoot, &emptyApplication)
 	if err == nil {
-		t.Errorf("Created duplicate application: %v", emptyApplication)
+		t.Errorf("Created empty application: %v", emptyApplication)
 
 		// Clean the application.
-		EnsureDelete(t, emptyApplication)
+		Delete(t, emptyApplication)
 	}
 }

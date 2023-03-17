@@ -83,7 +83,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	}
 
 	// Clean the application.
-	EnsureDelete(t, application)
+	Delete(t, application)
 }
 
 func TestApplicationFactsList(t *testing.T) {
@@ -118,5 +118,5 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Clean the application.
-	EnsureDelete(t, application)
+	Delete(t, application)
 }

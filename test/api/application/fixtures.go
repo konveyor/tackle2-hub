@@ -35,6 +35,8 @@ var SampleApplications = []*api.Application{
 	},
 }
 
+//
+// Creates a copy of SampleApplication for given test (copy is there to avoid tests inflence each other using the same object ref).
 func Samples() (applications []*api.Application) {
 	raw, err := json.Marshal(SampleApplications)
 	if err != nil {
@@ -44,30 +46,25 @@ func Samples() (applications []*api.Application) {
 	return
 }
 
-//deepcopy with json marshalling
-
-// TODO: deepcopy on read to avoid modifying by a test before using by other tests?
-
-//
-// A single valid Application to be used as a sample for testing.
-var Sample = SampleApplications[0]
-
-func EnsureDelete(t *testing.T, application *api.Application) {
-	err = Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
-	if err != nil {
-		t.Fatalf("Fatal error: %v", err.Error())
-	}
-	// Ensure would mean Fatal error in failed or ignore if failed?
-}
-
 //type TestCase struct {
 //	Test        testclient.TestCase
 //	Application *api.Application
 //}
 
+//
+// Create an Application (and stop tests on failure).
 func Create(t *testing.T, application *api.Application) {
 	err = Client.Post(api.ApplicationsRoot, &application)
 	if err != nil {
-		t.Fatalf("Create error: %v", err.Error()) // Error for standard test failure or failed assertion
+		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
+	}
+}
+
+//
+// Delete the Application (and stop tests on failure).
+func Delete(t *testing.T, application *api.Application) {
+	err = Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
+	if err != nil {
+		t.Fatalf("Delete fatal error: %v", err.Error())
 	}
 }

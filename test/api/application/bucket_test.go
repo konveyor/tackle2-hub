@@ -11,6 +11,8 @@ func TestApplicationBucket(t *testing.T) {
 	// Create the application.
 	Create(t, application)
 
+	// Bucket test TODO
+
 	// Clean the application.
-	EnsureDelete(t, application)
+	Delete(t, application)
 }

@@ -28,7 +28,7 @@ func TestApplicationGet(t *testing.T) {
 			}
 
 			// Clean the application.
-			EnsureDelete(t, application)
+			Delete(t, application)
 		})
 	}
 }
