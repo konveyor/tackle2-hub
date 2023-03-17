@@ -102,25 +102,27 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	//
-	// k8s scheme.
-	err = buildScheme()
-	if err != nil {
-		return
-	}
-	//
-	// Add controller.
-	addonManager, err := addonManager(db)
-	if err != nil {
-		return
-	}
-	go func() {
-		err = addonManager.Start(make(<-chan struct{}))
+	if !Settings.Disconnected {
+		//
+		// k8s scheme.
+		err = buildScheme()
 		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
-	}()
+		//
+		// Add controller.
+		addonManager, err := addonManager(db)
+		if err != nil {
+			return
+		}
+		go func() {
+			err = addonManager.Start(make(<-chan struct{}))
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}()
+	}
 	//
 	// k8s client.
 	client, err := k8s.NewClient()
