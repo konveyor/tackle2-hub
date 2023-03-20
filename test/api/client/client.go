@@ -22,15 +22,9 @@ func NewHubClient() (client *addon.Client, err error) {
 	return
 }
 
-type LoginObject struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
-	Token    string `json:"token"`
-}
-
 // Login performs a login request to the hub and returns a token
 func login(client *addon.Client, username, password string) (string, error) {
-	login := LoginObject{User: username, Password: password}
+	login := api.Login{User: username, Password: password}
 	err := client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
 		return "", err
