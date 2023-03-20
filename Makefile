@@ -1,7 +1,7 @@
 GOBIN ?= ${GOPATH}/bin
 IMG   ?= tackle2-hub:latest
-#HUB_ENDPOINT ?= http://localhost:8080
-HUB_ENDPOINT ?= http://$(minikube ip)/hub
+#HUB_BASE_URL ?= http://localhost:8080
+HUB_BASE_URL ?= http://$(minikube ip)/hub
 
 PKG = ./addon/... \
       ./api/... \
@@ -124,5 +124,5 @@ test: test-api
 
 # Run Hub REST API tests.
 test-api:
-	echo "Using Hub API from ${HUB_ENDPOINT}"
+	echo "Using Hub API from ${HUB_BASE_URL}"
 	go test -v ./test/api/...

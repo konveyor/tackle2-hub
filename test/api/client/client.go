@@ -1,4 +1,4 @@
-package testclient
+package client
 
 import (
 	"os"
@@ -7,15 +7,13 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-type RestClient struct {
+type Client struct {
 	client *addon.Client
 }
 
-//var restClient, _ = NewHubClient()
-
 // Add with and without login/token creation
 func NewHubClient() (client *addon.Client, err error) {
-	client = addon.NewClient(os.Getenv("HUB_ENDPOINT"), "")
+	client = addon.NewClient(os.Getenv("HUB_BASE_URL"), "")
 	token, err := login(client, "admin", "foobar")
 	if err != nil {
 		return

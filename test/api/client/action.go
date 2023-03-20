@@ -1,4 +1,4 @@
-package testclient
+package client
 
 //func (c *RestClient) Create(r interface{}) (err error) {
 //	//var path string

@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/testclient"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 // Hub REST API/addon Client
 // Setup Hub API client
-var Client, err = testclient.NewHubClient()
+var Client, err = client.NewHubClient()
 
 //if err != nil {
 //	t.Fatalf("Unable connect to Hub API: %v", err.Error())

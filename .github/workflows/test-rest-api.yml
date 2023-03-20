@@ -1,4 +1,4 @@
-name: Test Addons
+name: Hub Tests
 
 on:
   push:
