@@ -52,7 +52,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 	m := &model.Identity{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := Identity{}
@@ -91,7 +91,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	}
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	decrypted := ctx.GetBool(Decrypted)
@@ -126,7 +126,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	r := &Identity{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
@@ -134,12 +134,12 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	ref := &model.Identity{}
 	err = m.Encrypt(ref)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r.With(m)
@@ -159,12 +159,12 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 	identity := &model.Identity{}
 	result := h.DB(ctx).First(identity, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	result = h.DB(ctx).Delete(identity)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -185,19 +185,19 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	r := &Identity{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	ref := &model.Identity{}
 	err = h.DB(ctx).First(ref, id).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
 	err = m.Encrypt(ref)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m.ID = id
@@ -205,7 +205,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	db := h.DB(ctx).Model(m)
 	err = db.Updates(h.fields(m)).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 

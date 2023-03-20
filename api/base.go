@@ -3,18 +3,13 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 	"io"
-	"net/http"
-	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -54,80 +49,6 @@ func (h *BaseHandler) Client(ctx *gin.Context) (c client.Client) {
 		panic(liberr.New("context: k8s client not valid."))
 	}
 	return
-}
-
-//
-// reportError reports hub errors as http statuses.
-func (h *BaseHandler) reportError(ctx *gin.Context, err error) {
-	// gin binding errors
-	if errors.Is(err, validator.ValidationErrors{}) {
-		ctx.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if ctx.Request.Method == http.MethodDelete {
-			ctx.Status(http.StatusNoContent)
-			return
-		}
-		ctx.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-
-	if errors.Is(err, os.ErrNotExist) {
-		ctx.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-
-	if errors.Is(err, model.DependencyCyclicError{}) {
-		ctx.JSON(
-			http.StatusConflict,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-
-	sqliteErr := &sqlite3.Error{}
-	if errors.As(err, sqliteErr) {
-		switch sqliteErr.ExtendedCode {
-		case sqlite3.ErrConstraintUnique,
-			sqlite3.ErrConstraintPrimaryKey:
-			ctx.JSON(
-				http.StatusConflict,
-				gin.H{
-					"error": err.Error(),
-				})
-			return
-		}
-	}
-
-	ctx.JSON(
-		http.StatusInternalServerError,
-		gin.H{
-			"error": err.Error(),
-		})
-
-	url := ctx.Request.URL.String()
-	log.Error(
-		err,
-		"Request failed.",
-		"method",
-		ctx.Request.Method,
-		"url",
-		url)
 }
 
 //

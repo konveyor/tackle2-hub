@@ -48,7 +48,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := StakeholderGroup{}
@@ -69,7 +69,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []StakeholderGroup{}
@@ -95,14 +95,14 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 	r := &StakeholderGroup{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r.With(m)
@@ -122,12 +122,12 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 	m := &model.StakeholderGroup{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 	r := &StakeholderGroup{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
@@ -158,13 +158,13 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	db = h.DB(ctx).Model(m)
 	err = db.Association("Stakeholders").Replace(m.Stakeholders)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 

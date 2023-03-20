@@ -50,7 +50,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := Review{}
@@ -71,7 +71,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []Review{}
@@ -103,7 +103,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	review.With(m)
@@ -123,12 +123,12 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 	m := &model.Review{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -149,7 +149,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	r := &Review{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
@@ -159,7 +159,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 	m := model.Review{}
 	result := h.DB(ctx).First(&m, c.SourceReview)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	for _, id := range c.TargetApplications {
@@ -199,21 +199,21 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 		existing := []model.Review{}
 		result = h.DB(ctx).Find(&existing, "applicationid = ?", id)
 		if result.Error != nil {
-			h.reportError(ctx, result.Error)
+			_ = ctx.Error(result.Error)
 			return
 		}
 		// if the application doesn't already have a review, create one.
 		if len(existing) == 0 {
 			result = h.DB(ctx).Create(copied)
 			if result.Error != nil {
-				h.reportError(ctx, result.Error)
+				_ = ctx.Error(result.Error)
 				return
 			}
 			// if the application already has a review, replace it with the copied review.
 		} else {
 			result = h.DB(ctx).Model(&existing[0]).Updates(h.fields(copied))
 			if result.Error != nil {
-				h.reportError(ctx, result.Error)
+				_ = ctx.Error(result.Error)
 				return
 			}
 		}

@@ -36,7 +36,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	r := &Login{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	r.Token, err = auth.Remote.Login(r.User, r.Password)

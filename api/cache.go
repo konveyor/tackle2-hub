@@ -50,7 +50,7 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 		if os.IsNotExist(err) {
 			ctx.Status(http.StatusNotFound)
 		} else {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 		}
 		return
 	}
@@ -79,13 +79,13 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 		if os.IsNotExist(err) {
 			ctx.Status(http.StatusNoContent)
 		} else {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 		}
 		return
 	}
 	err = nas.RmDir(path)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 

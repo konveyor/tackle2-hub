@@ -51,7 +51,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(proxy, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := Proxy{}
@@ -76,7 +76,7 @@ func (h ProxyHandler) List(ctx *gin.Context) {
 	}
 	result := db.Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []Proxy{}
@@ -108,7 +108,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	proxy.With(m)
@@ -128,12 +128,12 @@ func (h ProxyHandler) Delete(ctx *gin.Context) {
 	proxy := &model.Proxy{}
 	result := h.DB(ctx).First(proxy, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	result = h.DB(ctx).Delete(proxy, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -154,7 +154,7 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 	r := &Proxy{}
 	err := ctx.BindJSON(r)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	m := r.Model()
@@ -164,7 +164,7 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 

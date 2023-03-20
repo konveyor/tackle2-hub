@@ -56,7 +56,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 			ctx.Status(http.StatusNotFound)
 			return
 		} else {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
@@ -82,7 +82,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 		},
 		list)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	content := []Addon{}

@@ -183,6 +183,7 @@ func main() {
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(api.ErrorHandler())
 	router.Use(api.TxHandler(db, client))
 	for _, h := range api.All() {
 		h.AddRoutes(router)

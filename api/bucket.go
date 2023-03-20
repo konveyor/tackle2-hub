@@ -67,7 +67,7 @@ func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
 	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	resources := []Bucket{}
@@ -94,7 +94,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	r := Bucket{}
@@ -118,7 +118,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if h.accepted(ctx, AppJson) {
@@ -142,19 +142,19 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	err = os.Remove(m.Path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 			return
 		}
 	}
 	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -234,7 +234,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	m := &model.Bucket{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
@@ -251,13 +251,13 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		if h.accepted(ctx, TextHTML) {
 			err = h.getFile(ctx, m)
 			if err != nil {
-				h.reportError(ctx, err)
+				_ = ctx.Error(err)
 			}
 			return
 		} else {
 			err := h.getDir(ctx, path, filter)
 			if err != nil {
-				h.reportError(ctx, err)
+				_ = ctx.Error(err)
 				return
 			}
 			ctx.Status(http.StatusOK)
@@ -265,7 +265,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	} else {
 		err = h.getFile(ctx, m)
 		if err != nil {
-			h.reportError(ctx, err)
+			_ = ctx.Error(err)
 		}
 		return
 	}
@@ -281,7 +281,7 @@ func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
 	m := &model.Bucket{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
@@ -290,7 +290,7 @@ func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
 		err = h.putFile(ctx, m)
 	}
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.Status(http.StatusNoContent)
@@ -302,14 +302,14 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 	m := &model.Bucket{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
-		h.reportError(ctx, result.Error)
+		_ = ctx.Error(result.Error)
 		return
 	}
 	rPath := ctx.Param(Wildcard)
 	path := pathlib.Join(m.Path, rPath)
 	err := nas.RmDir(path)
 	if err != nil {
-		h.reportError(ctx, err)
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.Status(http.StatusNoContent)
