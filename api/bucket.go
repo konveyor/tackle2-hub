@@ -65,7 +65,7 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 // @router /buckets [get]
 func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
-	result := h.DB.Find(&list)
+	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -92,7 +92,7 @@ func (h BucketHandler) List(ctx *gin.Context) {
 func (h BucketHandler) Create(ctx *gin.Context) {
 	m := &model.Bucket{}
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -116,7 +116,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 func (h BucketHandler) Get(ctx *gin.Context) {
 	m := &model.Bucket{}
 	id := h.pk(ctx)
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -140,7 +140,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 func (h BucketHandler) Delete(ctx *gin.Context) {
 	m := &model.Bucket{}
 	id := h.pk(ctx)
-	err := h.DB.First(m, id).Error
+	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -152,7 +152,7 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 			return
 		}
 	}
-	err = h.DB.Delete(m).Error
+	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -232,7 +232,7 @@ type BucketOwner struct {
 func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	var err error
 	m := &model.Bucket{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -279,7 +279,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
 	var err error
 	m := &model.Bucket{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -300,7 +300,7 @@ func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
 // bucketDelete content from the bucket.
 func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 	m := &model.Bucket{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

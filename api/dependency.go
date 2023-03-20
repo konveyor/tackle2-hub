@@ -44,7 +44,7 @@ func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 func (h DependencyHandler) Get(ctx *gin.Context) {
 	m := &model.Dependency{}
 	id := ctx.Param(ID)
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -67,7 +67,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 func (h DependencyHandler) List(ctx *gin.Context) {
 	var list []model.Dependency
 
-	db := h.DB
+	db := h.DB(ctx)
 	to := ctx.Query("to.id")
 	from := ctx.Query("from.id")
 	if to != "" {
@@ -111,7 +111,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	err = m.Create(h.DB)
+	err = m.Create(h.DB(ctx))
 	if err != nil {
 		h.reportError(ctx, err)
 		return
@@ -131,12 +131,12 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 func (h DependencyHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Dependency{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

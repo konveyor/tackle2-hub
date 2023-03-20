@@ -48,7 +48,7 @@ func (h TicketHandler) AddRoutes(e *gin.Engine) {
 func (h TicketHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Ticket{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -71,7 +71,7 @@ func (h TicketHandler) List(ctx *gin.Context) {
 	var list []model.Ticket
 	appId := ctx.Query(AppId)
 	trackerId := ctx.Query(TrackerId)
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	if appId != "" {
 		db = db.Where("ApplicationID = ?", appId)
 	}
@@ -111,7 +111,7 @@ func (h TicketHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -131,12 +131,12 @@ func (h TicketHandler) Create(ctx *gin.Context) {
 func (h TicketHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Ticket{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

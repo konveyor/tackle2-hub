@@ -48,7 +48,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 func (h SettingHandler) Get(ctx *gin.Context) {
 	setting := &model.Setting{}
 	key := ctx.Param(Key)
-	result := h.DB.Where(&model.Setting{Key: key}).First(setting)
+	result := h.DB(ctx).Where(&model.Setting{Key: key}).First(setting)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -68,7 +68,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 // @router /settings [get]
 func (h SettingHandler) List(ctx *gin.Context) {
 	var list []model.Setting
-	result := h.DB.Find(&list)
+	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -112,7 +112,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 
 	m := setting.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -151,7 +151,7 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 	}
 	m := setting.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(&m)
+	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -191,7 +191,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 
 	m := updates.Model()
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Where("key", key)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
@@ -220,7 +220,7 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	result := h.DB.Delete(&model.Setting{}, Key, key)
+	result := h.DB(ctx).Delete(&model.Setting{}, Key, key)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

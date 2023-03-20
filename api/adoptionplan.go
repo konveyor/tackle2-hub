@@ -62,7 +62,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	}
 
 	var reviews []model.Review
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Where("applicationId IN ?", ids).Find(&reviews)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -70,7 +70,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	}
 
 	var deps []model.Dependency
-	result = h.DB.Where("toId IN ? AND fromId IN ?", ids, ids).Find(&deps)
+	result = h.DB(ctx).Where("toId IN ? AND fromId IN ?", ids, ids).Find(&deps)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return

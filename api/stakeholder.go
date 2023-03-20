@@ -45,7 +45,7 @@ func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 func (h StakeholderHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Stakeholder{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -66,7 +66,7 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 // @router /stakeholders [get]
 func (h StakeholderHandler) List(ctx *gin.Context) {
 	var list []model.Stakeholder
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -100,7 +100,7 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -120,12 +120,12 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 func (h StakeholderHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Stakeholder{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -154,14 +154,14 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	db = h.DB.Model(m)
+	db = h.DB(ctx).Model(m)
 	err = db.Association("Groups").Replace(m.Groups)
 	if err != nil {
 		h.reportError(ctx, err)

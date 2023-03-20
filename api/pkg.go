@@ -4,8 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
-	"gorm.io/gorm"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -85,6 +83,5 @@ func All() []Handler {
 //
 // Handler.
 type Handler interface {
-	With(*gorm.DB, client.Client)
 	AddRoutes(e *gin.Engine)
 }

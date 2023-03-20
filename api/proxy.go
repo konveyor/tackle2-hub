@@ -48,7 +48,7 @@ func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 func (h ProxyHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	proxy := &model.Proxy{}
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(proxy, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -70,7 +70,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 func (h ProxyHandler) List(ctx *gin.Context) {
 	var list []model.Proxy
 	kind := ctx.Query(Kind)
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	if kind != "" {
 		db = db.Where(Kind, kind)
 	}
@@ -106,7 +106,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 	}
 	m := proxy.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -126,12 +126,12 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 func (h ProxyHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	proxy := &model.Proxy{}
-	result := h.DB.First(proxy, id)
+	result := h.DB(ctx).First(proxy, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(proxy, id)
+	result = h.DB(ctx).Delete(proxy, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -160,7 +160,7 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {

@@ -45,7 +45,7 @@ func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 	m := &model.BusinessService{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -66,7 +66,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 // @router /businessservices [get]
 func (h BusinessServiceHandler) List(ctx *gin.Context) {
 	var list []model.BusinessService
-	db := h.preLoad(h.DB, clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
@@ -100,7 +100,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB.Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -120,12 +120,12 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.BusinessService{}
-	result := h.DB.First(m, id)
+	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
 	}
-	result = h.DB.Delete(m)
+	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		h.reportError(ctx, result.Error)
 		return
@@ -154,7 +154,7 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB.Model(m)
+	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
