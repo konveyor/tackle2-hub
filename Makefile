@@ -124,5 +124,4 @@ test: test-api
 
 # Run Hub REST API tests.
 test-api:
-	echo "Using Hub API from ${HUB_BASE_URL}"
-	go test -v ./test/api/...
+	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/api/...

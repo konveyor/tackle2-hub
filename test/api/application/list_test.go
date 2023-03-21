@@ -15,7 +15,7 @@ func TestApplicationList(t *testing.T) {
 
 	// Try list applications.
 	gotApplications := []*api.Application{}
-	err = Client.Get(api.ApplicationsRoot, &gotApplications)
+	err := Client.Get(api.ApplicationsRoot, &gotApplications)
 	if err != nil {
 		t.Errorf("List error: %v", err.Error())
 	}

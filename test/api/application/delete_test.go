@@ -15,7 +15,7 @@ func TestApplicationDelete(t *testing.T) {
 			Create(t, application)
 
 			// Delete the application.
-			err = Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
+			err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
 			if err != nil {
 				t.Errorf("Delete error: %v", err.Error())
 			}

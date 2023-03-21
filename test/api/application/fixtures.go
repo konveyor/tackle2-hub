@@ -9,9 +9,10 @@ import (
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-// Hub REST API/addon Client
-// Setup Hub API client
-var Client, err = client.NewHubClient()
+var (
+	// Setup Hub API client
+	Client = client.Client
+)
 
 //if err != nil {
 //	t.Fatalf("Unable connect to Hub API: %v", err.Error())
@@ -54,7 +55,7 @@ func Samples() (applications []*api.Application) {
 //
 // Create an Application (and stop tests on failure).
 func Create(t *testing.T, application *api.Application) {
-	err = Client.Post(api.ApplicationsRoot, &application)
+	err := Client.Post(api.ApplicationsRoot, &application)
 	if err != nil {
 		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
 	}
@@ -63,7 +64,7 @@ func Create(t *testing.T, application *api.Application) {
 //
 // Delete the Application (and stop tests on failure).
 func Delete(t *testing.T, application *api.Application) {
-	err = Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
+	err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
 	if err != nil {
 		t.Fatalf("Delete fatal error: %v", err.Error())
 	}

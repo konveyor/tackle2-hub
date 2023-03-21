@@ -20,7 +20,7 @@ func TestApplicationUpdateName(t *testing.T) {
 			updateApplication := api.Application{
 				Name: updatedName,
 			}
-			err = Client.Put(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &updateApplication)
+			err := Client.Put(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &updateApplication)
 			if err != nil {
 				t.Errorf("Update error: %v", err.Error())
 			}

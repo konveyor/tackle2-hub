@@ -16,7 +16,7 @@ func TestApplicationGet(t *testing.T) {
 
 			// Try get the application.
 			gotApplication := api.Application{}
-			err = Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &gotApplication)
+			err := Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &gotApplication)
 			if err != nil {
 				t.Errorf("Get error: %v", err.Error())
 			}

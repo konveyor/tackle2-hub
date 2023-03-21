@@ -13,7 +13,7 @@ func TestApplicationCreate(t *testing.T) {
 	for _, application := range samples {
 		t.Run(fmt.Sprintf("Create application %s", application.Name), func(t *testing.T) {
 
-			err = Client.Post(api.ApplicationsRoot, &application)
+			err := Client.Post(api.ApplicationsRoot, &application)
 			if err != nil {
 				t.Errorf("Create error: %v", err.Error()) // Error for standard test failure or failed assertion
 			}
@@ -30,7 +30,7 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 	application := Samples()[0]
 
 	// Create sample Application.
-	err = Client.Post(api.ApplicationsRoot, &application)
+	err := Client.Post(api.ApplicationsRoot, &application)
 	if err != nil {
 		t.Errorf("Create error: %v", err.Error())
 	}
@@ -60,7 +60,7 @@ func TestApplicationNotCreateWithoutName(t *testing.T) {
 	}
 
 	// Try create the duplicate Application.
-	err = Client.Post(api.ApplicationsRoot, &emptyApplication)
+	err := Client.Post(api.ApplicationsRoot, &emptyApplication)
 	if err == nil {
 		t.Errorf("Created empty application: %v", emptyApplication)
 

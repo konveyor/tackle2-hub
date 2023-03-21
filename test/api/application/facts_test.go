@@ -32,7 +32,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 
 			//fmt.Printf("#### fresh fact: %v", fact)
 			// Create fact.
-			err = Client.Post(factPath, &fact)
+			err := Client.Post(factPath, &fact)
 			if err != nil {
 				t.Errorf("Create error: %v", err.Error())
 			}
@@ -95,7 +95,7 @@ func TestApplicationFactsList(t *testing.T) {
 
 	// Create facts.
 	for _, fact := range SampleFacts {
-		err = Client.Post(fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, fact.Key), &fact)
+		err := Client.Post(fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, fact.Key), &fact)
 		if err != nil {
 			t.Fatalf("Create error: %v", err.Error())
 		}
@@ -106,7 +106,7 @@ func TestApplicationFactsList(t *testing.T) {
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
 			gotFacts := []api.Fact{}
-			err = Client.Get(fmt.Sprintf("%s/%d/%s", api.ApplicationsRoot, application.ID, pathSuffix), &gotFacts)
+			err := Client.Get(fmt.Sprintf("%s/%d/%s", api.ApplicationsRoot, application.ID, pathSuffix), &gotFacts)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())
 			}

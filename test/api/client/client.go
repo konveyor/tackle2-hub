@@ -1,20 +1,28 @@
 package client
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/konveyor/tackle2-hub/addon"
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-type Client struct {
-	client *addon.Client
+var Client *addon.Client
+
+func init() {
+	var err error
+	baseUrl := os.Getenv("HUB_BASE_URL")
+	Client, err = NewHubClient(baseUrl, "admin", "")
+	if err != nil {
+		panic(fmt.Sprintf("Error: Cannot setup API client for URL '%s': %v.", baseUrl, err.Error()))
+	}
 }
 
 // Add with and without login/token creation
-func NewHubClient() (client *addon.Client, err error) {
-	client = addon.NewClient(os.Getenv("HUB_BASE_URL"), "")
-	token, err := login(client, "admin", "foobar")
+func NewHubClient(baseUrl, username, password string) (client *addon.Client, err error) {
+	client = addon.NewClient(baseUrl, "")
+	token, err := login(client, username, password)
 	if err != nil {
 		return
 	}
