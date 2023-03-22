@@ -21,7 +21,7 @@ var (
 //
 // Set of valid Application resources for tests and reuse.
 // Invalid application for negative tests are expected to be defined within the test methods, not here.
-var SampleApplications = []*api.Application{
+var Samples = []*api.Application{
 	{
 		Name:        "Pathfinder",
 		Description: "Tackle Pathfinder application.",
@@ -38,24 +38,19 @@ var SampleApplications = []*api.Application{
 
 //
 // Creates a copy of SampleApplication for given test (copy is there to avoid tests inflence each other using the same object ref).
-func Samples() (applications []*api.Application) {
-	raw, err := json.Marshal(SampleApplications)
+func CloneSamples() (samples []*api.Application) {
+	raw, err := json.Marshal(Samples)
 	if err != nil {
 		fmt.Print("ERROR cloning samples")
 	}
-	json.Unmarshal(raw, &applications)
+	json.Unmarshal(raw, &samples)
 	return
 }
 
-//type TestCase struct {
-//	Test        testclient.TestCase
-//	Application *api.Application
-//}
-
 //
 // Create an Application (and stop tests on failure).
-func Create(t *testing.T, application *api.Application) {
-	err := Client.Post(api.ApplicationsRoot, &application)
+func Create(t *testing.T, r *api.Application) {
+	err := Client.Post(api.ApplicationsRoot, &r)
 	if err != nil {
 		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
 	}
@@ -63,8 +58,8 @@ func Create(t *testing.T, application *api.Application) {
 
 //
 // Delete the Application (and stop tests on failure).
-func Delete(t *testing.T, application *api.Application) {
-	err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
+func Delete(t *testing.T, r *api.Application) {
+	err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID))
 	if err != nil {
 		t.Fatalf("Delete fatal error: %v", err.Error())
 	}

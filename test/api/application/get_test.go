@@ -8,27 +8,27 @@ import (
 )
 
 func TestApplicationGet(t *testing.T) {
-	samples := Samples()
-	for _, application := range samples {
-		t.Run(fmt.Sprintf("Get application %s", application.Name), func(t *testing.T) {
-			// Create the application.
-			Create(t, application)
+	samples := CloneSamples()
+	for _, r := range samples {
+		t.Run(r.Name, func(t *testing.T) {
+			// Create.
+			Create(t, r)
 
-			// Try get the application.
-			gotApplication := api.Application{}
-			err := Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &gotApplication)
+			// Try get.
+			got := api.Application{}
+			err := Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID), &got)
 			if err != nil {
 				t.Errorf("Get error: %v", err.Error())
 			}
 
 			// Assert the response.
-			//if !reflect.DeepEqual(gotApplication, application) { // Fails on different ref/Ptrs addresses
-			if gotApplication.Name != application.Name { // Too stupid asertion
-				t.Errorf("Get returned different application. Got %v, expected %v.", gotApplication, application)
+			//if !reflect.DeepEqual(got, r) { // Fails on different ref/Ptrs addresses
+			if got.Name != r.Name { // Too stupid asertion
+				t.Errorf("Get returned different r. Got %v, expected %v.", got, r)
 			}
 
-			// Clean the application.
-			Delete(t, application)
+			// Clean.
+			Delete(t, r)
 		})
 	}
 }

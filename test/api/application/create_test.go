@@ -1,70 +1,69 @@
 package application
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
 )
 
 func TestApplicationCreate(t *testing.T) {
-	samples := Samples()
+	samples := CloneSamples()
 	// Create on array of Applications calls subtest
-	for _, application := range samples {
-		t.Run(fmt.Sprintf("Create application %s", application.Name), func(t *testing.T) {
+	for _, r := range samples {
+		t.Run(r.Name, func(t *testing.T) {
 
-			err := Client.Post(api.ApplicationsRoot, &application)
+			err := Client.Post(api.ApplicationsRoot, &r)
 			if err != nil {
-				t.Errorf("Create error: %v", err.Error()) // Error for standard test failure or failed assertion
+				t.Errorf(err.Error()) // Error for standard test failure or failed assertion
 			}
 
 			// The Get test not included here, but in get_test.go
 
-			// Clean the app
-			Delete(t, application)
+			// Clean
+			Delete(t, r)
 		})
 	}
 }
 
 func TestApplicationNotCreateDuplicates(t *testing.T) {
-	application := Samples()[0]
+	r := CloneSamples()[0]
 
-	// Create sample Application.
-	err := Client.Post(api.ApplicationsRoot, &application)
+	// Create sample.
+	err := Client.Post(api.ApplicationsRoot, &r)
 	if err != nil {
 		t.Errorf("Create error: %v", err.Error())
 	}
 
 	// Prepare Application with duplicate Name.
-	dupApplication := &api.Application{
-		Name: application.Name,
+	dup := &api.Application{
+		Name: r.Name,
 	}
 
-	// Try create the duplicate Application.
-	err = Client.Post(api.ApplicationsRoot, &dupApplication)
+	// Try create the duplicate.
+	err = Client.Post(api.ApplicationsRoot, &dup)
 	if err == nil {
-		t.Errorf("Created duplicate application: %v", dupApplication)
+		t.Errorf("Created duplicate application: %v", dup)
 
-		// Clean the app
-		Delete(t, dupApplication)
+		// Clean the duplicate.
+		Delete(t, dup)
 	}
 
-	// Clean the application.
-	Delete(t, application)
+	// Clean.
+	Delete(t, r)
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
 	// Prepare Application without Name.
-	emptyApplication := &api.Application{
+	r := &api.Application{
 		Name: "",
 	}
 
 	// Try create the duplicate Application.
-	err := Client.Post(api.ApplicationsRoot, &emptyApplication)
+	err := Client.Post(api.ApplicationsRoot, &r)
 	if err == nil {
-		t.Errorf("Created empty application: %v", emptyApplication)
+		t.Errorf("Created empty application: %v", r)
 
-		// Clean the application.
-		Delete(t, emptyApplication)
+		// Clean.
+		Delete(t, r)
 	}
 }

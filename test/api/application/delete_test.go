@@ -8,22 +8,22 @@ import (
 )
 
 func TestApplicationDelete(t *testing.T) {
-	samples := Samples()
-	for _, application := range samples {
-		t.Run(fmt.Sprintf("Delete application %s", application.Name), func(t *testing.T) {
-			// Create the application.
-			Create(t, application)
+	samples := CloneSamples()
+	for _, r := range samples {
+		t.Run(r.Name, func(t *testing.T) {
+			// Create.
+			Create(t, r)
 
-			// Delete the application.
-			err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID))
+			// Try delete.
+			err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID))
 			if err != nil {
-				t.Errorf("Delete error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
 
-			// Check the application was deleted.
-			err = Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, application.ID), &application)
+			// Check the it was deleted.
+			err = Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID), &r)
 			if err == nil {
-				t.Errorf("Application exits, but should be deleted: %v", application)
+				t.Errorf("Exits, but should be deleted: %v", r)
 			}
 		})
 	}

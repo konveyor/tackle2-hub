@@ -20,64 +20,63 @@ var SampleFacts = []*api.Fact{
 
 func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := Samples()[0]
+	application := CloneSamples()[0]
 
 	// Create the application.
 	Create(t, application)
 
-	for _, fact := range SampleFacts {
-		t.Run(fmt.Sprintf("Fact %s application %s", fact.Key, application.Name), func(t *testing.T) {
+	// Test Facts subresource.
+	for _, r := range SampleFacts {
+		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
 
-			factPath := fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, fact.Key)
+			factPath := fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, r.Key)
 
-			//fmt.Printf("#### fresh fact: %v", fact)
-			// Create fact.
-			err := Client.Post(factPath, &fact)
+			// Create.
+			err := Client.Post(factPath, &r)
 			if err != nil {
-				t.Errorf("Create error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
-			//fmt.Printf("#### created fact: %v", fact)
 
-			// Get the fact.
-			gotFact := api.Fact{}
-			err = Client.Get(factPath, &gotFact)
+			// Get.
+			got := api.Fact{}
+			err = Client.Get(factPath, &got)
 			if err != nil {
-				t.Errorf("Get error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
 			// Not sure about map[] wrapping of the Fact Value (interface) by the API
-			//if !reflect.DeepEqual(gotFact.Value, fact.Value) {
-			//	t.Errorf("Different fact value error. Got %v, expected %v", gotFact.Value, fact.Value)
+			//if !reflect.DeepEqual(got.Value, fact.Value) {
+			//	t.Errorf("Different fact value error. Got %v, expected %v", got.Value, fact.Value)
 			//}
 
-			// Update the fact.
-			updatedFact := api.Fact{
-				Value: fmt.Sprintf("{\"%s\":\"%s\"}", fact.Key, "updated"),
+			// Update.
+			updated := api.Fact{
+				Value: fmt.Sprintf("{\"%s\":\"%s\"}", r.Key, "updated"),
 			}
-			err = Client.Put(factPath, updatedFact)
+			err = Client.Put(factPath, updated)
 			if err != nil {
-				t.Errorf("Update error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
 
-			// Get the updated fact.
-			gotFact = api.Fact{}
-			err = Client.Get(factPath, &gotFact)
+			// Get the updated.
+			got = api.Fact{}
+			err = Client.Get(factPath, &got)
 			if err != nil {
-				t.Errorf("Get updated error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
-			//if !reflect.DeepEqual(gotFact.Value, updatedFact.Value) {
-			//	t.Errorf("Different updated fact value error. Got %v, expected %v", gotFact.Value, updatedFact.Value)
+			//if !reflect.DeepEqual(got.Value, updated.Value) {
+			//	t.Errorf("Different updated fact value error. Got %v, expected %v", got.Value, updated.Value)
 			//}
 
-			// Delete the fact.
+			// Delete.
 			err = Client.Delete(factPath)
 			if err != nil {
-				t.Errorf("Delete error: %v", err.Error())
+				t.Errorf(err.Error())
 			}
 
-			// Check the fact was deleted.
-			err = Client.Get(factPath, &gotFact)
+			// Check the it was deleted.
+			err = Client.Get(factPath, &got)
 			if err == nil {
-				t.Errorf("Application exits, but should be deleted: %v", application)
+				t.Errorf("Exits, but should be deleted: %v", r)
 			}
 		})
 	}
@@ -88,16 +87,16 @@ func TestApplicationFactCRUD(t *testing.T) {
 
 func TestApplicationFactsList(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := Samples()[0]
+	application := CloneSamples()[0]
 
 	// Create the application.
 	Create(t, application)
 
 	// Create facts.
-	for _, fact := range SampleFacts {
-		err := Client.Post(fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, fact.Key), &fact)
+	for _, r := range SampleFacts {
+		err := Client.Post(fmt.Sprintf("%s/%d/facts/%s", api.ApplicationsRoot, application.ID, r.Key), &r)
 		if err != nil {
-			t.Fatalf("Create error: %v", err.Error())
+			t.Fatalf(err.Error())
 		}
 	}
 
@@ -105,13 +104,13 @@ func TestApplicationFactsList(t *testing.T) {
 	factsPathSuffix := []string{"facts", "facts/"}
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
-			gotFacts := []api.Fact{}
-			err := Client.Get(fmt.Sprintf("%s/%d/%s", api.ApplicationsRoot, application.ID, pathSuffix), &gotFacts)
+			got := []api.Fact{}
+			err := Client.Get(fmt.Sprintf("%s/%d/%s", api.ApplicationsRoot, application.ID, pathSuffix), &got)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())
 			}
-			if len(gotFacts) != len(SampleFacts) {
-				t.Errorf("Different length of fact list error. Got %d, expected %d", len(gotFacts), len(SampleFacts))
+			if len(got) != len(SampleFacts) {
+				t.Errorf("Different length of fact list error. Got %d, expected %d", len(got), len(SampleFacts))
 			}
 			// Compare returned list values?
 		})
