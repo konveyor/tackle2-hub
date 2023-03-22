@@ -31,7 +31,7 @@ type TaskGroupHandler struct {
 // AddRoutes adds routes.
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tasks"))
+	routeGroup.Use(auth.Required("tasks"), Transaction)
 	routeGroup.GET(TaskGroupsRoot, h.List)
 	routeGroup.GET(TaskGroupsRoot+"/", h.List)
 	routeGroup.POST(TaskGroupsRoot, h.Create)
@@ -220,7 +220,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	for _, task := range m.Tasks {
 		if task.Pod != "" {
 			rt := tasking.Task{Task: &task}
-			err := rt.Delete(h.Client(ctx))
+			err := rt.Delete(h.Client)
 			if err != nil {
 				if !k8serr.IsNotFound(err) {
 					_ = ctx.Error(err)

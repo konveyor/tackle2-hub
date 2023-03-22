@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -81,7 +82,8 @@ func All() []Handler {
 }
 
 //
-// Handler.
+// Handler API.
 type Handler interface {
+	With(client.Client)
 	AddRoutes(e *gin.Engine)
 }

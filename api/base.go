@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
@@ -21,33 +20,20 @@ var Log = logging.WithName("api")
 //
 // BaseHandler base handler.
 type BaseHandler struct {
+	// k8s client.
+	Client client.Client
+}
+
+//
+// With configuration.
+func (h *BaseHandler) With(client client.Client) {
+	h.Client = client
 }
 
 //
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
-	object, found := ctx.Get(CtxDB)
-	if !found {
-		panic(liberr.New("context: DB not found."))
-	}
-	db, cast := object.(*gorm.DB)
-	if !cast {
-		panic(liberr.New("context: DB not valid."))
-	}
-	return
-}
-
-//
-// Client return the k8s client associated with the context.
-func (h *BaseHandler) Client(ctx *gin.Context) (c client.Client) {
-	object, found := ctx.Get(CtxClient)
-	if !found {
-		panic(liberr.New("context: k8s client not found."))
-	}
-	c, cast := object.(client.Client)
-	if !cast {
-		panic(liberr.New("context: k8s client not valid."))
-	}
+	db = GetDB(ctx)
 	return
 }
 
