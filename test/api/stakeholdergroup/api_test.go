@@ -21,30 +21,30 @@ func TestStakeholderGroupCRUD(t *testing.T) {
 			rPath := fmt.Sprintf("%s/%d", api.StakeholderGroupsRoot, r.ID)
 
 			// Get.
-			gotR := api.StakeholderGroup{}
-			err = Client.Get(rPath, &gotR)
+			got := api.StakeholderGroup{}
+			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if client.FlatEqual(gotR, r) {
-				t.Errorf("Different response error. Got %v, expected %v", gotR, r)
+			if client.FlatEqual(got, r) {
+				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
 			// Update.
-			updatedR := api.StakeholderGroup{
+			updated := api.StakeholderGroup{
 				Name: "Updated " + r.Name,
 			}
-			err = Client.Put(rPath, updatedR)
+			err = Client.Put(rPath, updated)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(rPath, &gotR)
+			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if gotR.Name != updatedR.Name {
-				t.Errorf("Different response error. Got %s, expected %s", gotR.Name, updatedR.Name)
+			if got.Name != updated.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, updated.Name)
 			}
 
 			// Delete.
@@ -70,13 +70,13 @@ func TestStakeholderGroupList(t *testing.T) {
 		Create(t, r)
 	}
 
-	gotList := []api.StakeholderGroup{}
-	err := Client.Get(api.TagCategoriesRoot, &gotList)
+	got := []api.StakeholderGroup{}
+	err := Client.Get(api.TagCategoriesRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if client.FlatEqual(gotList, samples) {
-		t.Errorf("Different response error. Got %v, expected %v", gotList, samples)
+	if client.FlatEqual(got, samples) {
+		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
 	for _, r := range samples {

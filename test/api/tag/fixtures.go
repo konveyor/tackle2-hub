@@ -35,11 +35,11 @@ var Samples = []*api.Tag{
 }
 
 //
-// Creates a copy of Samples for given test (copy is there to avoid tests inflence each other using the same object ref).
+// Creates a copy of Samples for given test.
 func CloneSamples() (samples []*api.Tag) {
 	raw, err := json.Marshal(Samples)
 	if err != nil {
-		fmt.Print("ERROR cloning samples")
+		panic("ERROR cloning samples")
 	}
 	json.Unmarshal(raw, &samples)
 
@@ -64,7 +64,7 @@ func prepareCategory(t *testing.T, tags []*api.Tag) (category *api.TagCategory) 
 func Create(t *testing.T, r *api.Tag) {
 	err := Client.Post(api.TagsRoot, &r)
 	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
+		t.Fatalf("Create fatal error: %v", err.Error())
 	}
 }
 

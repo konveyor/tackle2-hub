@@ -32,7 +32,7 @@ var Samples = []*api.StakeholderGroup{
 func CloneSamples() (samples []*api.StakeholderGroup) {
 	raw, err := json.Marshal(Samples)
 	if err != nil {
-		fmt.Print("ERROR cloning samples")
+		panic("ERROR cloning samples")
 	}
 	json.Unmarshal(raw, &samples)
 	return

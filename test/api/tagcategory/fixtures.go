@@ -20,39 +20,37 @@ var SampleTagCategories = []*api.TagCategory{
 	{
 		Name:  "Test OS",
 		Color: "#dd0000",
-		//Tags:  []api.Ref{},
 	},
 	{
 		Name:  "Test Language",
 		Color: "#0000dd",
-		//Tags:  []api.Ref{},
 	},
 }
 
 //
 // Creates a copy of Samples for given test (copy is there to avoid tests inflence each other using the same object ref).
-func CloneSamples() (applications []*api.TagCategory) {
+func CloneSamples() (samples []*api.TagCategory) {
 	raw, err := json.Marshal(SampleTagCategories)
 	if err != nil {
-		fmt.Print("ERROR cloning samples")
+		panic("ERROR cloning samples")
 	}
-	json.Unmarshal(raw, &applications)
+	json.Unmarshal(raw, &samples)
 	return
 }
 
 //
-// Create a TagCategory.
-func Create(t *testing.T, tagCategory *api.TagCategory) {
-	err := Client.Post(api.TagCategoriesRoot, &tagCategory)
+// Create.
+func Create(t *testing.T, r *api.TagCategory) {
+	err := Client.Post(api.TagCategoriesRoot, &r)
 	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
+		t.Fatalf("Create fatal error: %v", err.Error())
 	}
 }
 
 //
-// Delete the TagCategory.
-func Delete(t *testing.T, tagCategory *api.TagCategory) {
-	err := Client.Delete(fmt.Sprintf("%s/%d", api.TagCategoriesRoot, tagCategory.ID))
+// Delete.
+func Delete(t *testing.T, r *api.TagCategory) {
+	err := Client.Delete(fmt.Sprintf("%s/%d", api.TagCategoriesRoot, r.ID))
 	if err != nil {
 		t.Fatalf("Delete fatal error: %v", err.Error())
 	}

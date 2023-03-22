@@ -11,76 +11,76 @@ import (
 func TestTagCategoriesCRUD(t *testing.T) {
 	samples := CloneSamples()
 
-	for _, tagCategory := range samples {
-		t.Run(tagCategory.Name, func(t *testing.T) {
+	for _, r := range samples {
+		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.TagCategoriesRoot, &tagCategory)
+			err := Client.Post(api.TagCategoriesRoot, &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			tagCategoryPath := fmt.Sprintf("%s/%d", api.TagCategoriesRoot, tagCategory.ID)
+			rPath := fmt.Sprintf("%s/%d", api.TagCategoriesRoot, r.ID)
 
 			// Get.
-			gotTagCategory := api.TagCategory{}
-			err = Client.Get(tagCategoryPath, &gotTagCategory)
+			got := api.TagCategory{}
+			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if client.FlatEqual(gotTagCategory, tagCategory) {
-				t.Errorf("Different response error. Got %v, expected %v", gotTagCategory, tagCategory)
+			if client.FlatEqual(got, r) {
+				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
 			// Update.
-			updatedTagCategory := api.TagCategory{
-				Name: "Updated " + tagCategory.Name,
+			updated := api.TagCategory{
+				Name: "Updated " + r.Name,
 			}
-			err = Client.Put(tagCategoryPath, updatedTagCategory)
+			err = Client.Put(rPath, updated)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(tagCategoryPath, &gotTagCategory)
+			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if gotTagCategory.Name != updatedTagCategory.Name {
-				t.Errorf("Different response error. Got %s, expected %s", gotTagCategory.Name, updatedTagCategory.Name)
+			if got.Name != updated.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, updated.Name)
 			}
 
 			// Delete.
-			err = Client.Delete(tagCategoryPath)
+			err = Client.Delete(rPath)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(tagCategoryPath, &tagCategory)
+			err = Client.Get(rPath, &r)
 			if err == nil {
-				t.Errorf("Resource exits, but should be deleted: %v", tagCategory)
+				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
 
 			// Cleanup.
-			Delete(t, tagCategory)
+			Delete(t, r)
 		})
 	}
 }
 
 func TestTagCategoriesList(t *testing.T) {
 	samples := CloneSamples()
-	for _, tagCategory := range samples {
-		Create(t, tagCategory)
+	for _, r := range samples {
+		Create(t, r)
 	}
 
-	gotTagCategories := []api.TagCategory{}
-	err := Client.Get(api.TagCategoriesRoot, &gotTagCategories)
+	got := []api.TagCategory{}
+	err := Client.Get(api.TagCategoriesRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if client.FlatEqual(gotTagCategories, samples) {
-		t.Errorf("Different response error. Got %v, expected %v", gotTagCategories, samples)
+	if client.FlatEqual(got, samples) {
+		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
-	for _, tagCategory := range samples {
-		Delete(t, tagCategory)
+	for _, r := range samples {
+		Delete(t, r)
 	}
 
 }
