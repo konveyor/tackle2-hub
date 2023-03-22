@@ -57,9 +57,6 @@ func TestStakeholderGroupCRUD(t *testing.T) {
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
-
-			// Cleanup.
-			Delete(t, r)
 		})
 	}
 }

@@ -6,12 +6,10 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/client"
-	"github.com/konveyor/tackle2-hub/test/api/tagcategory"
 )
 
 func TestTagCRUD(t *testing.T) {
 	samples := CloneSamples()
-	category := prepareCategory(t, samples)
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
@@ -60,19 +58,12 @@ func TestTagCRUD(t *testing.T) {
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
-
-			// Cleanup.
-			Delete(t, r)
 		})
 	}
-	// Category cleanup.
-	tagcategory.Delete(t, category)
-
 }
 
 func TestTagList(t *testing.T) {
 	samples := CloneSamples()
-	category := prepareCategory(t, samples)
 
 	for _, r := range samples {
 		Create(t, r)
@@ -90,5 +81,4 @@ func TestTagList(t *testing.T) {
 	for _, r := range samples {
 		Delete(t, r)
 	}
-	tagcategory.Delete(t, category)
 }

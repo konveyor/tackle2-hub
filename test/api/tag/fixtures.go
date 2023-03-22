@@ -7,7 +7,6 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/client"
-	"github.com/konveyor/tackle2-hub/test/api/tagcategory"
 )
 
 var (
@@ -19,17 +18,15 @@ var (
 // Set of valid resources for tests and reuse.
 var Samples = []*api.Tag{
 	{
-		Name:     "Test Linux",
+		Name: "Test Linux",
 		Category: api.Ref{
-			//ID:   99901, // or not hardcode ID here
-			//Name: "Test OS categories",
+			ID: 1, // Category from seeds.
 		},
 	},
 	{
-		Name:     "Test RHEL",
+		Name: "Test RHEL",
 		Category: api.Ref{
-			//ID:   99902, // or not hardcode ID here
-			//Name: "Test Linux distros",
+			ID: 2, // Category from seeds.
 		},
 	},
 }
@@ -43,19 +40,6 @@ func CloneSamples() (samples []*api.Tag) {
 	}
 	json.Unmarshal(raw, &samples)
 
-	return
-}
-
-//
-// Creates category for Tag test from tagcategory package samples.
-func prepareCategory(t *testing.T, tags []*api.Tag) (category *api.TagCategory) {
-	category = tagcategory.CloneSamples()[0]
-	tagcategory.Create(t, category)
-
-	// Assign category to Tag.
-	for _, tag := range tags {
-		tag.Category = api.Ref{ID: category.ID}
-	}
 	return
 }
 
