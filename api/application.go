@@ -194,11 +194,13 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	p := Pathfinder{}
-	err := p.DeleteAssessment([]uint{id}, ctx)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if !Settings.Disconnected {
+		p := Pathfinder{}
+		err := p.DeleteAssessment([]uint{id}, ctx)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
@@ -223,11 +225,13 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	p := Pathfinder{}
-	err = p.DeleteAssessment(ids, ctx)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if !Settings.Disconnected {
+		p := Pathfinder{}
+		err = p.DeleteAssessment(ids, ctx)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	err = h.DB(ctx).Delete(
 		&model.Application{},
