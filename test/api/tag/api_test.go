@@ -82,3 +82,14 @@ func TestTagList(t *testing.T) {
 		Delete(t, r)
 	}
 }
+
+func TestTagSeed(t *testing.T) {
+	got := []api.Tag{}
+	err := Client.Get(api.TagsRoot, &got)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if len(got) < 1 {
+		t.Errorf("Seed looks empty, but it shouldn't.")
+	}
+}

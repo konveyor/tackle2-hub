@@ -1,4 +1,4 @@
-package tagcategory
+package jobfunction
 
 import (
 	"fmt"
@@ -8,20 +8,20 @@ import (
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-func TestTagCategoriesCRUD(t *testing.T) {
+func TestJobfunctionsCRUD(t *testing.T) {
 	samples := CloneSamples()
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.TagCategoriesRoot, &r)
+			err := Client.Post(api.JobFunctionsRoot, &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := fmt.Sprintf("%s/%d", api.TagCategoriesRoot, r.ID)
+			rPath := fmt.Sprintf("%s/%d", api.JobFunctionsRoot, r.ID)
 
 			// Get.
-			got := api.TagCategory{}
+			got := api.JobFunction{}
 			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -31,7 +31,7 @@ func TestTagCategoriesCRUD(t *testing.T) {
 			}
 
 			// Update.
-			updated := api.TagCategory{
+			updated := api.JobFunction{
 				Name: "Updated " + r.Name,
 			}
 			err = Client.Put(rPath, updated)
@@ -61,14 +61,15 @@ func TestTagCategoriesCRUD(t *testing.T) {
 	}
 }
 
-func TestTagCategoriesList(t *testing.T) {
+func TestJobFunctionsList(t *testing.T) {
 	samples := CloneSamples()
+
 	for _, r := range samples {
 		Create(t, r)
 	}
 
-	got := []api.TagCategory{}
-	err := Client.Get(api.TagCategoriesRoot, &got)
+	got := []api.Tag{}
+	err := Client.Get(api.JobFunctionsRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -79,12 +80,11 @@ func TestTagCategoriesList(t *testing.T) {
 	for _, r := range samples {
 		Delete(t, r)
 	}
-
 }
 
-func TestTagCategorySeed(t *testing.T) {
-	got := []api.TagCategory{}
-	err := Client.Get(api.TagCategoriesRoot, &got)
+func TestJobFunctionSeed(t *testing.T) {
+	got := []api.JobFunction{}
+	err := Client.Get(api.JobFunctionsRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
