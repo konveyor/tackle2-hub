@@ -62,6 +62,9 @@ type Pathfinder struct {
 //
 // DeleteAssessment deletes associated assessments by application Ids.
 func (r *Pathfinder) DeleteAssessment(ids []uint, ctx *gin.Context) (err error) {
+	if Settings.Disconnected {
+		return
+	}
 	client := r.client()
 	body := map[string][]uint{"applicationIds": ids}
 	b, _ := json.Marshal(body)
