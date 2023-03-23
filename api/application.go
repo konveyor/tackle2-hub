@@ -200,7 +200,6 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
