@@ -33,7 +33,8 @@ func (h *BaseHandler) With(client client.Client) {
 //
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
-	db = GetDB(ctx)
+	rtx := WithContext(ctx)
+	db = rtx.DB
 	return
 }
 

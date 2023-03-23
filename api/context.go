@@ -6,39 +6,43 @@ import (
 	"net/http"
 )
 
-const (
-	// CtxDB is the DB client stored on the context.
-	CtxDB = "DB"
-)
-
 //
-// SetDB inject the DB into the context.
-func SetDB(ctx *gin.Context, db *gorm.DB) {
-	ctx.Set(CtxDB, db)
+// Context custom settings.
+type Context struct {
+	*gin.Context
+	// DB client.
+	DB *gorm.DB
 }
 
 //
-// GetDB extract DB from the context.
-func GetDB(ctx *gin.Context) (db *gorm.DB) {
-	object, _ := ctx.Get(CtxDB)
-	db = object.(*gorm.DB)
+// WithContext is a rich context.
+func WithContext(ctx *gin.Context) (n *Context) {
+	key := "RichContext"
+	object, found := ctx.Get(key)
+	if !found {
+		n = &Context{}
+		ctx.Set(key, n)
+	} else {
+		n = object.(*Context)
+	}
+	n.Context = ctx
 	return
 }
 
 //
 // Transaction handler.
 func Transaction(ctx *gin.Context) {
-	db := GetDB(ctx)
 	switch ctx.Request.Method {
 	case http.MethodPost,
 		http.MethodPut,
 		http.MethodPatch,
 		http.MethodDelete:
-		err := db.Transaction(func(tx *gorm.DB) (err error) {
-			ctx.Set(CtxDB, tx)
-			SetDB(ctx, tx)
+		rtx := WithContext(ctx)
+		err := rtx.DB.Transaction(func(tx *gorm.DB) (err error) {
+			db := rtx.DB
+			rtx.DB = tx
 			ctx.Next()
-			SetDB(ctx, db)
+			rtx.DB = db
 			if len(ctx.Errors) > 0 {
 				err = ctx.Errors[0]
 			}

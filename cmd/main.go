@@ -186,7 +186,8 @@ func main() {
 	router.Use(api.ErrorHandler())
 	router.Use(
 		func(ctx *gin.Context) {
-			api.SetDB(ctx, db)
+			rtx := api.WithContext(ctx)
+			rtx.DB = db
 		})
 	for _, h := range api.All() {
 		h.With(client)
