@@ -2,40 +2,37 @@ package client
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/konveyor/tackle2-hub/addon"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var Client *addon.Client
 
 func init() {
 	var err error
-	baseUrl := os.Getenv("HUB_BASE_URL")
-	Client, err = NewHubClient(baseUrl, "admin", "")
+	Client, err = New()
 	if err != nil {
-		panic(fmt.Sprintf("Error: Cannot setup API client for URL '%s': %v.", baseUrl, err.Error()))
+		panic(fmt.Sprintf("Error: Cannot setup API client: %v.", err.Error()))
 	}
 }
 
-// Add with and without login/token creation
-func NewHubClient(baseUrl, username, password string) (client *addon.Client, err error) {
+//
+// Create new Hub client with login.
+// Configured with environment variables HUB_BASE_URL, KEYCLOAK_ADMIN_USER, KEYCLOAK_ADMIN_PASS.
+func New() (client *addon.Client, err error) {
+	baseUrl := settings.Settings.Addon.Hub.URL
+	login := api.Login{User: settings.Settings.Auth.Keycloak.Admin.User, Password: settings.Settings.Auth.Keycloak.Admin.Pass}
+
+	// Setup client.
 	client = addon.NewClient(baseUrl, "")
-	token, err := login(client, username, password)
+
+	// Login.
+	err = client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
 		return
 	}
-	client.SetToken(token)
+	client.SetToken(login.Token)
 	return
-}
-
-// Login performs a login request to the hub and returns a token
-func login(client *addon.Client, username, password string) (string, error) {
-	login := api.Login{User: username, Password: password}
-	err := client.Post(api.AuthLoginRoot, &login)
-	if err != nil {
-		return "", err
-	}
-	return login.Token, nil
 }
