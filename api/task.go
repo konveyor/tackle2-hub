@@ -175,7 +175,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	rt := tasking.Task{Task: task}
-	err := rt.Delete(h.Client(ctx))
+	err := rt.Delete(h.Client)
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
 			_ = ctx.Error(err)

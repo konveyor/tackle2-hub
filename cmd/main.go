@@ -184,8 +184,13 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(api.ErrorHandler())
-	router.Use(api.TxHandler(db, client))
+	router.Use(
+		func(ctx *gin.Context) {
+			rtx := api.WithContext(ctx)
+			rtx.DB = db
+		})
 	for _, h := range api.All() {
+		h.With(client)
 		h.AddRoutes(router)
 	}
 	err = router.Run()

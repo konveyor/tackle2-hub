@@ -24,7 +24,7 @@ type RuleBundleHandler struct {
 
 func (h RuleBundleHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("rulebundles"))
+	routeGroup.Use(auth.Required("rulebundles"), Transaction)
 	routeGroup.GET(RuleBundlesRoot, h.List)
 	routeGroup.GET(RuleBundlesRoot+"/", h.List)
 	routeGroup.POST(RuleBundlesRoot, h.Create)

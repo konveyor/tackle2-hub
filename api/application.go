@@ -40,7 +40,7 @@ type ApplicationHandler struct {
 // AddRoutes adds routes.
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("applications"))
+	routeGroup.Use(auth.Required("applications"), Transaction)
 	routeGroup.GET(ApplicationsRoot, h.List)
 	routeGroup.GET(ApplicationsRoot+"/", h.List)
 	routeGroup.POST(ApplicationsRoot, h.Create)
@@ -49,11 +49,13 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(ApplicationsRoot, h.DeleteList)
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
 	// Tags
+	routeGroup = e.Group("/")
+	routeGroup.Use(auth.Required("applications"))
 	routeGroup.GET(ApplicationTagsRoot, h.TagList)
 	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
 	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
-	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace)
+	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace, Transaction)
 	// Facts
 	routeGroup = e.Group("/")
 	routeGroup.Use(auth.Required("applications.facts"))
