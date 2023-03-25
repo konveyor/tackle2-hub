@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"io"
@@ -44,7 +43,7 @@ type BucketHandler struct {
 // AddRoutes adds routes.
 func (h BucketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("buckets"))
+	routeGroup.Use(Required("buckets"))
 	routeGroup.GET(BucketsRoot, h.List)
 	routeGroup.GET(BucketsRoot+"/", h.List)
 	routeGroup.POST(BucketsRoot, h.Create)

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -24,7 +23,7 @@ type RuleBundleHandler struct {
 
 func (h RuleBundleHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("rulebundles"), Transaction)
+	routeGroup.Use(Required("rulebundles"), Transaction)
 	routeGroup.GET(RuleBundlesRoot, h.List)
 	routeGroup.GET(RuleBundlesRoot+"/", h.List)
 	routeGroup.POST(RuleBundlesRoot, h.Create)

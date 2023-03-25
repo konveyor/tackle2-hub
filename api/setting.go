@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strings"
@@ -27,7 +26,7 @@ type SettingHandler struct {
 // AddRoutes add routes.
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("settings"))
+	routeGroup.Use(Required("settings"))
 	routeGroup.GET(SettingsRoot, h.List)
 	routeGroup.GET(SettingsRoot+"/", h.List)
 	routeGroup.GET(SettingRoot, h.Get)

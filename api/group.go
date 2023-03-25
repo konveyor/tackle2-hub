@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -25,7 +24,7 @@ type StakeholderGroupHandler struct {
 // AddRoutes adds routes.
 func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("stakeholdergroups"), Transaction)
+	routeGroup.Use(Required("stakeholdergroups"), Transaction)
 	routeGroup.GET(StakeholderGroupsRoot, h.List)
 	routeGroup.GET(StakeholderGroupsRoot+"/", h.List)
 	routeGroup.POST(StakeholderGroupsRoot, h.Create)

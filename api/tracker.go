@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -30,7 +29,7 @@ type TrackerHandler struct {
 // AddRoutes adds routes.
 func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("trackers"))
+	routeGroup.Use(Required("trackers"))
 	routeGroup.GET(TrackersRoot, h.List)
 	routeGroup.GET(TrackersRoot+"/", h.List)
 	routeGroup.POST(TrackersRoot, h.Create)

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -28,7 +27,7 @@ type ProxyHandler struct {
 
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("proxies"))
+	routeGroup.Use(Required("proxies"))
 	routeGroup.GET(ProxiesRoot, h.List)
 	routeGroup.GET(ProxiesRoot+"/", h.List)
 	routeGroup.POST(ProxiesRoot, h.Create)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -40,7 +39,7 @@ type ApplicationHandler struct {
 // AddRoutes adds routes.
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("applications"), Transaction)
+	routeGroup.Use(Required("applications"), Transaction)
 	routeGroup.GET(ApplicationsRoot, h.List)
 	routeGroup.GET(ApplicationsRoot+"/", h.List)
 	routeGroup.POST(ApplicationsRoot, h.Create)
@@ -50,7 +49,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
 	// Tags
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("applications"))
+	routeGroup.Use(Required("applications"))
 	routeGroup.GET(ApplicationTagsRoot, h.TagList)
 	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
@@ -58,7 +57,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace, Transaction)
 	// Facts
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("applications.facts"))
+	routeGroup.Use(Required("applications.facts"))
 	routeGroup.GET(ApplicationFactsRoot, h.FactList)
 	routeGroup.GET(ApplicationFactsRoot+"/", h.FactList)
 	routeGroup.GET(ApplicationFactRoot, h.FactGet)
@@ -67,7 +66,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
 	// Bucket
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("applications.bucket"))
+	routeGroup.Use(Required("applications.bucket"))
 	routeGroup.GET(AppBucketRoot, h.BucketGet)
 	routeGroup.GET(AppBucketContentRoot, h.BucketGet)
 	routeGroup.POST(AppBucketContentRoot, h.BucketPut)

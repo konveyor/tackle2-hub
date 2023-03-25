@@ -10,7 +10,6 @@ import (
 	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/auth"
 	"io"
 	"mime/multipart"
 	"net"
@@ -621,7 +620,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(auth.Header, r.token)
+		request.Header.Set(api.Authorization, r.token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {

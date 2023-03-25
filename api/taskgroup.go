@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
@@ -31,7 +30,7 @@ type TaskGroupHandler struct {
 // AddRoutes adds routes.
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tasks"), Transaction)
+	routeGroup.Use(Required("tasks"), Transaction)
 	routeGroup.GET(TaskGroupsRoot, h.List)
 	routeGroup.GET(TaskGroupsRoot+"/", h.List)
 	routeGroup.POST(TaskGroupsRoot, h.Create)
@@ -41,7 +40,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
 	// Bucket
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("tasks.bucket"))
+	routeGroup.Use(Required("tasks.bucket"))
 	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
 	routeGroup.GET(TaskGroupBucketContentRoot, h.BucketGet)
 	routeGroup.POST(TaskGroupBucketContentRoot, h.BucketPut)

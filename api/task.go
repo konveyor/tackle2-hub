@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
@@ -39,7 +38,7 @@ type TaskHandler struct {
 // AddRoutes adds routes.
 func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tasks"))
+	routeGroup.Use(Required("tasks"))
 	routeGroup.GET(TasksRoot, h.List)
 	routeGroup.GET(TasksRoot+"/", h.List)
 	routeGroup.POST(TasksRoot, h.Create)
@@ -51,7 +50,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
 	// Bucket
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("tasks.bucket"))
+	routeGroup.Use(Required("tasks.bucket"))
 	routeGroup.GET(TaskBucketRoot, h.BucketGet)
 	routeGroup.GET(TaskBucketContentRoot, h.BucketGet)
 	routeGroup.POST(TaskBucketContentRoot, h.BucketPut)
@@ -59,7 +58,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(TaskBucketContentRoot, h.BucketDelete)
 	// Report
 	routeGroup = e.Group("/")
-	routeGroup.Use(auth.Required("tasks.report"))
+	routeGroup.Use(Required("tasks.report"))
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
 	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)

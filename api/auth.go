@@ -59,3 +59,33 @@ type Login struct {
 	Password string `json:"password,omitempty"`
 	Token    string `json:"token"`
 }
+
+//
+// Required enforces that the user (identified by a token) has
+// been granted the necessary scope to access a resource.
+func Required(scope string) func(*gin.Context) {
+	return func(ctx *gin.Context) {
+		rtx := WithContext(ctx)
+		token := ctx.GetHeader(Authorization)
+		request := &auth.Request{
+			Token:  token,
+			Scope:  scope,
+			Method: ctx.Request.Method,
+		}
+		result, err := request.Permit()
+		if err != nil {
+			ctx.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		if !result.Authenticated {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		if !result.Authorized {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		rtx.User = result.User
+		rtx.Scopes = result.Scopes
+	}
+}

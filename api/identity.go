@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strconv"
@@ -30,7 +29,7 @@ type IdentityHandler struct {
 
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("identities"))
+	routeGroup.Use(Required("identities"))
 	routeGroup.GET(IdentitiesRoot, h.setDecrypted, h.List)
 	routeGroup.GET(IdentitiesRoot+"/", h.setDecrypted, h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)

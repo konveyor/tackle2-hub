@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -29,7 +28,7 @@ type TicketHandler struct {
 // AddRoutes adds routes.
 func (h TicketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tickets"))
+	routeGroup.Use(Required("tickets"))
 	routeGroup.GET(TicketsRoot, h.List)
 	routeGroup.GET(TicketsRoot+"/", h.List)
 	routeGroup.POST(TicketsRoot, h.Create)
