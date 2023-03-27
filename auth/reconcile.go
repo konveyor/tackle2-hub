@@ -430,22 +430,13 @@ func (r *Reconciler) scopeMap() (scopeMap map[string]gocloak.ClientScope, err er
 //
 // login logs into the keycloak admin-cli client as the administrator.
 func (r *Reconciler) login() (err error) {
-	// retry for three minutes to allow for the possibility
-	// that the hub came up before keycloak did.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
-	defer cancel()
 	for {
-		select {
-		case <-ctx.Done():
+		r.token, err = r.client.LoginAdmin(context.Background(), r.admin, r.pass, r.adminRealm)
+		if err != nil {
+			Log.Info("Login failed.", "reason", err.Error())
+			time.Sleep(time.Second * 3)
+		} else {
 			return
-		default:
-			r.token, err = r.client.LoginAdmin(ctx, r.admin, r.pass, r.adminRealm)
-			if err != nil {
-				Log.Info("Login failed.", "reason", err.Error())
-				time.Sleep(time.Second)
-			} else {
-				return
-			}
 		}
 	}
 }
