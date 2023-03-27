@@ -1,7 +1,6 @@
 package tag
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,29 +15,21 @@ var (
 
 //
 // Set of valid resources for tests and reuse.
-var Samples = []*api.Tag{
-	{
-		Name: "Test Linux",
-		Category: api.Ref{
-			ID: 1, // Category from seeds.
+func Samples() (samples []api.Tag) {
+	samples = []api.Tag{
+		{
+			Name: "Test Linux",
+			Category: api.Ref{
+				ID: 1, // Category from seeds.
+			},
 		},
-	},
-	{
-		Name: "Test RHEL",
-		Category: api.Ref{
-			ID: 2, // Category from seeds.
+		{
+			Name: "Test RHEL",
+			Category: api.Ref{
+				ID: 2, // Category from seeds.
+			},
 		},
-	},
-}
-
-//
-// Creates a copy of Samples for given test.
-func CloneSamples() (samples []*api.Tag) {
-	raw, err := json.Marshal(Samples)
-	if err != nil {
-		panic("ERROR cloning samples")
 	}
-	json.Unmarshal(raw, &samples)
 
 	return
 }

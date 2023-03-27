@@ -1,7 +1,6 @@
 package tagcategory
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,25 +15,17 @@ var (
 
 //
 // Set of valid TagCategories resources for tests and reuse.
-var SampleTagCategories = []*api.TagCategory{
-	{
-		Name:  "Test OS",
-		Color: "#dd0000",
-	},
-	{
-		Name:  "Test Language",
-		Color: "#0000dd",
-	},
-}
-
-//
-// Creates a copy of Samples for given test (copy is there to avoid tests inflence each other using the same object ref).
-func CloneSamples() (samples []*api.TagCategory) {
-	raw, err := json.Marshal(SampleTagCategories)
-	if err != nil {
-		panic("ERROR cloning samples")
+func Samples() (samples []api.TagCategory) {
+	samples = []api.TagCategory{
+		{
+			Name:  "Test OS",
+			Color: "#dd0000",
+		},
+		{
+			Name:  "Test Language",
+			Color: "#0000dd",
+		},
 	}
-	json.Unmarshal(raw, &samples)
 	return
 }
 

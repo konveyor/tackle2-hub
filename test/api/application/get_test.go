@@ -8,11 +8,11 @@ import (
 )
 
 func TestApplicationGet(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			Create(t, r)
+			Create(t, &r)
 
 			// Try get.
 			got := api.Application{}
@@ -28,7 +28,7 @@ func TestApplicationGet(t *testing.T) {
 			}
 
 			// Clean.
-			Delete(t, r)
+			Delete(t, &r)
 		})
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestApplicationCreate(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 	// Create on array of Applications calls subtest
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
@@ -20,13 +20,13 @@ func TestApplicationCreate(t *testing.T) {
 			// The Get test not included here, but in get_test.go
 
 			// Clean
-			Delete(t, r)
+			Delete(t, &r)
 		})
 	}
 }
 
 func TestApplicationNotCreateDuplicates(t *testing.T) {
-	r := CloneSamples()[0]
+	r := Samples()[0]
 
 	// Create sample.
 	err := Client.Post(api.ApplicationsRoot, &r)
@@ -49,7 +49,7 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 	}
 
 	// Clean.
-	Delete(t, r)
+	Delete(t, &r)
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {

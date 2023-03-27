@@ -9,7 +9,7 @@ import (
 )
 
 func TestJobfunctionsCRUD(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
@@ -26,7 +26,7 @@ func TestJobfunctionsCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if client.FlatEqual(got, r) {
+			if client.FlatEqual(got, &r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
@@ -62,10 +62,10 @@ func TestJobfunctionsCRUD(t *testing.T) {
 }
 
 func TestJobFunctionsList(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 
 	for _, r := range samples {
-		Create(t, r)
+		Create(t, &r)
 	}
 
 	got := []api.Tag{}
@@ -78,7 +78,7 @@ func TestJobFunctionsList(t *testing.T) {
 	}
 
 	for _, r := range samples {
-		Delete(t, r)
+		Delete(t, &r)
 	}
 }
 

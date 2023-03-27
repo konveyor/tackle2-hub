@@ -8,11 +8,11 @@ import (
 )
 
 func TestApplicationDelete(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			Create(t, r)
+			Create(t, &r)
 
 			// Try delete.
 			err := Client.Delete(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID))

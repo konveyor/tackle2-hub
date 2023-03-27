@@ -9,11 +9,11 @@ import (
 )
 
 func TestApplicationUpdateName(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			Create(t, r)
+			Create(t, &r)
 
 			// Update.
 			updatedName := fmt.Sprint(r.Name, " updated")
@@ -36,7 +36,7 @@ func TestApplicationUpdateName(t *testing.T) {
 			}
 
 			// Clean.
-			Delete(t, r)
+			Delete(t, &r)
 		})
 	}
 }

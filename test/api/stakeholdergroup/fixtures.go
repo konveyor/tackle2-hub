@@ -1,7 +1,6 @@
 package stakeholdergroup
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,25 +15,17 @@ var (
 
 //
 // Set of valid resources for tests and reuse.
-var Samples = []*api.StakeholderGroup{
-	{
-		Name:        "Mgmt",
-		Description: "Management stakeholder group.",
-	},
-	{
-		Name:        "Engineering",
-		Description: "Engineering team.",
-	},
-}
-
-//
-// Creates a copy of Samples for a test.
-func CloneSamples() (samples []*api.StakeholderGroup) {
-	raw, err := json.Marshal(Samples)
-	if err != nil {
-		panic("ERROR cloning samples")
+func Samples() (samples []api.StakeholderGroup) {
+	samples = []api.StakeholderGroup{
+		{
+			Name:        "Mgmt",
+			Description: "Management stakeholder group.",
+		},
+		{
+			Name:        "Engineering",
+			Description: "Engineering team.",
+		},
 	}
-	json.Unmarshal(raw, &samples)
 	return
 }
 

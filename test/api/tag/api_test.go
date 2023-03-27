@@ -9,7 +9,7 @@ import (
 )
 
 func TestTagCRUD(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
@@ -26,7 +26,7 @@ func TestTagCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if client.FlatEqual(got, r) {
+			if client.FlatEqual(got, &r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
@@ -63,10 +63,10 @@ func TestTagCRUD(t *testing.T) {
 }
 
 func TestTagList(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 
-	for _, r := range samples {
-		Create(t, r)
+	for i := range samples {
+		Create(t, &samples[i])
 	}
 
 	got := []api.Tag{}
@@ -79,7 +79,7 @@ func TestTagList(t *testing.T) {
 	}
 
 	for _, r := range samples {
-		Delete(t, r)
+		Delete(t, &r)
 	}
 }
 

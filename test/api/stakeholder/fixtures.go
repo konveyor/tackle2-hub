@@ -1,7 +1,6 @@
 package stakeholder
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,25 +15,17 @@ var (
 
 //
 // Set of valid resources for tests and reuse.
-var Samples = []*api.Stakeholder{
-	{
-		Name:  "Alice",
-		Email: "alice@acme.local",
-	},
-	{
-		Name:  "Bob",
-		Email: "bob@acme-supplier.local",
-	},
-}
-
-//
-// Creates a copy of Samples for a test.
-func CloneSamples() (samples []*api.Stakeholder) {
-	raw, err := json.Marshal(Samples)
-	if err != nil {
-		panic("ERROR cloning samples")
+func Samples() (samples []api.Stakeholder) {
+	samples = []api.Stakeholder{
+		{
+			Name:  "Alice",
+			Email: "alice@acme.local",
+		},
+		{
+			Name:  "Bob",
+			Email: "bob@acme-supplier.local",
+		},
 	}
-	json.Unmarshal(raw, &samples)
 	return
 }
 

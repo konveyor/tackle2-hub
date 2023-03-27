@@ -20,10 +20,10 @@ var SampleFacts = []*api.Fact{
 
 func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := CloneSamples()[0]
+	application := Samples()[0]
 
 	// Create the application.
-	Create(t, application)
+	Create(t, &application)
 
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
@@ -82,15 +82,15 @@ func TestApplicationFactCRUD(t *testing.T) {
 	}
 
 	// Clean the application.
-	Delete(t, application)
+	Delete(t, &application)
 }
 
 func TestApplicationFactsList(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := CloneSamples()[0]
+	application := Samples()[0]
 
 	// Create the application.
-	Create(t, application)
+	Create(t, &application)
 
 	// Create facts.
 	for _, r := range SampleFacts {
@@ -117,5 +117,5 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Clean the application.
-	Delete(t, application)
+	Delete(t, &application)
 }

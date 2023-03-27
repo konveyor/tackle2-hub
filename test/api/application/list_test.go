@@ -7,14 +7,14 @@ import (
 )
 
 func TestApplicationList(t *testing.T) {
-	samples := CloneSamples()
+	samples := Samples()
 	// Create.
-	for _, r := range samples {
-		Create(t, r)
+	for i := range samples {
+		Create(t, &samples[i]) // Need modify parent array instead of single record created by the loop (to keep created IDs).
 	}
 
 	// Try list.
-	got := []*api.Application{}
+	got := []api.Application{}
 	err := Client.Get(api.ApplicationsRoot, &got)
 	if err != nil {
 		t.Errorf("List error: %v", err.Error())
@@ -32,6 +32,6 @@ func TestApplicationList(t *testing.T) {
 
 	// Clean.
 	for _, r := range samples {
-		Delete(t, r)
+		Delete(t, &r)
 	}
 }

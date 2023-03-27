@@ -1,7 +1,6 @@
 package jobfunction
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,24 +15,15 @@ var (
 
 //
 // Set of valid resources for tests and reuse.
-var Samples = []*api.JobFunction{
-	{
-		Name: "Engineer",
-	},
-	{
-		Name: "Manager",
-	},
-}
-
-//
-// Creates a copy of Samples for given test.
-func CloneSamples() (samples []*api.JobFunction) {
-	raw, err := json.Marshal(Samples)
-	if err != nil {
-		panic("ERROR cloning samples")
+func Samples() (samples []api.JobFunction) {
+	samples = []api.JobFunction{
+		{
+			Name: "Engineer",
+		},
+		{
+			Name: "Manager",
+		},
 	}
-	json.Unmarshal(raw, &samples)
-
 	return
 }
 

@@ -1,7 +1,6 @@
 package application
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -14,36 +13,24 @@ var (
 	Client = client.Client
 )
 
-//if err != nil {
-//	t.Fatalf("Unable connect to Hub API: %v", err.Error())
-//}
-
 //
 // Set of valid Application resources for tests and reuse.
 // Invalid application for negative tests are expected to be defined within the test methods, not here.
-var Samples = []*api.Application{
-	{
-		Name:        "Pathfinder",
-		Description: "Tackle Pathfinder application.",
-		Repository: &api.Repository{
-			Kind:   "git",
-			URL:    "https://github.com/konveyor/tackle-pathfinder.git",
-			Branch: "1.2.0",
+func Samples() (samples []api.Application) {
+	samples = []api.Application{
+		{
+			Name:        "Pathfinder",
+			Description: "Tackle Pathfinder application.",
+			Repository: &api.Repository{
+				Kind:   "git",
+				URL:    "https://github.com/konveyor/tackle-pathfinder.git",
+				Branch: "1.2.0",
+			},
 		},
-	},
-	{
-		Name: "Minimal application",
-	},
-}
-
-//
-// Creates a copy of SampleApplication for given test (copy is there to avoid tests inflence each other using the same object ref).
-func CloneSamples() (samples []*api.Application) {
-	raw, err := json.Marshal(Samples)
-	if err != nil {
-		fmt.Print("ERROR cloning samples")
+		{
+			Name: "Minimal application",
+		},
 	}
-	json.Unmarshal(raw, &samples)
 	return
 }
 
