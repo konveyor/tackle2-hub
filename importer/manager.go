@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"regexp"
 
 	liberr "github.com/konveyor/controller/pkg/error"
@@ -233,7 +232,6 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		if category.ID == 0 {
 			if imp.ImportSummary.CreateEntities {
 				category.Name = impTag.Category
-				category.Color = fmt.Sprintf("#%x%x%x", rand.Intn(255), rand.Intn(255), rand.Intn(255))
 				result := m.DB.Create(&category)
 				if result.Error != nil {
 					imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' cannot be created.", impTag.Category)
