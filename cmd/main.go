@@ -184,6 +184,7 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(api.ErrorHandler())
+	router.Use(api.WatchDog())
 	router.Use(
 		func(ctx *gin.Context) {
 			rtx := api.WithContext(ctx)
