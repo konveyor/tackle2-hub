@@ -5,10 +5,11 @@ Tackle hub/addon integration.
 package addon
 
 import (
+	"os"
+
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
 	"golang.org/x/sys/unix"
-	"os"
 )
 
 var (

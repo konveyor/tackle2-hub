@@ -1,9 +1,9 @@
 package tag
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/addon"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
@@ -46,7 +46,7 @@ func Create(t *testing.T, r *api.Tag) {
 //
 // Delete the Tag.
 func Delete(t *testing.T, r *api.Tag) {
-	err := Client.Delete(fmt.Sprintf("%s/%d", api.TagsRoot, r.ID))
+	err := Client.Delete(addon.Params{api.ID: r.ID}.Inject(api.TagRoot))
 	if err != nil {
 		t.Fatalf("Delete fatal error: %v", err.Error())
 	}
