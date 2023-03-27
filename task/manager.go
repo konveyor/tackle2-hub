@@ -83,7 +83,6 @@ func (m *Manager) Run(ctx context.Context) {
 		auth.Validators,
 		&Validator{
 			Client: m.Client,
-			DB:     m.DB,
 		})
 	go func() {
 		Log.Info("Started.")

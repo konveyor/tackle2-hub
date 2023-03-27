@@ -55,9 +55,10 @@ func (r *Keycloak) Login(user, password string) (token string, err error) {
 
 //
 // Authenticate the token
-func (r *Keycloak) Authenticate(token string) (jwToken *jwt.Token, err error) {
+func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
+	token := request.Token
 	jwToken, _, err = r.client.DecodeAccessToken(ctx, token, r.realm)
 	if err != nil || !jwToken.Valid {
 		err = liberr.Wrap(&NotAuthenticated{Token: token})

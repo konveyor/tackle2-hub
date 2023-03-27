@@ -71,6 +71,7 @@ func Required(scope string) func(*gin.Context) {
 			Token:  token,
 			Scope:  scope,
 			Method: ctx.Request.Method,
+			DB:     rtx.DB,
 		}
 		result, err := request.Permit()
 		if err != nil {

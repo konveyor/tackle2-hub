@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/golang-jwt/jwt/v4"
 	liberr "github.com/konveyor/controller/pkg/error"
+	"gorm.io/gorm"
 	"strings"
 )
 
@@ -14,7 +15,7 @@ var Validators []Validator
 // Validator provides token validation.
 type Validator interface {
 	// Valid determines if the token is valid.
-	Valid(token *jwt.Token) (valid bool)
+	Valid(token *jwt.Token, db *gorm.DB) (valid bool)
 }
 
 //
@@ -30,7 +31,7 @@ func (r NoAuth) NewToken(user string, scopes []string, claims jwt.MapClaims) (si
 
 //
 // Authenticate the token
-func (r *NoAuth) Authenticate(token string) (jwToken *jwt.Token, err error) {
+func (r *NoAuth) Authenticate(_ *Request) (jwToken *jwt.Token, err error) {
 	return
 }
 
@@ -62,9 +63,10 @@ type Builtin struct {
 
 //
 // Authenticate the token
-func (r *Builtin) Authenticate(token string) (jwToken *jwt.Token, err error) {
+func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
+	token := request.Token
 	jwToken, err = jwt.Parse(
-		token,
+		request.Token,
 		func(jwToken *jwt.Token) (secret interface{}, err error) {
 			_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
 			if !cast {
@@ -108,7 +110,7 @@ func (r *Builtin) Authenticate(token string) (jwToken *jwt.Token, err error) {
 		return
 	}
 	for _, v := range Validators {
-		if !v.Valid(jwToken) {
+		if !v.Valid(jwToken, request.DB) {
 			err = liberr.Wrap(&NotValid{Token: token})
 			return
 		}

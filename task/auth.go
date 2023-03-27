@@ -15,8 +15,6 @@ import (
 type Validator struct {
 	// k8s client.
 	Client k8s.Client
-	// DB client.
-	DB *gorm.DB
 }
 
 //
@@ -24,7 +22,7 @@ type Validator struct {
 //  - The token references a task.
 //  - The task is valid and running.
 //  - The task pod valid and pending|running.
-func (r *Validator) Valid(token *jwt.Token) (valid bool) {
+func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (valid bool) {
 	var err error
 	claims := token.Claims.(jwt.MapClaims)
 	v, found := claims["task"]
@@ -34,7 +32,7 @@ func (r *Validator) Valid(token *jwt.Token) (valid bool) {
 		return
 	}
 	task := &model.Task{}
-	err = r.DB.First(task, id).Error
+	err = db.First(task, id).Error
 	if err != nil {
 		Log.Info("Task referenced by token: not found.")
 		return
