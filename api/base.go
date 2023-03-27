@@ -137,7 +137,8 @@ func (h *BaseHandler) modBody(
 //
 // CurrentUser gets username from Keycloak auth token.
 func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
-	user = ctx.GetString(auth.TokenUser)
+	rtx := WithContext(ctx)
+	user = rtx.User
 	if user == "" {
 		Log.Info("Failed to get current user.")
 	}
@@ -150,14 +151,11 @@ func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
 	in := auth.BaseScope{}
 	in.With(scope)
-	if object, found := ctx.Get(auth.TokenScopes); found {
-		if scopes, cast := object.([]auth.Scope); cast {
-			for _, s := range scopes {
-				b = s.Match(in.Resource, in.Method)
-				if b {
-					return
-				}
-			}
+	rtx := WithContext(ctx)
+	for _, s := range rtx.Scopes {
+		b = s.Match(in.Resource, in.Method)
+		if b {
+			return
 		}
 	}
 	return

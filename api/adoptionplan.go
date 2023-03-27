@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -34,7 +33,7 @@ type AdoptionPlanHandler struct {
 // AddRoutes adds routes.
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("adoptionplans"))
+	routeGroup.Use(Required("adoptionplans"))
 	routeGroup.POST(AdoptionPlansRoot, h.Graph)
 }
 

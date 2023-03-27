@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -12,6 +13,10 @@ type Context struct {
 	*gin.Context
 	// DB client.
 	DB *gorm.DB
+	// User
+	User string
+	// Scope
+	Scopes []auth.Scope
 }
 
 //

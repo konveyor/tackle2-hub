@@ -1,9 +1,20 @@
 package auth
 
 import (
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/onsi/gomega"
 	"testing"
 )
+
+type _TestProvider struct {
+	err error
+	NoAuth
+}
+
+func (p *_TestProvider) Authenticate(token string) (jwToken *jwt.Token, err error) {
+	err = p.err
+	return
+}
 
 func TestValid(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -97,4 +108,144 @@ func TestScope(t *testing.T) {
 	scope.With("*:*")
 	g.Expect(scope.Match("things", "get")).To(gomega.BeTrue())
 	g.Expect(scope.Match("xx", "xx")).To(gomega.BeTrue())
+}
+
+func TestRequestHubPermit(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Hub = &Builtin{}
+	Remote = &_TestProvider{err: &NotAuthenticated{}}
+	user := "myUser"
+	scopes := []string{
+		"things:get",
+		"things:post",
+	}
+	//
+	// New token.
+	signed, err := Hub.NewToken(user, scopes, nil)
+	g.Expect(err).To(gomega.BeNil())
+	//
+	// Permit
+	request := Request{
+		Token:  signed,
+		Scope:  "things",
+		Method: "GET",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeTrue())
+	g.Expect(result.User).To(gomega.Equal(user))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(len(scopes)))
+	for i := range scopes {
+		g.Expect(result.Scopes[i].String()).To(gomega.Equal(scopes[i]))
+	}
+}
+
+func TestRequestRemotePermit(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Hub = &_TestProvider{err: &NotAuthenticated{}}
+	Remote = &Builtin{}
+	user := "myUser"
+	scopes := []string{
+		"things:get",
+		"things:post",
+	}
+	//
+	// New token.
+	signed, err := Remote.NewToken(user, scopes, nil)
+	g.Expect(err).To(gomega.BeNil())
+	//
+	// Permit
+	request := Request{
+		Token:  signed,
+		Scope:  "things",
+		Method: "GET",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeTrue())
+	g.Expect(result.User).To(gomega.Equal(user))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(len(scopes)))
+	for i := range scopes {
+		g.Expect(result.Scopes[i].String()).To(gomega.Equal(scopes[i]))
+	}
+}
+
+func TestRequestPermitNotAuthenticated(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Hub = &_TestProvider{err: &NotAuthenticated{}}
+	Remote = &_TestProvider{err: &NotAuthenticated{}}
+	//
+	// Permit
+	request := Request{
+		Token:  "",
+		Scope:  "things",
+		Method: "PUT",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeFalse())
+	g.Expect(result.Authorized).To(gomega.BeFalse())
+	g.Expect(result.User).To(gomega.Equal(""))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(0))
+}
+
+func TestRequestHubPermitNotAuthorized(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Hub = &Builtin{}
+	Remote = &_TestProvider{err: &NotAuthenticated{}}
+	user := "myUser"
+	scopes := []string{
+		"things:get",
+		"things:post",
+	}
+	//
+	// New token.
+	signed, err := Hub.NewToken(user, scopes, nil)
+	g.Expect(err).To(gomega.BeNil())
+	//
+	// Permit
+	request := Request{
+		Token:  signed,
+		Scope:  "things",
+		Method: "PUT",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeTrue())
+	g.Expect(result.Authorized).To(gomega.BeFalse())
+	g.Expect(result.User).To(gomega.Equal(""))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(0))
+}
+
+func TestRequestRemotePermitNotAuthorized(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Remote = &Builtin{}
+	Hub = &_TestProvider{err: &NotAuthenticated{}}
+	user := "myUser"
+	scopes := []string{
+		"things:get",
+		"things:post",
+	}
+	//
+	// New token.
+	signed, err := Remote.NewToken(user, scopes, nil)
+	g.Expect(err).To(gomega.BeNil())
+	//
+	// Permit
+	request := Request{
+		Token:  signed,
+		Scope:  "things",
+		Method: "PUT",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeTrue())
+	g.Expect(result.Authorized).To(gomega.BeFalse())
+	g.Expect(result.User).To(gomega.Equal(""))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(0))
 }

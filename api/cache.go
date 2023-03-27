@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/nas"
 	"net/http"
 	"os"
@@ -29,7 +28,7 @@ type CacheHandler struct {
 // AddRoutes adds routes.
 func (h CacheHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("cache"))
+	routeGroup.Use(Required("cache"))
 	routeGroup.GET(CacheRoot, h.Get)
 	routeGroup.GET(CacheDirRoot, h.Get)
 	routeGroup.DELETE(CacheDirRoot, h.Delete)

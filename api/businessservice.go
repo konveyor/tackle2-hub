@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -25,7 +24,7 @@ type BusinessServiceHandler struct {
 // AddRoutes adds routes.
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("businessservices"))
+	routeGroup.Use(Required("businessservices"))
 	routeGroup.GET(BusinessServicesRoot, h.List)
 	routeGroup.GET(BusinessServicesRoot+"/", h.List)
 	routeGroup.POST(BusinessServicesRoot, h.Create)

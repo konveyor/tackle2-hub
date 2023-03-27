@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	liberr "github.com/konveyor/controller/pkg/error"
-	"github.com/konveyor/tackle2-hub/auth"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -33,7 +32,7 @@ type PathfinderHandler struct {
 // AddRoutes adds routes.
 func (h PathfinderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group(PathfinderRoot)
-	routeGroup.Use(auth.Required(AssessmentsRoot))
+	routeGroup.Use(Required(AssessmentsRoot))
 	routeGroup.Any(AssessmentsRoot, h.ReverseProxy)
 	routeGroup.Any(AssessmentsRootX, h.ReverseProxy)
 }

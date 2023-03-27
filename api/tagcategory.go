@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -25,7 +24,7 @@ type TagCategoryHandler struct {
 // AddRoutes adds routes.
 func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("tagcategories"))
+	routeGroup.Use(Required("tagcategories"))
 	routeGroup.GET(TagCategoriesRoot, h.List)
 	routeGroup.GET(TagCategoriesRoot+"/", h.List)
 	routeGroup.POST(TagCategoriesRoot, h.Create)

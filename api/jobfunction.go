@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -25,7 +24,7 @@ type JobFunctionHandler struct {
 // AddRoutes adds routes.
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("jobfunctions"))
+	routeGroup.Use(Required("jobfunctions"))
 	routeGroup.GET(JobFunctionsRoot, h.List)
 	routeGroup.GET(JobFunctionsRoot+"/", h.List)
 	routeGroup.POST(JobFunctionsRoot, h.Create)

@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"mime"
@@ -29,7 +28,7 @@ type FileHandler struct {
 // AddRoutes adds routes.
 func (h FileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(auth.Required("files"))
+	routeGroup.Use(Required("files"))
 	routeGroup.GET(FilesRoot, h.List)
 	routeGroup.GET(FilesRoot+"/", h.List)
 	routeGroup.POST(FileRoot, h.Create)
