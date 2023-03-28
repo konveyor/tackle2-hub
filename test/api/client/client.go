@@ -37,3 +37,14 @@ func New() (client *addon.Client, err error) {
 	client.SetToken(login.Token)
 	return
 }
+
+//
+// Params mapping.
+type Params map[string]interface{}
+
+//
+// Merge path with params.
+func Path(base string, paramsMap map[string]interface{}) string {
+	params := addon.Params(paramsMap)
+	return params.Inject(base)
+}

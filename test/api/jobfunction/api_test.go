@@ -1,7 +1,6 @@
 package jobfunction
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -18,7 +17,7 @@ func TestJobfunctionsCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := fmt.Sprintf("%s/%d", api.JobFunctionsRoot, r.ID)
+			rPath := client.Path(api.JobFunctionRoot, client.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.JobFunction{}

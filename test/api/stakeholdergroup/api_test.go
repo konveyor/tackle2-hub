@@ -1,7 +1,6 @@
 package stakeholdergroup
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -18,7 +17,7 @@ func TestStakeholderGroupCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := fmt.Sprintf("%s/%d", api.StakeholderGroupsRoot, r.ID)
+			rPath := client.Path(api.StakeholderGroupRoot, client.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.StakeholderGroup{}

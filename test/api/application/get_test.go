@@ -1,10 +1,10 @@
 package application
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 func TestApplicationGet(t *testing.T) {
@@ -16,7 +16,7 @@ func TestApplicationGet(t *testing.T) {
 
 			// Try get.
 			got := api.Application{}
-			err := Client.Get(fmt.Sprintf("%s/%d", api.ApplicationsRoot, r.ID), &got)
+			err := Client.Get(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}), &got)
 			if err != nil {
 				t.Errorf("Get error: %v", err.Error())
 			}

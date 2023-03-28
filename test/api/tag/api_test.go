@@ -1,7 +1,6 @@
 package tag
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -18,7 +17,7 @@ func TestTagCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := fmt.Sprintf("%s/%d", api.TagsRoot, r.ID)
+			rPath := client.Path(api.TagRoot, client.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.Tag{}
