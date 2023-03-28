@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
+	"gorm.io/gorm"
 )
 
 //
@@ -11,6 +12,7 @@ type Request struct {
 	Token  string
 	Scope  string
 	Method string
+	DB     *gorm.DB
 }
 
 //
@@ -22,7 +24,7 @@ func (r *Request) Permit() (result Result, err error) {
 	)
 	for _, p = range []Provider{Hub, Remote} {
 		var pErr error
-		jwToken, pErr = p.Authenticate(r.Token)
+		jwToken, pErr = p.Authenticate(r)
 		if pErr == nil {
 			result.Authenticated = true
 			break

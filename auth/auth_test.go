@@ -11,7 +11,7 @@ type _TestProvider struct {
 	NoAuth
 }
 
-func (p *_TestProvider) Authenticate(token string) (jwToken *jwt.Token, err error) {
+func (p *_TestProvider) Authenticate(_ *Request) (jwToken *jwt.Token, err error) {
 	err = p.err
 	return
 }
@@ -32,7 +32,7 @@ func TestValid(t *testing.T) {
 	g.Expect(len(signed) > 0).To(gomega.BeTrue())
 	//
 	// Authenticate
-	jwToken, err := p.Authenticate(signed)
+	jwToken, err := p.Authenticate(&Request{Token: signed})
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(jwToken != nil).To(gomega.BeTrue())
 	//
@@ -66,13 +66,13 @@ func TestNotValid(t *testing.T) {
 	g.Expect(len(signed) > 0).To(gomega.BeTrue())
 	//
 	// Valid
-	jwToken, err := p.Authenticate(signed)
+	jwToken, err := p.Authenticate(&Request{Token: signed})
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(jwToken != nil).To(gomega.BeTrue())
 	//
 	// Not valid.
 	Settings.Auth.Token.Key = "NotMyKey"
-	jwToken, err = p.Authenticate(signed)
+	jwToken, err = p.Authenticate(&Request{Token: signed})
 	g.Expect(err != nil).To(gomega.BeTrue())
 }
 
