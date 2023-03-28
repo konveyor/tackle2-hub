@@ -120,7 +120,11 @@ endif
 	$(INSTALL_TACKLE_SH);
 
 # Run Hub test suite.
-test: test-api
+test: test-unit test-api
+
+# Run unit tests.
+test-unit:
+	go test -v ./auth/
 
 # Run Hub REST API tests.
 test-api:
