@@ -27,6 +27,11 @@ const (
 	AppOctet = api.AppOctet
 )
 
+const (
+	RetryLimit = 60
+	RetryDelay = time.Second * 10
+)
+
 //
 // Param.
 type Param struct {
@@ -43,21 +48,33 @@ type Client struct {
 	token string
 	// transport
 	transport http.RoundTripper
+	// Retry limit.
+	Retry int
+	// Error
+	Error error
 }
 
 //
-// Construct a new client
-func NewClient(url, token string) *Client {
-	return &Client{
+// NewClient Constructs a new client
+func NewClient(url, token string) (client *Client) {
+	client = &Client{
 		baseURL: url,
 		token:   token,
 	}
+	client.Retry = RetryLimit
+	return
 }
 
 //
-// Set hub token on client
+// SetToken sets hub token on client
 func (r *Client) SetToken(token string) {
 	r.token = token
+}
+
+//
+// Reset the client.
+func (r *Client) Reset() {
+	r.Error = nil
 }
 
 //
@@ -608,14 +625,17 @@ func (r *Client) isDir(path string, must bool) (b bool, err error) {
 //
 // Send the request.
 // Resilient against transient hub availability.
-// Retries for 10 minutes.
 func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response, err error) {
 	var request *http.Request
+	if r.Error != nil {
+		err = r.Error
+		return
+	}
 	err = r.buildTransport()
 	if err != nil {
 		return
 	}
-	for i := 0; i < 60; i++ {
+	for i := 0; ; i++ {
 		request, err = rb()
 		if err != nil {
 			return
@@ -626,9 +646,15 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			netErr := &net.OpError{}
 			if errors.As(err, &netErr) {
-				Log.Info(err.Error())
-				time.Sleep(time.Second * 10)
-				continue
+				if i < r.Retry {
+					Log.Info(err.Error())
+					time.Sleep(RetryDelay)
+					continue
+				} else {
+					r.Error = liberr.Wrap(err)
+					err = r.Error
+					return
+				}
 			} else {
 				err = liberr.Wrap(err)
 				return
