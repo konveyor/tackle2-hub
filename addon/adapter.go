@@ -80,7 +80,9 @@ func (h *Adapter) Run(addon func() error) {
 			if _, soft := err.(interface{ Soft() *SoftError }); !soft {
 				Log.Error(err, "Addon failed.")
 			}
-			h.Failed(err.Error())
+			if h.client.Error == nil {
+				h.Failed(err.Error())
+			}
 			os.Exit(1)
 		}
 	}()
@@ -109,10 +111,7 @@ func (h *Adapter) Client() *Client {
 func newAdapter() (adapter *Adapter) {
 	//
 	// Build REST client.
-	client := &Client{
-		baseURL: Settings.Addon.Hub.URL,
-		token:   Settings.Addon.Hub.Token,
-	}
+	client := NewClient(Settings.Addon.Hub.URL, Settings.Addon.Hub.Token)
 	//
 	// Build Adapter.
 	adapter = &Adapter{
