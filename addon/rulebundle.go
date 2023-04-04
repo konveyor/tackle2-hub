@@ -13,7 +13,7 @@ type RuleBundle struct {
 // Get a bundle by ID.
 func (h *RuleBundle) Get(id uint) (r *api.RuleBundle, err error) {
 	r = &api.RuleBundle{}
-	path := Params{api.ID: id}.inject(api.RuleBundleRoot)
+	path := Path(api.RuleBundleRoot).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -32,7 +32,7 @@ func (h *RuleBundle) List() (list []api.RuleBundle, err error) {
 //
 // Update a bundle by ID.
 func (h *RuleBundle) Update(r *api.RuleBundle) (err error) {
-	path := Params{api.ID: r.ID}.inject(api.RuleBundleRoot)
+	path := Path(api.RuleBundleRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
@@ -40,7 +40,7 @@ func (h *RuleBundle) Update(r *api.RuleBundle) (err error) {
 //
 // Delete a bundle.
 func (h *RuleBundle) Delete(id uint) (err error) {
-	path := Params{api.ID: id}.inject(api.RuleBundleRoot)
+	path := Path(api.RuleBundleRoot).Inject(Params{api.ID: id})
 	err = h.client.Delete(path)
 	return
 }

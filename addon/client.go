@@ -18,6 +18,7 @@ import (
 	"os"
 	pathlib "path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -40,6 +41,42 @@ type Param struct {
 }
 
 //
+// Params mapping.
+type Params map[string]interface{}
+
+//
+// Path API path.
+type Path string
+
+//
+// Inject named parameters.
+func (s Path) Inject(p Params) (out string) {
+	in := strings.Split(string(s), "/")
+	for i := range in {
+		if len(in[i]) < 1 {
+			continue
+		}
+		key := in[i][1:]
+		if v, found := p[key]; found {
+			in[i] = fmt.Sprintf("%v", v)
+		}
+	}
+	out = strings.Join(in, "/")
+	return
+}
+
+//
+// NewClient Constructs a new client
+func NewClient(url, token string) (client *Client) {
+	client = &Client{
+		baseURL: url,
+		token:   token,
+	}
+	client.Retry = RetryLimit
+	return
+}
+
+//
 // Client provides a REST client.
 type Client struct {
 	// baseURL for the nub.
@@ -52,17 +89,6 @@ type Client struct {
 	Retry int
 	// Error
 	Error error
-}
-
-//
-// NewClient Constructs a new client
-func NewClient(url, token string) (client *Client) {
-	client = &Client{
-		baseURL: url,
-		token:   token,
-	}
-	client.Retry = RetryLimit
-	return
 }
 
 //

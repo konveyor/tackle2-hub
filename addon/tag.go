@@ -28,7 +28,7 @@ func (h *Tag) Create(r *api.Tag) (err error) {
 // Get a tag by ID.
 func (h *Tag) Get(id uint) (r *api.Tag, err error) {
 	r = &api.Tag{}
-	path := Params{api.ID: id}.inject(api.TagRoot)
+	path := Path(api.TagRoot).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -44,7 +44,7 @@ func (h *Tag) List() (list []api.Tag, err error) {
 //
 // Delete a tag.
 func (h *Tag) Delete(r *api.Tag) (err error) {
-	path := Params{api.ID: r.ID}.inject(api.TagRoot)
+	path := Path(api.TagRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Delete(path)
 	if err == nil {
 		Log.Info(
@@ -112,7 +112,7 @@ func (h *TagCategory) Create(m *api.TagCategory) (err error) {
 // Get a tag-type by ID.
 func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
-	path := Params{api.ID: id}.inject(api.TagCategoryRoot)
+	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -128,7 +128,7 @@ func (h *TagCategory) List() (list []api.TagCategory, err error) {
 //
 // Delete a tag-type.
 func (h *TagCategory) Delete(r *api.TagCategory) (err error) {
-	path := Params{api.ID: r.ID}.inject(api.TagCategoryRoot)
+	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Delete(path)
 	if err == nil {
 		Log.Info(

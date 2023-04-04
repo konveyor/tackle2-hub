@@ -19,7 +19,7 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := Params{api.ID: id}.inject(api.IdentityRoot)
+	path := Path(api.IdentityRoot).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r, p)
 	if err != nil {
 		return

@@ -28,7 +28,7 @@ func (h *Task) Load() {
 		}
 	}()
 	h.task = &api.Task{}
-	path := Params{api.ID: Settings.Addon.Task}.inject(api.TaskRoot)
+	path := Path(api.TaskRoot).Inject(Params{api.ID: Settings.Addon.Task})
 	err = h.client.Get(path, h.task)
 	return
 }
@@ -42,7 +42,7 @@ func (h *Task) Application() (r *api.Application, err error) {
 		return
 	}
 	r = &api.Application{}
-	path := Params{api.ID: appRef.ID}.inject(api.ApplicationRoot)
+	path := Path(api.ApplicationRoot).Inject(Params{api.ID: appRef.ID})
 	err = h.client.Get(path, r)
 	return
 }
@@ -159,7 +159,7 @@ func (h *Task) Bucket() (b *Bucket) {
 		api.ID:       h.task.ID,
 		api.Wildcard: "",
 	}
-	path := params.inject(api.TaskBucketContentRoot)
+	path := Path(api.TaskBucketContentRoot).Inject(params)
 	b = &Bucket{
 		path:   path,
 		client: h.client,
@@ -182,7 +182,7 @@ func (h *Task) deleteReport() {
 	params := Params{
 		api.ID: h.task.ID,
 	}
-	path := params.inject(api.TaskReportRoot)
+	path := Path(api.TaskReportRoot).Inject(params)
 	err := h.client.Delete(path)
 	if err != nil {
 		panic(err)
@@ -201,7 +201,7 @@ func (h *Task) pushReport() {
 	params := Params{
 		api.ID: h.task.ID,
 	}
-	path := params.inject(api.TaskReportRoot)
+	path := Path(api.TaskReportRoot).Inject(params)
 	if h.report.ID == 0 {
 		err = h.client.Post(path, &h.report)
 	} else {
