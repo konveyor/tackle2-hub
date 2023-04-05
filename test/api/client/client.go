@@ -29,6 +29,9 @@ func New() (client *addon.Client, err error) {
 	// Setup client.
 	client = addon.NewClient(baseUrl, "")
 
+	// Disable HTTP requests retry for network-related errors to fail quickly.
+	client.Retry = 0
+
 	// Login.
 	err = client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
@@ -46,5 +49,5 @@ type Params map[string]interface{}
 // Merge path with params.
 func Path(base string, paramsMap map[string]interface{}) string {
 	params := addon.Params(paramsMap)
-	return params.Inject(base)
+	return addon.Path(base).Inject(params)
 }

@@ -1,15 +1,13 @@
 package tag
 
 import (
-	"testing"
-
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = client.Client
+	Client = c.Client
 )
 
 //
@@ -35,18 +33,14 @@ func Samples() (samples []api.Tag) {
 
 //
 // Create a Tag.
-func Create(t *testing.T, r *api.Tag) {
-	err := Client.Post(api.TagsRoot, &r)
-	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error())
-	}
+func Create(r *api.Tag) (err error) {
+	err = Client.Post(api.TagsRoot, &r)
+	return
 }
 
 //
 // Delete the Tag.
-func Delete(t *testing.T, r *api.Tag) {
-	err := Client.Delete(client.Path(api.TagRoot, client.Params{api.ID: r.ID}))
-	if err != nil {
-		t.Fatalf("Delete fatal error: %v", err.Error())
-	}
+func Delete(r *api.Tag) (err error) {
+	err = Client.Delete(c.Path(api.TagRoot, c.Params{api.ID: r.ID}))
+	return
 }
