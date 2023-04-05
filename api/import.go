@@ -46,6 +46,7 @@ type ImportHandler struct {
 //
 // AddRoutes adds routes.
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
+	e.Use(Required("imports"), Transaction)
 	e.GET(SummariesRoot, h.ListSummaries)
 	e.GET(SummariesRoot+"/", h.ListSummaries)
 	e.GET(SummaryRoot, h.GetSummary)
