@@ -34,6 +34,18 @@ func (h *Task) Load() {
 }
 
 //
+// Addon returns the addon referenced by the task.
+func (h *Task) Addon() (r *api.Addon) {
+	r = &api.Addon{}
+	path := Path(api.AddonRoot).Inject(Params{api.Name: h.task.Addon})
+	err := h.client.Get(path, r)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+//
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
 	appRef := h.task.Application

@@ -97,13 +97,24 @@ func (h AddonHandler) List(ctx *gin.Context) {
 //
 // Addon REST resource.
 type Addon struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	crd.AddonSpec
+	Name string `json:"name"`
 }
 
 //
 // With model.
 func (r *Addon) With(m *crd.Addon) {
+	r.AddonSpec = m.Spec
 	r.Name = m.Name
-	r.Image = m.Spec.Image
+}
+
+//
+// MaxMemory returns max memory (0=unlimited).
+func (r *Addon) MaxMemory() (n int64) {
+	if r.Resources.Limits == nil || r.Resources.Limits.Memory() == nil {
+		return
+	}
+	q := r.Resources.Limits.Memory()
+	n, _ = q.AsInt64()
+	return
 }
