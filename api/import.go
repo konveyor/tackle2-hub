@@ -46,17 +46,18 @@ type ImportHandler struct {
 //
 // AddRoutes adds routes.
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
-	e.Use(Required("imports"), Transaction)
-	e.GET(SummariesRoot, h.ListSummaries)
-	e.GET(SummariesRoot+"/", h.ListSummaries)
-	e.GET(SummaryRoot, h.GetSummary)
-	e.DELETE(SummaryRoot, h.DeleteSummary)
-	e.GET(ImportsRoot, h.ListImports)
-	e.GET(ImportsRoot+"/", h.ListImports)
-	e.GET(ImportRoot, h.GetImport)
-	e.DELETE(ImportRoot, h.DeleteImport)
-	e.GET(DownloadRoot, h.DownloadCSV)
-	e.POST(UploadRoot, h.UploadCSV)
+	routeGroup := e.Group("/")
+	routeGroup.Use(Required("imports"), Transaction)
+	routeGroup.GET(SummariesRoot, h.ListSummaries)
+	routeGroup.GET(SummariesRoot+"/", h.ListSummaries)
+	routeGroup.GET(SummaryRoot, h.GetSummary)
+	routeGroup.DELETE(SummaryRoot, h.DeleteSummary)
+	routeGroup.GET(ImportsRoot, h.ListImports)
+	routeGroup.GET(ImportsRoot+"/", h.ListImports)
+	routeGroup.GET(ImportRoot, h.GetImport)
+	routeGroup.DELETE(ImportRoot, h.DeleteImport)
+	routeGroup.GET(DownloadRoot, h.DownloadCSV)
+	routeGroup.POST(UploadRoot, h.UploadCSV)
 }
 
 //
