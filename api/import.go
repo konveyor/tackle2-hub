@@ -47,7 +47,7 @@ type ImportHandler struct {
 // AddRoutes adds routes.
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("imports"), Transaction)
+	routeGroup.Use(Required("applications"))
 	routeGroup.GET(SummariesRoot, h.ListSummaries)
 	routeGroup.GET(SummariesRoot+"/", h.ListSummaries)
 	routeGroup.GET(SummaryRoot, h.GetSummary)
