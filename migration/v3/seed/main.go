@@ -329,7 +329,7 @@ func Seed(db *gorm.DB) {
 	_ = db.Create(setting)
 
 	var categories = []model.TagCategory{
-		{Name: "3rd party", Rank: 17, Color: "#773CF3", Tags: []model.Tag{
+		{Name: "3rd party", Rank: 17, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "Apache Aries"},
 			{Name: "Apache Geronimo"},
 			{Name: "Apache Hadoop"},
@@ -350,7 +350,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Tomcat"},
 			{Name: "Weka"}},
 		},
-		{Name: "Bean", Rank: 26, Color: "#74F33C", Tags: []model.Tag{
+		{Name: "Bean", Rank: 26, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "EJB XML"},
 			{Name: "Entity Bean"},
 			{Name: "JBoss EJB XML"},
@@ -362,11 +362,11 @@ func Seed(db *gorm.DB) {
 			{Name: "WebSphere EJB"},
 			{Name: "WebSphere EJB Ext"}},
 		},
-		{Name: "Binding", Rank: 27, Color: "#F33CA9", Tags: []model.Tag{
+		{Name: "Binding", Rank: 27, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "Java EE JAXB"},
 			{Name: "JSON-B"}},
 		},
-		{Name: "Caching", Rank: 18, Color: "#3CF342", Tags: []model.Tag{
+		{Name: "Caching", Rank: 18, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "Apache Commons JCS"},
 			{Name: "Apache Ignite"},
 			{Name: "Cache API"},
@@ -384,12 +384,12 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Boot Cache"},
 			{Name: "Swarmcache"}},
 		},
-		{Name: "Clustering", Rank: 39, Color: "#4EF33C", Tags: []model.Tag{{Name: "Web Session"}}},
-		{Name: "Configuration Management", Rank: 35, Color: "#F33CE6", Tags: []model.Tag{
+		{Name: "Clustering", Rank: 39, Color: "#40199A", Tags: []model.Tag{{Name: "Web Session"}}},
+		{Name: "Configuration Management", Rank: 35, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "Spring Cloud Config"},
 			{Name: "Spring Properties"}},
 		},
-		{Name: "Database Driver", Rank: 16, Color: "#F3AC3C", Tags: []model.Tag{
+		{Name: "Database Driver", Rank: 16, Color: "#009596", Tags: []model.Tag{
 			{Name: "Apache Accumulo Client"},
 			{Name: "Apache HBase Client"},
 			{Name: "Axion Driver"},
@@ -406,16 +406,16 @@ func Seed(db *gorm.DB) {
 			{Name: "PostgreSQL Driver"},
 			{Name: "SQLite Driver"}},
 		},
-		{Name: "Database", Rank: 31, Color: "#3CF367", Tags: []model.Tag{
+		{Name: "Database", Rank: 31, Color: "#009596", Tags: []model.Tag{
 			{Name: "JDBC"},
 			{Name: "JDBC datasources"},
 			{Name: "JDBC XA datasources"}},
 		},
-		{Name: "HTTP", Rank: 29, Color: "#F3D23C", Tags: []model.Tag{
+		{Name: "HTTP", Rank: 29, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JAX-WS"},
 			{Name: "Servlet"},
 			{Name: "Web Services Metadata"}}},
-		{Name: "Integration", Rank: 9, Color: "#B43CF3", Tags: []model.Tag{
+		{Name: "Integration", Rank: 9, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "3scale"},
 			{Name: "Apache Camel"},
 			{Name: "Apache Synapse"},
@@ -434,7 +434,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Teiid"},
 			{Name: "WSO2"}},
 		},
-		{Name: "Inversion of Control", Rank: 11, Color: "#F3493C", Tags: []model.Tag{
+		{Name: "Inversion of Control", Rank: 11, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "Airframe"},
 			{Name: "AOP Alliance"},
 			{Name: "AspectJ"},
@@ -469,7 +469,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Weld"},
 			{Name: "Winter"}},
 		},
-		{Name: "Logging", Rank: 12, Color: "#3C65F3", Tags: []model.Tag{
+		{Name: "Logging", Rank: 12, Color: "#6EC664", Tags: []model.Tag{
 			{Name: "Airlift Log manager"},
 			{Name: "Apache Flume"},
 			{Name: "Avalon Logkit"},
@@ -500,7 +500,7 @@ func Seed(db *gorm.DB) {
 			{Name: "tinylog"},
 			{Name: "Twitter Util Logging"}},
 		},
-		{Name: "MVC", Rank: 15, Color: "#3CF3E1", Tags: []model.Tag{
+		{Name: "MVC", Rank: 15, Color: "#40199A", Tags: []model.Tag{
 			{Name: "Anakia"},
 			{Name: "AngularFaces"},
 			{Name: "ANTLR StringTemplate"},
@@ -552,18 +552,18 @@ func Seed(db *gorm.DB) {
 			{Name: "Webmarco"},
 			{Name: "Wicket"}},
 		},
-		{Name: "Markup", Rank: 23, Color: "#3CF3A4", Tags: []model.Tag{
+		{Name: "Markup", Rank: 23, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "CSS"},
 			{Name: "HTML"},
 			{Name: "Javascript"},
 			{Name: "Spring Boot Flo"}},
 		},
-		{Name: "Messaging", Rank: 32, Color: "#F33C47", Tags: []model.Tag{
+		{Name: "Messaging", Rank: 32, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JMS Connection factory"},
 			{Name: "JMS Queue"},
 			{Name: "JMS Topic"}},
 		},
-		{Name: "Object Mapping", Rank: 24, Color: "#F36F3C", Tags: []model.Tag{
+		{Name: "Object Mapping", Rank: 24, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "EclipseLink"},
 			{Name: "Hibernate"},
 			{Name: "Hibernate Cfg"},
@@ -572,12 +572,12 @@ func Seed(db *gorm.DB) {
 			{Name: "Morphia"},
 			{Name: "Spring Data"}},
 		},
-		{Name: "Observability", Rank: 34, Color: "#B1F33C", Tags: []model.Tag{
+		{Name: "Observability", Rank: 34, Color: "#6EC664", Tags: []model.Tag{
 			{Name: "Spring Boot Actuator"},
 			{Name: "Spring JMX"},
 			{Name: "Zipkin"}},
 		},
-		{Name: "Other", Rank: 8, Color: "#F3E93C", Tags: []model.Tag{
+		{Name: "Other", Rank: 8, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "0MQ Client"},
 			{Name: "ActiveMQ library"},
 			{Name: "Amazon SQS Cient"},
@@ -603,14 +603,14 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Messaging Client"},
 			{Name: "Zbus Client"}},
 		},
-		{Name: "Persistence", Rank: 33, Color: "#3C7CF3", Tags: []model.Tag{
+		{Name: "Persistence", Rank: 33, Color: "#009596", Tags: []model.Tag{
 			{Name: "JPA entities"},
 			{Name: "JPA named queries"},
 			{Name: "JPA XML"},
 			{Name: "Persistence units"},
 			{Name: "Spring Data JPA"}},
 		},
-		{Name: "Processing", Rank: 25, Color: "#3C3FF3", Tags: []model.Tag{
+		{Name: "Processing", Rank: 25, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "EJB Timer"},
 			{Name: "Eureka"},
 			{Name: "Feign"},
@@ -622,10 +622,10 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Batch"},
 			{Name: "Spring Scheduled"}},
 		},
-		{Name: "REST", Rank: 28, Color: "#3CDFF3", Tags: []model.Tag{{Name: "JAX-RS"},
+		{Name: "REST", Rank: 28, Color: "#F032E6", Tags: []model.Tag{{Name: "JAX-RS"},
 			{Name: "Jersey"},
 			{Name: "Unirest"}}},
-		{Name: "Rich", Rank: 19, Color: "#F33C6C", Tags: []model.Tag{
+		{Name: "Rich", Rank: 19, Color: "#BFEF45", Tags: []model.Tag{
 			{Name: "Applet"},
 			{Name: "EclipseRCP"},
 			{Name: "FormLayoutMaker"},
@@ -637,7 +637,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Standard Widget Tookit (SWT)"},
 			{Name: "Swing"}},
 		},
-		{Name: "Rules and Processes", Rank: 22, Color: "#D93CF3", Tags: []model.Tag{
+		{Name: "Rules and Processes", Rank: 22, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "Blaze"},
 			{Name: "Camunda"},
 			{Name: "Drools"},
@@ -647,7 +647,7 @@ func Seed(db *gorm.DB) {
 			{Name: "MRules"},
 			{Name: "Pega"}},
 		},
-		{Name: "Security", Rank: 10, Color: "#3CF37F", Tags: []model.Tag{
+		{Name: "Security", Rank: 10, Color: "#D95F55", Tags: []model.Tag{
 			{Name: "Acegi Security"},
 			{Name: "AcrIS Security"},
 			{Name: "Apache Commons Validator"},
@@ -676,8 +676,8 @@ func Seed(db *gorm.DB) {
 			{Name: "WSS4J"},
 			{Name: "XACML"}},
 		},
-		{Name: "Serverless / FAAS", Rank: 36, Color: "#3CF3CA", Tags: []model.Tag{{Name: "Spring Cloud Function"}}},
-		{Name: "Test", Rank: 14, Color: "#F33CCF", Tags: []model.Tag{
+		{Name: "Serverless / FAAS", Rank: 36, Color: "#40199A", Tags: []model.Tag{{Name: "Spring Cloud Function"}}},
+		{Name: "Test", Rank: 14, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "Akka Testkit"},
 			{Name: "Arquillian"},
 			{Name: "Catus"},
@@ -716,7 +716,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Unitils"},
 			{Name: "XMLUnit"}},
 		},
-		{Name: "Transaction", Rank: 13, Color: "#9AF33C", Tags: []model.Tag{
+		{Name: "Transaction", Rank: 13, Color: "#40199A", Tags: []model.Tag{
 			{Name: "AKKA JTA"},
 			{Name: "Apache Meecrowave JTA"},
 			{Name: "Apache Sirona JTA"},
@@ -739,9 +739,9 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Transactions"},
 			{Name: "WF Core JTA"}},
 		},
-		{Name: "Utilities", Rank: 37, Color: "#F3953C", Tags: []model.Tag{{Name: "Spring Shell"}}},
-		{Name: "Validation", Rank: 21, Color: "#D7F33C", Tags: []model.Tag{{Name: "Bean Validation"}}},
-		{Name: "Web Service", Rank: 20, Color: "#3CA2F3", Tags: []model.Tag{
+		{Name: "Utilities", Rank: 37, Color: "#2B9AF3", Tags: []model.Tag{{Name: "Spring Shell"}}},
+		{Name: "Validation", Rank: 21, Color: "#EC7A08", Tags: []model.Tag{{Name: "Bean Validation"}}},
+		{Name: "Web Service", Rank: 20, Color: "#40199A", Tags: []model.Tag{
 			{Name: "Axis"},
 			{Name: "Axis2"},
 			{Name: "CXF"},
@@ -751,7 +751,7 @@ func Seed(db *gorm.DB) {
 			{Name: "WSDL"},
 			{Name: "XFire"}},
 		},
-		{Name: "Web", Rank: 30, Color: "#9C3CF3", Tags: []model.Tag{
+		{Name: "Web", Rank: 30, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JBoss Web XML"},
 			{Name: "JSF Page"},
 			{Name: "JSP Page"},

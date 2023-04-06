@@ -32,12 +32,12 @@ func Seed(db *gorm.DB) {
 	_ = db.Create(jobFunctions)
 
 	tagTypes := []TagType{
-		{Name: "Application Type", Rank: 6, Color: "#ec7a08", Tags: []Tag{{Name: "COTS"}, {Name: "In house"}, {Name: "SaaS"}}},
-		{Name: "Data Center", Rank: 5, Color: "#2b9af3", Tags: []Tag{{Name: "Boston (USA)"}, {Name: "London (UK)"}, {Name: "Paris (FR)"}, {Name: "Sydney (AU)"}}},
-		{Name: "Database", Rank: 4, Color: "#6ec664", Tags: []Tag{{Name: "DB2"}, {Name: "MongoDB"}, {Name: "Oracle"}, {Name: "PostgreSQL"}, {Name: "SQL Server"}}},
-		{Name: "Language", Rank: 1, Color: "#009596", Tags: []Tag{{Name: "C# ASP .Net"}, {Name: "C++"}, {Name: "COBOL"}, {Name: "Java"}, {Name: "Javascript"}, {Name: "Python"}}},
-		{Name: "Operating System", Rank: 2, Color: "#a18fff", Tags: []Tag{{Name: "RHEL 8"}, {Name: "Windows Server 2016"}, {Name: "Z/OS"}}},
-		{Name: "Runtime", Rank: 3, Color: "#7d1007", Tags: []Tag{{Name: "EAP"}, {Name: "JWS"}, {Name: "Quarkus"}, {Name: "Spring Boot"}, {Name: "Tomcat"}, {Name: "WebLogic"}, {Name: "WebSphere"}}},
+		{Name: "Application Type", Rank: 6, Color: "#469990", Tags: []Tag{{Name: "COTS"}, {Name: "In house"}, {Name: "SaaS"}}},
+		{Name: "Data Center", Rank: 5, Color: "#469990", Tags: []Tag{{Name: "Boston (USA)"}, {Name: "London (UK)"}, {Name: "Paris (FR)"}, {Name: "Sydney (AU)"}}},
+		{Name: "Database", Rank: 4, Color: "#009596", Tags: []Tag{{Name: "DB2"}, {Name: "MongoDB"}, {Name: "Oracle"}, {Name: "PostgreSQL"}, {Name: "SQL Server"}}},
+		{Name: "Language", Rank: 1, Color: "#F4C145", Tags: []Tag{{Name: "C# ASP .Net"}, {Name: "C++"}, {Name: "COBOL"}, {Name: "Java"}, {Name: "Javascript"}, {Name: "Python"}}},
+		{Name: "Operating System", Rank: 2, Color: "#469990", Tags: []Tag{{Name: "RHEL 8"}, {Name: "Windows Server 2016"}, {Name: "Z/OS"}}},
+		{Name: "Runtime", Rank: 3, Color: "#40199A", Tags: []Tag{{Name: "EAP"}, {Name: "JWS"}, {Name: "Quarkus"}, {Name: "Spring Boot"}, {Name: "Tomcat"}, {Name: "WebLogic"}, {Name: "WebSphere"}}},
 	}
 	_ = db.Create(tagTypes)
 
