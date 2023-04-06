@@ -73,9 +73,6 @@ func TestBasicAnalysis(t *testing.T) {
 				time.Sleep(Wait)
 			}
 
-			// t.Log(tc.Task)
-			time.Sleep(90 * time.Second)
-
 			if tc.Task.State != "Succeeded" {
 				t.Errorf("Analyze Task failed. Details: %+v", tc.Task)
 			}
@@ -112,7 +109,6 @@ func TestBasicAnalysis(t *testing.T) {
 					// Proceed to Task result check
 					break
 				}
-				//t.Log(tc.Task)
 				time.Sleep(Wait)
 			}
 
