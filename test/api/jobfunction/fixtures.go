@@ -1,15 +1,13 @@
 package jobfunction
 
 import (
-	"testing"
-
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = client.Client
+	Client = c.Client
 )
 
 //
@@ -27,19 +25,36 @@ func Samples() (samples []api.JobFunction) {
 }
 
 //
-// Create a Tag.
-func Create(t *testing.T, r *api.JobFunction) {
-	err := Client.Post(api.JobFunctionsRoot, &r)
-	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error())
-	}
+// Create a JobFunction.
+func Create(r *api.JobFunction) (err error) {
+	err = Client.Post(api.JobFunctionsRoot, &r)
+	return
 }
 
 //
-// Delete the Tag.
-func Delete(t *testing.T, r *api.JobFunction) {
-	err := Client.Delete(client.Path(api.JobFunctionRoot, client.Params{api.ID: r.ID}))
-	if err != nil {
-		t.Fatalf("Delete fatal error: %v", err.Error())
-	}
+// Retrieve the JobFunction.
+func Get(r *api.JobFunction) (err error) {
+	err = Client.Get(c.Path(api.JobFunctionRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Update the JobFunction.
+func Update(r *api.JobFunction) (err error) {
+	err = Client.Put(c.Path(api.JobFunctionRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Delete the JobFunction.
+func Delete(r *api.JobFunction) (err error) {
+	err = Client.Delete(c.Path(api.JobFunctionRoot, c.Params{api.ID: r.ID}))
+	return
+}
+
+//
+// List JobFunctions.
+func List(r []*api.JobFunction) (err error) {
+	err = Client.Get(api.JobFunctionsRoot, &r)
+	return
 }

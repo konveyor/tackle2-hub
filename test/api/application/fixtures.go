@@ -1,15 +1,13 @@
 package application
 
 import (
-	"testing"
-
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = client.Client
+	Client = c.Client
 )
 
 //
@@ -34,19 +32,36 @@ func Samples() (samples []api.Application) {
 }
 
 //
-// Create an Application (and stop tests on failure).
-func Create(t *testing.T, r *api.Application) {
-	err := Client.Post(api.ApplicationsRoot, &r)
-	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error()) // Fatal here, Error for standard test failure or failed assertion.
-	}
+// Create a Application.
+func Create(r *api.Application) (err error) {
+	err = Client.Post(api.ApplicationsRoot, &r)
+	return
 }
 
 //
-// Delete the Application (and stop tests on failure).
-func Delete(t *testing.T, r *api.Application) {
-	err := Client.Delete(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}))
-	if err != nil {
-		t.Fatalf("Delete fatal error: %v", err.Error())
-	}
+// Retrieve the Application.
+func Get(r *api.Application) (err error) {
+	err = Client.Get(c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Update the Application.
+func Update(r *api.Application) (err error) {
+	err = Client.Put(c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Delete the Application.
+func Delete(r *api.Application) (err error) {
+	err = Client.Delete(c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID}))
+	return
+}
+
+//
+// List Applications.
+func List(r []*api.Application) (err error) {
+	err = Client.Get(api.ApplicationsRoot, &r)
+	return
 }

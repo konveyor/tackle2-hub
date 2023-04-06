@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 func TestApplicationCreate(t *testing.T) {
@@ -20,7 +21,7 @@ func TestApplicationCreate(t *testing.T) {
 			// The Get test not included here, but in get_test.go
 
 			// Clean
-			Delete(t, &r)
+			c.Must(t, Delete(&r))
 		})
 	}
 }
@@ -45,11 +46,11 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 		t.Errorf("Created duplicate application: %v", dup)
 
 		// Clean the duplicate.
-		Delete(t, dup)
+		c.Must(t, Delete(dup))
 	}
 
 	// Clean.
-	Delete(t, &r)
+	c.Must(t, Delete(&r))
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
@@ -64,6 +65,6 @@ func TestApplicationNotCreateWithoutName(t *testing.T) {
 		t.Errorf("Created empty application: %v", r)
 
 		// Clean.
-		Delete(t, r)
+		c.Must(t, Delete(r))
 	}
 }

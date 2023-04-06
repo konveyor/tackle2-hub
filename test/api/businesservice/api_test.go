@@ -1,4 +1,4 @@
-package jobfunction
+package businessservice
 
 import (
 	"testing"
@@ -7,20 +7,20 @@ import (
 	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-func TestJobfunctionsCRUD(t *testing.T) {
+func TestBusinessServiceCRUD(t *testing.T) {
 	samples := Samples()
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.JobFunctionsRoot, &r)
+			err := Client.Post(api.BusinessServicesRoot, &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := c.Path(api.JobFunctionRoot, c.Params{api.ID: r.ID})
+			rPath := c.Path(api.BusinessServiceRoot, c.Params{api.ID: r.ID})
 
 			// Get.
-			got := api.JobFunction{}
+			got := api.Tag{}
 			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -30,7 +30,7 @@ func TestJobfunctionsCRUD(t *testing.T) {
 			}
 
 			// Update.
-			updated := api.JobFunction{
+			updated := api.BusinessService{
 				Name: "Updated " + r.Name,
 			}
 			err = Client.Put(rPath, updated)
@@ -60,7 +60,7 @@ func TestJobfunctionsCRUD(t *testing.T) {
 	}
 }
 
-func TestJobFunctionsList(t *testing.T) {
+func TestBusinessServiceList(t *testing.T) {
 	samples := Samples()
 
 	for i := range samples {
@@ -68,26 +68,15 @@ func TestJobFunctionsList(t *testing.T) {
 	}
 
 	got := []api.Tag{}
-	err := Client.Get(api.JobFunctionsRoot, &got)
+	err := Client.Get(api.TagsRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if c.FlatEqual(got, samples) {
+	if c.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
 	for _, r := range samples {
 		c.Must(t, Delete(&r))
-	}
-}
-
-func TestJobFunctionSeed(t *testing.T) {
-	got := []api.JobFunction{}
-	err := Client.Get(api.JobFunctionsRoot, &got)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	if len(got) < 1 {
-		t.Errorf("Seed looks empty, but it shouldn't.")
 	}
 }

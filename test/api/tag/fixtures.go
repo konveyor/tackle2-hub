@@ -39,8 +39,29 @@ func Create(r *api.Tag) (err error) {
 }
 
 //
+// Retrieve the Tag.
+func Get(r *api.Tag) (err error) {
+	err = Client.Get(c.Path(api.TagRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Update the Tag.
+func Update(r *api.Tag) (err error) {
+	err = Client.Put(c.Path(api.TagRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
 // Delete the Tag.
 func Delete(r *api.Tag) (err error) {
 	err = Client.Delete(c.Path(api.TagRoot, c.Params{api.ID: r.ID}))
+	return
+}
+
+//
+// List Tags.
+func List(r []*api.Tag) (err error) {
+	err = Client.Get(api.TagsRoot, &r)
 	return
 }

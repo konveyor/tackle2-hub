@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 func TestApplicationList(t *testing.T) {
 	samples := Samples()
 	// Create.
 	for i := range samples {
-		Create(t, &samples[i]) // Need modify parent array instead of single record created by the loop (to keep created IDs).
+		c.Must(t, Create(&samples[i])) // Need modify parent array instead of single record created by the loop (to keep created IDs).
 	}
 
 	// Try list.
@@ -24,14 +25,12 @@ func TestApplicationList(t *testing.T) {
 	if len(got) != len(samples) {
 		t.Errorf("Wrong list length. Got %d, expected %d.", len(got), len(samples))
 	}
-
-	// Reflect fails on different Ptr address, compare via json serialization?
-	//if !reflect.DeepEqual(got, Samples) {
-	//	t.Errorf("List returned different applications. Got %v, expected %v.", &got, &Samples)
-	//}
+	if c.FlatEqual(got, samples) {
+		t.Errorf("Different response error. Got %v, expected %v", got, samples)
+	}
 
 	// Clean.
 	for _, r := range samples {
-		Delete(t, &r)
+		c.Must(t, Delete(&r))
 	}
 }

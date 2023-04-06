@@ -1,15 +1,13 @@
 package stakeholder
 
 import (
-	"testing"
-
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = client.Client
+	Client = c.Client
 )
 
 //
@@ -29,19 +27,36 @@ func Samples() (samples []api.Stakeholder) {
 }
 
 //
-// Create.
-func Create(t *testing.T, r *api.Stakeholder) {
-	err := Client.Post(api.StakeholdersRoot, &r)
-	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error())
-	}
+// Create a Stakeholder.
+func Create(r *api.Stakeholder) (err error) {
+	err = Client.Post(api.StakeholdersRoot, &r)
+	return
 }
 
 //
-// Delete.
-func Delete(t *testing.T, r *api.Stakeholder) {
-	err := Client.Delete(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}))
-	if err != nil {
-		t.Fatalf("Delete fatal error: %v", err.Error())
-	}
+// Retrieve the Stakeholder.
+func Get(r *api.Stakeholder) (err error) {
+	err = Client.Get(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Update the Stakeholder.
+func Update(r *api.Stakeholder) (err error) {
+	err = Client.Put(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Delete the Stakeholder.
+func Delete(r *api.Stakeholder) (err error) {
+	err = Client.Delete(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}))
+	return
+}
+
+//
+// List Stakeholders.
+func List(r []*api.Stakeholder) (err error) {
+	err = Client.Get(api.StakeholdersRoot, &r)
+	return
 }

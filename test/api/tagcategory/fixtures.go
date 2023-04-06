@@ -1,15 +1,13 @@
 package tagcategory
 
 import (
-	"testing"
-
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = client.Client
+	Client = c.Client
 )
 
 //
@@ -29,19 +27,36 @@ func Samples() (samples []api.TagCategory) {
 }
 
 //
-// Create.
-func Create(t *testing.T, r *api.TagCategory) {
-	err := Client.Post(api.TagCategoriesRoot, &r)
-	if err != nil {
-		t.Fatalf("Create fatal error: %v", err.Error())
-	}
+// Create a TagCategory.
+func Create(r *api.TagCategory) (err error) {
+	err = Client.Post(api.TagCategoriesRoot, &r)
+	return
 }
 
 //
-// Delete.
-func Delete(t *testing.T, r *api.TagCategory) {
-	err := Client.Delete(client.Path(api.TagCategoryRoot, client.Params{api.ID: r.ID}))
-	if err != nil {
-		t.Fatalf("Delete fatal error: %v", err.Error())
-	}
+// Retrieve the TagCategory.
+func Get(r *api.TagCategory) (err error) {
+	err = Client.Get(c.Path(api.TagCategoriesRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Update the TagCategory.
+func Update(r *api.TagCategory) (err error) {
+	err = Client.Put(c.Path(api.TagCategoryRoot, c.Params{api.ID: r.ID}), &r)
+	return
+}
+
+//
+// Delete the TagCategory.
+func Delete(r *api.TagCategory) (err error) {
+	err = Client.Delete(c.Path(api.TagCategoryRoot, c.Params{api.ID: r.ID}))
+	return
+}
+
+//
+// List TagCategories.
+func List(r []*api.TagCategory) (err error) {
+	err = Client.Get(api.TagCategoriesRoot, &r)
+	return
 }

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 func TestStakeholderCRUD(t *testing.T) {
@@ -17,7 +17,7 @@ func TestStakeholderCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID})
+			rPath := c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.Stakeholder{}
@@ -25,7 +25,7 @@ func TestStakeholderCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if client.FlatEqual(got, &r) {
+			if c.FlatEqual(got, &r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, &r)
 			}
 
@@ -64,7 +64,7 @@ func TestStakeholderCRUD(t *testing.T) {
 func TestStakeholderList(t *testing.T) {
 	samples := Samples()
 	for i := range samples {
-		Create(t, &samples[i])
+		c.Must(t, Create(&samples[i]))
 	}
 
 	got := []api.Stakeholder{}
@@ -72,12 +72,12 @@ func TestStakeholderList(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if client.FlatEqual(got, &samples) {
+	if c.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, &samples)
 	}
 
 	for _, r := range samples {
-		Delete(t, &r)
+		c.Must(t, Delete(&r))
 	}
 
 }

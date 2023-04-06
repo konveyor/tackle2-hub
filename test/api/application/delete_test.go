@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
+	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 func TestApplicationDelete(t *testing.T) {
@@ -12,8 +12,8 @@ func TestApplicationDelete(t *testing.T) {
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			Create(t, &r)
-			rPath := client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID})
+			c.Must(t, Create(&r))
+			rPath := c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID})
 
 			// Try delete.
 			err := Client.Delete(rPath)

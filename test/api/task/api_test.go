@@ -1,4 +1,4 @@
-package jobfunction
+package task
 
 import (
 	"testing"
@@ -7,20 +7,20 @@ import (
 	c "github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-func TestJobfunctionsCRUD(t *testing.T) {
+func TestTaskCRUD(t *testing.T) {
 	samples := Samples()
 
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.JobFunctionsRoot, &r)
+			err := Client.Post(api.TasksRoot, &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := c.Path(api.JobFunctionRoot, c.Params{api.ID: r.ID})
+			rPath := c.Path(api.TaskRoot, c.Params{api.ID: r.ID})
 
 			// Get.
-			got := api.JobFunction{}
+			got := api.Task{}
 			err = Client.Get(rPath, &got)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -30,8 +30,11 @@ func TestJobfunctionsCRUD(t *testing.T) {
 			}
 
 			// Update.
-			updated := api.JobFunction{
-				Name: "Updated " + r.Name,
+			updated := api.Task{
+				Name:  "Updated " + r.Name,
+				Addon: "updated-" + r.Addon,
+				Data:  "{updated}",
+				State: "Created",
 			}
 			err = Client.Put(rPath, updated)
 			if err != nil {
@@ -60,15 +63,15 @@ func TestJobfunctionsCRUD(t *testing.T) {
 	}
 }
 
-func TestJobFunctionsList(t *testing.T) {
+func TestTaskList(t *testing.T) {
 	samples := Samples()
 
 	for i := range samples {
 		c.Must(t, Create(&samples[i]))
 	}
 
-	got := []api.Tag{}
-	err := Client.Get(api.JobFunctionsRoot, &got)
+	got := []api.Task{}
+	err := Client.Get(api.TasksRoot, &got)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -78,16 +81,5 @@ func TestJobFunctionsList(t *testing.T) {
 
 	for _, r := range samples {
 		c.Must(t, Delete(&r))
-	}
-}
-
-func TestJobFunctionSeed(t *testing.T) {
-	got := []api.JobFunction{}
-	err := Client.Get(api.JobFunctionsRoot, &got)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	if len(got) < 1 {
-		t.Errorf("Seed looks empty, but it shouldn't.")
 	}
 }
