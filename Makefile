@@ -83,6 +83,10 @@ addon: fmt vet
 docs-swagger:
 	${GOBIN}/swag init -g api/base.go
 
+# Build HTML docs from Swagger API spec
+docs-html: docs-swagger
+	redoc-cli bundle -o docs/index.html docs/swagger.json
+
 # Build binding doc.
 docs-binding:
 	go doc --all addon > docs/binding.txt

@@ -21,6 +21,7 @@ const (
 	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
 	AppBucketRoot        = ApplicationRoot + "/bucket"
 	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
+	AppStakeholdersRoot  = ApplicationRoot + "/stakeholders"
 )
 
 //
@@ -72,12 +73,16 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(AppBucketContentRoot, h.BucketPut)
 	routeGroup.PUT(AppBucketContentRoot, h.BucketPut)
 	routeGroup.DELETE(AppBucketContentRoot, h.BucketDelete)
+	// Stakeholders
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("applications.stakeholders"))
+	routeGroup.PUT(AppStakeholdersRoot, h.StakeholdersUpdate)
 }
 
 // Get godoc
 // @summary Get an application by ID.
 // @description Get an application by ID.
-// @tags get
+// @tags applications
 // @produce json
 // @success 200 {object} api.Application
 // @router /applications/{id} [get]
@@ -109,7 +114,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all applications.
 // @description List all applications.
-// @tags list
+// @tags applications
 // @produce json
 // @success 200 {object} []api.Application
 // @router /applications [get]
@@ -142,7 +147,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create an application.
 // @description Create an application.
-// @tags create
+// @tags applications
 // @accept json
 // @produce json
 // @success 201 {object} api.Application
@@ -183,7 +188,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete an application.
 // @description Delete an application.
-// @tags delete
+// @tags applications
 // @success 204
 // @router /applications/{id} [delete]
 // @param id path int true "Application id"
@@ -213,7 +218,7 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 // DeleteList godoc
 // @summary Delete a applications.
 // @description Delete applications.
-// @tags delete
+// @tags applications
 // @success 204
 // @router /applications [delete]
 // @param application body []uint true "List of id"
@@ -245,7 +250,7 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 // Update godoc
 // @summary Update an application.
 // @description Update an application.
-// @tags update
+// @tags applications
 // @accept json
 // @success 204
 // @router /applications/{id} [put]
@@ -302,6 +307,12 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("Contributors").Replace(m.Contributors)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	//
 	// Update facts.
 	for _, m := range m.Facts {
@@ -340,7 +351,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
 // @description ?filter=glob supports directory content filtering.
-// @tags get
+// @tags applications
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/bucket/{wildcard} [get]
@@ -365,7 +376,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
-// @tags post
+// @tags applications
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
@@ -389,7 +400,7 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 // BucketDelete godoc
 // @summary Delete bucket content by ID and path.
 // @description Delete bucket content by ID and path.
-// @tags delete
+// @tags applications
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [delete]
@@ -413,7 +424,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 // TagList godoc
 // @summary List tag references.
 // @description List tag references.
-// @tags get
+// @tags applications
 // @produce json
 // @success 200 {object} []api.Ref
 // @router /applications/{id}/tags/id [get]
@@ -451,7 +462,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 // TagAdd godoc
 // @summary Add tag association.
 // @description Ensure tag is associated with the application.
-// @tags create
+// @tags applications
 // @accept json
 // @produce json
 // @success 201 {object} api.Ref
@@ -487,7 +498,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 // TagReplace godoc
 // @summary Replace tag associations.
 // @description Replace tag associations.
-// @tags update
+// @tags applications
 // @accept json
 // @success 204
 // @router /applications/{id}/tags [patch]
@@ -540,7 +551,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 // TagDelete godoc
 // @summary Delete tag association.
 // @description Ensure tag is not associated with the application.
-// @tags delete
+// @tags applications
 // @success 204
 // @router /applications/{id}/tags/{sid} [delete]
 // @param id path string true "Application ID"
@@ -573,7 +584,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // FactList godoc
 // @summary List facts.
 // @description List facts.
-// @tags get
+// @tags applications
 // @produce json
 // @success 200 {object} []api.Fact
 // @router /applications/{id}/facts [get]
@@ -605,7 +616,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context) {
 // FactGet godoc
 // @summary Get fact by name.
 // @description Get fact by name.
-// @tags get
+// @tags applications
 // @produce json
 // @success 200 {object} api.Fact
 // @router /applications/{id}/facts/{name} [get]
@@ -638,7 +649,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 // FactCreate godoc
 // @summary Create a fact.
 // @description Create a fact.
-// @tags create
+// @tags applications
 // @accept json
 // @produce json
 // @success 201
@@ -678,7 +689,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // FactPut godoc
 // @summary Update (or create) a fact.
 // @description Update (or create) a fact.
-// @tags update create
+// @tags applications
 // @accept json
 // @produce json
 // @success 204
@@ -732,7 +743,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // FactDelete godoc
 // @summary Delete a fact.
 // @description Delete a fact.
-// @tags delete
+// @tags applications
 // @success 204
 // @router /applications/{id}/facts/{key} [delete]
 // @param id path string true "Application ID"
@@ -756,6 +767,47 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// StakeholdersUpdate godoc
+// @summary Update the owner and contributors of an Application.
+// @description Update the owner and contributors of an Application.
+// @tags applications
+// @success 204
+// @router /applications/{id}/stakeholders [patch]
+// @param id path int true "Application ID"
+// @param application body api.Stakeholders true "Application stakeholders"
+func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
+	m := &model.Application{}
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB(ctx))
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	r := &Stakeholders{}
+	err := ctx.BindJSON(r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	db = h.DB(ctx).Model(m).Omit(clause.Associations, "BucketID")
+	result = db.Updates(map[string]interface{}{"OwnerID": r.ownerID()})
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	err = h.DB(ctx).Model(m).Association("Contributors").Replace(r.contributors())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
 //
 // Application REST resource.
 type Application struct {
@@ -771,6 +823,9 @@ type Application struct {
 	Identities      []Ref       `json:"identities"`
 	Tags            []TagRef    `json:"tags"`
 	BusinessService *Ref        `json:"businessService"`
+	Owner           *Ref        `json:"owner"`
+	Contributors    []Ref       `json:"contributors"`
+	MigrationWave   *Ref        `json:"migrationWave"`
 }
 
 //
@@ -808,6 +863,16 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source)
 		r.Tags = append(r.Tags, ref)
 	}
+	r.Owner = r.refPtr(m.OwnerID, m.Owner)
+	r.Contributors = []Ref{}
+	for _, c := range m.Contributors {
+		ref := Ref{}
+		ref.With(c.ID, c.Name)
+		r.Contributors = append(
+			r.Contributors,
+			ref)
+	}
+	r.MigrationWave = r.refPtr(m.MigrationWaveID, m.MigrationWave)
 }
 
 //
@@ -849,6 +914,21 @@ func (r *Application) Model() (m *model.Application) {
 				},
 			})
 	}
+	if r.Owner != nil {
+		m.OwnerID = &r.Owner.ID
+	}
+	for _, ref := range r.Contributors {
+		m.Contributors = append(
+			m.Contributors,
+			model.Stakeholder{
+				Model: model.Model{
+					ID: ref.ID,
+				},
+			})
+	}
+	if r.MigrationWave != nil {
+		m.MigrationWaveID = &r.MigrationWave.ID
+	}
 
 	return
 }
@@ -883,5 +963,32 @@ func (r *Fact) Model() (m *model.Fact) {
 	m = &model.Fact{}
 	m.Key = r.Key
 	m.Value, _ = json.Marshal(r.Value)
+	return
+}
+
+//
+// Stakeholders REST subresource.
+type Stakeholders struct {
+	Owner        *Ref  `json:"owner"`
+	Contributors []Ref `json:"contributors"`
+}
+
+func (r *Stakeholders) ownerID() (ownerID *uint) {
+	if r.Owner != nil {
+		ownerID = &r.Owner.ID
+	}
+	return
+}
+
+func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
+	for _, ref := range r.Contributors {
+		contributors = append(
+			contributors,
+			model.Stakeholder{
+				Model: model.Model{
+					ID: ref.ID,
+				},
+			})
+	}
 	return
 }

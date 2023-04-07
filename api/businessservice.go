@@ -36,7 +36,7 @@ func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a business service by ID.
 // @description Get a business service by ID.
-// @tags get
+// @tags businessservices
 // @produce json
 // @success 200 {object} api.BusinessService
 // @router /businessservices/{id} [get]
@@ -59,7 +59,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all business services.
 // @description List all business services.
-// @tags list
+// @tags businessservices
 // @produce json
 // @success 200 {object} api.BusinessService
 // @router /businessservices [get]
@@ -84,7 +84,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a business service.
 // @description Create a business service.
-// @tags create
+// @tags businessservices
 // @accept json
 // @produce json
 // @success 201 {object} api.BusinessService
@@ -112,7 +112,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a business service.
 // @description Delete a business service.
-// @tags delete
+// @tags businessservices
 // @success 204
 // @router /businessservices/{id} [delete]
 // @param id path string true "Business service ID"
@@ -136,7 +136,7 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a business service.
 // @description Update a business service.
-// @tags update
+// @tags businessservices
 // @accept json
 // @success 204
 // @router /businessservices/{id} [put]

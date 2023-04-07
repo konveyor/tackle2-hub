@@ -58,7 +58,7 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 // List godoc
 // @summary List all buckets.
 // @description List all buckets.
-// @tags get
+// @tags buckets
 // @produce json
 // @success 200 {object} []api.Bucket
 // @router /buckets [get]
@@ -82,7 +82,7 @@ func (h BucketHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a bucket.
 // @description Create a bucket.
-// @tags create
+// @tags buckets
 // @accept json
 // @produce json
 // @success 201 {object} api.Bucket
@@ -107,7 +107,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 // @description Returns api.Bucket when Accept=application/json.
 // @description Else returns index.html when Accept=text/html.
 // @description Else returns tarball.
-// @tags get
+// @tags buckets
 // @produce octet-stream
 // @success 200 {object} api.Bucket
 // @router /buckets/{id} [get]
@@ -132,7 +132,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a bucket.
 // @description Delete a bucket.
-// @tags delete
+// @tags buckets
 // @success 204
 // @router /buckets/{id} [delete]
 // @param id path string true "Bucket ID"
@@ -167,7 +167,7 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @description When path is DIRECTORY and Accept=text/html returns index.html.
 // @description ?filter=glob supports directory content filtering.
 // @description Else returns a tarball.
-// @tags get
+// @tags buckets
 // @produce octet-stream
 // @success 200
 // @router /buckets/{id}/{wildcard} [get]
@@ -180,7 +180,7 @@ func (h BucketHandler) BucketGet(ctx *gin.Context) {
 // BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
-// @tags post
+// @tags buckets
 // @produce json
 // @success 204
 // @router //buckets/{id}/{wildcard} [post]
@@ -192,7 +192,7 @@ func (h BucketHandler) BucketPut(ctx *gin.Context) {
 // BucketDelete godoc
 // @summary Delete bucket content by ID and path.
 // @description Delete bucket content by ID and path.
-// @tags delete
+// @tags buckets
 // @produce json
 // @success 204
 // @router /buckets/{id}/{wildcard} [delete]

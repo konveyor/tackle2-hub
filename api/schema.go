@@ -27,7 +27,7 @@ func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 // Get godoc
 // @summary Get the API schema.
 // @description Get the API schema.
-// @tags get
+// @tags schema
 // @produce json
 // @success 200 {object} Schema
 // @router /schema [get]

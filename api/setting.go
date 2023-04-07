@@ -39,7 +39,7 @@ func (h SettingHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a setting by its key.
 // @description Get a setting by its key.
-// @tags get, setting
+// @tags settings
 // @produce json
 // @success 200 {object} api.Setting
 // @router /settings/{key} [get]
@@ -61,7 +61,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all settings.
 // @description List all settings.
-// @tags list, setting
+// @tags settings
 // @produce json
 // @success 200 array api.Setting
 // @router /settings [get]
@@ -85,7 +85,7 @@ func (h SettingHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a setting.
 // @description Create a setting.
-// @tags create, setting
+// @tags settings
 // @accept json
 // @produce json
 // @success 201 {object} api.Setting
@@ -124,7 +124,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 // CreateByKey godoc
 // @summary Create a setting.
 // @description Create a setting.
-// @tags create, setting
+// @tags settings
 // @accept json
 // @success 201
 // @router /settings/{key} [post]
@@ -162,7 +162,7 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 // Update godoc
 // @summary Update a setting.
 // @description Update a setting.
-// @tags update, setting
+// @tags settings
 // @accept json
 // @produce json
 // @success 204
@@ -203,7 +203,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a setting.
 // @description Delete a setting.
-// @tags delete, setting
+// @tags settings
 // @success 204
 // @router /settings/{key} [delete]
 // @param key path string true "Key"

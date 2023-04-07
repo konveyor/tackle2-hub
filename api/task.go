@@ -67,7 +67,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a task by ID.
 // @description Get a task by ID.
-// @tags get
+// @tags tasks
 // @produce json
 // @success 200 {object} api.Task
 // @router /tasks/{id} [get]
@@ -90,7 +90,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tasks.
 // @description List all tasks.
-// @tags get
+// @tags tasks
 // @produce json
 // @success 200 {object} []api.Task
 // @router /tasks [get]
@@ -120,7 +120,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a task.
 // @description Create a task.
-// @tags create
+// @tags tasks
 // @accept json
 // @produce json
 // @success 201 {object} api.Task
@@ -161,7 +161,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a task.
 // @description Delete a task.
-// @tags delete
+// @tags tasks
 // @success 204
 // @router /tasks/{id} [delete]
 // @param id path string true "Task ID"
@@ -193,7 +193,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a task.
 // @description Update a task.
-// @tags update
+// @tags tasks
 // @accept json
 // @success 204
 // @router /tasks/{id} [put]
@@ -235,7 +235,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // Submit godoc
 // @summary Submit a task.
 // @description Submit a task.
-// @tags update
+// @tags tasks
 // @accept json
 // @success 204
 // @router /tasks/{id}/submit [put]
@@ -267,7 +267,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // Cancel godoc
 // @summary Cancel a task.
 // @description Cancel a task.
-// @tags delete
+// @tags tasks
 // @success 204
 // @router /tasks/{id}/cancel [put]
 // @param id path string true "Task ID"
@@ -313,7 +313,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 // @description Get bucket content by ID and path.
 // @description Returns index.html for directories when Accept=text/html else a tarball.
 // @description ?filter=glob supports directory content filtering.
-// @tags get
+// @tags tasks
 // @produce octet-stream
 // @success 200
 // @router /tasks/{id}/bucket/{wildcard} [get]
@@ -338,7 +338,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 // BucketPut godoc
 // @summary Upload bucket content by ID and path.
 // @description Upload bucket content by ID and path (handles both [post] and [put] requests).
-// @tags post
+// @tags tasks
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [post]
@@ -362,7 +362,7 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 // BucketDelete godoc
 // @summary Delete bucket content by ID and path.
 // @description Delete bucket content by ID and path.
-// @tags delete
+// @tags tasks
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [delete]
@@ -386,7 +386,7 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 // CreateReport godoc
 // @summary Create a task report.
 // @description Update a task report.
-// @tags update
+// @tags tasks
 // @accept json
 // @produce json
 // @success 201 {object} api.TaskReport
@@ -415,7 +415,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // UpdateReport godoc
 // @summary Update a task report.
 // @description Update a task report.
-// @tags update
+// @tags tasks
 // @accept json
 // @produce json
 // @success 200 {object} api.TaskReport
@@ -446,7 +446,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 // DeleteReport godoc
 // @summary Delete a task report.
 // @description Delete a task report.
-// @tags update
+// @tags tasks
 // @accept json
 // @produce json
 // @success 204
@@ -486,8 +486,15 @@ func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 }
 
 //
-// TTL
-type TTL model.TTL
+// TTL time-to-live.
+type TTL struct {
+	Created   int `json:"created,omitempty"`
+	Pending   int `json:"pending,omitempty"`
+	Postponed int `json:"postponed,omitempty"`
+	Running   int `json:"running,omitempty"`
+	Succeeded int `json:"succeeded,omitempty"`
+	Failed    int `json:"failed,omitempty"`
+}
 
 //
 // Task REST resource.
@@ -576,7 +583,7 @@ type TaskReport struct {
 	Total     int         `json:"total"`
 	Completed int         `json:"completed"`
 	Activity  []string    `json:"activity"`
-	Result    interface{} `json:"result,omitempty"`
+	Result    interface{} `json:"result,omitempty" swaggertype:"object"`
 	TaskID    uint        `json:"task"`
 }
 

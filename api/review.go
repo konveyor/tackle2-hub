@@ -38,7 +38,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a review by ID.
 // @description Get a review by ID.
-// @tags get
+// @tags reviews
 // @produce json
 // @success 200 {object} []api.Review
 // @router /reviews/{id} [get]
@@ -61,7 +61,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all reviews.
 // @description List all reviews.
-// @tags get
+// @tags reviews
 // @produce json
 // @success 200 {object} []api.Review
 // @router /reviews [get]
@@ -86,7 +86,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a review.
 // @description Create a review.
-// @tags create
+// @tags reviews
 // @accept json
 // @produce json
 // @success 201 {object} api.Review
@@ -113,7 +113,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a review.
 // @description Delete a review.
-// @tags delete
+// @tags reviews
 // @success 204
 // @router /reviews/{id} [delete]
 // @param id path string true "Review ID"
@@ -137,7 +137,7 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a review.
 // @description Update a review.
-// @tags update
+// @tags reviews
 // @accept json
 // @success 204
 // @router /reviews/{id} [put]
@@ -168,7 +168,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 // CopyReview godoc
 // @summary Copy a review from one application to others.
 // @description Copy a review from one application to others.
-// @tags copy
+// @tags reviews
 // @accept json
 // @success 204
 // @router /reviews/copy [post]

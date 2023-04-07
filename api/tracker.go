@@ -41,7 +41,7 @@ func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a tracker by ID.
 // @description Get a tracker by ID.
-// @tags get
+// @tags trackers
 // @produce json
 // @success 200 {object} api.Tracker
 // @router /trackers/{id} [get]
@@ -64,7 +64,7 @@ func (h TrackerHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all trackers.
 // @description List all trackers.
-// @tags get
+// @tags trackers
 // @produce json
 // @success 200 {object} []api.Tracker
 // @router /trackers [get]
@@ -102,7 +102,7 @@ func (h TrackerHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a tracker.
 // @description Create a tracker.
-// @tags create
+// @tags trackers
 // @accept json
 // @produce json
 // @success 201 {object} api.Tracker
@@ -130,7 +130,7 @@ func (h TrackerHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a tracker.
 // @description Delete a tracker.
-// @tags delete
+// @tags trackers
 // @success 204
 // @router /trackers/{id} [delete]
 // @param id path int true "Tracker id"
@@ -154,7 +154,7 @@ func (h TrackerHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a tracker.
 // @description Update a tracker.
-// @tags update
+// @tags trackers
 // @accept json
 // @success 204
 // @router /trackers/{id} [put]

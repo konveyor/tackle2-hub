@@ -64,7 +64,7 @@ func (h ImportHandler) AddRoutes(e *gin.Engine) {
 // GetImport godoc
 // @summary Get an import by ID.
 // @description Get an import by ID.
-// @tags get
+// @tags imports
 // @produce json
 // @success 200 {object} api.Import
 // @router /imports/{id} [get]
@@ -85,7 +85,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 // ListImports godoc
 // @summary List imports.
 // @description List imports.
-// @tags list
+// @tags imports
 // @produce json
 // @success 200 {object} []api.Import
 // @router /imports [get]
@@ -120,7 +120,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 // DeleteImport godoc
 // @summary Delete an import.
 // @description Delete an import. This leaves any created application or dependency.
-// @tags delete
+// @tags imports
 // @success 204
 // @router /imports/{id} [delete]
 // @param id path string true "Import ID"
@@ -139,7 +139,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 // GetSummary godoc
 // @summary Get an import summary by ID.
 // @description Get an import by ID.
-// @tags get
+// @tags imports
 // @produce json
 // @success 200 {object} api.ImportSummary
 // @router /importsummaries/{id} [get]
@@ -160,7 +160,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 // ListSummaries godoc
 // @summary List import summaries.
 // @description List import summaries.
-// @tags list
+// @tags imports
 // @produce json
 // @success 200 {object} []api.ImportSummary
 // @router /importsummaries [get]
@@ -186,7 +186,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 // DeleteSummary godoc
 // @summary Delete an import summary and associated import records.
 // @description Delete an import summary and associated import records.
-// @tags delete
+// @tags imports
 // @success 204
 // @router /importsummaries/{id} [delete]
 // @param id path string true "ImportSummary ID"
@@ -205,7 +205,7 @@ func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 // UploadCSV godoc
 // @summary Upload a CSV containing applications and dependencies to import.
 // @description Upload a CSV containing applications and dependencies to import.
-// @tags post
+// @tags imports
 // @success 201 {object} api.ImportSummary
 // @produce json
 // @router /importsummaries/upload [post]
@@ -302,7 +302,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 // DownloadCSV godoc
 // @summary Export the source CSV for a particular import summary.
 // @description Export the source CSV for a particular import summary.
-// @tags export
+// @tags imports
 // @produce text/csv
 // @success 200 file csv
 // @router /importsummaries/download [get]

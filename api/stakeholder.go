@@ -36,7 +36,7 @@ func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a stakeholder by ID.
 // @description Get a stakeholder by ID.
-// @tags get
+// @tags stakeholders
 // @produce json
 // @success 200 {object} api.Stakeholder
 // @router /stakeholders/{id} [get]
@@ -59,7 +59,7 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all stakeholders.
 // @description List all stakeholders.
-// @tags get
+// @tags stakeholders
 // @produce json
 // @success 200 {object} []api.Stakeholder
 // @router /stakeholders [get]
@@ -84,7 +84,7 @@ func (h StakeholderHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a stakeholder.
 // @description Create a stakeholder.
-// @tags create
+// @tags stakeholders
 // @accept json
 // @produce json
 // @success 201 {object} api.Stakeholder
@@ -112,7 +112,7 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a stakeholder.
 // @description Delete a stakeholder.
-// @tags delete
+// @tags stakeholders
 // @success 204
 // @router /stakeholders/{id} [delete]
 // @param id path string true "Stakeholder ID"
@@ -136,7 +136,7 @@ func (h StakeholderHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a stakeholder.
 // @description Update a stakeholder.
-// @tags update
+// @tags stakeholders
 // @accept json
 // @success 204
 // @router /stakeholders/{id} [put]
@@ -166,7 +166,24 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
+	db = h.DB(ctx).Model(m)
+	err = db.Association("Owns").Replace(m.Owns)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("Contributes").Replace(m.Contributes)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("MigrationWaves").Replace(m.MigrationWaves)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	ctx.Status(http.StatusNoContent)
 }
 
@@ -179,6 +196,9 @@ type Stakeholder struct {
 	Groups           []Ref  `json:"stakeholderGroups"`
 	BusinessServices []Ref  `json:"businessServices"`
 	JobFunction      *Ref   `json:"jobFunction"`
+	Owns             []Ref  `json:"owns"`
+	Contributes      []Ref  `json:"contributes"`
+	MigrationWaves   []Ref  `json:"migrationWaves"`
 }
 
 //
@@ -188,15 +208,35 @@ func (r *Stakeholder) With(m *model.Stakeholder) {
 	r.Name = m.Name
 	r.Email = m.Email
 	r.JobFunction = r.refPtr(m.JobFunctionID, m.JobFunction)
+	r.Groups = []Ref{}
 	for _, g := range m.Groups {
 		ref := Ref{}
 		ref.With(g.ID, g.Name)
 		r.Groups = append(r.Groups, ref)
 	}
+	r.BusinessServices = []Ref{}
 	for _, b := range m.BusinessServices {
 		ref := Ref{}
 		ref.With(b.ID, b.Name)
 		r.BusinessServices = append(r.BusinessServices, ref)
+	}
+	r.Owns = []Ref{}
+	for _, o := range m.Owns {
+		ref := Ref{}
+		ref.With(o.ID, o.Name)
+		r.Owns = append(r.Owns, ref)
+	}
+	r.Contributes = []Ref{}
+	for _, c := range m.Contributes {
+		ref := Ref{}
+		ref.With(c.ID, c.Name)
+		r.Contributes = append(r.Contributes, ref)
+	}
+	r.MigrationWaves = []Ref{}
+	for _, w := range m.MigrationWaves {
+		ref := Ref{}
+		ref.With(w.ID, w.Name)
+		r.MigrationWaves = append(r.MigrationWaves, ref)
 	}
 }
 
@@ -216,6 +256,15 @@ func (r *Stakeholder) Model() (m *model.Stakeholder) {
 	}
 	for _, b := range r.BusinessServices {
 		m.BusinessServices = append(m.BusinessServices, model.BusinessService{Model: model.Model{ID: b.ID}})
+	}
+	for _, o := range r.Owns {
+		m.Owns = append(m.Owns, model.Application{Model: model.Model{ID: o.ID}})
+	}
+	for _, c := range r.Contributes {
+		m.Contributes = append(m.Contributes, model.Application{Model: model.Model{ID: c.ID}})
+	}
+	for _, w := range r.MigrationWaves {
+		m.MigrationWaves = append(m.MigrationWaves, model.MigrationWave{Model: model.Model{ID: w.ID}})
 	}
 	return
 }

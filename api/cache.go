@@ -37,7 +37,7 @@ func (h CacheHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get the cache.
 // @description Get the cache.
-// @tags get
+// @tags cache
 // @produce json
 // @success 200 {object} api.Cache
 // @router /caches/{id} [get]
@@ -60,7 +60,7 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a directory within the cache.
 // @description Delete a directory within the cache.
-// @tags delete
+// @tags cache
 // @produce json
 // @success 204
 // @router /cache [delete]

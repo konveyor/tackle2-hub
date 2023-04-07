@@ -35,7 +35,7 @@ func (h RuleBundleHandler) AddRoutes(e *gin.Engine) {
 // Get godoc
 // @summary Get a RuleBundle by ID.
 // @description Get a RuleBundle by ID.
-// @tags get
+// @tags rulebundles
 // @produce json
 // @success 200 {object} RuleBundle
 // @router /rulebundles/{id} [get]
@@ -61,7 +61,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all bindings.
 // @description List all bindings.
-// @tags get
+// @tags rulebundles
 // @produce json
 // @success 200 {object} []RuleBundle
 // @router /rulebundles [get]
@@ -89,7 +89,7 @@ func (h RuleBundleHandler) List(ctx *gin.Context) {
 // Create godoc
 // @summary Create a bundle.
 // @description Create a bundle.
-// @tags create
+// @tags rulebundles
 // @accept json
 // @produce json
 // @success 201 {object} RuleBundle
@@ -125,7 +125,7 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 // Delete godoc
 // @summary Delete a bundle.
 // @description Delete a bundle.
-// @tags delete
+// @tags rulebundles
 // @success 204
 // @router /rulebundles/{id} [delete]
 // @param id path string true "RuleBundle ID"
@@ -149,7 +149,7 @@ func (h RuleBundleHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a bundle.
 // @description Update a bundle.
-// @tags update
+// @tags rulebundles
 // @accept json
 // @success 204
 // @router /rulebundles/{id} [put]

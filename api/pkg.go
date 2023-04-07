@@ -78,6 +78,7 @@ func All() []Handler {
 		&TrackerHandler{},
 		&BucketHandler{},
 		&FileHandler{},
+		&MigrationWaveHandler{},
 	}
 }
 
