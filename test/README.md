@@ -28,14 +28,14 @@ $ make run
 ```
 
 ```
-$ export HUB_ENDPOINT=http://localhost:8080
+$ export HUB_BASE_URL=http://localhost:8080
 $ go test -v ./test/api/
 ```
 
 Or tests can run against running Hub installation (example with minikube below).
 
 ```
-$ export HUB_ENDPOINT="http://$(minikube ip)/hub"
+$ export HUB_BASE_URL="http://$(minikube ip)/hub"
 $ export KEYCLOAK_ADMIN_USER="admin"
 $ export KEYCLOAK_ADMIN_PASS=""
 $ go test -v ./test/api/
