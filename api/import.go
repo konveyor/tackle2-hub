@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
