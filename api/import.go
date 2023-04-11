@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
@@ -47,7 +48,7 @@ type ImportHandler struct {
 // AddRoutes adds routes.
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("imports"))
+	routeGroup.Use(auth.Required("imports"))
 	routeGroup.GET(SummariesRoot, h.ListSummaries)
 	routeGroup.GET(SummariesRoot+"/", h.ListSummaries)
 	routeGroup.GET(SummaryRoot, h.GetSummary)
