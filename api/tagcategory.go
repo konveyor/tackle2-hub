@@ -53,7 +53,7 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 
 	resource := TagCategory{}
 	resource.With(m)
-	ctx.JSON(http.StatusOK, resource)
+	h.Render(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h TagCategoryHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -92,7 +92,7 @@ func (h TagCategoryHandler) List(ctx *gin.Context) {
 // @param tag_type body api.TagCategory true "Tag Category data"
 func (h TagCategoryHandler) Create(ctx *gin.Context) {
 	r := TagCategory{}
-	err := ctx.BindJSON(&r)
+	err := h.Bind(ctx, &r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -106,7 +106,7 @@ func (h TagCategoryHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -145,7 +145,7 @@ func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 func (h TagCategoryHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &TagCategory{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

@@ -68,7 +68,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	r := TaskGroup{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -93,7 +93,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -107,7 +107,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // @param taskgroup body api.TaskGroup true "TaskGroup data"
 func (h TaskGroupHandler) Create(ctx *gin.Context) {
 	r := &TaskGroup{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -126,7 +126,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	default:
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be ('''|Created|Ready)",
@@ -142,7 +142,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Update godoc
@@ -157,7 +157,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	updated := &TaskGroup{}
-	err := ctx.BindJSON(updated)
+	err := h.Bind(ctx, updated)
 	if err != nil {
 		return
 	}
@@ -182,7 +182,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			return
 		}
 	default:
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (Created|Ready)",

@@ -34,14 +34,14 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 // @router /auth/login [post]
 func (h AuthHandler) Login(ctx *gin.Context) {
 	r := &Login{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	r.Token, err = auth.Remote.Login(r.User, r.Password)
 	if err != nil {
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusUnauthorized,
 			gin.H{
 				"error": err.Error(),
@@ -49,7 +49,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 	r.Password = "" // Clear out password from response
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 //

@@ -62,7 +62,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 	r := Addon{}
 	r.With(addon)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -91,7 +91,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 		content = append(content, addon)
 	}
 
-	ctx.JSON(http.StatusOK, content)
+	h.Render(ctx, http.StatusOK, content)
 }
 
 //

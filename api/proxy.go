@@ -56,7 +56,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 	r := Proxy{}
 	r.With(proxy)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -85,7 +85,7 @@ func (h ProxyHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -99,7 +99,7 @@ func (h ProxyHandler) List(ctx *gin.Context) {
 // @param proxy body Proxy true "Proxy data"
 func (h ProxyHandler) Create(ctx *gin.Context) {
 	proxy := &Proxy{}
-	err := ctx.BindJSON(proxy)
+	err := h.Bind(ctx, proxy)
 	if err != nil {
 		return
 	}
@@ -112,7 +112,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 	}
 	proxy.With(m)
 
-	ctx.JSON(http.StatusCreated, proxy)
+	h.Render(ctx, http.StatusCreated, proxy)
 }
 
 // Delete godoc
@@ -151,7 +151,7 @@ func (h ProxyHandler) Delete(ctx *gin.Context) {
 func (h ProxyHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Proxy{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

@@ -108,7 +108,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	r := Application{}
 	r.With(m, tags)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -141,7 +141,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -155,7 +155,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 // @param application body api.Application true "Application data"
 func (h ApplicationHandler) Create(ctx *gin.Context) {
 	r := &Application{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -182,7 +182,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 
 	r.With(m, tags)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -224,7 +224,7 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 // @param application body []uint true "List of id"
 func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 	ids := []uint{}
-	err := ctx.BindJSON(&ids)
+	err := h.Bind(ctx, &ids)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -259,7 +259,7 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 func (h ApplicationHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Application{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -456,7 +456,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source)
 		resources = append(resources, r)
 	}
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // TagAdd godoc
@@ -471,7 +471,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	id := h.pk(ctx)
 	ref := &TagRef{}
-	err := ctx.BindJSON(ref)
+	err := h.Bind(ctx, ref)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -492,7 +492,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, ref)
+	h.Render(ctx, http.StatusCreated, ref)
 }
 
 // TagReplace godoc
@@ -508,7 +508,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 	id := h.pk(ctx)
 	refs := []TagRef{}
-	err := ctx.BindJSON(&refs)
+	err := h.Bind(ctx, &refs)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -610,7 +610,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context) {
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // FactGet godoc
@@ -643,7 +643,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	}
 	r := Fact{}
 	r.With(&list[0])
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // FactCreate godoc
@@ -660,7 +660,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var v interface{}
-	err := ctx.BindJSON(&v)
+	err := h.Bind(ctx, &v)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -683,7 +683,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	}
 	r := &Fact{}
 	r.With(m)
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // FactPut godoc
@@ -700,7 +700,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var v interface{}
-	err := ctx.BindJSON(&v)
+	err := h.Bind(ctx, &v)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -786,7 +786,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 	}
 
 	r := &Stakeholders{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

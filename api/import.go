@@ -78,7 +78,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	ctx.JSON(http.StatusOK, m.AsMap())
+	h.Render(ctx, http.StatusOK, m.AsMap())
 }
 
 //
@@ -113,7 +113,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 		resources = append(resources, list[i].AsMap())
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 //
@@ -153,7 +153,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	ctx.JSON(http.StatusOK, m)
+	h.Render(ctx, http.StatusOK, m)
 }
 
 //
@@ -179,7 +179,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 //
@@ -273,7 +273,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		case RecordTypeApplication:
 			// Check row format - length, expecting 15 fields + tags
 			if len(row) < 15 {
-				ctx.JSON(http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
+				h.Render(ctx, http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
 			imp = h.applicationFromRow(fileName, row)
@@ -295,7 +295,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 
 	summary := ImportSummary{}
 	summary.With(&m)
-	ctx.JSON(http.StatusCreated, summary)
+	h.Render(ctx, http.StatusCreated, summary)
 }
 
 //

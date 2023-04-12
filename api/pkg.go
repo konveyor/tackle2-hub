@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +35,14 @@ const (
 )
 
 //
-// Accepted (mime)
+// MIME Types.
 const (
-	AppJson  = "application/json"
-	AppOctet = "application/octet-stream"
-	TextHTML = "text/html"
+	MIMEOCTETSTREAM = "application/octet-stream"
 )
+
+//
+// BindMIMEs supported binding MIME types.
+var BindMIMEs = []string{binding.MIMEJSON, binding.MIMEYAML}
 
 //
 // Header Values

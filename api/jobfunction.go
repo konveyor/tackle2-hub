@@ -53,7 +53,7 @@ func (h JobFunctionHandler) Get(ctx *gin.Context) {
 	r := JobFunction{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h JobFunctionHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -92,7 +92,7 @@ func (h JobFunctionHandler) List(ctx *gin.Context) {
 // @param job_function body api.JobFunction true "Job Function data"
 func (h JobFunctionHandler) Create(ctx *gin.Context) {
 	r := &JobFunction{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -106,7 +106,7 @@ func (h JobFunctionHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -145,7 +145,7 @@ func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 func (h JobFunctionHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &JobFunction{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

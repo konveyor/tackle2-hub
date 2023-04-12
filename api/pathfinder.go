@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"io"
 	"net/http"
@@ -70,7 +71,7 @@ func (r *Pathfinder) DeleteAssessment(ids []uint, ctx *gin.Context) (err error) 
 	header := http.Header{
 		Authorization: ctx.Request.Header[Authorization],
 		ContentLength: []string{strconv.Itoa(len(b))},
-		ContentType:   []string{"application/json"},
+		ContentType:   []string{binding.MIMEJSON},
 	}
 	request := r.request(
 		http.MethodDelete,
