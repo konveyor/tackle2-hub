@@ -7,6 +7,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
@@ -76,7 +77,7 @@ func (h BucketHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -98,7 +99,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 	}
 	r := Bucket{}
 	r.With(m)
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Get godoc
@@ -120,10 +121,10 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	if h.accepted(ctx, AppJson) {
+	if h.Accepted(ctx, BindMIMEs...) {
 		r := Bucket{}
 		r.With(m)
-		ctx.JSON(http.StatusOK, r)
+		h.Render(ctx, http.StatusOK, r)
 		return
 	}
 	h.bucketGet(ctx, id)
@@ -247,7 +248,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 			pattern: ctx.Query(Filter),
 			root:    path,
 		}
-		if h.accepted(ctx, TextHTML) {
+		if h.Accepted(ctx, binding.MIMEHTML) {
 			err = h.getFile(ctx, m)
 			if err != nil {
 				_ = ctx.Error(err)
@@ -499,19 +500,6 @@ func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
 		return
 	}
 	err = os.Chmod(path, 0666)
-	return
-}
-
-//
-// accepted determines if the mime is accepted.
-func (h *BucketOwner) accepted(ctx *gin.Context, mime string) (b bool) {
-	accept := ctx.Request.Header.Get(Accept)
-	for _, s := range strings.Split(accept, ",") {
-		if s == mime {
-			b = true
-			break
-		}
-	}
 	return
 }
 

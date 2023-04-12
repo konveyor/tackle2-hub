@@ -53,7 +53,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 
 	resource := BusinessService{}
 	resource.With(m)
-	ctx.JSON(http.StatusOK, resource)
+	h.Render(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -92,7 +92,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 // @param business_service body api.BusinessService true "Business service data"
 func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 	r := &BusinessService{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -106,7 +106,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -145,7 +145,7 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &BusinessService{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

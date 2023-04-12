@@ -55,7 +55,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 	r := Review{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -80,7 +80,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -94,7 +94,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 // @param review body api.Review true "Review data"
 func (h ReviewHandler) Create(ctx *gin.Context) {
 	review := Review{}
-	err := ctx.BindJSON(&review)
+	err := h.Bind(ctx, &review)
 	if err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 	}
 	review.With(m)
 
-	ctx.JSON(http.StatusCreated, review)
+	h.Render(ctx, http.StatusCreated, review)
 }
 
 // Delete godoc
@@ -146,7 +146,7 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 func (h ReviewHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Review{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -175,7 +175,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 // @param copy_request body api.CopyRequest true "Review copy request data"
 func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 	c := CopyRequest{}
-	err := ctx.BindJSON(&c)
+	err := h.Bind(ctx, &c)
 	if err != nil {
 		return
 	}

@@ -52,7 +52,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 	r := Dependency{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 //
@@ -89,7 +89,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -103,7 +103,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 // @param applications_dependency body Dependency true "Dependency data"
 func (h DependencyHandler) Create(ctx *gin.Context) {
 	r := Dependency{}
-	err := ctx.BindJSON(&r)
+	err := h.Bind(ctx, &r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -116,7 +116,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc

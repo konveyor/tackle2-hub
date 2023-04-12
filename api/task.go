@@ -84,7 +84,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	r := Task{}
 	r.With(task)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -114,7 +114,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -128,7 +128,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 // @param task body api.Task true "Task data"
 func (h TaskHandler) Create(ctx *gin.Context) {
 	r := Task{}
-	err := ctx.BindJSON(&r)
+	err := h.Bind(ctx, &r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -139,7 +139,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	case tasking.Created,
 		tasking.Ready:
 	default:
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (''|Created|Ready)",
@@ -155,7 +155,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -202,7 +202,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 func (h TaskHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Task{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		return
 	}
@@ -210,7 +210,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	case tasking.Created,
 		tasking.Ready:
 	default:
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (Created|Ready)",
@@ -283,7 +283,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 	case tasking.Succeeded,
 		tasking.Failed,
 		tasking.Canceled:
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must not be (Succeeded|Failed|Canceled)",
@@ -396,7 +396,7 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	report := &TaskReport{}
-	err := ctx.BindJSON(report)
+	err := h.Bind(ctx, report)
 	if err != nil {
 		return
 	}
@@ -409,7 +409,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	}
 	report.With(m)
 
-	ctx.JSON(http.StatusCreated, report)
+	h.Render(ctx, http.StatusCreated, report)
 }
 
 // UpdateReport godoc
@@ -425,7 +425,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	report := &TaskReport{}
-	err := ctx.BindJSON(report)
+	err := h.Bind(ctx, report)
 	if err != nil {
 		return
 	}
@@ -440,7 +440,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	}
 	report.With(m)
 
-	ctx.JSON(http.StatusOK, report)
+	h.Render(ctx, http.StatusOK, report)
 }
 
 // DeleteReport godoc

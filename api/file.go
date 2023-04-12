@@ -58,7 +58,7 @@ func (h FileHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -116,7 +116,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	}
 	r := File{}
 	r.With(m)
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Get godoc
@@ -135,12 +135,11 @@ func (h FileHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	switch ctx.GetHeader(Accept) {
-	case AppJson:
+	if h.Accepted(ctx, BindMIMEs...) {
 		r := File{}
 		r.With(m)
-		ctx.JSON(http.StatusOK, r)
-	default:
+		h.Render(ctx, http.StatusOK, r)
+	} else {
 		header := ctx.Writer.Header()
 		header[ContentType] = []string{
 			mime.TypeByExtension(pathlib.Ext(m.Name)),

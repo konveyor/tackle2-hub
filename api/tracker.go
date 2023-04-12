@@ -58,7 +58,7 @@ func (h TrackerHandler) Get(ctx *gin.Context) {
 
 	resource := Tracker{}
 	resource.With(m)
-	ctx.JSON(http.StatusOK, resource)
+	h.Render(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -96,7 +96,7 @@ func (h TrackerHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -110,7 +110,7 @@ func (h TrackerHandler) List(ctx *gin.Context) {
 // @param tracker body api.Tracker true "Tracker data"
 func (h TrackerHandler) Create(ctx *gin.Context) {
 	r := &Tracker{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -124,7 +124,7 @@ func (h TrackerHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -163,7 +163,7 @@ func (h TrackerHandler) Delete(ctx *gin.Context) {
 func (h TrackerHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Tracker{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

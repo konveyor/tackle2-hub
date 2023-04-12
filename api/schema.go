@@ -40,7 +40,7 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 		schema.Paths = append(schema.Paths, rte.Path)
 	}
 
-	ctx.JSON(http.StatusOK, schema)
+	h.Render(ctx, http.StatusOK, schema)
 }
 
 type Schema struct {

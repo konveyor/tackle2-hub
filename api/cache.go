@@ -54,7 +54,7 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // Delete godoc

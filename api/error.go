@@ -11,6 +11,21 @@ import (
 	"os"
 )
 
+//
+// BadRequestError reports bad request errors.
+type BadRequestError struct {
+	Reason string
+}
+
+func (r *BadRequestError) Error() string {
+	return r.Reason
+}
+
+func (r *BadRequestError) Is(err error) (matched bool) {
+	_, matched = err.(*BadRequestError)
+	return
+}
+
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
@@ -30,7 +45,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		err := ctx.Errors[0]
 
-		if errors.Is(err, validator.ValidationErrors{}) {
+		if errors.Is(err, &BadRequestError{}) || errors.Is(err, validator.ValidationErrors{}) {
 			ctx.JSON(
 				http.StatusBadRequest,
 				gin.H{

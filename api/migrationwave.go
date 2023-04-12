@@ -54,7 +54,7 @@ func (h MigrationWaveHandler) Get(ctx *gin.Context) {
 	r := MigrationWave{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -79,7 +79,7 @@ func (h MigrationWaveHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -93,7 +93,7 @@ func (h MigrationWaveHandler) List(ctx *gin.Context) {
 // @param migrationwave body api.MigrationWave true "Migration Wave data"
 func (h MigrationWaveHandler) Create(ctx *gin.Context) {
 	r := &MigrationWave{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -107,7 +107,7 @@ func (h MigrationWaveHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Update godoc
@@ -122,7 +122,7 @@ func (h MigrationWaveHandler) Create(ctx *gin.Context) {
 func (h MigrationWaveHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &MigrationWave{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

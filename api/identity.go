@@ -65,7 +65,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, r)
+	h.Render(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -109,7 +109,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -123,7 +123,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @param identity body Identity true "Identity data"
 func (h IdentityHandler) Create(ctx *gin.Context) {
 	r := &Identity{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -143,7 +143,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -182,7 +182,7 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 func (h IdentityHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Identity{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

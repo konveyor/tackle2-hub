@@ -50,7 +50,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 		ApplicationID uint `json:"applicationId"`
 	}
 
-	err := ctx.BindJSON(&requestedApps)
+	err := h.Bind(ctx, &requestedApps)
 	if err != nil {
 		_ = ctx.Error(err)
 	}
@@ -99,7 +99,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 
 	sorted, ok := graph.TopologicalSort()
 	if !ok {
-		ctx.JSON(
+		h.Render(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "dependency cycle detected",
@@ -107,7 +107,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, sorted)
+	h.Render(ctx, http.StatusOK, sorted)
 }
 
 //

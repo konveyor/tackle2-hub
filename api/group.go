@@ -53,7 +53,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 	r := StakeholderGroup{}
 	r.With(m)
 
-	ctx.JSON(http.StatusOK, m)
+	h.Render(ctx, http.StatusOK, m)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	ctx.JSON(http.StatusOK, resources)
+	h.Render(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -92,7 +92,7 @@ func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 // @param stakeholder_group body api.StakeholderGroup true "Stakeholder Group data"
 func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 	r := &StakeholderGroup{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -106,7 +106,7 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	ctx.JSON(http.StatusCreated, r)
+	h.Render(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -145,7 +145,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &StakeholderGroup{}
-	err := ctx.BindJSON(r)
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
