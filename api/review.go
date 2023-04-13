@@ -67,7 +67,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 // @router /reviews [get]
 func (h ReviewHandler) List(ctx *gin.Context) {
 	var list []model.Review
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.Paginated(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

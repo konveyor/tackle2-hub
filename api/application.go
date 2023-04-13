@@ -120,7 +120,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @router /applications [get]
 func (h ApplicationHandler) List(ctx *gin.Context) {
 	var list []model.Application
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.Paginated(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

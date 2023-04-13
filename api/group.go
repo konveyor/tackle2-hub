@@ -65,7 +65,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 // @router /stakeholdergroups [get]
 func (h StakeholderGroupHandler) List(ctx *gin.Context) {
 	var list []model.StakeholderGroup
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.Paginated(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

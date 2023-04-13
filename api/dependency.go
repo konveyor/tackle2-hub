@@ -66,7 +66,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 func (h DependencyHandler) List(ctx *gin.Context) {
 	var list []model.Dependency
 
-	db := h.DB(ctx)
+	db := h.Paginated(ctx)
 	to := ctx.Query("to.id")
 	from := ctx.Query("from.id")
 	if to != "" {

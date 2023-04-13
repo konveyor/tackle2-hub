@@ -46,7 +46,7 @@ func (h FileHandler) AddRoutes(e *gin.Engine) {
 // @router /files [get]
 func (h FileHandler) List(ctx *gin.Context) {
 	var list []model.File
-	result := h.DB(ctx).Find(&list)
+	result := h.Paginated(ctx).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
