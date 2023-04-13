@@ -10,8 +10,9 @@ import (
 //
 // Routes
 const (
-	TagCategoriesRoot = "/tagcategories"
-	TagCategoryRoot   = TagCategoriesRoot + "/:" + ID
+	TagCategoriesRoot   = "/tagcategories"
+	TagCategoryRoot     = TagCategoriesRoot + "/:" + ID
+	TagCategoryTagsRoot = TagCategoryRoot + "/tags"
 )
 
 //
@@ -31,6 +32,8 @@ func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TagCategoryRoot, h.Get)
 	routeGroup.PUT(TagCategoryRoot, h.Update)
 	routeGroup.DELETE(TagCategoryRoot, h.Delete)
+	routeGroup.GET(TagCategoryTagsRoot, h.TagList)
+	routeGroup.GET(TagCategoryTagsRoot+"/", h.TagList)
 }
 
 // Get godoc
@@ -63,9 +66,13 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.TagCategory
 // @router /tagcategories [get]
+// @param name query string false "Optional category name filter"
 func (h TagCategoryHandler) List(ctx *gin.Context) {
 	var list []model.TagCategory
 	db := h.preLoad(h.DB(ctx), clause.Associations)
+	if name, found := ctx.GetQuery(Name); found {
+		db = db.Where("name = ?", name)
+	}
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -162,6 +169,44 @@ func (h TagCategoryHandler) Update(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+// TagList godoc
+// @summary List the tags in the tag category.
+// @description List the tags in the tag category.
+// @tags tagcategories
+// @produce json
+// @success 200 {object} []api.Tag
+// @router /tagcategories/{id}/tags [get]
+// @param id path string true "Tag Category ID"
+// @param name query string false "Optional tag name filter"
+func (h TagCategoryHandler) TagList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.TagCategory{}
+	result := h.DB(ctx).First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	var list []model.Tag
+	db := h.DB(ctx)
+	if name, found := ctx.GetQuery(Name); found {
+		db = db.Where("name = ?", name)
+	}
+	result = db.Find(&list, "CategoryID = ?", id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	resources := []Tag{}
+	for i := range list {
+		r := Tag{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	ctx.JSON(http.StatusOK, resources)
 }
 
 //

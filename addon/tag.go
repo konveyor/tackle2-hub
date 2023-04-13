@@ -59,16 +59,14 @@ func (h *Tag) Delete(r *api.Tag) (err error) {
 // Find by name and type.
 func (h *Tag) Find(name string, category uint) (r *api.Tag, found bool, err error) {
 	list := []api.Tag{}
-	err = h.client.Get(api.TagsRoot, &list)
+	path := Path(api.TagCategoryTagsRoot).Inject(Params{api.ID: category})
+	err = h.client.Get(path, &list, Param{Key: api.Name, Value: name})
 	if err != nil {
 		return
 	}
-	for i := range list {
-		if name == list[i].Name && category == list[i].Category.ID {
-			r = &list[i]
-			found = true
-			break
-		}
+	if len(list) > 0 {
+		found = true
+		r = &list[0]
 	}
 	return
 }
@@ -143,16 +141,13 @@ func (h *TagCategory) Delete(r *api.TagCategory) (err error) {
 // Find by name.
 func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err error) {
 	list := []api.TagCategory{}
-	err = h.client.Get(api.TagCategoriesRoot, &list)
+	err = h.client.Get(api.TagCategoriesRoot, &list, Param{Key: api.Name, Value: name})
 	if err != nil {
 		return
 	}
-	for i := range list {
-		if name == list[i].Name {
-			r = &list[i]
-			found = true
-			break
-		}
+	if len(list) > 0 {
+		found = true
+		r = &list[0]
 	}
 	return
 }

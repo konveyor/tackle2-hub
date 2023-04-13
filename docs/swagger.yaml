@@ -2570,6 +2570,11 @@ paths:
   /tagcategories:
     get:
       description: List all tag categories.
+      parameters:
+      - description: Optional category name filter
+        in: query
+        name: name
+        type: string
       produces:
       - application/json
       responses:
@@ -2656,6 +2661,31 @@ paths:
         "204":
           description: No Content
       summary: Update a tag category.
+      tags:
+      - tagcategories
+  /tagcategories/{id}/tags:
+    get:
+      description: List the tags in the tag category.
+      parameters:
+      - description: Tag Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Optional tag name filter
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Tag'
+            type: array
+      summary: List the tags in the tag category.
       tags:
       - tagcategories
   /tags:

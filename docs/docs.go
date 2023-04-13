@@ -2781,6 +2781,14 @@ const docTemplate = `{
                     "tagcategories"
                 ],
                 "summary": "List all tag categories.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Optional category name filter",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2905,6 +2913,44 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/tagcategories/{id}/tags": {
+            "get": {
+                "description": "List the tags in the tag category.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tagcategories"
+                ],
+                "summary": "List the tags in the tag category.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tag Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional tag name filter",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Tag"
+                            }
+                        }
                     }
                 }
             }
