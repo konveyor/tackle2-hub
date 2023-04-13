@@ -69,7 +69,7 @@ func (h ProxyHandler) Get(ctx *gin.Context) {
 func (h ProxyHandler) List(ctx *gin.Context) {
 	var list []model.Proxy
 	kind := ctx.Query(Kind)
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.Paginated(ctx), clause.Associations)
 	if kind != "" {
 		db = db.Where(Kind, kind)
 	}

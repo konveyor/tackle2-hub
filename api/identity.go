@@ -79,7 +79,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	var list []model.Identity
 	appId := ctx.Query(AppId)
 	kind := ctx.Query(Kind)
-	db := h.DB(ctx)
+	db := h.Paginated(ctx)
 	if appId != "" {
 		db = db.Where(
 			"id IN (SELECT identityID from ApplicationIdentity WHERE applicationID = ?)",

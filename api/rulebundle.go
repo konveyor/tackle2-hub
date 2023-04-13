@@ -68,7 +68,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 func (h RuleBundleHandler) List(ctx *gin.Context) {
 	var list []model.RuleBundle
 	db := h.preLoad(
-		h.DB(ctx),
+		h.Paginated(ctx),
 		clause.Associations,
 		"RuleSets.File")
 	result := db.Find(&list)

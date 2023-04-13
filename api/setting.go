@@ -67,7 +67,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 // @router /settings [get]
 func (h SettingHandler) List(ctx *gin.Context) {
 	var list []model.Setting
-	result := h.DB(ctx).Find(&list)
+	result := h.Paginated(ctx).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
