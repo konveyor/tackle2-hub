@@ -218,28 +218,17 @@ func (h *BaseHandler) Render(ctx *gin.Context, code int, r interface{}) {
 
 //
 // Accepted determines if the mime is accepted.
-func (h *BaseHandler) Accepted(ctx *gin.Context, wanted ...string) (b bool) {
+// Wildcards ignored.
+func (h *BaseHandler) Accepted(ctx *gin.Context, mimes ...string) (b bool) {
 	accept := ctx.GetHeader(Accept)
-	for _, m := range strings.Split(accept, ",") {
-		m = strings.TrimSpace(m)
-		m = strings.Split(m, ";")[0]
-		mp := strings.SplitN(m, "/", 2)
-		if len(mp) != 2 {
-			continue
-		}
-		for _, w := range wanted {
-			wp := strings.SplitN(w, "/", 2)
-			if len(wp) != 2 {
-				continue
+	for _, accepted := range strings.Split(accept, ",") {
+		accepted = strings.TrimSpace(accepted)
+		accepted = strings.Split(accepted, ";")[0]
+		for _, wanted := range mimes {
+			if accepted == wanted {
+				b = true
+				return
 			}
-			if !(mp[0] == "*" || mp[0] == wp[0]) {
-				continue
-			}
-			if !(mp[1] == "*" || mp[1] == wp[1]) {
-				continue
-			}
-			b = true
-			return
 		}
 	}
 	return

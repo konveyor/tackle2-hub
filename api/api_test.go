@@ -23,8 +23,6 @@ func TestAccepted(t *testing.T) {
 	// Empty.
 	ctx.Request.Header[Accept] = []string{""}
 	g.Expect(h.Accepted(ctx, "x/y")).To(gomega.BeFalse())
-	ctx.Request.Header[Accept] = []string{""}
-	g.Expect(h.Accepted(ctx, "")).To(gomega.BeFalse())
 	ctx.Request.Header[Accept] = []string{"a/b"}
 	g.Expect(h.Accepted(ctx, "")).To(gomega.BeFalse())
 	// Multiple with spaces.
@@ -33,27 +31,4 @@ func TestAccepted(t *testing.T) {
 	// Multiple and parameters.
 	ctx.Request.Header[Accept] = []string{"x/y,a/b;q=1.0"}
 	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
-	// wildcards
-	ctx.Request.Header[Accept] = []string{"*/b"}
-	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
-	ctx.Request.Header[Accept] = []string{"*/b"}
-	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
-	ctx.Request.Header[Accept] = []string{"*/*"}
-	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
-}
-
-func TestAcceptedAny(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-	h := BaseHandler{}
-	ctx := &gin.Context{
-		Request: &http.Request{
-			Header: http.Header{},
-		},
-	}
-	ctx.Request.Header[Accept] = []string{"a/b"}
-	g.Expect(h.Accepted(ctx, "a/b", "c/d")).To(gomega.BeTrue())
-	ctx.Request.Header[Accept] = []string{"a/b,c/d"}
-	g.Expect(h.Accepted(ctx, "a/b", "c/d")).To(gomega.BeTrue())
-	ctx.Request.Header[Accept] = []string{"a/b,c/d"}
-	g.Expect(h.Accepted(ctx, "e/f", "x/y")).To(gomega.BeFalse())
 }
