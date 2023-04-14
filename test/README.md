@@ -1,12 +1,12 @@
 # Hub Tests
 
 Hub tests consist of following parts:
-- Unit tests
-- REST API tests
-- WIP (more or less) Integration tests
+- Unit tests ```$ make test```
+- REST API tests ```$ make test-api```
+- Integration tests ```$ make test-integration```
 - WIP Export/import tests
 
-All tests can be executed with ```$ make test``` which will run all available tests.
+All tests can be executed with ```$ make test-all``` which will run all available tests.
 
 ## General information
 

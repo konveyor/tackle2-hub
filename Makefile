@@ -119,11 +119,8 @@ ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
 endif
 	$(INSTALL_TACKLE_SH);
 
-# Run Hub test suite.
-test: test-unit test-api test-integration
-
 # Run unit tests.
-test-unit:
+test:
 	go test -v ./auth/
 
 # Run Hub REST API tests.
@@ -133,3 +130,6 @@ test-api:
 # Run Hub API integration tests.
 test-integration:
 	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/integration/...
+
+# Run Hub test suite.
+test-all: test-unit test-api test-integration
