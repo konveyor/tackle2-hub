@@ -6,6 +6,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 var SampleFacts = []*api.Fact{
@@ -24,7 +25,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	application := Samples()[0]
 
 	// Create the application.
-	c.Must(t, Create(&application))
+	assert.Must(t, Create(&application))
 
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
@@ -82,7 +83,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	}
 
 	// Clean the application.
-	c.Must(t, Delete(&application))
+	assert.Must(t, Delete(&application))
 }
 
 func TestApplicationFactsList(t *testing.T) {
@@ -90,7 +91,7 @@ func TestApplicationFactsList(t *testing.T) {
 	application := Samples()[0]
 
 	// Create the application.
-	c.Must(t, Create(&application))
+	assert.Must(t, Create(&application))
 
 	// Create facts.
 	for _, r := range SampleFacts {
@@ -117,5 +118,5 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Clean the application.
-	c.Must(t, Delete(&application))
+	assert.Must(t, Delete(&application))
 }

@@ -1,7 +1,6 @@
-package client
+package assert
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -21,10 +20,4 @@ func Must(t *testing.T, err error) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-}
-
-//
-// Simple equality check working for flat types (no nested types passed by reference).
-func FlatEqual(got, expected interface{}) bool {
-	return fmt.Sprintf("%v", got) == fmt.Sprintf("%v", expected)
 }

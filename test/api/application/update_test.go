@@ -7,6 +7,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestApplicationUpdateName(t *testing.T) {
@@ -14,7 +15,7 @@ func TestApplicationUpdateName(t *testing.T) {
 	for _, r := range samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			c.Must(t, Create(&r))
+			assert.Must(t, Create(&r))
 			rPath := c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID})
 
 			// Update.
@@ -38,7 +39,7 @@ func TestApplicationUpdateName(t *testing.T) {
 			}
 
 			// Clean.
-			c.Must(t, Delete(&r))
+			assert.Must(t, Delete(&r))
 		})
 	}
 }

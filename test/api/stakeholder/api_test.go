@@ -5,6 +5,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestStakeholderCRUD(t *testing.T) {
@@ -25,7 +26,7 @@ func TestStakeholderCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if c.FlatEqual(got, &r) {
+			if assert.FlatEqual(got, &r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, &r)
 			}
 
@@ -64,7 +65,7 @@ func TestStakeholderCRUD(t *testing.T) {
 func TestStakeholderList(t *testing.T) {
 	samples := Samples()
 	for i := range samples {
-		c.Must(t, Create(&samples[i]))
+		assert.Must(t, Create(&samples[i]))
 	}
 
 	got := []api.Stakeholder{}
@@ -72,12 +73,12 @@ func TestStakeholderList(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if c.FlatEqual(got, &samples) {
+	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, &samples)
 	}
 
 	for _, r := range samples {
-		c.Must(t, Delete(&r))
+		assert.Must(t, Delete(&r))
 	}
 
 }

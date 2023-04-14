@@ -3,7 +3,7 @@ package application
 import (
 	"testing"
 
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestApplicationBucket(t *testing.T) {
@@ -11,10 +11,10 @@ func TestApplicationBucket(t *testing.T) {
 	application := Samples()[0]
 
 	// Create the application.
-	c.Must(t, Create(&application))
+	assert.Must(t, Create(&application))
 
 	// Bucket test TODO// with Client.BucketGet, BucketPut etc.
 
 	// Clean the application.
-	c.Must(t, Delete(&application))
+	assert.Must(t, Delete(&application))
 }
