@@ -56,7 +56,7 @@ jobs:
       - run: |
           make vet
           make run &
-          sleep 5
+          sleep 15  # probably a dirty solution
           HUB_BASE_URL=http://localhost:8080 make test-api
 
   test-e2e:

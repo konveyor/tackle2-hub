@@ -120,15 +120,15 @@ endif
 	$(INSTALL_TACKLE_SH);
 
 # Run unit tests.
-test:
+.PHONY: test:
 	go test -v ./auth/
 
 # Run Hub REST API tests.
-test-api:
+.PHONY: test-api:
 	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/api/...
 
 # Run Hub API integration tests.
-test-integration:
+.PHONY: test-integration:
 	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/integration/...
 
 # Run Hub test suite.
