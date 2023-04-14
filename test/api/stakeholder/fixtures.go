@@ -2,12 +2,12 @@ package stakeholder
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = c.Client
+	Client = client.Client
 )
 
 //
@@ -36,21 +36,21 @@ func Create(r *api.Stakeholder) (err error) {
 //
 // Retrieve the Stakeholder.
 func Get(r *api.Stakeholder) (err error) {
-	err = Client.Get(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}), &r)
+	err = Client.Get(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
 //
 // Update the Stakeholder.
 func Update(r *api.Stakeholder) (err error) {
-	err = Client.Put(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}), &r)
+	err = Client.Put(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
 //
 // Delete the Stakeholder.
 func Delete(r *api.Stakeholder) (err error) {
-	err = Client.Delete(c.Path(api.StakeholderRoot, c.Params{api.ID: r.ID}))
+	err = Client.Delete(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}))
 	return
 }
 

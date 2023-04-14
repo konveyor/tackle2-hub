@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -16,7 +16,7 @@ func TestApplicationUpdateName(t *testing.T) {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
 			assert.Must(t, Create(&r))
-			rPath := c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID})
+			rPath := client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID})
 
 			// Update.
 			updatedName := fmt.Sprint(r.Name, " updated")

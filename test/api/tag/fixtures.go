@@ -2,12 +2,12 @@ package tag
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	// Setup Hub API client
-	Client = c.Client
+	Client = client.Client
 )
 
 //
@@ -41,21 +41,21 @@ func Create(r *api.Tag) (err error) {
 //
 // Retrieve the Tag.
 func Get(r *api.Tag) (err error) {
-	err = Client.Get(c.Path(api.TagRoot, c.Params{api.ID: r.ID}), &r)
+	err = Client.Get(client.Path(api.TagRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
 //
 // Update the Tag.
 func Update(r *api.Tag) (err error) {
-	err = Client.Put(c.Path(api.TagRoot, c.Params{api.ID: r.ID}), &r)
+	err = Client.Put(client.Path(api.TagRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
 //
 // Delete the Tag.
 func Delete(r *api.Tag) (err error) {
-	err = Client.Delete(c.Path(api.TagRoot, c.Params{api.ID: r.ID}))
+	err = Client.Delete(client.Path(api.TagRoot, client.Params{api.ID: r.ID}))
 	return
 }
 

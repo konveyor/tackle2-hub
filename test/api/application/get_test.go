@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -17,7 +17,7 @@ func TestApplicationGet(t *testing.T) {
 
 			// Try get.
 			got := api.Application{}
-			err := Client.Get(c.Path(api.ApplicationRoot, c.Params{api.ID: r.ID}), &got)
+			err := Client.Get(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}), &got)
 			if err != nil {
 				t.Errorf("Get error: %v", err.Error())
 			}

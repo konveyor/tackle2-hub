@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -18,7 +18,7 @@ func TestStakeholderGroupCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := c.Path(api.StakeholderGroupRoot, c.Params{api.ID: r.ID})
+			rPath := client.Path(api.StakeholderGroupRoot, client.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.StakeholderGroup{}

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -18,7 +18,7 @@ func TestTaskCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := c.Path(api.TaskRoot, c.Params{api.ID: r.ID})
+			rPath := client.Path(api.TaskRoot, client.Params{api.ID: r.ID})
 
 			// Get.
 			got := api.Task{}
