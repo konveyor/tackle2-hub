@@ -7,8 +7,9 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/application"
-	c "github.com/konveyor/tackle2-hub/test/api/client"
+	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/api/task"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 //
@@ -56,12 +57,12 @@ func TestBasicAnalysis(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.Name+"_with_richclient", func(t *testing.T) {
 			// Create the application.
-			c.Should(t, application.Create(&tc.Application))
+			assert.Should(t, application.Create(&tc.Application))
 
 			// Prepare and submit the analyze task.
 			json.Unmarshal([]byte(tc.TaskData), &tc.Task.Data)
 			tc.Task.Application = &api.Ref{ID: tc.Application.ID}
-			c.Should(t, task.Create(&tc.Task))
+			assert.Should(t, task.Create(&tc.Task))
 
 			// Wait until task finishes
 			for i := 0; i < Retry; i++ {
@@ -80,7 +81,7 @@ func TestBasicAnalysis(t *testing.T) {
 			// TODO: check the report content here.
 
 			// Cleanup.
-			c.Must(t, application.Delete(&tc.Application))
+			assert.Must(t, application.Delete(&tc.Application))
 
 		})
 	}
@@ -104,7 +105,7 @@ func TestBasicAnalysis(t *testing.T) {
 
 			// Wait until task finishes
 			for i := 0; i < Retry; i++ {
-				err := Client.Get(c.Path(api.TaskRoot, c.Params{api.ID: tc.Task.ID}), &tc.Task)
+				err := Client.Get(client.Path(api.TaskRoot, client.Params{api.ID: tc.Task.ID}), &tc.Task)
 				if err != nil || tc.Task.State == "Succeeded" || tc.Task.State == "Failed" {
 					// Proceed to Task result check
 					break
@@ -119,7 +120,7 @@ func TestBasicAnalysis(t *testing.T) {
 			// TODO: check the report content here.
 
 			// Cleanup.
-			err = Client.Delete(c.Path(api.ApplicationRoot, c.Params{api.ID: tc.Application.ID}))
+			err = Client.Delete(client.Path(api.ApplicationRoot, client.Params{api.ID: tc.Application.ID}))
 			if err != nil {
 				t.Fatalf(err.Error())
 			}

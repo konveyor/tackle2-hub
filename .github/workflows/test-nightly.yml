@@ -1,13 +1,11 @@
-name: Hub Tests
+name: Test nightly
 
 on:
-  push:
-    branches: [ "main" ]
-    paths-ignore:
-      - '**.md'
+  schedule:
+    - cron: '13 0,12 * * *' # Regulary every 12 hours
       
 jobs:
-  test-addons:
+  test-integration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -29,6 +27,6 @@ jobs:
           echo "namespace=$(kubectl get tackles.tackle.konveyor.io --all-namespaces --no-headers | awk '{print $1}')" >> $GITHUB_ENV
       - name: Test execution
         run: |
-          make test
+          HUB_BASE_URL="http://$(minikube ip)/hub" make test-integration
         with:
           host: ${{ env.host }}
