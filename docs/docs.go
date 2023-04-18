@@ -343,7 +343,7 @@ const docTemplate = `{
         },
         "/applications/{id}/facts": {
             "get": {
-                "description": "List facts.",
+                "description": "List facts. Can be filtered by source.\nBy default facts from all sources are returned.",
                 "produces": [
                     "application/json"
                 ],
@@ -358,6 +358,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact source",
+                        "name": "source",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -369,6 +375,34 @@ const docTemplate = `{
                                 "$ref": "#/definitions/api.Fact"
                             }
                         }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Replace all facts from a source.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Replace all facts from a source.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -402,12 +436,19 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Fact data",
+                        "type": "string",
+                        "description": "Fact source",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact value",
                         "name": "fact",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "type": "object"
                         }
                     }
                 ],
@@ -445,12 +486,19 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Fact data",
+                        "type": "string",
+                        "description": "Fact source",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact value",
                         "name": "fact",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "type": "object"
                         }
                     }
                 ],
@@ -472,6 +520,13 @@ const docTemplate = `{
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact source",
+                        "name": "source",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -512,6 +567,13 @@ const docTemplate = `{
                         "description": "Fact key",
                         "name": "key",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fact source",
+                        "name": "source",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -4014,9 +4076,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "facts": {
-                    "$ref": "#/definitions/api.FactMap"
-                },
                 "id": {
                     "type": "integer"
                 },
@@ -4171,12 +4230,11 @@ const docTemplate = `{
                 "key": {
                     "type": "string"
                 },
+                "source": {
+                    "type": "string"
+                },
                 "value": {}
             }
-        },
-        "api.FactMap": {
-            "type": "object",
-            "additionalProperties": true
         },
         "api.Fields": {
             "type": "object",

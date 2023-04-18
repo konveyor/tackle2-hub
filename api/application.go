@@ -558,7 +558,8 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 
 // FactList godoc
 // @summary List facts.
-// @description List facts.
+// @description List facts. Can be filtered by source.
+// @description By default facts from all sources are returned.
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Fact
@@ -641,7 +642,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
 // @param source query string true "Fact source"
-// @param fact body {object} true "Fact value"
+// @param fact body object true "Fact value"
 func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var v interface{}
@@ -684,7 +685,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
 // @param source query string true "Fact source"
-// @param fact body {object} true "Fact value"
+// @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var v interface{}
