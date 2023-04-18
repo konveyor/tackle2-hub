@@ -65,7 +65,7 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(ApplicationFactRoot, h.FactCreate)
 	routeGroup.PUT(ApplicationFactRoot, h.FactPut)
 	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
-	routeGroup.PATCH(ApplicationFactsRoot, h.FactReplace, Transaction)
+	routeGroup.PUT(ApplicationFactsRoot, h.FactReplace, Transaction)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.bucket"))
@@ -765,7 +765,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @description Replace all facts from a source.
 // @tags applications
 // @success 204
-// @router /applications/{id}/facts [patch]
+// @router /applications/{id}/facts [put]
 // @param id path string true "Application ID"
 // @param source query string true "Source"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
