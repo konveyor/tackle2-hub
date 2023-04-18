@@ -19,7 +19,6 @@ type Model = v3.Model
 type Bucket = v3.Bucket
 type BucketOwner = v3.BucketOwner
 type Dependency = v3.Dependency
-type Fact = v3.Fact
 type File = v3.File
 type Identity = v3.Identity
 type Import = v3.Import
