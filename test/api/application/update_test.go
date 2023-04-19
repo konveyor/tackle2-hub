@@ -43,3 +43,5 @@ func TestApplicationUpdateName(t *testing.T) {
 		})
 	}
 }
+
+// Tests updating different Applications attributes and references resources will be added here.

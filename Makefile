@@ -1,7 +1,6 @@
 GOBIN ?= ${GOPATH}/bin
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
-#HUB_BASE_URL ?= http://$(minikube ip)/hub
 
 PKG = ./addon/... \
       ./api/... \
