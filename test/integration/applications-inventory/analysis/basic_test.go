@@ -19,7 +19,7 @@ func TestBasicAnalysis(t *testing.T) {
 	tests := []TC{
 		{
 			Name:        "Pathfinder cloud-readiness",
-			Application: application.Samples()[0],
+			Application: application.Samples()["Windup"],
 			Task: api.Task{
 				Addon: "windup",
 				State: "Ready",

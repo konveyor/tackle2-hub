@@ -5,17 +5,14 @@ import (
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-var (
-	// Setup Hub API client
-	Client = client.Client
-)
-
-//
 // Set of valid Application resources for tests and reuse.
 // Invalid application for negative tests are expected to be defined within the test methods, not here.
-func Samples() (samples []api.Application) {
-	samples = []api.Application{
-		{
+func Samples() (samples map[string]api.Application) {
+	samples = map[string]api.Application{
+		"Minimal": {
+			Name: "Minimal application",
+		},
+		"PathfinderGit": {
 			Name:        "Pathfinder",
 			Description: "Tackle Pathfinder application.",
 			Repository: &api.Repository{
@@ -24,42 +21,38 @@ func Samples() (samples []api.Application) {
 				Branch: "1.2.0",
 			},
 		},
-		{
-			Name: "Minimal application",
-		},
+
 	}
 	return
 }
 
-//
+// Setup Hub API client
+var Client = client.Client
+
 // Create a Application.
 func Create(r *api.Application) (err error) {
 	err = Client.Post(api.ApplicationsRoot, &r)
 	return
 }
 
-//
 // Retrieve the Application.
 func Get(r *api.Application) (err error) {
 	err = Client.Get(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
-//
 // Update the Application.
 func Update(r *api.Application) (err error) {
 	err = Client.Put(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}), &r)
 	return
 }
 
-//
 // Delete the Application.
 func Delete(r *api.Application) (err error) {
 	err = Client.Delete(client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID}))
 	return
 }
 
-//
 // List Applications.
 func List(r []*api.Application) (err error) {
 	err = Client.Get(api.ApplicationsRoot, &r)

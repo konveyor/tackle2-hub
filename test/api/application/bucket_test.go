@@ -10,7 +10,7 @@ import (
 
 func TestApplicationBucket(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := Samples()[0]
+	application := Samples()["Minimal"]
 
 	// Create the application.
 	assert.Must(t, Create(&application))

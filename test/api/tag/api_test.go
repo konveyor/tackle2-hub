@@ -65,8 +65,10 @@ func TestTagCRUD(t *testing.T) {
 func TestTagList(t *testing.T) {
 	samples := Samples()
 
-	for i := range samples {
-		assert.Must(t, Create(&samples[i]))
+	for name := range samples {
+		sample := samples[name]
+		assert.Must(t, Create(&sample))
+		samples[name] = sample
 	}
 
 	got := []api.Tag{}
