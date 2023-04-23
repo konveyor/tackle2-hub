@@ -34,6 +34,7 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	db, err = gorm.Open(
 		sqlite.Open(connStr),
 		&gorm.Config{
+			CreateBatchSize: 500,
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,
 				NoLowerCase:   true,
