@@ -416,13 +416,17 @@ func (p *Sort) With(ctx *gin.Context) {
 	if s == "" {
 		return
 	}
-	part := strings.SplitN(s, ":", 2)
-	if len(part) == 2 {
-		p.Descending = strings.ToLower(part[0])[0] == 'd'
-		p.Field = part[1]
-	} else {
-		p.Field = part[0]
+	mark := strings.Index(s, ":")
+	if mark == -1 {
+		p.Field = s
+		return
 	}
+	d := strings.ToLower(s[:mark])
+	field := s[mark+1:]
+	if len(d) != 0 {
+		p.Descending = d[0] == 'd'
+	}
+	p.Field = field
 }
 
 //
