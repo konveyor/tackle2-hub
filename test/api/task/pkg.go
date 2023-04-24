@@ -8,19 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.Task) {
-	samples = map[string]api.Task{
-		"Windup": {
-			Name:  "Test windup task",
-			Addon: "windup",
-			Data:  "{}",
-		},
-	}
-
-	return
-}
-
 // Create a Task.
 func Create(r *api.Task) (err error) {
 	err = Client.Post(api.TasksRoot, &r)

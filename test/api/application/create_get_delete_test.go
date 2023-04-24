@@ -9,9 +9,8 @@ import (
 )
 
 func TestApplicationCreateGetDelete(t *testing.T) {
-	samples := Samples()
 	// Create on array of Applications calls subtest
-	for _, r := range samples {
+	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			err := Client.Post(api.ApplicationsRoot, &r)
 			if err != nil {
@@ -27,8 +26,8 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			}
 
 			// Assert the get response.
-			if assert.FlatEqual(got, samples) {
-				t.Errorf("Different response error. Got %v, expected %v", got, samples)
+			if assert.FlatEqual(got, r) {
+				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
 			// Try list.
@@ -47,7 +46,7 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 				}
 			}
 			if assert.FlatEqual(foundR, r) {
-				t.Errorf("Different list entry error. Got %v, expected %v", got, samples)
+				t.Errorf("Different list entry error. Got %v, expected %v", foundR, r)
 			}
 
 			// Try delete.
@@ -66,7 +65,7 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 }
 
 func TestApplicationNotCreateDuplicates(t *testing.T) {
-	r := Samples()["Minimal"]
+	r := Minimal
 
 	// Create sample.
 	err := Client.Post(api.ApplicationsRoot, &r)

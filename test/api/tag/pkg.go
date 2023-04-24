@@ -8,26 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.Tag) {
-	samples = map[string]api.Tag{
-		"Test Linux": {
-			Name: "Test Linux",
-			Category: api.Ref{
-				ID: 1, // Category from seeds.
-			},
-		},
-		"Test RHEL": {
-			Name: "Test RHEL",
-			Category: api.Ref{
-				ID: 2, // Category from seeds.
-			},
-		},
-	}
-
-	return
-}
-
 // Create a Tag.
 func Create(r *api.Tag) (err error) {
 	err = Client.Post(api.TagsRoot, &r)

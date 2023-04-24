@@ -8,30 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.Stakeholder) {
-	samples = map[string]api.Stakeholder{
-		"Alice": {
-			Name:  "Alice",
-			Email: "alice@acme.local",
-		},
-		"Bob": {
-			Name:  "Bob",
-			Email: "bob@acme-supplier.local",
-		},
-	}
-	return
-}
-
-//Samples2 := struct{
-//	Alice api.StakeHolder
-//}{
-//	Alice: {
-//		Name:  "Alice",
-//		Email: "alice@acme.local",
-//	},
-//}
-
 // Create a Stakeholder.
 func Create(r *api.Stakeholder) (err error) {
 	err = Client.Post(api.StakeholdersRoot, &r)

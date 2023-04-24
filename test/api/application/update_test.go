@@ -11,8 +11,7 @@ import (
 )
 
 func TestApplicationUpdateName(t *testing.T) {
-	samples := Samples()
-	for _, r := range samples {
+	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
 			assert.Must(t, Create(&r))

@@ -8,19 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.JobFunction) {
-	samples = map[string]api.JobFunction{
-		"Engineer": {
-			Name: "Engineer",
-		},
-		"Manager": {
-			Name: "Manager",
-		},
-	}
-	return
-}
-
 // Create a JobFunction.
 func Create(r *api.JobFunction) (err error) {
 	err = Client.Post(api.JobFunctionsRoot, &r)

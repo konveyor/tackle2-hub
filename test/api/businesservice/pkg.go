@@ -8,21 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.BusinessService) {
-	samples = map[string]api.BusinessService{
-		"Marketing": {
-			Name:        "Marketing",
-			Description: "Marketing dept service.",
-		},
-		"Sales": {
-			Name:        "Sales",
-			Description: "Sales support service.",
-		},
-	}
-	return
-}
-
 // Create a BusinessService.
 func Create(r *api.BusinessService) (err error) {
 	err = Client.Post(api.BusinessServicesRoot, &r)

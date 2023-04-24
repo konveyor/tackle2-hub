@@ -5,27 +5,6 @@ import (
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-// Set of valid Application resources for tests and reuse.
-// Invalid application for negative tests are expected to be defined within the test methods, not here.
-func Samples() (samples map[string]api.Application) {
-	samples = map[string]api.Application{
-		"Minimal": {
-			Name: "Minimal application",
-		},
-		"PathfinderGit": {
-			Name:        "Pathfinder",
-			Description: "Tackle Pathfinder application.",
-			Repository: &api.Repository{
-				Kind:   "git",
-				URL:    "https://github.com/konveyor/tackle-pathfinder.git",
-				Branch: "1.2.0",
-			},
-		},
-
-	}
-	return
-}
-
 // Setup Hub API client
 var Client = client.Client
 

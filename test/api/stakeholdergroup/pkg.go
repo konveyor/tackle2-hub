@@ -8,21 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid resources for tests and reuse.
-func Samples() (samples map[string]api.StakeholderGroup) {
-	samples = map[string]api.StakeholderGroup{
-		"Mgmt": {
-			Name:        "Mgmt",
-			Description: "Management stakeholder group.",
-		},
-		"Engineering": {
-			Name:        "Engineering",
-			Description: "Engineering team.",
-		},
-	}
-	return
-}
-
 // Create a StakeholderGroup.
 func Create(r *api.StakeholderGroup) (err error) {
 	err = Client.Post(api.StakeholderGroupsRoot, &r)

@@ -22,7 +22,7 @@ var SampleFacts = []*api.Fact{
 
 func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := Samples()["Minimal"]
+	application := Minimal
 
 	// Create the application.
 	assert.Must(t, Create(&application))
@@ -88,7 +88,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 
 func TestApplicationFactsList(t *testing.T) {
 	// Test Facts subresource on the first sample application only.
-	application := Samples()["Minimal"]
+	application := Minimal
 
 	// Create the application.
 	assert.Must(t, Create(&application))

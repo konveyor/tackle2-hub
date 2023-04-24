@@ -9,9 +9,7 @@ import (
 )
 
 func TestJobfunctionsCRUD(t *testing.T) {
-	samples := Samples()
-
-	for _, r := range samples {
+	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
 			err := Client.Post(api.JobFunctionsRoot, &r)
@@ -62,7 +60,7 @@ func TestJobfunctionsCRUD(t *testing.T) {
 }
 
 func TestJobFunctionsList(t *testing.T) {
-	samples := Samples()
+	samples := Samples
 
 	for name := range samples {
 		sample := samples[name]

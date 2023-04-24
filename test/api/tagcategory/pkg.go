@@ -8,21 +8,6 @@ import (
 // Setup Hub API client
 var Client = client.Client
 
-// Set of valid TagCategories resources for tests and reuse.
-func Samples() (samples map[string]api.TagCategory) {
-	samples = map[string]api.TagCategory{
-		"Test OS": {
-			Name:  "Test OS",
-			Color: "#dd0000",
-		},
-		"Test Language": {
-			Name:  "Test Language",
-			Color: "#0000dd",
-		},
-	}
-	return
-}
-
 // Create a TagCategory.
 func Create(r *api.TagCategory) (err error) {
 	err = Client.Post(api.TagCategoriesRoot, &r)

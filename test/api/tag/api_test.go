@@ -9,9 +9,7 @@ import (
 )
 
 func TestTagCRUD(t *testing.T) {
-	samples := Samples()
-
-	for _, r := range samples {
+	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
 			err := Client.Post(api.TagsRoot, &r)
@@ -63,7 +61,7 @@ func TestTagCRUD(t *testing.T) {
 }
 
 func TestTagList(t *testing.T) {
-	samples := Samples()
+	samples := Samples
 
 	for name := range samples {
 		sample := samples[name]
