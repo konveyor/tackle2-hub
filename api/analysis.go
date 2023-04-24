@@ -15,19 +15,15 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot           = "/analyses"
-	AnalysisRoot           = AnalysesRoot + "/:" + ID
-	AnalysisDepsRoot       = AnalysesRoot + "/dependencies"
-	AnalysisIssuesRoot     = AnalysesRoot + "/issues"
-	AnalysisIssueCountRoot = AnalysesRoot + "/summary/issue/count"
-	AnalysisCategoryRoot   = AnalysesRoot + "/summary/category"
+	AnalysesRoot       = "/analyses"
+	AnalysisRoot       = AnalysesRoot + "/:" + ID
+	AnalysisDepsRoot   = AnalysesRoot + "/dependencies"
+	AnalysisIssuesRoot = AnalysesRoot + "/issues"
 
-	AppAnalysesRoot         = ApplicationRoot + "/analyses"
-	AppAnalysisRoot         = ApplicationRoot + "/analysis"
-	AppAnalysisDepsRoot     = AppAnalysisRoot + "/dependencies"
-	AppAnalysisIssuesRoot   = AppAnalysisRoot + "/issues"
-	AppAnalysisCategoryRoot = AppAnalysisRoot + "/summary/category"
-	AppAnalysisEffortRoot   = AppAnalysisRoot + "/summary/effort"
+	AppAnalysesRoot       = ApplicationRoot + "/analyses"
+	AppAnalysisRoot       = ApplicationRoot + "/analysis"
+	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
+	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
 )
 
 //
@@ -46,16 +42,12 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysisDepsRoot, h.Deps)
 	routeGroup.GET(AnalysisIssuesRoot, h.Issues)
-	routeGroup.GET(AnalysisIssueCountRoot, h.IssueCount)
-	routeGroup.GET(AnalysisCategoryRoot, h.Category)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
 	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
-	routeGroup.GET(AppAnalysisCategoryRoot, h.AppCategory)
-	routeGroup.GET(AppAnalysisEffortRoot, h.AppEffort)
 }
 
 // Get godoc
@@ -372,12 +364,6 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	h.Render(ctx, http.StatusOK, resources)
 }
 
-func (h AnalysisHandler) AppCategory(ctx *gin.Context) {
-}
-
-func (h AnalysisHandler) AppEffort(ctx *gin.Context) {
-}
-
 // Issues godoc
 // @summary List all issues.
 // @description List all issues.
@@ -544,12 +530,6 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
 
 	h.Render(ctx, http.StatusOK, resources)
-}
-
-func (h AnalysisHandler) IssueCount(ctx *gin.Context) {
-}
-
-func (h AnalysisHandler) Category(ctx *gin.Context) {
 }
 
 //
