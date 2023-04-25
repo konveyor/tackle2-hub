@@ -184,7 +184,7 @@ func (h BucketHandler) BucketGet(ctx *gin.Context) {
 // @tags buckets
 // @produce json
 // @success 204
-// @router //buckets/{id}/{wildcard} [post]
+// @router /buckets/{id}/{wildcard} [post]
 // @param id path string true "Bucket ID"
 func (h BucketHandler) BucketPut(ctx *gin.Context) {
 	h.bucketPut(ctx, h.pk(ctx))
