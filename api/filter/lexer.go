@@ -160,7 +160,8 @@ type Quoted struct {
 // Read token.
 func (q *Quoted) Read() (token Token, err error) {
 	lastCh := byte(0)
-	bfr := []byte{q.next()}
+	var bfr []byte
+	q.next()
 	for {
 		ch := q.next()
 		if ch == EOF {
@@ -168,7 +169,6 @@ func (q *Quoted) Read() (token Token, err error) {
 		}
 		switch ch {
 		case QUOTE:
-			bfr = append(bfr, ch)
 			if lastCh != ESCAPE {
 				token.Kind = STRING
 				token.Value = string(bfr)

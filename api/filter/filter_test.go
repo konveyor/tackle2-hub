@@ -28,7 +28,7 @@ func TestLexer(t *testing.T) {
 		[]Token{
 			{Kind: LITERAL, Value: "name"},
 			{Kind: OPERATOR, Value: string(COLON)},
-			{Kind: STRING, Value: "\"one|two\""},
+			{Kind: STRING, Value: "one|two"},
 		}))
 
 	lexer = Lexer{}
@@ -38,7 +38,7 @@ func TestLexer(t *testing.T) {
 		[]Token{
 			{Kind: LITERAL, Value: "name"},
 			{Kind: OPERATOR, Value: string(COLON)},
-			{Kind: STRING, Value: "\"one=two\""},
+			{Kind: STRING, Value: "one=two"},
 		}))
 
 	lexer = Lexer{}
@@ -48,7 +48,7 @@ func TestLexer(t *testing.T) {
 		[]Token{
 			{Kind: LITERAL, Value: "name"},
 			{Kind: OPERATOR, Value: string(COLON)},
-			{Kind: STRING, Value: "\"(one|two)\""},
+			{Kind: STRING, Value: "(one|two)"},
 		}))
 
 	lexer = Lexer{}
@@ -58,7 +58,7 @@ func TestLexer(t *testing.T) {
 		[]Token{
 			{Kind: LITERAL, Value: "name"},
 			{Kind: OPERATOR, Value: string(COLON)},
-			{Kind: STRING, Value: "\"hello world\""},
+			{Kind: STRING, Value: "hello world"},
 		}))
 
 	lexer = Lexer{}
@@ -68,7 +68,7 @@ func TestLexer(t *testing.T) {
 		[]Token{
 			{Kind: LITERAL, Value: "name"},
 			{Kind: OPERATOR, Value: string(EQ)},
-			{Kind: STRING, Value: "\"elmer\""},
+			{Kind: STRING, Value: "elmer"},
 			{Kind: OPERATOR, Value: string(COMMA)},
 			{Kind: LITERAL, Value: "age"},
 			{Kind: OPERATOR, Value: string(GT)},
