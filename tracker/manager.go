@@ -82,9 +82,9 @@ func (m *Manager) testConnection(tracker *model.Tracker) (err error) {
 	}
 	connected, err := conn.TestConnection()
 	if err != nil {
-		err = nil
 		Log.Error(err, "Connection test failed.", "tracker", tracker.ID)
 		tracker.Message = err.Error()
+		err = nil
 	}
 	if connected {
 		metadata, mErr := conn.GetMetadata()
