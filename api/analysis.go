@@ -572,11 +572,11 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 			}
 			collated[m.RuleID] = r
 			resources = append(resources, r)
-			r.Effort += m.Effort
 			if m.Labels != nil {
 				_ = json.Unmarshal(m.Labels, &r.Labels)
 			}
 		}
+		r.Effort += m.Effort
 		r.Technologies = append(
 			r.Technologies,
 			AnalysisTechnology{
