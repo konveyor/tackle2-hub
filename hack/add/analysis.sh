@@ -25,8 +25,6 @@ echo -n "- name: Main${r}
   - name: TechA
   - name: TechB
   - name: TechC
-  - name: TechD
-  - name: TechE
   - name: TechS
     source: true
   issues:

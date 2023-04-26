@@ -8,7 +8,7 @@ type Analysis struct {
 	Model
 	RuleSets      []AnalysisRuleSet    `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []AnalysisDependency `gorm:"constraint:OnDelete:CASCADE"`
-	ApplicationID uint
+	ApplicationID uint                 `gorm:"index;not null"`
 	Application   *Application
 }
 
@@ -20,7 +20,7 @@ type AnalysisRuleSet struct {
 	Description  string
 	Technologies []AnalysisTechnology `gorm:"foreignKey:RuleSetID;constraint:OnDelete:CASCADE"`
 	Issues       []AnalysisIssue      `gorm:"foreignKey:RuleSetID;constraint:OnDelete:CASCADE"`
-	AnalysisID   uint
+	AnalysisID   uint                 `gorm:"index;not null"`
 	Analysis     *Analysis
 }
 
@@ -31,7 +31,7 @@ type AnalysisTechnology struct {
 	Name      string `gorm:"index:techA;not null"`
 	Version   string `gorm:"index:techA;not null"`
 	Source    bool
-	RuleSetID uint
+	RuleSetID uint `gorm:"index;not null"`
 	RuleSet   *AnalysisRuleSet
 }
 
@@ -44,7 +44,7 @@ type AnalysisDependency struct {
 	Type       string `gorm:"index:depA"`
 	SHA        string `gorm:"index:depA"`
 	Indirect   bool
-	AnalysisID uint
+	AnalysisID uint `gorm:"index;not null"`
 	Analysis   *Analysis
 }
 
@@ -74,7 +74,7 @@ type AnalysisIssue struct {
 	Facts       JSON               `gorm:"type:json"`
 	Labels      JSON               `gorm:"type:json"`
 	Effort      int                `gorm:"index;not null"`
-	RuleSetID   uint
+	RuleSetID   uint               `gorm:"index;not null"`
 	RuleSet     *AnalysisRuleSet
 }
 
@@ -85,7 +85,7 @@ type AnalysisIncident struct {
 	URI     string
 	Message string
 	Facts   JSON `gorm:"type:json"`
-	IssueID uint
+	IssueID uint `gorm:"index;not null"`
 	Issue   *AnalysisIssue
 }
 

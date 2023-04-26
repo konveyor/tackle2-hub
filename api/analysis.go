@@ -455,7 +455,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @success 200 {object} []api.IssueComposite
 // @router /analyses/issues [get]
 func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
-	resources := []IssueComposite{}
+	resources := []*IssueComposite{}
 	mark := time.Now()
 	// Build query.
 	filter, err := qf.New(ctx,
@@ -473,8 +473,14 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	p := Page{}
+	p.With(ctx)
+	sort := Sort{}
+	sort.With(ctx)
+	// Build.
 	ruleSets := h.rulesetIDs(ctx, &filter)
-	q := h.Paginated(ctx)
+	q := h.DB(ctx)
+	q = p.Paginated(q)
 	q = q.Select(
 		"i.RuleID",
 		"i.Category",
@@ -488,7 +494,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	q = q.Where("r.ID IN (?)", ruleSets)
 	q = q.Group("i.RuleID")
 	q = q.Order("i.RuleID")
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
 	// Count.
@@ -534,6 +540,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		"t.Name",
 		"t.Version",
 		"t.Source")
+	db = sort.Sorted(db)
 	db = db.Table("AnalysisIssue i,")
 	db = db.Joins("AnalysisRuleSet r,")
 	db = db.Joins("AnalysisTechnology t,")
@@ -549,31 +556,29 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	r := IssueComposite{}
+	collated := make(map[string]*IssueComposite)
 	for i := range list {
-		rx := &list[i]
-		if i == 0 || rx.RuleID == r.RuleID {
-			r.RuleID = rx.RuleID
-			r.Technologies = append(
-				r.Technologies,
-				AnalysisTechnology{
-					Name:    rx.Name,
-					Version: rx.Version,
-					Source:  rx.Source,
-				})
-		} else {
-			r.Affected = affected[r.RuleID]
-			if rx.Labels != nil {
-				_ = json.Unmarshal(rx.Labels, &r.Labels)
+		m := list[i]
+		r, found := collated[m.RuleID]
+		if !found {
+			r = &IssueComposite{
+				Affected: affected[m.RuleID],
+				RuleID:   m.RuleID,
 			}
+			collated[m.RuleID] = r
 			resources = append(resources, r)
-			r = IssueComposite{
-				RuleID: rx.RuleID,
+			if m.Labels != nil {
+				_ = json.Unmarshal(m.Labels, &r.Labels)
 			}
 		}
+		r.Technologies = append(
+			r.Technologies,
+			AnalysisTechnology{
+				Name:    m.Name,
+				Version: m.Version,
+				Source:  m.Source,
+			})
 	}
-	r.Affected = affected[r.RuleID]
-	resources = append(resources, r)
 
 	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
 
