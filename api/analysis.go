@@ -498,8 +498,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleID",
-		"i.Category",
-		"i.Effort",
+		"i.Category", // needed by sort
+		"i.Effort",   // needed by sort
 		"COUNT(a.ID) Affected")
 	q = q.Table("AnalysisIssue i,")
 	q = q.Joins("AnalysisRuleSet r,")
@@ -531,14 +531,15 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	affected := make(map[string]int)
 	// Find.
 	type M struct {
-		RuleID   string
-		Category string
-		Effort   int
-		Labels   model.JSON
-		Name     string
-		Version  string
-		Source   bool
-		Affected int
+		RuleID      string
+		Description string
+		Category    string
+		Effort      int
+		Labels      model.JSON
+		Name        string
+		Version     string
+		Source      bool
+		Affected    int
 	}
 	var list []M
 	result = db.Scan(&list)
@@ -554,6 +555,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	db = h.DB(ctx)
 	db = db.Select(
 		"i.RuleID",
+		"i.Description",
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
@@ -582,10 +584,11 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		r, found := collated[m.RuleID]
 		if !found {
 			r = &IssueComposite{
-				tech:     make(map[string]AnalysisTechnology),
-				Affected: affected[m.RuleID],
-				Category: m.Category,
-				RuleID:   m.RuleID,
+				tech:        make(map[string]AnalysisTechnology),
+				Affected:    affected[m.RuleID],
+				Description: m.Description,
+				Category:    m.Category,
+				RuleID:      m.RuleID,
 			}
 			collated[m.RuleID] = r
 			resources = append(resources, r)
@@ -1075,6 +1078,7 @@ type AnalysisLink struct {
 type IssueComposite struct {
 	tech         map[string]AnalysisTechnology
 	RuleID       string               `json:"ruleID"`
+	Description  string               `json:"description"`
 	Category     string               `json:"category"`
 	Effort       int                  `json:"effort"`
 	Labels       []string             `json:"labels"`
