@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -130,11 +131,17 @@ func (r *Connector) GetMetadata() (metadata model.Metadata, err error) {
 }
 
 func (r *Connector) client() (client *jira.Client, err error) {
-	transport := jira.BasicAuthTransport{
-		Username: r.tracker.Identity.User,
-		Password: r.tracker.Identity.Password,
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	if r.tracker.Insecure {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	client, err = jira.NewClient(transport.Client(), r.tracker.URL)
+	jiraTransport := jira.BasicAuthTransport{
+		Username:  r.tracker.Identity.User,
+		Password:  r.tracker.Identity.Password,
+		Transport: transport,
+	}
+
+	client, err = jira.NewClient(jiraTransport.Client(), r.tracker.URL)
 	if err != nil {
 		return
 	}

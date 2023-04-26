@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/konveyor/controller/pkg/logging"
-	"github.com/konveyor/tackle2-hub/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"

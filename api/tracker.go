@@ -193,6 +193,7 @@ type Tracker struct {
 	LastUpdated time.Time `json:"lastUpdated"`
 	Metadata    Metadata  `json:"metadata"`
 	Identity    Ref       `json:"identity" binding:"required"`
+	Insecure    bool      `json:"insecure"`
 }
 
 // With updates the resource with the model.
@@ -204,6 +205,7 @@ func (r *Tracker) With(m *model.Tracker) {
 	r.Message = m.Message
 	r.Connected = m.Connected
 	r.LastUpdated = m.LastUpdated
+	r.Insecure = m.Insecure
 	r.Identity = r.ref(m.IdentityID, m.Identity)
 	_ = json.Unmarshal(m.Metadata, &r.Metadata)
 }
@@ -214,6 +216,7 @@ func (r *Tracker) Model() (m *model.Tracker) {
 		Name:       r.Name,
 		URL:        r.URL,
 		Kind:       r.Kind,
+		Insecure:   r.Insecure,
 		IdentityID: r.Identity.ID,
 	}
 
