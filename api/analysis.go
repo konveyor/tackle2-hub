@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
@@ -566,6 +567,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		r, found := collated[m.RuleID]
 		if !found {
 			r = &IssueComposite{
+				tech:     make(map[string]AnalysisTechnology),
 				Affected: affected[m.RuleID],
 				Category: m.Category,
 				RuleID:   m.RuleID,
@@ -577,13 +579,19 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 			}
 		}
 		r.Effort += m.Effort
-		r.Technologies = append(
-			r.Technologies,
-			AnalysisTechnology{
-				Name:    m.Name,
-				Version: m.Version,
-				Source:  m.Source,
-			})
+		tech := AnalysisTechnology{
+			Name:    m.Name,
+			Version: m.Version,
+			Source:  m.Source,
+		}
+		r.tech[tech.key()] = tech
+	}
+	for _, r := range resources {
+		for _, tech := range r.tech {
+			r.Technologies = append(
+				r.Technologies,
+				tech)
+		}
 	}
 
 	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
@@ -1021,6 +1029,16 @@ func (r *AnalysisTechnology) With(m *model.AnalysisTechnology) {
 }
 
 //
+// key returns a unique key.
+func (r *AnalysisTechnology) key() string {
+	return fmt.Sprintf(
+		"%s:%s:%v",
+		r.Name,
+		r.Version,
+		r.Source)
+}
+
+//
 // Model builds a model.
 func (r *AnalysisTechnology) Model() (m *model.AnalysisTechnology) {
 	m = &model.AnalysisTechnology{}
@@ -1040,6 +1058,7 @@ type AnalysisLink struct {
 //
 // IssueComposite issue composite view.
 type IssueComposite struct {
+	tech         map[string]AnalysisTechnology
 	RuleID       string               `json:"ruleID"`
 	Category     string               `json:"category"`
 	Effort       int                  `json:"effort"`
