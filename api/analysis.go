@@ -362,6 +362,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	for i := range list {
 		r := AnalysisIssue{}
 		r.With(&list[i])
+		r.Application = id
 		resources = append(resources, r)
 	}
 
@@ -405,7 +406,12 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	db := h.Paginated(ctx)
-	db = db.Where("RuleSetID IN (?)", h.rulesetIDs(ctx, &filter))
+	db = db.Table("AnalysisIssue i,")
+	db = db.Joins("AnalysisRuleSet r,")
+	db = db.Joins("Analysis a")
+	db = db.Where("a.ID = r.AnalysisID")
+	db = db.Where("r.ID = i.RuleSetID")
+	db = db.Where("r.ID IN (?)", h.rulesetIDs(ctx, &filter))
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -423,16 +429,25 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	type M struct {
+		model.AnalysisIssue
+		ApplicationID uint
+	}
+	db = db.Select(
+		"i.*",
+		"a.ApplicationID")
 	db = db.Preload(clause.Associations)
-	var list []model.AnalysisIssue
+	var list []M
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
 	for i := range list {
+		m := &list[i]
 		r := AnalysisIssue{}
-		r.With(&list[i])
+		r.With(&m.AnalysisIssue)
+		r.Application = m.ApplicationID
 		resources = append(resources, r)
 	}
 
@@ -478,7 +493,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	p.With(ctx)
 	sort := Sort{}
 	sort.With(ctx)
-	// Build.
+	// Build query.
 	ruleSets := h.rulesetIDs(ctx, &filter)
 	q := h.DB(ctx)
 	q = q.Select(
@@ -1056,7 +1071,7 @@ type AnalysisLink struct {
 }
 
 //
-// IssueComposite issue composite view.
+// IssueComposite composite REST resource.
 type IssueComposite struct {
 	tech         map[string]AnalysisTechnology
 	RuleID       string               `json:"ruleID"`
