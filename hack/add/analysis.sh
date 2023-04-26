@@ -38,6 +38,9 @@ echo -n "  - ruleid: Main${r}.00${i}
     description: This is a test ${r}/${i}.
     category: warning
     effort: 10
+    labels:
+    - RULESET-${r}
+    - RULE-${i}
     incidents:
     - uri: http://thing.com/file:1
       message: Thing happend line:1

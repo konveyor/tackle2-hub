@@ -480,7 +480,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	// Build.
 	ruleSets := h.rulesetIDs(ctx, &filter)
 	q := h.DB(ctx)
-	q = p.Paginated(q)
 	q = q.Select(
 		"i.RuleID",
 		"i.Category",
@@ -517,6 +516,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	// Find.
 	type M struct {
 		RuleID   string
+		Category string
+		Effort   int
 		Labels   model.JSON
 		Name     string
 		Version  string
@@ -533,9 +534,12 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		r := &list[i]
 		affected[r.RuleID] = r.Affected
 	}
+	q = p.Paginated(q)
 	db = h.DB(ctx)
 	db = db.Select(
 		"i.RuleID",
+		"i.Category",
+		"i.Effort",
 		"i.Labels",
 		"t.Name",
 		"t.Version",
@@ -563,10 +567,12 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		if !found {
 			r = &IssueComposite{
 				Affected: affected[m.RuleID],
+				Category: m.Category,
 				RuleID:   m.RuleID,
 			}
 			collated[m.RuleID] = r
 			resources = append(resources, r)
+			r.Effort += m.Effort
 			if m.Labels != nil {
 				_ = json.Unmarshal(m.Labels, &r.Labels)
 			}
@@ -1035,7 +1041,9 @@ type AnalysisLink struct {
 // IssueComposite issue composite view.
 type IssueComposite struct {
 	RuleID       string               `json:"ruleID"`
-	Affected     int                  `json:"affected"`
-	Technologies []AnalysisTechnology `json:"technologies"`
+	Category     string               `json:"category"`
+	Effort       int                  `json:"effort"`
 	Labels       []string             `json:"labels"`
+	Technologies []AnalysisTechnology `json:"technologies"`
+	Affected     int                  `json:"affected"`
 }
