@@ -15,10 +15,12 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot       = "/analyses"
-	AnalysisRoot       = AnalysesRoot + "/:" + ID
-	AnalysisDepsRoot   = AnalysesRoot + "/dependencies"
-	AnalysisIssuesRoot = AnalysesRoot + "/issues"
+	AnalysesRoot               = "/analyses"
+	AnalysisRoot               = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot           = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot         = AnalysesRoot + "/issues"
+	AnalysesCompositeRoot      = AnalysesRoot + "/composite"
+	AnalysisCompoSiteIssueRoot = AnalysesCompositeRoot + "/issues"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -40,8 +42,9 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	//
 	routeGroup.GET(AnalysisRoot, h.Get)
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
-	routeGroup.GET(AnalysisDepsRoot, h.Deps)
-	routeGroup.GET(AnalysisIssuesRoot, h.Issues)
+	routeGroup.GET(AnalysesDepsRoot, h.Deps)
+	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
+	routeGroup.GET(AnalysisCompoSiteIssueRoot, h.IssueComposites)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
@@ -369,9 +372,11 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description List all issues.
 // @description filters:
 // @description - id
+// @description - ruleid
 // @description - category
 // @description - effort
 // @description - application.(id|name)
+// @description - tech.(source|target)
 // @description - tag.id
 // @tags issues
 // @produce json
@@ -384,12 +389,14 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
+			{Field: "ruleid", Kind: qf.LITERAL},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
-			{Field: "technology.source", Kind: qf.STRING},
-			{Field: "technology.target", Kind: qf.STRING},
+			{Field: "tech.source", Kind: qf.STRING},
+			{Field: "tech.target", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
@@ -397,8 +404,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	db := h.Paginated(ctx)
-	db = filter.Where(db)
 	db = db.Where("RuleSetID IN (?)", h.rulesetIDs(ctx, &filter))
+	db = filter.Where(db)
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.AnalysisIssue{}).Count(&count)
@@ -415,22 +422,16 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	list := []model.AnalysisIssue{}
+	db = db.Preload(clause.Associations)
+	var list []model.AnalysisIssue
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	mp, err := h.issueAppMap(ctx, &filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	for i := range list {
 		r := AnalysisIssue{}
 		r.With(&list[i])
-		r.Applications = mp[r.RuleID]
 		resources = append(resources, r)
 	}
 
@@ -439,11 +440,150 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	h.Render(ctx, http.StatusOK, resources)
 }
 
-// Deps godoc
-// @summary List dependencies.
-// @description List dependencies.
+// IssueComposites godoc
+// @summary List issue composites.
+// @description List issue composites.
 // @description filters:
 // @description - id
+// @description - category
+// @description - effort
+// @description - application.(id|name)
+// @description - tech.(source|target)
+// @description - tag.id
+// @tags issues
+// @produce json
+// @success 200 {object} []api.IssueComposite
+// @router /analyses/issues [get]
+func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
+	resources := []IssueComposite{}
+	mark := time.Now()
+	// Build query.
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "category", Kind: qf.STRING},
+			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "affected", Kind: qf.LITERAL},
+			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "application.name", Kind: qf.STRING},
+			{Field: "tech.source", Kind: qf.STRING},
+			{Field: "tech.target", Kind: qf.STRING},
+			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	ruleSets := h.rulesetIDs(ctx, &filter)
+	q := h.Paginated(ctx)
+	q = q.Select(
+		"i.RuleID",
+		"i.Category",
+		"i.Effort",
+		"COUNT(a.ID) Affected")
+	q = q.Table("AnalysisIssue i,")
+	q = q.Joins("AnalysisRuleSet r,")
+	q = q.Joins("Analysis a")
+	q = q.Where("a.ID = r.AnalysisID")
+	q = q.Where("r.ID = i.RulesetID")
+	q = q.Where("r.ID IN (?)", ruleSets)
+	q = q.Group("i.RuleID")
+	q = q.Order("i.RuleID")
+	db := h.Paginated(ctx)
+	db = db.Table("(?)", q)
+	db = filter.Where(db)
+	// Count.
+	count := int64(0)
+	result := db.Model(&model.AnalysisIssue{}).Count(&count)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if count == 0 {
+		h.Render(ctx, http.StatusOK, resources)
+		return
+	}
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	affected := make(map[string]int)
+	// Find.
+	type M struct {
+		RuleID   string
+		Labels   model.JSON
+		Name     string
+		Version  string
+		Source   bool
+		Affected int
+	}
+	var list []M
+	result = db.Scan(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	for i := range list {
+		r := &list[i]
+		affected[r.RuleID] = r.Affected
+	}
+	db = h.DB(ctx)
+	db = db.Select(
+		"i.RuleID",
+		"i.Labels",
+		"t.Name",
+		"t.Version",
+		"t.Source")
+	db = db.Table("AnalysisIssue i,")
+	db = db.Joins("AnalysisRuleSet r,")
+	db = db.Joins("AnalysisTechnology t,")
+	db = db.Joins("Analysis a")
+	db = db.Where("a.ID = r.AnalysisID")
+	db = db.Where("r.ID = i.RulesetID")
+	db = db.Where("r.ID IN (?)", ruleSets)
+	db = db.Where("t.RulesetID = r.ID")
+	db = db.Where("i.RuleID IN (SELECT RuleID from (?))", q)
+	db = filter.Where(db)
+	result = db.Scan(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	r := IssueComposite{}
+	for i := range list {
+		rx := &list[i]
+		if i == 0 || rx.RuleID == r.RuleID {
+			r.RuleID = rx.RuleID
+			r.Technologies = append(
+				r.Technologies,
+				AnalysisTechnology{
+					Name:    rx.Name,
+					Version: rx.Version,
+					Source:  rx.Source,
+				})
+		} else {
+			r.Affected = affected[r.RuleID]
+			if rx.Labels != nil {
+				_ = json.Unmarshal(rx.Labels, &r.Labels)
+			}
+			resources = append(resources, r)
+			r = IssueComposite{
+				RuleID: rx.RuleID,
+			}
+		}
+	}
+	r.Affected = affected[r.RuleID]
+	resources = append(resources, r)
+
+	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
+
+	h.Render(ctx, http.StatusOK, resources)
+}
+
+// Deps godoc
+// @summary List dependencies.
+// @description List unique dependencies.
+// @description filters:
 // @description - name
 // @description - version
 // @description - type
@@ -460,7 +600,6 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "id", Kind: qf.LITERAL},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
 			{Field: "type", Kind: qf.STRING},
@@ -514,16 +653,10 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	mp, err := h.depAppMap(ctx, &filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	for i := range list {
 		m := &list[i]
 		r := AnalysisDependency{}
 		r.With(m)
-		r.Applications = mp[m.Key()]
 		resources = append(resources, r)
 	}
 
@@ -555,9 +688,12 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
 				}
 				part = append(
 					part,
-					"SELECT applicationID",
-					"FROM ApplicationTags",
-					"WHERE TagID = ?")
+					"SELECT",
+					"  applicationID",
+					"FROM",
+					"  ApplicationTags",
+					"WHERE",
+					"  TagID = ?")
 			}
 			tags := h.DB(ctx).Raw(
 				strings.Join(part, " "),
@@ -588,12 +724,15 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.D
 
 //
 // rulesetIDs provides ruleSet IDs.
+// filter:
+//   - tech.source
+//   - tech.target
 func (h *AnalysisHandler) rulesetIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.AnalysisRuleSet{})
 	q = q.Select("ID")
 	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, f))
-	techFilter := f.Resource("technology")
+	techFilter := f.Resource("tech")
 	if field, found := techFilter.Field("source"); found {
 		field = field.As("Name")
 		tech := h.DB(ctx)
@@ -611,98 +750,6 @@ func (h *AnalysisHandler) rulesetIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB
 		tech = tech.Where("Source", false)
 		tech = tech.Where(field.SQL())
 		q = q.Where("ID IN (?)", tech)
-	}
-	return
-}
-
-//
-// depAppMap provides map of deps to application refs.
-func (h *AnalysisHandler) depAppMap(ctx *gin.Context, f *qf.Filter) (mp map[string][]Ref, err error) {
-	type AppRef struct {
-		model.AnalysisDependency
-		AppID   uint
-		AppName string
-	}
-	mp = make(map[string][]Ref)
-	db := h.DB(ctx)
-	db = db.Raw(
-		strings.Join([]string{
-			"SELECT DISTINCT ",
-			"  app.ID AppID,",
-			"  app.Name AppName,",
-			"  dep.Name,",
-			"  dep.Version,",
-			"  dep.SHA",
-			"FROM",
-			"  AnalysisDependency dep,",
-			"  Analysis an,",
-			"  Application app",
-			"WHERE ",
-			"  app.ID = an.ApplicationID",
-			"  AND an.ID = dep.AnalysisID",
-			"  AND an.ID IN (?)",
-			"  AND app.ID IN (?)",
-		},
-			" "),
-		h.analysisIDs(ctx, f),
-		h.appIDs(ctx, f))
-	list := make([]AppRef, 0, 0)
-	result := db.Find(&list)
-	if result.Error != nil {
-		err = result.Error
-		return
-	}
-	for i := range list {
-		m := &list[i]
-		mp[m.Key()] = append(
-			mp[m.Key()],
-			Ref{ID: m.AppID, Name: m.AppName})
-	}
-	return
-}
-
-//
-// issueAppMap provides map of issues to application refs.
-func (h *AnalysisHandler) issueAppMap(ctx *gin.Context, f *qf.Filter) (mp map[string][]Ref, err error) {
-	type AppRef struct {
-		AppID   uint
-		AppName string
-		RuleID  string
-	}
-	mp = make(map[string][]Ref)
-	db := h.DB(ctx)
-	db = db.Raw(
-		strings.Join([]string{
-			"SELECT DISTINCT",
-			"  app.ID AppID,",
-			"  app.Name AppName,",
-			"  issue.RuleID",
-			"FROM",
-			"  AnalysisIssue issue,",
-			"  AnalysisRuleSet ruleset,",
-			"  Analysis an,",
-			"  Application app ",
-			"WHERE",
-			"  app.ID = an.ApplicationID",
-			"  AND an.ID = ruleset.AnalysisID",
-			"  AND ruleset.ID = issue.RuleSetID",
-			"  AND an.ID IN (?)",
-			"  AND app.ID IN (?)",
-		},
-			" "),
-		h.analysisIDs(ctx, f),
-		h.appIDs(ctx, f))
-	list := make([]AppRef, 0, 0)
-	result := db.Find(&list)
-	if result.Error != nil {
-		err = result.Error
-		return
-	}
-	for i := range list {
-		m := &list[i]
-		mp[m.RuleID] = append(
-			mp[m.RuleID],
-			Ref{ID: m.AppID, Name: m.AppName})
 	}
 	return
 }
@@ -764,7 +811,7 @@ type AnalysisRuleSet struct {
 	Resource     `yaml:",inline"`
 	Name         string               `json:"name" binding:"required"`
 	Description  string               `json:"description"`
-	Technologies []AnalysisTechnology `json:"technology"`
+	Technologies []AnalysisTechnology `json:"technologies"`
 	Issues       []AnalysisIssue      `json:"issues"`
 }
 
@@ -826,9 +873,10 @@ type AnalysisIssue struct {
 	Incidents   []AnalysisIncident `json:"incidents,omitempty" yaml:",omitempty"`
 	Links       []AnalysisLink     `json:"links,omitempty" yaml:",omitempty"`
 	Facts       FactMap            `json:"facts,omitempty" yaml:",omitempty"`
+	Labels      []string           `json:"labels"`
 	Effort      int                `json:"effort,omitempty" yaml:",omitempty"`
 	//
-	Applications []Ref `json:"applications" binding:"-"`
+	Application uint `json:"application" binding:"-"`
 }
 
 //
@@ -852,6 +900,9 @@ func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 	if m.Facts != nil {
 		_ = json.Unmarshal(m.Facts, &r.Facts)
 	}
+	if m.Labels != nil {
+		_ = json.Unmarshal(m.Labels, &r.Labels)
+	}
 	r.Effort = m.Effort
 }
 
@@ -871,6 +922,7 @@ func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
 	}
 	m.Links, _ = json.Marshal(r.Links)
 	m.Facts, _ = json.Marshal(r.Facts)
+	m.Labels, _ = json.Marshal(r.Labels)
 	m.Effort = r.Effort
 	return
 }
@@ -884,8 +936,6 @@ type AnalysisDependency struct {
 	Type     string `json:"type,omitempty" yaml:",omitempty"`
 	Indirect bool   `json:"indirect,omitempty" yaml:",omitempty"`
 	SHA      string `json:"sha,omitempty" yaml:",omitempty"`
-	//
-	Applications []Ref `json:"applications" binding:"-"`
 }
 
 //
@@ -974,4 +1024,13 @@ func (r *AnalysisTechnology) Model() (m *model.AnalysisTechnology) {
 type AnalysisLink struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty" yaml:",omitempty"`
+}
+
+//
+// IssueComposite issue composite view.
+type IssueComposite struct {
+	RuleID       string               `json:"ruleID"`
+	Affected     int                  `json:"affected"`
+	Technologies []AnalysisTechnology `json:"technologies"`
+	Labels       []string             `json:"labels"`
 }

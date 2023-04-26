@@ -72,6 +72,7 @@ type AnalysisIssue struct {
 	Incidents   []AnalysisIncident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
 	Links       JSON               `gorm:"type:json"`
 	Facts       JSON               `gorm:"type:json"`
+	Labels      JSON               `gorm:"type:json"`
 	Effort      int                `gorm:"index;not null"`
 	RuleSetID   uint
 	RuleSet     *AnalysisRuleSet
