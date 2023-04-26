@@ -22,10 +22,10 @@ do
 echo -n "- name: Main${r}
   description: Testing.
   technologies:
-  - name: TechA
-  - name: TechB
-  - name: TechC
-  - name: TechS
+  - name: TechA-${r}
+  - name: TechB-${r}
+  - name: TechC-${r}
+  - name: TechS-${r}
     source: true
   issues:
 " >> ${file}
