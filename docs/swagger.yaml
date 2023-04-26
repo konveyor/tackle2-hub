@@ -735,24 +735,6 @@ definitions:
 info:
   contact: {}
 paths:
-  //buckets/{id}/{wildcard}:
-    post:
-      description: Upload bucket content by ID and path (handles both [post] and [put]
-        requests).
-      parameters:
-      - description: Bucket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Upload bucket content by ID and path.
-      tags:
-      - buckets
   /addons:
     get:
       description: List all addons.
@@ -821,7 +803,7 @@ paths:
           type: array
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a applications.
       tags:
       - applications
@@ -871,7 +853,7 @@ paths:
         type: integer
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete an application.
       tags:
       - applications
@@ -911,7 +893,7 @@ paths:
           $ref: '#/definitions/api.Application'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update an application.
       tags:
       - applications
@@ -928,7 +910,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete bucket content by ID and path.
       tags:
       - applications
@@ -951,7 +933,7 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: ""
       summary: Get bucket content by ID and path.
       tags:
       - applications
@@ -968,7 +950,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Upload bucket content by ID and path.
       tags:
       - applications
@@ -1009,7 +991,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a fact.
       tags:
       - applications
@@ -1038,7 +1020,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: ""
       summary: Create a fact.
       tags:
       - applications
@@ -1067,7 +1049,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update (or create) a fact.
       tags:
       - applications
@@ -1112,7 +1094,7 @@ paths:
           $ref: '#/definitions/api.Stakeholders'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update the owner and contributors of an Application.
       tags:
       - applications
@@ -1141,7 +1123,7 @@ paths:
           type: array
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Replace tag associations.
       tags:
       - applications
@@ -1161,7 +1143,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete tag association.
       tags:
       - applications
@@ -1245,7 +1227,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a bucket.
       tags:
       - buckets
@@ -1284,7 +1266,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete bucket content by ID and path.
       tags:
       - buckets
@@ -1309,8 +1291,25 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: ""
       summary: Get bucket content by ID and path.
+      tags:
+      - buckets
+    post:
+      description: Upload bucket content by ID and path (handles both [post] and [put]
+        requests).
+      parameters:
+      - description: Bucket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Upload bucket content by ID and path.
       tags:
       - buckets
   /businessservices:
@@ -1358,7 +1357,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a business service.
       tags:
       - businessservices
@@ -1398,7 +1397,7 @@ paths:
           $ref: '#/definitions/api.BusinessService'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a business service.
       tags:
       - businessservices
@@ -1409,7 +1408,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a directory within the cache.
       tags:
       - cache
@@ -1481,7 +1480,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a dependency.
       tags:
       - dependencies
@@ -1549,7 +1548,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a file.
       tags:
       - file
@@ -1619,7 +1618,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete an identity.
       tags:
       - identities
@@ -1659,7 +1658,7 @@ paths:
           $ref: '#/definitions/api.Identity'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update an identity.
       tags:
       - identities
@@ -1689,7 +1688,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete an import.
       tags:
       - imports
@@ -1737,7 +1736,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete an import summary and associated import records.
       tags:
       - imports
@@ -1838,7 +1837,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a job function.
       tags:
       - jobfunctions
@@ -1880,7 +1879,7 @@ paths:
           $ref: '#/definitions/api.JobFunction'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a job function.
       tags:
       - jobfunctions
@@ -1931,7 +1930,7 @@ paths:
         type: integer
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a migration wave.
       tags:
       - migrationwaves
@@ -1971,7 +1970,7 @@ paths:
           $ref: '#/definitions/api.MigrationWave'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a migration wave.
       tags:
       - migrationwaves
@@ -2022,7 +2021,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete an proxy.
       tags:
       - proxies
@@ -2062,7 +2061,7 @@ paths:
           $ref: '#/definitions/api.Proxy'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update an proxy.
       tags:
       - proxies
@@ -2113,7 +2112,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a review.
       tags:
       - reviews
@@ -2155,7 +2154,7 @@ paths:
           $ref: '#/definitions/api.Review'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a review.
       tags:
       - reviews
@@ -2173,7 +2172,7 @@ paths:
           $ref: '#/definitions/api.CopyRequest'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Copy a review from one application to others.
       tags:
       - reviews
@@ -2224,7 +2223,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a bundle.
       tags:
       - rulebundles
@@ -2264,7 +2263,7 @@ paths:
           $ref: '#/definitions/api.RuleBundle'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a bundle.
       tags:
       - rulebundles
@@ -2328,7 +2327,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a setting.
       tags:
       - settings
@@ -2363,7 +2362,7 @@ paths:
           $ref: '#/definitions/api.Setting'
       responses:
         "201":
-          description: Created
+          description: ""
       summary: Create a setting.
       tags:
       - settings
@@ -2381,7 +2380,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a setting.
       tags:
       - settings
@@ -2432,7 +2431,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a stakeholder group.
       tags:
       - stakeholdergroups
@@ -2472,7 +2471,7 @@ paths:
           $ref: '#/definitions/api.StakeholderGroup'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a stakeholder group.
       tags:
       - stakeholdergroups
@@ -2523,7 +2522,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a stakeholder.
       tags:
       - stakeholders
@@ -2563,7 +2562,7 @@ paths:
           $ref: '#/definitions/api.Stakeholder'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a stakeholder.
       tags:
       - stakeholders
@@ -2619,7 +2618,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a tag category.
       tags:
       - tagcategories
@@ -2659,7 +2658,7 @@ paths:
           $ref: '#/definitions/api.TagCategory'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a tag category.
       tags:
       - tagcategories
@@ -2735,7 +2734,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a tag.
       tags:
       - tags
@@ -2775,7 +2774,7 @@ paths:
           $ref: '#/definitions/api.Tag'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a tag.
       tags:
       - tags
@@ -2826,7 +2825,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a task group.
       tags:
       - taskgroups
@@ -2866,7 +2865,7 @@ paths:
           $ref: '#/definitions/api.TaskGroup'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a task group.
       tags:
       - taskgroups
@@ -2883,7 +2882,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete bucket content by ID and path.
       tags:
       - taskgroups
@@ -2906,7 +2905,7 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: ""
       summary: Get bucket content by ID and path.
       tags:
       - taskgroups
@@ -2923,7 +2922,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Upload bucket content by ID and path.
       tags:
       - taskgroups
@@ -2945,7 +2944,7 @@ paths:
           $ref: '#/definitions/api.TaskGroup'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Submit a task group.
       tags:
       - taskgroups
@@ -2996,7 +2995,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a task.
       tags:
       - tasks
@@ -3036,7 +3035,7 @@ paths:
           $ref: '#/definitions/api.Task'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a task.
       tags:
       - tasks
@@ -3053,7 +3052,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete bucket content by ID and path.
       tags:
       - tasks
@@ -3076,7 +3075,7 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: ""
       summary: Get bucket content by ID and path.
       tags:
       - tasks
@@ -3093,7 +3092,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Upload bucket content by ID and path.
       tags:
       - tasks
@@ -3108,7 +3107,7 @@ paths:
         type: string
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Cancel a task.
       tags:
       - tasks
@@ -3127,7 +3126,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a task report.
       tags:
       - tasks
@@ -3201,7 +3200,7 @@ paths:
           $ref: '#/definitions/api.Task'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Submit a task.
       tags:
       - tasks
@@ -3252,7 +3251,7 @@ paths:
         type: integer
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a ticket.
       tags:
       - tickets
@@ -3321,7 +3320,7 @@ paths:
         type: integer
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Delete a tracker.
       tags:
       - trackers
@@ -3361,7 +3360,7 @@ paths:
           $ref: '#/definitions/api.Tracker'
       responses:
         "204":
-          description: No Content
+          description: ""
       summary: Update a tracker.
       tags:
       - trackers
