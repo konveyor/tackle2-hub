@@ -980,7 +980,31 @@ paths:
       summary: List facts.
       tags:
       - applications
-    patch:
+    post:
+      consumes:
+      - application/json
+      description: Create a fact.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact data
+        in: body
+        name: fact
+        required: true
+        schema:
+          $ref: '#/definitions/api.Fact'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+      summary: Create a fact.
+      tags:
+      - applications
+    put:
       description: Replace all facts from a source.
       parameters:
       - description: Application ID
@@ -1008,54 +1032,20 @@ paths:
         name: id
         required: true
         type: string
-      - description: Fact source
-        in: query
-        name: source
-        required: true
-        type: string
       - description: Fact key
         in: path
         name: key
+        required: true
+        type: string
+      - description: Fact source
+        in: path
+        name: source
         required: true
         type: string
       responses:
         "204":
           description: No Content
       summary: Delete a fact.
-      tags:
-      - applications
-    post:
-      consumes:
-      - application/json
-      description: Create a fact.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Fact key
-        in: path
-        name: key
-        required: true
-        type: string
-      - description: Fact source
-        in: query
-        name: source
-        required: true
-        type: string
-      - description: Fact value
-        in: body
-        name: fact
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-      summary: Create a fact.
       tags:
       - applications
     put:
@@ -1074,16 +1064,16 @@ paths:
         required: true
         type: string
       - description: Fact source
-        in: query
+        in: path
         name: source
         required: true
         type: string
-      - description: Fact value
+      - description: Fact data
         in: body
         name: fact
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/api.Fact'
       produces:
       - application/json
       responses:
@@ -1092,7 +1082,7 @@ paths:
       summary: Update (or create) a fact.
       tags:
       - applications
-  /applications/{id}/facts/{name}:
+  /applications/{id}/facts/{name}/{source}:
     get:
       description: Get fact by name.
       parameters:
@@ -1107,7 +1097,7 @@ paths:
         required: true
         type: string
       - description: Fact source
-        in: query
+        in: path
         name: source
         required: true
         type: string

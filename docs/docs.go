@@ -378,7 +378,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "patch": {
+            "put": {
                 "description": "Replace all facts from a source.",
                 "tags": [
                     "applications"
@@ -403,6 +403,42 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a fact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Create a fact.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact data",
+                        "name": "fact",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Fact"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
                     }
                 }
             }
@@ -439,72 +475,22 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Fact source",
                         "name": "source",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Fact value",
+                        "description": "Fact data",
                         "name": "fact",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/api.Fact"
                         }
                     }
                 ],
                 "responses": {
                     "204": {
                         "description": "No Content"
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a fact.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "applications"
-                ],
-                "summary": "Create a fact.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Fact key",
-                        "name": "key",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Fact source",
-                        "name": "source",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "description": "Fact value",
-                        "name": "fact",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created"
                     }
                 }
             },
@@ -524,15 +510,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Fact source",
-                        "name": "source",
-                        "in": "query",
+                        "description": "Fact key",
+                        "name": "key",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Fact key",
-                        "name": "key",
+                        "description": "Fact source",
+                        "name": "source",
                         "in": "path",
                         "required": true
                     }
@@ -544,7 +530,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/facts/{name}": {
+        "/applications/{id}/facts/{name}/{source}": {
             "get": {
                 "description": "Get fact by name.",
                 "produces": [
@@ -573,7 +559,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Fact source",
                         "name": "source",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
