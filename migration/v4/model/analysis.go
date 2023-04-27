@@ -22,8 +22,8 @@ func (m *Analysis) BeforeCreate(db *gorm.DB) (err error) {
 		ruleSet := &m.RuleSets[i]
 		for i := range ruleSet.Issues {
 			issue := &ruleSet.Issues[i]
-			id := ruleSet.Name + "." + issue.Name
-			issue.RuleID = id
+			uid := ruleSet.Name + "." + issue.RuleID
+			issue.RuleID = uid
 		}
 	}
 	return
@@ -84,7 +84,7 @@ func (m *AnalysisDependency) Key() (s string) {
 type AnalysisIssue struct {
 	Model
 	RuleID      string `gorm:"index;not null"`
-	Name        string `gorm:"index;not null"`
+	Name        string `gorm:"index"`
 	Description string
 	Category    string             `gorm:"index;not null"`
 	Incidents   []AnalysisIncident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`

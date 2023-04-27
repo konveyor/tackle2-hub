@@ -34,7 +34,8 @@ echo -n "- name: Main${r}
 #
 for i in $(seq 1 ${nIssue})
 do
-echo -n "  - name: Rule-${i}
+echo -n "  - ruleid: Rule-${i}
+    name: Rule-${i}-Violated
     description: This is a test ${r}/${i}.
     category: warning
     effort: 10
