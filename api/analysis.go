@@ -460,13 +460,12 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @summary List issue composites.
 // @description List issue composites.
 // @description filters:
-// @description - id
 // @description - category
 // @description - effort
 // @description - application.(id|name)
 // @description - tech.(source|target)
 // @description - tag.id
-// @tags issues
+// @tags issuecomposites
 // @produce json
 // @success 200 {object} []api.IssueComposite
 // @router /analyses/issues [get]
@@ -498,8 +497,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleID",
-		"i.Category", // needed by sort
-		"i.Effort",   // needed by sort
+		"i.Category", // needed by filter
+		"i.Effort",   // needed by filter
 		"COUNT(a.ID) Affected")
 	q = q.Table("AnalysisIssue i,")
 	q = q.Joins("AnalysisRuleSet r,")
@@ -912,8 +911,7 @@ type AnalysisIssue struct {
 	Facts       FactMap            `json:"facts,omitempty" yaml:",omitempty"`
 	Labels      []string           `json:"labels"`
 	Effort      int                `json:"effort,omitempty" yaml:",omitempty"`
-	//
-	Application uint `json:"application" binding:"-"`
+	Application uint               `json:"application" binding:"-"`
 }
 
 //
