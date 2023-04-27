@@ -615,7 +615,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		return
 	}
 	key := ctx.Param(Key)
-	source := h.wildcard(ctx, Source)
+	source := ctx.Param(Source)[1:]
 	list := []model.Fact{}
 	result = h.DB(ctx).Find(&list, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error != nil {
@@ -695,7 +695,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	}
 
 	key := ctx.Param(Key)
-	source := h.wildcard(ctx, Source)
+	source := ctx.Param(Source)[1:]
 	value, _ := json.Marshal(r.Value)
 	result = h.DB(ctx).First(&model.Fact{}, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error == nil {
@@ -733,7 +733,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // @description Delete a fact.
 // @tags applications
 // @success 204
-// @router /applications/{id}/facts/{key} [delete]
+// @router /applications/{id}/facts/{key}/{source} [delete]
 // @param id path string true "Application ID"
 // @param key path string true "Fact key"
 // @param source path string true "Fact source"
@@ -747,7 +747,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	}
 	fact := &model.Fact{}
 	key := ctx.Param(Key)
-	source := h.wildcard(ctx, Source)
+	source := ctx.Param(Source)[1:]
 	result = h.DB(ctx).Delete(fact, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -766,21 +766,16 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @param id path string true "Application ID"
 // @param source query string true "Source"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
+	source := ctx.Query(Source)
+	if source == "" {
+		_ = ctx.Error(&BadRequestError{Reason: "`source` query parameter is required"})
+		return
+	}
 	facts := []Fact{}
 	err := h.Bind(ctx, &facts)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
-	}
-	if len(facts) == 0 {
-		_ = ctx.Error(&BadRequestError{"must provide at least one Fact"})
-		return
-	}
-	for i := 1; i < len(facts); i++ {
-		if facts[i].Source != facts[i-1].Source {
-			_ = ctx.Error(&BadRequestError{"Fact `source` fields must agree"})
-			return
-		}
 	}
 
 	id := h.pk(ctx)
@@ -792,7 +787,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
 	}
 
 	// remove all the existing Facts for that source and app id.
-	db := h.DB(ctx).Where("ApplicationID = ?", id).Where("source = ?", facts[0].Source)
+	db := h.DB(ctx).Where("ApplicationID = ?", id).Where("source = ?", source)
 	err = db.Delete(&model.Fact{}).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -808,7 +803,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
 				ApplicationID: id,
 				Key:           f.Key,
 				Value:         value,
-				Source:        f.Source,
+				Source:        source,
 			})
 		}
 		err = db.Create(&newFacts).Error

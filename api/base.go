@@ -131,17 +131,6 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 }
 
 //
-// wildcard returns the value of a wildcard parameter
-// trimmed of any leading slash.
-func (h *BaseHandler) wildcard(ctx *gin.Context, param string) (value string) {
-	value = ctx.Param(param)
-	if value[0] == '/' {
-		value = value[1:]
-	}
-	return
-}
-
-//
 // modBody updates the body using the `mod` function.
 //   1. read the body.
 //   2. mod()

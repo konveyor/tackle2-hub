@@ -267,10 +267,7 @@ func (h *AppFacts) Delete(key string) (err error) {
 //
 // Replace facts.
 func (h *AppFacts) Replace(facts []api.Fact) (err error) {
-	for i := range facts {
-		facts[i].Source = h.source
-	}
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Put(path, facts)
+	err = h.client.Put(path, facts, Param{Key: api.Source, Value: h.source})
 	return
 }
