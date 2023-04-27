@@ -1,6 +1,9 @@
 package model
 
-import "strings"
+import (
+	"gorm.io/gorm"
+	"strings"
+)
 
 //
 // Analysis report.
@@ -10,6 +13,20 @@ type Analysis struct {
 	Dependencies  []AnalysisDependency `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint                 `gorm:"index;not null"`
 	Application   *Application
+}
+
+//
+// BeforeCreate assign ruleId.
+func (m *Analysis) BeforeCreate(db *gorm.DB) (err error) {
+	for i := range m.RuleSets {
+		ruleSet := &m.RuleSets[i]
+		for i := range ruleSet.Issues {
+			issue := &ruleSet.Issues[i]
+			id := ruleSet.Name + "." + issue.Name
+			issue.RuleID = id
+		}
+	}
+	return
 }
 
 //
@@ -67,6 +84,7 @@ func (m *AnalysisDependency) Key() (s string) {
 type AnalysisIssue struct {
 	Model
 	RuleID      string `gorm:"index;not null"`
+	Name        string `gorm:"index;not null"`
 	Description string
 	Category    string             `gorm:"index;not null"`
 	Incidents   []AnalysisIncident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`

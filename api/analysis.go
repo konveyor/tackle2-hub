@@ -300,6 +300,8 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @description List application issues.
 // @description filters:
 // @description - id
+// @description - ruleid
+// @description - name
 // @description - category
 // @description - effort
 // @tags issues
@@ -322,6 +324,8 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
+			{Field: "ruleid", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 		})
@@ -375,6 +379,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description filters:
 // @description - id
 // @description - ruleid
+// @description - name
 // @description - category
 // @description - effort
 // @description - application.(id|name)
@@ -391,7 +396,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
-			{Field: "ruleid", Kind: qf.LITERAL},
+			{Field: "ruleid", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "affected", Kind: qf.LITERAL},
@@ -497,6 +503,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleID",
+		"i.Name",     // needed by filter
 		"i.Category", // needed by filter
 		"i.Effort",   // needed by filter
 		"COUNT(a.ID) Affected")
@@ -900,17 +907,17 @@ func (r *AnalysisRuleSet) Model() (m *model.AnalysisRuleSet) {
 
 //
 // AnalysisIssue REST resource.
-// RuleID = ruleset.name + rule.id
 type AnalysisIssue struct {
 	Resource    `yaml:",inline"`
-	RuleID      string             `json:"ruleId" binding:"required"`
-	Category    string             `json:"category" binding:"required"`
+	RuleID      string             `json:"ruleId" binding:"-"`
+	Name        string             `json:"name" binding:"required"`
 	Description string             `json:"description,omitempty" yaml:",omitempty"`
+	Category    string             `json:"category" binding:"required"`
+	Effort      int                `json:"effort,omitempty" yaml:",omitempty"`
 	Incidents   []AnalysisIncident `json:"incidents,omitempty" yaml:",omitempty"`
 	Links       []AnalysisLink     `json:"links,omitempty" yaml:",omitempty"`
 	Facts       FactMap            `json:"facts,omitempty" yaml:",omitempty"`
 	Labels      []string           `json:"labels"`
-	Effort      int                `json:"effort,omitempty" yaml:",omitempty"`
 	Application uint               `json:"application" binding:"-"`
 }
 
@@ -919,6 +926,7 @@ type AnalysisIssue struct {
 func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 	r.Resource.With(&m.Model)
 	r.RuleID = m.RuleID
+	r.Name = m.Name
 	r.Description = m.Description
 	r.Category = m.Category
 	r.Incidents = []AnalysisIncident{}
@@ -946,6 +954,7 @@ func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
 	m = &model.AnalysisIssue{}
 	m.RuleID = r.RuleID
+	m.Name = r.Name
 	m.Description = r.Description
 	m.Category = r.Category
 	m.Incidents = []model.AnalysisIncident{}
