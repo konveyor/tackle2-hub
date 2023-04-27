@@ -35,12 +35,7 @@ type TagCategory = v3.TagCategory
 type Task = v3.Task
 type TaskGroup = v3.TaskGroup
 type TaskReport = v3.TaskReport
-type Ticket = v3.Ticket
-type Tracker = v3.Tracker
 type TTL = v3.TTL
-type Metadata = v3.Metadata
-type Project = v3.Project
-type IssueType = v3.IssueType
 
 //
 // Errors
