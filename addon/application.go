@@ -230,10 +230,11 @@ func (h *AppFacts) List() (list []api.Fact, err error) {
 func (h *AppFacts) Get(key string) (fact *api.Fact, err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:  h.appId,
-			api.Key: key,
+			api.ID:     h.appId,
+			api.Key:    key,
+			api.Source: h.source,
 		})
-	err = h.client.Get(path, fact, Param{Key: api.Source, Value: h.source})
+	err = h.client.Get(path, fact)
 	return
 }
 
@@ -242,10 +243,11 @@ func (h *AppFacts) Get(key string) (fact *api.Fact, err error) {
 func (h *AppFacts) Set(key string, value interface{}) (err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:  h.appId,
-			api.Key: key,
+			api.ID:     h.appId,
+			api.Key:    key,
+			api.Source: h.source,
 		})
-	err = h.client.Put(path, value, Param{Key: api.Source, Value: h.source})
+	err = h.client.Put(path, value)
 	return
 }
 
@@ -254,17 +256,21 @@ func (h *AppFacts) Set(key string, value interface{}) (err error) {
 func (h *AppFacts) Delete(key string) (err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:  h.appId,
-			api.Key: key,
+			api.ID:     h.appId,
+			api.Key:    key,
+			api.Source: h.source,
 		})
-	err = h.client.Delete(path, Param{Key: api.Source, Value: h.source})
+	err = h.client.Delete(path)
 	return
 }
 
 //
 // Replace facts.
-func (h *AppFacts) Replace(facts *[]api.Fact) (err error) {
+func (h *AppFacts) Replace(facts []api.Fact) (err error) {
+	for i := range facts {
+		facts[i].Source = h.source
+	}
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Put(path, facts, Param{Key: api.Source, Value: h.source})
+	err = h.client.Put(path, facts)
 	return
 }

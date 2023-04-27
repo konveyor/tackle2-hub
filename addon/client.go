@@ -149,7 +149,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 
 //
 // Post a resource.
-func (r *Client) Post(path string, object interface{}, params ...Param) (err error) {
+func (r *Client) Post(path string, object interface{}) (err error) {
 	request := func() (request *http.Request, err error) {
 		bfr, err := json.Marshal(object)
 		if err != nil {
@@ -164,13 +164,6 @@ func (r *Client) Post(path string, object interface{}, params ...Param) (err err
 			URL:    r.join(path),
 		}
 		request.Header.Set(api.Accept, binding.MIMEJSON)
-		if len(params) > 0 {
-			q := request.URL.Query()
-			for _, p := range params {
-				q.Add(p.Key, p.Value)
-			}
-			request.URL.RawQuery = q.Encode()
-		}
 		return
 	}
 	reply, err := r.send(request)
