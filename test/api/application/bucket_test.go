@@ -13,7 +13,7 @@ func TestApplicationBucket(t *testing.T) {
 	application := Minimal
 
 	// Create the application.
-	assert.Must(t, Create(&application))
+	assert.Must(t, Application.Create(&application))
 
 	// Get the bucket to check if it was created.
 	err := Client.BucketGet(client.Path(api.BucketRoot, client.Params{api.ID: application.Bucket.ID}), "/dev/null")
@@ -22,5 +22,5 @@ func TestApplicationBucket(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Delete(&application))
+	assert.Must(t, Application.Delete(&application))
 }

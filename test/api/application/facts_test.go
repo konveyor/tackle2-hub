@@ -25,7 +25,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	application := Minimal
 
 	// Create the application.
-	assert.Must(t, Create(&application))
+	assert.Must(t, Application.Create(&application))
 
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
@@ -83,7 +83,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Delete(&application))
+	assert.Must(t, Application.Delete(&application))
 }
 
 func TestApplicationFactsList(t *testing.T) {
@@ -91,7 +91,7 @@ func TestApplicationFactsList(t *testing.T) {
 	application := Minimal
 
 	// Create the application.
-	assert.Must(t, Create(&application))
+	assert.Must(t, Application.Create(&application))
 
 	// Create facts.
 	for _, r := range SampleFacts {
@@ -118,5 +118,5 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Delete(&application))
+	assert.Must(t, Application.Delete(&application))
 }

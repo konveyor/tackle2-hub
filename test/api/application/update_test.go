@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
@@ -14,7 +15,7 @@ func TestApplicationUpdateName(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			assert.Must(t, Create(&r))
+			assert.Must(t, Application.Create(&r))
 			rPath := client.Path(api.ApplicationRoot, client.Params{api.ID: r.ID})
 
 			// Update.
@@ -22,7 +23,7 @@ func TestApplicationUpdateName(t *testing.T) {
 			update := api.Application{
 				Name: updatedName,
 			}
-			err := Client.Put(rPath, &update)
+			err := binding.RichClient.Client().Put(rPath, &update)
 			if err != nil {
 				t.Errorf("Update error: %v", err.Error())
 			}
@@ -38,7 +39,7 @@ func TestApplicationUpdateName(t *testing.T) {
 			}
 
 			// Clean.
-			assert.Must(t, Delete(&r))
+			assert.Must(t, Application.Delete(&r))
 		})
 	}
 }

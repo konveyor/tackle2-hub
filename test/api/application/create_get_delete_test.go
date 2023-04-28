@@ -84,11 +84,11 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 		t.Errorf("Created duplicate application: %v", dup)
 
 		// Clean the duplicate.
-		assert.Must(t, Delete(dup))
+		assert.Must(t, Application.Delete(dup))
 	}
 
 	// Clean.
-	assert.Must(t, Delete(&r))
+	assert.Must(t, Application.Delete(&r))
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
@@ -103,6 +103,6 @@ func TestApplicationNotCreateWithoutName(t *testing.T) {
 		t.Errorf("Created empty application: %v", r)
 
 		// Clean.
-		assert.Must(t, Delete(r))
+		assert.Must(t, Application.Delete(r))
 	}
 }
