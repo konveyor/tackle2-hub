@@ -1,7 +1,10 @@
 package binding
 
 import (
+	"fmt"
+
 	"github.com/konveyor/controller/pkg/logging"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
@@ -59,7 +62,21 @@ func (h *Adapter) Client() *Client {
 func newRichClient() (richClient *Adapter) {
 	//
 	// Build REST client.
-	client := NewClient(Settings.Addon.Hub.URL, Settings.Addon.Hub.Token)
+	baseUrl := settings.Settings.Addon.Hub.URL
+	login := api.Login{User: settings.Settings.Auth.Keycloak.Admin.User, Password: settings.Settings.Auth.Keycloak.Admin.Pass}
+	client := NewClient(baseUrl, "")
+
+	// Disable HTTP requests retry for network-related errors to fail quickly.
+	// TODO: parametrize (only for tests)
+	client.Retry = 0
+
+	// Login.
+	err := client.Post(api.AuthLoginRoot, &login)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
+	}
+	client.SetToken(login.Token)
+
 	//
 	// Build RichClient.
 	richClient = &Adapter{
