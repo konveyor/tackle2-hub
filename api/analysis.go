@@ -503,7 +503,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleID",
-		"i.Name",     // needed by filter
 		"i.Category", // needed by filter
 		"i.Effort",   // needed by filter
 		"COUNT(a.ID) Affected")
@@ -538,6 +537,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	// Find.
 	type M struct {
 		RuleID      string
+		RuleName    string
 		Description string
 		Category    string
 		Effort      int
@@ -561,6 +561,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	db = h.DB(ctx)
 	db = db.Select(
 		"i.RuleID",
+		"i.Name RuleName",
 		"i.Description",
 		"i.Category",
 		"i.Effort",
@@ -595,6 +596,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 				Description: m.Description,
 				Category:    m.Category,
 				RuleID:      m.RuleID,
+				Name:        m.Name,
 			}
 			collated[m.RuleID] = r
 			resources = append(resources, r)
@@ -1085,6 +1087,7 @@ type AnalysisLink struct {
 type IssueComposite struct {
 	tech         map[string]AnalysisTechnology
 	RuleID       string               `json:"ruleID"`
+	Name         string               `json:"name"`
 	Description  string               `json:"description"`
 	Category     string               `json:"category"`
 	Effort       int                  `json:"effort"`
