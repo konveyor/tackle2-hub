@@ -9,8 +9,9 @@ import (
 //
 // Routes
 const (
-	AuthRoot      = "/auth"
-	AuthLoginRoot = AuthRoot + "/login"
+	AuthRoot        = "/auth"
+	AuthLoginRoot   = AuthRoot + "/login"
+	AuthRefreshRoot = AuthRoot + "/refresh"
 )
 
 //
@@ -23,6 +24,7 @@ type AuthHandler struct {
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	e.POST(AuthLoginRoot, h.Login)
+	e.POST(AuthRefreshRoot, h.Refresh)
 }
 
 // Login godoc
@@ -39,7 +41,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Token, err = auth.Remote.Login(r.User, r.Password)
+	token, err := auth.Remote.Login(r.User, r.Password)
 	if err != nil {
 		h.Render(ctx,
 			http.StatusUnauthorized,
@@ -49,6 +51,39 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 	r.Password = "" // Clear out password from response
+	r.Token = token.Access
+	r.Refresh = token.Refresh
+	r.Expiry = token.Expiry
+	h.Render(ctx, http.StatusCreated, r)
+}
+
+// Refresh godoc
+// @summary Refresh bearer token.
+// @description Refresh bearer token.
+// @tags auth
+// @produce json
+// @success 201 {object} api.Login
+// @router /auth/refresh [post]
+func (h AuthHandler) Refresh(ctx *gin.Context) {
+	r := &Login{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	token, err := auth.Remote.Refresh(r.Refresh)
+	if err != nil {
+		h.Render(ctx,
+			http.StatusUnauthorized,
+			gin.H{
+				"error": err.Error(),
+			})
+		return
+	}
+	r.Password = "" // Clear out password from response
+	r.Token = token.Access
+	r.Refresh = token.Refresh
+	r.Expiry = token.Expiry
 	h.Render(ctx, http.StatusCreated, r)
 }
 
@@ -58,6 +93,8 @@ type Login struct {
 	User     string `json:"user"`
 	Password string `json:"password,omitempty"`
 	Token    string `json:"token"`
+	Refresh  string `json:"refresh"`
+	Expiry   int    `json:"expiry"`
 }
 
 //

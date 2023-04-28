@@ -37,8 +37,9 @@ func (r Keycloak) NewToken(user string, scopes []string, claims jwt.MapClaims) (
 	return
 }
 
+//
 // Login and obtain a token.
-func (r *Keycloak) Login(user, password string) (token string, err error) {
+func (r *Keycloak) Login(user, password string) (token Token, err error) {
 	jwt, err := r.client.Login(
 		context.TODO(),
 		Settings.Auth.Keycloak.ClientID,
@@ -48,7 +49,27 @@ func (r *Keycloak) Login(user, password string) (token string, err error) {
 		password,
 	)
 	if err == nil {
-		token = jwt.AccessToken
+		token.Access = jwt.AccessToken
+		token.Refresh = jwt.RefreshToken
+		token.Expiry = jwt.ExpiresIn
+	}
+	return
+}
+
+//
+// Refresh token.
+func (r *Keycloak) Refresh(refresh string) (token Token, err error) {
+	jwt, err := r.client.RefreshToken(
+		context.TODO(),
+		refresh,
+		Settings.Auth.Keycloak.ClientID,
+		Settings.Auth.Keycloak.ClientSecret,
+		Settings.Auth.Keycloak.Realm,
+	)
+	if err == nil {
+		token.Access = jwt.AccessToken
+		token.Refresh = jwt.RefreshToken
+		token.Expiry = jwt.ExpiresIn
 	}
 	return
 }
