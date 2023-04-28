@@ -26,8 +26,6 @@ definitions:
         type: string
       description:
         type: string
-      facts:
-        $ref: '#/definitions/api.FactMap'
       id:
         type: integer
       identities:
@@ -131,10 +129,9 @@ definitions:
     properties:
       key:
         type: string
+      source:
+        type: string
       value: {}
-    type: object
-  api.FactMap:
-    additionalProperties: true
     type: object
   api.Fields:
     additionalProperties: true
@@ -958,12 +955,18 @@ paths:
       - applications
   /applications/{id}/facts:
     get:
-      description: List facts.
+      description: |-
+        List facts. Can be filtered by source.
+        By default facts from all sources are returned.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
+        type: string
+      - description: Fact source
+        in: query
+        name: source
         type: string
       produces:
       - application/json
@@ -977,26 +980,6 @@ paths:
       summary: List facts.
       tags:
       - applications
-  /applications/{id}/facts/{key}:
-    delete:
-      description: Delete a fact.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Fact key
-        in: path
-        name: key
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-      summary: Delete a fact.
-      tags:
-      - applications
     post:
       consumes:
       - application/json
@@ -1005,11 +988,6 @@ paths:
       - description: Application ID
         in: path
         name: id
-        required: true
-        type: string
-      - description: Fact key
-        in: path
-        name: key
         required: true
         type: string
       - description: Fact data
@@ -1027,6 +1005,50 @@ paths:
       tags:
       - applications
     put:
+      description: Replace all facts from a source.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Source
+        in: query
+        name: source
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Replace all facts from a source.
+      tags:
+      - applications
+  /applications/{id}/facts/{key}:
+    delete:
+      description: Delete a fact.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Fact source
+        in: path
+        name: source
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a fact.
+      tags:
+      - applications
+    put:
       consumes:
       - application/json
       description: Update (or create) a fact.
@@ -1039,6 +1061,11 @@ paths:
       - description: Fact key
         in: path
         name: key
+        required: true
+        type: string
+      - description: Fact source
+        in: path
+        name: source
         required: true
         type: string
       - description: Fact data
@@ -1055,7 +1082,7 @@ paths:
       summary: Update (or create) a fact.
       tags:
       - applications
-  /applications/{id}/facts/{name}:
+  /applications/{id}/facts/{name}/{source}:
     get:
       description: Get fact by name.
       parameters:
@@ -1067,6 +1094,11 @@ paths:
       - description: Fact key
         in: path
         name: key
+        required: true
+        type: string
+      - description: Fact source
+        in: path
+        name: source
         required: true
         type: string
       produces:

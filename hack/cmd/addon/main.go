@@ -60,6 +60,7 @@ func main() {
 		//
 		// Set fact.
 		facts := addon.Application.Facts(application.ID)
+		facts.Source("addon")
 		err = facts.Set("Listed", true)
 		if err != nil {
 			return
