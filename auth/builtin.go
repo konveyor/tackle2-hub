@@ -51,8 +51,15 @@ func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 	return
 }
 
+//
 // Login and obtain a token.
-func (r *NoAuth) Login(user, password string) (token string, err error) {
+func (r *NoAuth) Login(user, password string) (token Token, err error) {
+	return
+}
+
+//
+// Refresh token.
+func (r *NoAuth) Refresh(refresh string) (token Token, err error) {
 	return
 }
 
@@ -140,8 +147,15 @@ func (r *Builtin) User(jwToken *jwt.Token) (user string) {
 	return
 }
 
+//
 // Login and obtain a token.
-func (r *Builtin) Login(user, password string) (token string, err error) {
+func (r *Builtin) Login(user, password string) (token Token, err error) {
+	return
+}
+
+//
+// Refresh token.
+func (r *Builtin) Refresh(refresh string) (token Token, err error) {
 	return
 }
 

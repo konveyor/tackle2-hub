@@ -33,7 +33,15 @@ type Provider interface {
 	// User extracts the user from token.
 	User(jwToken *jwt.Token) (user string)
 	// Login and obtain a token.
-	Login(user, password string) (token string, err error)
+	Login(user, password string) (token Token, err error)
+	// Refresh token.
+	Refresh(refresh string) (token Token, err error)
+}
+
+type Token struct {
+	Access  string
+	Refresh string
+	Expiry  int
 }
 
 //
