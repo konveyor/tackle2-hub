@@ -1,8 +1,6 @@
 package binding
 
 import (
-	"fmt"
-
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -13,24 +11,15 @@ var (
 	Log      = logging.WithName("binding")
 )
 
-var (
-	// Addon An addon richClient configured for a task execution.
-	RichClient *Adapter
-	// Client
-	//client *Client
-)
-
 func init() {
-	err := Settings.Load()
-	if err != nil {
-		panic(err)
-	}
-
-	RichClient = newRichClient()
+    err := Settings.Load()
+    if err != nil {
+       panic(err)
+    }
 }
 
 // The RichClient provides API integration.
-type Adapter struct {
+type RichClient struct {
 	//	// Task API.
 	//	Task
 	//	// Settings API
@@ -54,32 +43,19 @@ type Adapter struct {
 }
 
 // Client provides the REST client.
-func (h *Adapter) Client() *Client {
+func (h *RichClient) Client() *Client {
 	return h.client
 }
 
-// newRichClient builds a new Addon RichClient object.
-func newRichClient() (richClient *Adapter) {
+// newRichClient builds a new RichClient object.
+func New(baseUrl string) (r *RichClient) {
 	//
 	// Build REST client.
-	baseUrl := settings.Settings.Addon.Hub.URL
-	login := api.Login{User: settings.Settings.Auth.Keycloak.Admin.User, Password: settings.Settings.Auth.Keycloak.Admin.Pass}
 	client := NewClient(baseUrl, "")
-
-	// Disable HTTP requests retry for network-related errors to fail quickly.
-	// TODO: parametrize (only for tests)
-	client.Retry = 0
-
-	// Login.
-	err := client.Post(api.AuthLoginRoot, &login)
-	if err != nil {
-		panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
-	}
-	client.SetToken(login.Token)
 
 	//
 	// Build RichClient.
-	richClient = &Adapter{
+	r = &RichClient{
 		//		Task: Task{
 		//			client: client,
 		//		},
@@ -115,3 +91,16 @@ func newRichClient() (richClient *Adapter) {
 	return
 }
 
+func (r *RichClient) Login(user, password string) (err error) {
+	//
+	// Build REST client.
+	login := api.Login{User: user, Password: password}
+
+	// Login.
+	err = r.client.Post(api.AuthLoginRoot, &login)
+	if err != nil {
+		return
+	}
+	r.client.SetToken(login.Token)
+	return
+}
