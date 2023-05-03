@@ -13,10 +13,12 @@ var SampleFacts = []*api.Fact{
 	{
 		Key:   "pet",
 		Value: "{\"kind\":\"dog\",\"Age\":4}",
+		Source: "test",
 	},
 	{
 		Key:   "address",
 		Value: "{\"street\":\"Maple\",\"State\":\"AL\"}",
+		Source: "test",
 	},
 }
 
@@ -30,10 +32,10 @@ func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
 		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
-			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key})
+			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key, api.Source: r.Source})
 
 			// Create.
-			err := Client.Post(binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID}), &r)
+			err := Client.Post(binding.Path(api.ApplicationFactsRoot).Inject(binding.Params{api.ID: application.ID}), &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -95,7 +97,7 @@ func TestApplicationFactsList(t *testing.T) {
 
 	// Create facts.
 	for _, r := range SampleFacts {
-		err := Client.Post(binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key}), &r)
+		err := Client.Post(binding.Path(api.ApplicationFactsRoot).Inject(binding.Params{api.ID: application.ID}), &r)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
