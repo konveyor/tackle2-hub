@@ -22,5 +22,5 @@ func TestApplicationBucket(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Application.Delete(&application))
+	assert.Must(t, Application.Delete(application.ID))
 }

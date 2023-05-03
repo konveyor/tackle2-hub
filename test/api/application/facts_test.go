@@ -33,7 +33,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key})
 
 			// Create.
-			err := Client.Post(factPath, &r)
+			err := Client.Post(binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID}), &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -83,7 +83,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Application.Delete(&application))
+	assert.Must(t, Application.Delete(application.ID))
 }
 
 func TestApplicationFactsList(t *testing.T) {
@@ -97,7 +97,7 @@ func TestApplicationFactsList(t *testing.T) {
 	for _, r := range SampleFacts {
 		err := Client.Post(binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key}), &r)
 		if err != nil {
-			t.Fatalf(err.Error())
+			t.Errorf(err.Error())
 		}
 	}
 
@@ -118,5 +118,5 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Clean the application.
-	assert.Must(t, Application.Delete(&application))
+	assert.Must(t, Application.Delete(application.ID))
 }

@@ -14,9 +14,8 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			assert.Should(t, Application.Create(&r))
 
 			// Try get.
-			got := api.Application{}
-			got.ID = r.ID
-			assert.Should(t, Application.Get(&got))
+			got, err := Application.Get(r.ID)
+			assert.Should(t, err)
 
 			// Assert the get response.
 			if assert.FlatEqual(got, r) {
@@ -24,14 +23,14 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			}
 
 			// Try list.
-			gotList := []*api.Application{}
-			assert.Should(t, Application.List(gotList))
+			gotList, err := Application.List()
+			assert.Should(t, err)
 
 			// Assert the list response.
 			foundR := api.Application{}
 			for _, listR := range gotList {
 				if listR.Name == r.Name && listR.ID == r.ID {
-					foundR = *listR
+					foundR = listR
 					break
 				}
 			}
@@ -40,10 +39,10 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			}
 
 			// Try delete.
-			assert.Should(t, Application.Delete(&got))
+			assert.Should(t, Application.Delete(got.ID))
 
 			// Check the created application was deleted.
-			err := Application.Get(&r)
+			_, err = Application.Get(r.ID)
 			if err == nil {
 				t.Fatalf("Exits, but should be deleted: %v", r)
 			}
@@ -68,11 +67,11 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 		t.Errorf("Created duplicate application: %v", dup)
 
 		// Clean the duplicate.
-		assert.Must(t, Application.Delete(dup))
+		assert.Must(t, Application.Delete(dup.ID))
 	}
 
 	// Clean.
-	assert.Must(t, Application.Delete(&r))
+	assert.Must(t, Application.Delete(r.ID))
 }
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
@@ -87,6 +86,6 @@ func TestApplicationNotCreateWithoutName(t *testing.T) {
 		t.Errorf("Created empty application: %v", r)
 
 		// Clean.
-		assert.Must(t, Application.Delete(r))
+		assert.Must(t, Application.Delete(r.ID))
 	}
 }

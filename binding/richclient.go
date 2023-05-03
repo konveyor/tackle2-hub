@@ -12,10 +12,10 @@ var (
 )
 
 func init() {
-    err := Settings.Load()
-    if err != nil {
-       panic(err)
-    }
+	err := Settings.Load()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // The RichClient provides API integration.

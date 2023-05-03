@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -21,15 +20,14 @@ func TestApplicationUpdateName(t *testing.T) {
 			assert.Should(t, Application.Update(&update))
 
 			// Check the updated.
-			got := api.Application{}
-			got.ID = r.ID
-			assert.Should(t, Application.Get(&got))
+			got, err := Application.Get(r.ID)
+			assert.Should(t, err)
 			if !reflect.DeepEqual(got.Name, update.Name) {
 				t.Errorf("Different updated name error. Got %v, expected %v", got.Name, update.Name)
 			}
 
 			// Clean.
-			assert.Must(t, Application.Delete(&r))
+			assert.Must(t, Application.Delete(r.ID))
 		})
 	}
 }
