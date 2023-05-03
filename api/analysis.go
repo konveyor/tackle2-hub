@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm/logger"
 	"net/http"
 	"strings"
-	"time"
 )
 
 //
@@ -177,7 +176,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	mark := time.Now()
 	m := r.Model()
 	m.ApplicationID = id
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
@@ -189,8 +187,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	r.With(m)
-
-	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
 
 	h.Render(ctx, http.StatusCreated, r)
 }
@@ -390,7 +386,6 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @router /analyses/issues [get]
 func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	resources := []AnalysisIssue{}
-	mark := time.Now()
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -456,8 +451,6 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
-
 	h.Render(ctx, http.StatusOK, resources)
 }
 
@@ -476,7 +469,6 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @router /analyses/issues [get]
 func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	resources := []*IssueComposite{}
-	mark := time.Now()
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -619,8 +611,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		}
 	}
 
-	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
-
 	h.Render(ctx, http.StatusOK, resources)
 }
 
@@ -641,7 +631,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	resources := []AnalysisDependency{}
-	mark := time.Now()
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -690,8 +679,6 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
-
 	h.Render(ctx, http.StatusOK, resources)
 }
 
@@ -712,7 +699,6 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	resources := []DepComposite{}
-	mark := time.Now()
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -769,8 +755,6 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
 
 	h.Render(ctx, http.StatusOK, resources)
 }
