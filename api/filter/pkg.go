@@ -5,12 +5,12 @@ package filter
 
 Predicates:
 
-filter (predicate (AND|OR)?)
+filter (predicate (AND|OR)*)
 predicate: field operator value
 field: LITERAL
 value: (LITERAL|STRING|list)
 STRING: ('|")(.)*('|")
-list: `(` (LITERAL|STRING) OR? `)` `
+list: `(` (LITERAL|STRING) OR* `)` `
 operator:
 - ,  COMMA, AND
 - | OR
