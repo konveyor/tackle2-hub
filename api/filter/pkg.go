@@ -9,6 +9,7 @@ filter (predicate (AND|OR)?)
 predicate: field operator value
 field: LITERAL
 value: (LITERAL|STRING|list)
+STRING: ('|")(.)*('|")
 list: `(` (LITERAL|STRING) OR? `)` `
 operator:
 - ,  COMMA, AND
@@ -24,6 +25,7 @@ operator:
 - () one of
 
 \* is a wildcard for string matching.
+
 
 Examples:
 ?filter=name:elmer

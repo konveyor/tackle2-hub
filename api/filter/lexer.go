@@ -12,6 +12,7 @@ const (
 	LT     = '<'
 	GT     = '>'
 	QUOTE  = '"'
+	SQUOTE = '\''
 	ESCAPE = '\\'
 	SPACE  = ' '
 	LPAREN = '('
@@ -54,7 +55,8 @@ func (r *Lexer) With(filter string) (err error) {
 			break
 		}
 		switch ch {
-		case QUOTE:
+		case QUOTE,
+			SQUOTE:
 			reader.put()
 			push(LITERAL)
 			q := Quoted{Reader: &reader}
@@ -161,14 +163,14 @@ type Quoted struct {
 func (q *Quoted) Read() (token Token, err error) {
 	lastCh := byte(0)
 	var bfr []byte
-	q.next()
+	quote := q.next()
 	for {
 		ch := q.next()
 		if ch == EOF {
 			break
 		}
 		switch ch {
-		case QUOTE:
+		case quote:
 			if lastCh != ESCAPE {
 				token.Kind = STRING
 				token.Value = string(bfr)
@@ -179,7 +181,7 @@ func (q *Quoted) Read() (token Token, err error) {
 		}
 		lastCh = ch
 	}
-	err = Errorf("End \" not found.")
+	err = Errorf("End (%c) not found.", quote)
 	return
 }
 

@@ -116,6 +116,16 @@ func TestLexer(t *testing.T) {
 			{Kind: LITERAL, Value: "three"},
 			{Kind: RPAREN, Value: string(RPAREN)},
 		}))
+
+	lexer = Lexer{}
+	err = lexer.With("name:'elmer'")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(lexer.tokens).To(gomega.Equal(
+		[]Token{
+			{Kind: LITERAL, Value: "name"},
+			{Kind: OPERATOR, Value: string(COLON)},
+			{Kind: STRING, Value: "elmer"},
+		}))
 }
 
 func TestParser(t *testing.T) {
