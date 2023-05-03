@@ -8,6 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 	"net/http"
 	"strings"
 	"time"
@@ -180,8 +181,9 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	m := r.Model()
 	m.ApplicationID = id
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	rtx := WithContext(ctx)
-	result := rtx.DB.Create(m)
+	db := h.DB(ctx)
+	db.Logger = db.Logger.LogMode(logger.Error)
+	result := db.Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
