@@ -21,6 +21,7 @@ const (
 	AnalysesDepsRoot           = AnalysesRoot + "/dependencies"
 	AnalysesIssuesRoot         = AnalysesRoot + "/issues"
 	AnalysesCompositeRoot      = AnalysesRoot + "/composite"
+	AnalysisCompoSiteDepRoot   = AnalysesCompositeRoot + "/dependencies"
 	AnalysisCompoSiteIssueRoot = AnalysesCompositeRoot + "/issues"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
@@ -46,6 +47,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysisCompoSiteIssueRoot, h.IssueComposites)
+	routeGroup.GET(AnalysisCompoSiteDepRoot, h.DepComposites)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
@@ -224,6 +226,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @description - version
 // @description - type
 // @description - sha
+// @description - indirect
 // @tags dependencies
 // @produce json
 // @success 200 {object} []api.AnalysesDependency
@@ -256,12 +259,6 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	}
 	db = h.Paginated(ctx)
 	db = db.Where("AnalysisID = ?", analysis.ID)
-	db = db.Distinct(
-		"Name",
-		"Version",
-		"Type",
-		"Indirect",
-		"SHA")
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -627,12 +624,13 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 
 // Deps godoc
 // @summary List dependencies.
-// @description List unique dependencies.
+// @description List dependencies.
 // @description filters:
 // @description - name
 // @description - version
 // @description - type
 // @description - sha
+// @description - indirect
 // @description - application.(id|name)
 // @description - tag.id
 // @tags dependencies
@@ -658,22 +656,12 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// Count.
-	db := h.DB(ctx)
-	db = filter.Where(db)
+	db := h.Paginated(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = db.Select(
-		strings.Join([]string{
-			"COUNT(",
-			"DISTINCT",
-			"Name",
-			"|| ifnull(Version,'')",
-			"|| ifnull(Type,'')",
-			"|| ifnull(SHA,''))",
-		},
-			" "))
+	db = filter.Where(db)
+	// Count.
 	count := int64(0)
-	result := db.Model(&model.AnalysisDependency{}).First(&count)
+	result := db.Model(&model.AnalysisDependency{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -688,10 +676,6 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	db = h.Paginated(ctx)
-	db = filter.Where(db)
-	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = db.Select("DISTINCT Name,Version,Type,SHA")
 	list := []model.AnalysisDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -699,10 +683,89 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	for i := range list {
-		m := &list[i]
 		r := AnalysisDependency{}
-		r.With(m)
+		r.With(&list[i])
 		resources = append(resources, r)
+	}
+
+	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
+
+	h.Render(ctx, http.StatusOK, resources)
+}
+
+// DepComposites godoc
+// @summary List dependency composites.
+// @description List dependency composites.
+// @description filters:
+// @description - name
+// @description - version
+// @description - type
+// @description - sha
+// @description - indirect
+// @description - application.(id|name)
+// @description - tag.id
+// @tags dependencies
+// @produce json
+// @success 200 {object} []api.AnalysesDependency
+// @router /analyses/dependencies [get]
+func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
+	resources := []DepComposite{}
+	mark := time.Now()
+	// Build query.
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
+			{Field: "version", Kind: qf.STRING},
+			{Field: "type", Kind: qf.STRING},
+			{Field: "indirect", Kind: qf.STRING},
+			{Field: "sha", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "application.name", Kind: qf.STRING},
+			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.Paginated(ctx)
+	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
+	db = filter.Where(db)
+	db = db.Select(
+		"Name",
+		"Version",
+		"Type",
+		"SHA",
+		"COUNT(AnalysisID) Affected")
+	db = db.Group(
+		strings.Join(
+			[]string{
+				"Name",
+				"Version",
+				"Type",
+				"SHA",
+			},
+			","))
+	// Count.
+	count := int64(0)
+	result := db.Model(&model.AnalysisDependency{}).Count(&count)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if count == 0 {
+		h.Render(ctx, http.StatusOK, resources)
+		return
+	}
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Find.
+	result = db.Find(&resources)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
 	}
 
 	Log.Info(ctx.Request.URL.String(), "duration", time.Since(mark))
@@ -1094,4 +1157,14 @@ type IssueComposite struct {
 	Labels       []string             `json:"labels"`
 	Technologies []AnalysisTechnology `json:"technologies"`
 	Affected     int                  `json:"affected"`
+}
+
+//
+// DepComposite composite REST resource.
+type DepComposite struct {
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Type     string `json:"type"`
+	SHA      string `json:"sha"`
+	Affected int    `json:"affected"`
 }
