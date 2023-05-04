@@ -441,7 +441,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.Ref
-// @router /tags [post]
+// @router /applications/{id}/tags [post]
 // @param tag body Ref true "Tag data"
 func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	id := h.pk(ctx)
