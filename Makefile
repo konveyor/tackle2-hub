@@ -1,5 +1,6 @@
 GOBIN ?= ${GOPATH}/bin
 IMG   ?= tackle2-hub:latest
+HUB_BASE_URL ?= http://localhost:8080
 
 PKG = ./addon/... \
       ./api/... \
@@ -116,3 +117,21 @@ ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
 	}
 endif
 	$(INSTALL_TACKLE_SH);
+
+# Run test targets always (not producing test dirs there).
+.PHONY: test test-api test-integration
+
+# Run unit tests.
+test:
+	go test -v ./auth/
+
+# Run Hub REST API tests.
+test-api:
+	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/api/...
+
+# Run Hub API integration tests.
+test-integration:
+	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/integration/...
+
+# Run Hub test suite.
+test-all: test-unit test-api test-integration
