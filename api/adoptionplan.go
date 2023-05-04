@@ -99,7 +99,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 
 	sorted, ok := graph.TopologicalSort()
 	if !ok {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "dependency cycle detected",
@@ -107,7 +107,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 		return
 	}
 
-	h.Render(ctx, http.StatusOK, sorted)
+	h.Respond(ctx, http.StatusOK, sorted)
 }
 
 //

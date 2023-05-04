@@ -52,7 +52,7 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 	r := Dependency{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 //
@@ -89,7 +89,7 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -116,7 +116,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -141,7 +141,7 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

@@ -58,7 +58,7 @@ func (h FileHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -74,7 +74,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	var err error
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	m := &model.File{}
@@ -87,7 +87,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	}
 	defer func() {
 		if err != nil {
-			ctx.Status(http.StatusInternalServerError)
+			h.Status(ctx, http.StatusInternalServerError)
 			_ = h.DB(ctx).Delete(&m)
 			return
 		}
@@ -116,7 +116,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	}
 	r := File{}
 	r.With(m)
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Get godoc
@@ -138,7 +138,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 	if h.Accepted(ctx, BindMIMEs...) {
 		r := File{}
 		r.With(m)
-		h.Render(ctx, http.StatusOK, r)
+		h.Respond(ctx, http.StatusOK, r)
 	} else {
 		header := ctx.Writer.Header()
 		header[ContentType] = []string{
@@ -176,7 +176,7 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

@@ -43,7 +43,7 @@ func (h AddonHandler) AddRoutes(e *gin.Engine) {
 func (h AddonHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	addon := &crd.Addon{}
-	err := h.Client.Get(
+	err := h.Client(ctx).Get(
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
@@ -52,7 +52,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 		addon)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			ctx.Status(http.StatusNotFound)
+			h.Status(ctx, http.StatusNotFound)
 			return
 		} else {
 			_ = ctx.Error(err)
@@ -62,7 +62,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 	r := Addon{}
 	r.With(addon)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -74,7 +74,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 // @router /addons [get]
 func (h AddonHandler) List(ctx *gin.Context) {
 	list := &crd.AddonList{}
-	err := h.Client.List(
+	err := h.Client(ctx).List(
 		context.TODO(),
 		&k8s.ListOptions{
 			Namespace: Settings.Namespace,
@@ -91,7 +91,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 		content = append(content, addon)
 	}
 
-	h.Render(ctx, http.StatusOK, content)
+	h.Respond(ctx, http.StatusOK, content)
 }
 
 //

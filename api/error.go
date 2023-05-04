@@ -26,6 +26,29 @@ func (r *BadRequestError) Is(err error) (matched bool) {
 	return
 }
 
+//
+// BatchError reports errors stemming from batch operations.
+type BatchError struct {
+	Message string
+	Items   []BatchErrorItem
+}
+
+type BatchErrorItem struct {
+	Error    error
+	Resource interface{}
+}
+
+func (r BatchError) Error() string {
+	return r.Message
+}
+
+func (r BatchError) Is(err error) (matched bool) {
+	_, matched = err.(BatchError)
+	return
+}
+
+//
+// ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
@@ -34,19 +57,11 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
-		if len(ctx.Errors) > 1 {
-			ctx.JSON(
-				http.StatusInternalServerError,
-				gin.H{
-					"errors": ctx.Errors.Errors(),
-				})
-			return
-		}
-
 		err := ctx.Errors[0]
 
+		rtx := WithContext(ctx)
 		if errors.Is(err, &BadRequestError{}) || errors.Is(err, validator.ValidationErrors{}) {
-			ctx.JSON(
+			rtx.Respond(
 				http.StatusBadRequest,
 				gin.H{
 					"error": err.Error(),
@@ -56,10 +71,10 @@ func ErrorHandler() gin.HandlerFunc {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if ctx.Request.Method == http.MethodDelete {
-				ctx.Status(http.StatusNoContent)
+				rtx.Status(http.StatusNoContent)
 				return
 			}
-			ctx.JSON(
+			rtx.Respond(
 				http.StatusNotFound,
 				gin.H{
 					"error": err.Error(),
@@ -68,7 +83,7 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		if errors.Is(err, os.ErrNotExist) {
-			ctx.JSON(
+			rtx.Respond(
 				http.StatusNotFound,
 				gin.H{
 					"error": err.Error(),
@@ -77,7 +92,7 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		if errors.Is(err, model.DependencyCyclicError{}) {
-			ctx.JSON(
+			rtx.Respond(
 				http.StatusConflict,
 				gin.H{
 					"error": err.Error(),
@@ -90,7 +105,7 @@ func ErrorHandler() gin.HandlerFunc {
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintUnique,
 				sqlite3.ErrConstraintPrimaryKey:
-				ctx.JSON(
+				rtx.Respond(
 					http.StatusConflict,
 					gin.H{
 						"error": err.Error(),
@@ -99,7 +114,16 @@ func ErrorHandler() gin.HandlerFunc {
 			}
 		}
 
-		ctx.JSON(
+		bErr := &BatchError{}
+		if errors.As(err, bErr) {
+			rtx.Respond(
+				http.StatusBadRequest,
+				bErr.Items,
+			)
+			return
+		}
+
+		rtx.Respond(
 			http.StatusInternalServerError,
 			gin.H{
 				"error": err.Error(),

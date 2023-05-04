@@ -53,7 +53,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 
 	resource := BusinessService{}
 	resource.With(m)
-	h.Render(ctx, http.StatusOK, resource)
+	h.Respond(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h BusinessServiceHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -106,7 +106,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -130,7 +130,7 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -161,7 +161,7 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

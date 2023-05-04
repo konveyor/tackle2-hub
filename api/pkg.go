@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/controller/pkg/logging"
 	"github.com/konveyor/tackle2-hub/settings"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -82,12 +81,12 @@ func All() []Handler {
 		&BucketHandler{},
 		&FileHandler{},
 		&MigrationWaveHandler{},
+		&BatchHandler{},
 	}
 }
 
 //
 // Handler API.
 type Handler interface {
-	With(client.Client)
 	AddRoutes(e *gin.Engine)
 }

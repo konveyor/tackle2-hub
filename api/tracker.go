@@ -58,7 +58,7 @@ func (h TrackerHandler) Get(ctx *gin.Context) {
 
 	resource := Tracker{}
 	resource.With(m)
-	h.Render(ctx, http.StatusOK, resource)
+	h.Respond(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -79,7 +79,7 @@ func (h TrackerHandler) List(ctx *gin.Context) {
 	if q != "" {
 		connected, err := strconv.ParseBool(q)
 		if err != nil {
-			ctx.Status(http.StatusBadRequest)
+			h.Status(ctx, http.StatusBadRequest)
 			return
 		}
 		db = db.Where(Connected, connected)
@@ -96,7 +96,7 @@ func (h TrackerHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -124,7 +124,7 @@ func (h TrackerHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -148,7 +148,7 @@ func (h TrackerHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -179,7 +179,7 @@ func (h TrackerHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Tracker API Resource

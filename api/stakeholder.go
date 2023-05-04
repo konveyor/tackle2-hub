@@ -53,7 +53,7 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 
 	resource := Stakeholder{}
 	resource.With(m)
-	h.Render(ctx, http.StatusOK, resource)
+	h.Respond(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -78,7 +78,7 @@ func (h StakeholderHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -106,7 +106,7 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -130,7 +130,7 @@ func (h StakeholderHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -184,7 +184,7 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

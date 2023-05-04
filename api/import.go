@@ -78,7 +78,7 @@ func (h ImportHandler) GetImport(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	h.Render(ctx, http.StatusOK, m.AsMap())
+	h.Respond(ctx, http.StatusOK, m.AsMap())
 }
 
 //
@@ -113,7 +113,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 		resources = append(resources, list[i].AsMap())
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 //
@@ -132,7 +132,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -153,7 +153,7 @@ func (h ImportHandler) GetSummary(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	h.Render(ctx, http.StatusOK, m)
+	h.Respond(ctx, http.StatusOK, m)
 }
 
 //
@@ -179,7 +179,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 //
@@ -198,7 +198,7 @@ func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -212,20 +212,20 @@ func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	fileName, ok := ctx.GetPostForm("fileName")
 	if !ok {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 	}
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 	}
 	fileReader, err := file.Open()
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 	}
 	buf := bytes.NewBuffer(nil)
 	_, err = io.Copy(buf, fileReader)
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError)
+		h.Status(ctx, http.StatusInternalServerError)
 	}
 	createEntitiesField, ok := ctx.GetPostForm("createEntities")
 	if !ok {
@@ -249,14 +249,14 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	}
 	_, err = fileReader.Seek(0, 0)
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError)
+		h.Status(ctx, http.StatusInternalServerError)
 	}
 	csvReader := csv.NewReader(fileReader)
 	csvReader.TrimLeadingSpace = true
 	// skip the header
 	_, err = csvReader.Read()
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 	}
 
 	for {
@@ -265,7 +265,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 			if err == io.EOF {
 				break
 			} else {
-				ctx.Status(http.StatusBadRequest)
+				h.Status(ctx, http.StatusBadRequest)
 			}
 		}
 		var imp model.Import
@@ -273,7 +273,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		case RecordTypeApplication:
 			// Check row format - length, expecting 15 fields + tags
 			if len(row) < 15 {
-				h.Render(ctx, http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
+				h.Respond(ctx, http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
 			imp = h.applicationFromRow(fileName, row)
@@ -295,7 +295,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 
 	summary := ImportSummary{}
 	summary.With(&m)
-	h.Render(ctx, http.StatusCreated, summary)
+	h.Respond(ctx, http.StatusCreated, summary)
 }
 
 //

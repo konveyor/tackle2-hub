@@ -55,7 +55,7 @@ func (h ReviewHandler) Get(ctx *gin.Context) {
 	r := Review{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -80,7 +80,7 @@ func (h ReviewHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -107,7 +107,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 	}
 	review.With(m)
 
-	h.Render(ctx, http.StatusCreated, review)
+	h.Respond(ctx, http.StatusCreated, review)
 }
 
 // Delete godoc
@@ -131,7 +131,7 @@ func (h ReviewHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -162,7 +162,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // CopyReview godoc
@@ -217,7 +217,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 			}
 		}
 	}
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

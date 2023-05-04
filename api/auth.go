@@ -43,7 +43,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	}
 	token, err := auth.Remote.Login(r.User, r.Password)
 	if err != nil {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusUnauthorized,
 			gin.H{
 				"error": err.Error(),
@@ -54,7 +54,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	r.Token = token.Access
 	r.Refresh = token.Refresh
 	r.Expiry = token.Expiry
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Refresh godoc
@@ -73,7 +73,7 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 	}
 	token, err := auth.Remote.Refresh(r.Refresh)
 	if err != nil {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusUnauthorized,
 			gin.H{
 				"error": err.Error(),
@@ -84,7 +84,7 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 	r.Token = token.Access
 	r.Refresh = token.Refresh
 	r.Expiry = token.Expiry
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 //

@@ -109,7 +109,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	r := Application{}
 	r.With(m, tags)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -142,7 +142,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -183,7 +183,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 
 	r.With(m, tags)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -213,7 +213,7 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // DeleteList godoc
@@ -245,7 +245,7 @@ func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -318,7 +318,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // BucketGet godoc
@@ -341,7 +341,7 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -365,7 +365,7 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -389,7 +389,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -431,7 +431,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source)
 		resources = append(resources, r)
 	}
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // TagAdd godoc
@@ -467,7 +467,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	h.Render(ctx, http.StatusCreated, ref)
+	h.Respond(ctx, http.StatusCreated, ref)
 }
 
 // TagReplace godoc
@@ -520,7 +520,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 		}
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // TagDelete godoc
@@ -553,7 +553,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // FactList godoc
@@ -593,7 +593,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context) {
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // FactGet godoc
@@ -623,12 +623,12 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		return
 	}
 	if len(list) < 1 {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 	r := Fact{}
 	r.With(&list[0])
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // FactCreate godoc
@@ -664,7 +664,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 		return
 	}
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // FactPut godoc
@@ -707,7 +707,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 			_ = ctx.Error(result.Error)
 			return
 		}
-		ctx.Status(http.StatusNoContent)
+		h.Status(ctx, http.StatusNoContent)
 		return
 	}
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -722,7 +722,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 			_ = ctx.Error(result.Error)
 			return
 		}
-		ctx.Status(http.StatusNoContent)
+		h.Status(ctx, http.StatusNoContent)
 	} else {
 		_ = ctx.Error(result.Error)
 	}
@@ -754,7 +754,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // FactReplace godoc
@@ -813,7 +813,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
 		}
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // StakeholdersUpdate godoc
@@ -854,7 +854,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

@@ -55,7 +55,7 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 	r := RuleBundle{}
 	r.With(bundle)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -83,7 +83,7 @@ func (h RuleBundleHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -119,7 +119,7 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 	}
 	bundle.With(m)
 
-	h.Render(ctx, http.StatusCreated, bundle)
+	h.Respond(ctx, http.StatusCreated, bundle)
 }
 
 // Delete godoc
@@ -143,7 +143,7 @@ func (h RuleBundleHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -210,7 +210,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
