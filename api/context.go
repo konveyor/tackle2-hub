@@ -80,6 +80,7 @@ func Transaction(ctx *gin.Context) {
 			rtx.DB = db
 			if len(ctx.Errors) > 0 {
 				err = ctx.Errors[0]
+				ctx.Errors = nil
 			}
 			return
 		})
