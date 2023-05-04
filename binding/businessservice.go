@@ -12,14 +12,14 @@ type BusinessService struct {
 }
 
 //
-// Create an BusinessService.
+// Create a BusinessService.
 func (h *BusinessService) Create(r *api.BusinessService) (err error) {
 	err = h.client.Post(api.BusinessServicesRoot, &r)
 	return
 }
 
 //
-// Get an BusinessService by ID.
+// Get a BusinessService by ID.
 func (h *BusinessService) Get(id uint) (r *api.BusinessService, err error) {
 	r = &api.BusinessService{}
 	path := Path(api.BusinessServiceRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *BusinessService) List() (list []api.BusinessService, err error) {
 }
 
 //
-// Update an BusinessService.
+// Update a BusinessService.
 func (h *BusinessService) Update(r *api.BusinessService) (err error) {
 	path := Path(api.BusinessServiceRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *BusinessService) Update(r *api.BusinessService) (err error) {
 }
 
 //
-// Delete an BusinessService.
+// Delete a BusinessService.
 func (h *BusinessService) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.BusinessServiceRoot).Inject(Params{api.ID: id}))
 	return

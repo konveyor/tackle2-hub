@@ -12,14 +12,14 @@ type TagCategory struct {
 }
 
 //
-// Create an TagCategory.
+// Create a TagCategory.
 func (h *TagCategory) Create(r *api.TagCategory) (err error) {
 	err = h.client.Post(api.TagCategoriesRoot, &r)
 	return
 }
 
 //
-// Get an TagCategory by ID.
+// Get a TagCategory by ID.
 func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
 	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *TagCategory) List() (list []api.TagCategory, err error) {
 }
 
 //
-// Update an TagCategory.
+// Update a TagCategory.
 func (h *TagCategory) Update(r *api.TagCategory) (err error) {
 	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *TagCategory) Update(r *api.TagCategory) (err error) {
 }
 
 //
-// Delete an TagCategory.
+// Delete a TagCategory.
 func (h *TagCategory) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TagCategoryRoot).Inject(Params{api.ID: id}))
 	return

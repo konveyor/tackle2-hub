@@ -12,14 +12,14 @@ type Tag struct {
 }
 
 //
-// Create an Tag.
+// Create a Tag.
 func (h *Tag) Create(r *api.Tag) (err error) {
 	err = h.client.Post(api.TagsRoot, &r)
 	return
 }
 
 //
-// Get an Tag by ID.
+// Get a Tag by ID.
 func (h *Tag) Get(id uint) (r *api.Tag, err error) {
 	r = &api.Tag{}
 	path := Path(api.TagRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *Tag) List() (list []api.Tag, err error) {
 }
 
 //
-// Update an Tag.
+// Update a Tag.
 func (h *Tag) Update(r *api.Tag) (err error) {
 	path := Path(api.TagRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *Tag) Update(r *api.Tag) (err error) {
 }
 
 //
-// Delete an Tag.
+// Delete a Tag.
 func (h *Tag) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TagRoot).Inject(Params{api.ID: id}))
 	return

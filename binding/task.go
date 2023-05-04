@@ -12,14 +12,14 @@ type Task struct {
 }
 
 //
-// Create an Task.
+// Create a Task.
 func (h *Task) Create(r *api.Task) (err error) {
 	err = h.client.Post(api.TasksRoot, &r)
 	return
 }
 
 //
-// Get an Task by ID.
+// Get a Task by ID.
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
 	path := Path(api.TaskRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *Task) List() (list []api.Task, err error) {
 }
 
 //
-// Update an Task.
+// Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
 	path := Path(api.TaskRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *Task) Update(r *api.Task) (err error) {
 }
 
 //
-// Delete an Task.
+// Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))
 	return

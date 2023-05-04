@@ -12,14 +12,14 @@ type Stakeholder struct {
 }
 
 //
-// Create an Stakeholder.
+// Create a Stakeholder.
 func (h *Stakeholder) Create(r *api.Stakeholder) (err error) {
 	err = h.client.Post(api.StakeholdersRoot, &r)
 	return
 }
 
 //
-// Get an Stakeholder by ID.
+// Get a Stakeholder by ID.
 func (h *Stakeholder) Get(id uint) (r *api.Stakeholder, err error) {
 	r = &api.Stakeholder{}
 	path := Path(api.StakeholderRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *Stakeholder) List() (list []api.Stakeholder, err error) {
 }
 
 //
-// Update an Stakeholder.
+// Update a Stakeholder.
 func (h *Stakeholder) Update(r *api.Stakeholder) (err error) {
 	path := Path(api.StakeholderRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *Stakeholder) Update(r *api.Stakeholder) (err error) {
 }
 
 //
-// Delete an Stakeholder.
+// Delete a Stakeholder.
 func (h *Stakeholder) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.StakeholderRoot).Inject(Params{api.ID: id}))
 	return

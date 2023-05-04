@@ -12,14 +12,14 @@ type JobFunction struct {
 }
 
 //
-// Create an JobFunction.
+// Create a JobFunction.
 func (h *JobFunction) Create(r *api.JobFunction) (err error) {
 	err = h.client.Post(api.JobFunctionsRoot, &r)
 	return
 }
 
 //
-// Get an JobFunction by ID.
+// Get a JobFunction by ID.
 func (h *JobFunction) Get(id uint) (r *api.JobFunction, err error) {
 	r = &api.JobFunction{}
 	path := Path(api.JobFunctionRoot).Inject(Params{api.ID: id})
@@ -36,7 +36,7 @@ func (h *JobFunction) List() (list []api.JobFunction, err error) {
 }
 
 //
-// Update an JobFunction.
+// Update a JobFunction.
 func (h *JobFunction) Update(r *api.JobFunction) (err error) {
 	path := Path(api.JobFunctionRoot).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
@@ -44,7 +44,7 @@ func (h *JobFunction) Update(r *api.JobFunction) (err error) {
 }
 
 //
-// Delete an JobFunction.
+// Delete a JobFunction.
 func (h *JobFunction) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.JobFunctionRoot).Inject(Params{api.ID: id}))
 	return
