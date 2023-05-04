@@ -1,39 +1,20 @@
 package jobfunction
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-// Setup Hub API client
-var Client = client.Client
+var (
+	RichClient *binding.RichClient
+	JobFunction binding.JobFunction
+)
 
-// Create a JobFunction.
-func Create(r *api.JobFunction) (err error) {
-	err = Client.Post(api.JobFunctionsRoot, &r)
-	return
-}
 
-// Retrieve the JobFunction.
-func Get(r *api.JobFunction) (err error) {
-	err = Client.Get(client.Path(api.JobFunctionRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
+func init() {
+	// Prepare RichClient and login to Hub API (configured from env variables).
+	RichClient = client.PrepareRichClient()
 
-// Update the JobFunction.
-func Update(r *api.JobFunction) (err error) {
-	err = Client.Put(client.Path(api.JobFunctionRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
-
-// Delete the JobFunction.
-func Delete(r *api.JobFunction) (err error) {
-	err = Client.Delete(client.Path(api.JobFunctionRoot, client.Params{api.ID: r.ID}))
-	return
-}
-
-// List JobFunctions.
-func List(r []*api.JobFunction) (err error) {
-	err = Client.Get(api.JobFunctionsRoot, &r)
-	return
+	// Shortcut for JobFunction-related RichClient methods.
+	JobFunction = RichClient.JobFunction
 }

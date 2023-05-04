@@ -1,39 +1,20 @@
 package stakeholder
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-// Setup Hub API client
-var Client = client.Client
+var (
+	RichClient *binding.RichClient
+	Stakeholder binding.Stakeholder
+)
 
-// Create a Stakeholder.
-func Create(r *api.Stakeholder) (err error) {
-	err = Client.Post(api.StakeholdersRoot, &r)
-	return
-}
 
-// Retrieve the Stakeholder.
-func Get(r *api.Stakeholder) (err error) {
-	err = Client.Get(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
+func init() {
+	// Prepare RichClient and login to Hub API (configured from env variables).
+	RichClient = client.PrepareRichClient()
 
-// Update the Stakeholder.
-func Update(r *api.Stakeholder) (err error) {
-	err = Client.Put(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
-
-// Delete the Stakeholder.
-func Delete(r *api.Stakeholder) (err error) {
-	err = Client.Delete(client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID}))
-	return
-}
-
-// List Stakeholders.
-func List(r []*api.Stakeholder) (err error) {
-	err = Client.Get(api.StakeholdersRoot, &r)
-	return
+	// Shortcut for Stakeholder-related RichClient methods.
+	Stakeholder = RichClient.Stakeholder
 }

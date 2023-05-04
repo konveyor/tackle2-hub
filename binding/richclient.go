@@ -20,25 +20,17 @@ func init() {
 
 // The RichClient provides API integration.
 type RichClient struct {
-	//	// Task API.
-	//	Task
-	//	// Settings API
-	//	Setting Setting
-	// Application API.
-	Application Application
-	// Identity API.
-	//	Identity Identity
-	//	// Proxy API.
-	//	Proxy Proxy
-	//	// TagCategory API.
-	//	TagCategory TagCategory
-	//	// Tag API.
-	//	Tag Tag
-	//	// File API.
-	//	File File
-	//	// RuleBundle API
-	//	RuleBundle RuleBundle
-	// client A REST client.
+	// Resources APIs.
+	Application      Application
+	BusinessService  BusinessService
+	JobFunction      JobFunction
+	Stakeholder      Stakeholder
+	StakeholderGroup StakeholderGroup
+	Tag              Tag
+	TagCategory      TagCategory
+	Task             Task
+
+	// A REST client.
 	client *Client
 }
 
@@ -56,37 +48,34 @@ func New(baseUrl string) (r *RichClient) {
 	//
 	// Build RichClient.
 	r = &RichClient{
-		//		Task: Task{
-		//			client: client,
-		//		},
-		//		Setting: Setting{
-		//			client: client,
-		//		},
 		Application: Application{
 			client: client,
 		},
-		//		Identity: Identity{
-		//			client: client,
-		//		},
-		//		Proxy: Proxy{
-		//			client: client,
-		//		},
-		//		TagCategory: TagCategory{
-		//			client: client,
-		//		},
-		//		Tag: Tag{
-		//			client: client,
-		//		},
-		//		File: File{
-		//			client: client,
-		//		},
-		//		RuleBundle: RuleBundle{
-		//			client: client,
-		//		},
+		BusinessService: BusinessService{
+			client: client,
+		},
+		JobFunction: JobFunction{
+			client: client,
+		},
+		Stakeholder: Stakeholder{
+			client: client,
+		},
+		StakeholderGroup: StakeholderGroup{
+			client: client,
+		},
+		Tag: Tag{
+			client: client,
+		},
+		TagCategory: TagCategory{
+			client: client,
+		},
+		Task: Task{
+			client: client,
+		},
 		client: client,
 	}
 
-	Log.Info("Hub RichClient (adapter) created.")
+	Log.Info("Hub RichClient created.")
 
 	return
 }

@@ -3,51 +3,21 @@ package client
 import (
 	"fmt"
 
-	"github.com/konveyor/tackle2-hub/addon"
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
-var Client *addon.Client
 
-func init() {
-	var err error
-	Client, err = New()
-	if err != nil {
-		panic(fmt.Sprintf("Error: Cannot setup API client: %v.", err.Error()))
-	}
-}
+func PrepareRichClient() (richClient *binding.RichClient) {
+		// Prepare RichClient and login to Hub API
+		richClient = binding.New(settings.Settings.Addon.Hub.URL)
+		err := richClient.Login(settings.Settings.Auth.Keycloak.Admin.User, settings.Settings.Auth.Keycloak.Admin.Pass)
+		if err != nil {
+		  panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
+		}
+	
+		// Disable HTTP requests retry for network-related errors to fail quickly.
+		richClient.Client().Retry = 0
 
-//
-// Create new Hub client with login.
-// Configured with environment variables HUB_BASE_URL, KEYCLOAK_ADMIN_USER, KEYCLOAK_ADMIN_PASS.
-// When using enabled auth, don't forget set AUTH_REQUIRED=1 to make Hub load Auth settings.
-func New() (client *addon.Client, err error) {
-	baseUrl := settings.Settings.Addon.Hub.URL
-	login := api.Login{User: settings.Settings.Auth.Keycloak.Admin.User, Password: settings.Settings.Auth.Keycloak.Admin.Pass}
-
-	// Setup client.
-	client = addon.NewClient(baseUrl, "")
-
-	// Disable HTTP requests retry for network-related errors to fail quickly.
-	client.Retry = 0
-
-	// Login.
-	err = client.Post(api.AuthLoginRoot, &login)
-	if err != nil {
 		return
-	}
-	client.SetToken(login.Token)
-	return
-}
-
-//
-// Params mapping.
-type Params map[string]interface{}
-
-//
-// Merge path with params.
-func Path(base string, paramsMap map[string]interface{}) string {
-	params := addon.Params(paramsMap)
-	return addon.Path(base).Inject(params)
 }

@@ -3,8 +3,6 @@ package stakeholder
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -12,47 +10,42 @@ func TestStakeholderCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.StakeholdersRoot, &r)
+			err := Stakeholder.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := client.Path(api.StakeholderRoot, client.Params{api.ID: r.ID})
 
 			// Get.
-			got := api.Stakeholder{}
-			err = Client.Get(rPath, &got)
+			got, err := Stakeholder.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if assert.FlatEqual(got, &r) {
-				t.Errorf("Different response error. Got %v, expected %v", got, &r)
+			if assert.FlatEqual(got, r) {
+				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
 			// Update.
-			update := api.Stakeholder{
-				Name:  "Updated " + r.Name,
-				Email: r.Email,
-			}
-			err = Client.Put(rPath, update)
+			r.Name = "Updated " + r.Name
+			err = Stakeholder.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(rPath, &got)
+			got, err = Stakeholder.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.Name != update.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.Name, update.Name)
+			if got.Name != r.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
 			}
 
 			// Delete.
-			err = Client.Delete(rPath)
+			err = Stakeholder.Delete(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(rPath, &r)
+			_, err = Stakeholder.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
@@ -62,23 +55,22 @@ func TestStakeholderCRUD(t *testing.T) {
 
 func TestStakeholderList(t *testing.T) {
 	samples := Samples
+
 	for name := range samples {
 		sample := samples[name]
-		assert.Must(t, Create(&sample))
+		assert.Must(t, Stakeholder.Create(&sample))
 		samples[name] = sample
 	}
 
-	got := []api.Stakeholder{}
-	err := Client.Get(api.StakeholdersRoot, &got)
+	got, err := Stakeholder.List()
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 	if assert.FlatEqual(got, &samples) {
-		t.Errorf("Different response error. Got %v, expected %v", got, &samples)
+		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
 	for _, r := range samples {
-		assert.Must(t, Delete(&r))
+		assert.Must(t, Stakeholder.Delete(r.ID))
 	}
-
 }

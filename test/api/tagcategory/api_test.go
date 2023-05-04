@@ -3,55 +3,49 @@ package tagcategory
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/client"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-func TestTagCategoriesCRUD(t *testing.T) {
+func TestTagCategoryCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Create.
-			err := Client.Post(api.TagCategoriesRoot, &r)
+			err := TagCategory.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			rPath := client.Path(api.TagCategoryRoot, client.Params{api.ID: r.ID})
 
 			// Get.
-			got := api.TagCategory{}
-			err = Client.Get(rPath, &got)
+			got, err := TagCategory.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if assert.FlatEqual(got, &r) {
+			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
 			// Update.
-			updated := api.TagCategory{
-				Name: "Updated " + r.Name,
-			}
-			err = Client.Put(rPath, updated)
+			r.Name = "Updated " + r.Name
+			err = TagCategory.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(rPath, &got)
+			got, err = TagCategory.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.Name != updated.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.Name, updated.Name)
+			if got.Name != r.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
 			}
 
 			// Delete.
-			err = Client.Delete(rPath)
+			err = TagCategory.Delete(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			err = Client.Get(rPath, &r)
+			_, err = TagCategory.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
@@ -59,32 +53,31 @@ func TestTagCategoriesCRUD(t *testing.T) {
 	}
 }
 
-func TestTagCategoriesList(t *testing.T) {
+func TestTagCategoryList(t *testing.T) {
 	samples := Samples
+
 	for name := range samples {
 		sample := samples[name]
-		assert.Must(t, Create(&sample))
+		assert.Must(t, TagCategory.Create(&sample))
 		samples[name] = sample
 	}
 
-	got := []api.TagCategory{}
-	err := Client.Get(api.TagCategoriesRoot, &got)
+	got, err := TagCategory.List()
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if assert.FlatEqual(got, samples) {
+	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
 	for _, r := range samples {
-		assert.Must(t, Delete(&r))
+		assert.Must(t, TagCategory.Delete(r.ID))
 	}
-
 }
 
+
 func TestTagCategorySeed(t *testing.T) {
-	got := []api.TagCategory{}
-	err := Client.Get(api.TagCategoriesRoot, &got)
+	got, err := TagCategory.List()
 	if err != nil {
 		t.Errorf(err.Error())
 	}

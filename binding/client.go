@@ -19,14 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
-)
-
-const (
-	Accept   = api.Accept
-	AppJson  = api.AppJson
-	AppOctet = api.AppOctet
 )
 
 const (
@@ -113,7 +108,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, AppJson)
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -169,7 +164,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, AppJson)
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		return
 	}
 	reply, err := r.send(request)
@@ -216,7 +211,7 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, AppJson)
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -264,7 +259,7 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, "")
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -304,7 +299,7 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(source),
 		}
-		request.Header.Set(Accept, AppOctet)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
 	reply, err := r.send(request)
@@ -348,7 +343,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			Body:   io.NopCloser(buf),
 			URL:    r.join(destination),
 		}
-		request.Header.Set(Accept, AppOctet)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		writer := multipart.NewWriter(buf)
 		defer func() {
 			_ = writer.Close()
@@ -396,7 +391,7 @@ func (r *Client) FileGet(path, destination string) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, AppOctet)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
 	reply, err := r.send(request)
@@ -440,7 +435,7 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 			Body:   io.NopCloser(buf),
 			URL:    r.join(path),
 		}
-		request.Header.Set(Accept, AppJson)
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		writer := multipart.NewWriter(buf)
 		defer func() {
 			_ = writer.Close()

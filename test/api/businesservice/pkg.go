@@ -1,39 +1,20 @@
 package businessservice
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
-// Setup Hub API client
-var Client = client.Client
+var (
+	RichClient *binding.RichClient
+	BusinessService binding.BusinessService
+)
 
-// Create a BusinessService.
-func Create(r *api.BusinessService) (err error) {
-	err = Client.Post(api.BusinessServicesRoot, &r)
-	return
-}
 
-// Retrieve the BusinessService.
-func Get(r *api.BusinessService) (err error) {
-	err = Client.Get(client.Path(api.BusinessServiceRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
+func init() {
+	// Prepare RichClient and login to Hub API (configured from env variables).
+	RichClient = client.PrepareRichClient()
 
-// Update the BusinessService.
-func Update(r *api.BusinessService) (err error) {
-	err = Client.Put(client.Path(api.BusinessServiceRoot, client.Params{api.ID: r.ID}), &r)
-	return
-}
-
-// Delete the BusinessService.
-func Delete(r *api.BusinessService) (err error) {
-	err = Client.Delete(client.Path(api.BusinessServiceRoot, client.Params{api.ID: r.ID}))
-	return
-}
-
-// List BusinessServices.
-func List(r []*api.BusinessService) (err error) {
-	err = Client.Get(api.BusinessServicesRoot, &r)
-	return
+	// Shortcut for BusinessService-related RichClient methods.
+	BusinessService = RichClient.BusinessService
 }
