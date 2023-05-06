@@ -23,7 +23,9 @@ type RichClient struct {
 	// Resources APIs.
 	Application      Application
 	BusinessService  BusinessService
+	Identity         Identity
 	JobFunction      JobFunction
+	Proxy            Proxy
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
@@ -54,7 +56,13 @@ func New(baseUrl string) (r *RichClient) {
 		BusinessService: BusinessService{
 			client: client,
 		},
+		Identity: Identity{
+			client: client,
+		},
 		JobFunction: JobFunction{
+			client: client,
+		},
+		Proxy: Proxy{
 			client: client,
 		},
 		Stakeholder: Stakeholder{
