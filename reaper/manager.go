@@ -2,7 +2,7 @@ package reaper
 
 import (
 	"context"
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
@@ -16,7 +16,7 @@ const (
 
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("reaper")
+	Log      = logr.WithName("reaper")
 )
 
 type Task = task.Task

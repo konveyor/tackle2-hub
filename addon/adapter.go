@@ -5,7 +5,7 @@ Tackle hub/addon integration.
 package addon
 
 import (
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/settings"
 	"golang.org/x/sys/unix"
 	"os"
@@ -13,7 +13,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("addon")
+	Log      = logr.WithName("addon")
 )
 
 //

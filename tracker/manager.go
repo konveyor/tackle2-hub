@@ -3,7 +3,7 @@ package tracker
 import (
 	"context"
 	"encoding/json"
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Log = logging.WithName("tickets")
+	Log = logr.WithName("tickets")
 )
 
 // Intervals

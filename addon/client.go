@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin/binding"
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"io"
 	"mime/multipart"

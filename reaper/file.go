@@ -1,7 +1,7 @@
 package reaper
 
 import (
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"os"
@@ -23,20 +23,20 @@ func (r *FileReaper) Run() {
 	list := []model.File{}
 	err := r.DB.Find(&list).Error
 	if err != nil {
-		Log.Trace(err)
+		Log.Error(err, "")
 		return
 	}
 	for _, file := range list {
 		busy, err := r.busy(&file)
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		if busy {
 			if file.Expiration != nil {
 				file.Expiration = nil
 				err = r.DB.Save(&file).Error
-				Log.Trace(err)
+				Log.Error(err, "")
 			}
 			continue
 		}
@@ -45,14 +45,14 @@ func (r *FileReaper) Run() {
 			mark := time.Now().Add(time.Minute * time.Duration(Settings.File.TTL))
 			file.Expiration = &mark
 			err = r.DB.Save(&file).Error
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		mark := time.Now()
 		if mark.After(*file.Expiration) {
 			err = r.delete(&file)
 			if err != nil {
-				Log.Trace(err)
+				Log.Error(err, "")
 				continue
 			}
 		}
@@ -71,7 +71,7 @@ func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	} {
 		n, err = ref.Count(m, "file", file.ID)
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		nRef += n

@@ -1,7 +1,7 @@
 package reaper
 
 import (
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
@@ -24,20 +24,20 @@ func (r *BucketReaper) Run() {
 	list := []model.Bucket{}
 	err := r.DB.Find(&list).Error
 	if err != nil {
-		Log.Trace(err)
+		Log.Error(err, "")
 		return
 	}
 	for _, bucket := range list {
 		busy, err := r.busy(&bucket)
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		if busy {
 			if bucket.Expiration != nil {
 				bucket.Expiration = nil
 				err = r.DB.Save(&bucket).Error
-				Log.Trace(err)
+				Log.Error(err, "")
 			}
 			continue
 		}
@@ -46,14 +46,14 @@ func (r *BucketReaper) Run() {
 			mark := time.Now().Add(time.Minute * time.Duration(Settings.Bucket.TTL))
 			bucket.Expiration = &mark
 			err = r.DB.Save(&bucket).Error
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		mark := time.Now()
 		if mark.After(*bucket.Expiration) {
 			err = r.delete(&bucket)
 			if err != nil {
-				Log.Trace(err)
+				Log.Error(err, "")
 				continue
 			}
 		}
@@ -73,7 +73,7 @@ func (r *BucketReaper) busy(bucket *model.Bucket) (busy bool, err error) {
 	} {
 		n, err = ref.Count(m, "bucket", bucket.ID)
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		nRef += n

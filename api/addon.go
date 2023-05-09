@@ -76,10 +76,10 @@ func (h AddonHandler) List(ctx *gin.Context) {
 	list := &crd.AddonList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
+		list,
 		&k8s.ListOptions{
 			Namespace: Settings.Namespace,
-		},
-		list)
+		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return

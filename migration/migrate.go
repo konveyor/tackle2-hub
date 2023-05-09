@@ -3,7 +3,7 @@ package migration
 import (
 	"encoding/json"
 	"errors"
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"

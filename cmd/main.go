@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	liberr "github.com/konveyor/controller/pkg/error"
-	"github.com/konveyor/controller/pkg/logging"
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/controller"
@@ -28,7 +28,7 @@ import (
 
 var Settings = &settings.Settings
 
-var log = logging.WithName("hub")
+var log = logr.WithName("hub")
 
 func init() {
 	_ = Settings.Load()
@@ -92,7 +92,7 @@ func main() {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Trace(err)
+			log.Error(err, "")
 		}
 	}()
 	syscall.Umask(0)
@@ -116,7 +116,7 @@ func main() {
 			return
 		}
 		go func() {
-			err = addonManager.Start(make(<-chan struct{}))
+			err = addonManager.Start(context.Background())
 			if err != nil {
 				err = liberr.Wrap(err)
 				return

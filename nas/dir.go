@@ -5,9 +5,9 @@ network attached storage (NAS).
 package nas
 
 import (
-"errors"
-liberr "github.com/konveyor/controller/pkg/error"
-"os"
+	"errors"
+	liberr "github.com/jortel/go-utils/error"
+	"os"
 	"os/exec"
 )
 
@@ -61,4 +61,3 @@ func Exists(path string) (found bool, err error) {
 	}
 	return
 }
-

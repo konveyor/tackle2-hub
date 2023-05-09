@@ -3,13 +3,13 @@ package auth
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"strings"
 )
 
 var (
 	// Log logger.
-	Log = logging.WithName("auth")
+	Log = logr.WithName("auth")
 	// Hub provider.
 	Hub Provider
 	// Remote provider.

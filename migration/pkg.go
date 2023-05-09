@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v2"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3"
 	v4 "github.com/konveyor/tackle2-hub/migration/v4"
@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var log = logging.WithName("migration")
+var log = logr.WithName("migration")
 var Settings = &settings.Settings
 
 //
