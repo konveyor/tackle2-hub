@@ -81,7 +81,7 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 	r := Analysis{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // AppLatest godoc
@@ -110,7 +110,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	r := Analysis{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // AppList godoc
@@ -135,7 +135,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err := h.WithCount(ctx, count)
@@ -156,7 +156,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // AppCreate godoc
@@ -188,7 +188,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -266,7 +266,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -287,7 +287,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // AppIssues godoc
@@ -343,7 +343,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -365,7 +365,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Issues godoc
@@ -421,7 +421,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -451,7 +451,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // IssueComposites godoc
@@ -516,7 +516,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -611,7 +611,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		}
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Deps godoc
@@ -658,7 +658,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -679,7 +679,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // DepComposites godoc
@@ -741,7 +741,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		return
 	}
 	if count == 0 {
-		h.Render(ctx, http.StatusOK, resources)
+		h.Respond(ctx, http.StatusOK, resources)
 		return
 	}
 	err = h.WithCount(ctx, count)
@@ -756,7 +756,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		return
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 //
@@ -1154,3 +1154,7 @@ type DepComposite struct {
 	SHA      string `json:"sha"`
 	Affected int    `json:"affected"`
 }
+
+//
+// FactMap map.
+type FactMap map[string]interface{}
