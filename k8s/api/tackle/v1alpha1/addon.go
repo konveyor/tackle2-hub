@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/konveyor/controller/pkg/condition"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,9 +37,6 @@ type AddonSpec struct {
 //
 // AddonStatus defines the observed state of Addon
 type AddonStatus struct {
-	//
-	// Conditions.
-	condition.Conditions `json:"conditions"`
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`

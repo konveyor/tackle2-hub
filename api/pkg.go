@@ -3,14 +3,14 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (
 	Settings = &settings.Settings
-	log      = logging.WithName("api")
+	log      = logr.WithName("api")
 )
 
 //

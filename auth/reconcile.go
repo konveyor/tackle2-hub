@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/Nerzal/gocloak/v10"
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"strings"
 	"time"
 )

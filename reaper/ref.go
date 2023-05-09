@@ -1,7 +1,7 @@
 package reaper
 
 import (
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
 	"reflect"
 )

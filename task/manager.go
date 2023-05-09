@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	liberr "github.com/konveyor/controller/pkg/error"
-	"github.com/konveyor/controller/pkg/logging"
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
@@ -46,7 +46,7 @@ const (
 
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("task-scheduler")
+	Log      = logr.WithName("task-scheduler")
 )
 
 //
@@ -121,7 +121,7 @@ func (m *Manager) startReady() {
 			Pending,
 			Running,
 		})
-	Log.Trace(result.Error)
+	Log.Error(result.Error, "")
 	if result.Error != nil {
 		return
 	}
@@ -133,7 +133,7 @@ func (m *Manager) startReady() {
 			task.Terminated = &mark
 			task.Error = "Hub is disconnected."
 			sErr := m.DB.Save(task).Error
-			Log.Trace(sErr)
+			Log.Error(sErr, "")
 			continue
 		}
 		if task.Canceled {
@@ -148,7 +148,7 @@ func (m *Manager) startReady() {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
 				sErr := m.DB.Save(ready).Error
-				Log.Trace(sErr)
+				Log.Error(sErr, "")
 				continue
 			}
 			rt := Task{ready}
@@ -158,14 +158,14 @@ func (m *Manager) startReady() {
 					ready.Error = err.Error()
 					ready.State = Failed
 					sErr := m.DB.Save(ready).Error
-					Log.Trace(sErr)
+					Log.Error(sErr, "")
 				}
-				Log.Trace(err)
+				Log.Error(err, "")
 				continue
 			}
 			Log.Info("Task started.", "id", ready.ID)
 			err = m.DB.Save(ready).Error
-			Log.Trace(err)
+			Log.Error(err, "")
 		default:
 			// Ignored.
 			// Other states included to support
@@ -186,7 +186,7 @@ func (m *Manager) updateRunning() {
 			Pending,
 			Running,
 		})
-	Log.Trace(result.Error)
+	Log.Error(result.Error, "")
 	if result.Error != nil {
 		return
 	}
@@ -198,12 +198,12 @@ func (m *Manager) updateRunning() {
 		rt := Task{&running}
 		err := rt.Reflect(m.Client)
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 			continue
 		}
 		err = m.DB.Save(&running).Error
 		if err != nil {
-			Log.Trace(result.Error)
+			Log.Error(result.Error, "")
 			continue
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
@@ -242,15 +242,15 @@ func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool
 func (m *Manager) canceled(task *model.Task) {
 	rt := Task{task}
 	err := rt.Cancel(m.Client)
-	Log.Trace(err)
+	Log.Error(err, "")
 	if err != nil {
 		return
 	}
 	err = m.DB.Save(task).Error
-	Log.Trace(err)
+	Log.Error(err, "")
 	db := m.DB.Model(&model.TaskReport{})
 	err = db.Delete("taskid", task.ID).Error
-	Log.Trace(err)
+	Log.Error(err, "")
 	return
 }
 
@@ -440,8 +440,8 @@ func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
 	list := crd.TackleList{}
 	err = client.List(
 		context.TODO(),
-		&k8s.ListOptions{Namespace: Settings.Namespace},
-		&list)
+		&list,
+		&k8s.ListOptions{Namespace: Settings.Namespace})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

@@ -1,14 +1,14 @@
 package binding
 
 import (
-	"github.com/konveyor/controller/pkg/logging"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("binding")
+	Log      = logr.WithName("binding")
 )
 
 func init() {

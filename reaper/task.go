@@ -55,7 +55,7 @@ func (r *TaskReaper) Run() {
 			task.Succeeded,
 			task.Failed,
 		})
-	Log.Trace(result.Error)
+	Log.Error(result.Error, "")
 	if result.Error != nil {
 		return
 	}
@@ -141,7 +141,7 @@ func (r *TaskReaper) release(m *model.Task) {
 			m.Pod = ""
 			nChanged++
 		} else {
-			Log.Trace(err)
+			Log.Error(err, "")
 		}
 	}
 	if m.HasBucket() {
@@ -152,7 +152,7 @@ func (r *TaskReaper) release(m *model.Task) {
 	if nChanged > 0 {
 		err := r.DB.Save(m).Error
 		if err != nil {
-			Log.Trace(err)
+			Log.Error(err, "")
 		}
 	}
 	return
@@ -164,13 +164,13 @@ func (r *TaskReaper) delete(m *model.Task) {
 	rt := Task{m}
 	err := rt.Delete(r.Client)
 	if err != nil {
-		Log.Trace(err)
+		Log.Error(err, "")
 	}
 	err = r.DB.Select(clause.Associations).Delete(m).Error
 	if err == nil {
 		Log.Info("Task deleted.", "id", m.ID)
 	} else {
-		Log.Trace(err)
+		Log.Error(err, "")
 	}
 }
 
@@ -240,7 +240,7 @@ func (r *GroupReaper) release(m *model.TaskGroup) {
 	if err == nil {
 		Log.Info("Group bucket released.", "id", m.ID)
 	} else {
-		Log.Trace(err)
+		Log.Error(err, "")
 	}
 }
 
@@ -251,9 +251,6 @@ func (r *GroupReaper) delete(m *model.TaskGroup) {
 	if err == nil {
 		Log.Info("Group deleted.", "id", m.ID)
 	} else {
-		Log.Trace(err)
+		Log.Error(err, "")
 	}
 }
-
-
-

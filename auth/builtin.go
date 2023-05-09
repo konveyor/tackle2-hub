@@ -2,7 +2,7 @@ package auth
 
 import (
 	"github.com/golang-jwt/jwt/v4"
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
 	"strings"
 )

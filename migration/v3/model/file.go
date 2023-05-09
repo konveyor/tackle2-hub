@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/google/uuid"
-	liberr "github.com/konveyor/controller/pkg/error"
+	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
 	"os"
 	"path"
