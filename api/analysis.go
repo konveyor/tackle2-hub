@@ -212,7 +212,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // AppDeps godoc
