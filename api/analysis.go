@@ -21,8 +21,8 @@ const (
 	AnalysesDepsRoot           = AnalysesRoot + "/dependencies"
 	AnalysesIssuesRoot         = AnalysesRoot + "/issues"
 	AnalysesCompositeRoot      = AnalysesRoot + "/composite"
-	AnalysisCompoSiteDepRoot   = AnalysesCompositeRoot + "/dependencies"
-	AnalysisCompoSiteIssueRoot = AnalysesCompositeRoot + "/issues"
+	AnalysisCompositeDepRoot   = AnalysesCompositeRoot + "/dependencies"
+	AnalysisCompositeIssueRoot = AnalysesCompositeRoot + "/issues"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -46,8 +46,8 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
-	routeGroup.GET(AnalysisCompoSiteIssueRoot, h.IssueComposites)
-	routeGroup.GET(AnalysisCompoSiteDepRoot, h.DepComposites)
+	routeGroup.GET(AnalysisCompositeIssueRoot, h.IssueComposites)
+	routeGroup.GET(AnalysisCompositeDepRoot, h.DepComposites)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
