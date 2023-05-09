@@ -59,13 +59,13 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 	if decrypted {
 		err := m.Decrypt()
 		if err != nil {
-			ctx.Status(http.StatusInternalServerError)
+			h.Status(ctx, http.StatusInternalServerError)
 			return
 		}
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -101,7 +101,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		if decrypted {
 			err := m.Decrypt()
 			if err != nil {
-				ctx.Status(http.StatusInternalServerError)
+				h.Status(ctx, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -109,7 +109,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -143,7 +143,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -167,7 +167,7 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -208,7 +208,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -220,7 +220,7 @@ func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
 	ctx.Set(Decrypted, requested)
 	if requested {
 		if !h.HasScope(ctx, "identities:decrypt") {
-			ctx.Status(http.StatusForbidden)
+			h.Status(ctx, http.StatusForbidden)
 		} else {
 			ctx.Next()
 		}

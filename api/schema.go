@@ -40,7 +40,7 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 		schema.Paths = append(schema.Paths, rte.Path)
 	}
 
-	h.Render(ctx, http.StatusOK, schema)
+	h.Respond(ctx, http.StatusOK, schema)
 }
 
 type Schema struct {

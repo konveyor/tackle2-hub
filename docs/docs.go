@@ -493,7 +493,9 @@ const docTemplate = `{
                         "description": "No Content"
                     }
                 }
-            },
+            }
+        },
+        "/applications/{id}/facts/{key}/{source}": {
             "delete": {
                 "description": "Delete a fact.",
                 "tags": [
@@ -606,6 +608,38 @@ const docTemplate = `{
             }
         },
         "/applications/{id}/tags": {
+            "post": {
+                "description": "Ensure tag is associated with the application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Add tag association.",
+                "parameters": [
+                    {
+                        "description": "Tag data",
+                        "name": "tag",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Ref"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Ref"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "Replace tag associations.",
                 "consumes": [
@@ -726,6 +760,102 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/api.Login"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Refresh bearer token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh bearer token.",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Login"
+                        }
+                    }
+                }
+            }
+        },
+        "/batch/tags": {
+            "post": {
+                "description": "Batch-create Tags.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "batch",
+                    "tags"
+                ],
+                "summary": "Batch-create Tags.",
+                "parameters": [
+                    {
+                        "description": "Tags data",
+                        "name": "tags",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Tag"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Tag"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/batch/tickets": {
+            "post": {
+                "description": "Batch-create Tickets.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "batch",
+                    "tickets"
+                ],
+                "summary": "Batch-create Tickets.",
+                "parameters": [
+                    {
+                        "description": "Tickets data",
+                        "name": "tickets",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Ticket"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Ticket"
+                            }
                         }
                     }
                 }
@@ -1844,7 +1974,7 @@ const docTemplate = `{
                 "tags": [
                     "migrationwaves"
                 ],
-                "summary": "Get aa migration wave by ID.",
+                "summary": "Get a migration wave by ID.",
                 "parameters": [
                     {
                         "type": "integer",
@@ -4365,7 +4495,13 @@ const docTemplate = `{
         "api.Login": {
             "type": "object",
             "properties": {
+                "expiry": {
+                    "type": "integer"
+                },
                 "password": {
+                    "type": "string"
+                },
+                "refresh": {
                     "type": "string"
                 },
                 "token": {

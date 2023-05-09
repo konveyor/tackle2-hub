@@ -84,7 +84,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	r := Task{}
 	r.With(task)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -114,7 +114,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -139,7 +139,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	case tasking.Created,
 		tasking.Ready:
 	default:
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (''|Created|Ready)",
@@ -155,7 +155,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -174,7 +174,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	rt := tasking.Task{Task: task}
-	err := rt.Delete(h.Client)
+	err := rt.Delete(h.Client(ctx))
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
 			_ = ctx.Error(err)
@@ -187,7 +187,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -210,7 +210,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	case tasking.Created,
 		tasking.Ready:
 	default:
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (Created|Ready)",
@@ -229,7 +229,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Submit godoc
@@ -283,7 +283,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 	case tasking.Succeeded,
 		tasking.Failed,
 		tasking.Canceled:
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must not be (Succeeded|Failed|Canceled)",
@@ -305,7 +305,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // BucketGet godoc
@@ -328,7 +328,7 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -352,7 +352,7 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -376,7 +376,7 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -409,7 +409,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	}
 	report.With(m)
 
-	h.Render(ctx, http.StatusCreated, report)
+	h.Respond(ctx, http.StatusCreated, report)
 }
 
 // UpdateReport godoc
@@ -440,7 +440,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	}
 	report.With(m)
 
-	h.Render(ctx, http.StatusOK, report)
+	h.Respond(ctx, http.StatusOK, report)
 }
 
 // DeleteReport godoc
@@ -463,7 +463,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

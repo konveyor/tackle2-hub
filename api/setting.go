@@ -55,7 +55,7 @@ func (h SettingHandler) Get(ctx *gin.Context) {
 	r := Setting{}
 	r.With(setting)
 
-	h.Render(ctx, http.StatusOK, r.Value)
+	h.Respond(ctx, http.StatusOK, r.Value)
 }
 
 // List godoc
@@ -79,7 +79,7 @@ func (h SettingHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -100,7 +100,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	}
 
 	if strings.HasPrefix(setting.Key, ".") {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusForbidden,
 			gin.H{
 				"error": fmt.Sprintf("%s is read-only.", setting.Key),
@@ -118,7 +118,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 	}
 	setting.With(m)
 
-	h.Render(ctx, http.StatusCreated, setting)
+	h.Respond(ctx, http.StatusCreated, setting)
 }
 
 // CreateByKey godoc
@@ -132,7 +132,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	if strings.HasPrefix(key, ".") {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusForbidden,
 			gin.H{
 				"error": fmt.Sprintf("%s is read-only.", key),
@@ -156,7 +156,7 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusCreated)
+	h.Status(ctx, http.StatusCreated)
 }
 
 // Update godoc
@@ -171,7 +171,7 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 func (h SettingHandler) Update(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	if strings.HasPrefix(key, ".") {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusForbidden,
 			gin.H{
 				"error": fmt.Sprintf("%s is read-only.", key),
@@ -197,7 +197,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Delete godoc
@@ -210,7 +210,7 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 func (h SettingHandler) Delete(ctx *gin.Context) {
 	key := ctx.Param(Key)
 	if strings.HasPrefix(key, ".") {
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusForbidden,
 			gin.H{
 				"error": fmt.Sprintf("%s is read-only.", key),
@@ -225,7 +225,7 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

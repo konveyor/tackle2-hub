@@ -56,7 +56,7 @@ func (h TicketHandler) Get(ctx *gin.Context) {
 
 	resource := Ticket{}
 	resource.With(m)
-	h.Render(ctx, http.StatusOK, resource)
+	h.Respond(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -89,7 +89,7 @@ func (h TicketHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -117,7 +117,7 @@ func (h TicketHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -141,7 +141,7 @@ func (h TicketHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Ticket API Resource

@@ -56,7 +56,7 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 
 	resource := TagCategory{}
 	resource.With(m)
-	h.Render(ctx, http.StatusOK, resource)
+	h.Respond(ctx, http.StatusOK, resource)
 }
 
 // List godoc
@@ -85,7 +85,7 @@ func (h TagCategoryHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -113,7 +113,7 @@ func (h TagCategoryHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -137,7 +137,7 @@ func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Update godoc
@@ -168,7 +168,7 @@ func (h TagCategoryHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // TagList godoc

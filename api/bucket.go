@@ -77,7 +77,7 @@ func (h BucketHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -99,7 +99,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 	}
 	r := Bucket{}
 	r.With(m)
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Get godoc
@@ -124,7 +124,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 	if h.Accepted(ctx, BindMIMEs...) {
 		r := Bucket{}
 		r.With(m)
-		h.Render(ctx, http.StatusOK, r)
+		h.Respond(ctx, http.StatusOK, r)
 		return
 	}
 	h.bucketGet(ctx, id)
@@ -158,7 +158,7 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // BucketGet godoc
@@ -240,7 +240,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	st, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 	if st.IsDir() {
@@ -260,7 +260,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 				_ = ctx.Error(err)
 				return
 			}
-			ctx.Status(http.StatusOK)
+			h.Status(ctx, http.StatusOK)
 		}
 	} else {
 		err = h.getFile(ctx, m)
@@ -293,7 +293,7 @@ func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -312,7 +312,7 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -320,12 +320,12 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	fileReader, err := file.Open()
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	defer func() {
@@ -333,7 +333,7 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	}()
 	zipReader, err := gzip.NewReader(fileReader)
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	defer func() {
@@ -474,7 +474,7 @@ func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
 	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		ctx.Status(http.StatusBadRequest)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	reader, err := input.Open()

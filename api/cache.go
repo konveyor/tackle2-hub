@@ -47,14 +47,14 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 	r, err := h.cache(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			ctx.Status(http.StatusNotFound)
+			h.Status(ctx, http.StatusNotFound)
 		} else {
 			_ = ctx.Error(err)
 		}
 		return
 	}
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // Delete godoc
@@ -67,7 +67,7 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 func (h CacheHandler) Delete(ctx *gin.Context) {
 	dir := ctx.Param(Wildcard)
 	if dir == "" {
-		ctx.Status(http.StatusForbidden)
+		h.Status(ctx, http.StatusForbidden)
 		return
 	}
 	path := pathlib.Join(
@@ -76,7 +76,7 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			ctx.Status(http.StatusNoContent)
+			h.Status(ctx, http.StatusNoContent)
 		} else {
 			_ = ctx.Error(err)
 		}
@@ -88,7 +88,7 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

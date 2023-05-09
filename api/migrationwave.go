@@ -35,7 +35,7 @@ func (h MigrationWaveHandler) AddRoutes(e *gin.Engine) {
 }
 
 // Get godoc
-// @summary Get aa migration wave by ID.
+// @summary Get a migration wave by ID.
 // @description Get a migration wave by ID.
 // @tags migrationwaves
 // @produce json
@@ -54,7 +54,7 @@ func (h MigrationWaveHandler) Get(ctx *gin.Context) {
 	r := MigrationWave{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -79,7 +79,7 @@ func (h MigrationWaveHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -107,7 +107,7 @@ func (h MigrationWaveHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Update godoc
@@ -153,7 +153,7 @@ func (h MigrationWaveHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Delete godoc
@@ -177,7 +177,7 @@ func (h MigrationWaveHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

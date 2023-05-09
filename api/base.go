@@ -21,22 +21,21 @@ var Log = logging.WithName("api")
 
 //
 // BaseHandler base handler.
-type BaseHandler struct {
-	// k8s client.
-	Client client.Client
-}
-
-//
-// With configuration.
-func (h *BaseHandler) With(client client.Client) {
-	h.Client = client
-}
+type BaseHandler struct{}
 
 //
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 	rtx := WithContext(ctx)
 	db = rtx.DB.Debug()
+	return
+}
+
+//
+// Client returns k8s client from the context.
+func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
+	rtx := WithContext(ctx)
+	client = rtx.Client
 	return
 }
 
@@ -206,14 +205,17 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 }
 
 //
-// Render renders based the Accept: header.
-// Opinionated towards json.
-func (h *BaseHandler) Render(ctx *gin.Context, code int, r interface{}) {
-	ctx.Negotiate(
-		code,
-		gin.Negotiate{
-			Offered: BindMIMEs,
-			Data:    r})
+// Status sets the status code.
+func (h *BaseHandler) Status(ctx *gin.Context, code int) {
+	rtx := WithContext(ctx)
+	rtx.Status(code)
+}
+
+//
+// Respond sets the response.
+func (h *BaseHandler) Respond(ctx *gin.Context, code int, r interface{}) {
+	rtx := WithContext(ctx)
+	rtx.Respond(code, r)
 }
 
 //

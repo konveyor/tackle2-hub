@@ -68,7 +68,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	r := TaskGroup{}
 	r.With(m)
 
-	h.Render(ctx, http.StatusOK, r)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
@@ -93,7 +93,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 		resources = append(resources, r)
 	}
 
-	h.Render(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -126,7 +126,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	default:
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be ('''|Created|Ready)",
@@ -142,7 +142,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 
 	r.With(m)
 
-	h.Render(ctx, http.StatusCreated, r)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Update godoc
@@ -182,7 +182,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			return
 		}
 	default:
-		h.Render(ctx,
+		h.Respond(ctx,
 			http.StatusBadRequest,
 			gin.H{
 				"error": "state must be (Created|Ready)",
@@ -197,7 +197,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Delete godoc
@@ -219,7 +219,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	for _, task := range m.Tasks {
 		if task.Pod != "" {
 			rt := tasking.Task{Task: &task}
-			err := rt.Delete(h.Client)
+			err := rt.Delete(h.Client(ctx))
 			if err != nil {
 				if !k8serr.IsNotFound(err) {
 					_ = ctx.Error(err)
@@ -241,7 +241,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Submit godoc
@@ -296,7 +296,7 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -320,7 +320,7 @@ func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 
@@ -344,7 +344,7 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 		return
 	}
 	if !m.HasBucket() {
-		ctx.Status(http.StatusNotFound)
+		h.Status(ctx, http.StatusNotFound)
 		return
 	}
 

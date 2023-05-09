@@ -181,16 +181,15 @@ func main() {
 	//
 	// Web
 	router := gin.Default()
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router.Use(api.Render())
 	router.Use(api.ErrorHandler())
 	router.Use(
 		func(ctx *gin.Context) {
 			rtx := api.WithContext(ctx)
 			rtx.DB = db
+			rtx.Client = client
 		})
 	for _, h := range api.All() {
-		h.With(client)
 		h.AddRoutes(router)
 	}
 	err = router.Run()
