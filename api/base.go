@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/controller/pkg/logging"
@@ -58,6 +59,33 @@ func (h *BaseHandler) Sorted(ctx *gin.Context) (db *gorm.DB) {
 	sort := Sort{}
 	sort.With(ctx)
 	db = sort.Sorted(h.DB(ctx))
+	return
+}
+
+//
+// WithCount report count.
+// Sets the X-Total header for pagination.
+// Returns an error when count exceeds the limited and
+// is not constrained by pagination.
+func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
+	n := int(count)
+	max := 500
+	p := Page{}
+	p.With(ctx)
+	if n > max {
+		if p.Limit == 0 || p.Limit > max {
+			err = &BadRequestError{
+				fmt.Sprintf(
+					"Found=%d, ?Limit <= %d required.",
+					n,
+					max)}
+			return
+		}
+	}
+	mp := ctx.Writer.Header()
+	mp[Total] = []string{
+		strconv.Itoa(int(count)),
+	}
 	return
 }
 
@@ -239,10 +267,10 @@ func (h *BaseHandler) Accepted(ctx *gin.Context, mimes ...string) (b bool) {
 //
 // REST resource.
 type Resource struct {
-	ID         uint      `json:"id"`
-	CreateUser string    `json:"createUser"`
-	UpdateUser string    `json:"updateUser"`
-	CreateTime time.Time `json:"createTime"`
+	ID         uint      `json:"id,omitempty" yaml:",omitempty"`
+	CreateUser string    `json:"createUser" yaml:",omitempty"`
+	UpdateUser string    `json:"updateUser" yaml:",omitempty"`
+	CreateTime time.Time `json:"createTime" yaml:",omitempty"`
 }
 
 //
@@ -388,13 +416,17 @@ func (p *Sort) With(ctx *gin.Context) {
 	if s == "" {
 		return
 	}
-	part := strings.SplitN(s, ":", 2)
-	if len(part) == 2 {
-		p.Descending = strings.ToLower(part[0])[0] == 'd'
-		p.Field = part[1]
-	} else {
-		p.Field = part[0]
+	mark := strings.Index(s, ":")
+	if mark == -1 {
+		p.Field = s
+		return
 	}
+	d := strings.ToLower(s[:mark])
+	field := s[mark+1:]
+	if len(d) != 0 {
+		p.Descending = d[0] == 'd'
+	}
+	p.Field = field
 }
 
 //
@@ -411,3 +443,6 @@ func (p *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 	out = out.Order(sort)
 	return
 }
+
+//
+//

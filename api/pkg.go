@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/controller/pkg/logging"
+	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
@@ -19,6 +20,7 @@ const (
 	ID2       = "id2"
 	Key       = "key"
 	Name      = "name"
+	Filter    = filter.QueryParam
 	Wildcard  = "wildcard"
 	FileField = "file"
 )
@@ -31,6 +33,7 @@ const (
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
 	Directory     = "X-Directory"
+	Total         = "X-Total"
 )
 
 //
@@ -56,6 +59,7 @@ func All() []Handler {
 	return []Handler{
 		&AddonHandler{},
 		&AdoptionPlanHandler{},
+		&AnalysisHandler{},
 		&ApplicationHandler{},
 		&AuthHandler{},
 		&BusinessServiceHandler{},

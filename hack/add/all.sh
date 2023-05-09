@@ -23,3 +23,6 @@ cd ${dir}
 ./review.sh
 ./proxy.sh
 ./applicationtags.sh
+./analysis.sh
+./analysis.sh
+./analysis.sh

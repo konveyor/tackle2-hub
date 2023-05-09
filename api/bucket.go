@@ -29,12 +29,6 @@ const (
 )
 
 //
-// Params
-const (
-	Filter = "filter"
-)
-
-//
 // BucketHandler handles bucket routes.
 type BucketHandler struct {
 	BucketOwner

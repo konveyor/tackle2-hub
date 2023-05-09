@@ -13,6 +13,12 @@ type JSON = datatypes.JSON
 // Models
 type Model = model.Model
 type Application = model.Application
+type AnalysisDependency = model.AnalysisDependency
+type AnalysisIncident = model.AnalysisIncident
+type Analysis = model.Analysis
+type AnalysisRuleSet = model.AnalysisRuleSet
+type AnalysisTechnology = model.AnalysisTechnology
+type AnalysisIssue = model.AnalysisIssue
 type Bucket = model.Bucket
 type BucketOwner = model.BucketOwner
 type BusinessService = model.BusinessService

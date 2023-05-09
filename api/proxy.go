@@ -101,6 +101,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 	proxy := &Proxy{}
 	err := h.Bind(ctx, proxy)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	m := proxy.Model()

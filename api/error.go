@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
@@ -60,7 +61,9 @@ func ErrorHandler() gin.HandlerFunc {
 		err := ctx.Errors[0]
 
 		rtx := WithContext(ctx)
-		if errors.Is(err, &BadRequestError{}) || errors.Is(err, validator.ValidationErrors{}) {
+		if errors.Is(err, &BadRequestError{}) ||
+			errors.Is(err, &filter.Error{}) ||
+			errors.Is(err, validator.ValidationErrors{}) {
 			rtx.Respond(
 				http.StatusBadRequest,
 				gin.H{
