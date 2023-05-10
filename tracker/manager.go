@@ -95,6 +95,7 @@ func (m *Manager) testConnection(tracker *model.Tracker) (err error) {
 		} else {
 			marshalled, _ := json.Marshal(metadata)
 			tracker.Metadata = marshalled
+			tracker.Message = ""
 		}
 	}
 
