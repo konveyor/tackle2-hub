@@ -235,7 +235,8 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	// Latest.
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
-	db := h.DB(ctx).Where("ApplicationID = ?", id)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID = ?", id)
 	result := db.Last(analysis)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -255,7 +256,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db = h.Paginated(ctx)
+	db = h.DB(ctx)
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = filter.Where(db)
 	// Count.
@@ -276,6 +277,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	}
 	// Find.
 	list := []model.AnalysisDependency{}
+	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -328,7 +330,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db = h.Paginated(ctx)
+	db = h.DB(ctx)
 	ruleSet := h.DB(ctx)
 	ruleSet = ruleSet.Model(&model.AnalysisRuleSet{})
 	ruleSet = ruleSet.Select("ID")
@@ -353,6 +355,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	}
 	// Find.
 	list := []model.AnalysisIssue{}
+	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -405,7 +408,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Table("AnalysisIssue i,")
 	db = db.Joins("AnalysisRuleSet r,")
 	db = db.Joins("Analysis a")
@@ -429,10 +432,13 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	//
+	// Find.
 	type M struct {
 		model.AnalysisIssue
 		ApplicationID uint
 	}
+	db = h.paginated(ctx, db)
 	db = db.Select(
 		"i.*",
 		"a.ApplicationID")
@@ -647,7 +653,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db)
 	// Count.
@@ -667,6 +673,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	// Find.
+	db = h.paginated(ctx, db)
 	list := []model.AnalysisDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -715,7 +722,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db)
 	db = db.Select(
@@ -750,6 +757,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		return
 	}
 	// Find.
+	db = h.paginated(ctx, db)
 	result = db.Find(&resources)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

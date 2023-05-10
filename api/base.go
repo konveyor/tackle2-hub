@@ -41,15 +41,9 @@ func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 }
 
 //
-// Paginated returns a paginated & sorted DB client.
+// Paginated returns a paginated AND sorted DB client.
 func (h *BaseHandler) Paginated(ctx *gin.Context) (db *gorm.DB) {
-	p := Page{}
-	p.With(ctx)
-	db = h.DB(ctx)
-	db = p.Paginated(db)
-	sort := Sort{}
-	sort.With(ctx)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, h.DB(ctx))
 	return
 }
 
@@ -86,6 +80,18 @@ func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 	mp[Total] = []string{
 		strconv.Itoa(int(count)),
 	}
+	return
+}
+
+//
+// Paginated returns a paginated AND sorted DB client.
+func (h *BaseHandler) paginated(ctx *gin.Context, in *gorm.DB) (db *gorm.DB) {
+	p := Page{}
+	p.With(ctx)
+	db = p.Paginated(in)
+	sort := Sort{}
+	sort.With(ctx)
+	db = sort.Sorted(db)
 	return
 }
 
