@@ -49,3 +49,18 @@ func (h *Application) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.ApplicationRoot).Inject(Params{api.ID: id}))
 	return
 }
+
+//
+// Bucket returns the bucket API.
+func (h *Application) Bucket(id uint) (b *Bucket) {
+	params := Params{
+		api.Wildcard: "",
+		api.ID:       id,
+	}
+	path := Path(api.AppBucketContentRoot).Inject(params)
+	b = &Bucket{
+		path:   path,
+		client: h.client,
+	}
+	return
+}
