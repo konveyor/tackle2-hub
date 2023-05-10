@@ -2,6 +2,7 @@ package seed
 
 import (
 	"encoding/json"
+
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
@@ -113,7 +114,6 @@ const imgVirt = `
 </svg>
 `
 
-//
 // Seed the database with models.
 func Seed(db *gorm.DB) {
 	settings := []model.Setting{
@@ -286,7 +286,7 @@ func Seed(db *gorm.DB) {
 			RuleBundle: model.RuleBundle{
 				Kind:        "category",
 				Name:        "Azure",
-				Description: "Upgrade your Java application so it can be deployed in different flavors of Azure.",
+				Description: "Upgrade your Java application so it can be deployed on Azure App Service.",
 				RuleSets: []model.RuleSet{
 					{
 						Name:        "Azure App Service",
@@ -306,7 +306,7 @@ func Seed(db *gorm.DB) {
 			excluded: !Settings.Product,
 			RuleBundle: model.RuleBundle{
 				Name:        "Azure",
-				Description: "Upgrade your Java application so it can be deployed in different flavors of Azure.",
+				Description: "Upgrade your Java application so it can be deployed on Azure App Service.",
 				RuleSets: []model.RuleSet{
 					{
 						Name:        "Azure App Service",
