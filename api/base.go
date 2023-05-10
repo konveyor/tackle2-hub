@@ -129,6 +129,12 @@ func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
 			case reflect.Struct:
 				if ft.Anonymous {
 					inspect(fv.Addr().Interface())
+					continue
+				}
+				inst := fv.Interface()
+				switch inst.(type) {
+				case time.Time:
+					mp[ft.Name] = inst
 				}
 			case reflect.Array:
 				continue
