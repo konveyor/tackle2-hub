@@ -47,8 +47,8 @@ func (r *Connector) Create(t *model.Ticket) (err error) {
 		Fields: &jira.IssueFields{
 			Summary:     fmt.Sprintf("Migrate %s", t.Application.Name),
 			Description: "Created by Konveyor.",
-			Type:        jira.IssueType{Name: t.Kind},
-			Project:     jira.Project{Key: t.Parent},
+			Type:        jira.IssueType{ID: t.Kind},
+			Project:     jira.Project{ID: t.Parent},
 		},
 	}
 	issue, response, err := client.Issue.Create(&i)
