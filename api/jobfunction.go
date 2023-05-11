@@ -38,7 +38,7 @@ func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 // @description Get a job function by ID.
 // @tags jobfunctions
 // @produce json
-// @success 200 {object} []api.JobFunction
+// @success 200 {object} api.JobFunction
 // @router /jobfunctions/{id} [get]
 // @param id path string true "Job Function ID"
 func (h JobFunctionHandler) Get(ctx *gin.Context) {

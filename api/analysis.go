@@ -119,7 +119,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @description Resources do not include relations.
 // @tags analyses
 // @produce json
-// @success 200 {object} []api.Analyses
+// @success 200 {object} []api.Analysis
 // @router /analyses [get]
 func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
@@ -227,7 +227,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @description - indirect
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysesDependency
+// @success 200 {object} []api.AnalysisDependency
 // @router /application/{id}/analysis/dependencies [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
@@ -303,7 +303,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @description - effort
 // @tags issues
 // @produce json
-// @success 200 {object} []api.AnalysesIssue
+// @success 200 {object} []api.AnalysisIssue
 // @router /application/{id}/analysis/issues [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
@@ -385,7 +385,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description - tag.id
 // @tags issues
 // @produce json
-// @success 200 {object} []api.AnalysesIssue
+// @success 200 {object} []api.AnalysisIssue
 // @router /analyses/issues [get]
 func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	resources := []AnalysisIssue{}
@@ -633,7 +633,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 // @description - tag.id
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysesDependency
+// @success 200 {object} []api.AnalysisDependency
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	resources := []AnalysisDependency{}
@@ -702,7 +702,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - tag.id
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysesDependency
+// @success 200 {object} []api.AnalysisDependency
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	resources := []DepComposite{}
