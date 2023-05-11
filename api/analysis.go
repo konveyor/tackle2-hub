@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
@@ -70,9 +69,7 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
-		"RuleSets.Issues",
-		"RuleSets.Issues.Incidents",
-		"RuleSets.Technologies")
+		"Issues.Incidents")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -98,9 +95,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
-		"RuleSets.Issues",
-		"RuleSets.Issues.Incidents",
-		"RuleSets.Technologies")
+		"Issues.Incidents")
 	db = db.Where("ApplicationID = ?", id)
 	result := db.Last(m)
 	if result.Error != nil {
@@ -331,11 +326,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	db = h.DB(ctx)
-	ruleSet := h.DB(ctx)
-	ruleSet = ruleSet.Model(&model.AnalysisRuleSet{})
-	ruleSet = ruleSet.Select("ID")
-	ruleSet = ruleSet.Where("AnalysisID = ?", analysis.ID)
-	db = db.Where("RuleSetID IN (?)", ruleSet)
+	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -380,8 +371,8 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description - name
 // @description - category
 // @description - effort
+// @description - labels
 // @description - application.(id|name)
-// @description - tech.(source|target)
 // @description - tag.id
 // @tags issues
 // @produce json
@@ -397,11 +388,10 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING},
 			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
-			{Field: "tech.source", Kind: qf.STRING},
-			{Field: "tech.target", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
@@ -410,11 +400,13 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	}
 	db := h.DB(ctx)
 	db = db.Table("AnalysisIssue i,")
-	db = db.Joins("AnalysisRuleSet r,")
 	db = db.Joins("Analysis a")
-	db = db.Where("a.ID = r.AnalysisID")
-	db = db.Where("r.ID = i.RuleSetID")
-	db = db.Where("r.ID IN (?)", h.rulesetIDs(ctx, &filter))
+	db = db.Where("a.ID = i.AnalysisID")
+	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
+	n, q := h.issueIDs(ctx, &filter)
+	if n > 0 {
+		db = db.Where("i.ID IN (?)", q)
+	}
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -466,8 +458,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @description filters:
 // @description - category
 // @description - effort
+// @description - labels
 // @description - application.(id|name)
-// @description - tech.(source|target)
 // @description - tag.id
 // @tags issuecomposites
 // @produce json
@@ -481,38 +473,34 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "affected", Kind: qf.LITERAL},
-			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
-			{Field: "tech.source", Kind: qf.STRING},
-			{Field: "tech.target", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	p := Page{}
-	p.With(ctx)
-	sort := Sort{}
-	sort.With(ctx)
-	// Build query.
-	ruleSets := h.rulesetIDs(ctx, &filter)
-	q := h.DB(ctx)
-	q = q.Select(
-		"i.RuleID",
-		"i.Category", // needed by filter
-		"i.Effort",   // needed by filter
-		"COUNT(a.ID) Affected")
-	q = q.Table("AnalysisIssue i,")
-	q = q.Joins("AnalysisRuleSet r,")
-	q = q.Joins("Analysis a")
-	q = q.Where("a.ID = r.AnalysisID")
-	q = q.Where("r.ID = i.RulesetID")
-	q = q.Where("r.ID IN (?)", ruleSets)
-	q = q.Group("i.RuleID")
-	q = q.Order("i.RuleID")
 	db := h.DB(ctx)
-	db = db.Table("(?)", q)
+	db = db.Select(
+		"i.RuleID",
+		"i.Name",
+		"i.Description",
+		"i.Category",
+		"i.Effort",
+		"i.Labels",
+		"COUNT(distinct a.ID) Affected")
+	db = db.Table("AnalysisIssue i,")
+	db = db.Joins("Analysis a")
+	db = db.Where("a.ID = i.AnalysisID")
+	db = db.Where("a.ID in (?)", h.analysisIDs(ctx, &filter))
+	n, q := h.issueIDs(ctx, &filter)
+	if n > 0 {
+		db = db.Where("i.ID IN (?)", q)
+	}
+	db = db.Group("i.RuleID")
+	db = db.Order("i.RuleID")
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -533,16 +521,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	affected := make(map[string]int)
 	// Find.
 	type M struct {
-		RuleID      string
-		RuleName    string
-		Description string
-		Category    string
-		Effort      int
-		Labels      model.JSON
-		Name        string
-		Version     string
-		Source      bool
-		Affected    int
+		model.AnalysisIssue
+		Affected int
 	}
 	var list []M
 	result = db.Scan(&list)
@@ -554,41 +534,13 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		r := &list[i]
 		affected[r.RuleID] = r.Affected
 	}
-	q = p.Paginated(q)
-	db = h.DB(ctx)
-	db = db.Select(
-		"i.RuleID",
-		"i.Name RuleName",
-		"i.Description",
-		"i.Category",
-		"i.Effort",
-		"i.Labels",
-		"t.Name",
-		"t.Version",
-		"t.Source")
-	db = sort.Sorted(db)
-	db = db.Table("AnalysisIssue i,")
-	db = db.Joins("AnalysisRuleSet r,")
-	db = db.Joins("AnalysisTechnology t,")
-	db = db.Joins("Analysis a")
-	db = db.Where("a.ID = r.AnalysisID")
-	db = db.Where("r.ID = i.RulesetID")
-	db = db.Where("r.ID IN (?)", ruleSets)
-	db = db.Where("t.RulesetID = r.ID")
-	db = db.Where("i.RuleID IN (SELECT RuleID from (?))", q)
-	db = filter.Where(db)
-	result = db.Scan(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+
 	collated := make(map[string]*IssueComposite)
 	for i := range list {
 		m := list[i]
 		r, found := collated[m.RuleID]
 		if !found {
 			r = &IssueComposite{
-				tech:        make(map[string]AnalysisTechnology),
 				Affected:    affected[m.RuleID],
 				Description: m.Description,
 				Category:    m.Category,
@@ -602,19 +554,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 			}
 		}
 		r.Effort += m.Effort
-		tech := AnalysisTechnology{
-			Name:    m.Name,
-			Version: m.Version,
-			Source:  m.Source,
-		}
-		r.tech[tech.key()] = tech
-	}
-	for _, r := range resources {
-		for _, tech := range r.tech {
-			r.Technologies = append(
-				r.Technologies,
-				tech)
-		}
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
@@ -730,7 +669,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		"Version",
 		"Type",
 		"SHA",
-		"COUNT(AnalysisID) Affected")
+		"COUNT(distinct AnalysisID) Affected")
 	db = db.Group(
 		strings.Join(
 			[]string{
@@ -781,33 +720,23 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
 	tagFilter := f.Resource("tag")
 	if field, found := tagFilter.Field("id"); found {
 		if field.Value.Operator(qf.AND) {
-			part := []string{}
-			values := []interface{}{}
-			for i, v := range field.Value.ByKind(qf.LITERAL, qf.STRING) {
-				values = append(values, qf.AsValue(v))
-				if i > 0 {
-					part = append(part, "INTERSECT")
-				}
-				part = append(
-					part,
-					"SELECT",
-					"  applicationID",
-					"FROM",
-					"  ApplicationTags",
-					"WHERE",
-					"  TagID = ?")
+			var qs []*gorm.DB
+			for _, v := range field.Value.ByKind(qf.LITERAL, qf.STRING) {
+				q := h.DB(ctx)
+				q = q.Model(&model.ApplicationTag{})
+				q = q.Select("applicationID ID")
+				q = q.Where("TagID = ?", qf.AsValue(v))
+				qs = append(qs, q)
 			}
-			tags := h.DB(ctx).Raw(
-				strings.Join(part, " "),
-				values...)
-			q = q.Where("ID IN (?)", tags)
+			tq := model.Intersect(qs...)
+			q = q.Where("ID IN (?)", tq)
 		} else {
 			field = field.As("TagID")
-			tags := h.DB(ctx)
-			tags = tags.Model(&model.ApplicationTag{})
-			tags = tags.Select("ApplicationID")
-			tags = tags.Where(field.SQL())
-			q = q.Where("ID IN (?)", tags)
+			tq := h.DB(ctx)
+			tq = tq.Model(&model.ApplicationTag{})
+			tq = tq.Select("ApplicationID ID")
+			tq = tq.Where(field.SQL())
+			q = q.Where("ID IN (?)", tq)
 		}
 	}
 	return
@@ -825,33 +754,33 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.D
 }
 
 //
-// rulesetIDs provides ruleSet IDs.
+// issueIDs returns filtered issues IDs query.
 // filter:
-//   - tech.source
-//   - tech.target
-func (h *AnalysisHandler) rulesetIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
-	q = h.DB(ctx)
-	q = q.Model(&model.AnalysisRuleSet{})
-	q = q.Select("ID")
-	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, f))
-	techFilter := f.Resource("tech")
-	if field, found := techFilter.Field("source"); found {
-		field = field.As("Name")
-		tech := h.DB(ctx)
-		tech = tech.Model(&model.AnalysisTechnology{})
-		tech = tech.Select("RuleSetID")
-		tech = tech.Where("Source", true)
-		tech = tech.Where(field.SQL())
-		q = q.Where("ID IN (?)", tech)
-	}
-	if field, found := techFilter.Field("target"); found {
-		field = field.As("Name")
-		tech := h.DB(ctx)
-		tech = tech.Model(&model.AnalysisTechnology{})
-		tech = tech.Select("RuleSetID")
-		tech = tech.Where("Source", false)
-		tech = tech.Where(field.SQL())
-		q = q.Where("ID IN (?)", tech)
+//   - labels
+func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f *qf.Filter) (n int, q *gorm.DB) {
+	filter := f
+	if f, found := filter.Field("labels"); found {
+		n = len(f.Value)
+		_ = filter.Delete("labels")
+		if f.Value.Operator(qf.AND) {
+			var qs []*gorm.DB
+			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
+				q := h.DB(ctx)
+				q = q.Model(&model.AnalysisIssue{})
+				q = q.Joins("i ,json_each(Labels)")
+				q = q.Select("i.ID")
+				q = q.Where("json_each.value = ?", qf.AsValue(v))
+				qs = append(qs, q)
+			}
+			q = model.Intersect(qs...)
+		} else {
+			f = f.As("json_each.value")
+			q = h.DB(ctx)
+			q = q.Model(&model.AnalysisIssue{})
+			q = q.Joins("i ,json_each(Labels)")
+			q = q.Select("i.ID")
+			q = q.Where(f.SQL())
+		}
 	}
 	return
 }
@@ -860,7 +789,7 @@ func (h *AnalysisHandler) rulesetIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB
 // Analysis (Analysis) REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
-	RuleSets     []AnalysisRuleSet    `json:"ruleSets"`
+	Issues       []AnalysisIssue      `json:"issues"`
 	Dependencies []AnalysisDependency `json:"dependencies"`
 }
 
@@ -868,12 +797,12 @@ type Analysis struct {
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
-	r.RuleSets = []AnalysisRuleSet{}
-	for i := range m.RuleSets {
-		n := AnalysisRuleSet{}
-		n.With(&m.RuleSets[i])
-		r.RuleSets = append(
-			r.RuleSets,
+	r.Issues = []AnalysisIssue{}
+	for i := range m.Issues {
+		n := AnalysisIssue{}
+		n.With(&m.Issues[i])
+		r.Issues = append(
+			r.Issues,
 			n)
 	}
 	r.Dependencies = []AnalysisDependency{}
@@ -890,11 +819,11 @@ func (r *Analysis) With(m *model.Analysis) {
 // Model builds a model.
 func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
-	m.RuleSets = []model.AnalysisRuleSet{}
-	for i := range r.RuleSets {
-		n := r.RuleSets[i].Model()
-		m.RuleSets = append(
-			m.RuleSets,
+	m.Issues = []model.AnalysisIssue{}
+	for i := range r.Issues {
+		n := r.Issues[i].Model()
+		m.Issues = append(
+			m.Issues,
 			*n)
 	}
 	m.Dependencies = []model.AnalysisDependency{}
@@ -902,63 +831,6 @@ func (r *Analysis) Model() (m *model.Analysis) {
 		n := r.Dependencies[i].Model()
 		m.Dependencies = append(
 			m.Dependencies,
-			*n)
-	}
-	return
-}
-
-//
-// AnalysisRuleSet REST resource.
-type AnalysisRuleSet struct {
-	Resource     `yaml:",inline"`
-	Name         string               `json:"name" binding:"required"`
-	Description  string               `json:"description"`
-	Technologies []AnalysisTechnology `json:"technologies"`
-	Issues       []AnalysisIssue      `json:"issues"`
-}
-
-//
-// With updates the resource with the model.
-func (r *AnalysisRuleSet) With(m *model.AnalysisRuleSet) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Technologies = []AnalysisTechnology{}
-	for i := range m.Technologies {
-		n := AnalysisTechnology{}
-		n.With(&m.Technologies[i])
-		r.Technologies = append(
-			r.Technologies,
-			n)
-	}
-	r.Issues = []AnalysisIssue{}
-	for i := range m.Issues {
-		n := AnalysisIssue{}
-		n.With(&m.Issues[i])
-		r.Issues = append(
-			r.Issues,
-			n)
-	}
-}
-
-//
-// Model builds a model.
-func (r *AnalysisRuleSet) Model() (m *model.AnalysisRuleSet) {
-	m = &model.AnalysisRuleSet{}
-	m.Name = r.Name
-	m.Description = r.Description
-	m.Technologies = []model.AnalysisTechnology{}
-	for i := range r.Technologies {
-		n := r.Technologies[i].Model()
-		m.Technologies = append(
-			m.Technologies,
-			*n)
-	}
-	m.Issues = []model.AnalysisIssue{}
-	for i := range r.Issues {
-		n := r.Issues[i].Model()
-		m.Issues = append(
-			m.Issues,
 			*n)
 	}
 	return
@@ -1095,44 +967,6 @@ func (r *AnalysisIncident) Model() (m *model.AnalysisIncident) {
 }
 
 //
-// AnalysisTechnology REST resource.
-type AnalysisTechnology struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Version  string `json:"version,omitempty" yaml:",omitempty"`
-	Source   bool   `json:"source,omitempty" yaml:",omitempty"`
-}
-
-//
-// With updates the resource with the model.
-func (r *AnalysisTechnology) With(m *model.AnalysisTechnology) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Version = m.Version
-	r.Source = m.Source
-}
-
-//
-// key returns a unique key.
-func (r *AnalysisTechnology) key() string {
-	return fmt.Sprintf(
-		"%s:%s:%v",
-		r.Name,
-		r.Version,
-		r.Source)
-}
-
-//
-// Model builds a model.
-func (r *AnalysisTechnology) Model() (m *model.AnalysisTechnology) {
-	m = &model.AnalysisTechnology{}
-	m.Name = r.Name
-	m.Version = r.Version
-	m.Source = r.Source
-	return
-}
-
-//
 // AnalysisLink analysis report link.
 type AnalysisLink struct {
 	URL   string `json:"url"`
@@ -1142,15 +976,13 @@ type AnalysisLink struct {
 //
 // IssueComposite composite REST resource.
 type IssueComposite struct {
-	tech         map[string]AnalysisTechnology
-	RuleID       string               `json:"ruleID"`
-	Name         string               `json:"name"`
-	Description  string               `json:"description"`
-	Category     string               `json:"category"`
-	Effort       int                  `json:"effort"`
-	Labels       []string             `json:"labels"`
-	Technologies []AnalysisTechnology `json:"technologies"`
-	Affected     int                  `json:"affected"`
+	RuleID      string   `json:"ruleID"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Category    string   `json:"category"`
+	Effort      int      `json:"effort"`
+	Labels      []string `json:"labels"`
+	Affected    int      `json:"affected"`
 }
 
 //

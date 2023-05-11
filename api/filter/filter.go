@@ -122,6 +122,21 @@ func (f *Filter) Where(in *gorm.DB) (out *gorm.DB) {
 }
 
 //
+// Delete specified fields.
+func (f *Filter) Delete(name string) (found bool) {
+	var wanted []Predicate
+	for _, p := range f.predicates {
+		if strings.ToLower(p.Field.Value) != name {
+			wanted = append(wanted, p)
+		} else {
+			found = true
+		}
+	}
+	f.predicates = wanted
+	return
+}
+
+//
 // Empty returns true when the filter has no predicates.
 func (f *Filter) Empty() bool {
 	return len(f.predicates) == 0
