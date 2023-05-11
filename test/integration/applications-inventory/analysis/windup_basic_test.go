@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +49,13 @@ func TestBasicAnalysis(t *testing.T) {
 					"cloud-readiness"
 				]
 			  }`,
+			ReportContent: map[string][]string {
+				"/windup/report/index.html": {
+					"5\nstory points",
+				    "5\nCloud Mandatory",
+					"9\nInformation",
+				},
+			},
 		},
 	}
 
@@ -77,11 +85,19 @@ func TestBasicAnalysis(t *testing.T) {
 				t.Errorf("Analyze Task failed. Details: %+v", task)
 			}
 
-			// TODO: check the report content here.
+			// Check the report content.
+			for path, expectedElems := range tc.ReportContent {
+				content := getReportText(t, &tc, path)
+				// Check its content.
+				for _, expectedContent := range expectedElems {
+					if !strings.Contains(content, expectedContent) {
+						t.Errorf("Error report contect check for %s. Cannot find %s in %s", path, expectedContent, content)
+					}
+				}
+			}
 
 			// Cleanup.
 			assert.Must(t, RichClient.Application.Delete(tc.Application.ID))
-
 		})
 	}
 }

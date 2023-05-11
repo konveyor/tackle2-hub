@@ -13,9 +13,10 @@ All tests can be executed with ```$ make test-all``` which will run all availabl
 - Tests are written in golang to fit well to the Konveyor project components.
 - Each test is responsible for setup its test data and clean it when finished.
 - The main way of interacting with Hub is its API, to make testing easier, following tools are provided:
-  - Test ```client``` package wrapping addon.Client provides API methods like Get/Post/etc., Should/Must and other equality assertions.
+  - ```RichClient``` from [binding](https://github.com/konveyor/tackle2-hub/tree/main/binding) package that provides methods working with Hub resources (like ```RichClient.Application.Create(&testApp)```). This is a preffered option.
+  - ```addon.Client``` provides API methods like Get/Post/etc. it can be accessed from ```RichClient.Client()```
+  - ```test/assertion``` package provides Should/Must and other equality assertions.
   - Hub's ```API``` package provides predefined routes and resources struct definition.
-  - Each resource has a test package that tests the resource endpoint methods and provides fixtures and basic CRUD methods (like ```application.Create(&testApp)```) to other tests.
 
 
 ## REST API
@@ -36,8 +37,8 @@ Or tests can run against running Hub installation (example with minikube below).
 
 ```
 $ export HUB_BASE_URL="http://$(minikube ip)/hub"
-$ export KEYCLOAK_ADMIN_USER="admin"
-$ export KEYCLOAK_ADMIN_PASS=""
+$ export HUB_PASSWORD=="admin"
+$ export HUB_PASSWORD="..."
 $ go test -v ./test/api/
 ```
 
