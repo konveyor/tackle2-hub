@@ -97,7 +97,7 @@ func (r *Connector) RefreshAll() (tickets map[*model.Ticket]bool, err error) {
 	err = handleJiraError(response, err)
 	if err != nil {
 		// JIRA returns a 400 if the search returned no results.
-		if response.StatusCode == http.StatusBadRequest {
+		if response != nil && response.StatusCode == http.StatusBadRequest {
 			err = nil
 		}
 		return
