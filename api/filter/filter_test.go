@@ -294,3 +294,49 @@ func TestValidation(t *testing.T) {
 		})
 	g.Expect(err).ToNot(gomega.BeNil())
 }
+
+func TestFieldSelector(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	field := func(name string) (f *Field) {
+		f = &Field{}
+		f.Field.Value = name
+		return
+	}
+	selector := FieldSelector{
+		"zero",
+		"-one",
+		"-two",
+	}
+	g.Expect(selector.Match(field("zero"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("one"))).ToNot(gomega.BeTrue())
+	g.Expect(selector.Match(field("two"))).ToNot(gomega.BeTrue())
+	g.Expect(selector.Match(field("unknown"))).ToNot(gomega.BeTrue())
+
+	selector = FieldSelector{
+		"-one",
+		"-two",
+	}
+	g.Expect(selector.Match(field("Zero"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("unknown"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("one"))).ToNot(gomega.BeTrue())
+	g.Expect(selector.Match(field("two"))).ToNot(gomega.BeTrue())
+
+	selector = FieldSelector{
+		"one",
+		"two",
+	}
+	g.Expect(selector.Match(field("one"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("two"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("unknown"))).ToNot(gomega.BeTrue())
+
+	selector = FieldSelector{}
+	g.Expect(selector.Match(field("one"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("two"))).To(gomega.BeTrue())
+
+	selector = FieldSelector{
+		"resource.one",
+		"two",
+	}
+	g.Expect(selector.Match(field("two"))).To(gomega.BeTrue())
+	g.Expect(selector.Match(field("resource.one"))).ToNot(gomega.BeTrue())
+}

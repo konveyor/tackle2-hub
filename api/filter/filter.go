@@ -109,12 +109,12 @@ func (f *Filter) Resource(r string) (filter Filter) {
 
 //
 // Where applies (root) fields to the where clause.
-func (f *Filter) Where(in *gorm.DB) (out *gorm.DB) {
+func (f *Filter) Where(in *gorm.DB, selector ...string) (out *gorm.DB) {
 	out = in
+	fs := FieldSelector(selector)
 	for _, p := range f.predicates {
 		field := Field{p}
-		fr := field.Resource()
-		if fr == "" {
+		if fs.Match(&field) {
 			out = out.Where(field.SQL())
 		}
 	}
@@ -140,6 +140,51 @@ func (f *Filter) Delete(name string) (found bool) {
 // Empty returns true when the filter has no predicates.
 func (f *Filter) Empty() bool {
 	return len(f.predicates) == 0
+}
+
+//
+// FieldSelector fields.
+// fields with '+' prefix are included.
+// fields with '-' prefix are excluded.
+// Fields scoped to a resource are excluded.
+// An empty selector includes ALL.
+type FieldSelector []string
+
+//
+// Match fields by qualified name.
+func (r FieldSelector) Match(f *Field) (m bool) {
+	if f.Resource() != "" {
+		return
+	}
+	if len(r) == 0 {
+		m = true
+		return
+	}
+	included := make(map[string]byte)
+	excluded := make(map[string]byte)
+	for _, s := range r {
+		s = strings.ToLower(s)
+		if s != "" {
+			switch s[0] {
+			case '-':
+				excluded[s[1:]] = 0
+			case '+':
+				included[s[1:]] = 0
+			default:
+				included[s] = 0
+			}
+		}
+	}
+	name := strings.ToLower(f.Field.Value)
+	if _, found := excluded[name]; found {
+		return
+	}
+	if len(included) == 0 {
+		m = true
+		return
+	}
+	_, m = included[name]
+	return
 }
 
 //

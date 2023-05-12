@@ -388,7 +388,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
 			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
@@ -403,11 +403,14 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	db = db.Joins("Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
 	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
-	n, q := h.issueIDs(ctx, &filter)
+	db = filter.Where(db, "-Labels")
+	n, q := h.withLabels(
+		&model.AnalysisIssue{},
+		ctx,
+		&filter)
 	if n > 0 {
 		db = db.Where("i.ID IN (?)", q)
 	}
-	db = filter.Where(db)
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.AnalysisIssue{}).Count(&count)
@@ -495,13 +498,16 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	db = db.Joins("Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
 	db = db.Where("a.ID in (?)", h.analysisIDs(ctx, &filter))
-	n, q := h.issueIDs(ctx, &filter)
+	db = filter.Where(db, "-Labels")
+	n, q := h.withLabels(
+		&model.AnalysisIssue{},
+		ctx,
+		&filter)
 	if n > 0 {
 		db = db.Where("i.ID IN (?)", q)
 	}
 	db = db.Group("i.RuleID")
 	db = db.Order("i.RuleID")
-	db = filter.Where(db)
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.AnalysisIssue{}).Count(&count)
@@ -565,9 +571,9 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 // @description filters:
 // @description - name
 // @description - version
-// @description - type
 // @description - sha
 // @description - indirect
+// @description - labels
 // @description - application.(id|name)
 // @description - tag.id
 // @tags dependencies
@@ -581,9 +587,9 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
-			{Field: "type", Kind: qf.STRING},
-			{Field: "indirect", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
+			{Field: "indirect", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
@@ -594,7 +600,14 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = filter.Where(db)
+	db = filter.Where(db, "-Labels")
+	n, q := h.withLabels(
+		&model.AnalysisDependency{},
+		ctx,
+		&filter)
+	if n > 0 {
+		db = db.Where("ID IN (?)", q)
+	}
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.AnalysisDependency{}).Count(&count)
@@ -634,9 +647,9 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description filters:
 // @description - name
 // @description - version
-// @description - type
 // @description - sha
 // @description - indirect
+// @description - labels
 // @description - application.(id|name)
 // @description - tag.id
 // @tags dependencies
@@ -650,9 +663,9 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
-			{Field: "type", Kind: qf.STRING},
-			{Field: "indirect", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
+			{Field: "indirect", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
@@ -662,20 +675,25 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = filter.Where(db)
 	db = db.Select(
 		"Name",
 		"Version",
-		"Type",
 		"SHA",
+		"Labels",
 		"COUNT(distinct AnalysisID) Affected")
+	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
+	db = filter.Where(db, "-Labels")
+	n, q := h.withLabels(
+		&model.AnalysisDependency{},
+		ctx,
+		&filter)
+	if n > 0 {
+		db = db.Where("ID IN (?)", q)
+	}
 	db = db.Group(
 		strings.Join(
 			[]string{
 				"Name",
-				"Version",
-				"Type",
 				"SHA",
 			},
 			","))
@@ -696,11 +714,29 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		return
 	}
 	// Find.
+	type M struct {
+		model.AnalysisDependency
+		Affected int
+	}
+	var list []M
 	db = h.paginated(ctx, db)
-	result = db.Find(&resources)
+	result = db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
+	}
+	for i := range list {
+		m := &list[i]
+		r := DepComposite{
+			Name:     m.Name,
+			Version:  m.Version,
+			SHA:      m.SHA,
+			Affected: m.Affected,
+		}
+		if m.Labels != nil {
+			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		resources = append(resources, r)
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
@@ -754,21 +790,20 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.D
 }
 
 //
-// issueIDs returns filtered issues IDs query.
+// withLabels returns IDs filtered by label.
 // filter:
 //   - labels
-func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f *qf.Filter) (n int, q *gorm.DB) {
+func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filter) (n int, q *gorm.DB) {
 	filter := f
 	if f, found := filter.Field("labels"); found {
 		n = len(f.Value)
-		_ = filter.Delete("labels")
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
 			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
 				q := h.DB(ctx)
-				q = q.Model(&model.AnalysisIssue{})
-				q = q.Joins("i ,json_each(Labels)")
-				q = q.Select("i.ID")
+				q = q.Model(m)
+				q = q.Joins("m ,json_each(Labels)")
+				q = q.Select("m.ID")
 				q = q.Where("json_each.value = ?", qf.AsValue(v))
 				qs = append(qs, q)
 			}
@@ -776,9 +811,9 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f *qf.Filter) (n int, q *go
 		} else {
 			f = f.As("json_each.value")
 			q = h.DB(ctx)
-			q = q.Model(&model.AnalysisIssue{})
-			q = q.Joins("i ,json_each(Labels)")
-			q = q.Select("i.ID")
+			q = q.Model(m)
+			q = q.Joins("m ,json_each(Labels)")
+			q = q.Select("m.ID")
 			q = q.Where(f.SQL())
 		}
 	}
@@ -906,11 +941,11 @@ func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
 // AnalysisDependency REST resource.
 type AnalysisDependency struct {
 	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Version  string `json:"version,omitempty" yaml:",omitempty"`
-	Type     string `json:"type,omitempty" yaml:",omitempty"`
-	Indirect bool   `json:"indirect,omitempty" yaml:",omitempty"`
-	SHA      string `json:"sha,omitempty" yaml:",omitempty"`
+	Name     string   `json:"name" binding:"required"`
+	Version  string   `json:"version,omitempty" yaml:",omitempty"`
+	Indirect bool     `json:"indirect,omitempty" yaml:",omitempty"`
+	Labels   []string `json:"labels,omitempty" yaml:",omitempty"`
+	SHA      string   `json:"sha,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -919,9 +954,11 @@ func (r *AnalysisDependency) With(m *model.AnalysisDependency) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Version = m.Version
-	r.Type = m.Type
 	r.Indirect = m.Indirect
 	r.SHA = m.SHA
+	if m.Labels != nil {
+		_ = json.Unmarshal(m.Labels, &r.Labels)
+	}
 }
 
 //
@@ -930,8 +967,8 @@ func (r *AnalysisDependency) Model() (m *model.AnalysisDependency) {
 	m = &model.AnalysisDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
-	m.Type = r.Type
 	m.Indirect = r.Indirect
+	m.Labels, _ = json.Marshal(r.Labels)
 	m.SHA = r.SHA
 	return
 }
@@ -988,11 +1025,11 @@ type IssueComposite struct {
 //
 // DepComposite composite REST resource.
 type DepComposite struct {
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Type     string `json:"type"`
-	SHA      string `json:"sha"`
-	Affected int    `json:"affected"`
+	Name     string   `json:"name"`
+	Version  string   `json:"version"`
+	SHA      string   `json:"sha"`
+	Labels   []string `json:"labels"`
+	Affected int      `json:"affected"`
 }
 
 //

@@ -16,7 +16,6 @@ type AnalysisDependency struct {
 	Model
 	Name       string `gorm:"index:depA;not null"`
 	Version    string `gorm:"index:depA"`
-	Type       string `gorm:"index:depA"`
 	SHA        string `gorm:"index:depA"`
 	Indirect   bool
 	Labels     JSON `gorm:"type:json"`
