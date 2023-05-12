@@ -40,7 +40,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 // @description Get a review by ID.
 // @tags reviews
 // @produce json
-// @success 200 {object} []api.Review
+// @success 200 {object} api.Review
 // @router /reviews/{id} [get]
 // @param id path string true "Review ID"
 func (h ReviewHandler) Get(ctx *gin.Context) {

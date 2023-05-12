@@ -53,7 +53,7 @@ func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 	r := StakeholderGroup{}
 	r.With(m)
 
-	h.Respond(ctx, http.StatusOK, m)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc
