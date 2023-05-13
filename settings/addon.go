@@ -7,10 +7,9 @@ import (
 )
 
 const (
-	EnvAddonWorkingDir = "ADDON_WORKING_DIR"
-	EnvHubBaseURL      = "HUB_BASE_URL"
-	EnvHubToken        = "TOKEN"
-	EnvTask            = "TASK"
+	EnvHubBaseURL = "HUB_BASE_URL"
+	EnvHubToken   = "TOKEN"
+	EnvTask       = "TASK"
 )
 
 //
@@ -22,11 +21,6 @@ type Addon struct {
 		URL string
 		// Token for the hub API.
 		Token string
-	}
-	// Path.
-	Path struct {
-		// Working directory path.
-		WorkingDir string
 	}
 	//
 	Task int
@@ -43,10 +37,6 @@ func (r *Addon) Load() (err error) {
 		panic(err)
 	}
 	r.Hub.Token, found = os.LookupEnv(EnvHubToken)
-	r.Path.WorkingDir, found = os.LookupEnv(EnvAddonWorkingDir)
-	if !found {
-		r.Path.WorkingDir = "/tmp"
-	}
 	if s, found := os.LookupEnv(EnvTask); found {
 		r.Task, _ = strconv.Atoi(s)
 	}
