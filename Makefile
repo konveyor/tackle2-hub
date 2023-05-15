@@ -121,9 +121,9 @@ endif
 # Run test targets always (not producing test dirs there).
 .PHONY: test test-api test-integration
 
-# Run unit tests.
+# Run unit tests (all tests outside /test directory).
 test:
-	go test -v ./auth/
+	go test -v $(go list ./... | grep -v "hub/test")
 
 # Run Hub REST API tests.
 test-api:
