@@ -367,7 +367,8 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description List all issues.
 // @description filters:
 // @description - id
-// @description - ruleid
+// @description - ruleset
+// @description - rule
 // @description - name
 // @description - category
 // @description - effort
@@ -384,7 +385,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
-			{Field: "ruleid", Kind: qf.STRING},
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
@@ -459,6 +461,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @summary List issue composites.
 // @description List issue composites.
 // @description filters:
+// @description - ruleset
+// @description - rule
 // @description - category
 // @description - effort
 // @description - labels
@@ -473,6 +477,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "affected", Kind: qf.LITERAL},
@@ -487,7 +493,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	}
 	db := h.DB(ctx)
 	db = db.Select(
-		"i.RuleID",
+		"i.RuleSet",
+		"i.Rule",
 		"i.Name",
 		"i.Description",
 		"i.Category",
@@ -506,8 +513,8 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	if n > 0 {
 		db = db.Where("i.ID IN (?)", q)
 	}
-	db = db.Group("i.RuleID")
-	db = db.Order("i.RuleID")
+	db = db.Group("i.RuleSet,i.Rule")
+	db = db.Order("i.RuleSet,i.Rule")
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.AnalysisIssue{}).Count(&count)
@@ -538,22 +545,23 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	}
 	for i := range list {
 		r := &list[i]
-		affected[r.RuleID] = r.Affected
+		affected[r.RuleId()] = r.Affected
 	}
 
 	collated := make(map[string]*IssueComposite)
 	for i := range list {
 		m := list[i]
-		r, found := collated[m.RuleID]
+		r, found := collated[m.RuleId()]
 		if !found {
 			r = &IssueComposite{
-				Affected:    affected[m.RuleID],
+				Affected:    affected[m.RuleId()],
 				Description: m.Description,
 				Category:    m.Category,
-				RuleID:      m.RuleID,
+				RuleSet:     m.RuleSet,
+				Rule:        m.Rule,
 				Name:        m.Name,
 			}
-			collated[m.RuleID] = r
+			collated[m.RuleId()] = r
 			resources = append(resources, r)
 			if m.Labels != nil {
 				_ = json.Unmarshal(m.Labels, &r.Labels)
@@ -875,7 +883,8 @@ func (r *Analysis) Model() (m *model.Analysis) {
 // AnalysisIssue REST resource.
 type AnalysisIssue struct {
 	Resource    `yaml:",inline"`
-	RuleID      string             `json:"ruleId" binding:"-"`
+	RuleSet     string             `json:"ruleset" binding:"required"`
+	Rule        string             `json:"rule" binding:"required"`
 	Name        string             `json:"name" binding:"required"`
 	Description string             `json:"description,omitempty" yaml:",omitempty"`
 	Category    string             `json:"category" binding:"required"`
@@ -891,7 +900,8 @@ type AnalysisIssue struct {
 // With updates the resource with the model.
 func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 	r.Resource.With(&m.Model)
-	r.RuleID = m.RuleID
+	r.RuleSet = m.RuleSet
+	r.Rule = m.Rule
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Category = m.Category
@@ -919,7 +929,8 @@ func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 // Model builds a model.
 func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
 	m = &model.AnalysisIssue{}
-	m.RuleID = r.RuleID
+	m.RuleSet = r.RuleSet
+	m.Rule = r.Rule
 	m.Name = r.Name
 	m.Description = r.Description
 	m.Category = r.Category
@@ -1013,13 +1024,20 @@ type AnalysisLink struct {
 //
 // IssueComposite composite REST resource.
 type IssueComposite struct {
-	RuleID      string   `json:"ruleID"`
+	RuleSet     string   `json:"ruleSet"`
+	Rule        string   `json:"rule"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Category    string   `json:"category"`
 	Effort      int      `json:"effort"`
 	Labels      []string `json:"labels"`
 	Affected    int      `json:"affected"`
+}
+
+//
+// RuleId returns unique rule ID.
+func (r *IssueComposite) RuleId() (id string) {
+	return r.RuleSet + "." + r.Rule
 }
 
 //

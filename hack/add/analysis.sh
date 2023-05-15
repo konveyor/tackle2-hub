@@ -21,7 +21,8 @@ for r in $(seq 1 ${nRuleSet})
 do
 for i in $(seq 1 ${nIssue})
 do
-echo -n "- ruleid: Rule-${r}.${i}
+echo -n "- ruleset: ruleSet-${r}
+  rule: rule-${i}
   name: Rule-${i}-Violated
   description: This is a test ${r}/${i}.
   category: warning

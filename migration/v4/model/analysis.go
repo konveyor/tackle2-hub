@@ -27,7 +27,8 @@ type AnalysisDependency struct {
 // AnalysisIssue report issue (violation).
 type AnalysisIssue struct {
 	Model
-	RuleID      string `gorm:"index;not null"`
+	RuleSet     string `gorm:"index:rule;not null"`
+	Rule        string `gorm:"index:rule;not null"`
 	Name        string `gorm:"index"`
 	Description string
 	Category    string             `gorm:"index;not null"`
@@ -38,6 +39,12 @@ type AnalysisIssue struct {
 	Effort      int                `gorm:"index;not null"`
 	AnalysisID  uint               `gorm:"index;not null"`
 	Analysis    *Analysis
+}
+
+//
+// RuleId returns unique rule ID.
+func (m *AnalysisIssue) RuleId() (id string) {
+	return m.RuleSet + "." + m.Rule
 }
 
 //
