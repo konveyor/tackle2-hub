@@ -123,7 +123,7 @@ endif
 
 # Run unit tests (all tests outside /test directory).
 test:
-	go test -v $(go list ./... | grep -v "hub/test")
+	go test -v $(shell go list ./... | grep -v "hub/test")
 
 # Run Hub REST API tests.
 test-api:
