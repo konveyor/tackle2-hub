@@ -36,6 +36,7 @@ type Review = model.Review
 type Setting = model.Setting
 type RuleBundle = model.RuleBundle
 type RuleSet = model.RuleSet
+type Rule = model.Rule
 type Stakeholder = model.Stakeholder
 type StakeholderGroup = model.StakeholderGroup
 type Tag = model.Tag

@@ -46,6 +46,8 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
+		"RuleSets.Rules",
+		"RuleSets.Rules.File",
 		"RuleSets.File")
 	result := db.First(bundle, id)
 	if result.Error != nil {
@@ -70,6 +72,8 @@ func (h RuleBundleHandler) List(ctx *gin.Context) {
 	db := h.preLoad(
 		h.Paginated(ctx),
 		clause.Associations,
+		"RuleSets.Rules",
+		"RuleSets.Rules.File",
 		"RuleSets.File")
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -111,6 +115,8 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
+		"RuleSets.Rules",
+		"RuleSets.Rules.File",
 		"RuleSets.File")
 	result = db.First(m)
 	if result.Error != nil {
@@ -293,6 +299,7 @@ type RuleSet struct {
 	Name        string      `json:"name,omitempty"`
 	Description string      `json:"description,omitempty"`
 	Metadata    interface{} `json:"metadata,omitempty"`
+	Rules       []Rule      `json:"rules"`
 	File        *Ref        `json:"file,omitempty"`
 }
 
@@ -302,6 +309,13 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	_ = json.Unmarshal(m.Metadata, &r.Metadata)
+	for i := range m.Rules {
+		rule := Rule{}
+		rule.With(&m.Rules[i])
+		r.Rules = append(
+			r.Rules,
+			rule)
+	}
 	r.File = r.refPtr(m.FileID, m.File)
 }
 
@@ -314,6 +328,37 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 	if r.Metadata != nil {
 		m.Metadata, _ = json.Marshal(r.Metadata)
 	}
+	m.Rules = []model.Rule{}
+	for _, rule := range r.Rules {
+		m.Rules = append(m.Rules, *rule.Model())
+	}
+	m.FileID = r.idPtr(r.File)
+	return
+}
+
+//
+// Rule - REST Resource.
+type Rule struct {
+	Resource
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	File        *Ref   `json:"file,omitempty"`
+}
+
+//
+// With updates the resource with the model.
+func (r *Rule) With(m *model.Rule) {
+	r.Resource.With(&m.Model)
+	r.Name = m.Name
+	r.File = r.refPtr(m.FileID, m.File)
+}
+
+//
+// Model builds a model.
+func (r *Rule) Model() (m *model.Rule) {
+	m = &model.Rule{}
+	m.ID = r.ID
+	m.Name = r.Name
 	m.FileID = r.idPtr(r.File)
 	return
 }
