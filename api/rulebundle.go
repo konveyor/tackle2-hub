@@ -340,7 +340,7 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 // Rule - REST Resource.
 type Rule struct {
 	Resource
-	Name        string `json:"name,omitempty"`
+	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	File        *Ref   `json:"file,omitempty"`
 }
