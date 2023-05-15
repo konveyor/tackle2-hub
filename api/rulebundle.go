@@ -292,7 +292,7 @@ type RuleSet struct {
 	Resource
 	Name        string      `json:"name,omitempty"`
 	Description string      `json:"description,omitempty"`
-	Metadata    interface{} `json:"metadata,omitempty"`
+	Labels      interface{} `json:"labels,omitempty"`
 	File        *Ref        `json:"file,omitempty"`
 }
 
@@ -301,7 +301,7 @@ type RuleSet struct {
 func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	_ = json.Unmarshal(m.Metadata, &r.Metadata)
+	_ = json.Unmarshal(m.Labels, &r.Labels)
 	r.File = r.refPtr(m.FileID, m.File)
 }
 
@@ -311,8 +311,8 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 	m = &model.RuleSet{}
 	m.ID = r.ID
 	m.Name = r.Name
-	if r.Metadata != nil {
-		m.Metadata, _ = json.Marshal(r.Metadata)
+	if r.Labels != nil {
+		m.Labels, _ = json.Marshal(r.Labels)
 	}
 	m.FileID = r.idPtr(r.File)
 	return
