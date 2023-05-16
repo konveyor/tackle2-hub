@@ -28,8 +28,8 @@ echo -n "- ruleset: ruleSet-${r}
   category: warning
   effort: 10
   labels:
-  - RULESET-${r}
-  - RULE-${i}
+  - konveyor.io/target=RULESET-${r}
+  - konveyor.io/source=RULE-${i}
   incidents:
   - uri: http://thing.com/file:1
     message: Thing happend line:1

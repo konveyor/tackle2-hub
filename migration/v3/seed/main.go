@@ -3,7 +3,7 @@ package seed
 import (
 	"encoding/json"
 
-	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )

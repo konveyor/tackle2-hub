@@ -27,8 +27,8 @@ type AnalysisDependency struct {
 // AnalysisIssue report issue (violation).
 type AnalysisIssue struct {
 	Model
-	RuleSet     string `gorm:"index:rule;not null"`
-	Rule        string `gorm:"index:rule;not null"`
+	RuleSet     string `gorm:"index:AnalysisIssueA;not null"`
+	Rule        string `gorm:"index:AnalysisIssueA;not null"`
 	Name        string `gorm:"index"`
 	Description string
 	Category    string             `gorm:"index;not null"`
