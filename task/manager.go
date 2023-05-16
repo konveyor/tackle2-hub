@@ -480,12 +480,6 @@ func (r *Task) pod(addon *crd.Addon, owner *crd.Tackle, secret *core.Secret) (po
 //
 // specification builds a Pod specification.
 func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specification core.PodSpec) {
-	working := core.Volume{
-		Name: "working",
-		VolumeSource: core.VolumeSource{
-			EmptyDir: &core.EmptyDirVolumeSource{},
-		},
-	}
 	cache := core.Volume{
 		Name: "cache",
 	}
@@ -507,7 +501,6 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 			r.container(addon, secret),
 		},
 		Volumes: []core.Volume{
-			working,
 			cache,
 		},
 	}
@@ -527,16 +520,11 @@ func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.
 		Name:            "main",
 		Image:           r.Image,
 		ImagePullPolicy: policy,
-		WorkingDir:      Settings.Addon.Path.WorkingDir,
 		Resources:       addon.Spec.Resources,
 		Env: []core.EnvVar{
 			{
 				Name:  settings.EnvHubBaseURL,
 				Value: Settings.Addon.Hub.URL,
-			},
-			{
-				Name:  settings.EnvAddonWorkingDir,
-				Value: Settings.Addon.Path.WorkingDir,
 			},
 			{
 				Name:  settings.EnvTask,
@@ -555,10 +543,6 @@ func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.
 			},
 		},
 		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      "working",
-				MountPath: Settings.Addon.Path.WorkingDir,
-			},
 			{
 				Name:      "cache",
 				MountPath: Settings.Cache.Path,
