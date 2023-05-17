@@ -12,52 +12,40 @@ echo " RuleSets: ${nRuleSet}"
 echo " Issues: ${nIssue}"
 
 #
-# RuleSets
-#
-echo -n "---
-rulesets:
-" > ${file}
-for r in $(seq 1 ${nRuleSet})
-do 
-echo -n "- name: Main${r}
-  description: Testing.
-  technologies:
-  - name: TechA-${r}
-  - name: TechB-${r}
-  - name: TechC-${r}
-  - name: TechS-${r}
-    source: true
-  issues:
-" >> ${file}
-#
 # Issues
 #
+echo -n "---
+issues:
+" > ${file}
+for r in $(seq 1 ${nRuleSet})
+do
 for i in $(seq 1 ${nIssue})
 do
-echo -n "  - ruleid: Rule-${i}
-    name: Rule-${i}-Violated
-    description: This is a test ${r}/${i}.
-    category: warning
-    effort: 10
-    labels:
-    - RULESET-${r}
-    - RULE-${i}
-    incidents:
-    - uri: http://thing.com/file:1
-      message: Thing happend line:1
-      facts:
-        factA: 1.A
-        factB: 1.B
-    - uri: http://thing.com/file:2
-      message: Thing happend line:2
-      facts:
-        factA: 1.C
-        factB: 1.D
-    - uri: http://thing.com/file:3
-      message: Thing happend line:3
-      facts:
-        factA: 1.E
-        factB: 1.F
+echo -n "- ruleset: ruleSet-${r}
+  rule: rule-${i}
+  name: Rule-${i}-Violated
+  description: This is a test ${r}/${i}.
+  category: warning
+  effort: 10
+  labels:
+  - konveyor.io/target=RULESET-${r}
+  - konveyor.io/source=RULE-${i}
+  incidents:
+  - uri: http://thing.com/file:1
+    message: Thing happend line:1
+    facts:
+      factA: 1.A
+      factB: 1.B
+  - uri: http://thing.com/file:2
+    message: Thing happend line:2
+    facts:
+      factA: 1.C
+      factB: 1.D
+  - uri: http://thing.com/file:3
+    message: Thing happend line:3
+    facts:
+      factA: 1.E
+      factB: 1.F
 " >> ${file}
 done
 done

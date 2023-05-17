@@ -26,8 +26,6 @@ type ImportSummary = v3.ImportSummary
 type ImportTag = v3.ImportTag
 type Proxy = v3.Proxy
 type Review = v3.Review
-type RuleBundle = v3.RuleBundle
-type RuleSet = v3.RuleSet
 type Setting = v3.Setting
 type Tag = v3.Tag
 type TagCategory = v3.TagCategory
@@ -46,11 +44,9 @@ type DependencyCyclicError = v3.DependencyCyclicError
 // all the other models on which they may depend.
 func All() []interface{} {
 	return []interface{}{
-		AnalysisTechnology{},
 		AnalysisDependency{},
 		AnalysisIncident{},
 		AnalysisIssue{},
-		AnalysisRuleSet{},
 		Analysis{},
 		ImportSummary{},
 		Import{},
