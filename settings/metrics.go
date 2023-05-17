@@ -9,36 +9,36 @@ import (
 //
 // Environment variables.
 const (
-	MetricsPort = "METRICS_PORT"
+	MetricsEnabled = "METRICS_ENABLED"
+	MetricsPort    = "METRICS_PORT"
 )
 
 //
 // Metrics settings
 type Metrics struct {
-	// Metrics port. 0 = disabled.
+	// Metrics port.
 	Port int
+	// Metrics enabled.
+	Enabled bool
 }
 
 //
 // Load settings.
 func (r *Metrics) Load() error {
+	// Enabled
+	r.Enabled = getEnvBool(MetricsEnabled, true)
 	// Port
 	if s, found := os.LookupEnv(MetricsPort); found {
 		r.Port, _ = strconv.Atoi(s)
 	} else {
-		r.Port = 8080
+		r.Port = 2112
 	}
 
 	return nil
 }
 
 //
-// Metrics address.
-// Port = 0 will disable metrics.
+// Address on which to serve metrics.
 func (r *Metrics) Address() string {
-	if r.Port > 0 {
-		return fmt.Sprintf(":%d", r.Port)
-	} else {
-		return "0"
-	}
+	return fmt.Sprintf(":%d", r.Port)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -49,6 +50,10 @@ func (h PathfinderHandler) ReverseProxy(ctx *gin.Context) {
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
 		},
+	}
+
+	if ctx.Request.Method == http.MethodPost {
+		metrics.AssessmentsInitiated.Inc()
 	}
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)

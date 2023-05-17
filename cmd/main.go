@@ -12,6 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -58,10 +59,6 @@ func buildScheme() (err error) {
 //
 // addonManager
 func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		_ = http.ListenAndServe(":2112", nil)
-	}()
 	cfg, err := config.GetConfig()
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -70,7 +67,7 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	mgr, err = manager.New(
 		cfg,
 		manager.Options{
-			MetricsBindAddress: Settings.Metrics.Address(),
+			MetricsBindAddress: "0",
 			Namespace:          Settings.Hub.Namespace,
 		})
 	if err != nil {
@@ -111,8 +108,9 @@ func main() {
 		}
 		//
 		// Add controller.
-		addonManager, err := addonManager(db)
-		if err != nil {
+		addonManager, aErr := addonManager(db)
+		if aErr != nil {
+			err = aErr
 			return
 		}
 		go func() {
@@ -179,6 +177,18 @@ func main() {
 	}
 	trackerManager.Run(context.Background())
 	//
+	// Metrics
+	if Settings.Metrics.Enabled {
+		log.Info("Serving Prometheus metrics", "port", Settings.Metrics.Port)
+		http.Handle("/metrics", promhttp.Handler())
+		go func() {
+			_ = http.ListenAndServe(Settings.Metrics.Address(), nil)
+		}()
+		metricsManager := metrics.Manager{
+			DB: db,
+		}
+		metricsManager.Run(context.Background())
+	}
 	// Web
 	router := gin.Default()
 	router.Use(api.Render())
