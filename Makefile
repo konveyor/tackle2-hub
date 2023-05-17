@@ -123,15 +123,15 @@ endif
 
 # Run unit tests (all tests outside /test directory).
 test:
-	go test -v $(shell go list ./... | grep -v "hub/test")
+	go test -count=1 -v $(shell go list ./... | grep -v "hub/test")
 
 # Run Hub REST API tests.
 test-api:
-	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/api/...
+	HUB_BASE_URL=${HUB_BASE_URL} go test -count=1 -v ./test/api/...
 
 # Run Hub API integration tests.
 test-integration:
-	HUB_BASE_URL=${HUB_BASE_URL} go test -v ./test/integration/...
+	HUB_BASE_URL=${HUB_BASE_URL} go test -count=1 -v ./test/integration/...
 
 # Run Hub test suite.
 test-all: test-unit test-api test-integration
