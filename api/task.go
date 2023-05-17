@@ -499,27 +499,27 @@ type TTL struct {
 //
 // Task REST resource.
 type Task struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string      `json:"name"`
-	Locator     string      `json:"locator,omitempty"`
-	Priority    int         `json:"priority,omitempty"`
-	Variant     string      `json:"variant,omitempty"`
-	Policy      string      `json:"policy,omitempty"`
-	TTL         *TTL        `json:"ttl,omitempty"`
-	Addon       string      `json:"addon,omitempty" binding:"required"`
+	Locator     string      `json:"locator,omitempty" yaml:",omitempty"`
+	Priority    int         `json:"priority,omitempty" yaml:",omitempty"`
+	Variant     string      `json:"variant,omitempty" yaml:",omitempty"`
+	Policy      string      `json:"policy,omitempty" yaml:",omitempty"`
+	TTL         *TTL        `json:"ttl,omitempty" yaml:",omitempty"`
+	Addon       string      `json:"addon,omitempty" binding:"required" yaml:",omitempty"`
 	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Application *Ref        `json:"application,omitempty"`
+	Application *Ref        `json:"application,omitempty" yaml:",omitempty"`
 	State       string      `json:"state"`
-	Image       string      `json:"image,omitempty"`
-	Bucket      *Ref        `json:"bucket,omitempty"`
-	Purged      bool        `json:"purged,omitempty"`
-	Started     *time.Time  `json:"started,omitempty"`
-	Terminated  *time.Time  `json:"terminated,omitempty"`
-	Error       string      `json:"error,omitempty"`
-	Pod         string      `json:"pod,omitempty"`
-	Retries     int         `json:"retries,omitempty"`
-	Canceled    bool        `json:"canceled,omitempty"`
-	Report      *TaskReport `json:"report,omitempty"`
+	Image       string      `json:"image,omitempty" yaml:",omitempty"`
+	Bucket      *Ref        `json:"bucket,omitempty" yaml:",omitempty"`
+	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
+	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
+	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
+	Error       string      `json:"error,omitempty" yaml:",omitempty"`
+	Pod         string      `json:"pod,omitempty" yaml:",omitempty"`
+	Retries     int         `json:"retries,omitempty" yaml:",omitempty"`
+	Canceled    bool        `json:"canceled,omitempty" yaml:",omitempty"`
+	Report      *TaskReport `json:"report,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -577,13 +577,13 @@ func (r *Task) Model() (m *model.Task) {
 //
 // TaskReport REST resource.
 type TaskReport struct {
-	Resource
+	Resource  `yaml:",inline"`
 	Status    string      `json:"status"`
-	Error     string      `json:"error"`
-	Total     int         `json:"total"`
-	Completed int         `json:"completed"`
-	Activity  []string    `json:"activity"`
-	Result    interface{} `json:"result,omitempty" swaggertype:"object"`
+	Error     string      `json:"error,omitempty" yaml:",omitempty"`
+	Total     int         `json:"total,omitempty" yaml:",omitempty"`
+	Completed int         `json:"completed,omitempty" yaml:",omitempty"`
+	Activity  []string    `json:"activity,omitempty" yaml:",omitempty"`
+	Result    interface{} `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
 	TaskID    uint        `json:"task"`
 }
 
