@@ -27,8 +27,8 @@ type AnalysisDependency struct {
 // AnalysisIssue report issue (violation).
 type AnalysisIssue struct {
 	Model
-	RuleSet     string `gorm:"index:AnalysisIssueA;not null"`
-	Rule        string `gorm:"index:AnalysisIssueA;not null"`
+	RuleSet     string `gorm:"index:issueA;not null"`
+	Rule        string `gorm:"index:issueA;not null"`
 	Name        string `gorm:"index"`
 	Description string
 	Category    string             `gorm:"index;not null"`
@@ -51,11 +51,12 @@ func (m *AnalysisIssue) RuleId() (id string) {
 // AnalysisIncident report incident.
 type AnalysisIncident struct {
 	Model
-	URI     string
-	Message string
-	Facts   JSON `gorm:"type:json"`
-	IssueID uint `gorm:"index;not null"`
-	Issue   *AnalysisIssue
+	URI      string
+	Message  string
+	CodeSnip string
+	Facts    JSON `gorm:"type:json"`
+	IssueID  uint `gorm:"index;not null"`
+	Issue    *AnalysisIssue
 }
 
 //

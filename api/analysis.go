@@ -990,6 +990,7 @@ type AnalysisIncident struct {
 	Resource `yaml:",inline"`
 	URI      string  `json:"uri"`
 	Message  string  `json:"message"`
+	CodeSnip string  `json:"codeSnip"`
 	Facts    FactMap `json:"facts"`
 }
 
@@ -999,6 +1000,7 @@ func (r *AnalysisIncident) With(m *model.AnalysisIncident) {
 	r.Resource.With(&m.Model)
 	r.URI = m.URI
 	r.Message = m.Message
+	r.CodeSnip = m.CodeSnip
 	if m.Facts != nil {
 		_ = json.Unmarshal(m.Facts, &r.Facts)
 	}
@@ -1010,6 +1012,7 @@ func (r *AnalysisIncident) Model() (m *model.AnalysisIncident) {
 	m = &model.AnalysisIncident{}
 	m.URI = r.URI
 	m.Message = r.Message
+	m.CodeSnip = r.CodeSnip
 	m.Facts, _ = json.Marshal(r.Facts)
 	return
 }
