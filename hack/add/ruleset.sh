@@ -3,7 +3,7 @@
 host="${HOST:-localhost:8080}"
 file="${1:-1}"
 
-curl -X POST ${host}/rulebundles \
+curl -X POST ${host}/rulesets \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
  -d \
