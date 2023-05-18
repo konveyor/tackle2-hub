@@ -514,7 +514,6 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		db = db.Where("i.ID IN (?)", q)
 	}
 	db = db.Group("i.RuleSet,i.Rule")
-	db = db.Order("i.RuleSet,i.Rule")
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.Issue{}).Count(&count)
@@ -538,6 +537,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		Affected int
 	}
 	var list []M
+	db = h.paginated(ctx, db)
 	result = db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
