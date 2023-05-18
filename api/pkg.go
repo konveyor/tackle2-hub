@@ -70,7 +70,7 @@ func All() []Handler {
 		&IdentityHandler{},
 		&ProxyHandler{},
 		&ReviewHandler{},
-		&RuleBundleHandler{},
+		&RuleSetHandler{},
 		&SchemaHandler{},
 		&SettingHandler{},
 		&StakeholderHandler{},

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	v3 "github.com/konveyor/tackle2-hub/migration/v3/model"
 	"github.com/konveyor/tackle2-hub/migration/v4/model"
 	"gorm.io/gorm"
 )
@@ -37,13 +38,13 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		return
 	}
 
-	err = db.AutoMigrate(r.Models()...)
+	err = r.migrateRuleBundles(db)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 
-	err = r.addLabels(db)
+	err = db.AutoMigrate(r.Models()...)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -56,42 +57,69 @@ func (r Migration) Models() []interface{} {
 	return model.All()
 }
 
-func (r Migration) addLabels(db *gorm.DB) (err error) {
+//
+// RuleBundles renamed: RuleSet
+// RuleSet renamed: Rule
+func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
+	err = db.Migrator().RenameTable(&model.RuleSet{}, "RuleSet__old")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.AutoMigrate(&model.RuleSet{}, &model.Rule{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Exec("INSERT INTO RuleSet SELECT * FROM RuleBundle").Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	type MD struct {
 		Source string `json:"source,omitempty"`
 		Target string `json:"target,omitempty"`
 	}
-	var rulesets []model.RuleSet
-	result := db.Find(&rulesets)
+	var rulesets []v3.RuleSet
+	result := db.Table("RuleSet__old").Find(&rulesets)
 	if result.Error != nil {
 		err = result.Error
 		return
 	}
 	for _, r := range rulesets {
-		var labels []string
+		labels := []string{}
 		md := MD{}
-		if r.Metadata == nil {
-			continue
+		if r.Metadata != nil {
+			err = json.Unmarshal(r.Metadata, &md)
+			if err == nil {
+				if md.Source != "" {
+					labels = append(labels, "konveyor.io/source="+md.Source)
+				}
+				if md.Target != "" {
+					labels = append(labels, "konveyor.io/target="+md.Target)
+				}
+			}
 		}
-		err = json.Unmarshal(r.Metadata, &md)
+		rule := &model.Rule{}
+		rule.ID = r.ID
+		rule.RuleSetID = r.RuleBundleID
+		rule.Labels, _ = json.Marshal(labels)
+		rule.FileID = r.FileID
+		err = db.Create(rule).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		if md.Source != "" {
-			labels = append(labels, "konveyor.io/source="+md.Source)
-		}
-		if md.Target != "" {
-			labels = append(labels, "konveyor.io/target="+md.Target)
-		}
-		if len(labels) > 0 {
-			r.Labels, _ = json.Marshal(labels)
-			err = db.Save(r).Error
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		}
+	}
+	err = db.Exec("UPDATE Setting SET Key = 'ui.ruleset.order' WHERE Key = 'ui.bundle.order'").Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Migrator().DropTable("RuleBundle", "RuleSet__old")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 	return
 }

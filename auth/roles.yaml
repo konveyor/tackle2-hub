@@ -155,7 +155,7 @@
         - get
         - post
         - put
-    - name: rulebundles
+    - name: rulesets
       verbs:
         - delete
         - get
@@ -311,7 +311,7 @@
         - get
         - post
         - put
-    - name: rulebundles
+    - name: rulesets
       verbs:
         - delete
         - get
@@ -415,7 +415,7 @@
     - name: buckets
       verbs:
         - get
-    - name: rulebundles
+    - name: rulesets
       verbs:
         - get
     - name: migrationwaves
@@ -504,7 +504,7 @@
     - name: buckets
       verbs:
         - get
-    - name: rulebundles
+    - name: rulesets
       verbs:
         - get
     - name: migrationwaves

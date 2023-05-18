@@ -11,49 +11,49 @@ import (
 //
 // Routes
 const (
-	RuleBundlesRoot = "/rulebundles"
-	RuleBundleRoot  = RuleBundlesRoot + "/:" + ID
+	RuleSetsRoot = "/rulesets"
+	RuleSetRoot  = RuleSetsRoot + "/:" + ID
 )
 
 //
-// RuleBundleHandler handles bundle resource routes.
-type RuleBundleHandler struct {
+// RuleSetHandler handles ruleset resource routes.
+type RuleSetHandler struct {
 	BaseHandler
 }
 
-func (h RuleBundleHandler) AddRoutes(e *gin.Engine) {
+func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("rulebundles"), Transaction)
-	routeGroup.GET(RuleBundlesRoot, h.List)
-	routeGroup.GET(RuleBundlesRoot+"/", h.List)
-	routeGroup.POST(RuleBundlesRoot, h.Create)
-	routeGroup.GET(RuleBundleRoot, h.Get)
-	routeGroup.PUT(RuleBundleRoot, h.Update)
-	routeGroup.DELETE(RuleBundleRoot, h.Delete)
+	routeGroup.Use(Required("rulesets"), Transaction)
+	routeGroup.GET(RuleSetsRoot, h.List)
+	routeGroup.GET(RuleSetsRoot+"/", h.List)
+	routeGroup.POST(RuleSetsRoot, h.Create)
+	routeGroup.GET(RuleSetRoot, h.Get)
+	routeGroup.PUT(RuleSetRoot, h.Update)
+	routeGroup.DELETE(RuleSetRoot, h.Delete)
 }
 
 // Get godoc
-// @summary Get a RuleBundle by ID.
-// @description Get a RuleBundle by ID.
-// @tags rulebundles
+// @summary Get a RuleSet by ID.
+// @description Get a RuleSet by ID.
+// @tags rulesets
 // @produce json
-// @success 200 {object} RuleBundle
-// @router /rulebundles/{id} [get]
-// @param id path string true "RuleBundle ID"
-func (h RuleBundleHandler) Get(ctx *gin.Context) {
+// @success 200 {object} RuleSet
+// @router /rulesets/{id} [get]
+// @param id path string true "RuleSet ID"
+func (h RuleSetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
-	bundle := &model.RuleBundle{}
+	ruleset := &model.RuleSet{}
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
-		"RuleSets.File")
-	result := db.First(bundle, id)
+		"Rules.File")
+	result := db.First(ruleset, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	r := RuleBundle{}
-	r.With(bundle)
+	r := RuleSet{}
+	r.With(ruleset)
 
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -61,24 +61,24 @@ func (h RuleBundleHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all bindings.
 // @description List all bindings.
-// @tags rulebundles
+// @tags rulesets
 // @produce json
-// @success 200 {object} []RuleBundle
-// @router /rulebundles [get]
-func (h RuleBundleHandler) List(ctx *gin.Context) {
-	var list []model.RuleBundle
+// @success 200 {object} []RuleSet
+// @router /rulesets [get]
+func (h RuleSetHandler) List(ctx *gin.Context) {
+	var list []model.RuleSet
 	db := h.preLoad(
 		h.Paginated(ctx),
 		clause.Associations,
-		"RuleSets.File")
+		"Rules.File")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	resources := []RuleBundle{}
+	resources := []RuleSet{}
 	for i := range list {
-		r := RuleBundle{}
+		r := RuleSet{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -87,21 +87,21 @@ func (h RuleBundleHandler) List(ctx *gin.Context) {
 }
 
 // Create godoc
-// @summary Create a bundle.
-// @description Create a bundle.
-// @tags rulebundles
+// @summary Create a ruleset.
+// @description Create a ruleset.
+// @tags rulesets
 // @accept json
 // @produce json
-// @success 201 {object} RuleBundle
-// @router /rulebundles [post]
-// @param ruleBundle body RuleBundle true "RuleBundle data"
-func (h RuleBundleHandler) Create(ctx *gin.Context) {
-	bundle := &RuleBundle{}
-	err := h.Bind(ctx, bundle)
+// @success 201 {object} RuleSet
+// @router /rulesets [post]
+// @param ruleBundle body RuleSet true "RuleSet data"
+func (h RuleSetHandler) Create(ctx *gin.Context) {
+	ruleset := &RuleSet{}
+	err := h.Bind(ctx, ruleset)
 	if err != nil {
 		return
 	}
-	m := bundle.Model()
+	m := ruleset.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
@@ -111,33 +111,33 @@ func (h RuleBundleHandler) Create(ctx *gin.Context) {
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
-		"RuleSets.File")
+		"Rules.File")
 	result = db.First(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	bundle.With(m)
+	ruleset.With(m)
 
-	h.Respond(ctx, http.StatusCreated, bundle)
+	h.Respond(ctx, http.StatusCreated, ruleset)
 }
 
 // Delete godoc
-// @summary Delete a bundle.
-// @description Delete a bundle.
-// @tags rulebundles
+// @summary Delete a ruleset.
+// @description Delete a ruleset.
+// @tags rulesets
 // @success 204
-// @router /rulebundles/{id} [delete]
-// @param id path string true "RuleBundle ID"
-func (h RuleBundleHandler) Delete(ctx *gin.Context) {
+// @router /rulesets/{id} [delete]
+// @param id path string true "RuleSet ID"
+func (h RuleSetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	bundle := &model.RuleBundle{}
-	result := h.DB(ctx).First(bundle, id)
+	ruleset := &model.RuleSet{}
+	result := h.DB(ctx).First(ruleset, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	result = h.DB(ctx).Delete(bundle, id)
+	result = h.DB(ctx).Delete(ruleset, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -147,17 +147,17 @@ func (h RuleBundleHandler) Delete(ctx *gin.Context) {
 }
 
 // Update godoc
-// @summary Update a bundle.
-// @description Update a bundle.
-// @tags rulebundles
+// @summary Update a ruleset.
+// @description Update a ruleset.
+// @tags rulesets
 // @accept json
 // @success 204
-// @router /rulebundles/{id} [put]
-// @param id path string true "RuleBundle ID"
-// @param ruleBundle body RuleBundle true "RuleBundle data"
-func (h RuleBundleHandler) Update(ctx *gin.Context) {
+// @router /rulesets/{id} [put]
+// @param id path string true "RuleSet ID"
+// @param ruleBundle body RuleSet true "RuleSet data"
+func (h RuleSetHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &RuleBundle{}
+	r := &RuleSet{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -165,15 +165,15 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 	}
 	//
 	// Delete unwanted ruleSets.
-	m := &model.RuleBundle{}
+	m := &model.RuleSet{}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	for _, ruleset := range m.RuleSets {
-		if !r.HasRuleSet(ruleset.ID) {
+	for _, ruleset := range m.Rules {
+		if !r.HasRule(ruleset.ID) {
 			err := h.DB(ctx).Delete(ruleset).Error
 			if err != nil {
 				_ = ctx.Error(err)
@@ -182,7 +182,7 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 		}
 	}
 	//
-	// Update bundle.
+	// Update ruleset.
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
@@ -193,15 +193,15 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("RuleSets").Replace(m.RuleSets)
+	err = h.DB(ctx).Model(m).Association("Rules").Replace(m.Rules)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	//
 	// Update ruleSets.
-	for i := range m.RuleSets {
-		m := &m.RuleSets[i]
+	for i := range m.Rules {
+		m := &m.Rules[i]
 		db = h.DB(ctx).Model(m)
 		err = db.Updates(h.fields(m)).Error
 		if err != nil {
@@ -214,14 +214,14 @@ func (h RuleBundleHandler) Update(ctx *gin.Context) {
 }
 
 //
-// RuleBundle REST resource.
-type RuleBundle struct {
+// RuleSet REST resource.
+type RuleSet struct {
 	Resource
 	Kind        string      `json:"kind,omitempty"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Image       Ref         `json:"image"`
-	RuleSets    []RuleSet   `json:"rulesets"`
+	Rules       []Rule      `json:"rules"`
 	Custom      bool        `json:"custom,omitempty"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
@@ -229,7 +229,7 @@ type RuleBundle struct {
 
 //
 // With updates the resource with the model.
-func (r *RuleBundle) With(m *model.RuleBundle) {
+func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
@@ -242,20 +242,20 @@ func (r *RuleBundle) With(m *model.RuleBundle) {
 	}
 	r.Image = imgRef
 	_ = json.Unmarshal(m.Repository, &r.Repository)
-	r.RuleSets = []RuleSet{}
-	for i := range m.RuleSets {
-		rule := RuleSet{}
-		rule.With(&m.RuleSets[i])
-		r.RuleSets = append(
-			r.RuleSets,
+	r.Rules = []Rule{}
+	for i := range m.Rules {
+		rule := Rule{}
+		rule.With(&m.Rules[i])
+		r.Rules = append(
+			r.Rules,
 			rule)
 	}
 }
 
 //
 // Model builds a model.
-func (r *RuleBundle) Model() (m *model.RuleBundle) {
-	m = &model.RuleBundle{
+func (r *RuleSet) Model() (m *model.RuleSet) {
+	m = &model.RuleSet{
 		Kind:        r.Kind,
 		Name:        r.Name,
 		Description: r.Description,
@@ -264,9 +264,9 @@ func (r *RuleBundle) Model() (m *model.RuleBundle) {
 	m.ID = r.ID
 	m.ImageID = r.Image.ID
 	m.IdentityID = r.idPtr(r.Identity)
-	m.RuleSets = []model.RuleSet{}
-	for _, rule := range r.RuleSets {
-		m.RuleSets = append(m.RuleSets, *rule.Model())
+	m.Rules = []model.Rule{}
+	for _, rule := range r.Rules {
+		m.Rules = append(m.Rules, *rule.Model())
 	}
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
@@ -275,9 +275,9 @@ func (r *RuleBundle) Model() (m *model.RuleBundle) {
 }
 
 //
-// HasRuleSet - determine if the ruleset is referenced.
-func (r *RuleBundle) HasRuleSet(id uint) (b bool) {
-	for _, ruleset := range r.RuleSets {
+// HasRule - determine if the ruleset is referenced.
+func (r *RuleSet) HasRule(id uint) (b bool) {
+	for _, ruleset := range r.Rules {
 		if id == ruleset.ID {
 			b = true
 			break
@@ -287,8 +287,8 @@ func (r *RuleBundle) HasRuleSet(id uint) (b bool) {
 }
 
 //
-// RuleSet - REST Resource.
-type RuleSet struct {
+// Rule - REST Resource.
+type Rule struct {
 	Resource
 	Name        string      `json:"name,omitempty"`
 	Description string      `json:"description,omitempty"`
@@ -298,7 +298,7 @@ type RuleSet struct {
 
 //
 // With updates the resource with the model.
-func (r *RuleSet) With(m *model.RuleSet) {
+func (r *Rule) With(m *model.Rule) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	_ = json.Unmarshal(m.Labels, &r.Labels)
@@ -307,8 +307,8 @@ func (r *RuleSet) With(m *model.RuleSet) {
 
 //
 // Model builds a model.
-func (r *RuleSet) Model() (m *model.RuleSet) {
-	m = &model.RuleSet{}
+func (r *Rule) Model() (m *model.Rule) {
+	m = &model.Rule{}
 	m.ID = r.ID
 	m.Name = r.Name
 	if r.Labels != nil {
