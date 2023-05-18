@@ -23,10 +23,10 @@ const (
 	AnalysisCompositeDepRoot   = AnalysesCompositeRoot + "/dependencies"
 	AnalysisCompositeIssueRoot = AnalysesCompositeRoot + "/issues"
 
-	AppAnalysesRoot       = ApplicationRoot + "/analyses"
-	AppAnalysisRoot       = ApplicationRoot + "/analysis"
-	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
-	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
+	AppAnalysesRoot     = ApplicationRoot + "/analyses"
+	AppAnalysisRoot     = ApplicationRoot + "/analysis"
+	AppAnalysisDepsRoot = AppAnalysisRoot + "/dependencies"
+	AppIssuesRoot       = AppAnalysisRoot + "/issues"
 )
 
 //
@@ -52,7 +52,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
-	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
+	routeGroup.GET(AppIssuesRoot, h.AppIssues)
 }
 
 // Get godoc
@@ -222,11 +222,11 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @description - indirect
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysisDependency
+// @success 200 {object} []api.TechDependency
 // @router /application/{id}/analysis/dependencies [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
-	resources := []AnalysisDependency{}
+	resources := []TechDependency{}
 	// Latest.
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -256,7 +256,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
-	result = db.Model(&model.AnalysisDependency{}).Count(&count)
+	result = db.Model(&model.TechDependency{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -271,7 +271,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	list := []model.AnalysisDependency{}
+	list := []model.TechDependency{}
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -279,7 +279,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		return
 	}
 	for i := range list {
-		r := AnalysisDependency{}
+		r := TechDependency{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -298,11 +298,11 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @description - effort
 // @tags issues
 // @produce json
-// @success 200 {object} []api.AnalysisIssue
+// @success 200 {object} []api.Issue
 // @router /application/{id}/analysis/issues [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
-	resources := []AnalysisIssue{}
+	resources := []Issue{}
 	// Latest.
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -330,7 +330,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
-	result = db.Model(&model.AnalysisIssue{}).Count(&count)
+	result = db.Model(&model.Issue{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -345,7 +345,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	list := []model.AnalysisIssue{}
+	list := []model.Issue{}
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -353,7 +353,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	for i := range list {
-		r := AnalysisIssue{}
+		r := Issue{}
 		r.With(&list[i])
 		r.Application = id
 		resources = append(resources, r)
@@ -377,10 +377,10 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description - tag.id
 // @tags issues
 // @produce json
-// @success 200 {object} []api.AnalysisIssue
+// @success 200 {object} []api.Issue
 // @router /analyses/issues [get]
 func (h AnalysisHandler) Issues(ctx *gin.Context) {
-	resources := []AnalysisIssue{}
+	resources := []Issue{}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -401,13 +401,13 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Table("AnalysisIssue i,")
+	db = db.Table("Issue i,")
 	db = db.Joins("Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
 	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
-		&model.AnalysisIssue{},
+		&model.Issue{},
 		ctx,
 		&filter)
 	if n > 0 {
@@ -415,7 +415,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	}
 	// Count.
 	count := int64(0)
-	result := db.Model(&model.AnalysisIssue{}).Count(&count)
+	result := db.Model(&model.Issue{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -432,7 +432,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	//
 	// Find.
 	type M struct {
-		model.AnalysisIssue
+		model.Issue
 		ApplicationID uint
 	}
 	db = h.paginated(ctx, db)
@@ -448,8 +448,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	}
 	for i := range list {
 		m := &list[i]
-		r := AnalysisIssue{}
-		r.With(&m.AnalysisIssue)
+		r := Issue{}
+		r.With(&m.Issue)
 		r.Application = m.ApplicationID
 		resources = append(resources, r)
 	}
@@ -501,13 +501,13 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		"i.Effort",
 		"i.Labels",
 		"COUNT(distinct a.ID) Affected")
-	db = db.Table("AnalysisIssue i,")
+	db = db.Table("Issue i,")
 	db = db.Joins("Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
 	db = db.Where("a.ID in (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
-		&model.AnalysisIssue{},
+		&model.Issue{},
 		ctx,
 		&filter)
 	if n > 0 {
@@ -517,7 +517,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	db = db.Order("i.RuleSet,i.Rule")
 	// Count.
 	count := int64(0)
-	result := db.Model(&model.AnalysisIssue{}).Count(&count)
+	result := db.Model(&model.Issue{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -534,7 +534,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	affected := make(map[string]int)
 	// Find.
 	type M struct {
-		model.AnalysisIssue
+		model.Issue
 		Affected int
 	}
 	var list []M
@@ -586,10 +586,10 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 // @description - tag.id
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysisDependency
+// @success 200 {object} []api.TechDependency
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) Deps(ctx *gin.Context) {
-	resources := []AnalysisDependency{}
+	resources := []TechDependency{}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -610,7 +610,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
-		&model.AnalysisDependency{},
+		&model.TechDependency{},
 		ctx,
 		&filter)
 	if n > 0 {
@@ -618,7 +618,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Count.
 	count := int64(0)
-	result := db.Model(&model.AnalysisDependency{}).Count(&count)
+	result := db.Model(&model.TechDependency{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -634,14 +634,14 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Find.
 	db = h.paginated(ctx, db)
-	list := []model.AnalysisDependency{}
+	list := []model.TechDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
 	for i := range list {
-		r := AnalysisDependency{}
+		r := TechDependency{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -662,7 +662,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - tag.id
 // @tags dependencies
 // @produce json
-// @success 200 {object} []api.AnalysisDependency
+// @success 200 {object} []api.TechDependency
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	resources := []DepComposite{}
@@ -692,7 +692,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
-		&model.AnalysisDependency{},
+		&model.TechDependency{},
 		ctx,
 		&filter)
 	if n > 0 {
@@ -707,7 +707,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 			","))
 	// Count.
 	count := int64(0)
-	result := db.Model(&model.AnalysisDependency{}).Count(&count)
+	result := db.Model(&model.TechDependency{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -723,7 +723,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	}
 	// Find.
 	type M struct {
-		model.AnalysisDependency
+		model.TechDependency
 		Affected int
 	}
 	var list []M
@@ -832,25 +832,25 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 // Analysis (Analysis) REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
-	Issues       []AnalysisIssue      `json:"issues"`
-	Dependencies []AnalysisDependency `json:"dependencies"`
+	Issues       []Issue          `json:"issues"`
+	Dependencies []TechDependency `json:"dependencies"`
 }
 
 //
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
-	r.Issues = []AnalysisIssue{}
+	r.Issues = []Issue{}
 	for i := range m.Issues {
-		n := AnalysisIssue{}
+		n := Issue{}
 		n.With(&m.Issues[i])
 		r.Issues = append(
 			r.Issues,
 			n)
 	}
-	r.Dependencies = []AnalysisDependency{}
+	r.Dependencies = []TechDependency{}
 	for i := range m.Dependencies {
-		n := AnalysisDependency{}
+		n := TechDependency{}
 		n.With(&m.Dependencies[i])
 		r.Dependencies = append(
 			r.Dependencies,
@@ -862,14 +862,14 @@ func (r *Analysis) With(m *model.Analysis) {
 // Model builds a model.
 func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
-	m.Issues = []model.AnalysisIssue{}
+	m.Issues = []model.Issue{}
 	for i := range r.Issues {
 		n := r.Issues[i].Model()
 		m.Issues = append(
 			m.Issues,
 			*n)
 	}
-	m.Dependencies = []model.AnalysisDependency{}
+	m.Dependencies = []model.TechDependency{}
 	for i := range r.Dependencies {
 		n := r.Dependencies[i].Model()
 		m.Dependencies = append(
@@ -880,34 +880,34 @@ func (r *Analysis) Model() (m *model.Analysis) {
 }
 
 //
-// AnalysisIssue REST resource.
-type AnalysisIssue struct {
+// Issue REST resource.
+type Issue struct {
 	Resource    `yaml:",inline"`
-	RuleSet     string             `json:"ruleset" binding:"required"`
-	Rule        string             `json:"rule" binding:"required"`
-	Name        string             `json:"name" binding:"required"`
-	Description string             `json:"description,omitempty" yaml:",omitempty"`
-	Category    string             `json:"category" binding:"required"`
-	Effort      int                `json:"effort,omitempty" yaml:",omitempty"`
-	Incidents   []AnalysisIncident `json:"incidents,omitempty" yaml:",omitempty"`
-	Links       []AnalysisLink     `json:"links,omitempty" yaml:",omitempty"`
-	Facts       FactMap            `json:"facts,omitempty" yaml:",omitempty"`
-	Labels      []string           `json:"labels"`
-	Application uint               `json:"application" binding:"-"`
+	RuleSet     string         `json:"ruleset" binding:"required"`
+	Rule        string         `json:"rule" binding:"required"`
+	Name        string         `json:"name" binding:"required"`
+	Description string         `json:"description,omitempty" yaml:",omitempty"`
+	Category    string         `json:"category" binding:"required"`
+	Effort      int            `json:"effort,omitempty" yaml:",omitempty"`
+	Incidents   []Incident     `json:"incidents,omitempty" yaml:",omitempty"`
+	Links       []AnalysisLink `json:"links,omitempty" yaml:",omitempty"`
+	Facts       FactMap        `json:"facts,omitempty" yaml:",omitempty"`
+	Labels      []string       `json:"labels"`
+	Application uint           `json:"application" binding:"-"`
 }
 
 //
 // With updates the resource with the model.
-func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
+func (r *Issue) With(m *model.Issue) {
 	r.Resource.With(&m.Model)
 	r.RuleSet = m.RuleSet
 	r.Rule = m.Rule
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Category = m.Category
-	r.Incidents = []AnalysisIncident{}
+	r.Incidents = []Incident{}
 	for i := range m.Incidents {
-		n := AnalysisIncident{}
+		n := Incident{}
 		n.With(&m.Incidents[i])
 		r.Incidents = append(
 			r.Incidents,
@@ -927,14 +927,14 @@ func (r *AnalysisIssue) With(m *model.AnalysisIssue) {
 
 //
 // Model builds a model.
-func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
-	m = &model.AnalysisIssue{}
+func (r *Issue) Model() (m *model.Issue) {
+	m = &model.Issue{}
 	m.RuleSet = r.RuleSet
 	m.Rule = r.Rule
 	m.Name = r.Name
 	m.Description = r.Description
 	m.Category = r.Category
-	m.Incidents = []model.AnalysisIncident{}
+	m.Incidents = []model.Incident{}
 	for i := range r.Incidents {
 		n := r.Incidents[i].Model()
 		m.Incidents = append(
@@ -949,8 +949,8 @@ func (r *AnalysisIssue) Model() (m *model.AnalysisIssue) {
 }
 
 //
-// AnalysisDependency REST resource.
-type AnalysisDependency struct {
+// TechDependency REST resource.
+type TechDependency struct {
 	Resource `yaml:",inline"`
 	Name     string   `json:"name" binding:"required"`
 	Version  string   `json:"version,omitempty" yaml:",omitempty"`
@@ -961,7 +961,7 @@ type AnalysisDependency struct {
 
 //
 // With updates the resource with the model.
-func (r *AnalysisDependency) With(m *model.AnalysisDependency) {
+func (r *TechDependency) With(m *model.TechDependency) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Version = m.Version
@@ -974,8 +974,8 @@ func (r *AnalysisDependency) With(m *model.AnalysisDependency) {
 
 //
 // Model builds a model.
-func (r *AnalysisDependency) Model() (m *model.AnalysisDependency) {
-	m = &model.AnalysisDependency{}
+func (r *TechDependency) Model() (m *model.TechDependency) {
+	m = &model.TechDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
 	m.Indirect = r.Indirect
@@ -985,8 +985,8 @@ func (r *AnalysisDependency) Model() (m *model.AnalysisDependency) {
 }
 
 //
-// AnalysisIncident REST resource.
-type AnalysisIncident struct {
+// Incident REST resource.
+type Incident struct {
 	Resource `yaml:",inline"`
 	URI      string  `json:"uri"`
 	Message  string  `json:"message"`
@@ -996,7 +996,7 @@ type AnalysisIncident struct {
 
 //
 // With updates the resource with the model.
-func (r *AnalysisIncident) With(m *model.AnalysisIncident) {
+func (r *Incident) With(m *model.Incident) {
 	r.Resource.With(&m.Model)
 	r.URI = m.URI
 	r.Message = m.Message
@@ -1008,8 +1008,8 @@ func (r *AnalysisIncident) With(m *model.AnalysisIncident) {
 
 //
 // Model builds a model.
-func (r *AnalysisIncident) Model() (m *model.AnalysisIncident) {
-	m = &model.AnalysisIncident{}
+func (r *Incident) Model() (m *model.Incident) {
+	m = &model.Incident{}
 	m.URI = r.URI
 	m.Message = r.Message
 	m.CodeSnip = r.CodeSnip
