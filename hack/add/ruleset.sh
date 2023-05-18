@@ -13,7 +13,7 @@ name: Test
 description: Test ruleset.
 image:
   id: 1
-rulesets:
+rules:
  - name: Example
    file:
      id: ${file}
