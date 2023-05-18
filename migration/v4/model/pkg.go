@@ -71,8 +71,8 @@ func All() []interface{} {
 		Ticket{},
 		File{},
 		Fact{},
-		RuleBundle{},
 		RuleSet{},
+		Rule{},
 		MigrationWave{},
 	}
 }

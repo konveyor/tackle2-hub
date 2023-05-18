@@ -28,7 +28,7 @@ var AddonRole = []string{
 	"tasks.report:*",
 	"tasks.bucket:get",
 	"files:get",
-	"rulebundles:get",
+	"rulesets:get",
 }
 
 //
