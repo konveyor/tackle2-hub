@@ -23,10 +23,10 @@ const (
 	AnalysisCompositeDepRoot   = AnalysesCompositeRoot + "/dependencies"
 	AnalysisCompositeIssueRoot = AnalysesCompositeRoot + "/issues"
 
-	AppAnalysesRoot     = ApplicationRoot + "/analyses"
-	AppAnalysisRoot     = ApplicationRoot + "/analysis"
-	AppAnalysisDepsRoot = AppAnalysisRoot + "/dependencies"
-	AppIssuesRoot       = AppAnalysisRoot + "/issues"
+	AppAnalysesRoot       = ApplicationRoot + "/analyses"
+	AppAnalysisRoot       = ApplicationRoot + "/analysis"
+	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
+	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
 )
 
 //
@@ -52,7 +52,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
-	routeGroup.GET(AppIssuesRoot, h.AppIssues)
+	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
 }
 
 // Get godoc
