@@ -44,9 +44,9 @@ type DependencyCyclicError = v3.DependencyCyclicError
 // all the other models on which they may depend.
 func All() []interface{} {
 	return []interface{}{
-		AnalysisDependency{},
-		AnalysisIncident{},
-		AnalysisIssue{},
+		TechDependency{},
+		Incident{},
+		Issue{},
 		Analysis{},
 		ImportSummary{},
 		Import{},

@@ -4,15 +4,15 @@ package model
 // Analysis report.
 type Analysis struct {
 	Model
-	Issues        []AnalysisIssue      `gorm:"constraint:OnDelete:CASCADE"`
-	Dependencies  []AnalysisDependency `gorm:"constraint:OnDelete:CASCADE"`
-	ApplicationID uint                 `gorm:"index;not null"`
+	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
+	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
+	ApplicationID uint             `gorm:"index;not null"`
 	Application   *Application
 }
 
 //
-// AnalysisDependency report dependency.
-type AnalysisDependency struct {
+// TechDependency report dependency.
+type TechDependency struct {
 	Model
 	Name       string `gorm:"index:depA;not null"`
 	Version    string `gorm:"index:depA"`
@@ -24,44 +24,44 @@ type AnalysisDependency struct {
 }
 
 //
-// AnalysisIssue report issue (violation).
-type AnalysisIssue struct {
+// Issue report issue (violation).
+type Issue struct {
 	Model
 	RuleSet     string `gorm:"index:issueA;not null"`
 	Rule        string `gorm:"index:issueA;not null"`
 	Name        string `gorm:"index"`
 	Description string
-	Category    string             `gorm:"index;not null"`
-	Incidents   []AnalysisIncident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
-	Links       JSON               `gorm:"type:json"`
-	Facts       JSON               `gorm:"type:json"`
-	Labels      JSON               `gorm:"type:json"`
-	Effort      int                `gorm:"index;not null"`
-	AnalysisID  uint               `gorm:"index;not null"`
+	Category    string     `gorm:"index;not null"`
+	Incidents   []Incident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
+	Links       JSON       `gorm:"type:json"`
+	Facts       JSON       `gorm:"type:json"`
+	Labels      JSON       `gorm:"type:json"`
+	Effort      int        `gorm:"index;not null"`
+	AnalysisID  uint       `gorm:"index;not null"`
 	Analysis    *Analysis
 }
 
 //
 // RuleId returns unique rule ID.
-func (m *AnalysisIssue) RuleId() (id string) {
+func (m *Issue) RuleId() (id string) {
 	return m.RuleSet + "." + m.Rule
 }
 
 //
-// AnalysisIncident report incident.
-type AnalysisIncident struct {
+// Incident report an issue incident.
+type Incident struct {
 	Model
 	URI      string
 	Message  string
 	CodeSnip string
 	Facts    JSON `gorm:"type:json"`
 	IssueID  uint `gorm:"index;not null"`
-	Issue    *AnalysisIssue
+	Issue    *Issue
 }
 
 //
-// AnalysisLink report link.
-type AnalysisLink struct {
+// Link URL link.
+type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
 }
