@@ -5,7 +5,7 @@ app="${1:-1}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"
-file="${HOME}/analysis.yaml"
+file="/tmp/analysis.yaml"
 
 echo "Writing report: ${file}"
 echo " Application: ${app}"
@@ -25,8 +25,8 @@ for i in $(seq 1 ${nIssue})
 do
 echo -n "- ruleset: ruleSet-${r}
   rule: rule-${i}
-  name: Rule-${i}-Violated
-  description: This is a test ${r}/${i}.
+  name: Rule-${r}.${i}-Violated
+  description: This is a test ${r}/${i} violation.
   category: warning
   effort: 10
   labels:
