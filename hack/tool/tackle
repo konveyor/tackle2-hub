@@ -717,10 +717,12 @@ class TackleTool:
         # TagCategories in the data directory
         if not os.path.exists(os.path.join(self.dataDir, 'tagcategories.json')) and os.path.exists(os.path.join(self.dataDir, 'tagtypes.json')):
             print("ERROR: The dump comes from old version using TagTypes instead of TagCategories. Update the dump first.")
-            print("Recommended steps: (make a backup copy of the data directory first)")
+            print("Recommended steps to update the dump: (make a backup copy of the data directory first)")
             print("  cd %s" % self.dataDir)
             print("  mv tagtypes.json tagcategories.json")
-            print("  sed 's/tagType/tagCategory/g' tags.json")
+            print("  sed -i 's/tagType/category/g' tags.json")
+            print("  cd ..")
+            print("and run import again.")
             exit(1)
 
         # Duplication checks
