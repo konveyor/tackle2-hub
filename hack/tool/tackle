@@ -488,7 +488,7 @@ class TackleTool:
             tt.rank       = tt2['rank']
             tt.username   = tt2['username']
             for tag in tags:
-                tag.tagCategory = copy.deepcopy(tt)
+                tag.category = copy.deepcopy(tt)
             tt.tags = tags
             self.add('tagcategories', tt)
 
@@ -515,7 +515,6 @@ class TackleTool:
             app.businessService = app2['businessService']
             app.repository      = app2['repository'] 
             app.binary          = app2['binary']
-            app.facts           = app2['facts']
             app.identities      = app2['identities']
             self.add('temp-buckets', {'owner': "applications/%s" % app.id})
             self.add('applications', app)
@@ -786,7 +785,7 @@ class TackleTool:
             return ""
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
-        return base64.b64encode(iv + cipher.encrypt(plain)).decode('ascii')
+        return base64.b64encode(iv + cipher.encrypt(bytes(plain, 'utf-8'))).decode('ascii')
 
     def decrypt(self, encrypted, verifyEncKey = True):
         # Check key from config file to be matching to key from export manifest to ensure decryption consistency
