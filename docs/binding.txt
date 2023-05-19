@@ -4,16 +4,15 @@ package addon // import "github.com/konveyor/tackle2-hub/addon"
 CONSTANTS
 
 const (
-	Accept   = api.Accept
-	AppJson  = api.AppJson
-	AppOctet = api.AppOctet
+	RetryLimit = 60
+	RetryDelay = time.Second * 10
 )
 
 VARIABLES
 
 var (
 	Settings = &settings.Settings
-	Log      = logging.WithName("addon")
+	Log      = logr.WithName("addon")
 )
 
 TYPES
@@ -35,8 +34,8 @@ type Adapter struct {
 	Tag Tag
 	// File API.
 	File File
-	// RuleBundle API
-	RuleBundle RuleBundle
+	// RuleSet API
+	RuleSet RuleSet
 
 	// Has unexported fields.
 }
@@ -50,9 +49,18 @@ func (h *Adapter) Client() *Client
 
 func (h *Adapter) Run(addon func() error)
     Run addon. Reports:
-      - Started
-      - Succeeded
-      - Failed (when addon returns error).
+
+        - Started
+        - Succeeded
+        - Failed (when addon returns error).
+
+type Analysis struct {
+	// Has unexported fields.
+}
+    Analysis API.
+
+func (h *Analysis) Create(r *api.Analysis) (err error)
+    Create an analysis report.
 
 type AppFacts struct {
 	// Has unexported fields.
@@ -62,14 +70,20 @@ type AppFacts struct {
 func (h *AppFacts) Delete(key string) (err error)
     Delete a fact.
 
-func (h *AppFacts) Get(key string, valuePtr interface{}) (err error)
+func (h *AppFacts) Get(key string) (fact *api.Fact, err error)
     Get a fact.
 
 func (h *AppFacts) List() (list []api.Fact, err error)
-    List associated tags. Returns a list of tag names.
+    List facts.
+
+func (h *AppFacts) Replace(facts []api.Fact) (err error)
+    Replace facts.
 
 func (h *AppFacts) Set(key string, value interface{}) (err error)
     Set a fact (created as needed).
+
+func (h *AppFacts) Source(source string)
+    Source sets the source for other operations on the facts.
 
 type AppTags struct {
 	// Has unexported fields.
@@ -97,6 +111,9 @@ type Application struct {
 	// Has unexported fields.
 }
     Application API.
+
+func (h *Application) Analysis(id uint) (a Analysis)
+    Analysis returns the analysis API.
 
 func (h *Application) Bucket(id uint) (b *Bucket)
     Bucket returns the bucket API.
@@ -136,12 +153,17 @@ func (h *Bucket) Put(source, destination string) (err error)
     root.
 
 type Client struct {
+
+	// Retry limit.
+	Retry int
+	// Error
+	Error error
 	// Has unexported fields.
 }
     Client provides a REST client.
 
-func NewClient(url, token string) *Client
-    Construct a new client
+func NewClient(url, token string) (client *Client)
+    NewClient Constructs a new client
 
 func (r *Client) BucketGet(source, destination string) (err error)
     BucketGet downloads a file/directory. The source (path) is relative to the
@@ -169,8 +191,11 @@ func (r *Client) Post(path string, object interface{}) (err error)
 func (r *Client) Put(path string, object interface{}, params ...Param) (err error)
     Put a resource.
 
+func (r *Client) Reset()
+    Reset the client.
+
 func (r *Client) SetToken(token string)
-    Set hub token on client
+    SetToken sets hub token on client
 
 type Conflict struct {
 	SoftError
@@ -226,6 +251,12 @@ type Param struct {
 type Params map[string]interface{}
     Params mapping.
 
+type Path string
+    Path API path.
+
+func (s Path) Inject(p Params) (out string)
+    Inject named parameters.
+
 type Proxy struct {
 	// Has unexported fields.
 }
@@ -243,22 +274,22 @@ func (h *Proxy) List() (list []api.Proxy, err error)
 func (h *Proxy) Update(r *api.Proxy) (err error)
     Update a proxy by ID.
 
-type RuleBundle struct {
+type RuleSet struct {
 	// Has unexported fields.
 }
-    RuleBundle API.
+    RuleSet API.
 
-func (h *RuleBundle) Delete(id uint) (err error)
-    Delete a bundle.
+func (h *RuleSet) Delete(id uint) (err error)
+    Delete a ruleset.
 
-func (h *RuleBundle) Get(id uint) (r *api.RuleBundle, err error)
-    Get a bundle by ID.
+func (h *RuleSet) Get(id uint) (r *api.RuleSet, err error)
+    Get a ruleset by ID.
 
-func (h *RuleBundle) List() (list []api.RuleBundle, err error)
-    List bundles.
+func (h *RuleSet) List() (list []api.RuleSet, err error)
+    List rulesets.
 
-func (h *RuleBundle) Update(r *api.RuleBundle) (err error)
-    Update a bundle by ID.
+func (h *RuleSet) Update(r *api.RuleSet) (err error)
+    Update a ruleset by ID.
 
 type Setting struct {
 	// Has unexported fields.
