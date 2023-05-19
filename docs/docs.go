@@ -122,7 +122,7 @@ const docTemplate = `{
         },
         "/analyses/dependencies": {
             "get": {
-                "description": "List dependency composites.\nfilters:\n- name\n- version\n- type\n- sha\n- indirect\n- application.(id|name)\n- tag.id",
+                "description": "List dependency composites.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels\n- application.(id|name)\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
@@ -136,7 +136,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AnalysisDependency"
+                                "$ref": "#/definitions/api.TechDependency"
                             }
                         }
                     }
@@ -145,7 +145,7 @@ const docTemplate = `{
         },
         "/analyses/issues": {
             "get": {
-                "description": "List issue composites.\nfilters:\n- category\n- effort\n- application.(id|name)\n- tech.(source|target)\n- tag.id",
+                "description": "List issue composites.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
@@ -211,7 +211,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -275,7 +275,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AnalysisDependency"
+                                "$ref": "#/definitions/api.TechDependency"
                             }
                         }
                     }
@@ -307,7 +307,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AnalysisIssue"
+                                "$ref": "#/definitions/api.Issue"
                             }
                         }
                     }
@@ -390,7 +390,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -452,7 +452,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -473,7 +473,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -534,7 +534,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -558,7 +558,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -582,7 +582,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -648,7 +648,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -684,7 +684,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": ""
+                        "description": "Created"
                     }
                 }
             }
@@ -736,7 +736,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -773,7 +773,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -848,7 +848,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -924,7 +924,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -986,7 +986,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1205,7 +1205,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1237,7 +1237,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -1261,7 +1261,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -1285,7 +1285,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1399,7 +1399,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -1420,7 +1420,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1437,7 +1437,7 @@ const docTemplate = `{
                 "summary": "Delete a directory within the cache.",
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1574,7 +1574,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1677,7 +1677,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1794,7 +1794,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -1815,7 +1815,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -1888,7 +1888,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2010,7 +2010,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2127,7 +2127,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2148,7 +2148,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2265,7 +2265,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2286,7 +2286,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2403,7 +2403,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2424,7 +2424,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2507,7 +2507,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2569,7 +2569,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2590,19 +2590,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
         },
-        "/rulebundles": {
+        "/rulesets": {
             "get": {
                 "description": "List all bindings.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "rulebundles"
+                    "rulesets"
                 ],
                 "summary": "List all bindings.",
                 "responses": {
@@ -2611,14 +2611,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.RuleBundle"
+                                "$ref": "#/definitions/api.RuleSet"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a bundle.",
+                "description": "Create a ruleset.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2626,17 +2626,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "rulebundles"
+                    "rulesets"
                 ],
-                "summary": "Create a bundle.",
+                "summary": "Create a ruleset.",
                 "parameters": [
                     {
-                        "description": "RuleBundle data",
+                        "description": "RuleSet data",
                         "name": "ruleBundle",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.RuleBundle"
+                            "$ref": "#/definitions/api.RuleSet"
                         }
                     }
                 ],
@@ -2644,26 +2644,26 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.RuleBundle"
+                            "$ref": "#/definitions/api.RuleSet"
                         }
                     }
                 }
             }
         },
-        "/rulebundles/{id}": {
+        "/rulesets/{id}": {
             "get": {
-                "description": "Get a RuleBundle by ID.",
+                "description": "Get a RuleSet by ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "rulebundles"
+                    "rulesets"
                 ],
-                "summary": "Get a RuleBundle by ID.",
+                "summary": "Get a RuleSet by ID.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "RuleBundle ID",
+                        "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2673,54 +2673,54 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.RuleBundle"
+                            "$ref": "#/definitions/api.RuleSet"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a bundle.",
+                "description": "Update a ruleset.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
-                    "rulebundles"
+                    "rulesets"
                 ],
-                "summary": "Update a bundle.",
+                "summary": "Update a ruleset.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "RuleBundle ID",
+                        "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "RuleBundle data",
+                        "description": "RuleSet data",
                         "name": "ruleBundle",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.RuleBundle"
+                            "$ref": "#/definitions/api.RuleSet"
                         }
                     }
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
             "delete": {
-                "description": "Delete a bundle.",
+                "description": "Delete a ruleset.",
                 "tags": [
-                    "rulebundles"
+                    "rulesets"
                 ],
-                "summary": "Delete a bundle.",
+                "summary": "Delete a ruleset.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "RuleBundle ID",
+                        "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2728,7 +2728,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -2859,7 +2859,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -2885,7 +2885,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": ""
+                        "description": "Created"
                     }
                 }
             },
@@ -2906,7 +2906,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3023,7 +3023,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3044,7 +3044,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3161,7 +3161,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3182,7 +3182,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3307,7 +3307,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3328,7 +3328,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3483,7 +3483,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3504,7 +3504,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3621,7 +3621,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3642,7 +3642,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3674,7 +3674,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -3698,7 +3698,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3722,7 +3722,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3756,7 +3756,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3873,7 +3873,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3894,7 +3894,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3926,7 +3926,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -3950,7 +3950,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -3974,7 +3974,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -3997,7 +3997,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -4104,7 +4104,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -4138,7 +4138,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -4243,7 +4243,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -4360,7 +4360,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             },
@@ -4381,7 +4381,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     }
                 }
             }
@@ -4411,138 +4411,17 @@ const docTemplate = `{
                 "dependencies": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.AnalysisDependency"
+                        "$ref": "#/definitions/api.TechDependency"
                     }
                 },
                 "id": {
                     "type": "integer"
                 },
-                "ruleSets": {
+                "issues": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.AnalysisRuleSet"
+                        "$ref": "#/definitions/api.Issue"
                     }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AnalysisDependency": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "indirect": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sha": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AnalysisIncident": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "facts": {
-                    "$ref": "#/definitions/api.FactMap"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AnalysisIssue": {
-            "type": "object",
-            "required": [
-                "category",
-                "name"
-            ],
-            "properties": {
-                "application": {
-                    "type": "integer"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "facts": {
-                    "$ref": "#/definitions/api.FactMap"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "incidents": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AnalysisIncident"
-                    }
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AnalysisLink"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "ruleId": {
-                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -4556,73 +4435,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AnalysisRuleSet": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issues": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AnalysisIssue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "technologies": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AnalysisTechnology"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AnalysisTechnology": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "boolean"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "version": {
                     "type": "string"
                 }
             }
@@ -4935,6 +4747,100 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Incident": {
+            "type": "object",
+            "properties": {
+                "codeSnip": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "facts": {
+                    "$ref": "#/definitions/api.FactMap"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Issue": {
+            "type": "object",
+            "required": [
+                "category",
+                "name",
+                "rule",
+                "ruleset"
+            ],
+            "properties": {
+                "application": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "facts": {
+                    "$ref": "#/definitions/api.FactMap"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incidents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Incident"
+                    }
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.AnalysisLink"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.IssueComposite": {
             "type": "object",
             "properties": {
@@ -4959,14 +4865,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "ruleID": {
+                "rule": {
                     "type": "string"
                 },
-                "technologies": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AnalysisTechnology"
-                    }
+                "ruleSet": {
+                    "type": "string"
                 }
             }
         },
@@ -5181,7 +5084,34 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RuleBundle": {
+        "api.Rule": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "file": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "labels": {},
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RuleSet": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -5214,38 +5144,11 @@ const docTemplate = `{
                 "repository": {
                     "$ref": "#/definitions/api.Repository"
                 },
-                "rulesets": {
+                "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.RuleSet"
+                        "$ref": "#/definitions/api.Rule"
                     }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.RuleSet": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "file": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {},
-                "name": {
-                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -5651,6 +5554,44 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TechDependency": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "indirect": {
+                    "type": "boolean"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sha": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }
