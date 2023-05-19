@@ -1,0 +1,19 @@
+on:
+  pull_request:
+    paths:
+      - 'docs/swagger.json'
+      - 'docs/swagger.yaml'
+
+jobs:
+  example_comment_pr:
+    runs-on: ubuntu-latest
+    name: Notify QE on Swagger spec file change
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+          :mega: There is a Swagger OpenAPI spec files change, please consider re-generate your API client. @mguetta1 @sshveta @kpunwatk
