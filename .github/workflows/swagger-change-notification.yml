@@ -16,4 +16,4 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-          :mega: There is a Swagger OpenAPI spec files change, please consider re-generating your API client. @konveyor/tackle-qe
+            :mega: There is a Swagger OpenAPI spec files change, please consider re-generating your API client. @konveyor/tackle-qe
