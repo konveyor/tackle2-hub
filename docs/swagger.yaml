@@ -1,4 +1,6 @@
 definitions:
+  test:
+    test
   api.Addon:
     properties:
       image:
