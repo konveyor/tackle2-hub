@@ -51,7 +51,8 @@ func (m *Issue) RuleId() (id string) {
 // Incident report an issue incident.
 type Incident struct {
 	Model
-	URI      string
+	File     string `gorm:"index;not null"`
+	Line     int
 	Message  string
 	CodeSnip string
 	Facts    JSON `gorm:"type:json"`
