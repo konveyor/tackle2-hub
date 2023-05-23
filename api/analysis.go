@@ -221,7 +221,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		r := &Issue{}
 		err = d.Decode(r)
 		if err != nil {
-			_ = db.Delete(file)
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
@@ -245,6 +244,9 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	defer func() {
+		_ = db.Delete(file)
+	}()
 	f, err = os.Open(file.Path)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -264,7 +266,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	_ = db.Delete(file)
 	for i := range deps {
 		r := &deps[i]
 		m := r.Model()
