@@ -171,7 +171,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
-// @param task body api.AnalysisReport true "Analysis data"
+// @param task body api.Analysis true "Analysis data"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Analysis{}

@@ -25,13 +25,6 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.AnalysisLink:
-    properties:
-      title:
-        type: string
-      url:
-        type: string
-    type: object
   api.Application:
     properties:
       binary:
@@ -182,6 +175,15 @@ definitions:
       updateUser:
         type: string
     type: object
+  api.FileReport:
+    properties:
+      file:
+        type: string
+      incidents:
+        type: integer
+      issueId:
+        type: integer
+    type: object
   api.Identity:
     properties:
       createTime:
@@ -246,19 +248,19 @@ definitions:
         type: string
       facts:
         $ref: '#/definitions/api.FactMap'
+      file:
+        type: string
       id:
+        type: integer
+      line:
         type: integer
       message:
         type: string
       updateUser:
         type: string
-      uri:
-        type: string
     type: object
   api.Issue:
     properties:
-      application:
-        type: integer
       category:
         type: string
       createTime:
@@ -283,7 +285,7 @@ definitions:
         type: array
       links:
         items:
-          $ref: '#/definitions/api.AnalysisLink'
+          $ref: '#/definitions/api.Link'
         type: array
       name:
         type: string
@@ -299,26 +301,49 @@ definitions:
     - rule
     - ruleset
     type: object
-  api.IssueComposite:
+  api.IssueReport:
     properties:
-      affected:
-        type: integer
+      application:
+        $ref: '#/definitions/api.Ref'
       category:
+        type: string
+      createTime:
+        type: string
+      createUser:
         type: string
       description:
         type: string
       effort:
         type: integer
+      facts:
+        $ref: '#/definitions/api.FactMap'
+      files:
+        type: integer
+      id:
+        type: integer
+      incidents:
+        type: integer
       labels:
         items:
           type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/api.Link'
         type: array
       name:
         type: string
       rule:
         type: string
-      ruleSet:
+      ruleset:
         type: string
+      updateUser:
+        type: string
+    required:
+    - category
+    - name
+    - rule
+    - ruleset
     type: object
   api.JobFunction:
     properties:
@@ -338,6 +363,13 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Link:
+    properties:
+      title:
+        type: string
+      url:
+        type: string
     type: object
   api.Login:
     properties:
@@ -475,6 +507,27 @@ definitions:
       name:
         type: string
       updateUser:
+        type: string
+    type: object
+  api.RuleReport:
+    properties:
+      applications:
+        type: integer
+      category:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      labels:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+      ruleSet:
         type: string
     type: object
   api.RuleSet:
@@ -983,7 +1036,7 @@ paths:
   /analyses/dependencies:
     get:
       description: |-
-        List dependency composites.
+        Each report collates dependencies by name and SHA.
         filters:
         - name
         - version
@@ -1001,13 +1054,109 @@ paths:
             items:
               $ref: '#/definitions/api.TechDependency'
             type: array
-      summary: List dependency composites.
+      summary: List dependency reports.
       tags:
       - dependencies
   /analyses/issues:
     get:
       description: |-
-        List issue composites.
+        List all issues.
+        filters:
+        - ruleset
+        - rule
+        - name
+        - category
+        - effort
+        - labels
+        - application.(id|name)
+        - tag.id
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Issue'
+            type: array
+      summary: List all issues.
+      tags:
+      - issues
+  /analyses/issues/{id}:
+    get:
+      description: Get an issue.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Issue'
+      summary: Get an issue.
+      tags:
+      - issue
+  /analyses/issues/{id}/incidents:
+    get:
+      description: |-
+        List incidents for an issue.
+        filters:
+        - file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Incident'
+            type: array
+      summary: List incidents for an issue.
+      tags:
+      - incidents
+  /analyses/report/issues:
+    get:
+      description: |-
+        Each report collates issues by ruleset/rule and application.
+        filters:
+        - ruleset
+        - rule
+        - name
+        - category
+        - effort
+        - labels
+        - application.(id|name)
+        - tag.id
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.IssueReport'
+            type: array
+      summary: List issue reports.
+      tags:
+      - issuereports
+  /analyses/report/issues/{id}/files:
+    get:
+      description: Each report collates incidents by file.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.FileReport'
+            type: array
+      summary: List incident file reports.
+      tags:
+      - filereports
+  /analyses/report/rules:
+    get:
+      description: |-
+        Each report collates issues by ruleset/rule.
         filters:
         - ruleset
         - rule
@@ -1023,16 +1172,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.IssueComposite'
+              $ref: '#/definitions/api.RuleReport'
             type: array
-      summary: List issue composites.
+      summary: List rule reports.
       tags:
-      - issuecomposites
+      - rulereports
   /application/{id}/analyses:
     post:
       consumes:
       - application/json
-      description: Create an analysis.
+      description: |-
+        Create an analysis.
+        Caller must upload (2) files.
+        An issues file that multiple issue resources.
+        A dependencies file that contains an array of dependencies.
       parameters:
       - description: Analysis data
         in: body
