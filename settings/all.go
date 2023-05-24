@@ -27,6 +27,10 @@ func (r *TackleSettings) Load() (err error) {
 	if err != nil {
 		return
 	}
+	err = r.Metrics.Load()
+	if err != nil {
+		return
+	}
 	return
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
@@ -151,6 +152,7 @@ func (m *Manager) startReady() {
 				Log.Error(sErr, "")
 				continue
 			}
+			metrics.TasksInitiated.Inc()
 			rt := Task{ready}
 			err := rt.Run(m.Client)
 			if err != nil {
