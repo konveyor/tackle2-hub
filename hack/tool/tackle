@@ -218,9 +218,9 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagtypes', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews']
+    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews']
     NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
-    TACKLE2_SEED_TYPES = ['tagtypes', 'tags', 'jobfunctions']
+    TACKLE2_SEED_TYPES = ['tagcategories', 'tags', 'jobfunctions']
 
     def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
         self.dataDir      = dataDir
@@ -246,12 +246,12 @@ class TackleTool:
 
     # Gather existing seeded objects from Tackle2
     def loadTackle2Seeds(self):
-        # Tackle 2 TagTypes and Tags
-        collection = apiJSON(tool.tackle2Url + "/hub/tagtypes", tool.tackle2Token)
+        # Tackle 2 TagCategories and Tags
+        collection = apiJSON(tool.tackle2Url + "/hub/tagcategories", tool.tackle2Token)
         for tt2 in collection:
             tt  = Tackle2Object(tt2)
             tt.name = tt2['name']
-            self.destData['tagtypes'][tt.name.lower()] = tt
+            self.destData['tagcategories'][tt.name.lower()] = tt
             if tt2['tags']:
                 for t2 in tt2['tags']:
                     tag             = Tackle2Object()
@@ -282,28 +282,28 @@ class TackleTool:
         for tt1 in collection:
             # Temp holder for tags
             tags = []
-            # Prepare TagTypes's Tags
+            # Prepare TagCategories's Tags
             for tag1 in tt1['tags']:
                 tag             = Tackle2Object(tag1)
                 tag.name        = tag1['name']
-                # TagType is injected from tagType processing few lines below
+                # TagCategory is injected from tagType processing few lines below
                 # Store Tag only if doesn't exist in Tackle2 destination already
                 self.add('origin-tags', tag)   # tmp tags for merge with seed tags lookup
                 if tag.name.lower() not in self.destData['tags']:
                     self.add('tags', tag)
                 tags.append(tag)
-            # Prepare TagType
+            # Prepare TagCategory
             tt            = Tackle2Object(tt1)
             tt.name       = tt1['name']
             tt.colour     = tt1['colour']
             tt.rank       = tt1['rank']
             tt.username   = tt1['createUser']
             for tag in tags:
-                tag.tagType = copy.deepcopy(tt)
+                tag.tagCategory = copy.deepcopy(tt)
             tt.tags = tags
             # Store only if doesn't exist in Tackle2 destination already
-            if tt.name.lower() not in self.destData['tagtypes']:
-                self.add('tagtypes', tt)
+            if tt.name.lower() not in self.destData['tagcategories']:
+                self.add('tagcategories', tt)
 
         ### APPLICATION ###
         collection = apiJSON(self.tackle1Url + "/api/application-inventory/application?page=0&size=10000", self.tackle1Token)
@@ -468,19 +468,19 @@ class TackleTool:
     # Gather Tackle 2 API objects
     def dumpTackle2(self):
         ### TAG TYPES & TAGS ###
-        collection = apiJSON(self.tackle2Url + "/hub/tagtypes", self.tackle2Token)
+        collection = apiJSON(self.tackle2Url + "/hub/tagcategories", self.tackle2Token)
         for tt2 in collection:
             # Temp holder for tags
             tags = []
-            # Prepare TagTypes's Tags
+            # Prepare TagCategories's Tags
             for tag2 in tt2['tags']:
                 tag             = Tackle2Object()
                 tag.id          = tag2['id']
                 tag.name        = tag2['name']
-                # TagType is injected from tagType processing few lines below
+                # TagCategories is injected from TagCategory processing few lines below
                 self.add('tags', tag)
                 tags.append(tag)
-            # Prepare TagType
+            # Prepare TagCategory
             tt            = Tackle2Object()
             tt.id         = tt2['id']
             tt.name       = tt2['name']
@@ -488,9 +488,9 @@ class TackleTool:
             tt.rank       = tt2['rank']
             tt.username   = tt2['username']
             for tag in tags:
-                tag.tagType = copy.deepcopy(tt)
+                tag.category = copy.deepcopy(tt)
             tt.tags = tags
-            self.add('tagtypes', tt)
+            self.add('tagcategories', tt)
 
         ### APPLICATION ###
         collection = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
@@ -515,7 +515,6 @@ class TackleTool:
             app.businessService = app2['businessService']
             app.repository      = app2['repository'] 
             app.binary          = app2['binary']
-            app.facts           = app2['facts']
             app.identities      = app2['identities']
             self.add('temp-buckets', {'owner': "applications/%s" % app.id})
             self.add('applications', app)
@@ -709,6 +708,24 @@ class TackleTool:
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
     def preImportCheck(self):
+        # Compatibility checks
+        # TagCategories on Hub API
+        if apiJSON(self.tackle2Url + "/hub/tagcategories", self.tackle2Token, ignoreErrors=True) is None:
+            print("ERROR: The API doesn't know TagCategories, use older version of this tool.")
+            exit(1)
+
+        # TagCategories in the data directory
+        if not os.path.exists(os.path.join(self.dataDir, 'tagcategories.json')) and os.path.exists(os.path.join(self.dataDir, 'tagtypes.json')):
+            print("ERROR: The dump comes from old version using TagTypes instead of TagCategories. Update the dump first.")
+            print("Recommended steps to update the dump: (make a backup copy of the data directory first)")
+            print("  cd %s" % self.dataDir)
+            print("  mv tagtypes.json tagcategories.json")
+            print("  sed -i 's/tagType/category/g' tags.json")
+            print("  cd ..")
+            print("and run import again.")
+            exit(1)
+
+        # Duplication checks
         for t in self.TYPES:
             # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
             if "assessment" in t:
@@ -770,7 +787,7 @@ class TackleTool:
             return ""
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.encKey, AES.MODE_CFB, iv)
-        return base64.b64encode(iv + cipher.encrypt(plain)).decode('ascii')
+        return base64.b64encode(iv + cipher.encrypt(bytes(plain, 'utf-8'))).decode('ascii')
 
     def decrypt(self, encrypted, verifyEncKey = True):
         # Check key from config file to be matching to key from export manifest to ensure decryption consistency
