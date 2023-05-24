@@ -96,10 +96,10 @@ echo -n "---
 
 echo "Report CREATED"
 
-issueId=$( curl -s -F "file=@${iPath}" http://${host}/files/issues | jq .id )
+issueId=$( curl -s -F "file=@${iPath}" ${host}/files/issues | jq .id )
 echo "File(issues) created id=${issueId}"
 
-depId=$( curl -s -F "file=@${dPath}" http://${host}/files/deps | jq .id )
+depId=$( curl -s -F "file=@${dPath}" ${host}/files/deps | jq .id )
 echo "File(deps) created id=${issueId}"
 
 curl -i -X POST ${host}/applications/${app}/analyses \
