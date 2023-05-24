@@ -711,7 +711,7 @@ class TackleTool:
         # Compatibility checks
         # TagCategories on Hub API
         if apiJSON(self.tackle2Url + "/hub/tagcategories", self.tackle2Token, ignoreErrors=True) is None:
-            print("ERROR: The API doesn't know TagCategories, use older version of this tool (before mta-6.1 branch).")
+            print("ERROR: The API doesn't know TagCategories, use older version of this tool.")
             exit(1)
 
         # TagCategories in the data directory
