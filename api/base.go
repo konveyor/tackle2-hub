@@ -9,6 +9,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
+	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 	"io"
 	"reflect"
@@ -245,6 +246,29 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 }
 
 //
+// Decoder returns a decoder based on Content-Type header.
+// Opinionated towards json.
+func (h *BaseHandler) Decoder(ctx *gin.Context, r io.Reader) (d Decoder, err error) {
+	if r == nil {
+		r = ctx.Request.Body
+	}
+	switch ctx.ContentType() {
+	case "",
+		binding.MIMEPOSTForm,
+		binding.MIMEJSON:
+		d = json.NewDecoder(r)
+	case binding.MIMEYAML:
+		d = yaml.NewDecoder(r)
+	default:
+		err = &BadRequestError{"Bind: MIME not supported."}
+	}
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+	}
+	return
+}
+
+//
 // Status sets the status code.
 func (h *BaseHandler) Status(ctx *gin.Context, code int) {
 	rtx := WithContext(ctx)
@@ -457,4 +481,7 @@ func (p *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 }
 
 //
-//
+// Decoder binding decoder.
+type Decoder interface {
+	Decode(r interface{}) (err error)
+}

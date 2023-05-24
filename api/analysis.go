@@ -2,26 +2,33 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 )
 
 //
 // Routes
 const (
-	AnalysesRoot               = "/analyses"
-	AnalysisRoot               = AnalysesRoot + "/:" + ID
-	AnalysesDepsRoot           = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot         = AnalysesRoot + "/issues"
-	AnalysesCompositeRoot      = AnalysesRoot + "/composite"
-	AnalysisCompositeDepRoot   = AnalysesCompositeRoot + "/dependencies"
-	AnalysisCompositeIssueRoot = AnalysesCompositeRoot + "/issues"
+	AnalysesRoot            = "/analyses"
+	AnalysisRoot            = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot        = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot      = AnalysesRoot + "/issues"
+	AnalysesIssueRoot       = AnalysesIssuesRoot + "/:" + ID
+	AnalysisIncidentsRoot   = AnalysesIssueRoot + "/incidents"
+	AnalysesReportRoot      = AnalysesRoot + "/report"
+	AnalysisReportDepRoot   = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot  = AnalysesReportRoot + "/rules"
+	AnalysisReportIssueRoot = AnalysesReportRoot + "/issues"
+	AnalysisReportFileRoot  = AnalysisReportIssueRoot + "/:" + ID + "/files"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -45,8 +52,12 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
-	routeGroup.GET(AnalysisCompositeIssueRoot, h.IssueComposites)
-	routeGroup.GET(AnalysisCompositeDepRoot, h.DepComposites)
+	routeGroup.GET(AnalysesIssueRoot, h.Issue)
+	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
+	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
+	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
+	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
+	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
@@ -66,10 +77,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 func (h AnalysisHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
-	db := h.preLoad(
-		h.DB(ctx),
-		clause.Associations,
-		"Issues.Incidents")
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -92,10 +100,7 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
-	db := h.preLoad(
-		h.DB(ctx),
-		clause.Associations,
-		"Issues.Incidents")
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	db = db.Where("ApplicationID = ?", id)
 	result := db.Last(m)
 	if result.Error != nil {
@@ -140,6 +145,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	}
 	// Find.
 	var list []model.Analysis
+	db = h.preLoad(db, clause.Associations)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -157,6 +163,9 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // AppCreate godoc
 // @summary Create an analysis.
 // @description Create an analysis.
+// @description Caller must upload (2) files.
+// @description An issues file that multiple issue resources.
+// @description A dependencies file that contains an array of dependencies.
 // @tags analyses
 // @accept json
 // @produce json
@@ -166,22 +175,116 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Analysis{}
-	err := h.Bind(ctx, r)
+	manifest := &AnalysisManifest{}
+	err := h.Bind(ctx, manifest)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
-	m.ApplicationID = id
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	//
+	// Analysis
+	analysis := r.Model()
+	analysis.ApplicationID = id
+	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db.Logger = db.Logger.LogMode(logger.Error)
-	result := db.Create(m)
+	err = db.Create(analysis).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	//
+	// Issues
+	file := &model.File{}
+	err = db.First(file, manifest.Issues.ID).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = db.Delete(file)
+	}()
+	f, err := os.Open(file.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	d, err := h.Decoder(ctx, f)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for {
+		r := &Issue{}
+		err = d.Decode(r)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				_ = ctx.Error(err)
+				return
+			}
+		}
+		m := r.Model()
+		m.AnalysisID = analysis.ID
+		err = db.Create(m).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+	}
+	//
+	// Dependencies
+	file = &model.File{}
+	err = db.First(file, manifest.Dependencies.ID).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = db.Delete(file)
+	}()
+	f, err = os.Open(file.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	d, err = h.Decoder(ctx, f)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	deps := []TechDependency{}
+	err = d.Decode(&deps)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range deps {
+		r := &deps[i]
+		m := r.Model()
+		m.AnalysisID = analysis.ID
+		err = db.Create(m).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+	}
+	//
+	// Fetch.
+	db = h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.First(analysis, analysis.ID)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	r.With(m)
+	r.With(analysis)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -302,7 +405,11 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @router /application/{id}/analysis/issues [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
-	resources := []Issue{}
+	type R struct {
+		Issue
+		Incidents int
+	}
+	resources := []R{}
 	// Latest.
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -326,7 +433,14 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	db = h.DB(ctx)
-	db = db.Where("AnalysisID = ?", analysis.ID)
+	db = db.Select(
+		"i.*",
+		"COUNT(n.ID) Incidents")
+	db = db.Table("Issue i")
+	db = db.Joins("Incident n")
+	db = db.Where("n.IssueId = i.ID")
+	db = db.Where("i.AnalysisID = ?", analysis.ID)
+	db = db.Group("i.ID")
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -345,7 +459,11 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	list := []model.Issue{}
+	type M struct {
+		model.Issue
+		Incidents int
+	}
+	list := []M{}
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -353,9 +471,10 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	for i := range list {
-		r := Issue{}
-		r.With(&list[i])
-		r.Application = id
+		m := &list[i]
+		r := R{}
+		r.With(&m.Issue)
+		r.Incidents = m.Incidents
 		resources = append(resources, r)
 	}
 
@@ -366,7 +485,6 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @summary List all issues.
 // @description List all issues.
 // @description filters:
-// @description - id
 // @description - ruleset
 // @description - rule
 // @description - name
@@ -384,7 +502,6 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "id", Kind: qf.LITERAL},
 			{Field: "ruleset", Kind: qf.STRING},
 			{Field: "rule", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
@@ -401,10 +518,11 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Table("Issue i,")
-	db = db.Joins("Analysis a")
+	db = db.Table("Issue i")
+	db = db.Joins(",Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
 	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
+	db = db.Group("i.ID")
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
 		&model.Issue{},
@@ -431,16 +549,8 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	}
 	//
 	// Find.
-	type M struct {
-		model.Issue
-		ApplicationID uint
-	}
 	db = h.paginated(ctx, db)
-	db = db.Select(
-		"i.*",
-		"a.ApplicationID")
-	db = db.Preload(clause.Associations)
-	var list []M
+	var list []model.Issue
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -449,17 +559,94 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	for i := range list {
 		m := &list[i]
 		r := Issue{}
-		r.With(&m.Issue)
-		r.Application = m.ApplicationID
+		r.With(m)
 		resources = append(resources, r)
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueComposites godoc
-// @summary List issue composites.
-// @description List issue composites.
+// Issue godoc
+// @summary Get an issue.
+// @description Get an issue.
+// @tags issue
+// @produce json
+// @success 200 {object} api.Issue
+// @router /analyses/issues/{id} [get]
+func (h AnalysisHandler) Issue(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Issue{}
+	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := Issue{}
+	r.With(m)
+
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// Incidents godoc
+// @summary List incidents for an issue.
+// @description List incidents for an issue.
+// @description filters:
+// @description - file
+// @tags incidents
+// @produce json
+// @success 200 {object} []api.Incident
+// @router /analyses/issues/{id}/incidents [get]
+func (h AnalysisHandler) Incidents(ctx *gin.Context) {
+	id := ctx.Param(ID)
+	// Build query.
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "file", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	var list []model.Incident
+	db := h.DB(ctx)
+	db = db.Where("IssueID", id)
+	db = filter.Where(db)
+	// Count.
+	count := int64(0)
+	result := db.Model(&model.Incident{}).Count(&count)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Find.
+	db = h.paginated(ctx, db)
+	result = db.Find(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	resources := []Incident{}
+	for _, m := range list {
+		r := Incident{}
+		r.With(&m)
+		resources = append(
+			resources,
+			r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// RuleReports godoc
+// @summary List rule reports.
+// @description Each report collates issues by ruleset/rule.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -468,12 +655,12 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @description - labels
 // @description - application.(id|name)
 // @description - tag.id
-// @tags issuecomposites
+// @tags rulereports
 // @produce json
-// @success 200 {object} []api.IssueComposite
-// @router /analyses/issues [get]
-func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
-	resources := []*IssueComposite{}
+// @success 200 {object} []api.RuleReport
+// @router /analyses/report/rules [get]
+func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
+	resources := []*RuleReport{}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -500,7 +687,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
-		"COUNT(distinct a.ID) Affected")
+		"COUNT(distinct a.ID) Applications")
 	db = db.Table("Issue i,")
 	db = db.Joins("Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
@@ -534,7 +721,7 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	// Find.
 	type M struct {
 		model.Issue
-		Affected int
+		Applications int
 	}
 	var list []M
 	db = h.paginated(ctx, db)
@@ -545,21 +732,21 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 	}
 	for i := range list {
 		r := &list[i]
-		affected[r.RuleId()] = r.Affected
+		affected[r.RuleId()] = r.Applications
 	}
 
-	collated := make(map[string]*IssueComposite)
+	collated := make(map[string]*RuleReport)
 	for i := range list {
 		m := list[i]
 		r, found := collated[m.RuleId()]
 		if !found {
-			r = &IssueComposite{
-				Affected:    affected[m.RuleId()],
-				Description: m.Description,
-				Category:    m.Category,
-				RuleSet:     m.RuleSet,
-				Rule:        m.Rule,
-				Name:        m.Name,
+			r = &RuleReport{
+				Applications: affected[m.RuleId()],
+				Description:  m.Description,
+				Category:     m.Category,
+				RuleSet:      m.RuleSet,
+				Rule:         m.Rule,
+				Name:         m.Name,
 			}
 			collated[m.RuleId()] = r
 			resources = append(resources, r)
@@ -568,6 +755,172 @@ func (h AnalysisHandler) IssueComposites(ctx *gin.Context) {
 			}
 		}
 		r.Effort += m.Effort
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// IssueReports godoc
+// @summary List issue reports.
+// @description Each report collates issues by ruleset/rule and application.
+// @description filters:
+// @description - ruleset
+// @description - rule
+// @description - name
+// @description - category
+// @description - effort
+// @description - labels
+// @description - application.(id|name)
+// @description - tag.id
+// @tags issuereports
+// @produce json
+// @success 200 {object} []api.IssueReport
+// @router /analyses/report/issues [get]
+func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
+	resources := []IssueReport{}
+	// Build query.
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "category", Kind: qf.STRING},
+			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "affected", Kind: qf.LITERAL},
+			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "application.name", Kind: qf.STRING},
+			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Table("Issue i")
+	db = db.Joins(",Incident n")
+	db = db.Joins(",Analysis a")
+	db = db.Joins(",Application app")
+	db = db.Where("a.ApplicationID = app.ID")
+	db = db.Where("n.IssueID = i.ID")
+	db = db.Where("a.ID = i.AnalysisID")
+	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
+	db = db.Group("i.ID")
+	db = filter.Where(db, "-Labels")
+	n, q := h.withLabels(
+		&model.Issue{},
+		ctx,
+		&filter)
+	if n > 0 {
+		db = db.Where("i.ID IN (?)", q)
+	}
+	// Count.
+	count := int64(0)
+	result := db.Model(&model.Issue{}).Count(&count)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if count == 0 {
+		h.Respond(ctx, http.StatusOK, resources)
+		return
+	}
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if count == 0 {
+		h.Respond(ctx, http.StatusOK, resources)
+		return
+	}
+	//
+	// Find.
+	type M struct {
+		model.Issue
+		Incidents int
+		Files     int
+		AppID     uint
+		AppName   string
+	}
+	db = h.paginated(ctx, db)
+	db = db.Select(
+		"i.*",
+		"COUNT(n.ID) Incidents",
+		"COUNT(distinct n.File) Files",
+		"app.ID AppID",
+		"app.Name AppName")
+	var list []M
+	result = db.Find(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	for i := range list {
+		m := &list[i]
+		r := IssueReport{}
+		r.With(&m.Issue)
+		r.Incidents = m.Incidents
+		r.Files = m.Files
+		r.Application = Ref{ID: m.AppID, Name: m.AppName}
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// FileReports godoc
+// @summary List incident file reports.
+// @description Each report collates incidents by file.
+// @tags filereports
+// @produce json
+// @success 200 {object} []api.FileReport
+// @router /analyses/report/issues/{id}/files [get]
+func (h AnalysisHandler) FileReports(ctx *gin.Context) {
+	resources := []FileReport{}
+	issueId := h.pk(ctx)
+	db := h.DB(ctx)
+	db = db.Where("IssueID", issueId)
+	db = db.Group("File")
+	// Count.
+	count := int64(0)
+	result := db.Model(&model.Incident{}).Count(&count)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	err := h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if count == 0 {
+		h.Respond(ctx, http.StatusOK, resources)
+		return
+	}
+	// Find.
+	type M struct {
+		File      string
+		Incidents int
+	}
+	var list []M
+	db = h.paginated(ctx, db)
+	db = db.Select(
+		"File",
+		"COUNT(id) Incidents")
+	result = db.Find(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	for _, m := range list {
+		r := FileReport{}
+		r.IssueID = issueId
+		r.File = m.File
+		r.Incidents = m.Incidents
+		resources = append(
+			resources,
+			r)
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
@@ -649,9 +1002,9 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// DepComposites godoc
-// @summary List dependency composites.
-// @description List dependency composites.
+// DepReports godoc
+// @summary List dependency reports.
+// @description Each report collates dependencies by name and SHA.
 // @description filters:
 // @description - name
 // @description - version
@@ -664,8 +1017,8 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.TechDependency
 // @router /analyses/dependencies [get]
-func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
-	resources := []DepComposite{}
+func (h AnalysisHandler) DepReports(ctx *gin.Context) {
+	resources := []DepReport{}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -688,7 +1041,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 		"Version",
 		"SHA",
 		"Labels",
-		"COUNT(distinct AnalysisID) Affected")
+		"COUNT(distinct AnalysisID) Applications")
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
 	n, q := h.withLabels(
@@ -724,7 +1077,7 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	// Find.
 	type M struct {
 		model.TechDependency
-		Affected int
+		Applications int
 	}
 	var list []M
 	db = h.paginated(ctx, db)
@@ -735,11 +1088,11 @@ func (h AnalysisHandler) DepComposites(ctx *gin.Context) {
 	}
 	for i := range list {
 		m := &list[i]
-		r := DepComposite{
-			Name:     m.Name,
-			Version:  m.Version,
-			SHA:      m.SHA,
-			Affected: m.Affected,
+		r := DepReport{
+			Name:         m.Name,
+			Version:      m.Version,
+			SHA:          m.SHA,
+			Applications: m.Applications,
 		}
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
@@ -829,11 +1182,19 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 }
 
 //
-// Analysis (Analysis) REST resource.
+// AnalysisManifest EST resource.
+type AnalysisManifest struct {
+	Resource     `yaml:",inline"`
+	Issues       Ref `json:"issues"`
+	Dependencies Ref `json:"dependencies"`
+}
+
+//
+// Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
-	Issues       []Issue          `json:"issues"`
-	Dependencies []TechDependency `json:"dependencies"`
+	Issues       []Issue          `json:"issues,omitempty"`
+	Dependencies []TechDependency `json:"dependencies,omitempty"`
 }
 
 //
@@ -883,17 +1244,16 @@ func (r *Analysis) Model() (m *model.Analysis) {
 // Issue REST resource.
 type Issue struct {
 	Resource    `yaml:",inline"`
-	RuleSet     string         `json:"ruleset" binding:"required"`
-	Rule        string         `json:"rule" binding:"required"`
-	Name        string         `json:"name" binding:"required"`
-	Description string         `json:"description,omitempty" yaml:",omitempty"`
-	Category    string         `json:"category" binding:"required"`
-	Effort      int            `json:"effort,omitempty" yaml:",omitempty"`
-	Incidents   []Incident     `json:"incidents,omitempty" yaml:",omitempty"`
-	Links       []AnalysisLink `json:"links,omitempty" yaml:",omitempty"`
-	Facts       FactMap        `json:"facts,omitempty" yaml:",omitempty"`
-	Labels      []string       `json:"labels"`
-	Application uint           `json:"application" binding:"-"`
+	RuleSet     string     `json:"ruleset" binding:"required"`
+	Rule        string     `json:"rule" binding:"required"`
+	Name        string     `json:"name" binding:"required"`
+	Description string     `json:"description,omitempty" yaml:",omitempty"`
+	Category    string     `json:"category" binding:"required"`
+	Effort      int        `json:"effort,omitempty" yaml:",omitempty"`
+	Incidents   []Incident `json:"incidents,omitempty" yaml:",omitempty"`
+	Links       []Link     `json:"links,omitempty" yaml:",omitempty"`
+	Facts       FactMap    `json:"facts,omitempty" yaml:",omitempty"`
+	Labels      []string   `json:"labels"`
 }
 
 //
@@ -988,7 +1348,8 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 // Incident REST resource.
 type Incident struct {
 	Resource `yaml:",inline"`
-	URI      string  `json:"uri"`
+	File     string  `json:"file"`
+	Line     int     `json:"line"`
 	Message  string  `json:"message"`
 	CodeSnip string  `json:"codeSnip"`
 	Facts    FactMap `json:"facts"`
@@ -998,7 +1359,8 @@ type Incident struct {
 // With updates the resource with the model.
 func (r *Incident) With(m *model.Incident) {
 	r.Resource.With(&m.Model)
-	r.URI = m.URI
+	r.File = m.File
+	r.Line = m.Line
 	r.Message = m.Message
 	r.CodeSnip = m.CodeSnip
 	if m.Facts != nil {
@@ -1010,7 +1372,8 @@ func (r *Incident) With(m *model.Incident) {
 // Model builds a model.
 func (r *Incident) Model() (m *model.Incident) {
 	m = &model.Incident{}
-	m.URI = r.URI
+	m.File = r.File
+	m.Line = r.Line
 	m.Message = r.Message
 	m.CodeSnip = r.CodeSnip
 	m.Facts, _ = json.Marshal(r.Facts)
@@ -1018,39 +1381,56 @@ func (r *Incident) Model() (m *model.Incident) {
 }
 
 //
-// AnalysisLink analysis report link.
-type AnalysisLink struct {
+// Link analysis report link.
+type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty" yaml:",omitempty"`
 }
 
 //
-// IssueComposite composite REST resource.
-type IssueComposite struct {
-	RuleSet     string   `json:"ruleSet"`
-	Rule        string   `json:"rule"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Category    string   `json:"category"`
-	Effort      int      `json:"effort"`
-	Labels      []string `json:"labels"`
-	Affected    int      `json:"affected"`
+// RuleReport REST resource.
+type RuleReport struct {
+	RuleSet      string   `json:"ruleset"`
+	Rule         string   `json:"rule"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Category     string   `json:"category"`
+	Effort       int      `json:"effort"`
+	Labels       []string `json:"labels"`
+	Applications int      `json:"applications"`
 }
 
 //
 // RuleId returns unique rule ID.
-func (r *IssueComposite) RuleId() (id string) {
+func (r *RuleReport) RuleId() (id string) {
 	return r.RuleSet + "." + r.Rule
 }
 
 //
-// DepComposite composite REST resource.
-type DepComposite struct {
-	Name     string   `json:"name"`
-	Version  string   `json:"version"`
-	SHA      string   `json:"sha"`
-	Labels   []string `json:"labels"`
-	Affected int      `json:"affected"`
+// IssueReport REST resource.
+type IssueReport struct {
+	Issue
+	Incidents   int `json:"incidents"`
+	Files       int `json:"files"`
+	Application Ref `json:"application"`
+}
+
+//
+// FileReport REST resource.
+type FileReport struct {
+	IssueID   uint   `json:"issueId" yaml:",issueId"`
+	File      string `json:"file"`
+	Incidents int    `json:"incidents"`
+}
+
+//
+// DepReport REST resource.
+type DepReport struct {
+	Name         string   `json:"name"`
+	Version      string   `json:"version"`
+	SHA          string   `json:"sha"`
+	Labels       []string `json:"labels"`
+	Applications int      `json:"applications"`
 }
 
 //

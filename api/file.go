@@ -182,7 +182,7 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 //
 // File REST resource.
 type File struct {
-	Resource
+	Resource   `yaml:",inline"`
 	Name       string     `json:"name"`
 	Path       string     `json:"path"`
 	Expiration *time.Time `json:"expiration,omitempty"`

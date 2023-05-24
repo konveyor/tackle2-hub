@@ -122,14 +122,14 @@ const docTemplate = `{
         },
         "/analyses/dependencies": {
             "get": {
-                "description": "List dependency composites.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels\n- application.(id|name)\n- tag.id",
+                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels\n- application.(id|name)\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "dependencies"
                 ],
-                "summary": "List dependency composites.",
+                "summary": "List dependency reports.",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -145,21 +145,133 @@ const docTemplate = `{
         },
         "/analyses/issues": {
             "get": {
-                "description": "List issue composites.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
+                "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issuecomposites"
+                    "issues"
                 ],
-                "summary": "List issue composites.",
+                "summary": "List all issues.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.IssueComposite"
+                                "$ref": "#/definitions/api.Issue"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/issues/{id}": {
+            "get": {
+                "description": "Get an issue.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issue"
+                ],
+                "summary": "Get an issue.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Issue"
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/issues/{id}/incidents": {
+            "get": {
+                "description": "List incidents for an issue.\nfilters:\n- file",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "incidents"
+                ],
+                "summary": "List incidents for an issue.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Incident"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/report/issues": {
+            "get": {
+                "description": "Each report collates issues by ruleset/rule and application.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issuereports"
+                ],
+                "summary": "List issue reports.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.IssueReport"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/report/issues/{id}/files": {
+            "get": {
+                "description": "Each report collates incidents by file.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "filereports"
+                ],
+                "summary": "List incident file reports.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.FileReport"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/report/rules": {
+            "get": {
+                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rulereports"
+                ],
+                "summary": "List rule reports.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.RuleReport"
                             }
                         }
                     }
@@ -218,7 +330,7 @@ const docTemplate = `{
         },
         "/application/{id}/analyses": {
             "post": {
-                "description": "Create an analysis.",
+                "description": "Create an analysis.\nCaller must upload (2) files.\nAn issues file that multiple issue resources.\nA dependencies file that contains an array of dependencies.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4428,17 +4540,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AnalysisLink": {
-            "type": "object",
-            "properties": {
-                "title": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
         "api.Application": {
             "type": "object",
             "required": [
@@ -4666,6 +4767,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.FileReport": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string"
+                },
+                "incidents": {
+                    "type": "integer"
+                },
+                "issueId": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.Identity": {
             "type": "object",
             "required": [
@@ -4762,16 +4877,19 @@ const docTemplate = `{
                 "facts": {
                     "$ref": "#/definitions/api.FactMap"
                 },
+                "file": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "integer"
+                },
+                "line": {
                     "type": "integer"
                 },
                 "message": {
                     "type": "string"
                 },
                 "updateUser": {
-                    "type": "string"
-                },
-                "uri": {
                     "type": "string"
                 }
             }
@@ -4785,9 +4903,6 @@ const docTemplate = `{
                 "ruleset"
             ],
             "properties": {
-                "application": {
-                    "type": "integer"
-                },
                 "category": {
                     "type": "string"
                 },
@@ -4824,7 +4939,7 @@ const docTemplate = `{
                 "links": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.AnalysisLink"
+                        "$ref": "#/definitions/api.Link"
                     }
                 },
                 "name": {
@@ -4841,13 +4956,25 @@ const docTemplate = `{
                 }
             }
         },
-        "api.IssueComposite": {
+        "api.IssueReport": {
             "type": "object",
+            "required": [
+                "category",
+                "name",
+                "rule",
+                "ruleset"
+            ],
             "properties": {
-                "affected": {
-                    "type": "integer"
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "category": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
                     "type": "string"
                 },
                 "description": {
@@ -4856,10 +4983,28 @@ const docTemplate = `{
                 "effort": {
                     "type": "integer"
                 },
+                "facts": {
+                    "$ref": "#/definitions/api.FactMap"
+                },
+                "files": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incidents": {
+                    "type": "integer"
+                },
                 "labels": {
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Link"
                     }
                 },
                 "name": {
@@ -4868,7 +5013,10 @@ const docTemplate = `{
                 "rule": {
                     "type": "string"
                 },
-                "ruleSet": {
+                "ruleset": {
+                    "type": "string"
+                },
+                "updateUser": {
                     "type": "string"
                 }
             }
@@ -4898,6 +5046,17 @@ const docTemplate = `{
                     }
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Link": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }
@@ -5107,6 +5266,38 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RuleReport": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleSet": {
                     "type": "string"
                 }
             }
