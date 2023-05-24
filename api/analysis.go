@@ -1390,7 +1390,7 @@ type Link struct {
 //
 // RuleReport REST resource.
 type RuleReport struct {
-	RuleSet      string   `json:"ruleSet"`
+	RuleSet      string   `json:"ruleset"`
 	Rule         string   `json:"rule"`
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
