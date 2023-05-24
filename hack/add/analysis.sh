@@ -7,7 +7,7 @@ app="${1:-1}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"
-iPath="/home/jortel/tmp/issues.yaml"
+iPath="/tmp/issues.yaml"
 dPath="/tmp/deps.yaml"
 
 echo " Application: ${app}"
