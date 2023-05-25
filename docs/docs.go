@@ -343,21 +343,18 @@ const docTemplate = `{
                 "summary": "Create an analysis.",
                 "parameters": [
                     {
-                        "description": "Analysis data",
-                        "name": "task",
+                        "description": "AnalysisManifest data",
+                        "name": "manifest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Analysis"
+                            "$ref": "#/definitions/api.AnalysisManifest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.Analysis"
-                        }
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -4540,6 +4537,29 @@ const docTemplate = `{
                 }
             }
         },
+        "api.AnalysisManifest": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "dependencies": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issues": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Application": {
             "type": "object",
             "required": [
@@ -5297,7 +5317,7 @@ const docTemplate = `{
                 "rule": {
                     "type": "string"
                 },
-                "ruleSet": {
+                "ruleset": {
                     "type": "string"
                 }
             }

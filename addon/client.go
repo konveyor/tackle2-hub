@@ -185,6 +185,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+	case http.StatusNoContent:
 	case http.StatusConflict:
 		err = &Conflict{Path: path}
 	default:
