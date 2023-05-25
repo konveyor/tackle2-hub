@@ -59,7 +59,7 @@ type Analysis struct {
 }
     Analysis API.
 
-func (h *Analysis) Create(r *api.Analysis) (err error)
+func (h *Analysis) Create(r *api.AnalysisManifest) (err error)
     Create an analysis report.
 
 type AppFacts struct {

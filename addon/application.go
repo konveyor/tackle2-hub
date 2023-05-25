@@ -290,7 +290,7 @@ type Analysis struct {
 
 //
 // Create an analysis report.
-func (h *Analysis) Create(r *api.Analysis) (err error) {
+func (h *Analysis) Create(r *api.AnalysisManifest) (err error) {
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.Post(path, r)
 	return
