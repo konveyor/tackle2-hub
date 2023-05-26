@@ -25,6 +25,21 @@ definitions:
       updateUser:
         type: string
     type: object
+  api.AnalysisManifest:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      dependencies:
+        $ref: '#/definitions/api.Ref'
+      id:
+        type: integer
+      issues:
+        $ref: '#/definitions/api.Ref'
+      updateUser:
+        type: string
+    type: object
   api.Application:
     properties:
       binary:
@@ -527,7 +542,7 @@ definitions:
         type: string
       rule:
         type: string
-      ruleSet:
+      ruleset:
         type: string
     type: object
   api.RuleSet:
@@ -1187,19 +1202,17 @@ paths:
         An issues file that multiple issue resources.
         A dependencies file that contains an array of dependencies.
       parameters:
-      - description: Analysis data
+      - description: AnalysisManifest data
         in: body
-        name: task
+        name: manifest
         required: true
         schema:
-          $ref: '#/definitions/api.Analysis'
+          $ref: '#/definitions/api.AnalysisManifest'
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/api.Analysis'
+        "204":
+          description: No Content
       summary: Create an analysis.
       tags:
       - analyses

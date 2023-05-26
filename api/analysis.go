@@ -169,9 +169,9 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @tags analyses
 // @accept json
 // @produce json
-// @success 201 {object} api.Analysis
+// @success 204
 // @router /application/{id}/analyses [post]
-// @param task body api.Analysis true "Analysis data"
+// @param manifest body api.AnalysisManifest true "AnalysisManifest data"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Analysis{}
@@ -276,17 +276,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			return
 		}
 	}
-	//
-	// Fetch.
-	db = h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.First(analysis, analysis.ID)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	r.With(analysis)
 
-	h.Respond(ctx, http.StatusCreated, r)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Delete godoc
