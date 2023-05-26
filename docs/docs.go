@@ -4523,6 +4523,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.TechDependency"
                     }
                 },
+                "effort": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -4540,23 +4543,11 @@ const docTemplate = `{
         "api.AnalysisManifest": {
             "type": "object",
             "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
                 "dependencies": {
                     "$ref": "#/definitions/api.Ref"
                 },
-                "id": {
-                    "type": "integer"
-                },
                 "issues": {
                     "$ref": "#/definitions/api.Ref"
-                },
-                "updateUser": {
-                    "type": "string"
                 }
             }
         },
@@ -4978,15 +4969,23 @@ const docTemplate = `{
         },
         "api.IssueReport": {
             "type": "object",
-            "required": [
-                "category",
-                "name",
-                "rule",
-                "ruleset"
-            ],
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "type": "object",
+                    "required": [
+                        "id"
+                    ],
+                    "properties": {
+                        "effort": {
+                            "type": "integer"
+                        },
+                        "id": {
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "category": {
                     "type": "string"

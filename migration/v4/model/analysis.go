@@ -4,6 +4,7 @@ package model
 // Analysis report.
 type Analysis struct {
 	Model
+	Effort        int
 	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint             `gorm:"index;not null"`

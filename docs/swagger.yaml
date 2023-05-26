@@ -16,6 +16,8 @@ definitions:
         items:
           $ref: '#/definitions/api.TechDependency'
         type: array
+      effort:
+        type: integer
       id:
         type: integer
       issues:
@@ -27,18 +29,10 @@ definitions:
     type: object
   api.AnalysisManifest:
     properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
       dependencies:
         $ref: '#/definitions/api.Ref'
-      id:
-        type: integer
       issues:
         $ref: '#/definitions/api.Ref'
-      updateUser:
-        type: string
     type: object
   api.Application:
     properties:
@@ -319,7 +313,16 @@ definitions:
   api.IssueReport:
     properties:
       application:
-        $ref: '#/definitions/api.Ref'
+        properties:
+          effort:
+            type: integer
+          id:
+            type: integer
+          name:
+            type: string
+        required:
+        - id
+        type: object
       category:
         type: string
       createTime:
@@ -354,11 +357,6 @@ definitions:
         type: string
       updateUser:
         type: string
-    required:
-    - category
-    - name
-    - rule
-    - ruleset
     type: object
   api.JobFunction:
     properties:

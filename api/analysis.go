@@ -235,6 +235,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
+		analysis.Effort += r.Effort * len(r.Incidents)
 	}
 	//
 	// Dependencies
@@ -275,6 +276,13 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
+	}
+	//
+	// Effort
+	err = db.Save(analysis).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 
 	h.Status(ctx, http.StatusNoContent)
@@ -833,6 +841,7 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 		Files     int
 		AppID     uint
 		AppName   string
+		AppEffort int
 	}
 	db = h.paginated(ctx, db)
 	db = db.Select(
@@ -840,7 +849,8 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 		"COUNT(n.ID) Incidents",
 		"COUNT(distinct n.File) Files",
 		"app.ID AppID",
-		"app.Name AppName")
+		"app.Name AppName",
+		"a.Effort AppEffort")
 	var list []M
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -851,9 +861,14 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 		m := &list[i]
 		r := IssueReport{}
 		r.With(&m.Issue)
+		r.Effort = m.Effort
 		r.Incidents = m.Incidents
 		r.Files = m.Files
-		r.Application = Ref{ID: m.AppID, Name: m.AppName}
+		r.Application.Ref = Ref{
+			ID:   m.AppID,
+			Name: m.AppName,
+		}
+		r.Application.Effort = m.AppEffort
 		resources = append(resources, r)
 	}
 
@@ -1175,7 +1190,6 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 //
 // AnalysisManifest EST resource.
 type AnalysisManifest struct {
-	Resource     `yaml:",inline"`
 	Issues       Ref `json:"issues"`
 	Dependencies Ref `json:"dependencies"`
 }
@@ -1184,6 +1198,7 @@ type AnalysisManifest struct {
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
+	Effort       int              `json:"effort"`
 	Issues       []Issue          `json:"issues,omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty"`
 }
@@ -1192,6 +1207,7 @@ type Analysis struct {
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
+	r.Effort = m.Effort
 	r.Issues = []Issue{}
 	for i := range m.Issues {
 		n := Issue{}
@@ -1214,6 +1230,7 @@ func (r *Analysis) With(m *model.Analysis) {
 // Model builds a model.
 func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
+	m.Effort = r.Effort
 	m.Issues = []model.Issue{}
 	for i := range r.Issues {
 		n := r.Issues[i].Model()
@@ -1400,10 +1417,43 @@ func (r *RuleReport) RuleId() (id string) {
 //
 // IssueReport REST resource.
 type IssueReport struct {
-	Issue
-	Incidents   int `json:"incidents"`
-	Files       int `json:"files"`
-	Application Ref `json:"application"`
+	Resource    `yaml:",inline"`
+	RuleSet     string   `json:"ruleset"`
+	Rule        string   `json:"rule"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty" yaml:",omitempty"`
+	Category    string   `json:"category"`
+	Effort      int      `json:"effort,omitempty" yaml:",omitempty"`
+	Links       []Link   `json:"links,omitempty" yaml:",omitempty"`
+	Facts       FactMap  `json:"facts,omitempty" yaml:",omitempty"`
+	Labels      []string `json:"labels"`
+	Incidents   int      `json:"incidents"`
+	Files       int      `json:"files"`
+	Application struct {
+		Ref    `yaml:",inline"`
+		Effort int `json:"effort"`
+	} `json:"application"`
+}
+
+//
+// With updates the resource with the model.
+func (r *IssueReport) With(m *model.Issue) {
+	r.Resource.With(&m.Model)
+	r.RuleSet = m.RuleSet
+	r.Rule = m.Rule
+	r.Name = m.Name
+	r.Description = m.Description
+	r.Category = m.Category
+	if m.Links != nil {
+		_ = json.Unmarshal(m.Links, &r.Links)
+	}
+	if m.Facts != nil {
+		_ = json.Unmarshal(m.Facts, &r.Facts)
+	}
+	if m.Labels != nil {
+		_ = json.Unmarshal(m.Labels, &r.Labels)
+	}
+	r.Effort = m.Effort
 }
 
 //

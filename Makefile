@@ -80,6 +80,8 @@ controller-gen:
 addon: fmt vet
 	go build -o bin/addon github.com/konveyor/tackle2-hub/hack/cmd/addon
 
+docs: docs-swagger docs-binding
+
 # Build Swagger API spec into ./docs directory
 docs-swagger:
 	${GOBIN}/swag init -g api/base.go
