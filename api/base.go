@@ -246,7 +246,7 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 }
 
 //
-// Decoder returns a decoder based on Content-Type header.
+// Decoder returns a decoder based on encoding.
 // Opinionated towards json.
 func (h *BaseHandler) Decoder(ctx *gin.Context, encoding string, r io.Reader) (d Decoder, err error) {
 	if r == nil {
