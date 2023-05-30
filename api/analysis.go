@@ -125,10 +125,10 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
 	// Build query.
 	id := h.pk(ctx)
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Where("ApplicationID = ?", id)
-	count := int64(0)
 	// Count.
+	count := int64(0)
 	result := db.Model(&model.Analysis{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -145,6 +145,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	}
 	// Find.
 	var list []model.Analysis
+	db = h.paginated(ctx, db)
 	db = h.preLoad(db, clause.Associations)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -319,7 +320,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @description - id
 // @description - name
 // @description - version
-// @description - type
+// @description - labels
 // @description - sha
 // @description - indirect
 // @tags dependencies
@@ -345,10 +346,23 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 			{Field: "id", Kind: qf.LITERAL},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
-			{Field: "type", Kind: qf.STRING},
 			{Field: "indirect", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"name",
+		"version",
+		"indirect",
+		"labels",
+		"sha",
+	)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -375,6 +389,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	// Find.
 	list := []model.TechDependency{}
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -394,7 +409,8 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @description List application issues.
 // @description filters:
 // @description - id
-// @description - ruleid
+// @description - ruleset
+// @description - rule
 // @description - name
 // @description - category
 // @description - effort
@@ -422,11 +438,28 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
-			{Field: "ruleid", Kind: qf.STRING},
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"ruleset",
+		"rule",
+		"name",
+		"category",
+		"effort",
+		"labels",
+		"incidents",
+	)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -464,6 +497,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	}
 	list := []M{}
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -507,11 +541,24 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "labels", Kind: qf.STRING, Relation: true},
-			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"ruleset",
+		"rule",
+		"name",
+		"category",
+		"effort",
+		"labels",
+	)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -549,6 +596,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	//
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	var list []model.Issue
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -608,6 +656,16 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"file",
+		"line",
+	)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	var list []model.Incident
 	db := h.DB(ctx)
 	db = db.Where("IssueID", id)
@@ -626,6 +684,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	}
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -677,6 +736,21 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"ruleset|i.ruleset",
+		"rule|i.rule",
+		"name|i.name",
+		"category|i.category",
+		"effort|i.effort",
+		"labels|i.labels",
+		"applications",
+	)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Select(
 		"i.RuleSet",
@@ -724,6 +798,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	}
 	var list []M
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -795,6 +870,24 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"ruleset|i.ruleset",
+		"rule|i.rule",
+		"name|i.name",
+		"category|i.category",
+		"effort|i.effort",
+		"incidents",
+		"files",
+		"application.id|AppId",
+		"application.name|AppName",
+		"application.effort|AppEffort",
+	)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Table("Issue i")
 	db = db.Joins(",Incident n")
@@ -844,6 +937,7 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 		AppEffort int
 	}
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	db = db.Select(
 		"i.*",
 		"COUNT(n.ID) Incidents",
@@ -883,6 +977,18 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // @success 200 {object} []api.FileReport
 // @router /analyses/report/issues/{id}/files [get]
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
+	//
+	// Build query.
+	sort := Sort{}
+	err := sort.With(
+		ctx,
+		"file",
+		"incidents",
+	)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	resources := []FileReport{}
 	issueId := h.pk(ctx)
 	db := h.DB(ctx)
@@ -895,7 +1001,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	err := h.WithCount(ctx, count)
+	err = h.WithCount(ctx, count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -911,6 +1017,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	}
 	var list []M
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	db = db.Select(
 		"File",
 		"COUNT(id) Incidents")
@@ -965,6 +1072,19 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"name",
+		"version",
+		"sha",
+		"indirect",
+		"labels",
+	)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
 	db = filter.Where(db, "-Labels")
@@ -993,6 +1113,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	list := []model.TechDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -1037,6 +1158,20 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(
+		ctx,
+		"name",
+		"version",
+		"sha",
+		"indirect",
+		"labels",
+		"applications",
+	)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1087,6 +1222,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	}
 	var list []M
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -1459,7 +1595,7 @@ func (r *IssueReport) With(m *model.Issue) {
 //
 // FileReport REST resource.
 type FileReport struct {
-	IssueID   uint   `json:"issueId" yaml:",issueId"`
+	IssueID   uint   `json:"issueId" yaml:"issueId"`
 	File      string `json:"file"`
 	Incidents int    `json:"incidents"`
 }
