@@ -330,7 +330,7 @@ const docTemplate = `{
         },
         "/application/{id}/analyses": {
             "post": {
-                "description": "Create an analysis.\nCaller must upload (2) files.\nAn issues file that multiple issue resources.\nA dependencies file that contains an array of dependencies.",
+                "description": "Create an analysis.\nForm fields:\n- issues: file that multiple api.Issue resources.\n- dependencies: file that multiple api.TechDependency resources.",
                 "consumes": [
                     "application/json"
                 ],
@@ -341,20 +341,12 @@ const docTemplate = `{
                     "analyses"
                 ],
                 "summary": "Create an analysis.",
-                "parameters": [
-                    {
-                        "description": "AnalysisManifest data",
-                        "name": "manifest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.AnalysisManifest"
-                        }
-                    }
-                ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Analysis"
+                        }
                     }
                 }
             }
@@ -4537,17 +4529,6 @@ const docTemplate = `{
                 },
                 "updateUser": {
                     "type": "string"
-                }
-            }
-        },
-        "api.AnalysisManifest": {
-            "type": "object",
-            "properties": {
-                "dependencies": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "issues": {
-                    "$ref": "#/definitions/api.Ref"
                 }
             }
         },

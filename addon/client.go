@@ -419,19 +419,24 @@ func (r *Client) FileGet(path, destination string) (err error) {
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object interface{}) (err error) {
-	isDir, err := r.isDir(source, true)
-	if err != nil {
-		return
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
 	}
-	if isDir {
-		err = liberr.New("Source cannot be directory.")
-		return
-	}
+	err = r.FileSend(path, http.MethodPut, fields, object)
+	return
+}
+
+//
+// FileSend sends file upload from.
+func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error) {
 	request := func() (request *http.Request, err error) {
 		buf := new(bytes.Buffer)
 		request = &http.Request{
 			Header: http.Header{},
-			Method: http.MethodPut,
+			Method: method,
 			Body:   io.NopCloser(buf),
 			URL:    r.join(path),
 		}
@@ -440,15 +445,26 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 		defer func() {
 			_ = writer.Close()
 		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
+		for _, field := range fields {
+			isDir, nErr := r.isDir(field.Path, true)
+			if nErr != nil {
+				err = nErr
+				return
+			}
+			if isDir {
+				err = liberr.New("Path cannot be directory.")
+				return
+			}
+			part, nErr := writer.CreateFormFile(field.Name, pathlib.Base(field.Path))
+			if err != nil {
+				err = liberr.Wrap(nErr)
+				return
+			}
+			err = r.putFile(part, field.Path)
 		}
 		request.Header.Add(
 			api.ContentType,
 			writer.FormDataContentType())
-		err = r.putFile(part, source)
 		return
 	}
 	reply, err := r.send(request)
@@ -720,4 +736,11 @@ func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
 	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
 	return
+}
+
+//
+// Field file upload form field.
+type Field struct {
+	Name string
+	Path string
 }

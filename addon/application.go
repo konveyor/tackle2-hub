@@ -3,6 +3,7 @@ package addon
 import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
+	"net/http"
 	"strconv"
 )
 
@@ -290,8 +291,21 @@ type Analysis struct {
 
 //
 // Create an analysis report.
-func (h *Analysis) Create(r *api.AnalysisManifest) (err error) {
+func (h *Analysis) Create(r *api.Analysis, issues, deps string) (err error) {
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Post(path, r)
+	err = h.client.FileSend(
+		path,
+		http.MethodPost,
+		[]Field{
+			{
+				Name: api.IssueField,
+				Path: issues,
+			},
+			{
+				Name: api.DepField,
+				Path: deps,
+			},
+		},
+		r)
 	return
 }

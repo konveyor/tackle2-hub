@@ -81,36 +81,29 @@ done
 #
 file=${dPath}
 echo -n "---
-- name: github.com/jboss
-  version: 5.0
-- name: github.com/hybernate
-  indirect: "true"
-  version: 4.6 
-- name: github.com/ejb
-  indirect: "true"
-  version: 4.3 
-- name: github.com/java
-  indirect: "true"
-  version: 8
+name: github.com/jboss
+version: 5.0
 " > ${file}
+echo -n "---
+name: github.com/hybernate
+indirect: "true"
+version: 4.6
+" >> ${file}
+echo -n "---
+name: github.com/ejb
+indirect: "true"
+version: 4.3
+" >> ${file}
+echo -n "---
+name: github.com/java
+indirect: "true"
+version: 8
+" >> ${file}
 
 echo "Report CREATED"
 
-issueId=$( curl -s -F "file=@${iPath}" ${host}/files/issues | jq .id )
-echo "File(issues) created id=${issueId}"
-
-depId=$( curl -s -F "file=@${dPath}" ${host}/files/deps | jq .id )
-echo "File(deps) created id=${issueId}"
-
-curl -i -X POST ${host}/applications/${app}/analyses \
-  -H 'Content-Type:application/x-yaml' \
-  -H 'Accept:application/x-yaml' \
-  -d \
-"
-issues:
-  id: ${issueId}
-dependencies:
-  id: ${depId}
-"
-
-
+curl \
+  -F "issues=@${iPath}" \
+  -F "dependencies=@${dPath}" \
+  ${host}/applications/${app}/analyses \
+  -H 'Accept:application/x-yaml'

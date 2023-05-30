@@ -10,8 +10,9 @@ import (
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"io"
+	"mime"
 	"net/http"
-	"os"
+	"path"
 	"strings"
 )
 
@@ -34,6 +35,11 @@ const (
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
 	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
 	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
+)
+
+const (
+	IssueField = "issues"
+	DepField   = "dependencides"
 )
 
 //
@@ -163,56 +169,47 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // AppCreate godoc
 // @summary Create an analysis.
 // @description Create an analysis.
-// @description Caller must upload (2) files.
-// @description An issues file that multiple issue resources.
-// @description A dependencies file that contains an array of dependencies.
+// @description Form fields:
+// @description   - issues: file that multiple api.Issue resources.
+// @description   - dependencies: file that multiple api.TechDependency resources.
 // @tags analyses
 // @accept json
 // @produce json
-// @success 204
+// @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
-// @param manifest body api.AnalysisManifest true "AnalysisManifest data"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &Analysis{}
-	manifest := &AnalysisManifest{}
-	err := h.Bind(ctx, manifest)
-	if err != nil {
-		_ = ctx.Error(err)
+	result := h.DB(ctx).First(&model.Application{}, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
 		return
 	}
-	//
-	// Analysis
-	analysis := r.Model()
+	analysis := &model.Analysis{}
 	analysis.ApplicationID = id
 	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db.Logger = db.Logger.LogMode(logger.Error)
-	err = db.Create(analysis).Error
+	err := db.Create(analysis).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	//
 	// Issues
-	file := &model.File{}
-	err = db.First(file, manifest.Issues.ID).Error
+	input, err := ctx.FormFile(IssueField)
 	if err != nil {
-		_ = ctx.Error(err)
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
+	reader, err := input.Open()
+	if err != nil {
 		return
 	}
 	defer func() {
-		_ = db.Delete(file)
+		_ = reader.Close()
 	}()
-	f, err := os.Open(file.Path)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	d, err := h.Decoder(ctx, f)
+	encoding := mime.TypeByExtension(path.Ext(input.Filename))
+	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -239,36 +236,35 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Dependencies
-	file = &model.File{}
-	err = db.First(file, manifest.Dependencies.ID).Error
+	input, err = ctx.FormFile(DepField)
 	if err != nil {
-		_ = ctx.Error(err)
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
+	reader, err = input.Open()
+	if err != nil {
 		return
 	}
 	defer func() {
-		_ = db.Delete(file)
+		_ = reader.Close()
 	}()
-	f, err = os.Open(file.Path)
+	encoding = mime.TypeByExtension(path.Ext(input.Filename))
+	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	defer func() {
-		_ = f.Close()
-	}()
-	d, err = h.Decoder(ctx, f)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	deps := []TechDependency{}
-	err = d.Decode(&deps)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	for i := range deps {
-		r := &deps[i]
+	for {
+		r := &TechDependency{}
+		err = d.Decode(r)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				_ = ctx.Error(err)
+				return
+			}
+		}
 		m := r.Model()
 		m.AnalysisID = analysis.ID
 		err = db.Create(m).Error
@@ -278,14 +274,25 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		}
 	}
 	//
-	// Effort
+	// Update effort.
 	err = db.Save(analysis).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	h.Status(ctx, http.StatusNoContent)
+	db = h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	err = db.First(analysis).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r := Analysis{}
+	r.With(analysis)
+
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // Delete godoc
@@ -1192,13 +1199,6 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 		}
 	}
 	return
-}
-
-//
-// AnalysisManifest EST resource.
-type AnalysisManifest struct {
-	Issues       Ref `json:"issues"`
-	Dependencies Ref `json:"dependencies"`
 }
 
 //

@@ -27,13 +27,6 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.AnalysisManifest:
-    properties:
-      dependencies:
-        $ref: '#/definitions/api.Ref'
-      issues:
-        $ref: '#/definitions/api.Ref'
-    type: object
   api.Application:
     properties:
       binary:
@@ -1196,21 +1189,16 @@ paths:
       - application/json
       description: |-
         Create an analysis.
-        Caller must upload (2) files.
-        An issues file that multiple issue resources.
-        A dependencies file that contains an array of dependencies.
-      parameters:
-      - description: AnalysisManifest data
-        in: body
-        name: manifest
-        required: true
-        schema:
-          $ref: '#/definitions/api.AnalysisManifest'
+        Form fields:
+        - issues: file that multiple api.Issue resources.
+        - dependencies: file that multiple api.TechDependency resources.
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Analysis'
       summary: Create an analysis.
       tags:
       - analyses
