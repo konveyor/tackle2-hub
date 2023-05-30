@@ -80,7 +80,7 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 // @router /taskgroups [get]
 func (h TaskGroupHandler) List(ctx *gin.Context) {
 	var list []model.TaskGroup
-	db := h.Paginated(ctx).Preload(clause.Associations)
+	db := h.DB(ctx).Preload(clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

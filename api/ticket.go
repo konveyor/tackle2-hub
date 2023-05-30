@@ -70,7 +70,7 @@ func (h TicketHandler) List(ctx *gin.Context) {
 	var list []model.Ticket
 	appId := ctx.Query(AppId)
 	trackerId := ctx.Query(TrackerId)
-	db := h.preLoad(h.Paginated(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	if appId != "" {
 		db = db.Where("ApplicationID = ?", appId)
 	}

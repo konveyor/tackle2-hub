@@ -59,7 +59,7 @@ func (h BucketHandler) AddRoutes(e *gin.Engine) {
 // @router /buckets [get]
 func (h BucketHandler) List(ctx *gin.Context) {
 	var list []model.Bucket
-	result := h.Paginated(ctx).Find(&list)
+	result := h.DB(ctx).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return

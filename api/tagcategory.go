@@ -69,7 +69,7 @@ func (h TagCategoryHandler) Get(ctx *gin.Context) {
 // @param name query string false "Optional category name filter"
 func (h TagCategoryHandler) List(ctx *gin.Context) {
 	var list []model.TagCategory
-	db := h.preLoad(h.Paginated(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	if name, found := ctx.GetQuery(Name); found {
 		db = db.Where("name = ?", name)
 	}

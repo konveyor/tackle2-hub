@@ -65,7 +65,7 @@ func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 // @router /businessservices [get]
 func (h BusinessServiceHandler) List(ctx *gin.Context) {
 	var list []model.BusinessService
-	db := h.preLoad(h.Paginated(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
