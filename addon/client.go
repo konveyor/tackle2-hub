@@ -344,6 +344,11 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			URL:    r.join(destination),
 		}
 		mp := multipart.NewWriter(pw)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
+		if isDir {
+			request.Header.Set(api.Directory, api.DirectoryExpand)
+		}
 		go func() {
 			var err error
 			defer func() {
@@ -360,16 +365,11 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 				return
 			}
 			if isDir {
-				request.Header.Set(api.Directory, api.DirectoryExpand)
 				err = r.putDir(part, source)
 			} else {
 				err = r.putFile(part, source)
 			}
 		}()
-		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
-		request.Header.Add(
-			api.ContentType,
-			mp.FormDataContentType())
 		return
 	}
 	reply, err := r.send(request)
@@ -427,13 +427,13 @@ func (r *Client) FileGet(path, destination string) (err error) {
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object interface{}) (err error) {
-	isDir, nErr := r.isDir(path, true)
+	isDir, nErr := r.isDir(source, true)
 	if nErr != nil {
 		err = nErr
 		return
 	}
 	if isDir {
-		err = liberr.New("Path cannot be directory.")
+		err = liberr.New("Must be regular file.")
 		return
 	}
 	fields := []Field{
@@ -458,6 +458,8 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			URL:    r.join(path),
 		}
 		mp := multipart.NewWriter(pw)
+		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		go func() {
 			var err error
 			defer func() {
@@ -480,10 +482,6 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 				}
 			}
 		}()
-		request.Header.Set(api.Accept, binding.MIMEJSON)
-		request.Header.Add(
-			api.ContentType,
-			mp.FormDataContentType())
 		return
 	}
 	reply, err := r.send(request)
