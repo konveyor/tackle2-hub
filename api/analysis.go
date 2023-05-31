@@ -885,12 +885,18 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	resources := []FileReport{}
 	issueId := h.pk(ctx)
+	issue := &model.Issue{}
+	result := h.DB(ctx).First(issue, issueId)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Where("IssueID", issueId)
 	db = db.Group("File")
 	// Count.
 	count := int64(0)
-	result := db.Model(&model.Incident{}).Count(&count)
+	result = db.Model(&model.Incident{}).Count(&count)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -924,6 +930,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		r.IssueID = issueId
 		r.File = m.File
 		r.Incidents = m.Incidents
+		r.Effort = issue.Effort * r.Incidents
 		resources = append(
 			resources,
 			r)
@@ -1459,9 +1466,10 @@ func (r *IssueReport) With(m *model.Issue) {
 //
 // FileReport REST resource.
 type FileReport struct {
-	IssueID   uint   `json:"issueId" yaml:",issueId"`
+	IssueID   uint   `json:"issueId" yaml:"issueId"`
 	File      string `json:"file"`
 	Incidents int    `json:"incidents"`
+	Effort    int    `json:"effort"`
 }
 
 //
