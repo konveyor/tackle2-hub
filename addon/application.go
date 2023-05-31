@@ -2,9 +2,11 @@ package addon
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
+	"gopkg.in/yaml.v3"
+	"io"
 	"net/http"
 	"strconv"
 )
@@ -293,13 +295,9 @@ type Analysis struct {
 
 //
 // Create an analysis report.
-func (h *Analysis) Create(r *api.Analysis, issues, deps string) (err error) {
-	err = h.validate(issues, deps)
-	if err != nil {
-		return
-	}
+func (h *Analysis) Create(r *api.Analysis, encoding string, issues, deps io.Reader) (err error) {
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
-	b, _ := json.Marshal(r)
+	b, _ := yaml.Marshal(r)
 	err = h.client.FileSend(
 		path,
 		http.MethodPost,
@@ -307,34 +305,30 @@ func (h *Analysis) Create(r *api.Analysis, issues, deps string) (err error) {
 			{
 				Name:   api.FileField,
 				Reader: bytes.NewReader(b),
-				Path:   "r.json",
+				Path:   h.Ext(binding.MIMEYAML),
 			},
 			{
-				Name: api.IssueField,
-				Path: issues,
+				Name:   api.IssueField,
+				Path:   h.Ext(encoding),
+				Reader: issues,
 			},
 			{
-				Name: api.DepField,
-				Path: deps,
+				Name:   api.DepField,
+				Path:   h.Ext(encoding),
+				Reader: deps,
 			},
 		},
 		r)
 	return
 }
 
-//
-// Validate files paths.
-func (h *Analysis) validate(paths ...string) (err error) {
-	for i := range paths {
-		isDir, nErr := h.client.isDir(paths[i], true)
-		if nErr != nil {
-			err = nErr
-			return
-		}
-		if isDir {
-			err = liberr.New("Path be regular file.")
-			return
-		}
+func (h *Analysis) Ext(encoding string) string {
+	switch encoding {
+	case binding.MIMEYAML:
+		return ".yaml"
+	case binding.MIMEJSON:
+		return ".json"
+	default:
+		return ""
 	}
-	return
 }

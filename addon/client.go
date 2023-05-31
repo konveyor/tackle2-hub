@@ -336,32 +336,35 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		return
 	}
 	request := func() (request *http.Request, err error) {
-		buf := new(bytes.Buffer)
+		pr, pw := io.Pipe()
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPut,
-			Body:   io.NopCloser(buf),
+			Body:   io.NopCloser(pr),
 			URL:    r.join(destination),
 		}
-		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
-		writer := multipart.NewWriter(buf)
-		defer func() {
-			_ = writer.Close()
+		mp := multipart.NewWriter(pw)
+		go func() {
+			defer func() {
+				_ = mp.Close()
+				_ = pw.Close()
+			}()
+			part, nErr := mp.CreateFormFile(api.FileField, pathlib.Base(source))
+			if err != nil {
+				err = liberr.Wrap(nErr)
+				return
+			}
+			if isDir {
+				request.Header.Set(api.Directory, api.DirectoryExpand)
+				err = r.putDir(part, source)
+			} else {
+				err = r.putFile(part, source)
+			}
 		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
-		}
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		request.Header.Add(
 			api.ContentType,
-			writer.FormDataContentType())
-		if isDir {
-			request.Header.Set(api.Directory, api.DirectoryExpand)
-			err = r.putDir(part, source)
-		} else {
-			err = r.putFile(part, source)
-		}
+			mp.FormDataContentType())
 		return
 	}
 	reply, err := r.send(request)
@@ -442,32 +445,34 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 // FileSend sends file upload from.
 func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error) {
 	request := func() (request *http.Request, err error) {
-		buf := new(bytes.Buffer)
+		pr, pw := io.Pipe()
 		request = &http.Request{
 			Header: http.Header{},
 			Method: method,
-			Body:   io.NopCloser(buf),
+			Body:   io.NopCloser(pr),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
-		writer := multipart.NewWriter(buf)
-		defer func() {
-			_ = writer.Close()
+		mp := multipart.NewWriter(pw)
+		go func() {
+			defer func() {
+				_ = mp.Close()
+				_ = pw.Close()
+			}()
+			for _, f := range fields {
+				part, err := mp.CreateFormFile(f.Name, pathlib.Base(f.Path))
+				if err != nil {
+					return
+				}
+				err = f.Write(part)
+				if err != nil {
+					return
+				}
+			}
 		}()
-		for _, field := range fields {
-			part, nErr := writer.CreateFormFile(field.Name, pathlib.Base(field.Path))
-			if err != nil {
-				err = liberr.Wrap(nErr)
-				return
-			}
-			err = field.Write(part)
-			if err != nil {
-				return
-			}
-		}
+		request.Header.Set(api.Accept, binding.MIMEJSON)
 		request.Header.Add(
 			api.ContentType,
-			writer.FormDataContentType())
+			mp.FormDataContentType())
 		return
 	}
 	reply, err := r.send(request)
