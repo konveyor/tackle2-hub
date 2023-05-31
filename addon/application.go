@@ -1,6 +1,8 @@
 package addon
 
 import (
+	"bytes"
+	"encoding/json"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"net/http"
@@ -292,11 +294,21 @@ type Analysis struct {
 //
 // Create an analysis report.
 func (h *Analysis) Create(r *api.Analysis, issues, deps string) (err error) {
+	err = h.validate(issues, deps)
+	if err != nil {
+		return
+	}
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
+	b, _ := json.Marshal(r)
 	err = h.client.FileSend(
 		path,
 		http.MethodPost,
 		[]Field{
+			{
+				Name:   api.FileField,
+				Reader: bytes.NewReader(b),
+				Path:   "r.json",
+			},
 			{
 				Name: api.IssueField,
 				Path: issues,
@@ -307,5 +319,22 @@ func (h *Analysis) Create(r *api.Analysis, issues, deps string) (err error) {
 			},
 		},
 		r)
+	return
+}
+
+//
+// Validate files paths.
+func (h *Analysis) validate(paths ...string) (err error) {
+	for i := range paths {
+		isDir, nErr := h.client.isDir(paths[i], true)
+		if nErr != nil {
+			err = nErr
+			return
+		}
+		if isDir {
+			err = liberr.New("Path be regular file.")
+			return
+		}
+	}
 	return
 }

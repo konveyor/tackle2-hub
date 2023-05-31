@@ -419,6 +419,15 @@ func (r *Client) FileGet(path, destination string) (err error) {
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object interface{}) (err error) {
+	isDir, nErr := r.isDir(path, true)
+	if nErr != nil {
+		err = nErr
+		return
+	}
+	if isDir {
+		err = liberr.New("Path cannot be directory.")
+		return
+	}
 	fields := []Field{
 		{
 			Name: api.FileField,
@@ -446,21 +455,15 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			_ = writer.Close()
 		}()
 		for _, field := range fields {
-			isDir, nErr := r.isDir(field.Path, true)
-			if nErr != nil {
-				err = nErr
-				return
-			}
-			if isDir {
-				err = liberr.New("Path cannot be directory.")
-				return
-			}
 			part, nErr := writer.CreateFormFile(field.Name, pathlib.Base(field.Path))
 			if err != nil {
 				err = liberr.Wrap(nErr)
 				return
 			}
-			err = r.putFile(part, field.Path)
+			err = field.Write(part)
+			if err != nil {
+				return
+			}
 		}
 		request.Header.Add(
 			api.ContentType,
@@ -741,6 +744,26 @@ func (r *Client) join(path string) (parsedURL *url.URL) {
 //
 // Field file upload form field.
 type Field struct {
-	Name string
-	Path string
+	Name   string
+	Path   string
+	Reader io.Reader
+}
+
+//
+// Write the field content.
+// When Reader is not set, the path is opened and copied.
+func (f *Field) Write(writer io.Writer) (err error) {
+	if f.Reader == nil {
+		file, nErr := os.Open(f.Path)
+		if nErr != nil {
+			err = liberr.Wrap(nErr)
+			return
+		}
+		f.Reader = file
+		defer func() {
+			_ = file.Close()
+		}()
+	}
+	_, err = io.Copy(writer, f.Reader)
+	return
 }

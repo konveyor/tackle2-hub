@@ -39,7 +39,7 @@ const (
 
 const (
 	IssueField = "issues"
-	DepField   = "dependencides"
+	DepField   = "dependencies"
 )
 
 //
@@ -170,10 +170,10 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @summary Create an analysis.
 // @description Create an analysis.
 // @description Form fields:
+// @description   - file: file that contains the api.Analysis resource.
 // @description   - issues: file that multiple api.Issue resources.
 // @description   - dependencies: file that multiple api.TechDependency resources.
 // @tags analyses
-// @accept json
 // @produce json
 // @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
@@ -195,14 +195,15 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	//
-	// Issues
-	input, err := ctx.FormFile(IssueField)
+	// Analysis
+	input, err := ctx.FormFile(FileField)
 	if err != nil {
 		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	reader, err := input.Open()
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
@@ -211,7 +212,34 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding := mime.TypeByExtension(path.Ext(input.Filename))
 	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
+	r := Analysis{}
+	err = d.Decode(&r)
+	if err != nil {
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
+	//
+	// Issues
+	input, err = ctx.FormFile(IssueField)
+	if err != nil {
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
+	reader, err = input.Open()
+	if err != nil {
 		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	encoding = mime.TypeByExtension(path.Ext(input.Filename))
+	d, err = h.Decoder(ctx, encoding, reader)
+	if err != nil {
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	for {
@@ -221,7 +249,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				_ = ctx.Error(err)
+				h.Status(ctx, http.StatusBadRequest)
 				return
 			}
 		}
@@ -243,6 +271,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	reader, err = input.Open()
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
@@ -251,7 +280,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding = mime.TypeByExtension(path.Ext(input.Filename))
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		_ = ctx.Error(err)
+		h.Status(ctx, http.StatusBadRequest)
 		return
 	}
 	for {
@@ -261,7 +290,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				_ = ctx.Error(err)
+				h.Status(ctx, http.StatusBadRequest)
 				return
 			}
 		}
@@ -289,7 +318,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 
-	r := Analysis{}
 	r.With(analysis)
 
 	h.Respond(ctx, http.StatusCreated, r)

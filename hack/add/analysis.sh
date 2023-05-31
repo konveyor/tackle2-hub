@@ -7,6 +7,7 @@ app="${1:-1}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"
+aPath="/tmp/analysis.yaml"
 iPath="/tmp/issues.yaml"
 dPath="/tmp/deps.yaml"
 
@@ -99,10 +100,19 @@ name: github.com/java
 indirect: "true"
 version: 8
 " >> ${file}
+#
+# Analysis
+#
+file=${aPath}
+echo -n "---
+issues:
+dependencies:
+" > ${file}
 
 echo "Report CREATED"
 
 curl \
+  -F "file=@${aPath}" \
   -F "issues=@${iPath}" \
   -F "dependencies=@${dPath}" \
   ${host}/applications/${app}/analyses \
