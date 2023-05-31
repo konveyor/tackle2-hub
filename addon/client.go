@@ -340,18 +340,23 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPut,
-			Body:   io.NopCloser(pr),
+			Body:   pr,
 			URL:    r.join(destination),
 		}
 		mp := multipart.NewWriter(pw)
 		go func() {
+			var err error
 			defer func() {
 				_ = mp.Close()
-				_ = pw.Close()
+				if err != nil {
+					_ = pw.CloseWithError(err)
+				} else {
+					_ = pw.Close()
+				}
 			}()
 			part, nErr := mp.CreateFormFile(api.FileField, pathlib.Base(source))
-			if err != nil {
-				err = liberr.Wrap(nErr)
+			if nErr != nil {
+				err = nErr
 				return
 			}
 			if isDir {
@@ -449,18 +454,24 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 		request = &http.Request{
 			Header: http.Header{},
 			Method: method,
-			Body:   io.NopCloser(pr),
+			Body:   pr,
 			URL:    r.join(path),
 		}
 		mp := multipart.NewWriter(pw)
 		go func() {
+			var err error
 			defer func() {
 				_ = mp.Close()
-				_ = pw.Close()
+				if err != nil {
+					_ = pw.CloseWithError(err)
+				} else {
+					_ = pw.Close()
+				}
 			}()
 			for _, f := range fields {
-				part, err := mp.CreateFormFile(f.Name, pathlib.Base(f.Path))
-				if err != nil {
+				part, nErr := mp.CreateFormFile(f.Name, pathlib.Base(f.Path))
+				if nErr != nil {
+					err = nErr
 					return
 				}
 				err = f.Write(part)
