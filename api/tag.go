@@ -98,6 +98,8 @@ func (h TagHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	// Load associated TagCategory.
+	h.DB(ctx).First(&m.Category, m.CategoryID)
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
