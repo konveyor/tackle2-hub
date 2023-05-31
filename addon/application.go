@@ -307,32 +307,21 @@ func (h *Analysis) Create(r *api.Analysis, encoding string, issues, deps io.Read
 		http.MethodPost,
 		[]Field{
 			{
-				Name:   api.FileField,
-				Reader: bytes.NewReader(b),
-				Path:   h.Ext(binding.MIMEYAML),
+				Name:     api.FileField,
+				Reader:   bytes.NewReader(b),
+				Encoding: binding.MIMEYAML,
 			},
 			{
-				Name:   api.IssueField,
-				Path:   h.Ext(encoding),
-				Reader: issues,
+				Name:     api.IssueField,
+				Encoding: encoding,
+				Reader:   issues,
 			},
 			{
-				Name:   api.DepField,
-				Path:   h.Ext(encoding),
-				Reader: deps,
+				Name:     api.DepField,
+				Encoding: encoding,
+				Reader:   deps,
 			},
 		},
 		r)
 	return
-}
-
-func (h *Analysis) Ext(encoding string) string {
-	switch encoding {
-	case binding.MIMEYAML:
-		return ".yaml"
-	case binding.MIMEJSON:
-		return ".json"
-	default:
-		return ""
-	}
 }

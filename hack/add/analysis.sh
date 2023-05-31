@@ -111,9 +111,11 @@ dependencies:
 
 echo "Report CREATED"
 
+mime="application/x-yaml"
+
 curl \
-  -F "file=@${aPath}" \
-  -F "issues=@${iPath}" \
-  -F "dependencies=@${dPath}" \
+  -F "file=@${aPath};type=${mime}" \
+  -F "issues=@${iPath};type=${mime}" \
+  -F "dependencies=@${dPath};type=${mime}" \
   ${host}/applications/${app}/analyses \
-  -H 'Accept:application/x-yaml'
+  -H "Accept:${mime}"

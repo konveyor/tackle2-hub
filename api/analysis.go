@@ -4,16 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"io"
-	"mime"
 	"net/http"
-	"path"
 	"strings"
 )
 
@@ -210,7 +207,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	encoding := h.mimeByExtension(input.Filename)
+	encoding := input.Header.Get(ContentType)
 	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		h.Status(ctx, http.StatusBadRequest)
@@ -237,7 +234,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	encoding = h.mimeByExtension(input.Filename)
+	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		h.Status(ctx, http.StatusBadRequest)
@@ -278,7 +275,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	encoding = h.mimeByExtension(input.Filename)
+	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		h.Status(ctx, http.StatusBadRequest)
@@ -1226,21 +1223,6 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 			q = q.Select("m.ID")
 			q = q.Where(f.SQL())
 		}
-	}
-	return
-}
-
-//
-// mimeByExtension returns MIME by file extension.
-func (h *AnalysisHandler) mimeByExtension(name string) (s string) {
-	ext := path.Ext(name)
-	switch strings.ToLower(ext) {
-	case ".yaml", ".yml":
-		s = binding.MIMEYAML
-	case ".json":
-		s = binding.MIMEJSON
-	default:
-		s = mime.TypeByExtension(ext)
 	}
 	return
 }

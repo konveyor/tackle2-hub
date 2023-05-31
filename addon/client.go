@@ -15,6 +15,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	pathlib "path"
@@ -471,7 +472,10 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 				}
 			}()
 			for _, f := range fields {
-				part, nErr := mp.CreateFormFile(f.Name, pathlib.Base(f.Path))
+				h := make(textproto.MIMEHeader)
+				h.Set("Content-Disposition", f.disposition())
+				h.Set("Content-Type", f.encoding())
+				part, nErr := mp.CreatePart(h)
 				if nErr != nil {
 					err = nErr
 					return
@@ -758,9 +762,10 @@ func (r *Client) join(path string) (parsedURL *url.URL) {
 //
 // Field file upload form field.
 type Field struct {
-	Name   string
-	Path   string
-	Reader io.Reader
+	Name     string
+	Path     string
+	Reader   io.Reader
+	Encoding string
 }
 
 //
@@ -779,5 +784,30 @@ func (f *Field) Write(writer io.Writer) (err error) {
 		}()
 	}
 	_, err = io.Copy(writer, f.Reader)
+	return
+}
+
+//
+// encoding returns MIME.
+func (f *Field) encoding() (mt string) {
+	if f.Encoding != "" {
+		mt = f.Encoding
+		return
+	}
+	switch pathlib.Ext(f.Path) {
+	case ".json":
+		mt = binding.MIMEJSON
+	case ".yaml":
+		mt = binding.MIMEYAML
+	default:
+		mt = "application/octet-stream"
+	}
+	return
+}
+
+//
+// disposition returns content-disposition.
+func (f *Field) disposition() (d string) {
+	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
 	return
 }
