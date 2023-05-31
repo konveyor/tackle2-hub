@@ -252,7 +252,11 @@ func (h *AppFacts) Set(key string, value interface{}) (err error) {
 			api.Key:    key,
 			api.Source: h.source,
 		})
-	err = h.client.Put(path, value)
+	err = h.client.Put(
+		path, api.Fact{
+			Key:   key,
+			Value: value,
+		})
 	return
 }
 
