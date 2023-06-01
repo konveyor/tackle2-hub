@@ -59,7 +59,7 @@ type Analysis struct {
 }
     Analysis API.
 
-func (h *Analysis) Create(r *api.AnalysisManifest) (err error)
+func (h *Analysis) Create(issues, deps string) (analysis *api.Analysis, err error)
     Create an analysis report.
 
 type AppFacts struct {
@@ -176,6 +176,9 @@ func (r *Client) BucketPut(source, destination string) (err error)
 func (r *Client) Delete(path string, params ...Param) (err error)
     Delete a resource.
 
+func (r *Client) FileForm(path, method string, files []FileField, object interface{}) (err error)
+    FileForm upload files.
+
 func (r *Client) FileGet(path, destination string) (err error)
     FileGet downloads a file.
 
@@ -220,6 +223,12 @@ func (h *File) Get(id uint, destination string) (err error)
 
 func (h *File) Put(source string) (r *api.File, err error)
     Put uploads a file.
+
+type FileField struct {
+	Name string
+	Path string
+}
+    FileField form file fields.
 
 type Identity struct {
 	// Has unexported fields.

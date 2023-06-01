@@ -26,7 +26,7 @@ var (
 
 const (
 	BucketDir = "list"
-	TmpDir = "/tmp/list"
+	TmpDir    = "/tmp/list"
 )
 
 type SoftError = hub.SoftError
@@ -178,7 +178,7 @@ func playWithBucket(bucket *hub.Bucket) (err error) {
 	}
 	//
 	// Upload the index.
-	err = bucket.Put(TmpDir + "/index.html", BucketDir + "/index.html")
+	err = bucket.Put(TmpDir+"/index.html", BucketDir+"/index.html")
 	if err != nil {
 		return
 	}
@@ -186,7 +186,7 @@ func playWithBucket(bucket *hub.Bucket) (err error) {
 	// Add file.
 	elmer := tmpDir2 + "/elmer"
 	_, _ = os.Create(elmer)
-	err = bucket.Put(elmer, BucketDir + "/networks")
+	err = bucket.Put(elmer, BucketDir+"/networks")
 	if err != nil {
 		return
 	}
@@ -289,9 +289,9 @@ func addTags(application *api.Application, source string, names ...string) (err 
 	//
 	// Ensure type exists.
 	tp := &api.TagCategory{
-		Name: "DIRECTORY",
+		Name:  "DIRECTORY",
 		Color: "#2b9af3",
-		Rank: 3,
+		Rank:  3,
 	}
 	err = addon.TagCategory.Ensure(tp)
 	if err != nil {
@@ -325,9 +325,9 @@ func replaceTags(application *api.Application, source string, names ...string) (
 	//
 	// Ensure type exists.
 	tp := &api.TagCategory{
-		Name: "DIRECTORY",
+		Name:  "DIRECTORY",
 		Color: "#2b9af3",
-		Rank: 3,
+		Rank:  3,
 	}
 	err = addon.TagCategory.Ensure(tp)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	pathlib "path"
@@ -336,32 +337,40 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		return
 	}
 	request := func() (request *http.Request, err error) {
-		buf := new(bytes.Buffer)
+		pr, pw := io.Pipe()
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPut,
-			Body:   io.NopCloser(buf),
+			Body:   pr,
 			URL:    r.join(destination),
 		}
+		mp := multipart.NewWriter(pw)
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
-		writer := multipart.NewWriter(buf)
-		defer func() {
-			_ = writer.Close()
-		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
-		}
-		request.Header.Add(
-			api.ContentType,
-			writer.FormDataContentType())
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		if isDir {
 			request.Header.Set(api.Directory, api.DirectoryExpand)
-			err = r.putDir(part, source)
-		} else {
-			err = r.putFile(part, source)
 		}
+		go func() {
+			var err error
+			defer func() {
+				_ = mp.Close()
+				if err != nil {
+					_ = pw.CloseWithError(err)
+				} else {
+					_ = pw.Close()
+				}
+			}()
+			part, nErr := mp.CreateFormFile(api.FileField, pathlib.Base(source))
+			if nErr != nil {
+				err = nErr
+				return
+			}
+			if isDir {
+				err = r.putDir(part, source)
+			} else {
+				err = r.putFile(part, source)
+			}
+		}()
 		return
 	}
 	reply, err := r.send(request)
@@ -419,36 +428,64 @@ func (r *Client) FileGet(path, destination string) (err error) {
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object interface{}) (err error) {
-	isDir, err := r.isDir(source, true)
-	if err != nil {
+	isDir, nErr := r.isDir(source, true)
+	if nErr != nil {
+		err = nErr
 		return
 	}
 	if isDir {
-		err = liberr.New("Source cannot be directory.")
+		err = liberr.New("Must be regular file.")
 		return
 	}
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
+	}
+	err = r.FileSend(path, http.MethodPut, fields, object)
+	return
+}
+
+//
+// FileSend sends file upload from.
+func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error) {
 	request := func() (request *http.Request, err error) {
-		buf := new(bytes.Buffer)
+		pr, pw := io.Pipe()
 		request = &http.Request{
 			Header: http.Header{},
-			Method: http.MethodPut,
-			Body:   io.NopCloser(buf),
+			Method: method,
+			Body:   pr,
 			URL:    r.join(path),
 		}
+		mp := multipart.NewWriter(pw)
 		request.Header.Set(api.Accept, binding.MIMEJSON)
-		writer := multipart.NewWriter(buf)
-		defer func() {
-			_ = writer.Close()
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
+		go func() {
+			var err error
+			defer func() {
+				_ = mp.Close()
+				if err != nil {
+					_ = pw.CloseWithError(err)
+				} else {
+					_ = pw.Close()
+				}
+			}()
+			for _, f := range fields {
+				h := make(textproto.MIMEHeader)
+				h.Set("Content-Disposition", f.disposition())
+				h.Set("Content-Type", f.encoding())
+				part, nErr := mp.CreatePart(h)
+				if nErr != nil {
+					err = nErr
+					return
+				}
+				err = f.Write(part)
+				if err != nil {
+					return
+				}
+			}
 		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
-		}
-		request.Header.Add(
-			api.ContentType,
-			writer.FormDataContentType())
-		err = r.putFile(part, source)
 		return
 	}
 	reply, err := r.send(request)
@@ -719,5 +756,58 @@ func (r *Client) buildTransport() (err error) {
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
 	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
+	return
+}
+
+//
+// Field file upload form field.
+type Field struct {
+	Name     string
+	Path     string
+	Reader   io.Reader
+	Encoding string
+}
+
+//
+// Write the field content.
+// When Reader is not set, the path is opened and copied.
+func (f *Field) Write(writer io.Writer) (err error) {
+	if f.Reader == nil {
+		file, nErr := os.Open(f.Path)
+		if nErr != nil {
+			err = liberr.Wrap(nErr)
+			return
+		}
+		f.Reader = file
+		defer func() {
+			_ = file.Close()
+		}()
+	}
+	_, err = io.Copy(writer, f.Reader)
+	return
+}
+
+//
+// encoding returns MIME.
+func (f *Field) encoding() (mt string) {
+	if f.Encoding != "" {
+		mt = f.Encoding
+		return
+	}
+	switch pathlib.Ext(f.Path) {
+	case ".json":
+		mt = binding.MIMEJSON
+	case ".yaml":
+		mt = binding.MIMEYAML
+	default:
+		mt = "application/octet-stream"
+	}
+	return
+}
+
+//
+// disposition returns content-disposition.
+func (f *Field) disposition() (d string) {
+	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
 	return
 }
