@@ -2,7 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X PUT ${host}/applications/1/facts/address \
+curl -L -X PUT ${host}/applications/1/facts/address \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
   -d \
