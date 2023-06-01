@@ -786,7 +786,6 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "labels", Kind: qf.STRING, Relation: true},
-			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
@@ -878,6 +877,10 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // FileReports godoc
 // @summary List incident file reports.
 // @description Each report collates incidents by file.
+// @description filters:
+// @description - file
+// @description - effort
+// @description - incidents
 // @tags filereports
 // @produce json
 // @success 200 {object} []api.FileReport
@@ -891,17 +894,40 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	db := h.DB(ctx)
-	db = db.Where("IssueID", issueId)
-	db = db.Group("File")
-	// Count.
-	count := int64(0)
-	result = db.Model(&model.Incident{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	//
+	// Build query.
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "file", Kind: qf.STRING},
+			{Field: "incidents", Kind: qf.LITERAL},
+			{Field: "effort", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	err := h.WithCount(ctx, count)
+	q := h.DB(ctx)
+	q = q.Model(&model.Incident{})
+	q = q.Select(
+		"IssueId",
+		"File",
+		"Effort*COUNT(Incident.id) Effort",
+		"COUNT(Incident.id) Incidents")
+	q = q.Joins(",Issue")
+	q = q.Where("Issue.ID = IssueID")
+	q = q.Where("Issue.ID", issueId)
+	q = q.Group("File")
+	// Count.
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	db = filter.Where(db)
+	count, err := h.count(db, q)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.WithCount(ctx, count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -912,14 +938,13 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	}
 	// Find.
 	type M struct {
+		IssueId   uint
 		File      string
+		Effort    int
 		Incidents int
 	}
 	var list []M
 	db = h.paginated(ctx, db)
-	db = db.Select(
-		"File",
-		"COUNT(id) Incidents")
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -927,10 +952,10 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	}
 	for _, m := range list {
 		r := FileReport{}
-		r.IssueID = issueId
+		r.IssueID = m.IssueId
 		r.File = m.File
+		r.Effort = m.Effort
 		r.Incidents = m.Incidents
-		r.Effort = issue.Effort * r.Incidents
 		resources = append(
 			resources,
 			r)
@@ -1114,6 +1139,15 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
+}
+
+//
+// Count rows returned by q.
+func (h *BaseHandler) count(db, q *gorm.DB) (count int64, err error) {
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	err = db.Count(&count).Error
+	return
 }
 
 //
