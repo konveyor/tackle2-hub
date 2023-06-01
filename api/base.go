@@ -246,15 +246,16 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 }
 
 //
-// Decoder returns a decoder based on Content-Type header.
+// Decoder returns a decoder based on encoding.
 // Opinionated towards json.
-func (h *BaseHandler) Decoder(ctx *gin.Context, r io.Reader) (d Decoder, err error) {
+func (h *BaseHandler) Decoder(ctx *gin.Context, encoding string, r io.Reader) (d Decoder, err error) {
 	if r == nil {
 		r = ctx.Request.Body
 	}
-	switch ctx.ContentType() {
+	switch encoding {
 	case "",
 		binding.MIMEPOSTForm,
+		binding.MIMEMultipartPOSTForm,
 		binding.MIMEJSON:
 		d = json.NewDecoder(r)
 	case binding.MIMEYAML:

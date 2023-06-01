@@ -1,8 +1,13 @@
 package addon
 
 import (
+	"bytes"
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
+	"gopkg.in/yaml.v3"
+	"io"
+	"net/http"
 	"strconv"
 )
 
@@ -247,7 +252,11 @@ func (h *AppFacts) Set(key string, value interface{}) (err error) {
 			api.Key:    key,
 			api.Source: h.source,
 		})
-	err = h.client.Put(path, value)
+	err = h.client.Put(
+		path, api.Fact{
+			Key:   key,
+			Value: value,
+		})
 	return
 }
 
@@ -290,8 +299,29 @@ type Analysis struct {
 
 //
 // Create an analysis report.
-func (h *Analysis) Create(r *api.AnalysisManifest) (err error) {
+func (h *Analysis) Create(r *api.Analysis, encoding string, issues, deps io.Reader) (err error) {
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Post(path, r)
+	b, _ := yaml.Marshal(r)
+	err = h.client.FileSend(
+		path,
+		http.MethodPost,
+		[]Field{
+			{
+				Name:     api.FileField,
+				Reader:   bytes.NewReader(b),
+				Encoding: binding.MIMEYAML,
+			},
+			{
+				Name:     api.IssueField,
+				Encoding: encoding,
+				Reader:   issues,
+			},
+			{
+				Name:     api.DepField,
+				Encoding: encoding,
+				Reader:   deps,
+			},
+		},
+		r)
 	return
 }
