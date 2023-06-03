@@ -380,18 +380,21 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 	pod.Namespace = path.Dir(r.Pod)
 	pod.Name = path.Base(r.Pod)
 	err = client.Delete(context.TODO(), pod)
-	if err == nil {
-		r.Pod = ""
-		Log.Info(
-			"Task pod deleted.",
-			"id",
-			r.ID,
-			"pod",
-			pod.Name)
-	} else {
-		err = liberr.Wrap(err)
-		return
+	if err != nil {
+		if !k8serr.IsNotFound(err) {
+			err = liberr.Wrap(err)
+			return
+		} else {
+			err = nil
+		}
 	}
+	r.Pod = ""
+	Log.Info(
+		"Task pod deleted.",
+		"id",
+		r.ID,
+		"pod",
+		pod.Name)
 	mark := time.Now()
 	r.Terminated = &mark
 	return
