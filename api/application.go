@@ -719,7 +719,9 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 			ApplicationID: id,
 			Value:         value,
 		}
-		result = h.DB(ctx).Create(m)
+		db := h.DB(ctx)
+		db = db.Clauses(clause.OnConflict{UpdateAll: true})
+		result = db.Create(m)
 		if result.Error != nil {
 			_ = ctx.Error(result.Error)
 			return
