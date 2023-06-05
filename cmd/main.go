@@ -18,7 +18,6 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/tracker"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
@@ -180,7 +179,7 @@ func main() {
 	// Metrics
 	if Settings.Metrics.Enabled {
 		log.Info("Serving Prometheus metrics", "port", Settings.Metrics.Port)
-		http.Handle("/metrics", promhttp.Handler())
+		http.Handle("/metrics", api.MetricsHandler())
 		go func() {
 			_ = http.ListenAndServe(Settings.Metrics.Address(), nil)
 		}()

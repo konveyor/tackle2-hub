@@ -49,17 +49,16 @@ func (h *Adapter) Client() *Client
 
 func (h *Adapter) Run(addon func() error)
     Run addon. Reports:
-
-        - Started
-        - Succeeded
-        - Failed (when addon returns error).
+      - Started
+      - Succeeded
+      - Failed (when addon returns error).
 
 type Analysis struct {
 	// Has unexported fields.
 }
     Analysis API.
 
-func (h *Analysis) Create(issues, deps string) (analysis *api.Analysis, err error)
+func (h *Analysis) Create(r *api.Analysis, encoding string, issues, deps io.Reader) (err error)
     Create an analysis report.
 
 type AppFacts struct {
@@ -176,14 +175,14 @@ func (r *Client) BucketPut(source, destination string) (err error)
 func (r *Client) Delete(path string, params ...Param) (err error)
     Delete a resource.
 
-func (r *Client) FileForm(path, method string, files []FileField, object interface{}) (err error)
-    FileForm upload files.
-
 func (r *Client) FileGet(path, destination string) (err error)
     FileGet downloads a file.
 
 func (r *Client) FilePut(path, source string, object interface{}) (err error)
     FilePut uploads a file. Returns the created File resource.
+
+func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error)
+    FileSend sends file upload from.
 
 func (r *Client) Get(path string, object interface{}, params ...Param) (err error)
     Get a resource.
@@ -210,6 +209,18 @@ func (e Conflict) Error() string
 
 func (e *Conflict) Is(err error) (matched bool)
 
+type Field struct {
+	Name     string
+	Path     string
+	Reader   io.Reader
+	Encoding string
+}
+    Field file upload form field.
+
+func (f *Field) Write(writer io.Writer) (err error)
+    Write the field content. When Reader is not set, the path is opened and
+    copied.
+
 type File struct {
 	// Has unexported fields.
 }
@@ -223,12 +234,6 @@ func (h *File) Get(id uint, destination string) (err error)
 
 func (h *File) Put(source string) (r *api.File, err error)
     Put uploads a file.
-
-type FileField struct {
-	Name string
-	Path string
-}
-    FileField form file fields.
 
 type Identity struct {
 	// Has unexported fields.
