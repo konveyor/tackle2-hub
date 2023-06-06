@@ -5,12 +5,11 @@ import (
 	"github.com/konveyor/tackle2-hub/encryption"
 )
 
-//
 // Identity represents and identity with a set of credentials.
 type Identity struct {
 	Model
 	Kind        string `gorm:"not null"`
-	Name        string `gorm:"not null"`
+	Name        string `gorm:"index;unique;not null"`
 	Description string
 	User        string
 	Password    string
