@@ -36,14 +36,6 @@ func (h *Dependency) List() (list []api.Dependency, err error) {
 }
 
 //
-// Update a Dependency.
-func (h *Dependency) Update(r *api.Dependency) (err error) {
-	path := Path(api.DependencyRoot).Inject(Params{api.ID: r.From.ID})
-	err = h.client.Put(path, r)
-	return
-}
-
-//
 // Delete a Dependency.
 func (h *Dependency) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.DependencyRoot).Inject(Params{api.ID: id}))

@@ -6,39 +6,49 @@ import (
 
 // Set of valid resources for tests and reuse.
 type TestCase struct {
-	Name         string
-	Dependency   api.Dependency
-	Application1 api.Application
-	Application2 api.Application
+	Name            string
+	ApplicationFrom api.Application
+	ApplicationTo   api.Application
 }
 
 var (
 	dependency = api.Dependency{
 		To: api.Ref{
-			ID:   uint(1),
-			Name: "Alice",
+			Name: "Gateway",
 		},
 		From: api.Ref{
-			ID:   uint(2),
-			Name: "Bob",
+			Name: "Inventory",
 		},
 	}
 
-	aliceApplication = api.Application{
-		Name:        "Alice",
-		Description: "alice's application",
+	Gateway = api.Application{
+		Name:        "Gateway",
+		Description: "Gateway application",
 	}
-	bobApplication = api.Application{
-		Name:        "Bob",
-		Description: "bob's application",
+	Inventory = api.Application{
+		Name:        "Inventory",
+		Description: "Inventory application",
 	}
 
 	testCase = TestCase{
-		Name:         "Test",
-		Dependency:   dependency,
-		Application1: aliceApplication,
-		Application2: bobApplication,
+		Name:            "Test",
+		ApplicationFrom: Gateway,
+		ApplicationTo:   Inventory,
 	}
-	tc      = []TestCase{testCase}
-	Samples = []api.Dependency{tc}
+	Samples = []api.Dependency{}
 )
+
+func init() {
+	tc := []TestCase{testCase}
+	for _, t := range tc {
+		dependency := api.Dependency{
+			To: api.Ref{
+				Name: t.ApplicationTo.Name,
+			},
+			From: api.Ref{
+				Name: t.ApplicationFrom.Name,
+			},
+		}
+		Samples = []api.Dependency{dependency}
+	}
+}
