@@ -257,7 +257,7 @@ func Seed(db *gorm.DB) {
 			image: imgMigration,
 			RuleBundle: model.RuleBundle{
 				Name: "Open Liberty",
-				Description: "A comprehensive set of rulesfor migrating traditional WebSphere" +
+				Description: "A comprehensive set of rules for migrating traditional WebSphere" +
 					" applications to Open Liberty.",
 				RuleSets: []model.RuleSet{
 					{
