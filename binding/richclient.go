@@ -22,7 +22,7 @@ func init() {
 type RichClient struct {
 	// Resources APIs.
 	Application      Application
-	Bucket			 Bucket
+	Bucket           Bucket
 	BusinessService  BusinessService
 	Identity         Identity
 	JobFunction      JobFunction
@@ -32,6 +32,7 @@ type RichClient struct {
 	Tag              Tag
 	TagCategory      TagCategory
 	Task             Task
+	Dependency       Dependency
 
 	// A REST client.
 	client *Client
@@ -58,6 +59,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		BusinessService: BusinessService{
+			client: client,
+		},
+		Dependency: Dependency{
 			client: client,
 		},
 		Identity: Identity{
