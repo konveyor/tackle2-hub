@@ -8,7 +8,7 @@ import (
 
 func TestDependencyCRUD(t *testing.T) {
 	for _, r := range Samples {
-		t.Run("Dependency CRUD", func(t *testing.T) {
+		t.Run("Dependency_CRUD", func(t *testing.T) {
 			// Create.
 			err := Dependency.Create(&r)
 			if err != nil {
@@ -16,7 +16,7 @@ func TestDependencyCRUD(t *testing.T) {
 			}
 
 			// Get.
-			got, err := Dependency.Get(r.From.ID)
+			got, err := Dependency.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -25,27 +25,27 @@ func TestDependencyCRUD(t *testing.T) {
 			}
 
 			// Update.
-			r.From.Name = "Updated " + r.From.Name
+			r.Name = "Updated " + r.Name
 			err = Dependency.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			got, err = Dependency.Get(r.From.ID)
+			got, err = Dependency.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.From.Name != r.From.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.From.Name, r.From.Name)
+			if got.Name != r.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
 			}
 
 			// Delete.
-			err = Dependency.Delete(r.From.ID)
+			err = Dependency.Delete(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			_, err = Dependency.Get(r.From.ID)
+			_, err = Dependency.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}

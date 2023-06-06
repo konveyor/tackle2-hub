@@ -5,10 +5,17 @@ import (
 )
 
 // Set of valid resources for tests and reuse.
+type TestCase struct {
+	Name         string
+	Dependency   api.Dependency
+	Application1 api.Application
+	Application2 api.Application
+}
+
 var (
-	firstDependency = api.Dependency{
+	dependency = api.Dependency{
 		To: api.Ref{
-			ID:   uint(1473),
+			ID:   uint(1),
 			Name: "Alice",
 		},
 		From: api.Ref{
@@ -17,16 +24,21 @@ var (
 		},
 	}
 
-	secondDependency = api.Dependency{
-		To: api.Ref{
-			ID:   uint(2123),
-			Name: "Bob",
-		},
-		From: api.Ref{
-			ID:   uint(1),
-			Name: "Alice",
-		},
+	aliceApplication = api.Application{
+		Name:        "Alice",
+		Description: "alice's application",
+	}
+	bobApplication = api.Application{
+		Name:        "Bob",
+		Description: "bob's application",
 	}
 
-	Samples = []api.Dependency{firstDependency, secondDependency}
+	testCase = TestCase{
+		Name:         "Test",
+		Dependency:   dependency,
+		Application1: aliceApplication,
+		Application2: bobApplication,
+	}
+	tc      = []TestCase{testCase}
+	Samples = []api.Dependency{tc}
 )
