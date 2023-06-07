@@ -375,10 +375,10 @@ func (r *Resource) nameOf(m interface{}) (name string) {
 //
 // Ref represents a FK.
 // Contains the PK and (name) natural key.
-// The name is read-only.
+// The name is optional and read-only.
 type Ref struct {
 	ID   uint   `json:"id" binding:"required"`
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
 
 //
