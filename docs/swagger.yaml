@@ -27,6 +27,34 @@ definitions:
       updateUser:
         type: string
     type: object
+  api.AppReport:
+    properties:
+      businessService:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      files:
+        type: integer
+      id:
+        type: integer
+      incidents:
+        type: integer
+      issue:
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          rule:
+            type: string
+          ruleset:
+            type: string
+        type: object
+      name:
+        type: string
+    type: object
   api.Application:
     properties:
       binary:
@@ -179,6 +207,8 @@ definitions:
     type: object
   api.FileReport:
     properties:
+      effort:
+        type: integer
       file:
         type: string
       incidents:
@@ -302,54 +332,6 @@ definitions:
     - name
     - rule
     - ruleset
-    type: object
-  api.IssueReport:
-    properties:
-      application:
-        properties:
-          effort:
-            type: integer
-          id:
-            type: integer
-          name:
-            type: string
-        required:
-        - id
-        type: object
-      category:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      facts:
-        $ref: '#/definitions/api.FactMap'
-      files:
-        type: integer
-      id:
-        type: integer
-      incidents:
-        type: integer
-      labels:
-        items:
-          type: string
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/api.Link'
-        type: array
-      name:
-        type: string
-      rule:
-        type: string
-      ruleset:
-        type: string
-      updateUser:
-        type: string
     type: object
   api.JobFunction:
     properties:
@@ -1049,8 +1031,13 @@ paths:
         - sha
         - indirect
         - labels
-        - application.(id|name)
+        - application.id
+        - application.name
         - tag.id
+        sort:
+        - name
+        - version
+        - sha
       produces:
       - application/json
       responses:
@@ -1119,19 +1106,36 @@ paths:
       summary: List incidents for an issue.
       tags:
       - incidents
-  /analyses/report/issues:
+  /analyses/report/applications:
     get:
       description: |-
-        Each report collates issues by ruleset/rule and application.
+        List application reports.
         filters:
-        - ruleset
-        - rule
+        - id
         - name
-        - category
+        - description
+        - businessService
         - effort
-        - labels
-        - application.(id|name)
-        - tag.id
+        - incidents
+        - files
+        - issue.id
+        - issue.name
+        - issue.ruleset
+        - issue.rule
+        - issue.category
+        - issue.effort
+        - issue.labels
+        - application.id
+        - application.name
+        - businessService.name
+        sort:
+        - id
+        - name
+        - description
+        - businessService
+        - effort
+        - incidents
+        - files
       produces:
       - application/json
       responses:
@@ -1139,14 +1143,23 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.IssueReport'
+              $ref: '#/definitions/api.AppReport'
             type: array
-      summary: List issue reports.
+      summary: List application reports.
       tags:
-      - issuereports
+      - appreports
   /analyses/report/issues/{id}/files:
     get:
-      description: Each report collates incidents by file.
+      description: |-
+        Each report collates incidents by file.
+        filters:
+        - file
+        - effort
+        - incidents
+        sort:
+        - file
+        - effort
+        - incidents
       produces:
       - application/json
       responses:
@@ -1169,8 +1182,16 @@ paths:
         - category
         - effort
         - labels
-        - application.(id|name)
+        - applications
+        - application.id
+        - application.name
         - tag.id
+        sort:
+        - ruleset
+        - rule
+        - category
+        - effort
+        - applications
       produces:
       - application/json
       responses:
@@ -1185,11 +1206,10 @@ paths:
       - rulereports
   /application/{id}/analyses:
     post:
-      consumes:
-      - application/json
       description: |-
         Create an analysis.
         Form fields:
+        - file: file that contains the api.Analysis resource.
         - issues: file that multiple api.Issue resources.
         - dependencies: file that multiple api.TechDependency resources.
       produces:

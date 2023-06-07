@@ -17,17 +17,17 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot            = "/analyses"
-	AnalysisRoot            = AnalysesRoot + "/:" + ID
-	AnalysesDepsRoot        = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot      = AnalysesRoot + "/issues"
-	AnalysesIssueRoot       = AnalysesIssuesRoot + "/:" + ID
-	AnalysisIncidentsRoot   = AnalysesIssueRoot + "/incidents"
-	AnalysesReportRoot      = AnalysesRoot + "/report"
-	AnalysisReportDepRoot   = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot  = AnalysesReportRoot + "/rules"
-	AnalysisReportIssueRoot = AnalysesReportRoot + "/issues"
-	AnalysisReportFileRoot  = AnalysisReportIssueRoot + "/:" + ID + "/files"
+	AnalysesRoot           = "/analyses"
+	AnalysisRoot           = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot       = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot     = AnalysesRoot + "/issues"
+	AnalysesIssueRoot      = AnalysesIssuesRoot + "/:" + ID
+	AnalysisIncidentsRoot  = AnalysesIssueRoot + "/incidents"
+	AnalysesReportRoot     = AnalysesRoot + "/report"
+	AnalysisReportDepRoot  = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot = AnalysesReportRoot + "/rules"
+	AnalysisReportAppRoot  = AnalysesReportRoot + "/applications"
+	AnalysisReportFileRoot = AnalysesReportRoot + "/issues/:" + ID + "/files"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -59,7 +59,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
+	routeGroup.GET(AnalysisReportAppRoot, h.AppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
 	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
 	//
@@ -553,16 +553,9 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	db = db.Table("Issue i")
 	db = db.Joins(",Analysis a")
 	db = db.Where("a.ID = i.AnalysisID")
-	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
+	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
+	db = db.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	db = db.Group("i.ID")
-	db = filter.Where(db, "-Labels")
-	n, q := h.withLabels(
-		&model.Issue{},
-		ctx,
-		&filter)
-	if n > 0 {
-		db = db.Where("i.ID IN (?)", q)
-	}
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.Issue{}).Count(&count)
@@ -685,8 +678,16 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - labels
-// @description - application.(id|name)
+// @description - applications
+// @description - application.id
+// @description - application.name
 // @description - tag.id
+// @description sort:
+// @description - ruleset
+// @description - rule
+// @description - category
+// @description - effort
+// @description - applications
 // @tags rulereports
 // @produce json
 // @success 200 {object} []api.RuleReport
@@ -700,18 +701,19 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			{Field: "rule", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.DB(ctx)
-	db = db.Select(
+	q := h.DB(ctx)
+	q = q.Select(
 		"i.RuleSet",
 		"i.Rule",
 		"i.Name",
@@ -720,24 +722,17 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		"i.Effort",
 		"i.Labels",
 		"COUNT(distinct a.ID) Applications")
-	db = db.Table("Issue i,")
-	db = db.Joins("Analysis a")
-	db = db.Where("a.ID = i.AnalysisID")
-	db = db.Where("a.ID in (?)", h.analysisIDs(ctx, &filter))
-	db = filter.Where(db, "-Labels")
-	n, q := h.withLabels(
-		&model.Issue{},
-		ctx,
-		&filter)
-	if n > 0 {
-		db = db.Where("i.ID IN (?)", q)
-	}
-	db = db.Group("i.RuleSet,i.Rule")
+	q = q.Table("Issue i,")
+	q = q.Joins("Analysis a")
+	q = q.Where("a.ID = i.AnalysisID")
+	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
+	q = q.Group("i.RuleSet,i.Rule")
+	q = filter.Where(q, "-Labels")
 	// Count.
-	count := int64(0)
-	result := db.Model(&model.Issue{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	count, err := h.count(h.DB(ctx), q, filter)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if count == 0 {
@@ -755,9 +750,12 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		model.Issue
 		Applications int
 	}
-	var list []M
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
 	db = h.paginated(ctx, db)
-	result = db.Scan(&list)
+	var list []M
+	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -792,64 +790,92 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueReports godoc
-// @summary List issue reports.
-// @description Each report collates issues by ruleset/rule and application.
+// AppReports godoc
+// @summary List application reports.
+// @description List application reports.
 // @description filters:
-// @description - ruleset
-// @description - rule
+// @description - id
 // @description - name
-// @description - category
+// @description - description
+// @description - businessService
 // @description - effort
-// @description - labels
-// @description - application.(id|name)
-// @description - tag.id
-// @tags issuereports
+// @description - incidents
+// @description - files
+// @description - issue.id
+// @description - issue.name
+// @description - issue.ruleset
+// @description - issue.rule
+// @description - issue.category
+// @description - issue.effort
+// @description - issue.labels
+// @description - application.id
+// @description - application.name
+// @description - businessService.name
+// @description sort:
+// @description - id
+// @description - name
+// @description - description
+// @description - businessService
+// @description - effort
+// @description - incidents
+// @description - files
+// @tags appreports
 // @produce json
-// @success 200 {object} []api.IssueReport
-// @router /analyses/report/issues [get]
-func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
-	resources := []IssueReport{}
+// @success 200 {object} []api.AppReport
+// @router /analyses/report/applications [get]
+func (h AnalysisHandler) AppReports(ctx *gin.Context) {
+	resources := []AppReport{}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "ruleset", Kind: qf.STRING},
-			{Field: "rule", Kind: qf.STRING},
+			{Field: "id", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
-			{Field: "category", Kind: qf.STRING},
+			{Field: "description", Kind: qf.STRING},
+			{Field: "businessService", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "incidents", Kind: qf.LITERAL},
+			{Field: "files", Kind: qf.LITERAL},
+			{Field: "issue.id", Kind: qf.LITERAL},
+			{Field: "issue.name", Kind: qf.LITERAL},
+			{Field: "issue.ruleset", Kind: qf.STRING},
+			{Field: "issue.rule", Kind: qf.STRING},
+			{Field: "issue.category", Kind: qf.STRING},
+			{Field: "issue.effort", Kind: qf.LITERAL},
+			{Field: "issue.labels", Kind: qf.STRING, Relation: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.DB(ctx)
-	db = db.Table("Issue i")
-	db = db.Joins(",Incident n")
-	db = db.Joins(",Analysis a")
-	db = db.Joins(",Application app")
-	db = db.Where("a.ApplicationID = app.ID")
-	db = db.Where("n.IssueID = i.ID")
-	db = db.Where("a.ID = i.AnalysisID")
-	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, &filter))
-	db = db.Group("i.ID")
-	db = filter.Where(db, "-Labels")
-	n, q := h.withLabels(
-		&model.Issue{},
-		ctx,
-		&filter)
-	if n > 0 {
-		db = db.Where("i.ID IN (?)", q)
-	}
+	q := h.DB(ctx)
+	q = q.Select(
+		"app.ID",
+		"app.Name",
+		"app.Description",
+		"b.Name BusinessService",
+		"a.Effort",
+		"COUNT(n.ID) Incidents",
+		"COUNT(distinct n.File) Files",
+		"i.ID IssueID",
+		"i.Name IssueName",
+		"i.RuleSet",
+		"i.Rule")
+	q = q.Table("Issue i")
+	q = q.Joins("LEFT JOIN Incident n ON n.IssueID = i.ID")
+	q = q.Joins("LEFT JOIN Analysis a ON a.ID = i.AnalysisID")
+	q = q.Joins("LEFT JOIN Application app ON app.ID = a.ApplicationID")
+	q = q.Joins("LEFT OUTER JOIN BusinessService b ON b.ID = app.BusinessServiceID")
+	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
+	q = q.Group("i.ID")
 	// Count.
-	count := int64(0)
-	result := db.Model(&model.Issue{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	count, err := h.count(h.DB(ctx), q, filter.With("-Labels"))
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if count == 0 {
@@ -868,39 +894,42 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 	//
 	// Find.
 	type M struct {
-		model.Issue
-		Incidents int
-		Files     int
-		AppID     uint
-		AppName   string
-		AppEffort int
+		ID              uint
+		Name            string
+		Description     string
+		BusinessService string
+		Effort          int
+		Incidents       int
+		Files           int
+		IssueID         uint
+		IssueName       string
+		RuleSet         string
+		Rule            string
 	}
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
 	db = h.paginated(ctx, db)
-	db = db.Select(
-		"i.*",
-		"COUNT(n.ID) Incidents",
-		"COUNT(distinct n.File) Files",
-		"app.ID AppID",
-		"app.Name AppName",
-		"a.Effort AppEffort")
 	var list []M
-	result = db.Find(&list)
+	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
 	for i := range list {
 		m := &list[i]
-		r := IssueReport{}
-		r.With(&m.Issue)
+		r := AppReport{}
+		r.ID = m.ID
+		r.Name = m.Name
+		r.Description = m.Description
+		r.BusinessService = m.BusinessService
 		r.Effort = m.Effort
 		r.Incidents = m.Incidents
 		r.Files = m.Files
-		r.Application.Ref = Ref{
-			ID:   m.AppID,
-			Name: m.AppName,
-		}
-		r.Application.Effort = m.AppEffort
+		r.Issue.ID = m.IssueID
+		r.Issue.Name = m.IssueName
+		r.Issue.RuleSet = m.RuleSet
+		r.Issue.Rule = m.Rule
 		resources = append(resources, r)
 	}
 
@@ -911,6 +940,10 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // @summary List incident file reports.
 // @description Each report collates incidents by file.
 // @description filters:
+// @description - file
+// @description - effort
+// @description - incidents
+// @description sort:
 // @description - file
 // @description - effort
 // @description - incidents
@@ -951,11 +984,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	q = q.Where("Issue.ID", issueId)
 	q = q.Group("File")
 	// Count.
-	db := h.DB(ctx)
-	db = db.Select("*")
-	db = db.Table("(?)", q)
-	db = filter.Where(db)
-	count, err := h.count(db, q)
+	count, err := h.count(h.DB(ctx), q, filter)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -977,6 +1006,9 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		Incidents int
 	}
 	var list []M
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -1031,15 +1063,8 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = filter.Where(db, "-Labels")
-	n, q := h.withLabels(
-		&model.TechDependency{},
-		ctx,
-		&filter)
-	if n > 0 {
-		db = db.Where("ID IN (?)", q)
-	}
+	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
+	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.TechDependency{}).Count(&count)
@@ -1082,8 +1107,13 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - sha
 // @description - indirect
 // @description - labels
-// @description - application.(id|name)
+// @description - application.id
+// @description - application.name
 // @description - tag.id
+// @description sort:
+// @description - name
+// @description - version
+// @description - sha
 // @tags dependencies
 // @produce json
 // @success 200 {object} []api.TechDependency
@@ -1098,6 +1128,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			{Field: "sha", Kind: qf.STRING},
 			{Field: "indirect", Kind: qf.STRING},
 			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
@@ -1106,23 +1137,17 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.DB(ctx)
-	db = db.Select(
+	q := h.DB(ctx)
+	q = q.Select(
 		"Name",
 		"Version",
 		"SHA",
 		"Labels",
 		"COUNT(distinct AnalysisID) Applications")
-	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, &filter))
-	db = filter.Where(db, "-Labels")
-	n, q := h.withLabels(
-		&model.TechDependency{},
-		ctx,
-		&filter)
-	if n > 0 {
-		db = db.Where("ID IN (?)", q)
-	}
-	db = db.Group(
+	q = q.Model(&model.TechDependency{})
+	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("ID IN (?)", h.depIDs(ctx, filter))
+	q = q.Group(
 		strings.Join(
 			[]string{
 				"Name",
@@ -1130,10 +1155,9 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			},
 			","))
 	// Count.
-	count := int64(0)
-	result := db.Model(&model.TechDependency{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	count, err := h.count(h.DB(ctx), q, filter)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if count == 0 {
@@ -1151,8 +1175,11 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		Applications int
 	}
 	var list []M
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
 	db = h.paginated(ctx, db)
-	result = db.Scan(&list)
+	result := db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -1176,9 +1203,9 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 
 //
 // Count rows returned by q.
-func (h *BaseHandler) count(db, q *gorm.DB) (count int64, err error) {
-	db = db.Select("*")
+func (h *BaseHandler) count(db, q *gorm.DB, f qf.Filter) (count int64, err error) {
 	db = db.Table("(?)", q)
+	db = f.Where(db)
 	err = db.Count(&count).Error
 	return
 }
@@ -1188,7 +1215,7 @@ func (h *BaseHandler) count(db, q *gorm.DB) (count int64, err error) {
 // filter:
 // - application.(id|name)
 // - tag.id
-func (h *AnalysisHandler) appIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
+func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Application{})
 	q = q.Select("ID")
@@ -1216,12 +1243,20 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
 			q = q.Where("ID IN (?)", tq)
 		}
 	}
+	bsFilter := f.Resource("businessService")
+	if !bsFilter.Empty() {
+		bq := h.DB(ctx)
+		bq.Model(&model.BusinessService{})
+		bq.Select("ID")
+		bq = bsFilter.Where(bq)
+		return
+	}
 	return
 }
 
 //
 // analysisIDs provides analysis IDs.
-func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.DB) {
+func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Analysis{})
 	q = q.Select("MAX(ID)")
@@ -1231,18 +1266,21 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f *qf.Filter) (q *gorm.D
 }
 
 //
-// withLabels returns IDs filtered by label.
-// filter:
-//   - labels
-func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filter) (n int, q *gorm.DB) {
+// issueIDs returns issue filtered issue IDs.
+// Filter:
+//  issue.*
+func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.Issue{})
+	q = q.Select("ID")
+	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
-		n = len(f.Value)
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
 			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
 				q := h.DB(ctx)
-				q = q.Model(m)
+				q = q.Table("Issue")
 				q = q.Joins("m ,json_each(Labels)")
 				q = q.Select("m.ID")
 				q = q.Where("json_each.value = ?", qf.AsValue(v))
@@ -1252,7 +1290,41 @@ func (h *AnalysisHandler) withLabels(m interface{}, ctx *gin.Context, f *qf.Filt
 		} else {
 			f = f.As("json_each.value")
 			q = h.DB(ctx)
-			q = q.Model(m)
+			q = q.Table("Issue")
+			q = q.Joins("m ,json_each(Labels)")
+			q = q.Select("m.ID")
+			q = q.Where(f.SQL())
+		}
+	}
+	return
+}
+
+//
+// depIDs returns issue filtered issue IDs.
+// Filter:
+//  techDeps.*
+func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.TechDependency{})
+	q = q.Select("ID")
+	q = f.Where(q, "-Labels")
+	filter := f
+	if f, found := filter.Field("labels"); found {
+		if f.Value.Operator(qf.AND) {
+			var qs []*gorm.DB
+			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
+				q := h.DB(ctx)
+				q = q.Table("Issue")
+				q = q.Joins("m ,json_each(Labels)")
+				q = q.Select("m.ID")
+				q = q.Where("json_each.value = ?", qf.AsValue(v))
+				qs = append(qs, q)
+			}
+			q = model.Intersect(qs...)
+		} else {
+			f = f.As("json_each.value")
+			q = h.DB(ctx)
+			q = q.Table("Issue")
 			q = q.Joins("m ,json_each(Labels)")
 			q = q.Select("m.ID")
 			q = q.Where(f.SQL())
@@ -1482,45 +1554,21 @@ func (r *RuleReport) RuleId() (id string) {
 }
 
 //
-// IssueReport REST resource.
-type IssueReport struct {
-	Resource    `yaml:",inline"`
-	RuleSet     string   `json:"ruleset"`
-	Rule        string   `json:"rule"`
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty" yaml:",omitempty"`
-	Category    string   `json:"category"`
-	Effort      int      `json:"effort,omitempty" yaml:",omitempty"`
-	Links       []Link   `json:"links,omitempty" yaml:",omitempty"`
-	Facts       FactMap  `json:"facts,omitempty" yaml:",omitempty"`
-	Labels      []string `json:"labels"`
-	Incidents   int      `json:"incidents"`
-	Files       int      `json:"files"`
-	Application struct {
-		Ref    `yaml:",inline"`
-		Effort int `json:"effort"`
-	} `json:"application"`
-}
-
-//
-// With updates the resource with the model.
-func (r *IssueReport) With(m *model.Issue) {
-	r.Resource.With(&m.Model)
-	r.RuleSet = m.RuleSet
-	r.Rule = m.Rule
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Category = m.Category
-	if m.Links != nil {
-		_ = json.Unmarshal(m.Links, &r.Links)
-	}
-	if m.Facts != nil {
-		_ = json.Unmarshal(m.Facts, &r.Facts)
-	}
-	if m.Labels != nil {
-		_ = json.Unmarshal(m.Labels, &r.Labels)
-	}
-	r.Effort = m.Effort
+// AppReport REST resource.
+type AppReport struct {
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	BusinessService string `json:"businessService"`
+	Effort          int    `json:"effort"`
+	Incidents       int    `json:"incidents"`
+	Files           int    `json:"files"`
+	Issue           struct {
+		ID      uint   `json:"id"`
+		Name    string `json:"name"`
+		RuleSet string `json:"ruleset"`
+		Rule    string `json:"rule"`
+	} `json:"issue"`
 }
 
 //

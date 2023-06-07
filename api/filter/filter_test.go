@@ -340,3 +340,27 @@ func TestFieldSelector(t *testing.T) {
 	g.Expect(selector.Match(field("two"))).To(gomega.BeTrue())
 	g.Expect(selector.Match(field("resource.one"))).ToNot(gomega.BeTrue())
 }
+
+func TestFilterWith(t *testing.T) {
+	var err error
+	g := gomega.NewGomegaWithT(t)
+	p := Parser{}
+
+	filter, err := p.Filter("name:elmer,age:20,category=(a|b|c)")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(filter.predicates)).To(gomega.Equal(3))
+	g.Expect(filter.Empty()).To(gomega.BeFalse())
+
+	f := filter.With("-name")
+	_, hasName := f.Field("name")
+	g.Expect(len(f.predicates)).To(gomega.Equal(2))
+	g.Expect(hasName).To(gomega.BeFalse())
+
+	f = filter.With("+name", "+age")
+	_, hasName = f.Field("name")
+	_, hasAge := f.Field("age")
+	_, hasCat := f.Field("category")
+	g.Expect(len(f.predicates)).To(gomega.Equal(2))
+	g.Expect(hasAge).To(gomega.BeTrue())
+	g.Expect(hasCat).To(gomega.BeFalse())
+}
