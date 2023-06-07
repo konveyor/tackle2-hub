@@ -122,6 +122,19 @@ func (f *Filter) Where(in *gorm.DB, selector ...string) (out *gorm.DB) {
 }
 
 //
+// With return filter with selected predicates.
+func (f *Filter) With(selector ...string) (out Filter) {
+	fs := FieldSelector(selector)
+	for _, p := range f.predicates {
+		field := Field{p}
+		if fs.Match(&field) {
+			out.predicates = append(out.predicates, p)
+		}
+	}
+	return
+}
+
+//
 // Delete specified fields.
 func (f *Filter) Delete(name string) (found bool) {
 	var wanted []Predicate
