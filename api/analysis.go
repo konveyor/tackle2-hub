@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm/logger"
 	"io"
 	"net/http"
-	"strings"
 )
 
 //
@@ -351,9 +350,9 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @description filters:
 // @description - name
 // @description - version
-// @description - type
 // @description - sha
 // @description - indirect
+// @description - labels
 // @tags dependencies
 // @produce json
 // @success 200 {object} []api.TechDependency
@@ -376,9 +375,9 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
-			{Field: "type", Kind: qf.STRING},
-			{Field: "indirect", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
+			{Field: "indirect", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -386,7 +385,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	}
 	db = h.DB(ctx)
 	db = db.Where("AnalysisID = ?", analysis.ID)
-	db = filter.Where(db)
+	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	// Count.
 	count := int64(0)
 	result = db.Model(&model.TechDependency{}).Count(&count)
@@ -610,7 +609,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @success 200 {object} []api.Incident
 // @router /analyses/issues/{id}/incidents [get]
 func (h AnalysisHandler) Incidents(ctx *gin.Context) {
-	id := ctx.Param(ID)
+	issueId := ctx.Param(ID)
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -622,7 +621,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	}
 	var list []model.Incident
 	db := h.DB(ctx)
-	db = db.Where("IssueID", id)
+	db = db.Where("IssueID", issueId)
 	db = filter.Where(db)
 	// Count.
 	count := int64(0)
@@ -1138,13 +1137,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	q = q.Model(&model.TechDependency{})
 	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("ID IN (?)", h.depIDs(ctx, filter))
-	q = q.Group(
-		strings.Join(
-			[]string{
-				"Name",
-				"SHA",
-			},
-			","))
+	q = q.Group("Name,SHA")
 	// Count.
 	count, err := h.count(h.DB(ctx), q, filter)
 	if err != nil {
