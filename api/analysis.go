@@ -349,7 +349,6 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @summary List application dependencies.
 // @description List application dependencies.
 // @description filters:
-// @description - id
 // @description - name
 // @description - version
 // @description - type
@@ -375,7 +374,6 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "id", Kind: qf.LITERAL},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
 			{Field: "type", Kind: qf.STRING},
@@ -426,22 +424,19 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @summary List application issues.
 // @description List application issues.
 // @description filters:
-// @description - id
-// @description - ruleid
+// @description - ruleset
+// @description - rule
 // @description - name
 // @description - category
 // @description - effort
+// @description - labels
 // @tags issues
 // @produce json
 // @success 200 {object} []api.Issue
 // @router /application/{id}/analysis/issues [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
-	type R struct {
-		Issue
-		Incidents int
-	}
-	resources := []R{}
+	resources := []Issue{}
 	// Latest.
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -454,26 +449,21 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "id", Kind: qf.LITERAL},
-			{Field: "ruleid", Kind: qf.STRING},
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	db = h.DB(ctx)
-	db = db.Select(
-		"i.*",
-		"COUNT(n.ID) Incidents")
-	db = db.Table("Issue i")
-	db = db.Joins("Incident n")
-	db = db.Where("n.IssueId = i.ID")
-	db = db.Where("i.AnalysisID = ?", analysis.ID)
-	db = db.Group("i.ID")
-	db = filter.Where(db)
+	db = db.Model(&model.Issue{})
+	db = db.Where("AnalysisID = ?", analysis.ID)
+	db = db.Where("ID IN (?)", h.issueIDs(ctx, filter))
 	// Count.
 	count := int64(0)
 	result = db.Model(&model.Issue{}).Count(&count)
@@ -491,11 +481,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	type M struct {
-		model.Issue
-		Incidents int
-	}
-	list := []M{}
+	list := []model.Issue{}
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -504,9 +490,8 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	}
 	for i := range list {
 		m := &list[i]
-		r := R{}
-		r.With(&m.Issue)
-		r.Incidents = m.Incidents
+		r := Issue{}
+		r.With(m)
 		resources = append(resources, r)
 	}
 
@@ -523,7 +508,8 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - labels
-// @description - application.(id|name)
+// @description - application.id
+// @description - application.name
 // @description - tag.id
 // @tags issues
 // @produce json
@@ -540,7 +526,6 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "labels", Kind: qf.STRING, Relation: true},
-			{Field: "affected", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
@@ -556,6 +541,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	db = db.Group("i.ID")
+	db = filter.Where(db, "-Labels")
 	// Count.
 	count := int64(0)
 	result := db.Model(&model.Issue{}).Count(&count)
@@ -1042,7 +1028,8 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 // @description - sha
 // @description - indirect
 // @description - labels
-// @description - application.(id|name)
+// @description - application.id
+// @description - application.name
 // @description - tag.id
 // @tags dependencies
 // @produce json
