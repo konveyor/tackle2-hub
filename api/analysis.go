@@ -728,8 +728,8 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
 	q = q.Group("i.RuleSet,i.Rule")
-	q = filter.Where(q, "-Labels")
 	// Count.
+	filter = filter.With("-Labels")
 	count, err := h.count(h.DB(ctx), q, filter)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -753,6 +753,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
+	db = filter.Where(db)
 	db = h.paginated(ctx, db)
 	var list []M
 	result := db.Find(&list)
@@ -873,7 +874,8 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
 	q = q.Group("i.ID")
 	// Count.
-	count, err := h.count(h.DB(ctx), q, filter.With("-Labels"))
+	filter = filter.With("-Labels")
+	count, err := h.count(h.DB(ctx), q, filter)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -909,6 +911,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
+	db = filter.Where(db)
 	db = h.paginated(ctx, db)
 	var list []M
 	result := db.Find(&list)
@@ -1009,6 +1012,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
+	db = filter.Where(db)
 	db = h.paginated(ctx, db)
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -1178,6 +1182,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
+	db = filter.Where(db)
 	db = h.paginated(ctx, db)
 	result := db.Scan(&list)
 	if result.Error != nil {

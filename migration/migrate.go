@@ -45,7 +45,6 @@ func Migrate(migrations []Migration) (err error) {
 			return
 		}
 	}
-
 	var start = v.Version
 	if start != 0 && start < MinimumVersion {
 		err = errors.New("unsupported database version")
