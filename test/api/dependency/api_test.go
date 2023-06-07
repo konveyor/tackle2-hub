@@ -1,24 +1,36 @@
 package dependency
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	app "github.com/konveyor/tackle2-hub/test/api/application"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestDependencyCRUD(t *testing.T) {
 	for _, r := range Samples {
-		t.Run("Dependency_CRUD", func(t *testing.T) {
+		t.Run(fmt.Sprintf("Dependency from %s -> %s", r.From.Name, r.To.Name), func(t *testing.T) {
 
 			applicationFrom := api.Application{
 				Name:        r.From.Name,
 				Description: "From application",
 			}
 
+			err := app.Application.Create(&applicationFrom)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
 			applicationTo := api.Application{
 				Name:        r.To.Name,
 				Description: "To application",
+			}
+
+			err = app.Application.Create(&applicationTo)
+			if err != nil {
+				t.Errorf(err.Error())
 			}
 
 			// Create.
@@ -30,7 +42,8 @@ func TestDependencyCRUD(t *testing.T) {
 					ID: applicationTo.ID,
 				},
 			}
-			err := Dependency.Create(&dependency)
+
+			err = Dependency.Create(&dependency)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -42,11 +55,6 @@ func TestDependencyCRUD(t *testing.T) {
 			}
 			if assert.FlatEqual(got, dependency.ID) {
 				t.Errorf("Different response error. Got %v, expected %v", got, dependency.ID)
-			}
-
-			_, err = Dependency.Get(r.ID)
-			if err != nil {
-				t.Errorf(err.Error())
 			}
 
 			// Delete dependency.
@@ -69,12 +77,14 @@ func TestDependencyList(t *testing.T) {
 			Name:        sample.From.Name,
 			Description: "From application",
 		}
+		assert.Must(t, app.Application.Create(&applicationFrom))
 		sample.From.ID = applicationFrom.ID
 
 		applicationTo := api.Application{
 			Name:        sample.To.Name,
 			Description: "To application",
 		}
+		assert.Must(t, app.Application.Create(&applicationTo))
 		sample.To.ID = applicationTo.ID
 
 		samples[name] = sample

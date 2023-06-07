@@ -11,16 +11,9 @@ type TestCase struct {
 	ApplicationTo   api.Application
 }
 
-var (
-	dependency = api.Dependency{
-		To: api.Ref{
-			Name: "Gateway",
-		},
-		From: api.Ref{
-			Name: "Inventory",
-		},
-	}
+var Samples = []api.Dependency{}
 
+var (
 	Gateway = api.Application{
 		Name:        "Gateway",
 		Description: "Gateway application",
@@ -35,20 +28,17 @@ var (
 		ApplicationFrom: Gateway,
 		ApplicationTo:   Inventory,
 	}
-	Samples = []api.Dependency{}
+
+	dependency = api.Dependency{
+		To: api.Ref{
+			Name: testCase.ApplicationTo.Name,
+		},
+		From: api.Ref{
+			Name: testCase.ApplicationFrom.Name,
+		},
+	}
 )
 
 func init() {
-	tc := []TestCase{testCase}
-	for _, t := range tc {
-		dependency := api.Dependency{
-			To: api.Ref{
-				Name: t.ApplicationTo.Name,
-			},
-			From: api.Ref{
-				Name: t.ApplicationFrom.Name,
-			},
-		}
-		Samples = []api.Dependency{dependency}
-	}
+	Samples = []api.Dependency{dependency}
 }
