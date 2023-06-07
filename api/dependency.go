@@ -1,10 +1,11 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -115,7 +116,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
+	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
 }
 

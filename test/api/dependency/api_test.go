@@ -62,6 +62,17 @@ func TestDependencyCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
+
+			//Delete Applications
+			err = app.Application.Delete(applicationFrom.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			err = app.Application.Delete(applicationTo.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 		})
 	}
 }
@@ -99,8 +110,10 @@ func TestDependencyList(t *testing.T) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
 	}
 
-	// Delete dependencies
+	// Delete dependencies as well as applications.
 	for _, r := range samples {
 		assert.Must(t, Dependency.Delete(r.ID))
+		assert.Must(t, app.Application.Delete(r.From.ID))
+		assert.Must(t, app.Application.Delete(r.To.ID))
 	}
 }
