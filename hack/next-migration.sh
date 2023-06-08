@@ -3,6 +3,7 @@
 set -e
 
 root="migration"
+importRoot="github.com/konveyor/tackle2-hub/migration"
 
 #
 # Determine migration versions.
@@ -35,7 +36,7 @@ package ${next}
 
 import (
         "github.com/jortel/go-utils/logr"
-//      "github.com/konveyor/tackle2-hub/migration/${next}/model"
+//      "${importRoot}/${next}/model"
         "gorm.io/gorm"
 )
 
@@ -47,6 +48,9 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
         return
 }
 
+func (r Migration) Models() []interface{} {
+	return model.All()
+}
 EOF
 )
 
@@ -59,7 +63,7 @@ file=${nextDir}/model/pkg.go
 pkg=$(cat << EOF
 package model
 
-import "github.com/konveyor/tackle2-hub/migration/${current}/model"
+import "${importRoot}/${current}/model"
 EOF
 )
 
@@ -69,18 +73,14 @@ echo "" >> ${file}
 grep "type" model/pkg.go | grep "model" | sort  >> ${file}
 
 #
-# Register migration.
+# Register new migration.
 #
 
-sed -i "s/${current}.Migration{}/${current}.Migration{},\n\t\t${next}.Migration{}/g" ${root}/pkg.go
+sed -i "s|${current} \"${importRoot}/${current}\"|${current} \"${importRoot}/${current}\"\n\t${next} \"${importRoot}/${next}\"|g" ${root}/pkg.go
+sed -i "s|${current}.Migration{}|${current}.Migration{},\n\t\t${next}.Migration{}|g" ${root}/pkg.go
 
 #
 # Point model at new migration.
 #
 sed -i "s/${current}/${next}/g" model/pkg.go
-
-#
-# DONE
-#
-echo "Done!"
 
