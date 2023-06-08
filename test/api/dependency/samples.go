@@ -4,41 +4,21 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-// Set of valid resources for tests and reuse.
-type TestCase struct {
-	Name            string
+// Struct to hold dependency sample data.
+type DependencySample struct {
 	ApplicationFrom api.Application
 	ApplicationTo   api.Application
 }
 
-var Samples = []api.Dependency{}
-
-var (
-	Gateway = api.Application{
-		Name:        "Gateway",
-		Description: "Gateway application",
-	}
-	Inventory = api.Application{
-		Name:        "Inventory",
-		Description: "Inventory application",
-	}
-
-	testCase = TestCase{
-		Name:            "Test",
-		ApplicationFrom: Gateway,
-		ApplicationTo:   Inventory,
-	}
-
-	dependency = api.Dependency{
-		To: api.Ref{
-			Name: testCase.ApplicationTo.Name,
+var Samples = []DependencySample{
+	{
+		ApplicationFrom: api.Application{
+			Name:        "Gateway",
+			Description: "Gateway application",
 		},
-		From: api.Ref{
-			Name: testCase.ApplicationFrom.Name,
+		ApplicationTo: api.Application{
+			Name:        "Inventory",
+			Description: "Inventory application",
 		},
-	}
-)
-
-func init() {
-	Samples = []api.Dependency{dependency}
+	},
 }

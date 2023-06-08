@@ -6,14 +6,18 @@ import (
 )
 
 var (
-	RichClient *binding.RichClient
-	Dependency binding.Dependency
+	RichClient  *binding.RichClient
+	Dependency  binding.Dependency
+	Application binding.Application
 )
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).
 	RichClient = client.PrepareRichClient()
 
-	// Shortcut for Dependencyrelated RichClient methods.
+	// Shortcut for Dependency related RichClient methods.
 	Dependency = RichClient.Dependency
+
+	//Shortcut for Application related RichClient methods.
+	Application = RichClient.Application
 }

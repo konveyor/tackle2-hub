@@ -5,33 +5,18 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	app "github.com/konveyor/tackle2-hub/test/api/application"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestDependencyCRUD(t *testing.T) {
-	for _, r := range Samples {
-		t.Run(fmt.Sprintf("Dependency from %s -> %s", r.From.Name, r.To.Name), func(t *testing.T) {
+	for _, sample := range Samples {
+		t.Run(fmt.Sprintf("Dependency from %s -> %s", sample.ApplicationFrom.Name, sample.ApplicationTo.Name), func(t *testing.T) {
 
-			applicationFrom := api.Application{
-				Name:        r.From.Name,
-				Description: "From application",
-			}
+			applicationFrom := sample.ApplicationFrom
+			assert.Must(t, Application.Create(&applicationFrom))
 
-			err := app.Application.Create(&applicationFrom)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			applicationTo := api.Application{
-				Name:        r.To.Name,
-				Description: "To application",
-			}
-
-			err = app.Application.Create(&applicationTo)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			applicationTo := sample.ApplicationTo
+			assert.Must(t, Application.Create(&applicationTo))
 
 			// Create.
 			dependency := api.Dependency{
@@ -42,11 +27,7 @@ func TestDependencyCRUD(t *testing.T) {
 					ID: applicationTo.ID,
 				},
 			}
-
-			err = Dependency.Create(&dependency)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			assert.Must(t, Dependency.Create(&dependency))
 
 			// Get.
 			got, err := Dependency.Get(dependency.ID)
@@ -58,47 +39,25 @@ func TestDependencyCRUD(t *testing.T) {
 			}
 
 			// Delete dependency.
-			err = Dependency.Delete(dependency.ID)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			assert.Must(t, Dependency.Delete(dependency.ID))
 
 			//Delete Applications
-			err = app.Application.Delete(applicationFrom.ID)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			err = app.Application.Delete(applicationTo.ID)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			assert.Must(t, Application.Delete(applicationFrom.ID))
+			assert.Must(t, Application.Delete(applicationTo.ID))
 		})
 	}
 }
 
 func TestDependencyList(t *testing.T) {
-	samples := Samples
-
-	for name := range samples {
-		sample := samples[name]
-
+	for _, sample := range Samples {
 		// Create applications.
-		applicationFrom := api.Application{
-			Name:        sample.From.Name,
-			Description: "From application",
-		}
-		assert.Must(t, app.Application.Create(&applicationFrom))
-		sample.From.ID = applicationFrom.ID
+		applicationFrom := sample.ApplicationFrom
+		assert.Must(t, Application.Create(&applicationFrom))
+		sample.ApplicationFrom.ID = applicationFrom.ID
 
-		applicationTo := api.Application{
-			Name:        sample.To.Name,
-			Description: "To application",
-		}
-		assert.Must(t, app.Application.Create(&applicationTo))
-		sample.To.ID = applicationTo.ID
-
-		samples[name] = sample
+		applicationTo := sample.ApplicationTo
+		assert.Must(t, Application.Create(&applicationTo))
+		sample.ApplicationTo.ID = applicationTo.ID
 	}
 
 	// List dependencies.
@@ -106,14 +65,13 @@ func TestDependencyList(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if assert.FlatEqual(got, &samples) {
-		t.Errorf("Different response error. Got %v, expected %v", got, samples)
+	if assert.FlatEqual(got, Samples) {
+		t.Errorf("Different response error. Got %v, expected %v", got, Samples)
 	}
 
-	// Delete dependencies as well as applications.
-	for _, r := range samples {
-		assert.Must(t, Dependency.Delete(r.ID))
-		assert.Must(t, app.Application.Delete(r.From.ID))
-		assert.Must(t, app.Application.Delete(r.To.ID))
+	// Delete applications.
+	for _, sample := range Samples {
+		assert.Must(t, Application.Delete(sample.ApplicationFrom.ID))
+		assert.Must(t, Application.Delete(sample.ApplicationTo.ID))
 	}
 }
