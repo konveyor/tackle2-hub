@@ -35,9 +35,9 @@ migrate=$(cat << EOF
 package ${next}
 
 import (
-        "github.com/jortel/go-utils/logr"
-//      "${importRoot}/${next}/model"
-        "gorm.io/gorm"
+	"github.com/jortel/go-utils/logr"
+	"${importRoot}/${next}/model"
+	"gorm.io/gorm"
 )
 
 var log = logr.WithName("migration|${current}")
@@ -45,7 +45,7 @@ var log = logr.WithName("migration|${current}")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-        return
+	return
 }
 
 func (r Migration) Models() []interface{} {
