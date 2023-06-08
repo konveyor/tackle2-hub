@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# - Create migration/vX
+# - Create migration/vX/model
+# - Build migration/vX/model/pkg.go
+# - Build migration/vX/migrate.go
+# - Edit migration/migrate.go add vX to migrations array
+# - Edit model/plg.go to import from migration vX
+#
 
 set -e
 
