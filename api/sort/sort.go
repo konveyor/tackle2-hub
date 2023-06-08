@@ -29,6 +29,7 @@ func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 	if param == "" {
 		return
 	}
+	r.fields = r.inspect(m)
 	for _, s := range strings.Split(param, ",") {
 		clause := Clause{}
 		s = strings.TrimSpace(s)
