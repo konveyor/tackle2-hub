@@ -80,7 +80,7 @@ echo -n "
 func All() []interface{} {
 	return []interface{}{
 " >> ${file}
-echo "${models}" | while read m
+echo "${models}" | grep -v "Model" | while read m
 do
   part=(${m})
   m=${part[3]#"model."}
