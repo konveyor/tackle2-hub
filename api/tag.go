@@ -65,7 +65,7 @@ func (h TagHandler) Get(ctx *gin.Context) {
 // @router /tags [get]
 func (h TagHandler) List(ctx *gin.Context) {
 	var list []model.Tag
-	db := h.preLoad(h.Paginated(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

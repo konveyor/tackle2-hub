@@ -70,7 +70,7 @@ func (h TrackerHandler) Get(ctx *gin.Context) {
 // @router /trackers [get]
 func (h TrackerHandler) List(ctx *gin.Context) {
 	var list []model.Tracker
-	db := h.preLoad(h.Paginated(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
 	kind := ctx.Query(Kind)
 	if kind != "" {
 		db = db.Where(Kind, kind)

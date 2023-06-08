@@ -128,7 +128,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
 	// Build query.
 	id := h.pk(ctx)
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	db = db.Where("ApplicationID = ?", id)
 	count := int64(0)
 	// Count.
@@ -383,6 +383,12 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.TechDependency{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db = h.DB(ctx)
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
@@ -405,6 +411,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	// Find.
 	list := []model.TechDependency{}
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -459,6 +466,12 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.Issue{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db = h.DB(ctx)
 	db = db.Model(&model.Issue{})
 	db = db.Where("AnalysisID = ?", analysis.ID)
@@ -482,6 +495,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	// Find.
 	list := []model.Issue{}
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -533,6 +547,12 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.Issue{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Table("Issue i")
 	db = db.Joins(",Analysis a")
@@ -560,6 +580,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	//
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	var list []model.Issue
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -619,6 +640,12 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.Incident{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	var list []model.Incident
 	db := h.DB(ctx)
 	db = db.Where("IssueID", issueId)
@@ -637,6 +664,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	}
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -679,6 +707,10 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 // @router /analyses/report/rules [get]
 func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	resources := []*RuleReport{}
+	type M struct {
+		model.Issue
+		Applications int
+	}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -693,6 +725,12 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -731,15 +769,12 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	}
 	affected := make(map[string]int)
 	// Find.
-	type M struct {
-		model.Issue
-		Applications int
-	}
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	var list []M
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -811,6 +846,19 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @router /analyses/report/applications [get]
 func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	resources := []AppReport{}
+	type M struct {
+		ID              uint
+		Name            string
+		Description     string
+		BusinessService string
+		Effort          int
+		Incidents       int
+		Files           int
+		IssueID         uint
+		IssueName       string
+		RuleSet         string
+		Rule            string
+	}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -833,6 +881,12 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -880,24 +934,12 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	}
 	//
 	// Find.
-	type M struct {
-		ID              uint
-		Name            string
-		Description     string
-		BusinessService string
-		Effort          int
-		Incidents       int
-		Files           int
-		IssueID         uint
-		IssueName       string
-		RuleSet         string
-		Rule            string
-	}
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	var list []M
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -941,6 +983,12 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 // @router /analyses/report/issues/{id}/files [get]
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	resources := []FileReport{}
+	type M struct {
+		IssueId   uint
+		File      string
+		Effort    int
+		Incidents int
+	}
 	issueId := h.pk(ctx)
 	issue := &model.Issue{}
 	result := h.DB(ctx).First(issue, issueId)
@@ -956,6 +1004,12 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 			{Field: "incidents", Kind: qf.LITERAL},
 			{Field: "effort", Kind: qf.LITERAL},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -987,18 +1041,13 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	type M struct {
-		IssueId   uint
-		File      string
-		Effort    int
-		Incidents int
-	}
 	var list []M
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -1052,6 +1101,12 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.TechDependency{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
@@ -1073,6 +1128,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Find.
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	list := []model.TechDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -1110,6 +1166,10 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	resources := []DepReport{}
+	type M struct {
+		model.TechDependency
+		Applications int
+	}
 	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -1123,6 +1183,12 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1154,16 +1220,13 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	type M struct {
-		model.TechDependency
-		Applications int
-	}
 	var list []M
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
 	db = h.paginated(ctx, db)
+	db = sort.Sorted(db)
 	result := db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
