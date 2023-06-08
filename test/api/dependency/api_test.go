@@ -12,8 +12,8 @@ func TestDependencyCRUD(t *testing.T) {
 	for _, sample := range Samples {
 		t.Run(fmt.Sprintf("Dependency from %s -> %s", sample.ApplicationFrom.Name, sample.ApplicationTo.Name), func(t *testing.T) {
 
-			assert.Should(t, Application.Create(&sample.ApplicationFrom))
-			assert.Should(t, Application.Create(&sample.ApplicationTo))
+			assert.Must(t, Application.Create(&sample.ApplicationFrom))
+			assert.Must(t, Application.Create(&sample.ApplicationTo))
 
 			// Create.
 			dependency := api.Dependency{
@@ -38,9 +38,14 @@ func TestDependencyCRUD(t *testing.T) {
 			// Delete dependency.
 			assert.Should(t, Dependency.Delete(dependency.ID))
 
+			_, err = Dependency.Get(dependency.ID)
+			if err == nil {
+				t.Errorf("Resource exits, but should be deleted: %v", dependency)
+			}
+
 			//Delete Applications
-			assert.Should(t, Application.Delete(sample.ApplicationFrom.ID))
-			assert.Should(t, Application.Delete(sample.ApplicationTo.ID))
+			assert.Must(t, Application.Delete(sample.ApplicationFrom.ID))
+			assert.Must(t, Application.Delete(sample.ApplicationTo.ID))
 		})
 	}
 }
@@ -49,8 +54,19 @@ func TestDependencyList(t *testing.T) {
 	for _, sample := range Samples {
 
 		// Create applications.
-		assert.Should(t, Application.Create(&sample.ApplicationFrom))
-		assert.Should(t, Application.Create(&sample.ApplicationTo))
+		assert.Must(t, Application.Create(&sample.ApplicationFrom))
+		assert.Must(t, Application.Create(&sample.ApplicationTo))
+
+		// Create dependencies.
+		dependency := api.Dependency{
+			From: api.Ref{
+				ID: sample.ApplicationFrom.ID,
+			},
+			To: api.Ref{
+				ID: sample.ApplicationTo.ID,
+			},
+		}
+		assert.Should(t, Dependency.Create(&dependency))
 	}
 
 	// List dependencies.
@@ -62,9 +78,14 @@ func TestDependencyList(t *testing.T) {
 		t.Errorf("Different response error. Got %v, expected %v", got, Samples)
 	}
 
+	// Delete Dependencies.
+	for _, dependency := range got {
+		assert.Should(t, Dependency.Delete(dependency.ID))
+	}
+
 	// Delete applications.
 	for _, sample := range Samples {
-		assert.Should(t, Application.Delete(sample.ApplicationFrom.ID))
-		assert.Should(t, Application.Delete(sample.ApplicationTo.ID))
+		assert.Must(t, Application.Delete(sample.ApplicationFrom.ID))
+		assert.Must(t, Application.Delete(sample.ApplicationTo.ID))
 	}
 }

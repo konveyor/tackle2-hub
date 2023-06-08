@@ -1,10 +1,11 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -63,16 +64,48 @@ func (h DependencyHandler) Get(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Dependency
 // @router /dependencies [get]
+// func (h DependencyHandler) List(ctx *gin.Context) {
+// 	var list []model.Dependency
+
+// 	db := h.Paginated(ctx)
+// 	to := ctx.Query("to.id")
+// 	from := ctx.Query("from.id")
+// 	if to != "" {
+// 		db = db.Where("toid = ?", to)
+// 	} else if from != "" {
+// 		db = db.Where("fromid = ?", from)
+// 	}
+
+// 	db = h.preLoad(db, clause.Associations)
+// 	result := db.Find(&list)
+// 	if result.Error != nil {
+// 		_ = ctx.Error(result.Error)
+// 		return
+// 	}
+
+// 	resources := []Dependency{}
+// 	for i := range list {
+// 		r := Dependency{}
+// 		r.With(&list[i])
+// 		resources = append(resources, r)
+// 	}
+
+// 	h.Respond(ctx, http.StatusOK, resources)
+// }
+
 func (h DependencyHandler) List(ctx *gin.Context) {
 	var list []model.Dependency
 
 	db := h.Paginated(ctx)
-	to := ctx.Query("to.id")
-	from := ctx.Query("from.id")
-	if to != "" {
-		db = db.Where("toid = ?", to)
+	from := ctx.Query("from")
+	to := ctx.Query("to")
+
+	if from != "" && to != "" {
+		db = db.Where("fromid = ? AND toid = ?", from, to)
 	} else if from != "" {
 		db = db.Where("fromid = ?", from)
+	} else if to != "" {
+		db = db.Where("toid = ?", to)
 	}
 
 	db = h.preLoad(db, clause.Associations)
