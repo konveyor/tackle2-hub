@@ -121,7 +121,7 @@ endif
 	$(INSTALL_TACKLE_SH);
 
 # Run test targets always (not producing test dirs there).
-.PHONY: test test-api test-integration
+.PHONY: test test-api test-integration migration
 
 # Run unit tests (all tests outside /test directory).
 test:
@@ -137,3 +137,7 @@ test-integration:
 
 # Run Hub test suite.
 test-all: test-unit test-api test-integration
+
+migration:
+	hack/next-migration.sh
+
