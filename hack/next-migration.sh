@@ -69,6 +69,12 @@ echo "" >> ${file}
 grep "type" model/pkg.go | grep "model" | sort  >> ${file}
 
 #
+# Register migration.
+#
+
+sed -i "s/${current}.Migration{}/${current}.Migration{},\n\t\t${next}.Migration{}/g" ${root}/pkg.go
+
+#
 # Point model at new migration.
 #
 sed -i "s/${current}/${next}/g" model/pkg.go
