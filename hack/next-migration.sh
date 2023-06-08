@@ -68,9 +68,26 @@ EOF
 )
 
 echo "${pkg}" > ${file}
-echo "" >> ${file}
 
-grep "type" model/pkg.go | grep "model" | sort  >> ${file}
+echo "" >> ${file}
+models=$(grep "type" model/pkg.go | grep "model")
+echo "${models}"  >> ${file}
+echo -n "
+//
+// All builds all models.
+// Models are enumerated such that each are listed after
+// all the other models on which they may depend.
+func All() []interface{} {
+	return []interface{}{
+" >> ${file}
+echo "${models}" | while read m
+do
+  part=(${m})
+  m=${part[3]#"model."}
+  echo -e "\t\t${m}{}," >> ${file}
+done
+echo -e "\t}" >> ${file}
+echo "}" >> ${file}
 
 #
 # Register new migration.
