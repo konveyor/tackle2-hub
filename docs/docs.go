@@ -2153,6 +2153,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/metrics": {
+            "get": {
+                "description": "Get Prometheus metrics.\nWrapper for Prometheus-supplied handler.\nServed on port defined by METRICS_PORT environment variable.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Get Prometheus metrics.",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/migrationwaves": {
             "get": {
                 "description": "List all migration waves.",
