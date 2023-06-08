@@ -1061,7 +1061,8 @@ paths:
         - category
         - effort
         - labels
-        - application.(id|name)
+        - application.id
+        - application.name
         - tag.id
       produces:
       - application/json
@@ -1227,12 +1228,11 @@ paths:
       description: |-
         List application dependencies.
         filters:
-        - id
         - name
         - version
-        - type
         - sha
         - indirect
+        - labels
       parameters:
       - description: Application ID
         in: path
@@ -1256,11 +1256,12 @@ paths:
       description: |-
         List application issues.
         filters:
-        - id
-        - ruleid
+        - ruleset
+        - rule
         - name
         - category
         - effort
+        - labels
       parameters:
       - description: Application ID
         in: path
@@ -2510,6 +2511,20 @@ paths:
       summary: Update a job function.
       tags:
       - jobfunctions
+  /metrics:
+    get:
+      description: |-
+        Get Prometheus metrics.
+        Wrapper for Prometheus-supplied handler.
+        Served on port defined by METRICS_PORT environment variable.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+      summary: Get Prometheus metrics.
+      tags:
+      - metrics
   /migrationwaves:
     get:
       description: List all migration waves.

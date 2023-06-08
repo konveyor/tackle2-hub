@@ -145,7 +145,7 @@ const docTemplate = `{
         },
         "/analyses/issues": {
             "get": {
-                "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.(id|name)\n- tag.id",
+                "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
@@ -350,7 +350,7 @@ const docTemplate = `{
         },
         "/application/{id}/analysis/dependencies": {
             "get": {
-                "description": "List application dependencies.\nfilters:\n- id\n- name\n- version\n- type\n- sha\n- indirect",
+                "description": "List application dependencies.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels",
                 "produces": [
                     "application/json"
                 ],
@@ -382,7 +382,7 @@ const docTemplate = `{
         },
         "/application/{id}/analysis/issues": {
             "get": {
-                "description": "List application issues.\nfilters:\n- id\n- ruleid\n- name\n- category\n- effort",
+                "description": "List application issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
                 "produces": [
                     "application/json"
                 ],
@@ -2247,6 +2247,23 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/metrics": {
+            "get": {
+                "description": "Get Prometheus metrics.\nWrapper for Prometheus-supplied handler.\nServed on port defined by METRICS_PORT environment variable.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "metrics"
+                ],
+                "summary": "Get Prometheus metrics.",
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
