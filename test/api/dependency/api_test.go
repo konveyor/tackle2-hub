@@ -12,22 +12,19 @@ func TestDependencyCRUD(t *testing.T) {
 	for _, sample := range Samples {
 		t.Run(fmt.Sprintf("Dependency from %s -> %s", sample.ApplicationFrom.Name, sample.ApplicationTo.Name), func(t *testing.T) {
 
-			applicationFrom := sample.ApplicationFrom
-			assert.Must(t, Application.Create(&applicationFrom))
-
-			applicationTo := sample.ApplicationTo
-			assert.Must(t, Application.Create(&applicationTo))
+			assert.Should(t, Application.Create(&sample.ApplicationFrom))
+			assert.Should(t, Application.Create(&sample.ApplicationTo))
 
 			// Create.
 			dependency := api.Dependency{
 				From: api.Ref{
-					ID: applicationFrom.ID,
+					ID: sample.ApplicationFrom.ID,
 				},
 				To: api.Ref{
-					ID: applicationTo.ID,
+					ID: sample.ApplicationTo.ID,
 				},
 			}
-			assert.Must(t, Dependency.Create(&dependency))
+			assert.Should(t, Dependency.Create(&dependency))
 
 			// Get.
 			got, err := Dependency.Get(dependency.ID)
@@ -39,25 +36,21 @@ func TestDependencyCRUD(t *testing.T) {
 			}
 
 			// Delete dependency.
-			assert.Must(t, Dependency.Delete(dependency.ID))
+			assert.Should(t, Dependency.Delete(dependency.ID))
 
 			//Delete Applications
-			assert.Must(t, Application.Delete(applicationFrom.ID))
-			assert.Must(t, Application.Delete(applicationTo.ID))
+			assert.Should(t, Application.Delete(sample.ApplicationFrom.ID))
+			assert.Should(t, Application.Delete(sample.ApplicationTo.ID))
 		})
 	}
 }
 
 func TestDependencyList(t *testing.T) {
 	for _, sample := range Samples {
-		// Create applications.
-		applicationFrom := sample.ApplicationFrom
-		assert.Must(t, Application.Create(&applicationFrom))
-		sample.ApplicationFrom.ID = applicationFrom.ID
 
-		applicationTo := sample.ApplicationTo
-		assert.Must(t, Application.Create(&applicationTo))
-		sample.ApplicationTo.ID = applicationTo.ID
+		// Create applications.
+		assert.Should(t, Application.Create(&sample.ApplicationFrom))
+		assert.Should(t, Application.Create(&sample.ApplicationTo))
 	}
 
 	// List dependencies.
@@ -71,7 +64,7 @@ func TestDependencyList(t *testing.T) {
 
 	// Delete applications.
 	for _, sample := range Samples {
-		assert.Must(t, Application.Delete(sample.ApplicationFrom.ID))
-		assert.Must(t, Application.Delete(sample.ApplicationTo.ID))
+		assert.Should(t, Application.Delete(sample.ApplicationFrom.ID))
+		assert.Should(t, Application.Delete(sample.ApplicationTo.ID))
 	}
 }
