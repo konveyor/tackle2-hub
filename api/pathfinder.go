@@ -52,7 +52,7 @@ func (h PathfinderHandler) ReverseProxy(ctx *gin.Context) {
 		},
 	}
 
-	if ctx.Request.Method == http.MethodPost {
+	if ctx.Request.URL.Path == path.Join(PathfinderRoot, AssessmentsRoot) && ctx.Request.Method == http.MethodPost {
 		metrics.AssessmentsInitiated.Inc()
 	}
 
