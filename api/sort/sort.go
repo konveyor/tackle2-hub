@@ -2,10 +2,9 @@ package sort
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/reflect"
 	"gorm.io/gorm"
-	"reflect"
 	"strings"
-	"time"
 )
 
 //
@@ -18,7 +17,7 @@ type Clause struct {
 //
 // Sort provides sorting.
 type Sort struct {
-	fields  map[string]bool
+	fields  map[string]interface{}
 	clauses []Clause
 }
 
@@ -84,42 +83,10 @@ func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 
 //
 // inspect object and return fields.
-func (r *Sort) inspect(m interface{}) (fields map[string]bool) {
-	fields = make(map[string]bool)
-	var inspect func(r interface{})
-	inspect = func(r interface{}) {
-		mt := reflect.TypeOf(r)
-		mv := reflect.ValueOf(r)
-		if mt.Kind() == reflect.Ptr {
-			mt = mt.Elem()
-			mv = mv.Elem()
-		}
-		for i := 0; i < mt.NumField(); i++ {
-			ft := mt.Field(i)
-			fv := mv.Field(i)
-			if !ft.IsExported() {
-				continue
-			}
-			switch fv.Kind() {
-			case reflect.Struct:
-				if ft.Anonymous {
-					inspect(fv.Interface())
-					continue
-				}
-				inst := fv.Interface()
-				switch inst.(type) {
-				case time.Time:
-					fields[strings.ToLower(ft.Name)] = true
-				}
-			case reflect.Array,
-				reflect.Slice,
-				reflect.Ptr:
-				continue
-			default:
-				fields[strings.ToLower(ft.Name)] = true
-			}
-		}
+func (r *Sort) inspect(m interface{}) (fields map[string]interface{}) {
+	fields = reflect.Fields(m)
+	for key, v := range fields {
+		fields[strings.ToLower(key)] = v
 	}
-	inspect(m)
 	return
 }
