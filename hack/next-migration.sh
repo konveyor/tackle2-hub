@@ -53,6 +53,7 @@ var log = logr.WithName("migration|${current}")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
+	err = db.AutoMigrate(r.Models()...)
 	return
 }
 
