@@ -237,6 +237,8 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 					imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' cannot be created.", impTag.Category)
 					return
 				}
+				// Add newly created Category to lookup list.
+				allCategories = append(allCategories, *category)
 			} else {
 				imp.ErrorMessage = fmt.Sprintf("TagCategory '%s' could not be found.", impTag.Category)
 				return
