@@ -51,22 +51,27 @@ func TestDependencyCRUD(t *testing.T) {
 }
 
 func TestDependencyList(t *testing.T) {
-	for _, sample := range Samples {
+
+	// an array of created dependencies to track them later
+	createdDependencies := []api.Dependency{}
+
+	for _, r := range Samples {
 
 		// Create applications.
-		assert.Must(t, Application.Create(&sample.ApplicationFrom))
-		assert.Must(t, Application.Create(&sample.ApplicationTo))
+		assert.Must(t, Application.Create(&r.ApplicationFrom))
+		assert.Must(t, Application.Create(&r.ApplicationTo))
 
 		// Create dependencies.
 		dependency := api.Dependency{
 			From: api.Ref{
-				ID: sample.ApplicationFrom.ID,
+				ID: r.ApplicationFrom.ID,
 			},
 			To: api.Ref{
-				ID: sample.ApplicationTo.ID,
+				ID: r.ApplicationTo.ID,
 			},
 		}
 		assert.Should(t, Dependency.Create(&dependency))
+		createdDependencies = append(createdDependencies, dependency)
 	}
 
 	// List dependencies.
@@ -74,18 +79,25 @@ func TestDependencyList(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if assert.FlatEqual(got, Samples) {
-		t.Errorf("Different response error. Got %v, expected %v", got, Samples)
+
+	// check if created Dependencies are in the list we got from Dependency.List()
+	for _, createdDependency := range createdDependencies {
+		found := false
+		for _, retrievedDependency := range got {
+			if assert.FlatEqual(createdDependency.ID, retrievedDependency.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected dependency not found in the list: %v", createdDependency)
+		}
 	}
 
-	// Delete Dependencies.
-	for _, dependency := range got {
+	// Delete Dependencies and Applications.
+	for _, dependency := range createdDependencies {
 		assert.Should(t, Dependency.Delete(dependency.ID))
-	}
-
-	// Delete applications.
-	for _, sample := range Samples {
-		assert.Must(t, Application.Delete(sample.ApplicationFrom.ID))
-		assert.Must(t, Application.Delete(sample.ApplicationTo.ID))
+		assert.Must(t, Application.Delete(dependency.From.ID))
+		assert.Must(t, Application.Delete(dependency.To.ID))
 	}
 }

@@ -68,15 +68,12 @@ func (h DependencyHandler) List(ctx *gin.Context) {
 	var list []model.Dependency
 
 	db := h.Paginated(ctx)
-	from := ctx.Query("from")
-	to := ctx.Query("to")
-
-	if from != "" && to != "" {
-		db = db.Where("fromid = ? AND toid = ?", from, to)
+	to := ctx.Query("to.id")
+	from := ctx.Query("from.id")
+	if to != "" {
+		db = db.Where("toid = ?", to)
 	} else if from != "" {
 		db = db.Where("fromid = ?", from)
-	} else if to != "" {
-		db = db.Where("toid = ?", to)
 	}
 
 	db = h.preLoad(db, clause.Associations)
