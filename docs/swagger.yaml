@@ -2338,6 +2338,20 @@ paths:
       summary: Update a job function.
       tags:
       - jobfunctions
+  /metrics:
+    get:
+      description: |-
+        Get Prometheus metrics.
+        Wrapper for Prometheus-supplied handler.
+        Served on port defined by METRICS_PORT environment variable.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+      summary: Get Prometheus metrics.
+      tags:
+      - metrics
   /migrationwaves:
     get:
       description: List all migration waves.

@@ -49,10 +49,9 @@ func (h *Adapter) Client() *Client
 
 func (h *Adapter) Run(addon func() error)
     Run addon. Reports:
-
-        - Started
-        - Succeeded
-        - Failed (when addon returns error).
+      - Started
+      - Succeeded
+      - Failed (when addon returns error).
 
 type Analysis struct {
 	// Has unexported fields.
