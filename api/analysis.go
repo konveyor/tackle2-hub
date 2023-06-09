@@ -410,8 +410,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	}
 	// Find.
 	list := []model.TechDependency{}
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -494,8 +493,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	}
 	// Find.
 	list := []model.Issue{}
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -579,8 +577,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	}
 	//
 	// Find.
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	var list []model.Issue
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -663,8 +660,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -773,8 +769,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	var list []M
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -938,8 +933,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	var list []M
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -1046,8 +1040,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -1127,8 +1120,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		return
 	}
 	// Find.
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	list := []model.TechDependency{}
 	result = db.Find(&list)
 	if result.Error != nil {
@@ -1225,8 +1217,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, db)
-	db = sort.Sorted(db)
+	db = h.paginated(ctx, sort, db)
 	result := db.Scan(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
