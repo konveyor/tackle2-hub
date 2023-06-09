@@ -7,12 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/jortel/go-utils/logr"
+	reflect "github.com/konveyor/tackle2-hub/api/reflect"
+	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 	"io"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
@@ -38,22 +39,6 @@ func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 	rtx := WithContext(ctx)
 	client = rtx.Client
-	return
-}
-
-//
-// Paginated returns a paginated AND sorted DB client.
-func (h *BaseHandler) Paginated(ctx *gin.Context) (db *gorm.DB) {
-	db = h.paginated(ctx, h.DB(ctx))
-	return
-}
-
-//
-// Sorted returns a sorted DB client.
-func (h *BaseHandler) Sorted(ctx *gin.Context) (db *gorm.DB) {
-	sort := Sort{}
-	sort.With(ctx)
-	db = sort.Sorted(h.DB(ctx))
 	return
 }
 
@@ -85,13 +70,11 @@ func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 }
 
 //
-// Paginated returns a paginated AND sorted DB client.
-func (h *BaseHandler) paginated(ctx *gin.Context, in *gorm.DB) (db *gorm.DB) {
+// Paginated returns a paginated and sorted DB client.
+func (h *BaseHandler) paginated(ctx *gin.Context, sort Sort, in *gorm.DB) (db *gorm.DB) {
 	p := Page{}
 	p.With(ctx)
 	db = p.Paginated(in)
-	sort := Sort{}
-	sort.With(ctx)
 	db = sort.Sorted(db)
 	return
 }
@@ -110,54 +93,7 @@ func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 //
 // fields builds a map of fields.
 func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
-	var inspect func(r interface{})
-	inspect = func(r interface{}) {
-		mt := reflect.TypeOf(r)
-		mv := reflect.ValueOf(r)
-		if mt.Kind() == reflect.Ptr {
-			mt = mt.Elem()
-			mv = mv.Elem()
-		}
-		for i := 0; i < mt.NumField(); i++ {
-			ft := mt.Field(i)
-			fv := mv.Field(i)
-			if !ft.IsExported() {
-				continue
-			}
-			switch fv.Kind() {
-			case reflect.Ptr:
-				pt := ft.Type.Elem()
-				switch pt.Kind() {
-				case reflect.Struct, reflect.Slice, reflect.Array:
-					continue
-				default:
-					mp[ft.Name] = fv.Interface()
-				}
-			case reflect.Struct:
-				if ft.Anonymous {
-					inspect(fv.Addr().Interface())
-					continue
-				}
-				inst := fv.Interface()
-				switch inst.(type) {
-				case time.Time:
-					mp[ft.Name] = inst
-				}
-			case reflect.Array:
-				continue
-			case reflect.Slice:
-				inst := fv.Interface()
-				switch inst.(type) {
-				case []byte:
-					mp[ft.Name] = fv.Interface()
-				}
-			default:
-				mp[ft.Name] = fv.Interface()
-			}
-		}
-	}
-	mp = map[string]interface{}{}
-	inspect(m)
+	mp = reflect.Fields(m)
 	return
 }
 
@@ -351,24 +287,7 @@ func (r *Resource) idPtr(ref *Ref) (id *uint) {
 //
 // nameOf model.
 func (r *Resource) nameOf(m interface{}) (name string) {
-	mt := reflect.TypeOf(m)
-	mv := reflect.ValueOf(m)
-	if mv.IsNil() {
-		return
-	}
-	if mt.Kind() == reflect.Ptr {
-		mt = mt.Elem()
-		mv = mv.Elem()
-	}
-	for i := 0; i < mt.NumField(); i++ {
-		ft := mt.Field(i)
-		fv := mv.Field(i)
-		switch ft.Name {
-		case "Name":
-			name = fv.String()
-			return
-		}
-	}
+	reflect.NameOf(m)
 	return
 }
 
@@ -441,45 +360,7 @@ func (p *Page) Paginated(in *gorm.DB) (out *gorm.DB) {
 
 //
 // Sort provides sorting.
-type Sort struct {
-	Descending bool
-	Field      string
-}
-
-//
-// With context.
-func (p *Sort) With(ctx *gin.Context) {
-	s := ctx.Query("sort")
-	if s == "" {
-		return
-	}
-	mark := strings.Index(s, ":")
-	if mark == -1 {
-		p.Field = s
-		return
-	}
-	d := strings.ToLower(s[:mark])
-	field := s[mark+1:]
-	if len(d) != 0 {
-		p.Descending = d[0] == 'd'
-	}
-	p.Field = field
-}
-
-//
-// Sorted returns sorted DB.
-func (p *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
-	out = in
-	if p.Field == "" {
-		return
-	}
-	sort := p.Field
-	if p.Descending {
-		sort += " DESC"
-	}
-	out = out.Order(sort)
-	return
-}
+type Sort = sort.Sort
 
 //
 // Decoder binding decoder.

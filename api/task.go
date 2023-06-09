@@ -96,7 +96,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
 	var list []model.Task
-	db := h.Paginated(ctx)
+	db := h.DB(ctx)
 	locator := ctx.Query(LocatorParam)
 	if locator != "" {
 		db = db.Where("locator", locator)
