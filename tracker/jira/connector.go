@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/andygrunwald/go-jira"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
@@ -20,6 +21,13 @@ const (
 	InProgress = "In Progress"
 	Done       = "Done"
 	Unknown    = "Unknown"
+)
+
+//
+// Auth kinds
+const (
+	BearerAuth = "bearer"
+	BasicAuth  = "basic-auth"
 )
 
 //
@@ -154,13 +162,28 @@ func (r *Connector) client() (client *jira.Client, err error) {
 	if r.tracker.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	jiraTransport := jira.BasicAuthTransport{
-		Username:  r.tracker.Identity.User,
-		Password:  r.tracker.Identity.Password,
-		Transport: transport,
+
+	var httpclient *http.Client
+	switch r.tracker.Identity.Kind {
+	case BearerAuth:
+		jiraTransport := jira.BearerAuthTransport{
+			Token:     r.tracker.Identity.Key,
+			Transport: transport,
+		}
+		httpclient = jiraTransport.Client()
+	case BasicAuth:
+		jiraTransport := jira.BasicAuthTransport{
+			Username:  r.tracker.Identity.User,
+			Password:  r.tracker.Identity.Password,
+			Transport: transport,
+		}
+		httpclient = jiraTransport.Client()
+	default:
+		err = liberr.New("unsupported identity kind", "kind", r.tracker.Identity.Kind)
+		return
 	}
 
-	client, err = jira.NewClient(jiraTransport.Client(), r.tracker.URL)
+	client, err = jira.NewClient(httpclient, r.tracker.URL)
 	if err != nil {
 		return
 	}
