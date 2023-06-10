@@ -15,6 +15,8 @@ func TestDependencyCRUD(t *testing.T) {
 			assert.Must(t, Application.Create(&sample.ApplicationFrom))
 			assert.Must(t, Application.Create(&sample.ApplicationTo))
 
+			// Create a check for reverse dependency
+
 			// Create.
 			dependency := api.Dependency{
 				From: api.Ref{
@@ -99,5 +101,92 @@ func TestDependencyList(t *testing.T) {
 		assert.Should(t, Dependency.Delete(dependency.ID))
 		assert.Must(t, Application.Delete(dependency.From.ID))
 		assert.Must(t, Application.Delete(dependency.To.ID))
+	}
+}
+
+func TestReverseDependency(t *testing.T) {
+	for _, r := range ReverseSamples {
+		assert.Must(t, Application.Create(&r.Application1))
+		assert.Must(t, Application.Create(&r.Application2))
+		assert.Must(t, Application.Create(&r.Application3))
+
+		firstDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application1.ID,
+			},
+			To: api.Ref{
+				ID: r.Application2.ID,
+			},
+		}
+		err := Dependency.Create(&firstDependency)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+
+		secondDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application2.ID,
+			},
+			To: api.Ref{
+				ID: r.Application3.ID,
+			},
+		}
+		err = Dependency.Create(&secondDependency)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+
+		thirdDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application3.ID,
+			},
+			To: api.Ref{
+				ID: r.Application1.ID,
+			},
+		}
+		err = Dependency.Create(&thirdDependency)
+		if err == nil {
+			t.Error("Indirect Reverse dependency not allowed")
+		}
+
+		fourthDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application1.ID,
+			},
+			To: api.Ref{
+				ID: r.Application3.ID,
+			},
+		}
+		err = Dependency.Create(&fourthDependency)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+
+		fifthDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application2.ID,
+			},
+			To: api.Ref{
+				ID: r.Application1.ID,
+			},
+		}
+		err = Dependency.Create(&fifthDependency)
+		if err == nil {
+			t.Error("Direct Reverse dependency not allowed")
+		}
+
+		sixthDependency := api.Dependency{
+			From: api.Ref{
+				ID: r.Application3.ID,
+			},
+			To: api.Ref{
+				ID: r.Application2.ID,
+			},
+		}
+		err = Dependency.Create(&sixthDependency)
+		if err == nil {
+			t.Error("Direct Reverse dependency not allowed")
+		}
+
 	}
 }
