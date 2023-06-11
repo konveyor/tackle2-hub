@@ -33,7 +33,7 @@ func TestDependencyCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if assert.FlatEqual(got, dependency.ID) {
+			if !assert.FlatEqual(got.ID, dependency.ID) {
 				t.Errorf("Different response error. Got %v, expected %v", got, dependency.ID)
 			}
 
@@ -106,6 +106,7 @@ func TestDependencyList(t *testing.T) {
 
 func TestReverseDependency(t *testing.T) {
 	for _, r := range ReverseSamples {
+		// Create Applications.
 		assert.Must(t, Application.Create(&r.Application1))
 		assert.Must(t, Application.Create(&r.Application2))
 		assert.Must(t, Application.Create(&r.Application3))
@@ -136,6 +137,7 @@ func TestReverseDependency(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
+		// Indirect Reverse dependency should fail.
 		thirdDependency := api.Dependency{
 			From: api.Ref{
 				ID: r.Application3.ID,
@@ -162,6 +164,7 @@ func TestReverseDependency(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
+		// Direct Reverse dependency should fail.
 		fifthDependency := api.Dependency{
 			From: api.Ref{
 				ID: r.Application2.ID,
@@ -175,6 +178,7 @@ func TestReverseDependency(t *testing.T) {
 			t.Error("Direct Reverse dependency not allowed")
 		}
 
+		// Direct Reverse dependency should fail.
 		sixthDependency := api.Dependency{
 			From: api.Ref{
 				ID: r.Application3.ID,
@@ -188,5 +192,17 @@ func TestReverseDependency(t *testing.T) {
 			t.Error("Direct Reverse dependency not allowed")
 		}
 
+		// Delete Dependencies.
+		assert.Should(t, Dependency.Delete(firstDependency.ID))
+		assert.Should(t, Dependency.Delete(secondDependency.ID))
+		assert.Should(t, Dependency.Delete(thirdDependency.ID))
+		assert.Should(t, Dependency.Delete(fourthDependency.ID))
+		assert.Should(t, Dependency.Delete(fifthDependency.ID))
+		assert.Should(t, Dependency.Delete(sixthDependency.ID))
+
+		// Delete Applications.
+		assert.Must(t, Application.Delete(r.Application1.ID))
+		assert.Must(t, Application.Delete(r.Application2.ID))
+		assert.Must(t, Application.Delete(r.Application3.ID))
 	}
 }
