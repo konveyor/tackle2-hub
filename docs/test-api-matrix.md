@@ -5,7 +5,7 @@ Endpoint | binding functions | basic CRUD test | deeper test| notes/component/st
 **Application Inventory**||||
 application|:white_check_mark: partially|:heavy_check_mark:||
 bucket||||partially within application
-dependency||||
+dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 file||||
 import||||
 review||||
