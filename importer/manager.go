@@ -263,6 +263,8 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 					imp.ErrorMessage = fmt.Sprintf("Tag '%s' cannot be created.", impTag.Name)
 					return
 				}
+				// Add newly created Tag to lookup list.
+				allTags = append(allTags, *tag)
 			} else {
 				imp.ErrorMessage = fmt.Sprintf("Tag '%s' could not be found.", impTag.Name)
 				return
