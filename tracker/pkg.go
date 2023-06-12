@@ -9,6 +9,7 @@ import (
 // Tracker types
 const (
 	JiraCloud      = "jira-cloud"
+	JiraOnPrem     = "jira-onprem"
 	JiraServer     = "jira-server"
 	JiraDataCenter = "jira-datacenter"
 )
@@ -30,7 +31,7 @@ type Connector interface {
 // NewConnector instantiates a connector for an external ticket tracker.
 func NewConnector(t *model.Tracker) (conn Connector, err error) {
 	switch t.Kind {
-	case JiraCloud, JiraServer, JiraDataCenter:
+	case JiraCloud, JiraServer, JiraDataCenter, JiraOnPrem:
 		conn = &jira.Connector{}
 		conn.With(t)
 	default:
