@@ -143,6 +143,8 @@ func (r Migration) updateBundleSeed(db *gorm.DB) (err error) {
 		"Description",
 		"A comprehensive set of rules for migrating traditional WebSphere"+
 			" applications to Open Liberty.").Error
+	return
+}
 
 func (r Migration) migrateIdentitiesUniqName(db *gorm.DB) (err error) {
 	var identities []v3.Identity
