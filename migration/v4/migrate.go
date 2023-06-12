@@ -2,6 +2,7 @@ package v4
 
 import (
 	"encoding/json"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3/model"
@@ -50,6 +51,12 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		return
 	}
 
+	err = r.updateBundleSeed(db)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
 	return
 }
 
@@ -57,7 +64,6 @@ func (r Migration) Models() []interface{} {
 	return model.All()
 }
 
-//
 // RuleBundles renamed: RuleSet
 // RuleSet renamed: Rule
 func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
@@ -121,5 +127,15 @@ func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+func (r Migration) updateBundleSeed(db *gorm.DB) (err error) {
+	db = db.Model(&model.RuleSet{})
+	db = db.Where("Name", "Open Liberty")
+	err = db.Update(
+		"Description",
+		"A comprehensive set of rules for migrating traditional WebSphere"+
+			" applications to Open Liberty.").Error
 	return
 }
