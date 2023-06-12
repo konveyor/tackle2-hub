@@ -140,22 +140,34 @@ func (r Migration) migrateIdentitiesUniqName(db *gorm.DB) (err error) {
 		return
 	}
 
-	for _, identity := range identities {
-		var dupCount int64
-		err = db.Model(identity).Where("name = ?", identity.Name).Where("id != ?", identity.ID).Count(&dupCount).Error
+	dupes := make(map[string]int)
+	for i := range identities {
+		id := &identities[i]
+		dupes[id.Name]++
+	}
+
+	for _, id := range identities {
+		if dupes[id.Name] < 2 {
+			continue
+		}
+
+		suffix := 0
+		for {
+			suffix++
+			newName := fmt.Sprintf("%s (%d)", id.Name, suffix)
+			_, found := dupes[newName]
+			if !found {
+				id.Name = newName
+				dupes[newName] = 1
+				break
+			}
+		}
+		err = db.Save(id).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-
-		if dupCount > 0 {
-			identity.Name = fmt.Sprintf("%s-ID%d", identity.Name, identity.ID)
-			err = db.Save(&identity).Error
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		}
 	}
+
 	return
 }
