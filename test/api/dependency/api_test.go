@@ -15,8 +15,6 @@ func TestDependencyCRUD(t *testing.T) {
 			assert.Must(t, Application.Create(&sample.ApplicationFrom))
 			assert.Must(t, Application.Create(&sample.ApplicationTo))
 
-			// Create a check for reverse dependency
-
 			// Create.
 			dependency := api.Dependency{
 				From: api.Ref{
@@ -111,7 +109,7 @@ func TestReverseDependency(t *testing.T) {
 		assert.Must(t, Application.Create(&r.Application2))
 		assert.Must(t, Application.Create(&r.Application3))
 
-		firstDependency := api.Dependency{
+		firstDependencyPass := api.Dependency{
 			From: api.Ref{
 				ID: r.Application1.ID,
 			},
@@ -119,12 +117,9 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application2.ID,
 			},
 		}
-		err := Dependency.Create(&firstDependency)
-		if err != nil {
-			t.Errorf(err.Error())
-		}
+		assert.Should(t, Dependency.Create(&firstDependencyPass))
 
-		secondDependency := api.Dependency{
+		secondDependencyPass := api.Dependency{
 			From: api.Ref{
 				ID: r.Application2.ID,
 			},
@@ -132,13 +127,10 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application3.ID,
 			},
 		}
-		err = Dependency.Create(&secondDependency)
-		if err != nil {
-			t.Errorf(err.Error())
-		}
+		assert.Should(t, Dependency.Create(&secondDependencyPass))
 
 		// Indirect Reverse dependency should fail.
-		thirdDependency := api.Dependency{
+		indirectReverseDependencyFail := api.Dependency{
 			From: api.Ref{
 				ID: r.Application3.ID,
 			},
@@ -146,12 +138,12 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application1.ID,
 			},
 		}
-		err = Dependency.Create(&thirdDependency)
+		err := Dependency.Create(&indirectReverseDependencyFail)
 		if err == nil {
 			t.Error("Indirect Reverse dependency not allowed")
 		}
 
-		fourthDependency := api.Dependency{
+		thirdDependencyPass := api.Dependency{
 			From: api.Ref{
 				ID: r.Application1.ID,
 			},
@@ -159,13 +151,10 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application3.ID,
 			},
 		}
-		err = Dependency.Create(&fourthDependency)
-		if err != nil {
-			t.Errorf(err.Error())
-		}
+		assert.Should(t, Dependency.Create(&thirdDependencyPass))
 
 		// Direct Reverse dependency should fail.
-		fifthDependency := api.Dependency{
+		DirectReverseDependencyFail := api.Dependency{
 			From: api.Ref{
 				ID: r.Application2.ID,
 			},
@@ -173,13 +162,13 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application1.ID,
 			},
 		}
-		err = Dependency.Create(&fifthDependency)
+		err = Dependency.Create(&DirectReverseDependencyFail)
 		if err == nil {
 			t.Error("Direct Reverse dependency not allowed")
 		}
 
 		// Direct Reverse dependency should fail.
-		sixthDependency := api.Dependency{
+		anotherDirectReverseDependencyFail := api.Dependency{
 			From: api.Ref{
 				ID: r.Application3.ID,
 			},
@@ -187,18 +176,15 @@ func TestReverseDependency(t *testing.T) {
 				ID: r.Application2.ID,
 			},
 		}
-		err = Dependency.Create(&sixthDependency)
+		err = Dependency.Create(&anotherDirectReverseDependencyFail)
 		if err == nil {
 			t.Error("Direct Reverse dependency not allowed")
 		}
 
 		// Delete Dependencies.
-		assert.Should(t, Dependency.Delete(firstDependency.ID))
-		assert.Should(t, Dependency.Delete(secondDependency.ID))
-		assert.Should(t, Dependency.Delete(thirdDependency.ID))
-		assert.Should(t, Dependency.Delete(fourthDependency.ID))
-		assert.Should(t, Dependency.Delete(fifthDependency.ID))
-		assert.Should(t, Dependency.Delete(sixthDependency.ID))
+		assert.Should(t, Dependency.Delete(firstDependencyPass.ID))
+		assert.Should(t, Dependency.Delete(secondDependencyPass.ID))
+		assert.Should(t, Dependency.Delete(thirdDependencyPass.ID))
 
 		// Delete Applications.
 		assert.Must(t, Application.Delete(r.Application1.ID))
