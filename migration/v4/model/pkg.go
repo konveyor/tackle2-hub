@@ -20,7 +20,6 @@ type Bucket = v3.Bucket
 type BucketOwner = v3.BucketOwner
 type Dependency = v3.Dependency
 type File = v3.File
-type Identity = v3.Identity
 type Import = v3.Import
 type ImportSummary = v3.ImportSummary
 type ImportTag = v3.ImportTag

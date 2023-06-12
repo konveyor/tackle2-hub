@@ -2,6 +2,8 @@ package v4
 
 import (
 	"encoding/json"
+	"fmt"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3/model"
@@ -39,6 +41,12 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	}
 
 	err = r.migrateRuleBundles(db)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	err = r.migrateIdentitiesUniqName(db)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -121,5 +129,45 @@ func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+func (r Migration) migrateIdentitiesUniqName(db *gorm.DB) (err error) {
+	var identities []v3.Identity
+	err = db.Find(&identities).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	dupes := make(map[string]int)
+	for i := range identities {
+		id := &identities[i]
+		dupes[id.Name]++
+	}
+
+	for _, id := range identities {
+		if dupes[id.Name] < 2 {
+			continue
+		}
+
+		suffix := 0
+		for {
+			suffix++
+			newName := fmt.Sprintf("%s (%d)", id.Name, suffix)
+			_, found := dupes[newName]
+			if !found {
+				id.Name = newName
+				dupes[newName] = 1
+				break
+			}
+		}
+		err = db.Save(id).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+
 	return
 }
