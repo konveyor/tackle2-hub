@@ -16,7 +16,7 @@ type File struct {
 // Get downloads a file.
 func (h *File) Get(id uint, destination string) (err error) {
 	path := Path(api.FileRoot).Inject(Params{api.ID: id})
-	isDir, err := h.client.isDir(destination, false)
+	isDir, err := h.client.IsDir(destination, false)
 	if err != nil {
 		return
 	}
