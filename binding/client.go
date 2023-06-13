@@ -361,7 +361,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			request.Header.Set(api.Directory, api.DirectoryExpand)
 			err = r.putDir(part, source)
 		} else {
-			err = r.putFile(part, source)
+			err = r.loadFile(part, source)
 		}
 		return
 	}
@@ -449,7 +449,70 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 		request.Header.Add(
 			api.ContentType,
 			writer.FormDataContentType())
-		err = r.putFile(part, source)
+		err = r.loadFile(part, source)
+		return
+	}
+	reply, err := r.send(request)
+	if err != nil {
+		return
+	}
+	status := reply.StatusCode
+	switch status {
+	case http.StatusOK,
+		http.StatusCreated:
+		var body []byte
+		body, err = io.ReadAll(reply.Body)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = json.Unmarshal(body, object)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	case http.StatusConflict:
+		err = &Conflict{Path: path}
+	default:
+		err = liberr.New(http.StatusText(status))
+	}
+	return
+}
+
+//
+// FilePost uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePost(path, source string, object interface{}) (err error) {
+	isDir, err := r.isDir(source, true)
+	if err != nil {
+		return
+	}
+	if isDir {
+		err = liberr.New("Source cannot be directory.")
+		return
+	}
+	request := func() (request *http.Request, err error) {
+		buf := new(bytes.Buffer)
+		request = &http.Request{
+			Header: http.Header{},
+			Method: http.MethodPost,
+			Body:   io.NopCloser(buf),
+			URL:    r.join(path),
+		}
+		request.Header.Set(api.Accept, binding.MIMEJSON)
+		writer := multipart.NewWriter(buf)
+		defer func() {
+			_ = writer.Close()
+		}()
+		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
+		if err != nil {
+			err = liberr.Wrap(nErr)
+			return
+		}
+		request.Header.Add(
+			api.ContentType,
+			writer.FormDataContentType())
+		err = r.loadFile(part, source)
 		return
 	}
 	reply, err := r.send(request)
@@ -610,8 +673,8 @@ func (r *Client) getFile(body io.Reader, path, output string) (err error) {
 }
 
 //
-// putFile uploads plain file.
-func (r *Client) putFile(writer io.Writer, input string) (err error) {
+// loadFile uploads a file.
+func (r *Client) loadFile(writer io.Writer, input string) (err error) {
 	file, err := os.Open(input)
 	if err != nil {
 		err = liberr.Wrap(err)
