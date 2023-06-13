@@ -187,7 +187,7 @@ type Tracker struct {
 	Resource
 	Name        string    `json:"name" binding:"required"`
 	URL         string    `json:"url" binding:"required"`
-	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-server jira-datacenter"`
+	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-onprem"`
 	Message     string    `json:"message"`
 	Connected   bool      `json:"connected"`
 	LastUpdated time.Time `json:"lastUpdated"`
