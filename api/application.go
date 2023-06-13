@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"strings"
 )
 
 //
@@ -18,7 +19,7 @@ const (
 	ApplicationTagsRoot  = ApplicationRoot + "/tags"
 	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
 	ApplicationFactsRoot = ApplicationRoot + "/facts"
-	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key + "/*" + Source
+	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
 	AppBucketRoot        = ApplicationRoot + "/bucket"
 	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
 	AppStakeholdersRoot  = ApplicationRoot + "/stakeholders"
@@ -59,13 +60,13 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	// Facts
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.facts"))
-	routeGroup.GET(ApplicationFactsRoot, h.FactList)
-	routeGroup.GET(ApplicationFactsRoot+"/", h.FactList)
+	routeGroup.GET(ApplicationFactsRoot, h.FactGet)
+	routeGroup.GET(ApplicationFactsRoot+"/", h.FactGet)
 	routeGroup.POST(ApplicationFactsRoot, h.FactCreate)
 	routeGroup.GET(ApplicationFactRoot, h.FactGet)
 	routeGroup.PUT(ApplicationFactRoot, h.FactPut)
 	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
-	routeGroup.PUT(ApplicationFactsRoot, h.FactReplace, Transaction)
+	routeGroup.PUT(ApplicationFactsRoot, h.FactPut, Transaction)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.bucket"))
@@ -560,42 +561,28 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 
 // FactList godoc
 // @summary List facts.
-// @description List facts. Can be filtered by source.
-// @description By default facts from all sources are returned.
+// @description List facts by source.
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Fact
-// @router /applications/{id}/facts [get]
+// @router /applications/{id}/facts/{source}: [get]
 // @param id path string true "Application ID"
-// @param source query string false "Fact source"
-func (h ApplicationHandler) FactList(ctx *gin.Context) {
+// @param source path string true "Fact source"
+func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
 	id := h.pk(ctx)
-	app := &model.Application{}
-	result := h.DB(ctx).First(app, id)
+	list := []model.Fact{}
+	result := h.DB(ctx).Find(&list, "ApplicationID = ? AND source = ?", id, source)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
 
-	db := h.DB(ctx)
-	source, found := ctx.GetQuery(Source)
-	if found {
-		condition := h.DB(ctx).Where("source = ?", source)
-		db = db.Where(condition)
-	}
-	list := []model.Fact{}
-	result = db.Find(&list, "ApplicationID = ?", id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	resources := []Fact{}
+	facts := FactMap{}
 	for i := range list {
-		r := Fact{}
-		r.With(&list[i])
-		resources = append(resources, r)
+		fact := &list[i]
+		facts[fact.Key] = fact.Value
 	}
-	h.Respond(ctx, http.StatusOK, resources)
+	h.Respond(ctx, http.StatusOK, facts)
 }
 
 // FactGet godoc
@@ -604,10 +591,9 @@ func (h ApplicationHandler) FactList(ctx *gin.Context) {
 // @tags applications
 // @produce json
 // @success 200 {object} api.Fact
-// @router /applications/{id}/facts/{name}/{source} [get]
+// @router /applications/{id}/facts/{key} [get]
 // @param id path string true "Application ID"
-// @param key path string true "Fact key"
-// @param source path string true "Fact source"
+// @param key path string true "Qualified fact"
 func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -616,8 +602,13 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	key := ctx.Param(Key)
-	source := ctx.Param(Source)[1:]
+
+	source, key := qualifiedFact(ctx.Param(Key))
+	if key == "" {
+		h.FactList(ctx, source)
+		return
+	}
+
 	list := []model.Fact{}
 	result = h.DB(ctx).Find(&list, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error != nil {
@@ -678,17 +669,10 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @success 204
 // @router /applications/{id}/facts/{key} [put]
 // @param id path string true "Application ID"
-// @param key path string true "Fact key"
-// @param source path string true "Fact source"
-// @param fact body api.Fact true "Fact data"
+// @param key path string true "Qualified fact"
+// @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &Fact{}
-	err := h.Bind(ctx, &r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
@@ -696,15 +680,24 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 
-	key := ctx.Param(Key)
-	source := ctx.Param(Source)[1:]
-	value, _ := json.Marshal(r.Value)
+	source, key := qualifiedFact(ctx.Param(Key))
+	if key == "" {
+		h.FactReplace(ctx, source)
+		return
+	}
+	f := Fact{}
+	err := h.Bind(ctx, &f.Value)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	result = h.DB(ctx).First(&model.Fact{}, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error == nil {
 		result = h.DB(ctx).
 			Model(&model.Fact{}).
 			Where("ApplicationID = ? AND Key = ? AND source = ?", id, key, source).
-			Update("Value", value)
+			Update("Value", f.Value)
 		if result.Error != nil {
 			_ = ctx.Error(result.Error)
 			return
@@ -713,8 +706,9 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		value, _ := json.Marshal(f.Value)
 		m := &model.Fact{
-			Key:           Key,
+			Key:           key,
 			Source:        source,
 			ApplicationID: id,
 			Value:         value,
@@ -737,10 +731,9 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // @description Delete a fact.
 // @tags applications
 // @success 204
-// @router /applications/{id}/facts/{key}/{source} [delete]
+// @router /applications/{id}/facts/{key} [delete]
 // @param id path string true "Application ID"
-// @param key path string true "Fact key"
-// @param source path string true "Fact source"
+// @param key path string true "Qualified fact"
 func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -750,8 +743,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 		return
 	}
 	fact := &model.Fact{}
-	key := ctx.Param(Key)
-	source := ctx.Param(Source)[1:]
+	source, key := qualifiedFact(ctx.Param(Key))
 	result = h.DB(ctx).Delete(fact, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -766,16 +758,12 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @description Replace all facts from a source.
 // @tags applications
 // @success 204
-// @router /applications/{id}/facts [put]
+// @router /applications/{id}/facts/{source}: [put]
 // @param id path string true "Application ID"
-// @param source query string true "Source"
-func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
-	source := ctx.Query(Source)
-	if source == "" {
-		_ = ctx.Error(&BadRequestError{Reason: "`source` query parameter is required"})
-		return
-	}
-	facts := []Fact{}
+// @param source path string true "Source"
+// @param factmap body api.FactMap true "Fact map"
+func (h ApplicationHandler) FactReplace(ctx *gin.Context, source string) {
+	facts := FactMap{}
 	err := h.Bind(ctx, &facts)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -783,15 +771,8 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
 	}
 
 	id := h.pk(ctx)
-	app := &model.Application{}
-	result := h.DB(ctx).First(app, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-
 	// remove all the existing Facts for that source and app id.
-	db := h.DB(ctx).Where("ApplicationID = ?", id).Where("source = ?", source)
+	db := h.DB(ctx).Where("ApplicationID = ? AND source = ?", id, source)
 	err = db.Delete(&model.Fact{}).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -801,11 +782,11 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context) {
 	// create new Facts
 	if len(facts) > 0 {
 		newFacts := []model.Fact{}
-		for _, f := range facts {
-			value, _ := json.Marshal(f.Value)
+		for k, v := range facts {
+			value, _ := json.Marshal(v)
 			newFacts = append(newFacts, model.Fact{
 				ApplicationID: id,
-				Key:           f.Key,
+				Key:           k,
 				Value:         value,
 				Source:        source,
 			})
@@ -1029,6 +1010,15 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 					ID: ref.ID,
 				},
 			})
+	}
+	return
+}
+
+func qualifiedFact(qualified string) (source string, key string) {
+	source, key, found := strings.Cut(qualified, ":")
+	if !found {
+		source = ""
+		key = qualified
 	}
 	return
 }
