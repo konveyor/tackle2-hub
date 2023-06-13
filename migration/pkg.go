@@ -5,6 +5,7 @@ import (
 	"github.com/konveyor/tackle2-hub/migration/v2"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3"
 	v4 "github.com/konveyor/tackle2-hub/migration/v4"
+	v5 "github.com/konveyor/tackle2-hub/migration/v5"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
@@ -41,5 +42,6 @@ func All() []Migration {
 		v2.Migration{},
 		v3.Migration{},
 		v4.Migration{},
+		v5.Migration{},
 	}
 }
