@@ -3,6 +3,7 @@ package identity
 import (
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -73,4 +74,34 @@ func TestIdentityList(t *testing.T) {
 	for _, r := range samples {
 		assert.Must(t, Identity.Delete(r.ID))
 	}
+}
+
+func TestIdentityNotCreateDuplicates(t *testing.T) {
+	r := GitPw
+
+	// Create sample.
+	assert.Should(t, Identity.Create(&r))
+
+	// Try duplicate with the same and different Kind
+	for _, kind := range []string{r.Kind, "mvn"} {
+		t.Run(kind, func(t *testing.T) {
+			// Prepare Identity with duplicate Name.
+			dup := &api.Identity{
+				Name: r.Name,
+				Kind: kind,
+			}
+
+			// Try create the duplicate.
+			err := Identity.Create(dup)
+			if err == nil {
+				t.Errorf("Created duplicate identity: %v", dup)
+
+				// Clean the duplicate.
+				assert.Must(t, Identity.Delete(dup.ID))
+			}
+		})
+	}
+
+	// Clean.
+	assert.Must(t, Identity.Delete(r.ID))
 }
