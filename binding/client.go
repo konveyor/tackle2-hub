@@ -134,7 +134,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-		err = json.Unmarshal(body, object)
+		err = json.Unmarshal(body, &object)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -529,7 +529,7 @@ func (r *Client) FilePost(path, source string, object interface{}) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
-		err = json.Unmarshal(body, object)
+		err = json.Unmarshal(body, &object)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
