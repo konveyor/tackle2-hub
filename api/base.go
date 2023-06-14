@@ -287,7 +287,7 @@ func (r *Resource) idPtr(ref *Ref) (id *uint) {
 //
 // nameOf model.
 func (r *Resource) nameOf(m interface{}) (name string) {
-	reflect.NameOf(m)
+	name = reflect.NameOf(m)
 	return
 }
 
