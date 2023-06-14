@@ -997,9 +997,12 @@ func (r *Fact) Model() (m *model.Fact) {
 type FactKey string
 
 //
-// With updates the value of the fact key.
-func (r *FactKey) With(source, name string) {
-	*r = FactKey(strings.Join([]string{source, name}, ":"))
+// Qualify qualifies the name with the source.
+func (r *FactKey) Qualify(source string) {
+	*r = FactKey(
+		strings.Join(
+			[]string{source, r.Name()},
+			":"))
 }
 
 //

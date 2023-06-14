@@ -53,7 +53,22 @@ func TestFactKey(t *testing.T) {
 	g.Expect(key.Name()).To(gomega.Equal(""))
 
 	key = FactKey("")
-	key.With("test", "key")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal(""))
+
+	key = FactKey("key")
+	key.Qualify("test")
 	g.Expect(key.Source()).To(gomega.Equal("test"))
 	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("source:key")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("source:")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal(""))
 }

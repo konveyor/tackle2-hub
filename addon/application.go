@@ -226,7 +226,7 @@ func (h *AppFacts) Source(source string) {
 func (h *AppFacts) List() (facts api.FactMap, err error) {
 	facts = api.FactMap{}
 	key := api.FactKey("")
-	key.With(h.source, "")
+	key.Qualify(h.source)
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: key})
 	err = h.client.Get(path, &facts)
 	return
@@ -235,8 +235,8 @@ func (h *AppFacts) List() (facts api.FactMap, err error) {
 //
 // Get a fact.
 func (h *AppFacts) Get(name string, value interface{}) (err error) {
-	key := api.FactKey("")
-	key.With(h.source, name)
+	key := api.FactKey(name)
+	key.Qualify(h.source)
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
 			api.ID:  h.appId,
@@ -249,8 +249,8 @@ func (h *AppFacts) Get(name string, value interface{}) (err error) {
 //
 // Set a fact (created as needed).
 func (h *AppFacts) Set(name string, value interface{}) (err error) {
-	key := api.FactKey("")
-	key.With(h.source, name)
+	key := api.FactKey(name)
+	key.Qualify(h.source)
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
 			api.ID:  h.appId,
@@ -263,8 +263,8 @@ func (h *AppFacts) Set(name string, value interface{}) (err error) {
 //
 // Delete a fact.
 func (h *AppFacts) Delete(name string) (err error) {
-	key := api.FactKey("")
-	key.With(h.source, name)
+	key := api.FactKey(name)
+	key.Qualify(h.source)
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
 			api.ID:  h.appId,
@@ -278,7 +278,7 @@ func (h *AppFacts) Delete(name string) (err error) {
 // Replace facts.
 func (h *AppFacts) Replace(facts api.FactMap) (err error) {
 	key := api.FactKey("")
-	key.With(h.source, "")
+	key.Qualify(h.source)
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: key})
 	err = h.client.Put(path, facts)
 	return
