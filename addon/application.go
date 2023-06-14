@@ -2,6 +2,7 @@ package addon
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
@@ -223,10 +224,10 @@ func (h *AppFacts) Source(source string) {
 
 //
 // List facts.
-func (h *AppFacts) List() (list []api.Fact, err error) {
-	list = []api.Fact{}
-	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Get(path, &list, Param{Key: api.Source, Value: h.source})
+func (h *AppFacts) List() (facts api.FactMap, err error) {
+	facts = api.FactMap{}
+	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: fmt.Sprintf("%s:", h.source)})
+	err = h.client.Get(path, &facts)
 	return
 }
 
@@ -235,9 +236,8 @@ func (h *AppFacts) List() (list []api.Fact, err error) {
 func (h *AppFacts) Get(key string) (fact *api.Fact, err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:     h.appId,
-			api.Key:    key,
-			api.Source: h.source,
+			api.ID:  h.appId,
+			api.Key: fmt.Sprintf("%s:%s", h.source, key),
 		})
 	err = h.client.Get(path, fact)
 	return
@@ -248,11 +248,10 @@ func (h *AppFacts) Get(key string) (fact *api.Fact, err error) {
 func (h *AppFacts) Set(key string, value interface{}) (err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:     h.appId,
-			api.Key:    key,
-			api.Source: h.source,
+			api.ID:  h.appId,
+			api.Key: fmt.Sprintf("%s:%s", h.source, key),
 		})
-	err = h.client.Put(path, api.Fact{Value: value})
+	err = h.client.Put(path, value)
 	return
 }
 
@@ -261,9 +260,8 @@ func (h *AppFacts) Set(key string, value interface{}) (err error) {
 func (h *AppFacts) Delete(key string) (err error) {
 	path := Path(api.ApplicationFactRoot).Inject(
 		Params{
-			api.ID:     h.appId,
-			api.Key:    key,
-			api.Source: h.source,
+			api.ID:  h.appId,
+			api.Key: fmt.Sprintf("%s:%s", h.source, key),
 		})
 	err = h.client.Delete(path)
 	return
@@ -271,9 +269,9 @@ func (h *AppFacts) Delete(key string) (err error) {
 
 //
 // Replace facts.
-func (h *AppFacts) Replace(facts []api.Fact) (err error) {
-	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Put(path, facts, Param{Key: api.Source, Value: h.source})
+func (h *AppFacts) Replace(facts api.FactMap) (err error) {
+	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: fmt.Sprintf("%s:", h.source)})
+	err = h.client.Put(path, facts)
 	return
 }
 
