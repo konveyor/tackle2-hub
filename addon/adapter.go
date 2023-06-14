@@ -6,6 +6,7 @@ package addon
 
 import (
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 	"golang.org/x/sys/unix"
 	"os"
@@ -109,7 +110,7 @@ func (h *Adapter) Client() *Client {
 func newAdapter() (adapter *Adapter) {
 	//
 	// Build REST client.
-	client := NewClient(Settings.Addon.Hub.URL, Settings.Addon.Hub.Token)
+	client := binding.NewClient(Settings.Addon.Hub.URL, Settings.Addon.Hub.Token)
 	//
 	// Build Adapter.
 	adapter = &Adapter{
