@@ -757,6 +757,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @param source path api.FactKey true "Source key"
 // @param factmap body api.FactMap true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
+	id := h.pk(ctx)
 	facts := FactMap{}
 	err := h.Bind(ctx, &facts)
 	if err != nil {
@@ -764,7 +765,6 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 		return
 	}
 
-	id := h.pk(ctx)
 	// remove all the existing Facts for that source and app id.
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
@@ -782,7 +782,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 			value, _ := json.Marshal(v)
 			newFacts = append(newFacts, model.Fact{
 				ApplicationID: id,
-				Key:           k,
+				Key:           FactKey(k).Name(),
 				Value:         value,
 				Source:        key.Source(),
 			})
@@ -1007,8 +1007,8 @@ func (r *FactKey) Qualify(source string) {
 
 //
 // Source returns the source portion of a fact key.
-func (r *FactKey) Source() (source string) {
-	s, _, found := strings.Cut(string(*r), ":")
+func (r FactKey) Source() (source string) {
+	s, _, found := strings.Cut(string(r), ":")
 	if found {
 		source = s
 	}
@@ -1017,12 +1017,12 @@ func (r *FactKey) Source() (source string) {
 
 //
 // Name returns the name portion of a fact key.
-func (r *FactKey) Name() (name string) {
-	_, n, found := strings.Cut(string(*r), ":")
+func (r FactKey) Name() (name string) {
+	_, n, found := strings.Cut(string(r), ":")
 	if found {
 		name = n
 	} else {
-		name = string(*r)
+		name = string(r)
 	}
 	return
 }
