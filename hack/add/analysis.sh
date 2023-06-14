@@ -42,9 +42,20 @@ incidents:
 for n in $(seq 1 ${nIncident})
 do
 f=$(($n%3))
-echo -n "- file: /thing.com/file/${i}${f}
+echo -n "- file: /thing.com/file/${i}${f}.java
   line: ${n}
-  message: Thing happend line:${n}
+  message: |
+    This is a **description** of the issue on line ${n} *in markdown*. Here's how to fix the issue.
+    
+    For example:
+    
+        This is some bad code.
+    
+    Should become:
+    
+        This is some good code.
+    
+    Some documentation links will go here.
   facts:
     factA: ${i}-${n}.A
     factB: ${i}-${n}.B
