@@ -753,7 +753,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "type": "object"
                         }
                     }
                 }
@@ -860,10 +860,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Fact"
-                            }
+                            "$ref": "#/definitions/api.FactMap"
                         }
                     }
                 }

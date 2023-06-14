@@ -2,10 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 	"strings"
@@ -564,14 +562,17 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // @description List facts by source.
 // @tags applications
 // @produce json
-// @success 200 {object} []api.Fact
+// @success 200 {object} api.FactMap
 // @router /applications/{id}/facts/{source}: [get]
 // @param id path string true "Application ID"
 // @param source path string true "Fact source"
 func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
 	id := h.pk(ctx)
 	list := []model.Fact{}
-	result := h.DB(ctx).Find(&list, "ApplicationID = ? AND source = ?", id, source)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	db = db.Where("Source", source)
+	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -580,7 +581,9 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
 	facts := FactMap{}
 	for i := range list {
 		fact := &list[i]
-		facts[fact.Key] = fact.Value
+		var v interface{}
+		_ = json.Unmarshal(fact.Value, &v)
+		facts[fact.Key] = v
 	}
 	h.Respond(ctx, http.StatusOK, facts)
 }
@@ -590,7 +593,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
 // @description Get fact by name.
 // @tags applications
 // @produce json
-// @success 200 {object} api.Fact
+// @success 200 {object} object
 // @router /applications/{id}/facts/{key} [get]
 // @param id path string true "Application ID"
 // @param key path string true "Qualified fact"
@@ -610,7 +613,11 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	}
 
 	list := []model.Fact{}
-	result = h.DB(ctx).Find(&list, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	db = db.Where("Source", source)
+	db = db.Where("Key", key)
+	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -619,9 +626,10 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		h.Status(ctx, http.StatusNotFound)
 		return
 	}
-	r := Fact{}
-	r.With(&list[0])
-	h.Respond(ctx, http.StatusOK, r)
+
+	var v interface{}
+	_ = json.Unmarshal(list[0].Value, &v)
+	h.Respond(ctx, http.StatusOK, v)
 }
 
 // FactCreate godoc
@@ -692,38 +700,20 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 
-	result = h.DB(ctx).First(&model.Fact{}, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
-	if result.Error == nil {
-		result = h.DB(ctx).
-			Model(&model.Fact{}).
-			Where("ApplicationID = ? AND Key = ? AND source = ?", id, key, source).
-			Update("Value", f.Value)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
-		h.Status(ctx, http.StatusNoContent)
+	value, _ := json.Marshal(f.Value)
+	m := &model.Fact{
+		Key: key,
+		Source: source,
+		ApplicationID: id,
+		Value: value,
+	}
+	db := h.DB(ctx)
+	result = db.Save(m)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
 		return
 	}
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		value, _ := json.Marshal(f.Value)
-		m := &model.Fact{
-			Key:           key,
-			Source:        source,
-			ApplicationID: id,
-			Value:         value,
-		}
-		db := h.DB(ctx)
-		db = db.Clauses(clause.OnConflict{UpdateAll: true})
-		result = db.Create(m)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
-		h.Status(ctx, http.StatusNoContent)
-	} else {
-		_ = ctx.Error(result.Error)
-	}
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // FactDelete godoc
@@ -744,7 +734,11 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	}
 	fact := &model.Fact{}
 	source, key := qualifiedFact(ctx.Param(Key))
-	result = h.DB(ctx).Delete(fact, "ApplicationID = ? AND Key = ? AND source = ?", id, key, source)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	db = db.Where("Source", source)
+	db = db.Where("Key", key)
+	result = db.Delete(fact)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -772,7 +766,9 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, source string) {
 
 	id := h.pk(ctx)
 	// remove all the existing Facts for that source and app id.
-	db := h.DB(ctx).Where("ApplicationID = ? AND source = ?", id, source)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	db = db.Where("Source", source)
 	err = db.Delete(&model.Fact{}).Error
 	if err != nil {
 		_ = ctx.Error(err)

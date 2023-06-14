@@ -1527,7 +1527,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Fact'
+            type: object
       summary: Get fact by name.
       tags:
       - applications
@@ -1580,9 +1580,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.Fact'
-            type: array
+            $ref: '#/definitions/api.FactMap'
       summary: List facts.
       tags:
       - applications
