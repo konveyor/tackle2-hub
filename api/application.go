@@ -565,13 +565,13 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // @success 200 {object} api.FactMap
 // @router /applications/{id}/facts/{source}: [get]
 // @param id path string true "Application ID"
-// @param source path string true "Fact source"
-func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
+// @param source path api.FactKey true "Source key"
+func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
 	list := []model.Fact{}
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
-	db = db.Where("Source", source)
+	db = db.Where("Source", key.Source())
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -596,7 +596,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, source string) {
 // @success 200 {object} object
 // @router /applications/{id}/facts/{key} [get]
 // @param id path string true "Application ID"
-// @param key path string true "Qualified fact"
+// @param key path api.FactKey true "Fact key"
 func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -606,17 +606,17 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		return
 	}
 
-	source, key := qualifiedFact(ctx.Param(Key))
-	if key == "" {
-		h.FactList(ctx, source)
+	key := FactKey(ctx.Param(Key))
+	if key.Name() == "" {
+		h.FactList(ctx, key)
 		return
 	}
 
 	list := []model.Fact{}
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
-	db = db.Where("Source", source)
-	db = db.Where("Key", key)
+	db = db.Where("Source", key.Source())
+	db = db.Where("Key", key.Name())
 	result = db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -677,7 +677,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @success 204
 // @router /applications/{id}/facts/{key} [put]
 // @param id path string true "Application ID"
-// @param key path string true "Qualified fact"
+// @param key path api.FactKey true "Fact key"
 // @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -688,9 +688,9 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 
-	source, key := qualifiedFact(ctx.Param(Key))
-	if key == "" {
-		h.FactReplace(ctx, source)
+	key := FactKey(ctx.Param(Key))
+	if key.Name() == "" {
+		h.FactReplace(ctx, key)
 		return
 	}
 	f := Fact{}
@@ -702,10 +702,10 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 
 	value, _ := json.Marshal(f.Value)
 	m := &model.Fact{
-		Key: key,
-		Source: source,
+		Key:           key.Name(),
+		Source:        key.Source(),
 		ApplicationID: id,
-		Value: value,
+		Value:         value,
 	}
 	db := h.DB(ctx)
 	result = db.Save(m)
@@ -723,7 +723,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // @success 204
 // @router /applications/{id}/facts/{key} [delete]
 // @param id path string true "Application ID"
-// @param key path string true "Qualified fact"
+// @param key path api.FactKey true "Fact key"
 func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -733,11 +733,11 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 		return
 	}
 	fact := &model.Fact{}
-	source, key := qualifiedFact(ctx.Param(Key))
+	key := FactKey(ctx.Param(Key))
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
-	db = db.Where("Source", source)
-	db = db.Where("Key", key)
+	db = db.Where("Source", key.Source())
+	db = db.Where("Key", key.Name())
 	result = db.Delete(fact)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -754,9 +754,9 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @success 204
 // @router /applications/{id}/facts/{source}: [put]
 // @param id path string true "Application ID"
-// @param source path string true "Source"
+// @param source path api.FactKey true "Source key"
 // @param factmap body api.FactMap true "Fact map"
-func (h ApplicationHandler) FactReplace(ctx *gin.Context, source string) {
+func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 	facts := FactMap{}
 	err := h.Bind(ctx, &facts)
 	if err != nil {
@@ -768,7 +768,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, source string) {
 	// remove all the existing Facts for that source and app id.
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
-	db = db.Where("Source", source)
+	db = db.Where("Source", key.Source())
 	err = db.Delete(&model.Fact{}).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -784,7 +784,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, source string) {
 				ApplicationID: id,
 				Key:           k,
 				Value:         value,
-				Source:        source,
+				Source:        key.Source(),
 			})
 		}
 		err = db.Create(&newFacts).Error
@@ -984,6 +984,47 @@ func (r *Fact) Model() (m *model.Fact) {
 }
 
 //
+// FactKey is a fact source and fact name separated by a colon.
+//   Example: 'analysis:languages'
+//
+// A FactKey can be used to identify an anonymous fact.
+//   Example: 'languages' or ':languages'
+//
+// A FactKey can also be used to identify just a source. This use must include the trailing
+// colon to distinguish it from an anonymous fact. This is used when listing or replacing
+// all facts that belong to a source.
+//   Example: 'analysis:"
+type FactKey string
+
+//
+// With updates the value of the fact key.
+func (r *FactKey) With(source, name string) {
+	*r = FactKey(strings.Join([]string{source, name}, ":"))
+}
+
+//
+// Source returns the source portion of a fact key.
+func (r *FactKey) Source() (source string) {
+	s, _, found := strings.Cut(string(*r), ":")
+	if found {
+		source = s
+	}
+	return
+}
+
+//
+// Name returns the name portion of a fact key.
+func (r *FactKey) Name() (name string) {
+	_, n, found := strings.Cut(string(*r), ":")
+	if found {
+		name = n
+	} else {
+		name = string(*r)
+	}
+	return
+}
+
+//
 // Stakeholders REST subresource.
 type Stakeholders struct {
 	Owner        *Ref  `json:"owner"`
@@ -1006,15 +1047,6 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 					ID: ref.ID,
 				},
 			})
-	}
-	return
-}
-
-func qualifiedFact(qualified string) (source string, key string) {
-	source, key, found := strings.Cut(qualified, ":")
-	if !found {
-		source = ""
-		key = qualified
 	}
 	return
 }
