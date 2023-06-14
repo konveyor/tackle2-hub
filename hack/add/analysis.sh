@@ -18,6 +18,51 @@ echo " Incidents: ${nIncident}"
 echo " Issues path: ${iPath}"
 echo " Deps path: ${dPath}"
 
+sources=(
+konveyor.io/source=oraclejdk
+konveyor.io/source=oraclejdk
+konveyor.io/source=oraclejdk
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+)
+targets=(
+konveyor.io/target=openjdk7
+konveyor.io/target=openjdk11+
+konveyor.io/target=openjdk17+
+konveyor.io/target=cloud-readiness
+konveyor.io/target=openliberty
+konveyor.io/target=quarkus
+konveyor.io/target=jakarta-ee9+
+konveyor.io/target=rhr
+konveyor.io/target=azure-aks
+konveyor.io/target=azure-appservice
+konveyor.io/target=azure-container-apps
+konveyor.io/target=azure-spring-apps
+konveyor.io/target=eap
+konveyor.io/target=eap6
+konveyor.io/target=eap7
+konveyor.io/target=eap8
+konveyor.io/target=drools
+konveyor.io/target=camel
+konveyor.io/target=hibernate
+konveyor.io/target=jbpm
+)
+
 #
 # Issues
 #
@@ -35,8 +80,10 @@ description: This is a test ${r}/${i} violation.
 category: warning
 effort: 10
 labels:
-- konveyor.io/target=RULESET-${r}
-- konveyor.io/source=RULE-${i}
+- RULE-${i}
+- RULESET-${r}
+- ${sources[$((${i}%${#sources[@]}))]}
+- ${targets[$((${i}%${#targets[@]}))]}
 incidents:
 " >> ${file}
 for n in $(seq 1 ${nIncident})
