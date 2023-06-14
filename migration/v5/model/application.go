@@ -18,6 +18,7 @@ type Application struct {
 	OwnerID           *uint         `gorm:"index"`
 	Owner             *Stakeholder  `gorm:"foreignKey:OwnerID"`
 	Contributors      []Stakeholder `gorm:"many2many:ApplicationContributors;constraint:OnDelete:CASCADE"`
+	Analyses          []Analysis    `gorm:"constraint:OnDelete:CASCADE"`
 	MigrationWaveID   *uint         `gorm:"index"`
 	MigrationWave     *MigrationWave
 }
