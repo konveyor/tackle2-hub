@@ -1490,14 +1490,16 @@ paths:
       - applications
   /applications/{id}/facts/{key}:
     delete:
-      description: Delete a fact.
+      description: |-
+        Delete a fact.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: string
-      - description: Qualified fact
+      - description: Fact key
         in: path
         name: key
         required: true
@@ -1509,14 +1511,16 @@ paths:
       tags:
       - applications
     get:
-      description: Get fact by name.
+      description: |-
+        Get fact by name.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: string
-      - description: Qualified fact
+      - description: Fact key
         in: path
         name: key
         required: true
@@ -1534,14 +1538,16 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update (or create) a fact.
+      description: |-
+        Update (or create) a fact.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: string
-      - description: Qualified fact
+      - description: Fact key
         in: path
         name: key
         required: true
@@ -1562,14 +1568,16 @@ paths:
       - applications
   '/applications/{id}/facts/{source}:':
     get:
-      description: List facts by source.
+      description: |-
+        List facts by source.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: string
-      - description: Fact source
+      - description: Source key
         in: path
         name: source
         required: true
@@ -1585,14 +1593,16 @@ paths:
       tags:
       - applications
     put:
-      description: Replace all facts from a source.
+      description: |-
+        Replace all facts from a source.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: string
-      - description: Source
+      - description: Fact key
         in: path
         name: source
         required: true

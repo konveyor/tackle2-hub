@@ -560,12 +560,13 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // FactList godoc
 // @summary List facts.
 // @description List facts by source.
+// @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @produce json
 // @success 200 {object} api.FactMap
 // @router /applications/{id}/facts/{source}: [get]
 // @param id path string true "Application ID"
-// @param source path api.FactKey true "Source key"
+// @param source path string true "Source key"
 func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
 	list := []model.Fact{}
@@ -591,12 +592,13 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 // FactGet godoc
 // @summary Get fact by name.
 // @description Get fact by name.
+// @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @produce json
 // @success 200 {object} object
 // @router /applications/{id}/facts/{key} [get]
 // @param id path string true "Application ID"
-// @param key path api.FactKey true "Fact key"
+// @param key path string true "Fact key"
 func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -671,13 +673,14 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // FactPut godoc
 // @summary Update (or create) a fact.
 // @description Update (or create) a fact.
+// @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @accept json
 // @produce json
 // @success 204
 // @router /applications/{id}/facts/{key} [put]
 // @param id path string true "Application ID"
-// @param key path api.FactKey true "Fact key"
+// @param key path string true "Fact key"
 // @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -719,11 +722,12 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // FactDelete godoc
 // @summary Delete a fact.
 // @description Delete a fact.
+// @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{key} [delete]
 // @param id path string true "Application ID"
-// @param key path api.FactKey true "Fact key"
+// @param key path string true "Fact key"
 func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -750,11 +754,12 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // FactReplace godoc
 // @summary Replace all facts from a source.
 // @description Replace all facts from a source.
+// @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{source}: [put]
 // @param id path string true "Application ID"
-// @param source path api.FactKey true "Source key"
+// @param source path string true "Fact key"
 // @param factmap body api.FactMap true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)

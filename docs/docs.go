@@ -725,7 +725,7 @@ const docTemplate = `{
         },
         "/applications/{id}/facts/{key}": {
             "get": {
-                "description": "Get fact by name.",
+                "description": "Get fact by name.\nsee api.FactKey for details on key parameter format.",
                 "produces": [
                     "application/json"
                 ],
@@ -743,7 +743,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Qualified fact",
+                        "description": "Fact key",
                         "name": "key",
                         "in": "path",
                         "required": true
@@ -759,7 +759,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update (or create) a fact.",
+                "description": "Update (or create) a fact.\nsee api.FactKey for details on key parameter format.",
                 "consumes": [
                     "application/json"
                 ],
@@ -780,7 +780,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Qualified fact",
+                        "description": "Fact key",
                         "name": "key",
                         "in": "path",
                         "required": true
@@ -802,7 +802,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a fact.",
+                "description": "Delete a fact.\nsee api.FactKey for details on key parameter format.",
                 "tags": [
                     "applications"
                 ],
@@ -817,7 +817,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Qualified fact",
+                        "description": "Fact key",
                         "name": "key",
                         "in": "path",
                         "required": true
@@ -832,7 +832,7 @@ const docTemplate = `{
         },
         "/applications/{id}/facts/{source}:": {
             "get": {
-                "description": "List facts by source.",
+                "description": "List facts by source.\nsee api.FactKey for details on key parameter format.",
                 "produces": [
                     "application/json"
                 ],
@@ -850,7 +850,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Fact source",
+                        "description": "Source key",
                         "name": "source",
                         "in": "path",
                         "required": true
@@ -866,7 +866,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Replace all facts from a source.",
+                "description": "Replace all facts from a source.\nsee api.FactKey for details on key parameter format.",
                 "tags": [
                     "applications"
                 ],
@@ -881,7 +881,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Source",
+                        "description": "Fact key",
                         "name": "source",
                         "in": "path",
                         "required": true
