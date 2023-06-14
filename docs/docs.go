@@ -686,70 +686,6 @@ const docTemplate = `{
             }
         },
         "/applications/{id}/facts": {
-            "get": {
-                "description": "List facts. Can be filtered by source.\nBy default facts from all sources are returned.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "applications"
-                ],
-                "summary": "List facts.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Fact source",
-                        "name": "source",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.Fact"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Replace all facts from a source.",
-                "tags": [
-                    "applications"
-                ],
-                "summary": "Replace all facts from a source.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Application ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Source",
-                        "name": "source",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            },
             "post": {
                 "description": "Create a fact.",
                 "consumes": [
@@ -788,6 +724,40 @@ const docTemplate = `{
             }
         },
         "/applications/{id}/facts/{key}": {
+            "get": {
+                "description": "Get fact by name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Get fact by name.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Qualified fact",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Fact"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update (or create) a fact.",
                 "consumes": [
@@ -810,25 +780,18 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Fact key",
+                        "description": "Qualified fact",
                         "name": "key",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Fact source",
-                        "name": "source",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Fact data",
+                        "description": "Fact value",
                         "name": "fact",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "type": "object"
                         }
                     }
                 ],
@@ -837,9 +800,7 @@ const docTemplate = `{
                         "description": "No Content"
                     }
                 }
-            }
-        },
-        "/applications/{id}/facts/{key}/{source}": {
+            },
             "delete": {
                 "description": "Delete a fact.",
                 "tags": [
@@ -856,15 +817,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Fact key",
+                        "description": "Qualified fact",
                         "name": "key",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Fact source",
-                        "name": "source",
                         "in": "path",
                         "required": true
                     }
@@ -876,28 +830,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/facts/{name}/{source}": {
+        "/applications/{id}/facts/{source}:": {
             "get": {
-                "description": "Get fact by name.",
+                "description": "List facts by source.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "applications"
                 ],
-                "summary": "Get fact by name.",
+                "summary": "List facts.",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Application ID",
                         "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Fact key",
-                        "name": "key",
                         "in": "path",
                         "required": true
                     },
@@ -913,8 +860,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Fact"
+                            }
                         }
+                    }
+                }
+            },
+            "put": {
+                "description": "Replace all facts from a source.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Replace all facts from a source.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source",
+                        "name": "source",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fact map",
+                        "name": "factmap",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.FactMap"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -5861,8 +5848,7 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "jira-cloud",
-                        "jira-server",
-                        "jira-datacenter"
+                        "jira-onprem"
                     ]
                 },
                 "lastUpdated": {
