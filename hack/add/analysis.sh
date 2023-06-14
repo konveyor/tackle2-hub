@@ -35,8 +35,9 @@ description: This is a test ${r}/${i} violation.
 category: warning
 effort: 10
 labels:
-- konveyor.io/target=RULESET-${r}
-- konveyor.io/source=RULE-${i}
+- konveyor.io/target=openjdk11
+- konveyor.io/target=openjdk17
+- konveyor.io/source=oraclejdk
 incidents:
 " >> ${file}
 for n in $(seq 1 ${nIncident})
