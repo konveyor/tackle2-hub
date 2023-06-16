@@ -90,7 +90,6 @@ for n in $(seq 1 ${nIncident})
 do
 f=$(($n%3))
 echo -n "- file: /thing.com/file/${i}${f}.java
-  line: ${n}
   message: |
     This is a **description** of the issue on line ${n} *in markdown*. Here's how to fix the issue.
     
@@ -106,30 +105,31 @@ echo -n "- file: /thing.com/file/${i}${f}.java
   facts:
     factA: ${i}-${n}.A
     factB: ${i}-${n}.B
+  line: 459
 " >> ${file}
-if ((${n} < 6)); then echo -n "  codesnip: |
-    public class SwapNumbers {
-        public static void main(String[] args) {
-            float first = 1.20f, second = 2.45f;
-    
-            System.out.println(\"--Before swap--\");
-            System.out.println(\"First number = \" + first);
-            System.out.println(\"Second number = \" + second);
-    
-            // Value of first is assigned to temporary
-            float temporary = first;
-    
-            // Value of second is assigned to first
-            first = second;
-    
-            // Value of temporary (which contains the initial value of first) is assigned to second
-            second = temporary;
-    
-            System.out.println(\"--After swap--\");
-            System.out.println(\"First number = \" + first);
-            System.out.println(\"Second number = \" + second);
-        }
-    }
+if ((${n} < 6)); then echo -n "  codesnip: |2
+    450  public class SwapNumbers {
+    451      public static void main(String[] args) {
+    452          float first = 1.20f, second = 2.45f;
+    453 
+    454        System.out.println(\"--Before swap--\");
+    455        System.out.println(\"First number = \" + first);
+    456        System.out.println(\"Second number = \" + second);
+    457 
+    458        // Value of first is assigned to temporary
+    459        float temporary = first;
+    460 
+    461        // Value of second is assigned to first
+    462        first = second;
+    463 
+    464        // Value of temporary assigned to second
+    465        second = temporary;
+    466 
+    467        System.out.println(\"--After swap--\");
+    468        System.out.println(\"First number = \" + first);
+    469        System.out.println(\"Second number = \" + second);
+    470    }
+    471 }
 " >> ${file}
 fi
 done
