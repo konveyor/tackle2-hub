@@ -87,8 +87,10 @@ func (m *Manager) testConnection(tracker *model.Tracker) (err error) {
 		err = nil
 	}
 
+	if connected {
+		tracker.Message = ""
+	}
 	tracker.Connected = connected
-	tracker.Message = ""
 	tracker.LastUpdated = time.Now()
 
 	result := m.DB.Save(tracker)

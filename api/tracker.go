@@ -205,16 +205,18 @@ func (h TrackerHandler) ProjectList(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	conn, err := tracker.NewConnector(m)
-	if err != nil {
-		_ = ctx.Error(err)
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
 		return
 	}
-
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
 	projects, err := conn.Projects()
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&TrackerError{err.Error()})
 		return
 	}
 
@@ -245,16 +247,18 @@ func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	conn, err := tracker.NewConnector(m)
-	if err != nil {
-		_ = ctx.Error(err)
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
 		return
 	}
-
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
 	project, err := conn.Project(ctx.Param(ID2))
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&TrackerError{err.Error()})
 		return
 	}
 
@@ -281,16 +285,18 @@ func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	conn, err := tracker.NewConnector(m)
-	if err != nil {
-		_ = ctx.Error(err)
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
 		return
 	}
-
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
 	issueTypes, err := conn.IssueTypes(ctx.Param(ID2))
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&TrackerError{err.Error()})
 		return
 	}
 

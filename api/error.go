@@ -50,6 +50,22 @@ func (r BatchError) Is(err error) (matched bool) {
 }
 
 //
+// TrackerError reports an error stemming from the Hub being unable
+// to communicate with an external issue tracker.
+type TrackerError struct {
+	Reason string
+}
+
+func (r *TrackerError) Error() string {
+	return r.Reason
+}
+
+func (r *TrackerError) Is(err error) (matched bool) {
+	_, matched = err.(*TrackerError)
+	return
+}
+
+//
 // ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -99,6 +115,15 @@ func ErrorHandler() gin.HandlerFunc {
 		if errors.Is(err, model.DependencyCyclicError{}) {
 			rtx.Respond(
 				http.StatusConflict,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if errors.Is(err, &TrackerError{}) {
+			rtx.Respond(
+				http.StatusServiceUnavailable,
 				gin.H{
 					"error": err.Error(),
 				})
