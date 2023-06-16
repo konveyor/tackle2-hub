@@ -73,6 +73,17 @@ func main() {
 			return
 		}
 		//
+		// Replace facts.
+		err = facts.Replace(
+			api.FactMap{
+				"Listed": true,
+				"Color":  "blue",
+				"Length": 100,
+			})
+		if err != nil {
+			return
+		}
+		//
 		// Add tags.
 		err = addTags(application, "addon", "LISTED", "TEST", "OTHER")
 		if err != nil {
