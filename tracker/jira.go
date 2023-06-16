@@ -1,4 +1,4 @@
-package jira
+package tracker
 
 import (
 	"crypto/tls"
@@ -15,37 +15,21 @@ import (
 )
 
 //
-// Ticket status
-const (
-	New        = "New"
-	InProgress = "In Progress"
-	Done       = "Done"
-	Unknown    = "Unknown"
-)
-
-//
-// Auth kinds
-const (
-	BearerAuth = "bearer"
-	BasicAuth  = "basic-auth"
-)
-
-//
-// Connector for the Jira API
-type Connector struct {
+// JiraConnector for the Jira Cloud API
+type JiraConnector struct {
 	tracker *model.Tracker
 }
 
 //
 // With updates the connector with the Tracker model.
-func (r *Connector) With(t *model.Tracker) {
+func (r *JiraConnector) With(t *model.Tracker) {
 	r.tracker = t
 	_ = r.tracker.Identity.Decrypt()
 }
 
 //
 // Create the ticket in Jira.
-func (r *Connector) Create(t *model.Ticket) (err error) {
+func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	client, err := r.client()
 	if err != nil {
 		return
@@ -80,7 +64,7 @@ func (r *Connector) Create(t *model.Ticket) (err error) {
 
 //
 // RefreshAll retrieves fresh status information for all the tracker's tickets.
-func (r *Connector) RefreshAll() (tickets map[*model.Ticket]bool, err error) {
+func (r *JiraConnector) RefreshAll() (tickets map[*model.Ticket]bool, err error) {
 	client, err := r.client()
 	if err != nil {
 		return
@@ -130,34 +114,72 @@ func (r *Connector) RefreshAll() (tickets map[*model.Ticket]bool, err error) {
 }
 
 //
-// GetMetadata returns a simplified version of the project and issue type
-// metadata from the Jira API.
-func (r *Connector) GetMetadata() (metadata model.Metadata, err error) {
+// Projects returns a list of Projects.
+func (r *JiraConnector) Projects() (projects []Project, err error) {
 	client, err := r.client()
 	if err != nil {
 		return
 	}
-	meta, response, err := client.Issue.GetCreateMetaWithOptions(nil)
+	list, response, err := client.Project.GetList()
 	err = handleJiraError(response, err)
 	if err != nil {
 		return
 	}
-
-	for _, p := range meta.Projects {
-		project := model.Project{ID: p.Id, Key: p.Key, Name: p.Name}
-		for _, it := range p.IssueTypes {
-			issueType := model.IssueType{ID: it.Id, Name: it.Name}
-			project.IssueTypes = append(project.IssueTypes, issueType)
+	for _, p := range *list {
+		project := Project{
+			ID:   p.ID,
+			Name: p.Name,
 		}
-		metadata.Projects = append(metadata.Projects, project)
+		projects = append(projects, project)
+	}
+	return
+}
+
+//
+// Project returns a Project.
+func (r *JiraConnector) Project(id string) (project Project, err error) {
+	client, err := r.client()
+	if err != nil {
+		return
+	}
+	p, response, err := client.Project.Get(id)
+	err = handleJiraError(response, err)
+	if err != nil {
+		return
+	}
+	project = Project{
+		ID:   p.ID,
+		Name: p.Name,
 	}
 
 	return
 }
 
 //
+// IssueTypes returns a list of IssueTypes for a Project.
+func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error) {
+	client, err := r.client()
+	if err != nil {
+		return
+	}
+	project, response, err := client.Project.Get(id)
+	err = handleJiraError(response, err)
+	if err != nil {
+		return
+	}
+	for _, i := range project.IssueTypes {
+		issueType := IssueType{
+			ID:   i.ID,
+			Name: i.Name,
+		}
+		issueTypes = append(issueTypes, issueType)
+	}
+	return
+}
+
+//
 // client builds a Jira API client for the tracker.
-func (r *Connector) client() (client *jira.Client, err error) {
+func (r *JiraConnector) client() (client *jira.Client, err error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	if r.tracker.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -192,7 +214,7 @@ func (r *Connector) client() (client *jira.Client, err error) {
 
 //
 // TestConnection to Jira Cloud.
-func (r *Connector) TestConnection() (connected bool, err error) {
+func (r *JiraConnector) TestConnection() (connected bool, err error) {
 	client, err := r.client()
 	if err != nil {
 		return
