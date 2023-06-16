@@ -690,6 +690,8 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 // @description - applications
 // @description - application.id
 // @description - application.name
+// @description - businessService.id
+// @description - businessService.name
 // @description - tag.id
 // @description sort:
 // @description - ruleset
@@ -718,6 +720,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
@@ -826,6 +829,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @description - issue.labels
 // @description - application.id
 // @description - application.name
+// @description - businessService.id
 // @description - businessService.name
 // @description sort:
 // @description - id
@@ -873,6 +877,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 			{Field: "issue.labels", Kind: qf.STRING, Relation: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
@@ -1147,6 +1152,8 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - labels
 // @description - application.id
 // @description - application.name
+// @description - businessService.id
+// @description - businessService.name
 // @description - tag.id
 // @description sort:
 // @description - name
@@ -1173,6 +1180,8 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.id", Kind: qf.LITERAL},
+			{Field: "businessService.name", Kind: qf.STRING},
 			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
 		})
 	if err != nil {
@@ -1285,9 +1294,10 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	bsFilter := f.Resource("businessService")
 	if !bsFilter.Empty() {
 		bq := h.DB(ctx)
-		bq.Model(&model.BusinessService{})
-		bq.Select("ID")
+		bq = bq.Model(&model.BusinessService{})
+		bq = bq.Select("ID")
 		bq = bsFilter.Where(bq)
+		q = q.Where("ID IN (?)", bq)
 		return
 	}
 	return
