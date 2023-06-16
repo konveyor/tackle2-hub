@@ -8,9 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin/binding"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/api"
 	"io"
 	"mime/multipart"
 	"net"
@@ -22,6 +19,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin/binding"
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 const (
@@ -349,9 +350,6 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		if isDir {
 			request.Header.Set(api.Directory, api.DirectoryExpand)
-			err = r.putDir(part, source)
-		} else {
-			err = r.loadFile(part, source)
 		}
 		go func() {
 			var err error
@@ -371,7 +369,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			if isDir {
 				err = r.putDir(part, source)
 			} else {
-				err = r.putFile(part, source)
+				err = r.loadFile(part, source)
 			}
 		}()
 		return
@@ -489,15 +487,6 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 				}
 			}
 		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
-		}
-		request.Header.Add(
-			api.ContentType,
-			writer.FormDataContentType())
-		err = r.loadFile(part, source)
 		return
 	}
 	reply, err := r.send(request)
@@ -531,7 +520,7 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 // FilePost uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePost(path, source string, object interface{}) (err error) {
-	isDir, err := r.isDir(source, true)
+	isDir, err := r.IsDir(source, true)
 	if err != nil {
 		return
 	}

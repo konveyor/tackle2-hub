@@ -1,4 +1,4 @@
-package importCSV
+package importcsv
 
 import (
 	"github.com/konveyor/tackle2-hub/binding"
