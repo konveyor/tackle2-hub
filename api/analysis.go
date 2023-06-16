@@ -745,7 +745,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Joins("Analysis a")
 	q = q.Where("a.ID = i.AnalysisID")
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
+	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	q = q.Group("i.RuleSet,i.Rule")
 	// Count.
 	filter = filter.With("-Labels")
