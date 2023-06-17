@@ -1327,12 +1327,16 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	if f, found := filter.Field("labels"); found {
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
+			operator := f.Operator.Value
+			if operator == string(qf.LIKE) {
+				operator = "LIKE"
+			}
 			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
 				q := h.DB(ctx)
 				q = q.Table("Issue")
 				q = q.Joins("m ,json_each(Labels)")
 				q = q.Select("m.ID")
-				q = q.Where("json_each.value = ?", qf.AsValue(v))
+				q = q.Where("json_each.value "+operator+" ?", qf.AsValue(v))
 				qs = append(qs, q)
 			}
 			q = model.Intersect(qs...)
