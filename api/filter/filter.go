@@ -272,17 +272,14 @@ func (f *Field) SQL() (s string, vList []interface{}) {
 		}
 		switch f.Operator.Value {
 		case string(LIKE):
-			values := f.Value.ByKind(LITERAL, STRING)
-			for i := range values {
-				v := strings.Replace(values[i].Value, "*", "%", -1)
-				vList = append(vList, v)
-			}
 			s = "("
-			var p []string
-			for _ = range values {
-				p = append(p, name+" LIKE ?")
+			var clauses []string
+			for _, fx := range f.Expand() {
+				sql, values := fx.SQL()
+				vList = append(vList, values[0])
+				clauses = append(clauses, sql)
 			}
-			s += strings.Join(p, " OR ")
+			s += strings.Join(clauses, " OR ")
 			s += ")"
 		default:
 			values := f.Value.ByKind(LITERAL, STRING)
@@ -300,6 +297,22 @@ func (f *Field) SQL() (s string, vList []interface{}) {
 				},
 				" ")
 		}
+	}
+	return
+}
+
+//
+// Expand flattens a multi-value field and returns a Field for each value.
+func (f *Field) Expand() (expanded []Field) {
+	for _, v := range f.Value.ByKind(LITERAL, STRING) {
+		expanded = append(
+			expanded,
+			Field{Predicate{
+				Unused:   f.Predicate.Unused,
+				Field:    f.Predicate.Field,
+				Operator: f.Predicate.Operator,
+				Value:    Value{v},
+			}})
 	}
 	return
 }
