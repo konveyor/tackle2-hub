@@ -1287,7 +1287,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			tq := h.DB(ctx)
 			tq = tq.Model(&model.ApplicationTag{})
 			tq = tq.Select("ApplicationID ID")
-			tq = tq.Where(field.SQL())
+			tq = field.Where(tq)
 			q = q.Where("ID IN (?)", tq)
 		}
 	}
@@ -1342,7 +1342,7 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			q = q.Table("Issue")
 			q = q.Joins("m ,json_each(Labels)")
 			q = q.Select("m.ID")
-			q = q.Where(f.SQL())
+			q = f.Where(q)
 		}
 	}
 	return
@@ -1376,7 +1376,7 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			q = q.Table("Issue")
 			q = q.Joins("m ,json_each(Labels)")
 			q = q.Select("m.ID")
-			q = q.Where(f.SQL())
+			q = f.Where(q)
 		}
 	}
 	return
