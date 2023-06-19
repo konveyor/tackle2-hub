@@ -49,9 +49,9 @@ type Adapter struct {
 	// Tag API.
 	Tag Tag
 	// File API.
-	File File
+	File binding.File
 	// RuleSet API
-	RuleSet RuleSet
+	RuleSet binding.RuleSet
 	// client A REST client.
 	client *Client
 }
