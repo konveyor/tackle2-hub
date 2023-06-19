@@ -1,8 +1,9 @@
-package addon
+package binding
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	pathlib "path"
+
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 //
@@ -10,6 +11,12 @@ import (
 type File struct {
 	// hub API client.
 	client *Client
+}
+
+//
+// Setting client from outside packages, temporary compatibility workaroud for addon pkg.
+func (h *File) SetClient(client *Client) {
+	h.client = client
 }
 
 //

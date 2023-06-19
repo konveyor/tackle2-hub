@@ -24,9 +24,11 @@ type RichClient struct {
 	Application      Application
 	Bucket           Bucket
 	BusinessService  BusinessService
+	File             File
 	Identity         Identity
 	JobFunction      JobFunction
 	Proxy            Proxy
+	RuleSet          RuleSet
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
@@ -64,6 +66,9 @@ func New(baseUrl string) (r *RichClient) {
 		Dependency: Dependency{
 			client: client,
 		},
+		File: File{
+			client: client,
+		},
 		Identity: Identity{
 			client: client,
 		},
@@ -71,6 +76,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		Proxy: Proxy{
+			client: client,
+		},
+		RuleSet: RuleSet{
 			client: client,
 		},
 		Stakeholder: Stakeholder{
