@@ -105,31 +105,31 @@ echo -n "- file: /thing.com/file/${i}${f}.java
   facts:
     factA: ${i}-${n}.A
     factB: ${i}-${n}.B
-  line: 459
+  line: 106
 " >> ${file}
 if ((${n} < 6)); then echo -n "  codesnip: |2
-    450  public class SwapNumbers {
-    451      public static void main(String[] args) {
-    452          float first = 1.20f, second = 2.45f;
-    453 
-    454        System.out.println(\"--Before swap--\");
-    455        System.out.println(\"First number = \" + first);
-    456        System.out.println(\"Second number = \" + second);
-    457 
-    458        // Value of first is assigned to temporary
-    459        float temporary = first;
-    460 
-    461        // Value of second is assigned to first
-    462        first = second;
-    463 
-    464        // Value of temporary assigned to second
-    465        second = temporary;
-    466 
-    467        System.out.println(\"--After swap--\");
-    468        System.out.println(\"First number = \" + first);
-    469        System.out.println(\"Second number = \" + second);
-    470    }
-    471 }
+     97  public class SwapNumbers {
+     98      public static void main(String[] args) {
+     99          float first = 1.20f, second = 2.45f;
+    100 
+    101          System.out.println(\"--Before swap--\");
+    102          System.out.println(\"First number = \" + first);
+    103          System.out.println(\"Second number = \" + second);
+    104 
+    105          // Value of first is assigned to temporary
+    106          float temporary = first;
+    107 
+    108          // Value of second is assigned to first
+    109          first = second;
+    110 
+    111          // Value of temporary assigned to second
+    112          second = temporary;
+    113 
+    114          System.out.println(\"--After swap--\");
+    115          System.out.println(\"First number = \" + first);
+    116          System.out.println(\"Second number = \" + second);
+    117      }
+    118  }
 " >> ${file}
 fi
 done
