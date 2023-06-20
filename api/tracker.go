@@ -272,7 +272,7 @@ func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
 // @description List a tracker project's issue types.
 // @tags trackers
 // @produce json
-// @success 200 {object} []api.TrackerIssueType
+// @success 200 {object} []api.IssueType
 // @router /trackers/{id}/projects/{id2}/issuetypes [get]
 // @param id path string true "Tracker ID"
 // @param id2 path string true "Project ID"

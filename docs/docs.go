@@ -4484,6 +4484,113 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/trackers/{id}/projects": {
+            "get": {
+                "description": "List a tracker's projects.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trackers"
+                ],
+                "summary": "List a tracker's projects.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Project"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/trackers/{id}/projects/{id2}": {
+            "get": {
+                "description": "Get a tracker project by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trackers"
+                ],
+                "summary": "Get a tracker project by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "id2",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/trackers/{id}/projects/{id2}/issuetypes": {
+            "get": {
+                "description": "List a tracker project's issue types.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trackers"
+                ],
+                "summary": "List a tracker project's issue types.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "id2",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.IssueType"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4992,6 +5099,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.IssueType": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "api.JobFunction": {
             "type": "object",
             "required": [
@@ -5052,10 +5170,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Metadata": {
-            "type": "object",
-            "additionalProperties": true
-        },
         "api.MigrationWave": {
             "type": "object",
             "properties": {
@@ -5096,6 +5210,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Project": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -5853,9 +5978,6 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/api.Metadata"
                 },
                 "name": {
                     "type": "string"

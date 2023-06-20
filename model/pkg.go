@@ -46,9 +46,6 @@ type Tracker = model.Tracker
 
 //
 type TTL = model.TTL
-type Metadata = model.Metadata
-type Project = model.Project
-type IssueType = model.IssueType
 
 //
 // Join tables

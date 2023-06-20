@@ -333,6 +333,13 @@ definitions:
     - rule
     - ruleset
     type: object
+  api.IssueType:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   api.JobFunction:
     properties:
       createTime:
@@ -372,9 +379,6 @@ definitions:
       user:
         type: string
     type: object
-  api.Metadata:
-    additionalProperties: true
-    type: object
   api.MigrationWave:
     properties:
       applications:
@@ -402,6 +406,13 @@ definitions:
       startDate:
         type: string
       updateUser:
+        type: string
+    type: object
+  api.Project:
+    properties:
+      id:
+        type: string
+      name:
         type: string
     type: object
   api.Proxy:
@@ -899,8 +910,6 @@ definitions:
         type: string
       message:
         type: string
-      metadata:
-        $ref: '#/definitions/api.Metadata'
       name:
         type: string
       updateUser:
@@ -3998,6 +4007,77 @@ paths:
         "204":
           description: No Content
       summary: Update a tracker.
+      tags:
+      - trackers
+  /trackers/{id}/projects:
+    get:
+      description: List a tracker's projects.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Project'
+            type: array
+      summary: List a tracker's projects.
+      tags:
+      - trackers
+  /trackers/{id}/projects/{id2}:
+    get:
+      description: Get a tracker project by ID.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: id2
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Project'
+      summary: Get a tracker project by ID.
+      tags:
+      - trackers
+  /trackers/{id}/projects/{id2}/issuetypes:
+    get:
+      description: List a tracker project's issue types.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: id2
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.IssueType'
+            type: array
+      summary: List a tracker project's issue types.
       tags:
       - trackers
 swagger: "2.0"
