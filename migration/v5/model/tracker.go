@@ -14,5 +14,5 @@ type Tracker struct {
 	LastUpdated time.Time
 	Message     string
 	Insecure    bool
-	Tickets     []Ticket `gorm:"constraint:OnDelete:CASCADE"`
+	Tickets     []Ticket
 }
