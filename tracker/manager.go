@@ -3,7 +3,6 @@ package tracker
 import (
 	"context"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -186,7 +185,6 @@ func (m *Manager) create(tracker *model.Tracker, ticket *model.Ticket) (err erro
 	if err != nil {
 		return
 	}
-	metrics.IssuesExported.Inc()
 	result := m.DB.Save(ticket)
 	if result.Error != nil {
 		err = result.Error
