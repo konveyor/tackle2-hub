@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
@@ -87,19 +86,10 @@ func (m *Manager) testConnection(tracker *model.Tracker) (err error) {
 		tracker.Message = err.Error()
 		err = nil
 	}
-	if connected {
-		metadata, mErr := conn.GetMetadata()
-		if mErr != nil {
-			Log.Error(mErr, "Could not retrieve metadata.", "tracker", tracker.ID)
-			tracker.Message = mErr.Error()
-			connected = false
-		} else {
-			marshalled, _ := json.Marshal(metadata)
-			tracker.Metadata = marshalled
-			tracker.Message = ""
-		}
-	}
 
+	if connected {
+		tracker.Message = ""
+	}
 	tracker.Connected = connected
 	tracker.LastUpdated = time.Now()
 
