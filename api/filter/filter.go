@@ -115,7 +115,7 @@ func (f *Filter) Where(in *gorm.DB, selector ...string) (out *gorm.DB) {
 	for _, p := range f.predicates {
 		field := Field{p}
 		if fs.Match(&field) {
-			out = out.Where(field.SQL())
+			out = field.Where(out)
 		}
 	}
 	return
@@ -229,16 +229,25 @@ func (f *Field) Resource() (s string) {
 }
 
 //
+// Where updates the where clause.
+func (f *Field) Where(in *gorm.DB) (out *gorm.DB) {
+	sql, values := f.SQL()
+	out = in.Where(sql, values...)
+	return
+}
+
+//
 // SQL builds SQL.
-// Returns statement and value (for ?).
-func (f *Field) SQL() (s string, v interface{}) {
+// Returns statement and values (for ?).
+func (f *Field) SQL() (s string, vList []interface{}) {
 	name := f.Name()
 	switch len(f.Value) {
 	case 0:
 	case 1:
 		switch f.Operator.Value {
 		case string(LIKE):
-			v = strings.Replace(f.Value[0].Value, "*", "%", -1)
+			v := strings.Replace(f.Value[0].Value, "*", "%", -1)
+			vList = append(vList, v)
 			s = strings.Join(
 				[]string{
 					name,
@@ -247,7 +256,7 @@ func (f *Field) SQL() (s string, v interface{}) {
 				},
 				" ")
 		default:
-			v = AsValue(f.Value[0])
+			vList = append(vList, AsValue(f.Value[0]))
 			s = strings.Join(
 				[]string{
 					name,
@@ -261,20 +270,49 @@ func (f *Field) SQL() (s string, v interface{}) {
 			// not supported.
 			break
 		}
-		values := f.Value.ByKind(LITERAL, STRING)
-		collection := []interface{}{}
-		for i := range values {
-			v := AsValue(values[i])
-			collection = append(collection, v)
+		switch f.Operator.Value {
+		case string(LIKE):
+			s = "("
+			var clauses []string
+			for _, fx := range f.Expand() {
+				sql, values := fx.SQL()
+				vList = append(vList, values[0])
+				clauses = append(clauses, sql)
+			}
+			s += strings.Join(clauses, " OR ")
+			s += ")"
+		default:
+			values := f.Value.ByKind(LITERAL, STRING)
+			var collection []interface{}
+			for i := range values {
+				v := AsValue(values[i])
+				collection = append(collection, v)
+			}
+			vList = append(vList, collection)
+			s = strings.Join(
+				[]string{
+					name,
+					f.operator(),
+					"?",
+				},
+				" ")
 		}
-		v = collection
-		s = strings.Join(
-			[]string{
-				name,
-				f.operator(),
-				"?",
-			},
-			" ")
+	}
+	return
+}
+
+//
+// Expand flattens a multi-value field and returns a Field for each value.
+func (f *Field) Expand() (expanded []Field) {
+	for _, v := range f.Value.ByKind(LITERAL, STRING) {
+		expanded = append(
+			expanded,
+			Field{Predicate{
+				Unused:   f.Predicate.Unused,
+				Field:    f.Predicate.Field,
+				Operator: f.Predicate.Operator,
+				Value:    Value{v},
+			}})
 	}
 	return
 }

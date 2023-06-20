@@ -748,7 +748,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Joins("Analysis a")
 	q = q.Where("a.ID = i.AnalysisID")
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
+	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	q = q.Group("i.RuleSet,i.Rule")
 	// Count.
 	filter = filter.With("-Labels")
@@ -1270,24 +1270,25 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	appFilter := f.Resource("application")
 	q = appFilter.Where(q)
 	tagFilter := f.Resource("tag")
-	if field, found := tagFilter.Field("id"); found {
-		if field.Value.Operator(qf.AND) {
+	if f, found := tagFilter.Field("id"); found {
+		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
-			for _, v := range field.Value.ByKind(qf.LITERAL, qf.STRING) {
+			for _, f = range f.Expand() {
+				f = f.As("TagID")
 				q := h.DB(ctx)
 				q = q.Model(&model.ApplicationTag{})
 				q = q.Select("applicationID ID")
-				q = q.Where("TagID = ?", qf.AsValue(v))
+				q = f.Where(q)
 				qs = append(qs, q)
 			}
 			tq := model.Intersect(qs...)
 			q = q.Where("ID IN (?)", tq)
 		} else {
-			field = field.As("TagID")
+			f = f.As("TagID")
 			tq := h.DB(ctx)
 			tq = tq.Model(&model.ApplicationTag{})
 			tq = tq.Select("ApplicationID ID")
-			tq = tq.Where(field.SQL())
+			tq = f.Where(tq)
 			q = q.Where("ID IN (?)", tq)
 		}
 	}
@@ -1327,12 +1328,13 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	if f, found := filter.Field("labels"); found {
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
-			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
+			for _, f = range f.Expand() {
+				f = f.As("json_each.value")
 				q := h.DB(ctx)
 				q = q.Table("Issue")
 				q = q.Joins("m ,json_each(Labels)")
 				q = q.Select("m.ID")
-				q = q.Where("json_each.value = ?", qf.AsValue(v))
+				q = f.Where(q)
 				qs = append(qs, q)
 			}
 			q = model.Intersect(qs...)
@@ -1342,7 +1344,7 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			q = q.Table("Issue")
 			q = q.Joins("m ,json_each(Labels)")
 			q = q.Select("m.ID")
-			q = q.Where(f.SQL())
+			q = f.Where(q)
 		}
 	}
 	return
@@ -1361,12 +1363,13 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	if f, found := filter.Field("labels"); found {
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
-			for _, v := range f.Value.ByKind(qf.LITERAL, qf.STRING) {
+			for _, f = range f.Expand() {
+				f = f.As("json_each.value")
 				q := h.DB(ctx)
 				q = q.Table("Issue")
 				q = q.Joins("m ,json_each(Labels)")
 				q = q.Select("m.ID")
-				q = q.Where("json_each.value = ?", qf.AsValue(v))
+				q = f.Where(q)
 				qs = append(qs, q)
 			}
 			q = model.Intersect(qs...)
@@ -1376,7 +1379,7 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			q = q.Table("Issue")
 			q = q.Joins("m ,json_each(Labels)")
 			q = q.Select("m.ID")
-			q = q.Where(f.SQL())
+			q = f.Where(q)
 		}
 	}
 	return
