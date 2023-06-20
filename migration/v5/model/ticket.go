@@ -28,19 +28,3 @@ type Ticket struct {
 	Tracker       *Tracker
 	TrackerID     uint `gorm:"uniqueIndex:ticketA;not null"`
 }
-
-type Metadata struct {
-	Projects []Project `json:"projects"`
-}
-
-type Project struct {
-	ID         string      `json:"id"`
-	Key        string      `json:"key"`
-	Name       string      `json:"name"`
-	IssueTypes []IssueType `json:"issueTypes"`
-}
-
-type IssueType struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
