@@ -21,4 +21,5 @@ type Application struct {
 	Analyses          []Analysis    `gorm:"constraint:OnDelete:CASCADE"`
 	MigrationWaveID   *uint         `gorm:"index"`
 	MigrationWave     *MigrationWave
+	Ticket            *Ticket `gorm:"constraint:OnDelete:CASCADE"`
 }
