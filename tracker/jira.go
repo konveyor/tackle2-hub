@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/andygrunwald/go-jira"
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
@@ -58,6 +59,7 @@ func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	t.Reference = issue.Key
 	t.Link = issue.Self
 	t.LastUpdated = time.Now()
+	metrics.IssuesExported.Inc()
 
 	return
 }
