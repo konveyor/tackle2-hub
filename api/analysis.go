@@ -1275,30 +1275,29 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
 				f = f.As("TagID")
-				q := h.DB(ctx)
-				q = q.Model(&model.ApplicationTag{})
-				q = q.Select("applicationID ID")
-				q = f.Where(q)
-				qs = append(qs, q)
+				iq := h.DB(ctx)
+				iq = iq.Model(&model.ApplicationTag{})
+				iq = iq.Select("applicationID ID")
+				iq = f.Where(q)
+				qs = append(qs, iq)
 			}
-			tq := model.Intersect(qs...)
-			q = q.Where("ID IN (?)", tq)
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("TagID")
-			tq := h.DB(ctx)
-			tq = tq.Model(&model.ApplicationTag{})
-			tq = tq.Select("ApplicationID ID")
-			tq = f.Where(tq)
-			q = q.Where("ID IN (?)", tq)
+			iq := h.DB(ctx)
+			iq = iq.Model(&model.ApplicationTag{})
+			iq = iq.Select("ApplicationID ID")
+			iq = f.Where(iq)
+			q = q.Where("ID IN (?)", iq)
 		}
 	}
 	bsFilter := f.Resource("businessService")
 	if !bsFilter.Empty() {
-		bq := h.DB(ctx)
-		bq = bq.Model(&model.BusinessService{})
-		bq = bq.Select("ID")
-		bq = bsFilter.Where(bq)
-		q = q.Where("ID IN (?)", bq)
+		iq := h.DB(ctx)
+		iq = iq.Model(&model.BusinessService{})
+		iq = iq.Select("ID")
+		iq = bsFilter.Where(iq)
+		q = q.Where("ID IN (?)", iq)
 		return
 	}
 	return
@@ -1330,21 +1329,22 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
 				f = f.As("json_each.value")
-				q := h.DB(ctx)
-				q = q.Table("Issue")
-				q = q.Joins("m ,json_each(Labels)")
-				q = q.Select("m.ID")
-				q = f.Where(q)
-				qs = append(qs, q)
+				iq := h.DB(ctx)
+				iq = iq.Table("Issue")
+				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Select("m.ID")
+				iq = f.Where(iq)
+				qs = append(qs, iq)
 			}
-			q = model.Intersect(qs...)
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("json_each.value")
-			q = h.DB(ctx)
-			q = q.Table("Issue")
-			q = q.Joins("m ,json_each(Labels)")
-			q = q.Select("m.ID")
-			q = f.Where(q)
+			iq := h.DB(ctx)
+			iq = iq.Table("Issue")
+			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Select("m.ID")
+			iq = f.Where(iq)
+			q = q.Where("ID IN (?)", iq)
 		}
 	}
 	return
