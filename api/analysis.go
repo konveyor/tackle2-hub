@@ -653,6 +653,9 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	db = db.Offset(page.Limit)
 	var m model.Incident
 	cursor := Cursor{}
+	defer func() {
+		cursor.Close()
+	}()
 	cursor.With(db, page)
 	for cursor.Next(&m) {
 		if cursor.Error != nil {
@@ -762,6 +765,9 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	var m M
 	cursor := Cursor{}
 	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
 	for cursor.Next(&m) {
 		if cursor.Error != nil {
 			_ = ctx.Error(cursor.Error)

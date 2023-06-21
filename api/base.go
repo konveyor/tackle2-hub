@@ -416,3 +416,11 @@ func (r *Cursor) With(db *gorm.DB, p Page) {
 	r.Scanned = false
 	r.Count = int64(0)
 }
+
+//
+// Close the cursor.
+func (r *Cursor) Close() {
+	if r.Rows != nil {
+		_ = r.Rows.Close()
+	}
+}
