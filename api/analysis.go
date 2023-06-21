@@ -126,11 +126,20 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @router /analyses [get]
 func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
+	// Sort
+	sort := Sort{}
+	err := sort.With(ctx, &model.Issue{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	// Find.
 	id := h.pk(ctx)
 	db := h.DB(ctx)
+	db = db.Model(&model.Analysis{})
 	db = db.Where("ApplicationID = ?", id)
 	db = db.Preload(clause.Associations)
+	db = sort.Sorted(db)
 	var list []model.Analysis
 	var m model.Analysis
 	page := Page{}
@@ -147,7 +156,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err := h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

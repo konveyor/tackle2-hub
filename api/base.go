@@ -379,6 +379,7 @@ type Cursor struct {
 // Next returns true when has next row.
 func (r *Cursor) Next(m interface{}) (next bool) {
 	if r.Error != nil {
+		next = true
 		return
 	}
 	next = r.Rows.Next()
@@ -387,7 +388,7 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 	} else {
 		return
 	}
-	if r.Count > int64(r.Limit) || r.Count > MaxPage {
+	if r.pageExceeded() || r.Count > MaxPage {
 		for r.Rows.Next() {
 			r.Count++
 			if r.Count > MaxCount {
@@ -417,4 +418,14 @@ func (r *Cursor) Close() {
 	if r.Rows != nil {
 		_ = r.Rows.Close()
 	}
+}
+
+//
+// pageExceeded returns true when page Limit defined and exceeded.
+func (r *Cursor) pageExceeded() (b bool) {
+	if r.Limit < 1 {
+		return
+	}
+	b = r.Count > int64(r.Limit)
+	return
 }
