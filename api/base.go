@@ -67,10 +67,12 @@ func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 			return
 		}
 	}
-	mp := ctx.Writer.Header()
-	mp[Total] = []string{
-		strconv.Itoa(int(count)),
+	s := strconv.Itoa(n)
+	if n > MaxCount {
+		s = ">" + strconv.Itoa(MaxCount)
 	}
+	mp := ctx.Writer.Header()
+	mp[Total] = []string{s}
 	return
 }
 
