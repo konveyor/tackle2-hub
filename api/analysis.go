@@ -126,34 +126,33 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @router /analyses [get]
 func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
-	// Build query.
+	// Find.
 	id := h.pk(ctx)
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID = ?", id)
-	count := int64(0)
-	// Count.
-	result := db.Model(&model.Analysis{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
+	db = db.Preload(clause.Associations)
+	var list []model.Analysis
+	var m model.Analysis
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err := h.WithCount(ctx, count)
+	err := h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	var list []model.Analysis
-	db = h.preLoad(db, clause.Associations)
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+	// Render
 	for i := range list {
 		r := Analysis{}
 		r.With(&list[i])
@@ -360,7 +359,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	resources := []TechDependency{}
-	// Latest.
+	// Latest
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
 	db := h.DB(ctx)
@@ -370,7 +369,6 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
@@ -389,33 +387,33 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Find
 	db = h.DB(ctx)
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
-	// Count.
-	count := int64(0)
-	result = db.Model(&model.TechDependency{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
+	db = sort.Sorted(db)
+	var list []model.TechDependency
+	var m model.TechDependency
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	list := []model.TechDependency{}
-	db = h.paginated(ctx, sort, db)
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+	// Render
 	for i := range list {
 		r := TechDependency{}
 		r.With(&list[i])
@@ -442,7 +440,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	resources := []Issue{}
-	// Latest.
+	// Latest
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
 	db := h.DB(ctx).Where("ApplicationID = ?", id)
@@ -451,7 +449,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "ruleset", Kind: qf.STRING},
@@ -465,40 +463,41 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Issue{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Find
 	db = h.DB(ctx)
 	db = db.Model(&model.Issue{})
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = db.Where("ID IN (?)", h.issueIDs(ctx, filter))
-	// Count.
-	count := int64(0)
-	result = db.Model(&model.Issue{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
+	db = sort.Sorted(db)
+	var list []model.Issue
+	var m model.Issue
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	list := []model.Issue{}
-	db = h.paginated(ctx, sort, db)
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+	// Render
 	for i := range list {
 		m := &list[i]
 		r := Issue{}
@@ -528,7 +527,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @router /analyses/issues [get]
 func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	resources := []Issue{}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "ruleset", Kind: qf.STRING},
@@ -545,12 +544,14 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Issue{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Find
 	db := h.DB(ctx)
 	db = db.Table("Issue i")
 	db = db.Joins(",Analysis a")
@@ -559,31 +560,29 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	db = db.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	db = db.Group("i.ID")
 	db = filter.Where(db, "-Labels")
-	// Count.
-	count := int64(0)
-	result := db.Model(&model.Issue{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
+	db = sort.Sorted(db)
+	var list []model.Issue
+	var m model.Issue
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	//
-	// Find.
-	db = h.paginated(ctx, sort, db)
-	var list []model.Issue
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+	// Render
 	for i := range list {
 		m := &list[i]
 		r := Issue{}
@@ -628,6 +627,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @router /analyses/issues/{id}/incidents [get]
 func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	issueId := ctx.Param(ID)
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "file", Kind: qf.STRING},
@@ -636,24 +636,27 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Incident{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	page := Page{}
-	page.With(ctx)
-	var list []model.Incident
+	// Find
 	db := h.DB(ctx)
 	db = db.Model(&model.Incident{})
 	db = db.Where("IssueID", issueId)
 	db = filter.Where(db)
+	db = sort.Sorted(db)
+	var list []model.Incident
 	var m model.Incident
 	cursor := Cursor{}
 	defer func() {
 		cursor.Close()
 	}()
+	page := Page{}
+	page.With(ctx)
 	cursor.With(db, page)
 	for cursor.Next(&m) {
 		if cursor.Error != nil {
@@ -667,6 +670,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Render
 	resources := []Incident{}
 	for _, m := range list {
 		r := Incident{}
@@ -710,7 +714,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		model.Issue
 		Applications int
 	}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "ruleset", Kind: qf.STRING},
@@ -729,14 +733,14 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	page := Page{}
-	page.With(ctx)
+	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleSet",
@@ -753,12 +757,16 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	q = q.Group("i.RuleSet,i.Rule")
+	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
+	db = sort.Sorted(db)
 	var list []M
 	var m M
+	page := Page{}
+	page.With(ctx)
 	cursor := Cursor{}
 	cursor.With(db, page)
 	defer func() {
@@ -776,12 +784,12 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Render
 	affected := make(map[string]int)
 	for i := range list {
 		r := &list[i]
 		affected[r.RuleId()] = r.Applications
 	}
-
 	collated := make(map[string]*RuleReport)
 	for i := range list {
 		m := list[i]
@@ -856,7 +864,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 		RuleSet         string
 		Rule            string
 	}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.STRING},
@@ -883,12 +891,14 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
 		"app.ID",
@@ -910,39 +920,34 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
 	q = q.Group("i.ID")
-	// Count.
-	filter = filter.With("-Labels")
-	count, err := h.count(h.DB(ctx), q, filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	//
-	// Find.
+	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, sort, db)
+	db = sort.Sorted(db)
 	var list []M
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
+	// Render
 	for i := range list {
 		m := &list[i]
 		r := AppReport{}
@@ -986,6 +991,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		Effort    int
 		Incidents int
 	}
+	// Issue
 	issueId := h.pk(ctx)
 	issue := &model.Issue{}
 	result := h.DB(ctx).First(issue, issueId)
@@ -993,8 +999,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	//
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "file", Kind: qf.STRING},
@@ -1005,12 +1010,14 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Inner Query
 	q := h.DB(ctx)
 	q = q.Model(&model.Incident{})
 	q = q.Select(
@@ -1022,33 +1029,34 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	q = q.Where("Issue.ID = IssueID")
 	q = q.Where("Issue.ID", issueId)
 	q = q.Group("File")
-	// Count.
-	count, err := h.count(h.DB(ctx), q, filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.WithCount(ctx, count)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	// Find.
-	var list []M
+	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, sort, db)
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	db = sort.Sorted(db)
+	var list []M
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
+	// Render
 	for _, m := range list {
 		r := FileReport{}
 		r.IssueID = m.IssueId
@@ -1081,7 +1089,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 // @router /analyses/dependencies [get]
 func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	resources := []TechDependency{}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
@@ -1097,39 +1105,40 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.TechDependency{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Find
 	db := h.DB(ctx)
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
-	// Count.
-	count := int64(0)
-	result := db.Model(&model.TechDependency{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
+	db = sort.Sorted(db)
+	var list []model.TechDependency
+	var m model.TechDependency
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	db = h.paginated(ctx, sort, db)
-	list := []model.TechDependency{}
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
+	// Render
 	for i := range list {
 		r := TechDependency{}
 		r.With(&list[i])
@@ -1167,7 +1176,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		model.TechDependency
 		Applications int
 	}
-	// Build query.
+	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
@@ -1186,12 +1195,14 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &M{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
 		"Name",
@@ -1203,33 +1214,33 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("ID IN (?)", h.depIDs(ctx, filter))
 	q = q.Group("Name,SHA")
-	// Count.
-	count, err := h.count(h.DB(ctx), q, filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	// Find.
-	var list []M
+	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
-	db = h.paginated(ctx, sort, db)
-	result := db.Scan(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	var list []M
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
+	// Render
 	for i := range list {
 		m := &list[i]
 		r := DepReport{
@@ -1245,15 +1256,6 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
-}
-
-//
-// Count rows returned by q.
-func (h *BaseHandler) count(db, q *gorm.DB, f qf.Filter) (count int64, err error) {
-	db = db.Table("(?)", q)
-	db = f.Where(db)
-	err = db.Count(&count).Error
-	return
 }
 
 //

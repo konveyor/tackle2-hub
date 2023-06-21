@@ -77,16 +77,6 @@ func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 }
 
 //
-// Paginated returns a paginated and sorted DB client.
-func (h *BaseHandler) paginated(ctx *gin.Context, sort Sort, in *gorm.DB) (db *gorm.DB) {
-	p := Page{}
-	p.With(ctx)
-	db = p.Paginated(in)
-	db = sort.Sorted(db)
-	return
-}
-
-//
 // preLoad update DB to pre-load fields.
 func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 	tx = db
