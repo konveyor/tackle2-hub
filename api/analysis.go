@@ -628,7 +628,6 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @router /analyses/issues/{id}/incidents [get]
 func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	issueId := ctx.Param(ID)
-	// Build query.
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "file", Kind: qf.STRING},
