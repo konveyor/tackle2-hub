@@ -156,7 +156,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -418,7 +418,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -502,7 +502,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -586,7 +586,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -674,7 +674,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -787,7 +787,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -950,7 +950,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1059,7 +1059,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1141,7 +1141,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1243,7 +1243,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count)
+	err = h.WithCount(ctx, cursor.Count())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
