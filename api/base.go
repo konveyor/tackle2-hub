@@ -390,14 +390,17 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 		return
 	}
 	next = r.Rows.Next()
-	if !next {
+	if next {
+		r.Count++
+	} else {
 		return
 	}
-	r.Count++
 	if r.Count > int64(r.Limit) || r.Count > MaxPage {
 		for r.Rows.Next() {
 			r.Count++
 			if r.Count > MaxCount {
+				next = false
+				r.Close()
 				break
 			}
 		}
