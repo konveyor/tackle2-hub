@@ -651,14 +651,10 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	db = db.Where("IssueID", issueId)
 	db = filter.Where(db)
 	db = db.Offset(page.Limit)
-	rows, err := db.Rows()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	var m model.Incident
-	cursor := Cursor{Rows: rows}
-	for cursor.Next(db, page, &m) {
+	cursor := Cursor{}
+	cursor.With(db, page)
+	for cursor.Next(&m) {
 		if cursor.Error != nil {
 			_ = ctx.Error(cursor.Error)
 			return
