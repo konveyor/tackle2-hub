@@ -410,8 +410,8 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 //
 // With configures the cursor.
 func (r *Cursor) With(db *gorm.DB, p Page) {
-	r.Rows, r.Error = db.Rows()
-	r.DB = db
+	r.DB = db.Offset(p.Offset)
+	r.Rows, r.Error = r.DB.Rows()
 	r.Page = p
 	r.Scanned = false
 	r.Count = int64(0)

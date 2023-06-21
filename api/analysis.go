@@ -650,7 +650,6 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	db = db.Model(&model.Incident{})
 	db = db.Where("IssueID", issueId)
 	db = filter.Where(db)
-	db = db.Offset(page.Limit)
 	var m model.Incident
 	cursor := Cursor{}
 	defer func() {
