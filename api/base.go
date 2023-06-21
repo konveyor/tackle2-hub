@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,11 @@ import (
 )
 
 var Log = logr.WithName("api")
+
+const (
+	MaxPage  = 500
+	MaxCount = 10000
+)
 
 //
 // BaseHandler base handler.
@@ -49,16 +55,15 @@ func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 // is not constrained by pagination.
 func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 	n := int(count)
-	max := 500
 	p := Page{}
 	p.With(ctx)
-	if n > max {
-		if p.Limit == 0 || p.Limit > max {
+	if n > MaxPage {
+		if p.Limit == 0 || p.Limit > MaxPage {
 			err = &BadRequestError{
 				fmt.Sprintf(
 					"Found=%d, ?Limit <= %d required.",
 					n,
-					max)}
+					MaxPage)}
 			return
 		}
 	}
@@ -366,4 +371,33 @@ type Sort = sort.Sort
 // Decoder binding decoder.
 type Decoder interface {
 	Decode(r interface{}) (err error)
+}
+
+//
+// Cursor DB cursor.
+type Cursor struct {
+	Rows    *sql.Rows
+	Count   int64
+	Scanned bool
+	Error   error
+}
+
+//
+// Next returns true when there are more rows.
+// Scanned indicates whether data was scanned into the model.
+func (r *Cursor) Next(db *gorm.DB, p Page, m interface{}) (next bool) {
+	r.Scanned = false
+	if r.Count > MaxCount {
+		return
+	}
+	r.Count++
+	next = r.Rows.Next()
+	if !next || r.Count > int64(p.Limit) || r.Count > MaxPage {
+		return
+	}
+	r.Error = db.ScanRows(r.Rows, m)
+	if r.Error == nil {
+		r.Scanned = true
+	}
+	return
 }

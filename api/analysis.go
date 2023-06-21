@@ -643,27 +643,33 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	page := Page{}
+	page.With(ctx)
 	var list []model.Incident
 	db := h.DB(ctx)
+	db = db.Model(&model.Incident{})
 	db = db.Where("IssueID", issueId)
 	db = filter.Where(db)
-	// Count.
-	count := int64(0)
-	result := db.Model(&model.Incident{}).Count(&count)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	db = db.Offset(page.Limit)
+	rows, err := db.Rows()
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find.
-	db = h.paginated(ctx, sort, db)
-	result = db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	var m model.Incident
+	cursor := Cursor{Rows: rows}
+	for cursor.Next(db, page, &m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		if cursor.Scanned {
+			list = append(list, m)
+		}
+	}
+	err = h.WithCount(ctx, cursor.Count)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	resources := []Incident{}
