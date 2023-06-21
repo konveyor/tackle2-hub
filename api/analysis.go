@@ -661,9 +661,7 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 			_ = ctx.Error(cursor.Error)
 			return
 		}
-		if cursor.Scanned {
-			list = append(list, m)
-		}
+		list = append(list, m)
 	}
 	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
@@ -772,9 +770,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			_ = ctx.Error(cursor.Error)
 			return
 		}
-		if cursor.Scanned {
-			list = append(list, m)
-		}
+		list = append(list, m)
 	}
 	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {

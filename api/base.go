@@ -374,36 +374,36 @@ type Decoder interface {
 }
 
 //
-// Cursor DB cursor.
+// Cursor Paginated cursor.
 type Cursor struct {
 	Page
-	DB      *gorm.DB
-	Rows    *sql.Rows
-	Count   int64
-	Scanned bool
-	Error   error
+	DB    *gorm.DB
+	Rows  *sql.Rows
+	Count int64
+	Error error
 }
 
 //
-// Next returns true when there are more rows.
-// Scanned indicates whether data was scanned into the model.
+// Next returns true when has next row.
 func (r *Cursor) Next(m interface{}) (next bool) {
-	r.Scanned = false
 	if r.Error != nil {
 		return
 	}
-	if r.Count > MaxCount {
+	next = r.Rows.Next()
+	if !next {
 		return
 	}
 	r.Count++
-	next = r.Rows.Next()
-	if !next || r.Count > int64(r.Limit) || r.Count > MaxPage {
+	if r.Count > int64(r.Limit) || r.Count > MaxPage {
+		for r.Rows.Next() {
+			r.Count++
+			if r.Count > MaxCount {
+				break
+			}
+		}
 		return
 	}
 	r.Error = r.DB.ScanRows(r.Rows, m)
-	if r.Error == nil {
-		r.Scanned = true
-	}
 	return
 }
 
@@ -412,9 +412,8 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 func (r *Cursor) With(db *gorm.DB, p Page) {
 	r.DB = db.Offset(p.Offset)
 	r.Rows, r.Error = r.DB.Rows()
-	r.Page = p
-	r.Scanned = false
 	r.Count = int64(0)
+	r.Page = p
 }
 
 //
