@@ -736,6 +736,8 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	page := Page{}
+	page.With(ctx)
 	q := h.DB(ctx)
 	q = q.Select(
 		"i.RuleSet",
@@ -752,35 +754,29 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	q = q.Group("i.RuleSet,i.Rule")
-	// Count.
-	filter = filter.With("-Labels")
-	count, err := h.count(h.DB(ctx), q, filter)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	db = filter.Where(db)
+	var list []M
+	var m M
+	cursor := Cursor{}
+	cursor.With(db, page)
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		if cursor.Scanned {
+			list = append(list, m)
+		}
 	}
-	if count == 0 {
-		h.Respond(ctx, http.StatusOK, resources)
-		return
-	}
-	err = h.WithCount(ctx, count)
+	err = h.WithCount(ctx, cursor.Count)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	affected := make(map[string]int)
-	// Find.
-	db := h.DB(ctx)
-	db = db.Select("*")
-	db = db.Table("(?)", q)
-	db = filter.Where(db)
-	db = h.paginated(ctx, sort, db)
-	var list []M
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
 	for i := range list {
 		r := &list[i]
 		affected[r.RuleId()] = r.Applications
