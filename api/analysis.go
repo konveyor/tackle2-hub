@@ -398,6 +398,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	}
 	// Find
 	db = h.DB(ctx)
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
