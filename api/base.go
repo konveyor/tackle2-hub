@@ -25,7 +25,7 @@ var Log = logr.WithName("api")
 
 const (
 	MaxPage  = 500
-	MaxCount = 10000
+	MaxCount = 50000
 )
 
 //
@@ -399,11 +399,11 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 		for r.Rows.Next() {
 			r.Count++
 			if r.Count > MaxCount {
-				next = false
-				r.Close()
 				break
 			}
 		}
+		next = false
+		r.Close()
 		return
 	}
 	r.Error = r.DB.ScanRows(r.Rows, m)
