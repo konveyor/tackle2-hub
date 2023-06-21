@@ -371,7 +371,7 @@ type Cursor struct {
 	Page
 	DB    *gorm.DB
 	Rows  *sql.Rows
-	Index int64
+	Count int64
 	Error error
 }
 
@@ -384,14 +384,14 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 	}
 	next = r.Rows.Next()
 	if next {
-		r.Index++
+		r.Count++
 	} else {
 		return
 	}
-	if r.pageLimited() || r.Index > MaxPage {
+	if r.pageLimited() || r.Count > MaxPage {
 		for r.Rows.Next() {
-			r.Index++
-			if r.Index > MaxCount {
+			r.Count++
+			if r.Count > MaxCount {
 				break
 			}
 		}
@@ -408,15 +408,8 @@ func (r *Cursor) Next(m interface{}) (next bool) {
 func (r *Cursor) With(db *gorm.DB, p Page) {
 	r.DB = db.Offset(p.Offset)
 	r.Rows, r.Error = r.DB.Rows()
-	r.Index = int64(0)
+	r.Count = int64(p.Offset)
 	r.Page = p
-}
-
-//
-// Count returns the count.
-func (r *Cursor) Count() (n int64) {
-	n = int64(r.Offset) + r.Index
-	return
 }
 
 //
@@ -433,6 +426,6 @@ func (r *Cursor) pageLimited() (b bool) {
 	if r.Limit < 1 {
 		return
 	}
-	b = r.Index > int64(r.Limit)
+	b = r.Count > int64(r.Limit)
 	return
 }
