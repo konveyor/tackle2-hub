@@ -569,7 +569,6 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
 	db = db.Group("i.ID")
-	db = filter.Where(db, "-Labels")
 	db = sort.Sorted(db)
 	var list []model.Issue
 	var m model.Issue
@@ -771,7 +770,6 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
-	db = filter.Where(db, "-Labels")
 	db = sort.Sorted(db)
 	var list []M
 	var m M
