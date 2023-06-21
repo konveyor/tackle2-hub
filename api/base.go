@@ -374,7 +374,7 @@ type Decoder interface {
 }
 
 //
-// Cursor Paginated cursor.
+// Cursor Paginated rows iterator.
 type Cursor struct {
 	Page
 	DB    *gorm.DB
