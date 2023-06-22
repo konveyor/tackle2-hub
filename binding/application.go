@@ -8,13 +8,13 @@ import (
 // Application API.
 type Application struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create an Application.
 func (h *Application) Create(r *api.Application) (err error) {
-	err = h.client.Post(api.ApplicationsRoot, &r)
+	err = h.Client.Post(api.ApplicationsRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *Application) Create(r *api.Application) (err error) {
 func (h *Application) Get(id uint) (r *api.Application, err error) {
 	r = &api.Application{}
 	path := Path(api.ApplicationRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *Application) Get(id uint) (r *api.Application, err error) {
 // List Applications.
 func (h *Application) List() (list []api.Application, err error) {
 	list = []api.Application{}
-	err = h.client.Get(api.ApplicationsRoot, &list)
+	err = h.Client.Get(api.ApplicationsRoot, &list)
 	return
 }
 
@@ -39,14 +39,14 @@ func (h *Application) List() (list []api.Application, err error) {
 // Update an Application.
 func (h *Application) Update(r *api.Application) (err error) {
 	path := Path(api.ApplicationRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete an Application.
 func (h *Application) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.ApplicationRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.ApplicationRoot).Inject(Params{api.ID: id}))
 	return
 }
 
@@ -60,7 +60,7 @@ func (h *Application) Bucket(id uint) (b *Bucket) {
 	path := Path(api.AppBucketContentRoot).Inject(params)
 	b = &Bucket{
 		path:   path,
-		client: h.client,
+		Client: h.Client,
 	}
 	return
 }

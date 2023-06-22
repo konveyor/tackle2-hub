@@ -37,12 +37,7 @@ type RichClient struct {
 	Dependency       Dependency
 
 	// A REST client.
-	client *Client
-}
-
-// Client provides the REST client.
-func (h *RichClient) Client() *Client {
-	return h.client
+	Client *Client
 }
 
 // newRichClient builds a new RichClient object.
@@ -55,48 +50,48 @@ func New(baseUrl string) (r *RichClient) {
 	// Build RichClient.
 	r = &RichClient{
 		Application: Application{
-			client: client,
+			Client: client,
 		},
 		Bucket: Bucket{
-			client: client,
+			Client: client,
 		},
 		BusinessService: BusinessService{
-			client: client,
+			Client: client,
 		},
 		Dependency: Dependency{
-			client: client,
+			Client: client,
 		},
 		File: File{
-			client: client,
+			Client: client,
 		},
 		Identity: Identity{
-			client: client,
+			Client: client,
 		},
 		JobFunction: JobFunction{
-			client: client,
+			Client: client,
 		},
 		Proxy: Proxy{
-			client: client,
+			Client: client,
 		},
 		RuleSet: RuleSet{
-			client: client,
+			Client: client,
 		},
 		Stakeholder: Stakeholder{
-			client: client,
+			Client: client,
 		},
 		StakeholderGroup: StakeholderGroup{
-			client: client,
+			Client: client,
 		},
 		Tag: Tag{
-			client: client,
+			Client: client,
 		},
 		TagCategory: TagCategory{
-			client: client,
+			Client: client,
 		},
 		Task: Task{
-			client: client,
+			Client: client,
 		},
-		client: client,
+		Client: client,
 	}
 
 	Log.Info("Hub RichClient created.")
@@ -110,10 +105,10 @@ func (r *RichClient) Login(user, password string) (err error) {
 	login := api.Login{User: user, Password: password}
 
 	// Login.
-	err = r.client.Post(api.AuthLoginRoot, &login)
+	err = r.Client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
 		return
 	}
-	r.client.SetToken(login.Token)
+	r.Client.SetToken(login.Token)
 	return
 }

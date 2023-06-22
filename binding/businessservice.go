@@ -8,13 +8,13 @@ import (
 // BusinessService API.
 type BusinessService struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create a BusinessService.
 func (h *BusinessService) Create(r *api.BusinessService) (err error) {
-	err = h.client.Post(api.BusinessServicesRoot, &r)
+	err = h.Client.Post(api.BusinessServicesRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *BusinessService) Create(r *api.BusinessService) (err error) {
 func (h *BusinessService) Get(id uint) (r *api.BusinessService, err error) {
 	r = &api.BusinessService{}
 	path := Path(api.BusinessServiceRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *BusinessService) Get(id uint) (r *api.BusinessService, err error) {
 // List BusinessServices.
 func (h *BusinessService) List() (list []api.BusinessService, err error) {
 	list = []api.BusinessService{}
-	err = h.client.Get(api.BusinessServicesRoot, &list)
+	err = h.Client.Get(api.BusinessServicesRoot, &list)
 	return
 }
 
@@ -39,13 +39,13 @@ func (h *BusinessService) List() (list []api.BusinessService, err error) {
 // Update a BusinessService.
 func (h *BusinessService) Update(r *api.BusinessService) (err error) {
 	path := Path(api.BusinessServiceRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete a BusinessService.
 func (h *BusinessService) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.BusinessServiceRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.BusinessServiceRoot).Inject(Params{api.ID: id}))
 	return
 }

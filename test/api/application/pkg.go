@@ -17,7 +17,7 @@ func init() {
 	RichClient = client.PrepareRichClient()
 
 	// Access REST client directly (some test API call need it)
-	Client = RichClient.Client()
+	Client = RichClient.Client
 
 	// Shortcut for Application-related RichClient methods.
 	Application = RichClient.Application

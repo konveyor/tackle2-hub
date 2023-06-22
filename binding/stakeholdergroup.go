@@ -8,13 +8,13 @@ import (
 // StakeholderGroup API.
 type StakeholderGroup struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create a StakeholderGroup.
 func (h *StakeholderGroup) Create(r *api.StakeholderGroup) (err error) {
-	err = h.client.Post(api.StakeholderGroupsRoot, &r)
+	err = h.Client.Post(api.StakeholderGroupsRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *StakeholderGroup) Create(r *api.StakeholderGroup) (err error) {
 func (h *StakeholderGroup) Get(id uint) (r *api.StakeholderGroup, err error) {
 	r = &api.StakeholderGroup{}
 	path := Path(api.StakeholderGroupRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *StakeholderGroup) Get(id uint) (r *api.StakeholderGroup, err error) {
 // List StakeholderGroups.
 func (h *StakeholderGroup) List() (list []api.StakeholderGroup, err error) {
 	list = []api.StakeholderGroup{}
-	err = h.client.Get(api.StakeholderGroupsRoot, &list)
+	err = h.Client.Get(api.StakeholderGroupsRoot, &list)
 	return
 }
 
@@ -39,13 +39,13 @@ func (h *StakeholderGroup) List() (list []api.StakeholderGroup, err error) {
 // Update a StakeholderGroup.
 func (h *StakeholderGroup) Update(r *api.StakeholderGroup) (err error) {
 	path := Path(api.StakeholderGroupRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete a StakeholderGroup.
 func (h *StakeholderGroup) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.StakeholderGroupRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.StakeholderGroupRoot).Inject(Params{api.ID: id}))
 	return
 }
