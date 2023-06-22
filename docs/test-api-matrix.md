@@ -6,7 +6,7 @@ Endpoint | binding functions | basic CRUD test | deeper test| notes/component/st
 application|:white_check_mark: partially|:heavy_check_mark:||
 bucket||||partially within application
 dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-file||||
+file|:heavy_check_mark:|:heavy_check_mark:||
 import||||
 review||||
 **Controls**||||
@@ -21,7 +21,7 @@ tagcategory|:heavy_check_mark:|:heavy_check_mark:||
 **Dynamic Reports**||||
 adoptionplan||||
 analysis||||
-ruleset||||
+ruleset|:heavy_check_mark:|:heavy_check_mark:||
 **Migrationwaves and Jira**||||
 batch||||
 migrationwave||||

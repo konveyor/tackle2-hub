@@ -1,46 +1,51 @@
-package addon
+package binding
 
-import "github.com/konveyor/tackle2-hub/api"
+import (
+	"github.com/konveyor/tackle2-hub/api"
+)
 
 //
 // RuleSet API.
 type RuleSet struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
-// Get a ruleset by ID.
+// Create a RuleSet.
+func (h *RuleSet) Create(r *api.RuleSet) (err error) {
+	err = h.Client.Post(api.RuleSetsRoot, &r)
+	return
+}
+
+//
+// Get a RuleSet by ID.
 func (h *RuleSet) Get(id uint) (r *api.RuleSet, err error) {
 	r = &api.RuleSet{}
 	path := Path(api.RuleSetRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
 //
-// List rulesets.
+// List RuleSets.
 func (h *RuleSet) List() (list []api.RuleSet, err error) {
 	list = []api.RuleSet{}
-	err = h.client.Get(api.RuleSetsRoot, &list)
-	if err != nil {
-		return
-	}
+	err = h.Client.Get(api.RuleSetsRoot, &list)
 	return
 }
 
 //
-// Update a ruleset by ID.
+// Update a RuleSet.
 func (h *RuleSet) Update(r *api.RuleSet) (err error) {
 	path := Path(api.RuleSetRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
-// Delete a ruleset.
+// Delete a RuleSet.
 func (h *RuleSet) Delete(id uint) (err error) {
-	path := Path(api.RuleSetRoot).Inject(Params{api.ID: id})
-	err = h.client.Delete(path)
+	err = h.Client.Delete(Path(api.RuleSetRoot).Inject(Params{api.ID: id}))
 	return
 }
