@@ -135,14 +135,14 @@ func newAdapter() (adapter *Adapter) {
 		Tag: Tag{
 			client: client,
 		},
-		File:    binding.File{},
-		RuleSet: binding.RuleSet{},
-		client:  client,
+		File: binding.File{
+			Client: client,
+		},
+		RuleSet: binding.RuleSet{
+			Client: client,
+		},
+		client: client,
 	}
-	//
-	// Setting client in binding package via setter method.
-	adapter.File.SetClient(client)
-	adapter.RuleSet.SetClient(client)
 
 	Log.Info("Addon (adapter) created.")
 
