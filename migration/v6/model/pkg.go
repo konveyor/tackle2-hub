@@ -1,22 +1,13 @@
 package model
 
-import (
-	"github.com/konveyor/tackle2-hub/migration/v6/model"
-	"gorm.io/datatypes"
-)
+import "github.com/konveyor/tackle2-hub/migration/v5/model"
 
 //
-// Field (data) types.
-type JSON = datatypes.JSON
+// JSON field (data) type.
+type JSON = []byte
 
-//
-// Models
 type Model = model.Model
 type Application = model.Application
-type TechDependency = model.TechDependency
-type Incident = model.Incident
-type Analysis = model.Analysis
-type Issue = model.Issue
 type Bucket = model.Bucket
 type BucketOwner = model.BucketOwner
 type BusinessService = model.BusinessService
@@ -43,14 +34,49 @@ type TaskGroup = model.TaskGroup
 type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
-
-//
 type TTL = model.TTL
-
-//
-// Join tables
 type ApplicationTag = model.ApplicationTag
+type DependencyCyclicError = model.DependencyCyclicError
 
 //
-// Errors
-type DependencyCyclicError = model.DependencyCyclicError
+// All builds all models.
+// Models are enumerated such that each are listed after
+// all the other models on which they may depend.
+func All() []interface{} {
+	return []interface{}{
+		Application{},
+		TechDependency{},
+		Incident{},
+		Analysis{},
+		Issue{},
+		Bucket{},
+		BucketOwner{},
+		BusinessService{},
+		Dependency{},
+		File{},
+		Fact{},
+		Identity{},
+		Import{},
+		ImportSummary{},
+		ImportTag{},
+		JobFunction{},
+		MigrationWave{},
+		Proxy{},
+		Review{},
+		Setting{},
+		RuleSet{},
+		Rule{},
+		Stakeholder{},
+		StakeholderGroup{},
+		Tag{},
+		TagCategory{},
+		Task{},
+		TaskGroup{},
+		TaskReport{},
+		Ticket{},
+		Tracker{},
+		TTL{},
+		ApplicationTag{},
+		DependencyCyclicError{},
+	}
+}

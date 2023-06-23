@@ -12,6 +12,9 @@ name: Dog
 description: Dog application.
 businessService: 
   id: 1
+repository:
+    kind: git
+    url: https://github.com/WASdev/sample.daytrader7.git
 identities:
   - id: 1
   - id: 2
