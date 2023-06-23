@@ -829,7 +829,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @description - rule
 // @description - category
 // @description - effort
-// @description - applications
+// @description - files
 // @tags rulereports
 // @produce json
 // @success 200 {object} []api.RuleReport
