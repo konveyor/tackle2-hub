@@ -3,6 +3,8 @@ package importcsv
 import (
 	"strconv"
 	"testing"
+
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 func TestImportCSV(t *testing.T) {
@@ -16,52 +18,64 @@ func TestImportCSV(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			// Get summaries.
-			id := uint64(inputData["id"].(float64))
-			var inputID = strconv.FormatUint(id, 10)
-			outputImport := make(map[string]interface{})
-			err = Client.Get("/importsummaries/"+inputID, &outputImport)
-			if err != nil {
-				t.Errorf("CSV import failed")
-			}
-			// access the import sectio of output data to checks applications and dependencies.
-			imports := outputImport["Imports"]
-
-			// fetch ExpectedApplications and ExpectedDependencies.
+			// Check list of Applications.
+			importedApps, _ := Application.List()
 			expectedApps := r.ExpectedApplications
-			expectedDeps := r.ExpectedDependencies
-			importList, ok := imports.([]interface{})
-			if ok {
-				i, j := 0, 0
-				for _, item := range importList {
-					if importMap, ok := item.(map[string]interface{}); ok {
-						applicationName := importMap["ApplicationName"].(string)
-						dependencyName := importMap["Dependency"].(string)
-						// if no dependency mentioned just compare the applications.
-						if len(dependencyName) == 0 {
-							if applicationName != expectedApps[i].Name {
-								t.Errorf("The output applications %v doesnt match with the expected applications %v", applicationName, expectedApps[i].Name)
-							}
-							i++
-						}
-						// if dependency name present, compare the names of applications and dependencies.
-						if len(dependencyName) != 0 {
-							if applicationName != expectedApps[i].Name || dependencyName != expectedDeps[j].To.Name {
-								if applicationName != expectedApps[i].Name {
-									t.Errorf("The output applications %v doesnt match with the expected applications %v", applicationName, expectedApps[i].Name)
-								}
-								if dependencyName != expectedDeps[j].To.Name {
-									t.Errorf("The output dependency %v doesnt match with the expected dependency %v", dependencyName, expectedDeps[j].To.Name)
-								}
-							}
-							// if there is a match increment the application by 2 as there is a dependency between 2 applications and dependency only by 1.
-							i += 2
-							j++
-						}
-					}
+			for i, expectedApp := range expectedApps {
+				if i >= len(importedApps) {
+					t.Errorf("Missing imported Application: %s", expectedApp.Name)
+					continue
+				}
+				importedApp := importedApps[i]
+				if importedApp.Name != expectedApp.Name {
+					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedApp.Name, importedApp.Name)
 				}
 			}
 
+			// Check list of Dependencies.
+			importedDeps, _ := Dependency.List()
+			expectedDeps := r.ExpectedDependencies
+			for i, expectedDep := range expectedDeps {
+				if i >= len(importedDeps) {
+					t.Errorf("Missing imported Dependency: %s", expectedDep.To.Name)
+					continue
+				}
+				importedDep := importedDeps[i].To.Name
+				if importedDep != expectedDep.To.Name {
+					t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", expectedDep.To.Name, importedDep)
+				}
+			}
+
+			// fetch id's
+			id := uint64(inputData["id"].(float64))
+			var inputID = strconv.FormatUint(id, 10)
+			var output []api.ImportSummary
+			err = Client.Get("/importsummaries/", &output)
+			if err != nil {
+				t.Errorf("Can't get summaries of all imports")
+			}
+
+			// check for the id and return valid
+			// for _, imp := range output {
+			// 	if uint64(imp.ID) == id {
+			// 		if len(importedDeps)+len(importedApps) != imp.ValidCount {
+			// 			t.Errorf("Mismatch in number of valid count")
+			// 		}
+			// 	}
+			// }
+
+			// Get summaries of the Input ID.
+			outputImport := api.ImportSummary{}
+			err = Client.Get("/importsummaries/"+inputID, &outputImport)
+			if err != nil {
+				t.Errorf("Could not get the CSV output")
+			}
+
+			// Delete summaries of the Input ID.
+			err = Client.Delete("/importsummaries/" + inputID)
+			if err != nil {
+				t.Errorf("CSV delete failed")
+			}
 		})
 	}
 }

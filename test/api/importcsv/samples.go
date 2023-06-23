@@ -27,22 +27,6 @@ var (
 					Name:        "Gateway",
 					Description: "API Gateway",
 				},
-				{
-					Name:        "Gateway",
-					Description: "API Gateway",
-				},
-				{
-					Name:        "Inventory",
-					Description: "Inventory service",
-				},
-				{
-					Name:        "Gateway",
-					Description: "API Gateway",
-				},
-				{
-					Name:        "Customers",
-					Description: "Legacy Customers management service",
-				},
 			},
 			ExpectedDependencies: []api.Dependency{
 				{

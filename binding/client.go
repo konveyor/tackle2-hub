@@ -449,6 +449,29 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 }
 
 //
+// FilePost uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePost(path, source string, object interface{}) (err error) {
+	isDir, nErr := r.IsDir(source, true)
+	if nErr != nil {
+		err = nErr
+		return
+	}
+	if isDir {
+		err = liberr.New("Must be regular file.")
+		return
+	}
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
+	}
+	err = r.FileSend(path, http.MethodPost, fields, object)
+	return
+}
+
+//
 // FileSend sends file upload from.
 func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error) {
 	request := func() (request *http.Request, err error) {
@@ -504,69 +527,6 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			return
 		}
 		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	case http.StatusConflict:
-		err = &Conflict{Path: path}
-	default:
-		err = liberr.New(http.StatusText(status))
-	}
-	return
-}
-
-//
-// FilePost uploads a file.
-// Returns the created File resource.
-func (r *Client) FilePost(path, source string, object interface{}) (err error) {
-	isDir, err := r.IsDir(source, true)
-	if err != nil {
-		return
-	}
-	if isDir {
-		err = liberr.New("Source cannot be directory.")
-		return
-	}
-	request := func() (request *http.Request, err error) {
-		buf := new(bytes.Buffer)
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPost,
-			Body:   io.NopCloser(buf),
-			URL:    r.join(path),
-		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
-		writer := multipart.NewWriter(buf)
-		defer func() {
-			_ = writer.Close()
-		}()
-		part, nErr := writer.CreateFormFile(api.FileField, pathlib.Base(source))
-		if err != nil {
-			err = liberr.Wrap(nErr)
-			return
-		}
-		request.Header.Add(
-			api.ContentType,
-			writer.FormDataContentType())
-		err = r.loadFile(part, source)
-		return
-	}
-	reply, err := r.send(request)
-	if err != nil {
-		return
-	}
-	status := reply.StatusCode
-	switch status {
-	case http.StatusOK,
-		http.StatusCreated:
-		var body []byte
-		body, err = io.ReadAll(reply.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, &object)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

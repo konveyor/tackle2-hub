@@ -6,8 +6,10 @@ import (
 )
 
 var (
-	RichClient *binding.RichClient
-	Client     *binding.Client
+	RichClient  *binding.RichClient
+	Client      *binding.Client
+	Application binding.Application
+	Dependency  binding.Dependency
 )
 
 func init() {
@@ -16,4 +18,10 @@ func init() {
 
 	// Access REST client directly
 	Client = RichClient.Client()
+
+	// Access Application directly
+	Application = RichClient.Application
+
+	// Access Dependency directly
+	Dependency = RichClient.Dependency
 }
