@@ -1630,6 +1630,7 @@ func (r *Issue) Model() (m *model.Issue) {
 // TechDependency REST resource.
 type TechDependency struct {
 	Resource `yaml:",inline"`
+	Provider string   `json:"provider" yaml:",omitempty"`
 	Name     string   `json:"name" binding:"required"`
 	Version  string   `json:"version,omitempty" yaml:",omitempty"`
 	Indirect bool     `json:"indirect,omitempty" yaml:",omitempty"`
@@ -1641,6 +1642,7 @@ type TechDependency struct {
 // With updates the resource with the model.
 func (r *TechDependency) With(m *model.TechDependency) {
 	r.Resource.With(&m.Model)
+	r.Provider = m.Provider
 	r.Name = m.Name
 	r.Version = m.Version
 	r.Indirect = m.Indirect
@@ -1656,6 +1658,7 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 	m = &model.TechDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
+	m.Provider = r.Provider
 	m.Indirect = r.Indirect
 	m.Labels, _ = json.Marshal(r.Labels)
 	m.SHA = r.SHA
@@ -1761,6 +1764,7 @@ type FileReport struct {
 //
 // DepReport REST resource.
 type DepReport struct {
+	Provider     string   `json:"provider"`
 	Name         string   `json:"name"`
 	Version      string   `json:"version"`
 	SHA          string   `json:"sha"`
