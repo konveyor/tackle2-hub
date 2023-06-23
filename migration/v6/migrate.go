@@ -11,6 +11,11 @@ var log = logr.WithName("migration|v5")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
+	m := db.Migrator()
+	err = m.DropIndex(model.TechDependency{}, "DepA")
+	if err != nil {
+		return
+	}
 	err = db.AutoMigrate(r.Models()...)
 	return
 }

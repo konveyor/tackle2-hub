@@ -77,6 +77,5 @@ func All() []interface{} {
 		Tracker{},
 		TTL{},
 		ApplicationTag{},
-		DependencyCyclicError{},
 	}
 }
