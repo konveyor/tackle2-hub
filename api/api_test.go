@@ -32,3 +32,43 @@ func TestAccepted(t *testing.T) {
 	ctx.Request.Header[Accept] = []string{"x/y,a/b;q=1.0"}
 	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
 }
+
+func TestFactKey(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	key := FactKey("key")
+	g.Expect(key.Source()).To(gomega.Equal(""))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("test:key")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey(":key")
+	g.Expect(key.Source()).To(gomega.Equal(""))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("test:")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal(""))
+
+	key = FactKey("")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal(""))
+
+	key = FactKey("key")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("source:key")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal("key"))
+
+	key = FactKey("source:")
+	key.Qualify("test")
+	g.Expect(key.Source()).To(gomega.Equal("test"))
+	g.Expect(key.Name()).To(gomega.Equal(""))
+}

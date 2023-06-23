@@ -8,13 +8,13 @@ import (
 // Proxy API.
 type Proxy struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create a Proxy.
 func (h *Proxy) Create(r *api.Proxy) (err error) {
-	err = h.client.Post(api.ProxiesRoot, &r)
+	err = h.Client.Post(api.ProxiesRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *Proxy) Create(r *api.Proxy) (err error) {
 func (h *Proxy) Get(id uint) (r *api.Proxy, err error) {
 	r = &api.Proxy{}
 	path := Path(api.ProxyRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *Proxy) Get(id uint) (r *api.Proxy, err error) {
 // List Proxies.
 func (h *Proxy) List() (list []api.Proxy, err error) {
 	list = []api.Proxy{}
-	err = h.client.Get(api.ProxiesRoot, &list)
+	err = h.Client.Get(api.ProxiesRoot, &list)
 	return
 }
 
@@ -39,13 +39,13 @@ func (h *Proxy) List() (list []api.Proxy, err error) {
 // Update a Proxy.
 func (h *Proxy) Update(r *api.Proxy) (err error) {
 	path := Path(api.ProxyRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete a Proxy.
 func (h *Proxy) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.ProxyRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.ProxyRoot).Inject(Params{api.ID: id}))
 	return
 }

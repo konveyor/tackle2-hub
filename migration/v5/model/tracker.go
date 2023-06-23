@@ -9,10 +9,9 @@ type Tracker struct {
 	Kind        string
 	Identity    *Identity
 	IdentityID  uint
-	Metadata    JSON `gorm:"type:json"`
 	Connected   bool
 	LastUpdated time.Time
 	Message     string
 	Insecure    bool
-	Tickets     []Ticket `gorm:"constraint:OnDelete:CASCADE"`
+	Tickets     []Ticket
 }

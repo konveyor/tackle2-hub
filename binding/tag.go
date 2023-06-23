@@ -8,13 +8,13 @@ import (
 // Tag API.
 type Tag struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create a Tag.
 func (h *Tag) Create(r *api.Tag) (err error) {
-	err = h.client.Post(api.TagsRoot, &r)
+	err = h.Client.Post(api.TagsRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *Tag) Create(r *api.Tag) (err error) {
 func (h *Tag) Get(id uint) (r *api.Tag, err error) {
 	r = &api.Tag{}
 	path := Path(api.TagRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *Tag) Get(id uint) (r *api.Tag, err error) {
 // List Tags.
 func (h *Tag) List() (list []api.Tag, err error) {
 	list = []api.Tag{}
-	err = h.client.Get(api.TagsRoot, &list)
+	err = h.Client.Get(api.TagsRoot, &list)
 	return
 }
 
@@ -39,13 +39,13 @@ func (h *Tag) List() (list []api.Tag, err error) {
 // Update a Tag.
 func (h *Tag) Update(r *api.Tag) (err error) {
 	path := Path(api.TagRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete a Tag.
 func (h *Tag) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.TagRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.TagRoot).Inject(Params{api.ID: id}))
 	return
 }

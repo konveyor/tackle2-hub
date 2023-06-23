@@ -333,6 +333,13 @@ definitions:
     - rule
     - ruleset
     type: object
+  api.IssueType:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   api.JobFunction:
     properties:
       createTime:
@@ -372,9 +379,6 @@ definitions:
       user:
         type: string
     type: object
-  api.Metadata:
-    additionalProperties: true
-    type: object
   api.MigrationWave:
     properties:
       applications:
@@ -402,6 +406,13 @@ definitions:
       startDate:
         type: string
       updateUser:
+        type: string
+    type: object
+  api.Project:
+    properties:
+      id:
+        type: string
+      name:
         type: string
     type: object
   api.Proxy:
@@ -893,15 +904,12 @@ definitions:
       kind:
         enum:
         - jira-cloud
-        - jira-server
-        - jira-datacenter
+        - jira-onprem
         type: string
       lastUpdated:
         type: string
       message:
         type: string
-      metadata:
-        $ref: '#/definitions/api.Metadata'
       name:
         type: string
       updateUser:
@@ -1465,32 +1473,6 @@ paths:
       tags:
       - applications
   /applications/{id}/facts:
-    get:
-      description: |-
-        List facts. Can be filtered by source.
-        By default facts from all sources are returned.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Fact source
-        in: query
-        name: source
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.Fact'
-            type: array
-      summary: List facts.
-      tags:
-      - applications
     post:
       consumes:
       - application/json
@@ -1515,63 +1497,11 @@ paths:
       summary: Create a fact.
       tags:
       - applications
-    put:
-      description: Replace all facts from a source.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Source
-        in: query
-        name: source
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-      summary: Replace all facts from a source.
-      tags:
-      - applications
   /applications/{id}/facts/{key}:
-    put:
-      consumes:
-      - application/json
-      description: Update (or create) a fact.
-      parameters:
-      - description: Application ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Fact key
-        in: path
-        name: key
-        required: true
-        type: string
-      - description: Fact source
-        in: path
-        name: source
-        required: true
-        type: string
-      - description: Fact data
-        in: body
-        name: fact
-        required: true
-        schema:
-          $ref: '#/definitions/api.Fact'
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Update (or create) a fact.
-      tags:
-      - applications
-  /applications/{id}/facts/{key}/{source}:
     delete:
-      description: Delete a fact.
+      description: |-
+        Delete a fact.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
@@ -1581,11 +1511,6 @@ paths:
       - description: Fact key
         in: path
         name: key
-        required: true
-        type: string
-      - description: Fact source
-        in: path
-        name: source
         required: true
         type: string
       responses:
@@ -1594,9 +1519,10 @@ paths:
       summary: Delete a fact.
       tags:
       - applications
-  /applications/{id}/facts/{name}/{source}:
     get:
-      description: Get fact by name.
+      description: |-
+        Get fact by name.
+        see api.FactKey for details on key parameter format.
       parameters:
       - description: Application ID
         in: path
@@ -1608,7 +1534,59 @@ paths:
         name: key
         required: true
         type: string
-      - description: Fact source
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Get fact by name.
+      tags:
+      - applications
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update (or create) a fact.
+        see api.FactKey for details on key parameter format.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Fact value
+        in: body
+        name: fact
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Update (or create) a fact.
+      tags:
+      - applications
+  '/applications/{id}/facts/{source}:':
+    get:
+      description: |-
+        List facts by source.
+        see api.FactKey for details on key parameter format.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Source key
         in: path
         name: source
         required: true
@@ -1619,8 +1597,35 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Fact'
-      summary: Get fact by name.
+            $ref: '#/definitions/api.FactMap'
+      summary: List facts.
+      tags:
+      - applications
+    put:
+      description: |-
+        Replace all facts from a source.
+        see api.FactKey for details on key parameter format.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fact key
+        in: path
+        name: source
+        required: true
+        type: string
+      - description: Fact map
+        in: body
+        name: factmap
+        required: true
+        schema:
+          $ref: '#/definitions/api.FactMap'
+      responses:
+        "204":
+          description: No Content
+      summary: Replace all facts from a source.
       tags:
       - applications
   /applications/{id}/stakeholders:
@@ -4002,6 +4007,77 @@ paths:
         "204":
           description: No Content
       summary: Update a tracker.
+      tags:
+      - trackers
+  /trackers/{id}/projects:
+    get:
+      description: List a tracker's projects.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Project'
+            type: array
+      summary: List a tracker's projects.
+      tags:
+      - trackers
+  /trackers/{id}/projects/{id2}:
+    get:
+      description: Get a tracker project by ID.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: id2
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Project'
+      summary: Get a tracker project by ID.
+      tags:
+      - trackers
+  /trackers/{id}/projects/{id2}/issuetypes:
+    get:
+      description: List a tracker project's issue types.
+      parameters:
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: id2
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.IssueType'
+            type: array
+      summary: List a tracker project's issue types.
       tags:
       - trackers
 swagger: "2.0"

@@ -1,9 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm/clause"
 	"net/http"
 	"strconv"
@@ -12,8 +12,11 @@ import (
 
 // Routes
 const (
-	TrackersRoot = "/trackers"
-	TrackerRoot  = "/trackers" + "/:" + ID
+	TrackersRoot             = "/trackers"
+	TrackerRoot              = "/trackers" + "/:" + ID
+	TrackerProjects          = TrackerRoot + "/projects"
+	TrackerProject           = TrackerRoot + "/projects" + "/:" + ID2
+	TrackerProjectIssueTypes = TrackerProject + "/issuetypes"
 )
 
 // Params
@@ -36,6 +39,9 @@ func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TrackerRoot, h.Get)
 	routeGroup.PUT(TrackerRoot, h.Update)
 	routeGroup.DELETE(TrackerRoot, h.Delete)
+	routeGroup.GET(TrackerProjects, h.ProjectList)
+	routeGroup.GET(TrackerProject, h.ProjectGet)
+	routeGroup.GET(TrackerProjectIssueTypes, h.ProjectIssueTypeList)
 }
 
 // Get godoc
@@ -182,6 +188,127 @@ func (h TrackerHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// ProjectList godoc
+// @summary List a tracker's projects.
+// @description List a tracker's projects.
+// @tags trackers
+// @produce json
+// @success 200 {object} []api.Project
+// @router /trackers/{id}/projects [get]
+// @param id path string true "Tracker ID"
+func (h TrackerHandler) ProjectList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Tracker{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
+		return
+	}
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+	projects, err := conn.Projects()
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+
+	resources := []Project{}
+	for i := range projects {
+		r := Project{}
+		r.With(&projects[i])
+		resources = append(resources, r)
+	}
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// ProjectGet godoc
+// @summary Get a tracker project by ID.
+// @description Get a tracker project by ID.
+// @tags trackers
+// @produce json
+// @success 200 {object} api.Project
+// @router /trackers/{id}/projects/{id2} [get]
+// @param id path string true "Tracker ID"
+// @param id2 path string true "Project ID"
+func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Tracker{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
+		return
+	}
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+	project, err := conn.Project(ctx.Param(ID2))
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+
+	resource := Project{}
+	resource.With(&project)
+	h.Respond(ctx, http.StatusOK, resource)
+}
+
+// ProjectIssueTypeList godoc
+// @summary List a tracker project's issue types.
+// @description List a tracker project's issue types.
+// @tags trackers
+// @produce json
+// @success 200 {object} []api.IssueType
+// @router /trackers/{id}/projects/{id2}/issuetypes [get]
+// @param id path string true "Tracker ID"
+// @param id2 path string true "Project ID"
+func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Tracker{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	if !m.Connected {
+		_ = ctx.Error(&TrackerError{m.Message})
+		return
+	}
+	conn, err := tracker.NewConnector(m)
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+	issueTypes, err := conn.IssueTypes(ctx.Param(ID2))
+	if err != nil {
+		_ = ctx.Error(&TrackerError{err.Error()})
+		return
+	}
+
+	resources := []IssueType{}
+	for i := range issueTypes {
+		r := IssueType{}
+		r.With(&issueTypes[i])
+		resources = append(resources, r)
+	}
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
 // Tracker API Resource
 type Tracker struct {
 	Resource
@@ -191,7 +318,6 @@ type Tracker struct {
 	Message     string    `json:"message"`
 	Connected   bool      `json:"connected"`
 	LastUpdated time.Time `json:"lastUpdated"`
-	Metadata    Metadata  `json:"metadata"`
 	Identity    Ref       `json:"identity" binding:"required"`
 	Insecure    bool      `json:"insecure"`
 }
@@ -207,7 +333,6 @@ func (r *Tracker) With(m *model.Tracker) {
 	r.LastUpdated = m.LastUpdated
 	r.Insecure = m.Insecure
 	r.Identity = r.ref(m.IdentityID, m.Identity)
-	_ = json.Unmarshal(m.Metadata, &r.Metadata)
 }
 
 // Model builds a model.
@@ -225,4 +350,30 @@ func (r *Tracker) Model() (m *model.Tracker) {
 	return
 }
 
-type Metadata map[string]interface{}
+//
+// Project API Resource
+type Project struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+//
+// With updates the resource with the model.
+func (r *Project) With(i *tracker.Project) {
+	r.ID = i.ID
+	r.Name = i.Name
+}
+
+//
+// IssueType API Resource
+type IssueType struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+//
+// With updates the resource with the model.
+func (r *IssueType) With(i *tracker.IssueType) {
+	r.ID = i.ID
+	r.Name = i.Name
+}

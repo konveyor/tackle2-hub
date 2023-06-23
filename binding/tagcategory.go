@@ -8,13 +8,13 @@ import (
 // TagCategory API.
 type TagCategory struct {
 	// hub API client.
-	client *Client
+	Client *Client
 }
 
 //
 // Create a TagCategory.
 func (h *TagCategory) Create(r *api.TagCategory) (err error) {
-	err = h.client.Post(api.TagCategoriesRoot, &r)
+	err = h.Client.Post(api.TagCategoriesRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *TagCategory) Create(r *api.TagCategory) (err error) {
 func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
 	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, r)
+	err = h.Client.Get(path, r)
 	return
 }
 
@@ -31,7 +31,7 @@ func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 // List TagCategories.
 func (h *TagCategory) List() (list []api.TagCategory, err error) {
 	list = []api.TagCategory{}
-	err = h.client.Get(api.TagCategoriesRoot, &list)
+	err = h.Client.Get(api.TagCategoriesRoot, &list)
 	return
 }
 
@@ -39,13 +39,13 @@ func (h *TagCategory) List() (list []api.TagCategory, err error) {
 // Update a TagCategory.
 func (h *TagCategory) Update(r *api.TagCategory) (err error) {
 	path := Path(api.TagCategoryRoot).Inject(Params{api.ID: r.ID})
-	err = h.client.Put(path, r)
+	err = h.Client.Put(path, r)
 	return
 }
 
 //
 // Delete a TagCategory.
 func (h *TagCategory) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.TagCategoryRoot).Inject(Params{api.ID: id}))
+	err = h.Client.Delete(Path(api.TagCategoryRoot).Inject(Params{api.ID: id}))
 	return
 }

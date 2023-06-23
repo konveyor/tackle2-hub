@@ -229,7 +229,7 @@ func TestFilter(t *testing.T) {
 	}))
 	sql, values := f.SQL()
 	g.Expect(sql).To(gomega.Equal("category IN ?"))
-	g.Expect(values).To(gomega.Equal([]interface{}{"a", "b", "c"}))
+	g.Expect(values[0]).To(gomega.Equal([]interface{}{"a", "b", "c"}))
 
 	f, found = filter.Field("name.first")
 	g.Expect(found).To(gomega.BeTrue())
@@ -258,6 +258,13 @@ func TestFilter(t *testing.T) {
 	f, found = filter.Field("id")
 	g.Expect(found).To(gomega.BeTrue())
 	g.Expect(AsValue(f.Value[0])).To(gomega.Equal(0))
+
+	filter, err = p.Filter("category~(a|b)")
+	f, found = filter.Field("category")
+	g.Expect(found).To(gomega.BeTrue())
+	sql, values = f.SQL()
+	g.Expect(sql).To(gomega.Equal("(category LIKE ? OR category LIKE ?)"))
+	g.Expect(values).To(gomega.Equal([]interface{}{"a", "b"}))
 }
 
 func TestValidation(t *testing.T) {

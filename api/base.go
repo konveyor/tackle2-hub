@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,11 @@ import (
 )
 
 var Log = logr.WithName("api")
+
+const (
+	MaxPage  = 500
+	MaxCount = 50000
+)
 
 //
 // BaseHandler base handler.
@@ -49,33 +55,24 @@ func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 // is not constrained by pagination.
 func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 	n := int(count)
-	max := 500
 	p := Page{}
 	p.With(ctx)
-	if n > max {
-		if p.Limit == 0 || p.Limit > max {
+	if n > MaxPage {
+		if p.Limit == 0 || p.Limit > MaxPage {
 			err = &BadRequestError{
 				fmt.Sprintf(
 					"Found=%d, ?Limit <= %d required.",
 					n,
-					max)}
+					MaxPage)}
 			return
 		}
 	}
-	mp := ctx.Writer.Header()
-	mp[Total] = []string{
-		strconv.Itoa(int(count)),
+	s := strconv.Itoa(n)
+	if n > MaxCount {
+		s = ">" + strconv.Itoa(MaxCount)
 	}
-	return
-}
-
-//
-// Paginated returns a paginated and sorted DB client.
-func (h *BaseHandler) paginated(ctx *gin.Context, sort Sort, in *gorm.DB) (db *gorm.DB) {
-	p := Page{}
-	p.With(ctx)
-	db = p.Paginated(in)
-	db = sort.Sorted(db)
+	mp := ctx.Writer.Header()
+	mp[Total] = []string{s}
 	return
 }
 
@@ -366,4 +363,76 @@ type Sort = sort.Sort
 // Decoder binding decoder.
 type Decoder interface {
 	Decode(r interface{}) (err error)
+}
+
+//
+// Cursor Paginated rows iterator.
+type Cursor struct {
+	Page
+	DB    *gorm.DB
+	Rows  *sql.Rows
+	Index int64
+	Error error
+}
+
+//
+// Next returns true when has next row.
+func (r *Cursor) Next(m interface{}) (next bool) {
+	if r.Error != nil {
+		next = true
+		return
+	}
+	next = r.Rows.Next()
+	if next {
+		r.Index++
+	} else {
+		return
+	}
+	if r.pageLimited() || r.Index > MaxPage {
+		for r.Rows.Next() {
+			r.Index++
+			if r.Index > MaxCount {
+				break
+			}
+		}
+		next = false
+		r.Close()
+		return
+	}
+	r.Error = r.DB.ScanRows(r.Rows, m)
+	return
+}
+
+//
+// With configures the cursor.
+func (r *Cursor) With(db *gorm.DB, p Page) {
+	r.DB = db.Offset(p.Offset)
+	r.Rows, r.Error = r.DB.Rows()
+	r.Index = int64(0)
+	r.Page = p
+}
+
+//
+// Count returns the count adjusted for offset.
+func (r *Cursor) Count() (n int64) {
+	n = int64(r.Offset) + r.Index
+	return n
+}
+
+//
+// Close the cursor.
+func (r *Cursor) Close() {
+	if r.Rows != nil {
+		_ = r.Rows.Close()
+	}
+}
+
+//
+// pageLimited returns true when page Limit defined and exceeded.
+func (r *Cursor) pageLimited() (b bool) {
+	if r.Limit < 1 {
+		return
+	}
+	b = r.Index > int64(r.Limit)
+	return
 }

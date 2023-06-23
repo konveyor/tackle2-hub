@@ -32,7 +32,9 @@ func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
 		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
-			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: r.Key, api.Source: r.Source})
+			key := api.FactKey(r.Key)
+			key.Qualify(r.Source)
+			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: key})
 
 			// Create.
 			err := Client.Post(binding.Path(api.ApplicationFactsRoot).Inject(binding.Params{api.ID: application.ID}), &r)
@@ -41,8 +43,8 @@ func TestApplicationFactCRUD(t *testing.T) {
 			}
 
 			// Get.
-			got := api.Fact{}
-			err = Client.Get(factPath, &got)
+			var v interface{}
+			err = Client.Get(factPath, &v)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -55,14 +57,13 @@ func TestApplicationFactCRUD(t *testing.T) {
 			updated := api.Fact{
 				Value: fmt.Sprintf("{\"%s\":\"%s\"}", r.Key, "updated"),
 			}
-			err = Client.Put(factPath, updated)
+			err = Client.Put(factPath, updated.Value)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
 			// Get the updated.
-			got = api.Fact{}
-			err = Client.Get(factPath, &got)
+			err = Client.Get(factPath, &v)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -77,7 +78,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 			}
 
 			// Check the it was deleted.
-			err = Client.Get(factPath, &got)
+			err = Client.Get(factPath, &v)
 			if err == nil {
 				t.Errorf("Exits, but should be deleted: %v", r)
 			}
@@ -104,10 +105,10 @@ func TestApplicationFactsList(t *testing.T) {
 	}
 
 	// Check facts list with and without trailing slash (client maybe removes it anyway).
-	factsPathSuffix := []string{"facts", "facts/"}
+	factsPathSuffix := []string{"facts/test:", "facts/test:/"}
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
-			got := []api.Fact{}
+			got := api.FactMap{}
 			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api.ApplicationRoot).Inject(binding.Params{api.ID: application.ID}), pathSuffix), &got)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())
