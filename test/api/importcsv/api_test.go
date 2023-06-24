@@ -23,10 +23,6 @@ func TestImportCSV(t *testing.T) {
 			importedApps, _ := Application.List()
 			expectedApps := r.ExpectedApplications
 			for i, expectedApp := range expectedApps {
-				if i >= len(importedApps) {
-					t.Errorf("Missing imported Application: %s", expectedApp.Name)
-					continue
-				}
 				importedApp := importedApps[i]
 				if importedApp.Name != expectedApp.Name {
 					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedApp.Name, importedApp.Name)
@@ -37,10 +33,6 @@ func TestImportCSV(t *testing.T) {
 			importedDeps, _ := Dependency.List()
 			expectedDeps := r.ExpectedDependencies
 			for i, expectedDep := range expectedDeps {
-				if i >= len(importedDeps) {
-					t.Errorf("Missing imported Dependency: %s", expectedDep.To.Name)
-					continue
-				}
 				importedDep := importedDeps[i].To.Name
 				if importedDep != expectedDep.To.Name {
 					t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", expectedDep.To.Name, importedDep)
