@@ -1,7 +1,6 @@
 package importcsv
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -22,20 +21,28 @@ func TestImportCSV(t *testing.T) {
 			// Check list of Applications.
 			importedApps, _ := Application.List()
 			expectedApps := r.ExpectedApplications
-			for i, expectedApp := range expectedApps {
-				importedApp := importedApps[i]
-				if importedApp.Name != expectedApp.Name {
-					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedApp.Name, importedApp.Name)
+			for i, importedApp := range importedApps {
+				if i >= len(expectedApps) {
+					t.Errorf("Extra imported Application: %s", importedApp.Name)
+					continue
+				}
+				expectedApp := expectedApps[i].Name
+				if importedApp.Name != expectedApp {
+					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedApp, importedApp.Name)
 				}
 			}
 
 			// Check list of Dependencies.
 			importedDeps, _ := Dependency.List()
 			expectedDeps := r.ExpectedDependencies
-			for i, expectedDep := range expectedDeps {
-				importedDep := importedDeps[i].To.Name
-				if importedDep != expectedDep.To.Name {
-					t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", expectedDep.To.Name, importedDep)
+			for i, importedDep := range importedDeps {
+				if i >= len(expectedDeps) {
+					t.Errorf("Extra imported Application: %s", importedDep.To.Name)
+					continue
+				}
+				expectedDep := expectedDeps[i].To.Name
+				if importedDep.To.Name != expectedDep {
+					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedDep, importedDep.To.Name)
 				}
 			}
 
@@ -54,7 +61,6 @@ func TestImportCSV(t *testing.T) {
 					outputMatchingSummary = imp
 				}
 			}
-			fmt.Println(outputMatchingSummary)
 			if len(importedDeps)+len(importedApps) != outputMatchingSummary.ValidCount {
 				t.Errorf("valid count not matching with number of applications and dependencies")
 			}
