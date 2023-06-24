@@ -17,7 +17,7 @@ func init() {
 	RichClient = client.PrepareRichClient()
 
 	// Access REST client directly
-	Client = RichClient.Client()
+	Client = RichClient.Client
 
 	// Access Application directly
 	Application = RichClient.Application

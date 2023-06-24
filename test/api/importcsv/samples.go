@@ -5,7 +5,7 @@ import (
 )
 
 type TestCase struct {
-	fileName             string
+	FileName             string
 	ExpectedApplications []api.Application
 	ExpectedDependencies []api.Dependency
 }
@@ -13,7 +13,7 @@ type TestCase struct {
 var (
 	TestCases = []TestCase{
 		{
-			fileName: "template_application_import.csv",
+			FileName: "template_application_import.csv",
 			ExpectedApplications: []api.Application{
 				{
 					Name:        "Customers",

@@ -1,6 +1,7 @@
 package importcsv
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -9,11 +10,11 @@ import (
 
 func TestImportCSV(t *testing.T) {
 	for _, r := range TestCases {
-		t.Run(r.fileName, func(t *testing.T) {
+		t.Run(r.FileName, func(t *testing.T) {
 
 			// Upload CSV.
 			inputData := make(map[string]interface{})
-			err := Client.FilePost("/importsummaries/upload", r.fileName, &inputData)
+			err := Client.FilePost("/importsummaries/upload", r.FileName, &inputData)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -46,23 +47,25 @@ func TestImportCSV(t *testing.T) {
 				}
 			}
 
-			// fetch id's
+			// fetch id of CSV file and convert it into required formats
 			id := uint64(inputData["id"].(float64))
-			var inputID = strconv.FormatUint(id, 10)
-			var output []api.ImportSummary
-			err = Client.Get("/importsummaries/", &output)
-			if err != nil {
-				t.Errorf("Can't get summaries of all imports")
-			}
+			var inputID = strconv.FormatUint(id, 10) // to be used for API compatibility
 
-			// check for the id and return valid
-			// for _, imp := range output {
-			// 	if uint64(imp.ID) == id {
-			// 		if len(importedDeps)+len(importedApps) != imp.ValidCount {
-			// 			t.Errorf("Mismatch in number of valid count")
-			// 		}
-			// 	}
-			// }
+			var outputImportSummaries []api.ImportSummary
+			outputMatchingSummary := api.ImportSummary{}
+			err = Client.Get("/importsummaries", &outputImportSummaries)
+			if err != nil {
+				t.Errorf("failed to get import summary: %v", err)
+			}
+			for _, imp := range outputImportSummaries {
+				if uint64(imp.ID) == id {
+					outputMatchingSummary = imp
+				}
+			}
+			fmt.Println(outputMatchingSummary)
+			if len(importedDeps)+len(importedApps) != outputMatchingSummary.ValidCount {
+				t.Errorf("valid count not matching with number of applications and dependencies")
+			}
 
 			// Get summaries of the Input ID.
 			outputImport := api.ImportSummary{}
@@ -75,6 +78,18 @@ func TestImportCSV(t *testing.T) {
 			err = Client.Delete("/importsummaries/" + inputID)
 			if err != nil {
 				t.Errorf("CSV delete failed")
+			}
+
+			// Delete related Applications.
+			err = Application.Delete(uint(id))
+			if err != nil {
+				t.Errorf("Application delete failed")
+			}
+
+			// Delete related Dependencies.
+			err = Dependency.Delete(uint(id))
+			if err != nil {
+				t.Errorf("Dependency delete failed")
 			}
 		})
 	}
