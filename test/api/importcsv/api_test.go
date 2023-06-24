@@ -66,13 +66,33 @@ func TestImportCSV(t *testing.T) {
 			}
 
 			// Get summaries of the Input ID.
-			outputImport := api.ImportSummary{}
-			err = Client.Get("/importsummaries/"+inputID, &outputImport)
+			outputImportSummary := api.ImportSummary{}
+			err = Client.Get("/importsummaries/"+inputID, &outputImportSummary)
 			if err != nil {
 				t.Errorf("Could not get the CSV output")
 			}
 
-			// Delete summaries of the Input ID.
+			// Get all imports.
+			var outputImports []api.Import
+			err = Client.Get("/imports", &outputImports)
+			if err != nil {
+				t.Errorf("Could not get the imports")
+			}
+
+			// Get import of the Input Id.
+			outputImport := api.Import{}
+			err = Client.Get("/imports/"+inputID, &outputImport)
+			if err != nil {
+				t.Errorf("Import for the id failed")
+			}
+
+			// Delete import of the Input Id.
+			err = Client.Delete("/imports/" + inputID)
+			if err != nil {
+				t.Errorf("Import delete failed")
+			}
+
+			// Delete summary of the Input ID.
 			err = Client.Delete("/importsummaries/" + inputID)
 			if err != nil {
 				t.Errorf("CSV delete failed")
