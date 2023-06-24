@@ -15,7 +15,7 @@ type Analysis struct {
 // TechDependency report dependency.
 type TechDependency struct {
 	Model
-	Provider   string `gorm:"index:depA"`
+	Provider   string `gorm:"index:depA;not null;default:''"`
 	Name       string `gorm:"index:depA;not null"`
 	Version    string `gorm:"index:depA"`
 	SHA        string `gorm:"index:depA"`
