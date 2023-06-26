@@ -964,7 +964,7 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // @description - effort
 // @description - incidents
 // @description - files
-// @tags appreports
+// @tags issueappreports
 // @produce json
 // @success 200 {object} []api.AppReport
 // @router /analyses/report/applications [get]
@@ -1233,6 +1233,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Find
 	db := h.DB(ctx)
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
@@ -1271,6 +1272,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @summary List dependency reports.
 // @description Each report collates dependencies by name and SHA.
 // @description filters:
+// @description - provider
 // @description - name
 // @description - version
 // @description - sha
@@ -1282,6 +1284,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - businessService.name
 // @description - tag.id
 // @description sort:
+// @description - provider
 // @description - name
 // @description - version
 // @description - sha
@@ -1298,6 +1301,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "provider", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
@@ -1371,6 +1375,158 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
 		}
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// DepAppReports godoc
+// @summary List application reports.
+// @description List application reports.
+// @description filters:
+// @description - id
+// @description - name
+// @description - description
+// @description - businessService
+// @description - provider
+// @description - name
+// @description - version
+// @description - sha
+// @description - indirect
+// @description - dep.provider
+// @description - dep.name
+// @description - dep.version
+// @description - dep.sha
+// @description - dep.indirect
+// @description - dep.labels
+// @description - application.id
+// @description - application.name
+// @description - businessService.id
+// @description - businessService.name
+// @description sort:
+// @description - name
+// @description - description
+// @description - businessService
+// @description - provider
+// @description - name
+// @description - version
+// @description - sha
+// @description - indirect
+// @tags depappreports
+// @produce json
+// @success 200 {object} []api.AppReport
+// @router /analyses/report/applications [get]
+func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
+	resources := []DepAppReport{}
+	type M struct {
+		ID              uint
+		Name            string
+		Description     string
+		BusinessService string
+		DepID           uint
+		Provider        string
+		DepName         string
+		Version         string
+		SHA             string
+		Indirect        bool
+	}
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "id", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "description", Kind: qf.STRING},
+			{Field: "businessService", Kind: qf.STRING},
+			{Field: "provider", Kind: qf.LITERAL},
+			{Field: "name", Kind: qf.LITERAL},
+			{Field: "version", Kind: qf.LITERAL},
+			{Field: "sha", Kind: qf.LITERAL},
+			{Field: "indirect", Kind: qf.LITERAL},
+			{Field: "dep.provider", Kind: qf.LITERAL},
+			{Field: "dep.name", Kind: qf.LITERAL},
+			{Field: "dep.version", Kind: qf.LITERAL},
+			{Field: "dep.sha", Kind: qf.LITERAL},
+			{Field: "dep.indirect", Kind: qf.LITERAL},
+			{Field: "dep.labels", Kind: qf.LITERAL},
+			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.id", Kind: qf.LITERAL},
+			{Field: "businessService.name", Kind: qf.STRING},
+			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Inner Query
+	q := h.DB(ctx)
+	q = q.Select(
+		"app.ID",
+		"app.Name",
+		"app.Description",
+		"b.Name BusinessService",
+		"d.ID DepID",
+		"d.Provider",
+		"d.Name DepName",
+		"d.Version",
+		"d.SHA",
+		"d.Indirect")
+	q = q.Table("TechDependency d")
+	q = q.Joins("LEFT JOIN Analysis a ON a.ID = d.AnalysisID")
+	q = q.Joins("LEFT JOIN Application app ON app.ID = a.ApplicationID")
+	q = q.Joins("LEFT OUTER JOIN BusinessService b ON b.ID = app.BusinessServiceID")
+	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter.Resource("dep")))
+	q = q.Group("i.ID")
+	// Find
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	db = filter.Where(db)
+	db = sort.Sorted(db)
+	var list []M
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Render
+	for i := range list {
+		m := &list[i]
+		r := DepAppReport{}
+		r.ID = m.ID
+		r.Name = m.Name
+		r.Description = m.Description
+		r.BusinessService = m.BusinessService
+		r.Dep.ID = m.DepID
+		r.Dep.Provider = m.Provider
+		r.Dep.Name = m.DepName
+		r.Dep.Version = m.Version
+		r.Dep.SHA = m.SHA
+		r.Dep.Indirect = m.Indirect
 		resources = append(resources, r)
 	}
 
@@ -1770,6 +1926,23 @@ type DepReport struct {
 	SHA          string   `json:"sha"`
 	Labels       []string `json:"labels"`
 	Applications int      `json:"applications"`
+}
+
+//
+// DepAppReport REST resource.
+type DepAppReport struct {
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	BusinessService string `json:"businessService"`
+	Dep             struct {
+		ID       uint   `json:"id"`
+		Provider string `json:"provider"`
+		Name     string `json:"name"`
+		Version  string `json:"version"`
+		SHA      string `json:"rule"`
+		Indirect bool   `json:"indirect"`
+	} `json:"dep"`
 }
 
 //
