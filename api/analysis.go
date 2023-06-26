@@ -60,7 +60,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
 	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
-	routeGroup.GET(AnalysisReportAppRoot, h.AppReports)
+	routeGroup.GET(AnalysisReportAppRoot, h.AppIssueReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
 	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
 	//
@@ -934,7 +934,7 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// AppReports godoc
+// AppIssueReports godoc
 // @summary List application reports.
 // @description List application reports.
 // @description filters:
@@ -968,8 +968,8 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.AppReport
 // @router /analyses/report/applications [get]
-func (h AnalysisHandler) AppReports(ctx *gin.Context) {
-	resources := []AppReport{}
+func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
+	resources := []AppIssueReport{}
 	type M struct {
 		ID              uint
 		Name            string
@@ -1069,7 +1069,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	// Render
 	for i := range list {
 		m := &list[i]
-		r := AppReport{}
+		r := AppIssueReport{}
 		r.ID = m.ID
 		r.Name = m.Name
 		r.Description = m.Description
@@ -1735,8 +1735,8 @@ type IssueReport struct {
 }
 
 //
-// AppReport REST resource.
-type AppReport struct {
+// AppIssueReport REST resource.
+type AppIssueReport struct {
 	ID              uint   `json:"id"`
 	Name            string `json:"name"`
 	Description     string `json:"description"`
