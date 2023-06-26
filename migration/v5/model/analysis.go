@@ -43,12 +43,6 @@ type Issue struct {
 }
 
 //
-// RuleId returns unique rule ID.
-func (m *Issue) RuleId() (id string) {
-	return m.RuleSet + "." + m.Rule
-}
-
-//
 // Incident report an issue incident.
 type Incident struct {
 	Model

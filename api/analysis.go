@@ -16,17 +16,18 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot           = "/analyses"
-	AnalysisRoot           = AnalysesRoot + "/:" + ID
-	AnalysesDepsRoot       = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot     = AnalysesRoot + "/issues"
-	AnalysesIssueRoot      = AnalysesIssuesRoot + "/:" + ID
-	AnalysisIncidentsRoot  = AnalysesIssueRoot + "/incidents"
-	AnalysesReportRoot     = AnalysesRoot + "/report"
-	AnalysisReportDepRoot  = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot = AnalysesReportRoot + "/rules"
-	AnalysisReportAppRoot  = AnalysesReportRoot + "/applications"
-	AnalysisReportFileRoot = AnalysesReportRoot + "/issues/:" + ID + "/files"
+	AnalysesRoot            = "/analyses"
+	AnalysisRoot            = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot        = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot      = AnalysesRoot + "/issues"
+	AnalysesIssueRoot       = AnalysesIssuesRoot + "/:" + ID
+	AnalysisIncidentsRoot   = AnalysesIssueRoot + "/incidents"
+	AnalysesReportRoot      = AnalysesRoot + "/report"
+	AnalysisReportDepRoot   = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot  = AnalysesReportRoot + "/rules"
+	AnalysisReportAppRoot   = AnalysesReportRoot + "/applications"
+	AnalysisReportIssueRoot = AnalysisReportAppRoot + "/:" + ID + "/issues"
+	AnalysisReportFileRoot  = AnalysesReportRoot + "/issues/:" + ID + "/files"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -58,6 +59,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
+	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
 	routeGroup.GET(AnalysisReportAppRoot, h.AppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
 	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
@@ -793,29 +795,138 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		return
 	}
 	// Render
-	affected := make(map[string]int)
-	for i := range list {
-		r := &list[i]
-		affected[r.RuleId()] = r.Applications
-	}
-	collated := make(map[string]*RuleReport)
 	for i := range list {
 		m := list[i]
-		r, found := collated[m.RuleId()]
-		if !found {
-			r = &RuleReport{
-				Applications: affected[m.RuleId()],
-				Description:  m.Description,
-				Category:     m.Category,
-				RuleSet:      m.RuleSet,
-				Rule:         m.Rule,
-				Name:         m.Name,
-			}
-			collated[m.RuleId()] = r
-			resources = append(resources, r)
-			if m.Labels != nil {
-				_ = json.Unmarshal(m.Labels, &r.Labels)
-			}
+		r := &RuleReport{
+			Applications: m.Applications,
+			Description:  m.Description,
+			Category:     m.Category,
+			RuleSet:      m.RuleSet,
+			Rule:         m.Rule,
+			Name:         m.Name,
+		}
+		resources = append(resources, r)
+		if m.Labels != nil {
+			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		r.Effort += m.Effort
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// IssueReports godoc
+// @summary List application issue reports.
+// @description Each report collates issues by ruleset/rule.
+// @description filters:
+// @description - ruleset
+// @description - rule
+// @description - category
+// @description - effort
+// @description - labels
+// @description sort:
+// @description - ruleset
+// @description - rule
+// @description - category
+// @description - effort
+// @description - files
+// @tags issuereport
+// @produce json
+// @success 200 {object} []api.IssueReport
+// @router /analyses/report/applications/{id}/issues [get]
+// @param id path string true "Application ID"
+func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
+	resources := []*IssueReport{}
+	type M struct {
+		model.Issue
+		Files int
+	}
+	// Latest
+	id := h.pk(ctx)
+	analysis := &model.Analysis{}
+	db := h.DB(ctx).Where("ApplicationID", id)
+	result := db.Last(analysis)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
+			{Field: "category", Kind: qf.STRING},
+			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Inner Query
+	q := h.DB(ctx)
+	q = q.Select(
+		"i.RuleSet",
+		"i.Rule",
+		"i.Name",
+		"i.Description",
+		"i.Category",
+		"i.Effort",
+		"i.Labels",
+		"COUNT(distinct n.File) Files")
+	q = q.Table("Issue i,")
+	q = q.Joins("Incident n")
+	q = q.Where("i.ID = n.IssueID")
+	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
+	q = q.Where("i.AnalysisID", analysis.ID)
+	q = q.Group("i.RuleSet,i.Rule")
+	// Find
+	db = h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	db = sort.Sorted(db)
+	var list []M
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Render
+	for i := range list {
+		m := list[i]
+		r := &IssueReport{
+			Files:       m.Files,
+			Description: m.Description,
+			Category:    m.Category,
+			RuleSet:     m.RuleSet,
+			Rule:        m.Rule,
+			Name:        m.Name,
+		}
+		resources = append(resources, r)
+		if m.Labels != nil {
+			_ = json.Unmarshal(m.Labels, &r.Labels)
 		}
 		r.Effort += m.Effort
 	}
@@ -1608,9 +1719,16 @@ type RuleReport struct {
 }
 
 //
-// RuleId returns unique rule ID.
-func (r *RuleReport) RuleId() (id string) {
-	return r.RuleSet + "." + r.Rule
+// IssueReport REST resource.
+type IssueReport struct {
+	RuleSet     string   `json:"ruleset"`
+	Rule        string   `json:"rule"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Category    string   `json:"category"`
+	Effort      int      `json:"effort"`
+	Labels      []string `json:"labels"`
+	Files       int      `json:"files"`
 }
 
 //
