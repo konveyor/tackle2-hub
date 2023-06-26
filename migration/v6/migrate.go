@@ -12,7 +12,11 @@ type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	m := db.Migrator()
-	err = m.DropIndex(model.TechDependency{}, "DepA")
+	err = m.DropIndex(model.TechDependency{}, "depA")
+	if err != nil {
+		return
+	}
+	err = m.DropIndex(model.Issue{}, "issueA")
 	if err != nil {
 		return
 	}

@@ -15,13 +15,13 @@ type Analysis struct {
 // TechDependency report dependency.
 type TechDependency struct {
 	Model
-	Provider   string
-	Name       string
-	Version    string
-	SHA        string
+	Provider   string `gorm:"index:depA"`
+	Name       string `gorm:"index:depA"`
+	Version    string `gorm:"index:depA"`
+	SHA        string `gorm:"index:depA"`
 	Indirect   bool
 	Labels     JSON `gorm:"type:json"`
-	AnalysisID uint `gorm:"index;not null"`
+	AnalysisID uint `gorm:"index;index:depA;not null"`
 	Analysis   *Analysis
 }
 
@@ -39,7 +39,7 @@ type Issue struct {
 	Facts       JSON       `gorm:"type:json"`
 	Labels      JSON       `gorm:"type:json"`
 	Effort      int        `gorm:"index;not null"`
-	AnalysisID  uint       `gorm:"index;not null"`
+	AnalysisID  uint       `gorm:"index;index:issueA;not null"`
 	Analysis    *Analysis
 }
 
