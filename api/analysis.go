@@ -830,10 +830,11 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - files
-// @tags rulereports
+// @tags issuereport
 // @produce json
-// @success 200 {object} []api.RuleReport
-// @router /analyses/report/rules [get]
+// @success 200 {object} []api.IssueReport
+// @router /analyses/report/applications/{id}/issues [get]
+// @param id path string true "Application ID"
 func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
