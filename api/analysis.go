@@ -16,18 +16,23 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot            = "/analyses"
-	AnalysisRoot            = AnalysesRoot + "/:" + ID
-	AnalysesDepsRoot        = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot      = AnalysesRoot + "/issues"
-	AnalysesIssueRoot       = AnalysesIssuesRoot + "/:" + ID
-	AnalysisIncidentsRoot   = AnalysesIssueRoot + "/incidents"
-	AnalysesReportRoot      = AnalysesRoot + "/report"
-	AnalysisReportDepRoot   = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot  = AnalysesReportRoot + "/rules"
-	AnalysisReportAppRoot   = AnalysesReportRoot + "/applications"
-	AnalysisReportIssueRoot = AnalysisReportAppRoot + "/:" + ID + "/issues"
-	AnalysisReportFileRoot  = AnalysesReportRoot + "/issues/:" + ID + "/files"
+	AnalysesRoot          = "/analyses"
+	AnalysisRoot          = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot    = AnalysesRoot + "/issues"
+	AnalysesIssueRoot     = AnalysesIssuesRoot + "/:" + ID
+	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
+
+	AnalysesReportRoot           = AnalysesRoot + "/report"
+	AnalysisReportDepsRoot       = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot       = AnalysesReportRoot + "/rules"
+	AnalysisReportIssuesRoot     = AnalysesReportRoot + "/issues"
+	AnalysisReportAppsRoot       = AnalysesReportRoot + "/applications"
+	AnalysisReportIssueRoot      = AnalysisReportIssuesRoot + "/:" + ID
+	AnalysisReportIssuesAppsRoot = AnalysisReportIssuesRoot + "/applications"
+	AnalysisReportDepsAppsRoot   = AnalysisReportDepsRoot + "/applications"
+	AnalysisReportAppsIssuesRoot = AnalysisReportAppsRoot + "/:" + ID + "/issues"
+	AnalysisReportFileRoot       = AnalysisReportIssueRoot + "/files"
 
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
@@ -59,10 +64,11 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
-	routeGroup.GET(AnalysisReportAppRoot, h.IssueAppReports)
+	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
+	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
-	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
+	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
+	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
@@ -815,7 +821,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueReports godoc
+// AppIssueReports godoc
 // @summary List application issue reports.
 // @description Each report collates issues by ruleset/rule.
 // @description filters:
@@ -835,7 +841,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @success 200 {object} []api.IssueReport
 // @router /analyses/report/applications/{id}/issues [get]
 // @param id path string true "Application ID"
-func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
+func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
 		model.Issue
@@ -1485,7 +1491,6 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 	q = q.Joins("LEFT OUTER JOIN BusinessService b ON b.ID = app.BusinessServiceID")
 	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter.Resource("dep")))
-	q = q.Group("i.ID")
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
@@ -1521,12 +1526,12 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 		r.Name = m.Name
 		r.Description = m.Description
 		r.BusinessService = m.BusinessService
-		r.Dep.ID = m.DepID
-		r.Dep.Provider = m.Provider
-		r.Dep.Name = m.DepName
-		r.Dep.Version = m.Version
-		r.Dep.SHA = m.SHA
-		r.Dep.Indirect = m.Indirect
+		r.Dependency.ID = m.DepID
+		r.Dependency.Provider = m.Provider
+		r.Dependency.Name = m.DepName
+		r.Dependency.Version = m.Version
+		r.Dependency.SHA = m.SHA
+		r.Dependency.Indirect = m.Indirect
 		resources = append(resources, r)
 	}
 
@@ -1935,14 +1940,14 @@ type DepAppReport struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	BusinessService string `json:"businessService"`
-	Dep             struct {
+	Dependency      struct {
 		ID       uint   `json:"id"`
 		Provider string `json:"provider"`
 		Name     string `json:"name"`
 		Version  string `json:"version"`
 		SHA      string `json:"rule"`
 		Indirect bool   `json:"indirect"`
-	} `json:"dep"`
+	} `json:"dependency"`
 }
 
 //
