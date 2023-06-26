@@ -22,7 +22,7 @@ const (
 	AnalysesIssuesRoot    = AnalysesRoot + "/issues"
 	AnalysesIssueRoot     = AnalysesIssuesRoot + "/:" + ID
 	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
-
+	//
 	AnalysesReportRoot           = AnalysesRoot + "/report"
 	AnalysisReportDepsRoot       = AnalysesReportRoot + "/dependencies"
 	AnalysisReportRuleRoot       = AnalysesReportRoot + "/rules"
@@ -33,7 +33,7 @@ const (
 	AnalysisReportDepsAppsRoot   = AnalysisReportDepsRoot + "/applications"
 	AnalysisReportAppsIssuesRoot = AnalysisReportAppsRoot + "/:" + ID + "/issues"
 	AnalysisReportFileRoot       = AnalysisReportIssueRoot + "/files"
-
+	//
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
 	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
@@ -63,6 +63,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
+	//
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
 	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
 	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
