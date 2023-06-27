@@ -73,6 +73,10 @@ pkg=$(cat << EOF
 package model
 
 import "${importRoot}/${current}/model"
+
+//
+// JSON field (data) type.
+type JSON = []byte
 EOF
 )
 

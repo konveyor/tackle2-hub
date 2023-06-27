@@ -16,19 +16,24 @@ import (
 //
 // Routes
 const (
-	AnalysesRoot            = "/analyses"
-	AnalysisRoot            = AnalysesRoot + "/:" + ID
-	AnalysesDepsRoot        = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot      = AnalysesRoot + "/issues"
-	AnalysesIssueRoot       = AnalysesIssuesRoot + "/:" + ID
-	AnalysisIncidentsRoot   = AnalysesIssueRoot + "/incidents"
-	AnalysesReportRoot      = AnalysesRoot + "/report"
-	AnalysisReportDepRoot   = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot  = AnalysesReportRoot + "/rules"
-	AnalysisReportAppRoot   = AnalysesReportRoot + "/applications"
-	AnalysisReportIssueRoot = AnalysisReportAppRoot + "/:" + ID + "/issues"
-	AnalysisReportFileRoot  = AnalysesReportRoot + "/issues/:" + ID + "/files"
-
+	AnalysesRoot          = "/analyses"
+	AnalysisRoot          = AnalysesRoot + "/:" + ID
+	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
+	AnalysesIssuesRoot    = AnalysesRoot + "/issues"
+	AnalysesIssueRoot     = AnalysesIssuesRoot + "/:" + ID
+	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
+	//
+	AnalysesReportRoot           = AnalysesRoot + "/report"
+	AnalysisReportDepsRoot       = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot       = AnalysesReportRoot + "/rules"
+	AnalysisReportIssuesRoot     = AnalysesReportRoot + "/issues"
+	AnalysisReportAppsRoot       = AnalysesReportRoot + "/applications"
+	AnalysisReportIssueRoot      = AnalysisReportIssuesRoot + "/:" + ID
+	AnalysisReportIssuesAppsRoot = AnalysisReportIssuesRoot + "/applications"
+	AnalysisReportDepsAppsRoot   = AnalysisReportDepsRoot + "/applications"
+	AnalysisReportAppsIssuesRoot = AnalysisReportAppsRoot + "/:" + ID + "/issues"
+	AnalysisReportFileRoot       = AnalysisReportIssueRoot + "/files"
+	//
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
 	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
@@ -58,11 +63,13 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
+	//
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportIssueRoot, h.IssueReports)
-	routeGroup.GET(AnalysisReportAppRoot, h.AppReports)
+	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
+	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
-	routeGroup.GET(AnalysisReportDepRoot, h.DepReports)
+	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
+	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
 	//
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
@@ -815,7 +822,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueReports godoc
+// AppIssueReports godoc
 // @summary List application issue reports.
 // @description Each report collates issues by ruleset/rule.
 // @description filters:
@@ -835,7 +842,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @success 200 {object} []api.IssueReport
 // @router /analyses/report/applications/{id}/issues [get]
 // @param id path string true "Application ID"
-func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
+func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
 		model.Issue
@@ -934,7 +941,7 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// AppReports godoc
+// IssueAppReports godoc
 // @summary List application reports.
 // @description List application reports.
 // @description filters:
@@ -964,12 +971,12 @@ func (h AnalysisHandler) IssueReports(ctx *gin.Context) {
 // @description - effort
 // @description - incidents
 // @description - files
-// @tags appreports
+// @tags issueappreports
 // @produce json
 // @success 200 {object} []api.AppReport
 // @router /analyses/report/applications [get]
-func (h AnalysisHandler) AppReports(ctx *gin.Context) {
-	resources := []AppReport{}
+func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
+	resources := []IssueAppReport{}
 	type M struct {
 		ID              uint
 		Name            string
@@ -1069,7 +1076,7 @@ func (h AnalysisHandler) AppReports(ctx *gin.Context) {
 	// Render
 	for i := range list {
 		m := &list[i]
-		r := AppReport{}
+		r := IssueAppReport{}
 		r.ID = m.ID
 		r.Name = m.Name
 		r.Description = m.Description
@@ -1233,6 +1240,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Find
 	db := h.DB(ctx)
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
@@ -1271,6 +1279,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @summary List dependency reports.
 // @description Each report collates dependencies by name and SHA.
 // @description filters:
+// @description - provider
 // @description - name
 // @description - version
 // @description - sha
@@ -1282,6 +1291,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description - businessService.name
 // @description - tag.id
 // @description sort:
+// @description - provider
 // @description - name
 // @description - version
 // @description - sha
@@ -1298,6 +1308,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "provider", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "version", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
@@ -1371,6 +1382,157 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
 		}
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// DepAppReports godoc
+// @summary List application reports.
+// @description List application reports.
+// @description filters:
+// @description - id
+// @description - name
+// @description - description
+// @description - businessService
+// @description - provider
+// @description - name
+// @description - version
+// @description - sha
+// @description - indirect
+// @description - dep.provider
+// @description - dep.name
+// @description - dep.version
+// @description - dep.sha
+// @description - dep.indirect
+// @description - dep.labels
+// @description - application.id
+// @description - application.name
+// @description - businessService.id
+// @description - businessService.name
+// @description sort:
+// @description - name
+// @description - description
+// @description - businessService
+// @description - provider
+// @description - name
+// @description - version
+// @description - sha
+// @description - indirect
+// @tags depappreports
+// @produce json
+// @success 200 {object} []api.AppReport
+// @router /analyses/report/applications [get]
+func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
+	resources := []DepAppReport{}
+	type M struct {
+		ID              uint
+		Name            string
+		Description     string
+		BusinessService string
+		DepID           uint
+		Provider        string
+		DepName         string
+		Version         string
+		SHA             string
+		Indirect        bool
+	}
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "id", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "description", Kind: qf.STRING},
+			{Field: "businessService", Kind: qf.STRING},
+			{Field: "provider", Kind: qf.LITERAL},
+			{Field: "name", Kind: qf.LITERAL},
+			{Field: "version", Kind: qf.LITERAL},
+			{Field: "sha", Kind: qf.LITERAL},
+			{Field: "indirect", Kind: qf.LITERAL},
+			{Field: "dep.provider", Kind: qf.LITERAL},
+			{Field: "dep.name", Kind: qf.LITERAL},
+			{Field: "dep.version", Kind: qf.LITERAL},
+			{Field: "dep.sha", Kind: qf.LITERAL},
+			{Field: "dep.indirect", Kind: qf.LITERAL},
+			{Field: "dep.labels", Kind: qf.LITERAL},
+			{Field: "application.id", Kind: qf.LITERAL},
+			{Field: "application.name", Kind: qf.STRING},
+			{Field: "businessService.id", Kind: qf.LITERAL},
+			{Field: "businessService.name", Kind: qf.STRING},
+			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &M{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Inner Query
+	q := h.DB(ctx)
+	q = q.Select(
+		"app.ID",
+		"app.Name",
+		"app.Description",
+		"b.Name BusinessService",
+		"d.ID DepID",
+		"d.Provider",
+		"d.Name DepName",
+		"d.Version",
+		"d.SHA",
+		"d.Indirect")
+	q = q.Table("TechDependency d")
+	q = q.Joins("LEFT JOIN Analysis a ON a.ID = d.AnalysisID")
+	q = q.Joins("LEFT JOIN Application app ON app.ID = a.ApplicationID")
+	q = q.Joins("LEFT OUTER JOIN BusinessService b ON b.ID = app.BusinessServiceID")
+	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter.Resource("dep")))
+	// Find
+	db := h.DB(ctx)
+	db = db.Select("*")
+	db = db.Table("(?)", q)
+	db = filter.Where(db)
+	db = sort.Sorted(db)
+	var list []M
+	var m M
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Render
+	for i := range list {
+		m := &list[i]
+		r := DepAppReport{}
+		r.ID = m.ID
+		r.Name = m.Name
+		r.Description = m.Description
+		r.BusinessService = m.BusinessService
+		r.Dependency.ID = m.DepID
+		r.Dependency.Provider = m.Provider
+		r.Dependency.Name = m.DepName
+		r.Dependency.Version = m.Version
+		r.Dependency.SHA = m.SHA
+		r.Dependency.Indirect = m.Indirect
 		resources = append(resources, r)
 	}
 
@@ -1630,6 +1792,7 @@ func (r *Issue) Model() (m *model.Issue) {
 // TechDependency REST resource.
 type TechDependency struct {
 	Resource `yaml:",inline"`
+	Provider string   `json:"provider" yaml:",omitempty"`
 	Name     string   `json:"name" binding:"required"`
 	Version  string   `json:"version,omitempty" yaml:",omitempty"`
 	Indirect bool     `json:"indirect,omitempty" yaml:",omitempty"`
@@ -1641,6 +1804,7 @@ type TechDependency struct {
 // With updates the resource with the model.
 func (r *TechDependency) With(m *model.TechDependency) {
 	r.Resource.With(&m.Model)
+	r.Provider = m.Provider
 	r.Name = m.Name
 	r.Version = m.Version
 	r.Indirect = m.Indirect
@@ -1656,6 +1820,7 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 	m = &model.TechDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
+	m.Provider = r.Provider
 	m.Indirect = r.Indirect
 	m.Labels, _ = json.Marshal(r.Labels)
 	m.SHA = r.SHA
@@ -1732,8 +1897,8 @@ type IssueReport struct {
 }
 
 //
-// AppReport REST resource.
-type AppReport struct {
+// IssueAppReport REST resource.
+type IssueAppReport struct {
 	ID              uint   `json:"id"`
 	Name            string `json:"name"`
 	Description     string `json:"description"`
@@ -1761,11 +1926,29 @@ type FileReport struct {
 //
 // DepReport REST resource.
 type DepReport struct {
+	Provider     string   `json:"provider"`
 	Name         string   `json:"name"`
 	Version      string   `json:"version"`
 	SHA          string   `json:"sha"`
 	Labels       []string `json:"labels"`
 	Applications int      `json:"applications"`
+}
+
+//
+// DepAppReport REST resource.
+type DepAppReport struct {
+	ID              uint   `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	BusinessService string `json:"businessService"`
+	Dependency      struct {
+		ID       uint   `json:"id"`
+		Provider string `json:"provider"`
+		Name     string `json:"name"`
+		Version  string `json:"version"`
+		SHA      string `json:"rule"`
+		Indirect bool   `json:"indirect"`
+	} `json:"dependency"`
 }
 
 //
