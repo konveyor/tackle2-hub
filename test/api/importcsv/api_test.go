@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestImportCSV(t *testing.T) {
@@ -12,103 +13,66 @@ func TestImportCSV(t *testing.T) {
 		t.Run(r.FileName, func(t *testing.T) {
 
 			// Upload CSV.
-			inputData := make(map[string]interface{})
-			err := Client.FilePost("/importsummaries/upload", r.FileName, &inputData)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			inputData := api.ImportSummary{}
+			assert.Must(t, Client.FilePost(api.SummariesRoot+"/upload", r.FileName, &inputData))
 
 			// Check list of Applications.
-			importedApps, _ := Application.List()
+			gotApps, _ := Application.List()
 			expectedApps := r.ExpectedApplications
-			for i, importedApp := range importedApps {
-				if i >= len(expectedApps) {
-					t.Errorf("Extra imported Application: %s", importedApp.Name)
-					continue
-				}
-				expectedApp := expectedApps[i].Name
-				if importedApp.Name != expectedApp {
-					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedApp, importedApp.Name)
+			if len(gotApps) != len(expectedApps) {
+				t.Errorf("Mismatch in number of imported Applications: Expected %d, Actual %d", len(expectedApps), len(gotApps))
+			} else {
+				for i, importedApp := range gotApps {
+					assert.FlatEqual(expectedApps[i].Name, importedApp.Name)
+					assert.FlatEqual(expectedApps[i].Description, importedApp.Description)
+					assert.FlatEqual(expectedApps[i].Repository.Kind, importedApp.Repository.Kind)
+					assert.FlatEqual(expectedApps[i].Repository.URL, importedApp.Repository.URL)
+					assert.FlatEqual(expectedApps[i].Binary, importedApp.Binary)
+					for j, tag := range expectedApps[i].Tags {
+						assert.FlatEqual(tag.Name, importedApp.Tags[j].Name)
+					}
+					assert.FlatEqual(expectedApps[i].BusinessService.Name, importedApp.BusinessService.Name)
 				}
 			}
 
 			// Check list of Dependencies.
-			importedDeps, _ := Dependency.List()
+			gotDeps, _ := Dependency.List()
 			expectedDeps := r.ExpectedDependencies
-			for i, importedDep := range importedDeps {
-				if i >= len(expectedDeps) {
-					t.Errorf("Extra imported Application: %s", importedDep.To.Name)
-					continue
-				}
-				expectedDep := expectedDeps[i].To.Name
-				if importedDep.To.Name != expectedDep {
-					t.Errorf("Mismatch in imported Application: Expected %s, Actual %s", expectedDep, importedDep.To.Name)
+			if len(gotDeps) != len(expectedDeps) {
+				t.Errorf("Mismatch in number of imported Dependencies: Expected %d, Actual %d", len(expectedDeps), len(gotDeps))
+			} else {
+				for i, importedDep := range gotDeps {
+					expectedDep := expectedDeps[i].To.Name
+					if importedDep.To.Name != expectedDep {
+						t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", expectedDep, importedDep.To.Name)
+					}
 				}
 			}
 
 			// fetch id of CSV file and convert it into required formats
-			id := uint64(inputData["id"].(float64))
-			var inputID = strconv.FormatUint(id, 10) // to be used for API compatibility
+			var inputID = strconv.FormatUint(uint64(inputData.ID), 10) // to be used for API compatibility
 
 			var outputImportSummaries []api.ImportSummary
 			outputMatchingSummary := api.ImportSummary{}
-			err = Client.Get("/importsummaries", &outputImportSummaries)
-			if err != nil {
-				t.Errorf("failed to get import summary: %v", err)
-			}
+			assert.Should(t, Client.Get(api.SummariesRoot, &outputImportSummaries))
 			for _, imp := range outputImportSummaries {
-				if uint64(imp.ID) == id {
+				if uint(imp.ID) == inputData.ID {
 					outputMatchingSummary = imp
 				}
 			}
-			if len(importedDeps)+len(importedApps) != outputMatchingSummary.ValidCount {
-				t.Errorf("valid count not matching with number of applications and dependencies")
-			}
+			assert.FlatEqual(len(expectedApps)+len(expectedDeps), outputMatchingSummary.ValidCount)
 
 			// Get summaries of the Input ID.
 			outputImportSummary := api.ImportSummary{}
-			err = Client.Get("/importsummaries/"+inputID, &outputImportSummary)
-			if err != nil {
-				t.Errorf("Could not get the CSV output")
-			}
+			assert.Should(t, Client.Get(api.SummariesRoot+"/"+inputID, &outputImportSummary))
 
 			// Get all imports.
 			var outputImports []api.Import
-			err = Client.Get("/imports", &outputImports)
-			if err != nil {
-				t.Errorf("Could not get the imports")
-			}
+			assert.Should(t, Client.Get(api.ImportsRoot, &outputImports))
 
-			// Get import of the Input Id.
+			// Get import of the specific Input Id.
 			outputImport := api.Import{}
-			err = Client.Get("/imports/"+inputID, &outputImport)
-			if err != nil {
-				t.Errorf("Import for the id failed")
-			}
-
-			// Delete import of the Input Id.
-			err = Client.Delete("/imports/" + inputID)
-			if err != nil {
-				t.Errorf("Import delete failed")
-			}
-
-			// Delete summary of the Input ID.
-			err = Client.Delete("/importsummaries/" + inputID)
-			if err != nil {
-				t.Errorf("CSV delete failed")
-			}
-
-			// Delete related Applications.
-			err = Application.Delete(uint(id))
-			if err != nil {
-				t.Errorf("Application delete failed")
-			}
-
-			// Delete related Dependencies.
-			err = Dependency.Delete(uint(id))
-			if err != nil {
-				t.Errorf("Dependency delete failed")
-			}
+			assert.Should(t, Client.Get(api.ImportsRoot+"/"+inputID, &outputImport))
 		})
 	}
 }

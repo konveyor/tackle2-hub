@@ -135,7 +135,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-		err = json.Unmarshal(body, &object)
+		err = json.Unmarshal(body, object)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
