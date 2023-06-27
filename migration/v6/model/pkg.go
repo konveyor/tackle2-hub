@@ -50,7 +50,6 @@ func All() []interface{} {
 		Analysis{},
 		Issue{},
 		Bucket{},
-		BucketOwner{},
 		BusinessService{},
 		Dependency{},
 		File{},
@@ -75,7 +74,6 @@ func All() []interface{} {
 		TaskReport{},
 		Ticket{},
 		Tracker{},
-		TTL{},
 		ApplicationTag{},
 	}
 }
