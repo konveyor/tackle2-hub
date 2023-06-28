@@ -497,6 +497,14 @@ type TTL struct {
 }
 
 //
+// TaskEvent used in Task.Errors.
+type TaskEvent struct {
+	Kind        string `json:"kind"`
+	Origin      string `json:"origin,omitempty"`
+	Description string `json:"description"`
+}
+
+//
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
@@ -515,7 +523,7 @@ type Task struct {
 	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
 	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
-	Error       string      `json:"error,omitempty" yaml:",omitempty"`
+	Events      []TaskEvent `json:"events,omitempty" yaml:",omitempty"`
 	Pod         string      `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int         `json:"retries,omitempty" yaml:",omitempty"`
 	Canceled    bool        `json:"canceled,omitempty" yaml:",omitempty"`
@@ -538,7 +546,6 @@ func (r *Task) With(m *model.Task) {
 	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated
-	r.Error = m.Error
 	r.Pod = m.Pod
 	r.Retries = m.Retries
 	r.Canceled = m.Canceled
@@ -550,6 +557,9 @@ func (r *Task) With(m *model.Task) {
 	}
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
+	}
+	if m.Events != nil {
+		_ = json.Unmarshal(m.Events, &r.Events)
 	}
 }
 
