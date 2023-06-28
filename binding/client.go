@@ -193,7 +193,6 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	default:
 		err = liberr.New(http.StatusText(status))
 	}
-
 	return
 }
 
@@ -369,7 +368,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			if isDir {
 				err = r.putDir(part, source)
 			} else {
-				err = r.loadFile(part, source)
+				err = r.putFile(part, source)
 			}
 		}()
 		return
@@ -449,7 +448,7 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 }
 
 //
-// FilePost uploads a file.
+// FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePost(path, source string, object interface{}) (err error) {
 	isDir, nErr := r.IsDir(source, true)
@@ -670,8 +669,8 @@ func (r *Client) getFile(body io.Reader, path, output string) (err error) {
 }
 
 //
-// loadFile uploads a file.
-func (r *Client) loadFile(writer io.Writer, input string) (err error) {
+// putFile uploads plain file.
+func (r *Client) putFile(writer io.Writer, input string) (err error) {
 	file, err := os.Open(input)
 	if err != nil {
 		err = liberr.Wrap(err)

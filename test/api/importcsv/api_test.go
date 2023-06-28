@@ -3,8 +3,10 @@ package importcsv
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -14,7 +16,10 @@ func TestImportCSV(t *testing.T) {
 
 			// Upload CSV.
 			inputData := api.ImportSummary{}
-			assert.Must(t, Client.FilePost(api.SummariesRoot+"/upload", r.FileName, &inputData))
+			assert.Must(t, Client.FilePost(api.UploadRoot, r.FileName, &inputData))
+
+			// Since uploading the CSV happens asynchronously we need to wait for the upload to check Applications and Dependencies.
+			time.Sleep(time.Second * 3)
 
 			// Check list of Applications.
 			gotApps, _ := Application.List()
@@ -23,15 +28,29 @@ func TestImportCSV(t *testing.T) {
 				t.Errorf("Mismatch in number of imported Applications: Expected %d, Actual %d", len(expectedApps), len(gotApps))
 			} else {
 				for i, importedApp := range gotApps {
-					assert.FlatEqual(expectedApps[i].Name, importedApp.Name)
-					assert.FlatEqual(expectedApps[i].Description, importedApp.Description)
-					assert.FlatEqual(expectedApps[i].Repository.Kind, importedApp.Repository.Kind)
-					assert.FlatEqual(expectedApps[i].Repository.URL, importedApp.Repository.URL)
-					assert.FlatEqual(expectedApps[i].Binary, importedApp.Binary)
-					for j, tag := range expectedApps[i].Tags {
-						assert.FlatEqual(tag.Name, importedApp.Tags[j].Name)
+					if expectedApps[i].Name != importedApp.Name {
+						t.Errorf("Mismatch in name of imported Application: Expected %s, Actual %s", expectedApps[i].Name, importedApp.Name)
 					}
-					assert.FlatEqual(expectedApps[i].BusinessService.Name, importedApp.BusinessService.Name)
+					if expectedApps[i].Description != importedApp.Description {
+						t.Errorf("Mismatch in description of imported Application: Expected %s, Actual %s", expectedApps[i].Description, importedApp.Description)
+					}
+					if expectedApps[i].Repository.Kind != importedApp.Repository.Kind {
+						t.Errorf("Mismatch in repository's kind ofimported Application: Expected %s, Actual %s", expectedApps[i].Repository.Kind, importedApp.Repository.Kind)
+					}
+					if expectedApps[i].Repository.URL != importedApp.Repository.URL {
+						t.Errorf("Mismatch in repository's url of imported Application: Expected %s, Actual %s", expectedApps[i].Repository.URL, importedApp.Repository.URL)
+					}
+					if expectedApps[i].Binary != importedApp.Binary {
+						t.Errorf("Mismatch in binary of imported Application: Expected %s, Actual %s", expectedApps[i].Binary, importedApp.Binary)
+					}
+					for j, tag := range expectedApps[i].Tags {
+						if tag.Name != importedApp.Tags[j].Name {
+							t.Errorf("Mismatch in tag name of imported Application: Expected %s, Actual %s", tag.Name, importedApp.Tags[j].Name)
+						}
+					}
+					if expectedApps[i].BusinessService.Name != importedApp.BusinessService.Name {
+						t.Errorf("Mismatch in name of the BusinessService of imported Application: Expected %s, Actual %s", expectedApps[i].BusinessService.Name, importedApp.BusinessService.Name)
+					}
 				}
 			}
 
@@ -62,17 +81,45 @@ func TestImportCSV(t *testing.T) {
 			}
 			assert.FlatEqual(len(expectedApps)+len(expectedDeps), outputMatchingSummary.ValidCount)
 
+			// inject import summary id into Summary root
+			path := binding.Path(api.SummaryRoot).Inject(binding.Params{api.ID: inputID})
+
 			// Get summaries of the Input ID.
 			outputImportSummary := api.ImportSummary{}
-			assert.Should(t, Client.Get(api.SummariesRoot+"/"+inputID, &outputImportSummary))
+			assert.Should(t, Client.Get(path, &outputImportSummary))
+
+			// Delete import summary
+			// assert.Should(t, Client.Delete(path))
 
 			// Get all imports.
 			var outputImports []api.Import
 			assert.Should(t, Client.Get(api.ImportsRoot, &outputImports))
-
-			// Get import of the specific Input Id.
-			outputImport := api.Import{}
-			assert.Should(t, Client.Get(api.ImportsRoot+"/"+inputID, &outputImport))
+			j, k := 0, 0
+			for _, imp := range outputImports {
+				if imp["recordType1"] == 1 && j < len(expectedApps) {
+					// An Application with no dependencies.
+					if expectedApps[j].Name != imp["applicationName"] {
+						t.Errorf("Mismatch in name of import: Expected %s, Actual %s", expectedApps[j].Name, imp["applicationName"])
+					}
+					if expectedApps[j].Description != imp["description"] {
+						t.Errorf("Mismatch in name of import: Expected %s, Actual %s", expectedApps[j].Description, imp["description"])
+					}
+					if expectedApps[j].BusinessService.Name != imp["businessService"] {
+						t.Errorf("Mismatch in name of import: Expected %s, Actual %s", expectedApps[j].BusinessService.Name, imp["businessService"])
+					}
+					j++
+				}
+				if imp["recordType1"] == 2 && k < len(expectedDeps) {
+					// An Application with Dependencies.
+					if expectedDeps[k].From.Name != imp["applicationName"] {
+						t.Errorf("Mismatch in name of import: Expected %s, Actual %s", expectedDeps[k].From.Name, imp["applicationName"])
+					}
+					if expectedDeps[k].To.Name != imp["dependency"] {
+						t.Errorf("Mismatch in name of import: Expected %s, Actual %s", expectedDeps[k].To.Name, imp["dependency"])
+					}
+					k++
+				}
+			}
 		})
 	}
 }

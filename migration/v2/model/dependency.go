@@ -11,9 +11,9 @@ var depMutex sync.Mutex
 
 type Dependency struct {
 	Model
-	ToID   uint         `gorm:"index"`
+	ToID   uint         `gorm:"uniqueIndex:dependency_primary_key"`
 	To     *Application `gorm:"foreignKey:ToID;constraint:OnDelete:CASCADE"`
-	FromID uint         `gorm:"index"`
+	FromID uint         `gorm:"uniqueIndex:dependency_primary_key"`
 	From   *Application `gorm:"foreignKey:FromID;constraint:OnDelete:CASCADE"`
 }
 
