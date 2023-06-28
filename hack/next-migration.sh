@@ -104,7 +104,6 @@ echo "}" >> ${file}
 #
 # Register new migration.
 #
-
 sed -i "s|${current} \"${importRoot}/${current}\"|${current} \"${importRoot}/${current}\"\n\t${next} \"${importRoot}/${next}\"|g" ${root}/pkg.go
 sed -i "s|${current}.Migration{}|${current}.Migration{},\n\t\t${next}.Migration{}|g" ${root}/pkg.go
 
