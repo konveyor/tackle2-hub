@@ -93,11 +93,10 @@ echo -n "
 func All() []interface{} {
 	return []interface{}{
 " >> ${file}
-echo "${models}" | grep -v "Model" | while read m
+models=$(grep "{}," ${currentDir}/model/pkg.go)
+echo "${models}" | while read m
 do
-  part=(${m})
-  m=${part[3]#"model."}
-  echo -e "\t\t${m}{}," >> ${file}
+  echo -e "\t\t${m}" >> ${file}
 done
 echo -e "\t}" >> ${file}
 echo "}" >> ${file}
@@ -105,7 +104,6 @@ echo "}" >> ${file}
 #
 # Register new migration.
 #
-
 sed -i "s|${current} \"${importRoot}/${current}\"|${current} \"${importRoot}/${current}\"\n\t${next} \"${importRoot}/${next}\"|g" ${root}/pkg.go
 sed -i "s|${current}.Migration{}|${current}.Migration{},\n\t\t${next}.Migration{}|g" ${root}/pkg.go
 
