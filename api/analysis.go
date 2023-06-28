@@ -880,6 +880,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
+		"i.ID",
 		"i.RuleSet",
 		"i.Rule",
 		"i.Name",
@@ -930,6 +931,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 			RuleSet:     m.RuleSet,
 			Rule:        m.Rule,
 			Name:        m.Name,
+			ID:          m.ID,
 		}
 		resources = append(resources, r)
 		if m.Labels != nil {
@@ -978,17 +980,18 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 	resources := []IssueAppReport{}
 	type M struct {
-		ID              uint
-		Name            string
-		Description     string
-		BusinessService string
-		Effort          int
-		Incidents       int
-		Files           int
-		IssueID         uint
-		IssueName       string
-		RuleSet         string
-		Rule            string
+		ID               uint
+		Name             string
+		Description      string
+		BusinessService  string
+		Effort           int
+		Incidents        int
+		Files            int
+		IssueID          uint
+		IssueName        string
+		IssueDescription string
+		RuleSet          string
+		Rule             string
 	}
 	// Filter
 	filter, err := qf.New(ctx,
@@ -1086,6 +1089,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 		r.Files = m.Files
 		r.Issue.ID = m.IssueID
 		r.Issue.Name = m.IssueName
+		r.Issue.Description = m.IssueName
 		r.Issue.RuleSet = m.RuleSet
 		r.Issue.Rule = m.Rule
 		resources = append(resources, r)
@@ -1886,6 +1890,7 @@ type RuleReport struct {
 //
 // IssueReport REST resource.
 type IssueReport struct {
+	ID          uint     `json:"id"`
 	RuleSet     string   `json:"ruleset"`
 	Rule        string   `json:"rule"`
 	Name        string   `json:"name"`
@@ -1907,10 +1912,11 @@ type IssueAppReport struct {
 	Incidents       int    `json:"incidents"`
 	Files           int    `json:"files"`
 	Issue           struct {
-		ID      uint   `json:"id"`
-		Name    string `json:"name"`
-		RuleSet string `json:"ruleset"`
-		Rule    string `json:"rule"`
+		ID          uint   `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		RuleSet     string `json:"ruleset"`
+		Rule        string `json:"rule"`
 	} `json:"issue"`
 }
 
