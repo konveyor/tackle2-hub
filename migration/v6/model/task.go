@@ -37,6 +37,7 @@ func (m *Task) Reset() {
 	m.Started = nil
 	m.Terminated = nil
 	m.Report = nil
+	m.Errors = nil
 }
 
 func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
