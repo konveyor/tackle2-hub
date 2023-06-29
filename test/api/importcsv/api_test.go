@@ -1,6 +1,7 @@
 package importcsv
 
 import (
+	"encoding/csv"
 	"os"
 	"strconv"
 	"testing"
@@ -120,13 +121,14 @@ func TestImportCSV(t *testing.T) {
 			}
 
 			// Download the csv.
-			err := Client.FileGet(api.DownloadRoot, "downloadcsv.csv")
+			pathToOutputCSV := "downloadcsv.csv"
+			err := Client.FileGet(api.DownloadRoot, pathToOutputCSV)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
 			// Compare contents of the csv.
-			file1, err := os.Open("downloadcsv.csv")
+			file1, err := os.Open(pathToOutputCSV)
 			if err != nil {
 				t.Errorf(err.Error())
 				return
@@ -134,14 +136,69 @@ func TestImportCSV(t *testing.T) {
 			defer file1.Close()
 
 			// Open the second CSV file
-			file2, err := os.Open("template_application_import.csv")
+			file2, err := os.Open(r.FileName)
 			if err != nil {
 				t.Errorf(err.Error())
 				return
 			}
 			defer file2.Close()
 
-			// TODO: Compare both the files
+			// Read both the CSV files for comparison.
+			reader1 := csv.NewReader(file1)
+			reader2 := csv.NewReader(file2)
+
+			column1, err := reader1.Read()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			columm2, err := reader2.Read()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Check number of columns.
+			if len(column1) != len(columm2) {
+				t.Errorf("The Content of both the CSV files are different")
+			}
+
+			// Check column names.
+			for i := range column1 {
+				if column1[i] != columm2[i] {
+					t.Errorf("Mismatch in the Column Names")
+				}
+			}
+
+			// Compare rest of the contents of the files.
+			reader1.FieldsPerRecord = -1
+			item1, err := reader1.ReadAll()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			reader2.FieldsPerRecord = -1
+			item2, err := reader2.ReadAll()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Compare number of records present
+			if len(item1) != len(item2) {
+				t.Errorf("Mismatch in number of records present")
+			}
+
+			// Compare each value.
+			for i := 0; i < len(item1); i++ {
+				if len(item1[i]) != len(item2[i]) {
+					t.Errorf("Mismatch in number of values")
+				}
+
+				for j := 0; j < len(item1[i]); j++ {
+					if item1[i][j] != item2[i][j] {
+						t.Errorf("Mismatch in values")
+					}
+				}
+			}
 
 			// Delete import summary
 			assert.Should(t, Client.Delete(pathForImportSummary))
