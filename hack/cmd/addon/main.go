@@ -97,6 +97,8 @@ func main() {
 		}
 		return
 	})
+
+	addon.Error("Warning", "Test warning.")
 }
 
 //

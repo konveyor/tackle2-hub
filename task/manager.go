@@ -132,7 +132,7 @@ func (m *Manager) startReady() {
 			mark := time.Now()
 			task.State = Failed
 			task.Terminated = &mark
-			task.Event("Error", "Hub", "Hub is disconnected.")
+			task.Error("Error", "Hub is disconnected.")
 			sErr := m.DB.Save(task).Error
 			Log.Error(sErr, "")
 			continue
@@ -147,7 +147,6 @@ func (m *Manager) startReady() {
 			ready := task
 			if m.postpone(ready, list) {
 				ready.State = Postponed
-				ready.Event("Warning", "Hub", Postponed)
 				Log.Info("Task postponed.", "id", ready.ID)
 				sErr := m.DB.Save(ready).Error
 				Log.Error(sErr, "")
@@ -158,7 +157,7 @@ func (m *Manager) startReady() {
 			err := rt.Run(m.Client)
 			if err != nil {
 				if errors.Is(err, &AddonNotFound{}) {
-					ready.Event("Error", "Hub", err.Error())
+					ready.Error("Error", err.Error())
 					ready.State = Failed
 					sErr := m.DB.Save(ready).Error
 					Log.Error(sErr, "")
@@ -270,7 +269,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	mark := time.Now()
 	defer func() {
 		if err != nil {
-			r.Event("Error", "Hub", err.Error())
+			r.Error("Error", err.Error())
 			r.Terminated = &mark
 			r.State = Failed
 		}
@@ -355,7 +354,7 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 		r.State = Succeeded
 		r.Terminated = &mark
 	case core.PodFailed:
-		r.Event("Error", "k8s", pod.Status.Message)
+		r.Error("Error", "Pod failed: %s", pod.Status.Message)
 		if r.Retries < Settings.Hub.Task.Retries {
 			_ = client.Delete(context.TODO(), pod)
 			r.Pod = ""

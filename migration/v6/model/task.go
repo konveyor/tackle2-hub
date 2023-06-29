@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 )
@@ -21,7 +22,7 @@ type Task struct {
 	Started       *time.Time
 	Terminated    *time.Time
 	State         string `gorm:"index"`
-	Events        JSON
+	Errors        JSON
 	Pod           string `gorm:"index"`
 	Retries       int
 	Canceled      bool
@@ -45,18 +46,14 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 }
 
 //
-// Event appends an event.
-func (m *Task) Event(kind, origin, description string) {
-	var events []TaskEvent
-	_ = json.Unmarshal(m.Events, &events)
-	events = append(
-		events,
-		TaskEvent{
-			Kind:        kind,
-			Origin:      origin,
-			Description: description,
-		})
-	m.Events, _ = json.Marshal(events)
+// Error appends an error.
+func (m *Task) Error(severity, description string, x ...interface{}) {
+	var list []TaskError
+	description = fmt.Sprintf(description, x...)
+	te := TaskError{Severity: severity, Description: description}
+	_ = json.Unmarshal(m.Errors, &list)
+	list = append(list, te)
+	m.Errors, _ = json.Marshal(list)
 }
 
 //
@@ -75,9 +72,20 @@ type TTL struct {
 }
 
 //
-// TaskEvent used in Task.Errors.
-type TaskEvent struct {
-	Kind        string `json:"kind"`
-	Origin      string `json:"origin,omitempty"`
+// TaskError used in Task.Errors.
+type TaskError struct {
+	Severity    string `json:"severity"`
 	Description string `json:"description"`
+}
+
+type TaskReport struct {
+	Model
+	Status    string
+	Errors    JSON
+	Total     int
+	Completed int
+	Activity  JSON `gorm:"type:json"`
+	Result    JSON `gorm:"type:json"`
+	TaskID    uint `gorm:"<-:create;uniqueIndex"`
+	Task      *Task
 }

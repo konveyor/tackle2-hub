@@ -29,7 +29,6 @@ type Stakeholder = model.Stakeholder
 type StakeholderGroup = model.StakeholderGroup
 type Tag = model.Tag
 type TagCategory = model.TagCategory
-type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
 type ApplicationTag = model.ApplicationTag
