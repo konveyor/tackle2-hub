@@ -448,7 +448,7 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 }
 
 //
-// FilePut uploads a file.
+// FilePost uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePost(path, source string, object interface{}) (err error) {
 	isDir, nErr := r.IsDir(source, true)

@@ -1,6 +1,7 @@
 package importcsv
 
 import (
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -82,14 +83,11 @@ func TestImportCSV(t *testing.T) {
 			assert.FlatEqual(len(expectedApps)+len(expectedDeps), outputMatchingSummary.ValidCount)
 
 			// inject import summary id into Summary root
-			path := binding.Path(api.SummaryRoot).Inject(binding.Params{api.ID: inputID})
+			pathForImportSummary := binding.Path(api.SummaryRoot).Inject(binding.Params{api.ID: inputID})
 
 			// Get summaries of the Input ID.
 			outputImportSummary := api.ImportSummary{}
-			assert.Should(t, Client.Get(path, &outputImportSummary))
-
-			// Delete import summary
-			// assert.Should(t, Client.Delete(path))
+			assert.Should(t, Client.Get(pathForImportSummary, &outputImportSummary))
 
 			// Get all imports.
 			var outputImports []api.Import
@@ -119,6 +117,41 @@ func TestImportCSV(t *testing.T) {
 					}
 					k++
 				}
+			}
+
+			// Download the csv.
+			err := Client.FileGet(api.DownloadRoot, "downloadcsv.csv")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Compare contents of the csv.
+			file1, err := os.Open("downloadcsv.csv")
+			if err != nil {
+				t.Errorf(err.Error())
+				return
+			}
+			defer file1.Close()
+
+			// Open the second CSV file
+			file2, err := os.Open("template_application_import.csv")
+			if err != nil {
+				t.Errorf(err.Error())
+				return
+			}
+			defer file2.Close()
+
+			// TODO: Compare both the files
+
+			// Delete import summary
+			assert.Should(t, Client.Delete(pathForImportSummary))
+
+			// Delete all imports
+			id := 1
+			for id <= len(expectedApps)+len(expectedDeps) {
+				pathForImport := binding.Path(api.ImportRoot).Inject(binding.Params{api.ID: id})
+				assert.Should(t, Client.Delete(pathForImport))
+				id++
 			}
 		})
 	}
