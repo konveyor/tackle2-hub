@@ -182,7 +182,7 @@ func TestImportCSV(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			// Compare number of records present
+			// Compare number of records present.
 			if len(item1) != len(item2) {
 				t.Errorf("Mismatch in number of records present")
 			}
@@ -198,6 +198,12 @@ func TestImportCSV(t *testing.T) {
 						t.Errorf("Mismatch in values")
 					}
 				}
+			}
+
+			// Remove the CSV file created.
+			err = os.Remove(pathToOutputCSV)
+			if err != nil {
+				t.Errorf(err.Error())
 			}
 
 			// Delete import summary
