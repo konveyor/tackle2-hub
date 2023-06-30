@@ -3,10 +3,10 @@
 Hub tests consist of following parts:
 - Unit tests ```$ make test```
 - REST API tests ```$ make test-api```
-- Integration tests ```$ make test-integration```
-- WIP Export/import tests
 
 All tests can be executed with ```$ make test-all``` which will run all available tests.
+
+For API E2E / integration tests, refer to https://github.com/konveyor/go-konveyor-tests
 
 ## General information
 
@@ -14,7 +14,7 @@ All tests can be executed with ```$ make test-all``` which will run all availabl
 - Each test is responsible for setup its test data and clean it when finished.
 - The main way of interacting with Hub is its API, to make testing easier, following tools are provided:
   - ```RichClient``` from [binding](https://github.com/konveyor/tackle2-hub/tree/main/binding) package that provides methods working with Hub resources (like ```RichClient.Application.Create(&testApp)```). This is a preffered option.
-  - ```addon.Client``` provides API methods like Get/Post/etc. it can be accessed from ```RichClient.Client()```
+  - ```addon.Client``` provides API methods like Get/Post/etc. it can be accessed from ```RichClient.Client```
   - ```test/assertion``` package provides Should/Must and other equality assertions.
   - Hub's ```API``` package provides predefined routes and resources struct definition.
 
