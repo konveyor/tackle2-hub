@@ -311,10 +311,10 @@ func (r *RuleSet) HasRule(id uint) (b bool) {
 // Rule - REST Resource.
 type Rule struct {
 	Resource
-	Name        string      `json:"name,omitempty"`
-	Description string      `json:"description,omitempty"`
-	Labels      interface{} `json:"labels,omitempty"`
-	File        *Ref        `json:"file,omitempty"`
+	Name        string   `json:"name,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Labels      []string `json:"labels,omitempty"`
+	File        *Ref     `json:"file,omitempty"`
 }
 
 //
