@@ -1,7 +1,7 @@
 package importcsv
 
 import (
-	"encoding/csv"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
@@ -121,87 +121,32 @@ func TestImportCSV(t *testing.T) {
 			}
 
 			// Download the csv.
-			pathToOutputCSV := "downloadcsv.csv"
-			err := Client.FileGet(api.DownloadRoot, pathToOutputCSV)
+			pathToGotCSV := "downloadcsv.csv"
+			err := Client.FileGet(api.DownloadRoot, pathToGotCSV)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("Error downloading CSV: %v", err)
 			}
 
-			// Compare contents of the csv.
-			file1, err := os.Open(pathToOutputCSV)
+			// Read the got CSV file.
+			gotCSV, err := ioutil.ReadFile(pathToGotCSV)
 			if err != nil {
-				t.Errorf(err.Error())
-				return
+				t.Errorf("Error reading CSV: %s", pathToGotCSV)
 			}
-			defer file1.Close()
+			gotCSVString := string(gotCSV)
 
-			// Open the second CSV file
-			file2, err := os.Open(r.FileName)
+			// Read the expected CSV file.
+			expectedCSV, err := ioutil.ReadFile(r.FileName)
 			if err != nil {
-				t.Errorf(err.Error())
-				return
+				t.Errorf("Error reading CSV: %s", r.FileName)
 			}
-			defer file2.Close()
+			expectedCSVString := string(expectedCSV)
 
-			// Read both the CSV files for comparison.
-			reader1 := csv.NewReader(file1)
-			reader2 := csv.NewReader(file2)
-
-			column1, err := reader1.Read()
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			columm2, err := reader2.Read()
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			// Check number of columns.
-			if len(column1) != len(columm2) {
-				t.Errorf("The Content of both the CSV files are different")
-			}
-
-			// Check column names.
-			for i := range column1 {
-				if column1[i] != columm2[i] {
-					t.Errorf("Mismatch in the Column Names")
-				}
-			}
-
-			// Compare rest of the contents of the files.
-			reader1.FieldsPerRecord = -1
-			item1, err := reader1.ReadAll()
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			reader2.FieldsPerRecord = -1
-			item2, err := reader2.ReadAll()
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			// Compare number of records present.
-			if len(item1) != len(item2) {
-				t.Errorf("Mismatch in number of records present")
-			}
-
-			// Compare each value.
-			for i := 0; i < len(item1); i++ {
-				if len(item1[i]) != len(item2[i]) {
-					t.Errorf("Mismatch in number of values")
-				}
-
-				for j := 0; j < len(item1[i]); j++ {
-					if item1[i][j] != item2[i][j] {
-						t.Errorf("Mismatch in values")
-					}
-				}
+			if gotCSVString != expectedCSVString {
+				t.Errorf("The CSV files have different content %s and %s", gotCSVString, expectedCSVString)
 			}
 
 			// Remove the CSV file created.
-			err = os.Remove(pathToOutputCSV)
+			err = os.Remove(pathToGotCSV)
 			if err != nil {
 				t.Errorf(err.Error())
 			}

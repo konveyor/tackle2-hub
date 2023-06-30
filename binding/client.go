@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin/binding"
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/api"
 	"io"
 	"mime/multipart"
 	"net"
@@ -18,11 +21,7 @@ import (
 	pathlib "path"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/gin-gonic/gin/binding"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/api"
+	"time"	
 )
 
 const (
