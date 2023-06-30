@@ -193,6 +193,11 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	err = h.DB(ctx).Model(m).Association("DependsOn").Replace(m.DependsOn)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	err = h.DB(ctx).Model(m).Association("Rules").Replace(m.Rules)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -225,6 +230,7 @@ type RuleSet struct {
 	Custom      bool        `json:"custom,omitempty"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
+	DependsOn   []Ref       `json:"dependsOn"`
 }
 
 //
@@ -250,6 +256,12 @@ func (r *RuleSet) With(m *model.RuleSet) {
 			r.Rules,
 			rule)
 	}
+	r.DependsOn = []Ref{}
+	for i := range m.DependsOn {
+		dep := Ref{}
+		dep.With(m.DependsOn[i].ID, m.DependsOn[i].Name)
+		r.DependsOn = append(r.DependsOn, dep)
+	}
 }
 
 //
@@ -270,6 +282,15 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 	}
 	if r.Repository != nil {
 		m.Repository, _ = json.Marshal(r.Repository)
+	}
+	for _, ref := range r.DependsOn {
+		m.DependsOn = append(
+			m.DependsOn,
+			model.RuleSet{
+				Model: model.Model{
+					ID: ref.ID,
+				},
+			})
 	}
 	return
 }
