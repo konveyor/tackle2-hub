@@ -41,13 +41,12 @@ func (r Migration) Models() []interface{} {
 }
 
 func (r Migration) taskError(db *gorm.DB) (err error) {
-	type M struct {
+	type Task struct {
 		model.Task
 		Error string
 	}
-	var list []M
-	db = db.Table("Task")
-	err = db.Find(&M{}, &list).Error
+	var list []Task
+	err = db.Find(&Task{}, &list).Error
 	if err != nil {
 		return
 	}
@@ -70,13 +69,12 @@ func (r Migration) taskError(db *gorm.DB) (err error) {
 }
 
 func (r Migration) taskReportError(db *gorm.DB) (err error) {
-	type M struct {
+	type TaskReport struct {
 		model.TaskReport
 		Error string
 	}
-	var list []M
-	db = db.Table("TaskReport")
-	err = db.Find(&M{}, &list).Error
+	var list []TaskReport
+	err = db.Find(&TaskReport{}, &list).Error
 	if err != nil {
 		return
 	}
