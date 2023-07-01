@@ -7,7 +7,7 @@ application|:white_check_mark: partially|:heavy_check_mark:||
 bucket||||partially within application
 dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 file|:heavy_check_mark:|:heavy_check_mark:||
-import|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+import||:heavy_check_mark:|:heavy_check_mark:|
 review||||
 **Controls**||||
 businessservice|:heavy_check_mark:|:heavy_check_mark:||
