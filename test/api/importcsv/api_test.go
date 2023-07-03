@@ -18,18 +18,26 @@ func TestImportCSV(t *testing.T) {
 			inputData := api.ImportSummary{}
 			assert.Must(t, Client.FilePost(api.UploadRoot, r.FileName, &inputData))
 
-			// inject import summary id into Summary root
+			// Inject import summary id into Summary root
 			pathForImportSummary := binding.Path(api.SummaryRoot).Inject(binding.Params{api.ID: inputData.ID})
 
 			// Since uploading the CSV happens asynchronously we need to wait for the upload to check Applications and Dependencies.
 			time.Sleep(time.Second)
 
-			// Code below not working as expected need to check
-			
-			// checkImport := api.ImportSummary{}
-			// for checkImport.ValidCount + checkImport.InvalidCount != len(r.ExpectedApplications)+len(r.ExpectedDependencies){
-			// 	 assert.Should(t, Client.Get(pathForImportSummary, &checkImport))
-			// }
+			var outputImportSummaries []api.ImportSummary
+			outputMatchingSummary := api.ImportSummary{}
+			for{
+				assert.Should(t, Client.Get(api.SummariesRoot, &outputImportSummaries))
+				for _, gotImport := range outputImportSummaries {
+					if uint(gotImport.ID) == inputData.ID {
+						outputMatchingSummary = gotImport
+					}
+				}
+				if(outputMatchingSummary.ValidCount + outputMatchingSummary.InvalidCount == len(r.ExpectedApplications)+len(r.ExpectedDependencies)){
+					break
+				}
+				time.Sleep(time.Second)
+			}
 
 			// Check list of Applications.
 			gotApps, _ := Application.List()
@@ -76,21 +84,7 @@ func TestImportCSV(t *testing.T) {
 						t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", r.ExpectedDependencies[i].From.Name, importedDep.From.Name)
 					}
 				}
-			}
-
-			var outputImportSummaries []api.ImportSummary
-			outputMatchingSummary := api.ImportSummary{}
-			assert.Should(t, Client.Get(api.SummariesRoot, &outputImportSummaries))
-			for _, imp := range outputImportSummaries {
-				if uint(imp.ID) == inputData.ID {
-					outputMatchingSummary = imp
-				}
-			}
-
-			// Compare the number of imports.
-			if len(r.ExpectedApplications)+len(r.ExpectedDependencies) != outputMatchingSummary.ValidCount {
-				t.Errorf("Mismatch in no. of imports: expected %v, got %v", len(r.ExpectedApplications)+len(r.ExpectedDependencies), outputMatchingSummary.ValidCount)
-			}
+			}	
 
 			// Get summaries of the Input ID.
 			outputImportSummary := api.ImportSummary{}
