@@ -21,7 +21,7 @@ import (
 	pathlib "path"
 	"path/filepath"
 	"strings"
-	"time"
+	"time"	
 )
 
 const (
@@ -192,7 +192,6 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	default:
 		err = liberr.New(http.StatusText(status))
 	}
-
 	return
 }
 
@@ -444,6 +443,29 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 		},
 	}
 	err = r.FileSend(path, http.MethodPut, fields, object)
+	return
+}
+
+//
+// FilePost uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePost(path, source string, object interface{}) (err error) {
+	isDir, nErr := r.IsDir(source, true)
+	if nErr != nil {
+		err = nErr
+		return
+	}
+	if isDir {
+		err = liberr.New("Must be regular file.")
+		return
+	}
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
+	}
+	err = r.FileSend(path, http.MethodPost, fields, object)
 	return
 }
 
