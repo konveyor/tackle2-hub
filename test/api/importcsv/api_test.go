@@ -44,29 +44,29 @@ func TestImportCSV(t *testing.T) {
 			if len(gotApps) != len(r.ExpectedApplications) {
 				t.Errorf("Mismatch in number of imported Applications: Expected %d, Actual %d", len(r.ExpectedApplications), len(gotApps))
 			} else {
-				for i, importedApp := range gotApps {
-					if r.ExpectedApplications[i].Name != importedApp.Name {
-						t.Errorf("Mismatch in name of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Name, importedApp.Name)
+				for i, gotApp := range gotApps {
+					if r.ExpectedApplications[i].Name != gotApp.Name {
+						t.Errorf("Mismatch in name of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Name, gotApp.Name)
 					}
-					if r.ExpectedApplications[i].Description != importedApp.Description {
-						t.Errorf("Mismatch in description of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Description, importedApp.Description)
+					if r.ExpectedApplications[i].Description != gotApp.Description {
+						t.Errorf("Mismatch in description of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Description, gotApp.Description)
 					}
-					if r.ExpectedApplications[i].Repository.Kind != importedApp.Repository.Kind {
-						t.Errorf("Mismatch in repository's kind ofimported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Repository.Kind, importedApp.Repository.Kind)
+					if r.ExpectedApplications[i].Repository.Kind != gotApp.Repository.Kind {
+						t.Errorf("Mismatch in repository's kind ofimported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Repository.Kind, gotApp.Repository.Kind)
 					}
-					if r.ExpectedApplications[i].Repository.URL != importedApp.Repository.URL {
-						t.Errorf("Mismatch in repository's url of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Repository.URL, importedApp.Repository.URL)
+					if r.ExpectedApplications[i].Repository.URL != gotApp.Repository.URL {
+						t.Errorf("Mismatch in repository's url of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Repository.URL, gotApp.Repository.URL)
 					}
-					if r.ExpectedApplications[i].Binary != importedApp.Binary {
-						t.Errorf("Mismatch in binary of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Binary, importedApp.Binary)
+					if r.ExpectedApplications[i].Binary != gotApp.Binary {
+						t.Errorf("Mismatch in binary of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Binary, gotApp.Binary)
 					}
 					for j, tag := range r.ExpectedApplications[i].Tags {
-						if tag.Name != importedApp.Tags[j].Name {
-							t.Errorf("Mismatch in tag name of imported Application: Expected %s, Actual %s", tag.Name, importedApp.Tags[j].Name)
+						if tag.Name != gotApp.Tags[j].Name {
+							t.Errorf("Mismatch in tag name of imported Application: Expected %s, Actual %s", tag.Name, gotApp.Tags[j].Name)
 						}
 					}
-					if r.ExpectedApplications[i].BusinessService.Name != importedApp.BusinessService.Name {
-						t.Errorf("Mismatch in name of the BusinessService of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].BusinessService.Name, importedApp.BusinessService.Name)
+					if r.ExpectedApplications[i].BusinessService.Name != gotApp.BusinessService.Name {
+						t.Errorf("Mismatch in name of the BusinessService of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].BusinessService.Name, gotApp.BusinessService.Name)
 					}
 				}
 			}
