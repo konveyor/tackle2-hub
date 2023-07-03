@@ -359,6 +359,7 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 			_ = client.Delete(context.TODO(), pod)
 			r.Pod = ""
 			r.State = Ready
+			r.Errors = nil
 			r.Retries++
 		} else {
 			r.State = Failed
