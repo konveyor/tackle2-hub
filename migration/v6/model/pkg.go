@@ -27,12 +27,8 @@ type Stakeholder = model.Stakeholder
 type StakeholderGroup = model.StakeholderGroup
 type Tag = model.Tag
 type TagCategory = model.TagCategory
-type Task = model.Task
-type TaskGroup = model.TaskGroup
-type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
-type TTL = model.TTL
 type ApplicationTag = model.ApplicationTag
 type DependencyCyclicError = model.DependencyCyclicError
 

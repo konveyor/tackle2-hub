@@ -497,6 +497,13 @@ type TTL struct {
 }
 
 //
+// TaskError used in Task.Errors.
+type TaskError struct {
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+}
+
+//
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
@@ -515,7 +522,7 @@ type Task struct {
 	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
 	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
 	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
-	Error       string      `json:"error,omitempty" yaml:",omitempty"`
+	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
 	Pod         string      `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int         `json:"retries,omitempty" yaml:",omitempty"`
 	Canceled    bool        `json:"canceled,omitempty" yaml:",omitempty"`
@@ -538,7 +545,6 @@ func (r *Task) With(m *model.Task) {
 	r.State = m.State
 	r.Started = m.Started
 	r.Terminated = m.Terminated
-	r.Error = m.Error
 	r.Pod = m.Pod
 	r.Retries = m.Retries
 	r.Canceled = m.Canceled
@@ -550,6 +556,9 @@ func (r *Task) With(m *model.Task) {
 	}
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
+	}
+	if m.Errors != nil {
+		_ = json.Unmarshal(m.Errors, &r.Errors)
 	}
 }
 
@@ -579,7 +588,7 @@ func (r *Task) Model() (m *model.Task) {
 type TaskReport struct {
 	Resource  `yaml:",inline"`
 	Status    string      `json:"status"`
-	Error     string      `json:"error,omitempty" yaml:",omitempty"`
+	Errors    []TaskError `json:"errors,omitempty" yaml:",omitempty"`
 	Total     int         `json:"total,omitempty" yaml:",omitempty"`
 	Completed int         `json:"completed,omitempty" yaml:",omitempty"`
 	Activity  []string    `json:"activity,omitempty" yaml:",omitempty"`
@@ -592,12 +601,14 @@ type TaskReport struct {
 func (r *TaskReport) With(m *model.TaskReport) {
 	r.Resource.With(&m.Model)
 	r.Status = m.Status
-	r.Error = m.Error
 	r.Total = m.Total
 	r.Completed = m.Completed
 	r.TaskID = m.TaskID
 	if m.Activity != nil {
 		_ = json.Unmarshal(m.Activity, &r.Activity)
+	}
+	if m.Errors != nil {
+		_ = json.Unmarshal(m.Errors, &r.Errors)
 	}
 	if m.Result != nil {
 		_ = json.Unmarshal(m.Result, &r.Result)
@@ -612,7 +623,6 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	}
 	m = &model.TaskReport{
 		Status:    r.Status,
-		Error:     r.Error,
 		Total:     r.Total,
 		Completed: r.Completed,
 		TaskID:    r.TaskID,
@@ -622,6 +632,9 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	}
 	if r.Result != nil {
 		m.Result, _ = json.Marshal(r.Result)
+	}
+	if r.Errors != nil {
+		m.Errors, _ = json.Marshal(r.Errors)
 	}
 	m.ID = r.ID
 

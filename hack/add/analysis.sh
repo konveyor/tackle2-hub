@@ -149,6 +149,11 @@ indirect: "true"
 version: 4.6
 " >> ${file}
 echo -n "---
+name: github.com/hybernate
+indirect: "true"
+version: 5.0
+" >> ${file}
+echo -n "---
 name: github.com/ejb
 indirect: "true"
 version: 4.3
