@@ -1,6 +1,10 @@
 package binding
 
-import pathlib "path"
+import (
+	pathlib "path"
+
+	"github.com/konveyor/tackle2-hub/api"
+)
 
 //
 // Bucket API.
@@ -9,6 +13,21 @@ type Bucket struct {
 	Client *Client
 	// root path
 	path string
+}
+
+//
+// Create a Bucket.
+func (h *Bucket) Create(r *api.Bucket) (err error) {
+	err = h.Client.Post(api.BucketsRoot, &r)
+	return
+}
+
+//
+// List Buckets.
+func (h *Bucket) List() (list []api.Bucket, err error) {
+	list = []api.Bucket{}
+	err = h.Client.Get(api.BucketsRoot, &list)
+	return
 }
 
 //
