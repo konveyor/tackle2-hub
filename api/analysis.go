@@ -1347,6 +1347,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
+		"Provider",
 		"Name",
 		"Version",
 		"SHA",
@@ -1386,6 +1387,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	for i := range list {
 		m := &list[i]
 		r := DepReport{
+			Provider:     m.Provider,
 			Name:         m.Name,
 			Version:      m.Version,
 			SHA:          m.SHA,
