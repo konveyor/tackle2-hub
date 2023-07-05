@@ -76,7 +76,18 @@ echo -n "---
 ruleset: ruleSet-${r}
 rule: rule-${i}
 name: Rule-${r}.${i}-Violated
-description: This is a test ${r}/${i} violation.
+description: |
+  This is a test ${r}/${i} violation.
+    This is a **description** of the issue in markdown*.
+    Here's how to fix the issue.
+    
+    For example:
+    
+        This is some bad code.
+    
+    Should become:
+    
+        This is some good code.
 category: warning
 effort: 10
 labels:
@@ -84,6 +95,11 @@ labels:
 - RULESET-${r}
 - ${sources[$((${i}%${#sources[@]}))]}
 - ${targets[$((${i}%${#targets[@]}))]}
+links:
+- title: Document A
+  url: http://ruleset/${r}/rule/${i}/documentA.html
+- title: Document B
+  url: http://ruleset/${r}/rule/${i}/documentB.html
 incidents:
 " >> ${file}
 for n in $(seq 1 ${nIncident})
