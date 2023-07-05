@@ -768,6 +768,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
+		"i.Links",
 		"COUNT(distinct a.ID) Applications")
 	q = q.Table("Issue i,")
 	q = q.Joins("Analysis a")
@@ -815,6 +816,9 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		resources = append(resources, r)
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		if m.Links != nil {
+			_ = json.Unmarshal(m.Links, &r.Links)
 		}
 		r.Effort += m.Effort
 	}
@@ -888,6 +892,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
+		"i.Links",
 		"COUNT(distinct n.File) Files")
 	q = q.Table("Issue i,")
 	q = q.Joins("Incident n")
@@ -936,6 +941,9 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		resources = append(resources, r)
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		if m.Links != nil {
+			_ = json.Unmarshal(m.Links, &r.Links)
 		}
 		r.Effort += m.Effort
 	}
@@ -1884,6 +1892,7 @@ type RuleReport struct {
 	Category     string   `json:"category"`
 	Effort       int      `json:"effort"`
 	Labels       []string `json:"labels"`
+	Links        []Link   `json:"links"`
 	Applications int      `json:"applications"`
 }
 
@@ -1898,6 +1907,7 @@ type IssueReport struct {
 	Category    string   `json:"category"`
 	Effort      int      `json:"effort"`
 	Labels      []string `json:"labels"`
+	Links       []Link   `json:"links"`
 	Files       int      `json:"files"`
 }
 
