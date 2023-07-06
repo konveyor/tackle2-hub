@@ -158,6 +158,8 @@ file=${dPath}
 echo -n "---
 name: github.com/jboss
 version: 5.0
+labels:
+- konveyor.io/dep-source
 " > ${file}
 echo -n "---
 name: github.com/hybernate
