@@ -1362,6 +1362,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	db = db.Select("*")
 	db = db.Table("(?)", q)
 	db = filter.Where(db)
+	db = sort.Sorted(db)
 	var list []M
 	var m M
 	page := Page{}
