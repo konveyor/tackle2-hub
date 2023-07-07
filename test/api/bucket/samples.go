@@ -14,7 +14,7 @@ type BucketReaperSample struct {
 
 var Samples = []BucketSample{
 	{
-		Path: "sample",
+		Path: "sample/template_application_import.csv",
 	},
 }
 
