@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"io"
 	pathlib "path"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -51,5 +52,15 @@ func (h *Bucket) Put(source, destination string) (err error) {
 // The path is relative to the bucket root.
 func (h *Bucket) Delete(path string) (err error) {
 	err = h.Client.Delete(pathlib.Join(h.path, path))
+	return
+}
+
+func (h *Bucket) GetDir(file io.Reader, path string) (err error) {
+	err = h.Client.getDir(file, path)
+	return
+}
+
+func (h *Bucket) PutDir(file io.Writer, path string) (err error) {
+	err = h.Client.putDir(file, path)
 	return
 }

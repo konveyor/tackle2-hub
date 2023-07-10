@@ -1,8 +1,12 @@
 package bucket
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -97,6 +101,74 @@ func TestBucketFile(t *testing.T) {
 
 			// Remove the CSV file created.
 			err = os.Remove(pathToGotCSV)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Delete the bucket contents.
+			assert.Must(t, Client.Delete(bucketContentPath))
+		})
+	}
+}
+
+func TestDirectory(t *testing.T) {
+	for _, sample := range Samples {
+		t.Run("Directory CRUD tests", func(t *testing.T) {
+			baseDirectory := "sample"
+
+			// Generate a unique temporary directory path
+			tempDir, err := ioutil.TempDir(baseDirectory, "")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer os.RemoveAll(tempDir)
+
+			// Construct the destination path for the CSV file in the temporary directory
+			destFilePath := filepath.Join(tempDir, "template_application_import.csv")
+
+			// Open the source CSV file for reading
+			srcFile, err := os.Open(sample.Path)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer srcFile.Close()
+
+			// Create the destination file in the temporary directory
+			destFile, err := os.Create(destFilePath)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer destFile.Close()
+
+			// Copy the contents of the source CSV file to the destination file
+			_, err = io.Copy(destFile, srcFile)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			var buf bytes.Buffer
+			err = Bucket.PutDir(&buf, tempDir)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			outputFile, err := os.Create("test.tar.gz")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer outputFile.Close()
+
+			// Create a gzip writer
+			gzipWriter := gzip.NewWriter(outputFile)
+			defer gzipWriter.Close()
+
+			// Write the archive data from the buffer to the gzip writer
+			_, err = buf.WriteTo(gzipWriter)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			err = os.Remove("test.tar.gz")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
