@@ -152,7 +152,9 @@ func (m *Manager) startReady() {
 				Log.Error(sErr, "")
 				continue
 			}
-			metrics.TasksInitiated.Inc()
+			if ready.Retries == 0 {
+				metrics.TasksInitiated.Inc()
+			}
 			rt := Task{ready}
 			err := rt.Run(m.Client)
 			if err != nil {
