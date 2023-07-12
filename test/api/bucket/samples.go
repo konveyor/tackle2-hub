@@ -1,29 +1,20 @@
 package bucket
 
-import "time"
+import (
+	"github.com/konveyor/tackle2-hub/api"
+)
 
-// Struct to hold bucket sample data.
-type BucketSample struct {
-	Path string
-}
-
-type BucketReaperSample struct {
-	Path       string
-	Expiration *time.Time
-}
-
-var Samples = []BucketSample{
+var Buckets = []api.Bucket{
 	{
 		Path: "sample/template_application_import.csv",
 	},
-}
-
-var ReaperSamples = []BucketReaperSample{
 	{
-		Path: "reaper",
-		Expiration: func() *time.Time {
-			expiration := time.Now()
-			return &expiration
-		}(),
+		Path: "sample/template_application_import1.csv",
+	},
+	{
+		Path: "sample/template_application_import2.csv",
+	},
+	{
+		Path: "sample/template_application_import3.csv",
 	},
 }

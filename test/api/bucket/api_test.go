@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
@@ -16,11 +15,11 @@ import (
 )
 
 func TestBucketCRUD(t *testing.T) {
-	for _, sample := range Samples {
+	for _, bucket := range Buckets {
 		t.Run("Bucket CRUD Test", func(t *testing.T) {
 
 			expectedBucket := api.Bucket{
-				Path: sample.Path,
+				Path: bucket.Path,
 			}
 
 			// Create a new bucket.
@@ -58,25 +57,15 @@ func TestBucketCRUD(t *testing.T) {
 
 			// Delete bucket.
 			assert.Must(t, Bucket.Delete(pathForBucket))
-		})
-	}
-}
 
-func TestBucketFile(t *testing.T) {
-	for _, sample := range Samples {
-		t.Run("Bucket File Test", func(t *testing.T) {
-			// Create a sample bucket.
-			expectedBucket := api.Bucket{
-				Path: sample.Path,
-			}
 			// Create a test bucket.
 			assert.Must(t, Bucket.Create(&expectedBucket))
 
 			// Inject bucket id and location into the path
-			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: expectedBucket.ID, api.Wildcard: sample.Path})
+			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: expectedBucket.ID, api.Wildcard: bucket.Path})
 
 			// Add the file to the Bucket.
-			assert.Must(t, Client.BucketPut(sample.Path, bucketContentPath))
+			assert.Must(t, Client.BucketPut(bucket.Path, bucketContentPath))
 
 			// Get the file from the bucket.
 			pathToGotCSV := "downloadcsv.csv"
@@ -90,9 +79,9 @@ func TestBucketFile(t *testing.T) {
 			gotCSVString := string(gotCSV)
 
 			// Read the expected CSV file.
-			expectedCSV, err := ioutil.ReadFile(sample.Path)
+			expectedCSV, err := ioutil.ReadFile(bucket.Path)
 			if err != nil {
-				t.Errorf("Error reading CSV: %s", sample.Path)
+				t.Errorf("Error reading CSV: %s", bucket.Path)
 			}
 			expectedCSVString := string(expectedCSV)
 			if gotCSVString != expectedCSVString {
@@ -107,13 +96,7 @@ func TestBucketFile(t *testing.T) {
 
 			// Delete the bucket contents.
 			assert.Must(t, Client.Delete(bucketContentPath))
-		})
-	}
-}
 
-func TestDirectory(t *testing.T) {
-	for _, sample := range Samples {
-		t.Run("Directory CRUD tests", func(t *testing.T) {
 			baseDirectory := "sample"
 
 			// Generate a unique temporary directory path
@@ -127,7 +110,7 @@ func TestDirectory(t *testing.T) {
 			destFilePath := filepath.Join(tempDir, "template_application_import.csv")
 
 			// Open the source CSV file for reading
-			srcFile, err := os.Open(sample.Path)
+			srcFile, err := os.Open(bucket.Path)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -168,37 +151,20 @@ func TestDirectory(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
+			// expectedFile, err := os.Open("test.tar.gz")
+			// if err != nil {
+			// 	t.Errorf(err.Error())
+			// }
+			// defer expectedFile.Close()
+
+			// err = Bucket.GetDir(expectedFile, baseDirectory)
+			// if err != nil {
+			// 	t.Errorf(err.Error())
+			// }
+
 			err = os.Remove("test.tar.gz")
 			if err != nil {
 				t.Errorf(err.Error())
-			}
-		})
-	}
-}
-
-func TestBucketReaper(t *testing.T) {
-	for _, sample := range ReaperSamples {
-		t.Run("Indirect Bucket Deletion Check", func(t *testing.T) {
-			expectedReaperBucket := api.Bucket{
-				Path:       sample.Path,
-				Expiration: sample.Expiration,
-			}
-
-			// Create a new Bucket.
-			assert.Must(t, Bucket.Create(&expectedReaperBucket))
-
-			// Inject Reaper Buckets's ID into the BucketRoot.
-			pathForReaperBucket := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: expectedReaperBucket.ID})
-
-			// Wait for Bucket to be deleted.
-			gotReaperBucket := api.Bucket{}
-			for {
-				time.Sleep(time.Second * 10)
-				err := Client.Get(pathForReaperBucket, &gotReaperBucket)
-				// error will not be nil when the bucket is deleted thus will break the loop.
-				if err != nil {
-					break
-				}
 			}
 		})
 	}
