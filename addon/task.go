@@ -113,6 +113,7 @@ func (h *Task) Failed(reason string, x ...interface{}) {
 // Error report addon error.
 // The description can be a printf style format.
 func (h *Task) Error(severity, description string, x ...interface{}) {
+	h.report.Status = task.Failed
 	description = fmt.Sprintf(description, x...)
 	h.report.Errors = append(
 		h.report.Errors,

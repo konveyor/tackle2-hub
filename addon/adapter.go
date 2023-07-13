@@ -101,11 +101,7 @@ func (h *Adapter) Run(addon func() error) {
 	case task.Failed,
 		task.Succeeded:
 	default:
-		if len(h.report.Errors) > 0 {
-			h.Failed("Addon reported errors.")
-		} else {
-			h.Succeeded()
-		}
+		h.Succeeded()
 	}
 }
 
