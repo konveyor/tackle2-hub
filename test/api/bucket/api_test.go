@@ -14,7 +14,7 @@ import (
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-func TestBucketCRUD(t *testing.T) {
+func TestBucket(t *testing.T) {
 	for _, bucket := range Buckets {
 		t.Run("Bucket CRUD Test", func(t *testing.T) {
 			expectedPath := bucket.Path
@@ -126,12 +126,17 @@ func TestBucketCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
+			// Access the directory , convert to archive and upload its contents.
 			var buf bytes.Buffer
 			err = Bucket.PutDir(&buf, tempDir)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
+			/*----------------------------------------------------------------*/
+			// below needs to be checked
+
+			// Create an archive.
 			outputFile, err := os.Create("test.tar.gz")
 			if err != nil {
 				t.Errorf(err.Error())
@@ -143,22 +148,22 @@ func TestBucketCRUD(t *testing.T) {
 			defer gzipWriter.Close()
 
 			// Write the archive data from the buffer to the gzip writer
-			_, err = buf.WriteTo(gzipWriter)
+			_, err = io.Copy(gzipWriter, destFile)
 			if err != nil {
-				panic(err)
+				t.Errorf(err.Error())
 			}
 
-			// // Open the archive for reading
-			// expectedFile, err := os.Open("test.tar.gz")
-			// if err != nil {
-			// 	t.Errorf(err.Error())
-			// }
-			// defer expectedFile.Close()
+			// // // Open the archive for reading
+			// // expectedFile, err := os.Open("test.tar.gz")
+			// // if err != nil {
+			// // 	t.Errorf(err.Error())
+			// // }
+			// // defer expectedFile.Close()
 
-			// err = Bucket.GetDir(expectedFile, baseDirectory)
-			// if err != nil {
-			// 	t.Errorf(err.Error())
-			// }
+			// // err = Bucket.GetDir(expectedFile, baseDirectory)
+			// // if err != nil {
+			// // 	t.Errorf(err.Error())
+			// // }
 
 			err = os.Remove("test.tar.gz")
 			if err != nil {
