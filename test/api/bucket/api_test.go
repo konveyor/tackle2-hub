@@ -17,13 +17,9 @@ import (
 func TestBucketCRUD(t *testing.T) {
 	for _, bucket := range Buckets {
 		t.Run("Bucket CRUD Test", func(t *testing.T) {
-
-			expectedBucket := api.Bucket{
-				Path: bucket.Path,
-			}
-
+			expectedPath := bucket.Path
 			// Create a new bucket.
-			assert.Must(t, Bucket.Create(&expectedBucket))
+			assert.Must(t, Bucket.Create(&bucket))
 
 			// Get all the buckets.
 			gotBuckets, err := Bucket.List()
@@ -33,15 +29,15 @@ func TestBucketCRUD(t *testing.T) {
 
 			// Find for the specific bucket and compare Paths as it is a unique value.
 			for _, gotBucket := range gotBuckets {
-				if gotBucket.ID == expectedBucket.ID {
-					if gotBucket.Path != expectedBucket.Path {
-						t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, expectedBucket.Path)
+				if gotBucket.ID == bucket.ID {
+					if gotBucket.Path != bucket.Path {
+						t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, bucket.Path)
 					}
 				}
 			}
 
 			// Inject Expected Buckets's ID into the BucketRoot.
-			pathForBucket := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: expectedBucket.ID})
+			pathForBucket := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: bucket.ID})
 
 			// Get specific bucket.
 			gotBucket := api.Bucket{}
@@ -51,24 +47,26 @@ func TestBucketCRUD(t *testing.T) {
 			}
 
 			// Compare bucket Paths.
-			if gotBucket.Path != expectedBucket.Path {
-				t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, expectedBucket.Path)
+			if gotBucket.Path != bucket.Path {
+				t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, bucket.Path)
 			}
 
-			// Delete bucket.
-			assert.Must(t, Bucket.Delete(pathForBucket))
-
-			// Create a test bucket.
-			assert.Must(t, Bucket.Create(&expectedBucket))
+			/* -----------------------------------------------------------------------------*/
+			// ADirectory tests
 
 			// Inject bucket id and location into the path
-			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: expectedBucket.ID, api.Wildcard: bucket.Path})
+			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: bucket.ID, api.Wildcard: expectedPath})
 
 			// Add the file to the Bucket.
-			assert.Must(t, Client.BucketPut(bucket.Path, bucketContentPath))
+			assert.Should(t, Client.BucketPut(expectedPath, bucketContentPath))
 
 			// Get the file from the bucket.
-			pathToGotCSV := "downloadcsv.csv"
+			pathToGotCSV := "downloadedcsv.csv"
+			_, err = os.Create(pathToGotCSV)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
 			assert.Should(t, Client.BucketGet(bucketContentPath, pathToGotCSV))
 
 			// Read the got CSV file.
@@ -77,11 +75,10 @@ func TestBucketCRUD(t *testing.T) {
 				t.Errorf("Error reading CSV: %s", pathToGotCSV)
 			}
 			gotCSVString := string(gotCSV)
-
 			// Read the expected CSV file.
-			expectedCSV, err := ioutil.ReadFile(bucket.Path)
+			expectedCSV, err := ioutil.ReadFile(expectedPath)
 			if err != nil {
-				t.Errorf("Error reading CSV: %s", bucket.Path)
+				t.Errorf("Error reading CSV: %s", expectedPath)
 			}
 			expectedCSVString := string(expectedCSV)
 			if gotCSVString != expectedCSVString {
@@ -94,8 +91,8 @@ func TestBucketCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			// Delete the bucket contents.
-			assert.Must(t, Client.Delete(bucketContentPath))
+			/* -----------------------------------------------------------------------------*/
+			// Archive tests
 
 			baseDirectory := "sample"
 
@@ -110,7 +107,7 @@ func TestBucketCRUD(t *testing.T) {
 			destFilePath := filepath.Join(tempDir, "template_application_import.csv")
 
 			// Open the source CSV file for reading
-			srcFile, err := os.Open(bucket.Path)
+			srcFile, err := os.Open(expectedPath)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -148,9 +145,10 @@ func TestBucketCRUD(t *testing.T) {
 			// Write the archive data from the buffer to the gzip writer
 			_, err = buf.WriteTo(gzipWriter)
 			if err != nil {
-				t.Errorf(err.Error())
+				panic(err)
 			}
 
+			// // Open the archive for reading
 			// expectedFile, err := os.Open("test.tar.gz")
 			// if err != nil {
 			// 	t.Errorf(err.Error())
@@ -166,6 +164,9 @@ func TestBucketCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
+
+			// Delete the bucket contents.
+			assert.Must(t, Client.Delete(bucketContentPath))
 		})
 	}
 }
