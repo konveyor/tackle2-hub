@@ -96,7 +96,7 @@ func (h *Adapter) Run(addon func() error) {
 		return
 	}
 	//
-	// Report addon status.
+	// Report addon succeeded.
 	switch h.report.Status {
 	case task.Failed,
 		task.Succeeded:
