@@ -8,6 +8,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
 	"os"
 )
@@ -96,7 +97,12 @@ func (h *Adapter) Run(addon func() error) {
 	}
 	//
 	// Report addon succeeded.
-	h.Succeeded()
+	switch h.report.Status {
+	case task.Failed,
+		task.Succeeded:
+	default:
+		h.Succeeded()
+	}
 }
 
 //
