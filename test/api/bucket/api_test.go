@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"bytes"
-	"compress/gzip"
 	"io"
 	"io/ioutil"
 	"os"
@@ -137,21 +136,28 @@ func TestBucket(t *testing.T) {
 			// below needs to be checked
 
 			// Create an archive.
-			outputFile, err := os.Create("test.tar.gz")
+
+			_ = Bucket.Compress(tempDir, &buf)
+
+			// write the .tar.gzip
+			fileToWrite, err := os.OpenFile("./compress.tar.gzip", os.O_CREATE|os.O_RDWR, os.FileMode(0777))
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			defer outputFile.Close()
 
-			// Create a gzip writer
-			gzipWriter := gzip.NewWriter(outputFile)
-			defer gzipWriter.Close()
-
-			// Write the archive data from the buffer to the gzip writer
-			_, err = io.Copy(gzipWriter, destFile)
-			if err != nil {
+			if _, err := io.Copy(fileToWrite, &buf); err != nil {
 				t.Errorf(err.Error())
 			}
+
+			// // Create a gzip writer
+			// gzipWriter := gzip.NewWriter(outputFile)
+			// defer gzipWriter.Close()
+
+			// // Write the archive data from the buffer to the gzip writer
+			// _, err = io.Copy(gzipWriter, destFile)
+			// if err != nil {
+			// 	t.Errorf(err.Error())
+			// }
 
 			// // // Open the archive for reading
 			// // expectedFile, err := os.Open("test.tar.gz")
@@ -164,11 +170,6 @@ func TestBucket(t *testing.T) {
 			// // if err != nil {
 			// // 	t.Errorf(err.Error())
 			// // }
-
-			err = os.Remove("test.tar.gz")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
 
 			// Delete the bucket contents.
 			assert.Must(t, Client.Delete(bucketContentPath))
