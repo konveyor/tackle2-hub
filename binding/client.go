@@ -139,10 +139,8 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 
 	return
@@ -187,10 +185,8 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			return
 		}
 	case http.StatusNoContent:
-	case http.StatusConflict:
-		err = (&Conflict{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 	return
 }
@@ -241,10 +237,8 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 
 	return
@@ -280,10 +274,8 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 	switch status {
 	case http.StatusOK,
 		http.StatusNoContent:
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 
 	return
@@ -319,10 +311,8 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 		} else {
 			err = r.getFile(reply.Body, source, destination)
 		}
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 	return
 }
@@ -382,10 +372,8 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		http.StatusNoContent,
 		http.StatusCreated,
 		http.StatusAccepted:
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 	return
 }
@@ -415,10 +403,8 @@ func (r *Client) FileGet(path, destination string) (err error) {
 		// Empty.
 	case http.StatusOK:
 		err = r.getFile(reply.Body, "", destination)
-	case http.StatusNotFound:
-		err = (&NotFound{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 	return
 }
@@ -529,10 +515,8 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusConflict:
-		err = (&Conflict{}).With(reply)
 	default:
-		err = (&RestError{}).With(reply)
+		err = r.newError(reply)
 	}
 	return
 }
@@ -778,6 +762,27 @@ func (r *Client) buildTransport() (err error) {
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
 	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
+	return
+}
+
+//
+// newError returns an error based on status.
+func (r *Client) newError(response *http.Response) (err error) {
+	status := response.StatusCode
+	if status < 400 {
+		return
+	}
+	switch status {
+	case http.StatusConflict:
+		restErr := &Conflict{}
+		err = restErr.With(response)
+	case http.StatusNotFound:
+		restErr := &NotFound{}
+		err = restErr.With(response)
+	default:
+		restErr := &RestError{}
+		err = restErr.With(response)
+	}
 	return
 }
 
