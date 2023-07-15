@@ -140,7 +140,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			return
 		}
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 
 	return
@@ -186,7 +186,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		}
 	case http.StatusNoContent:
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 	return
 }
@@ -238,7 +238,7 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 			return
 		}
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 
 	return
@@ -275,7 +275,7 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 	case http.StatusOK,
 		http.StatusNoContent:
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 
 	return
@@ -312,7 +312,7 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 			err = r.getFile(reply.Body, source, destination)
 		}
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 	return
 }
@@ -373,7 +373,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		http.StatusCreated,
 		http.StatusAccepted:
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 	return
 }
@@ -404,7 +404,7 @@ func (r *Client) FileGet(path, destination string) (err error) {
 	case http.StatusOK:
 		err = r.getFile(reply.Body, "", destination)
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 	return
 }
@@ -516,7 +516,7 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			return
 		}
 	default:
-		err = r.newError(reply)
+		err = r.restError(reply)
 	}
 	return
 }
@@ -766,22 +766,22 @@ func (r *Client) join(path string) (parsedURL *url.URL) {
 }
 
 //
-// newError returns an error based on status.
-func (r *Client) newError(response *http.Response) (err error) {
+// restError returns an error based on status.
+func (r *Client) restError(response *http.Response) (err error) {
 	status := response.StatusCode
 	if status < 400 {
 		return
 	}
 	switch status {
 	case http.StatusConflict:
-		restErr := &Conflict{}
-		err = restErr.With(response)
+		restError := &Conflict{}
+		err = restError.With(response)
 	case http.StatusNotFound:
-		restErr := &NotFound{}
-		err = restErr.With(response)
+		restError := &NotFound{}
+		err = restError.With(response)
 	default:
-		restErr := &RestError{}
-		err = restErr.With(response)
+		restError := &RestError{}
+		err = restError.With(response)
 	}
 	return
 }
