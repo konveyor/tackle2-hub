@@ -91,13 +91,15 @@ func TestBucket(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
+			assert.Should(t, Client.Delete(bucketContentPath))
+
 			/* -----------------------------------------------------------------------------*/
 			// Archive tests
 
-			baseDirectory := "sample"
+			outputDirectory := "sample"
 
 			// Generate a unique temporary directory path
-			tempDir, err := ioutil.TempDir(baseDirectory, "")
+			tempDir, err := ioutil.TempDir(outputDirectory, "")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -128,17 +130,11 @@ func TestBucket(t *testing.T) {
 
 			// Access the directory , convert to archive and upload its contents.
 			var buf bytes.Buffer
-			err = Bucket.PutDir(&buf, tempDir)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			/*----------------------------------------------------------------*/
-			// Get and Put Dir tests.
+			assert.Should(t, Bucket.PutDir(&buf, tempDir))
 
 			// Create an archive.
-			var newbuf bytes.Buffer
-			_ = Bucket.Compress(expectedPath, &newbuf)
+			var outputBuffer bytes.Buffer
+			_ = Bucket.Compress(expectedPath, &outputBuffer)
 
 			// write the .tar.gzip
 			fileToWrite, err := os.OpenFile("./compress.tar.gzip", os.O_CREATE|os.O_RDWR, os.FileMode(0777))
@@ -148,17 +144,17 @@ func TestBucket(t *testing.T) {
 			defer fileToWrite.Close()
 
 			// Copy the csv file to the archive.
-			_, err = io.Copy(fileToWrite, &newbuf)
+			_, err = io.Copy(fileToWrite, &outputBuffer)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
 			// Open the file for reading.
-			expectedFile, err := os.Open("compress.tar.gzip")
+			expectedArchive, err := os.Open("compress.tar.gzip")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			defer expectedFile.Close()
+			defer expectedArchive.Close()
 
 			// Create the "compress" directory
 			err = os.MkdirAll("compress", 0755)
@@ -173,9 +169,27 @@ func TestBucket(t *testing.T) {
 			}
 
 			// Extract the contents in compress/sample directory.
-			err = Bucket.GetDir(expectedFile, "compress")
+			assert.Should(t, Bucket.GetDir(expectedArchive, "compress"))
+
+			gotPath := filepath.Join("compress", expectedPath)
+
+			// Open got file for comparison.
+			gotOutputCSV, err := ioutil.ReadFile(gotPath)
 			if err != nil {
 				t.Errorf(err.Error())
+			}
+			gotOutputCSVString := string(gotOutputCSV)
+
+			// Open expected file for comparison.
+			expectedOutputCSV, err := ioutil.ReadFile(expectedPath)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			expectedOutputCSVString := string(expectedOutputCSV)
+
+			// Compare the two csv files.
+			if gotOutputCSVString != expectedOutputCSVString {
+				t.Errorf("The CSV files have different content %s and %s", gotOutputCSVString, expectedOutputCSVString)
 			}
 
 			// Remove the archive.
@@ -183,9 +197,6 @@ func TestBucket(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-
-			// Delete the bucket contents.
-			assert.Must(t, Client.Delete(bucketContentPath))
 
 			// Remove the compress directory.
 			err = os.RemoveAll("compress")
