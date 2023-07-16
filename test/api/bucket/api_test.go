@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -51,7 +52,7 @@ func TestBucket(t *testing.T) {
 			}
 
 			/* -----------------------------------------------------------------------------*/
-			// ADirectory tests
+			// Directory tests
 
 			// Inject bucket id and location into the path
 			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: bucket.ID, api.Wildcard: expectedPath})
@@ -103,7 +104,7 @@ func TestBucket(t *testing.T) {
 			defer os.RemoveAll(tempDir)
 
 			// Construct the destination path for the CSV file in the temporary directory
-			destFilePath := filepath.Join(tempDir, "template_application_import.csv")
+			destFilePath := filepath.Join(tempDir, strings.TrimPrefix(expectedPath, "sample/"))
 
 			// Open the source CSV file for reading
 			srcFile, err := os.Open(expectedPath)
@@ -133,46 +134,64 @@ func TestBucket(t *testing.T) {
 			}
 
 			/*----------------------------------------------------------------*/
-			// below needs to be checked
+			// Get and Put Dir tests.
 
 			// Create an archive.
-
-			_ = Bucket.Compress(tempDir, &buf)
+			var newbuf bytes.Buffer
+			_ = Bucket.Compress(expectedPath, &newbuf)
 
 			// write the .tar.gzip
 			fileToWrite, err := os.OpenFile("./compress.tar.gzip", os.O_CREATE|os.O_RDWR, os.FileMode(0777))
 			if err != nil {
 				t.Errorf(err.Error())
 			}
+			defer fileToWrite.Close()
 
-			if _, err := io.Copy(fileToWrite, &buf); err != nil {
+			// Copy the csv file to the archive.
+			_, err = io.Copy(fileToWrite, &newbuf)
+			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// // Create a gzip writer
-			// gzipWriter := gzip.NewWriter(outputFile)
-			// defer gzipWriter.Close()
+			// Open the file for reading.
+			expectedFile, err := os.Open("compress.tar.gzip")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer expectedFile.Close()
 
-			// // Write the archive data from the buffer to the gzip writer
-			// _, err = io.Copy(gzipWriter, destFile)
-			// if err != nil {
-			// 	t.Errorf(err.Error())
-			// }
+			// Create the "compress" directory
+			err = os.MkdirAll("compress", 0755)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 
-			// // // Open the archive for reading
-			// // expectedFile, err := os.Open("test.tar.gz")
-			// // if err != nil {
-			// // 	t.Errorf(err.Error())
-			// // }
-			// // defer expectedFile.Close()
+			// Create the "sample" subdirectory inside "compress"
+			err = os.MkdirAll(filepath.Join("compress", "sample"), 0755)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 
-			// // err = Bucket.GetDir(expectedFile, baseDirectory)
-			// // if err != nil {
-			// // 	t.Errorf(err.Error())
-			// // }
+			// Extract the contents in compress/sample directory.
+			err = Bucket.GetDir(expectedFile, "compress")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Remove the archive.
+			err = os.Remove("compress.tar.gzip")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 
 			// Delete the bucket contents.
 			assert.Must(t, Client.Delete(bucketContentPath))
+
+			// Remove the compress directory.
+			err = os.RemoveAll("compress")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 		})
 	}
 }
