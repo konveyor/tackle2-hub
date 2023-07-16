@@ -21,7 +21,7 @@ import (
 	pathlib "path"
 	"path/filepath"
 	"strings"
-	"time"	
+	"time"
 )
 
 const (
@@ -118,18 +118,18 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -139,10 +139,8 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusNotFound:
-		err = &NotFound{Path: path}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 
 	return
@@ -167,16 +165,16 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		request.Header.Set(api.Accept, binding.MIMEJSON)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -187,10 +185,8 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			return
 		}
 	case http.StatusNoContent:
-	case http.StatusConflict:
-		err = &Conflict{Path: path}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 	return
 }
@@ -221,17 +217,17 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -241,10 +237,8 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusNotFound:
-		err = &NotFound{Path: path}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 
 	return
@@ -269,21 +263,19 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusNoContent:
-	case http.StatusNotFound:
-		err = &NotFound{Path: path}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 
 	return
@@ -302,27 +294,25 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 		// Empty.
 	case http.StatusOK:
-		if reply.Header.Get(api.Directory) == api.DirectoryExpand {
-			err = r.getDir(reply.Body, destination)
+		if response.Header.Get(api.Directory) == api.DirectoryExpand {
+			err = r.getDir(response.Body, destination)
 		} else {
-			err = r.getFile(reply.Body, source, destination)
+			err = r.getFile(response.Body, source, destination)
 		}
-	case http.StatusNotFound:
-		err = &NotFound{Path: source}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 	return
 }
@@ -372,20 +362,18 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		}()
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusNoContent,
 		http.StatusCreated,
 		http.StatusAccepted:
-	case http.StatusNotFound:
-		err = &NotFound{Path: destination}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 	return
 }
@@ -402,23 +390,21 @@ func (r *Client) FileGet(path, destination string) (err error) {
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 		// Empty.
 	case http.StatusOK:
-		err = r.getFile(reply.Body, "", destination)
-	case http.StatusNotFound:
-		err = &NotFound{Path: path}
+		err = r.getFile(response.Body, "", destination)
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 	return
 }
@@ -510,16 +496,16 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 		}()
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -529,10 +515,8 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusConflict:
-		err = &Conflict{Path: path}
 	default:
-		err = liberr.New(http.StatusText(status))
+		err = r.restError(response)
 	}
 	return
 }
@@ -778,6 +762,27 @@ func (r *Client) buildTransport() (err error) {
 func (r *Client) join(path string) (parsedURL *url.URL) {
 	parsedURL, _ = url.Parse(r.baseURL)
 	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
+	return
+}
+
+//
+// restError returns an error based on status.
+func (r *Client) restError(response *http.Response) (err error) {
+	status := response.StatusCode
+	if status < 400 {
+		return
+	}
+	switch status {
+	case http.StatusConflict:
+		restError := &Conflict{}
+		err = restError.With(response)
+	case http.StatusNotFound:
+		restError := &NotFound{}
+		err = restError.With(response)
+	default:
+		restError := &RestError{}
+		err = restError.With(response)
+	}
 	return
 }
 
