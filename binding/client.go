@@ -118,18 +118,18 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -140,7 +140,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 			return
 		}
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 
 	return
@@ -165,16 +165,16 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		request.Header.Set(api.Accept, binding.MIMEJSON)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -186,7 +186,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 		}
 	case http.StatusNoContent:
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 	return
 }
@@ -217,17 +217,17 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -238,7 +238,7 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 			return
 		}
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 
 	return
@@ -263,19 +263,19 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 		}
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusNoContent:
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 
 	return
@@ -294,25 +294,25 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 		// Empty.
 	case http.StatusOK:
-		if reply.Header.Get(api.Directory) == api.DirectoryExpand {
-			err = r.getDir(reply.Body, destination)
+		if response.Header.Get(api.Directory) == api.DirectoryExpand {
+			err = r.getDir(response.Body, destination)
 		} else {
-			err = r.getFile(reply.Body, source, destination)
+			err = r.getFile(response.Body, source, destination)
 		}
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 	return
 }
@@ -362,18 +362,18 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 		}()
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusNoContent,
 		http.StatusCreated,
 		http.StatusAccepted:
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 	return
 }
@@ -390,21 +390,21 @@ func (r *Client) FileGet(path, destination string) (err error) {
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = reply.Body.Close()
+		_ = response.Body.Close()
 	}()
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusNoContent:
 		// Empty.
 	case http.StatusOK:
-		err = r.getFile(reply.Body, "", destination)
+		err = r.getFile(response.Body, "", destination)
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 	return
 }
@@ -496,16 +496,16 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 		}()
 		return
 	}
-	reply, err := r.send(request)
+	response, err := r.send(request)
 	if err != nil {
 		return
 	}
-	status := reply.StatusCode
+	status := response.StatusCode
 	switch status {
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
-		body, err = io.ReadAll(reply.Body)
+		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -516,7 +516,7 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 			return
 		}
 	default:
-		err = r.restError(reply)
+		err = r.restError(response)
 	}
 	return
 }
