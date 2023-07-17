@@ -74,7 +74,8 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	var err error
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	m := &model.File{}
@@ -94,6 +95,8 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	}()
 	reader, err := input.Open()
 	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {

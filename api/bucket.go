@@ -314,12 +314,14 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	fileReader, err := file.Open()
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
@@ -327,7 +329,8 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	}()
 	zipReader, err := gzip.NewReader(fileReader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
@@ -468,11 +471,14 @@ func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
 	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	reader, err := input.Open()
 	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
