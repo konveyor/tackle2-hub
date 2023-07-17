@@ -212,12 +212,12 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	// Analysis
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	reader, err := input.Open()
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	defer func() {
@@ -226,25 +226,25 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding := input.Header.Get(ContentType)
 	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	r := Analysis{}
 	err = d.Decode(&r)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	//
 	// Issues
 	input, err = ctx.FormFile(IssueField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	reader, err = input.Open()
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	defer func() {
@@ -253,7 +253,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	for {
@@ -263,7 +263,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				h.Status(ctx, http.StatusBadRequest)
+				_ = ctx.Error(&BadRequestError{err.Error()})
 				return
 			}
 		}
@@ -280,12 +280,12 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	// Dependencies
 	input, err = ctx.FormFile(DepField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	reader, err = input.Open()
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	defer func() {
@@ -294,7 +294,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		_ = ctx.Error(&BadRequestError{err.Error()})
 		return
 	}
 	for {
@@ -304,7 +304,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				h.Status(ctx, http.StatusBadRequest)
+				_ = ctx.Error(&BadRequestError{err.Error()})
 				return
 			}
 		}
