@@ -16,8 +16,11 @@ import (
 
 func TestBucket(t *testing.T) {
 	for _, bucket := range Buckets {
-		t.Run("Bucket CRUD Test", func(t *testing.T) {
-			expectedPath := bucket.Path
+		// Path variable to access across the tests.
+		expectedPath := bucket.Path
+
+		t.Run("Create Bucket and Compare", func(t *testing.T) {
+
 			// Create a new bucket.
 			assert.Must(t, Bucket.Create(&bucket))
 
@@ -37,11 +40,11 @@ func TestBucket(t *testing.T) {
 			}
 
 			// Inject Expected Buckets's ID into the BucketRoot.
-			pathForBucket := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: bucket.ID})
+			bucketID := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: bucket.ID})
 
 			// Get specific bucket.
 			gotBucket := api.Bucket{}
-			err = Client.Get(pathForBucket, &gotBucket)
+			err = Client.Get(bucketID, &gotBucket)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -50,9 +53,9 @@ func TestBucket(t *testing.T) {
 			if gotBucket.Path != bucket.Path {
 				t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, bucket.Path)
 			}
+		})
 
-			/* -----------------------------------------------------------------------------*/
-			// Directory tests
+		t.Run("Directory Related Tests on Created Bucket", func(t *testing.T) {
 
 			// Inject bucket id and location into the path
 			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: bucket.ID, api.Wildcard: expectedPath})
@@ -62,7 +65,7 @@ func TestBucket(t *testing.T) {
 
 			// Get the file from the bucket.
 			pathToGotCSV := "downloadedcsv.csv"
-			_, err = os.Create(pathToGotCSV)
+			_, err := os.Create(pathToGotCSV)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -75,6 +78,7 @@ func TestBucket(t *testing.T) {
 				t.Errorf("Error reading CSV: %s", pathToGotCSV)
 			}
 			gotCSVString := string(gotCSV)
+
 			// Read the expected CSV file.
 			expectedCSV, err := ioutil.ReadFile(expectedPath)
 			if err != nil {
@@ -85,19 +89,13 @@ func TestBucket(t *testing.T) {
 				t.Errorf("The CSV files have different content %s and %s", gotCSVString, expectedCSVString)
 			}
 
-			// Remove the CSV file created.
-			err = os.Remove(pathToGotCSV)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			// Delete path for Bucket's Contents
+			assert.Must(t, Client.Delete(bucketContentPath))
+		})
 
-			assert.Should(t, Client.Delete(bucketContentPath))
-
-			/* -----------------------------------------------------------------------------*/
-			// Archive tests
+		t.Run("Archive Related Tests on Created Bucket", func(t *testing.T) {
 
 			outputDirectory := "sample"
-
 			// Generate a unique temporary directory path
 			tempDir, err := ioutil.TempDir(outputDirectory, "")
 			if err != nil {
@@ -134,7 +132,10 @@ func TestBucket(t *testing.T) {
 
 			// Create an archive.
 			var outputBuffer bytes.Buffer
-			_ = Bucket.Compress(expectedPath, &outputBuffer)
+			err = Bucket.Compress(expectedPath, &outputBuffer)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 
 			// write the .tar.gzip
 			fileToWrite, err := os.OpenFile("./compress.tar.gzip", os.O_CREATE|os.O_RDWR, os.FileMode(0777))
@@ -191,14 +192,23 @@ func TestBucket(t *testing.T) {
 			if gotOutputCSVString != expectedOutputCSVString {
 				t.Errorf("The CSV files have different content %s and %s", gotOutputCSVString, expectedOutputCSVString)
 			}
+		})
 
-			// Remove the archive.
+		t.Run("Delete created Bucket and it's created binaries and archives", func(t *testing.T) {
+
+			// Remove the CSV file created.
+			err := os.Remove("downloadedcsv.csv")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Remove the archive(Created by Compress()).
 			err = os.Remove("compress.tar.gzip")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// Remove the compress directory.
+			// Remove the expanded directory(output by GetDir).
 			err = os.RemoveAll("compress")
 			if err != nil {
 				t.Errorf(err.Error())
