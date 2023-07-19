@@ -38,6 +38,8 @@ type SoftError = hub.SoftError
 // main
 func main() {
 	addon.Run(func() (err error) {
+		_, _ = addon.Identity.List()
+		_, _ = addon.Identity.Get(1)
 		//
 		// Get the addon data associated with the task.
 		d := &Data{}

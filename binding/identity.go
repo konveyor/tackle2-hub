@@ -27,11 +27,6 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 	}
 	path := Path(api.IdentityRoot).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r, p)
-	if err != nil {
-		return
-	}
-	m := r.Model()
-	r.With(m)
 	return
 }
 
@@ -44,14 +39,6 @@ func (h *Identity) List() (list []api.Identity, err error) {
 		Value: "1",
 	}
 	err = h.client.Get(api.IdentitiesRoot, &list, p)
-	if err != nil {
-		return
-	}
-	for i := range list {
-		r := &list[i]
-		m := r.Model()
-		r.With(m)
-	}
 	return
 }
 
