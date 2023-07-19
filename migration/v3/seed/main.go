@@ -142,11 +142,6 @@ func Seed(db *gorm.DB) {
 						Description: "JBoss EAP 7",
 						Metadata:    Target("eap7"),
 					},
-					{
-						Name:        "JBoss EAP 6",
-						Description: "JBoss EAP 6",
-						Metadata:    Target("eap6"),
-					},
 				},
 			},
 		},
