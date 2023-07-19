@@ -20,8 +20,8 @@ tree managed by the bucket.
 packaged as a tarball and the `X-Directory=Expand` header set. A GET with an Accept=text/html header behaves like
 a static file website.
 
-**PUT** stores the uploaded file in the bucket at the specified path. The intermediate directories are automatically 
-created. When the file _isA_ directory, the client must upload a tarball and set the `X-Directory=Expand` header.
+**PUT** creates/updates the file/directory at the specified path. The intermediate directories are created 
+as needed. When the file _isA_ directory, the client must upload a tarball and set the `X-Directory=Expand` header.
 The body must be a miltipart form with a field named `file`.
 
 **DELETE** deletes the file/directory at the specified path (but not intermediate directories).
