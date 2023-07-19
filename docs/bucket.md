@@ -14,7 +14,7 @@ buckets follow conventional CRUD life-cycle patterns.
 
 ### Content ###
 The Bucket itself has a _virtual_ content subresource that provides GET/PUT/DELETE operations. For example: a route 
-of `/buckets/1/this/that/thing`  `this/that/thing` is the path to the `thing` subresource (file) within the bucket.
+of `/buckets/1/this/that/thing`, `this/that/thing` is the path to the `thing` subresource (file) within the bucket.
 
 **GET** returns `thing` as an octet-stream. when `thing` is a directory, it is packaged as a tarball and
 the `X-Directory=Expand` header set. Bucket (content) may be inspected using a Web Browser. A **GET** on 
