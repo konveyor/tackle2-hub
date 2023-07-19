@@ -7,9 +7,9 @@ buckets follow conventional CRUD life-cycle patterns.
 
 **GET** returns the Bucket resource.
 
-**POST** Creates the Bucket resource and storage directory.
+**POST** creates the Bucket resource and storage directory.
 
-**DELETE** Deletes the Bucket resource and associated storage directory.
+**DELETE** deletes the Bucket resource and associated storage directory.
 
 
 ### Content ###
