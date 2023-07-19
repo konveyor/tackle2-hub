@@ -212,11 +212,13 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	// Analysis
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	reader, err := input.Open()
 	if err != nil {
+		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -226,24 +228,28 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding := input.Header.Get(ContentType)
 	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	r := Analysis{}
 	err = d.Decode(&r)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	//
 	// Issues
 	input, err = ctx.FormFile(IssueField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	reader, err = input.Open()
 	if err != nil {
+		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -253,7 +259,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	for {
@@ -263,7 +270,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				h.Status(ctx, http.StatusBadRequest)
+				err = &BadRequestError{err.Error()}
+				_ = ctx.Error(err)
 				return
 			}
 		}
@@ -280,11 +288,13 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	// Dependencies
 	input, err = ctx.FormFile(DepField)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	reader, err = input.Open()
 	if err != nil {
+		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -294,7 +304,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	encoding = input.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
-		h.Status(ctx, http.StatusBadRequest)
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
 		return
 	}
 	for {
@@ -304,7 +315,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				h.Status(ctx, http.StatusBadRequest)
+				err = &BadRequestError{err.Error()}
+				_ = ctx.Error(err)
 				return
 			}
 		}
@@ -768,6 +780,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
+		"i.Links",
 		"COUNT(distinct a.ID) Applications")
 	q = q.Table("Issue i,")
 	q = q.Joins("Analysis a")
@@ -815,6 +828,9 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		resources = append(resources, r)
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		if m.Links != nil {
+			_ = json.Unmarshal(m.Links, &r.Links)
 		}
 		r.Effort += m.Effort
 	}
@@ -888,6 +904,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		"i.Category",
 		"i.Effort",
 		"i.Labels",
+		"i.Links",
 		"COUNT(distinct n.File) Files")
 	q = q.Table("Issue i,")
 	q = q.Joins("Incident n")
@@ -936,6 +953,9 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		resources = append(resources, r)
 		if m.Labels != nil {
 			_ = json.Unmarshal(m.Labels, &r.Labels)
+		}
+		if m.Links != nil {
+			_ = json.Unmarshal(m.Links, &r.Links)
 		}
 		r.Effort += m.Effort
 	}
@@ -1339,6 +1359,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
+		"Provider",
 		"Name",
 		"Version",
 		"SHA",
@@ -1352,7 +1373,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select("*")
 	db = db.Table("(?)", q)
-	db = filter.Where(db)
+	db = sort.Sorted(db)
 	var list []M
 	var m M
 	page := Page{}
@@ -1378,6 +1399,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	for i := range list {
 		m := &list[i]
 		r := DepReport{
+			Provider:     m.Provider,
 			Name:         m.Name,
 			Version:      m.Version,
 			SHA:          m.SHA,
@@ -1441,6 +1463,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 		Version         string
 		SHA             string
 		Indirect        bool
+		Labels          model.JSON
 	}
 	// Filter
 	filter, err := qf.New(ctx,
@@ -1459,7 +1482,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 			{Field: "dep.version", Kind: qf.LITERAL},
 			{Field: "dep.sha", Kind: qf.LITERAL},
 			{Field: "dep.indirect", Kind: qf.LITERAL},
-			{Field: "dep.labels", Kind: qf.LITERAL},
+			{Field: "dep.labels", Kind: qf.STRING, Relation: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
@@ -1489,7 +1512,8 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 		"d.Name DepName",
 		"d.Version",
 		"d.SHA",
-		"d.Indirect")
+		"d.Indirect",
+		"d.Labels")
 	q = q.Table("TechDependency d")
 	q = q.Joins("LEFT JOIN Analysis a ON a.ID = d.AnalysisID")
 	q = q.Joins("LEFT JOIN Application app ON app.ID = a.ApplicationID")
@@ -1537,6 +1561,9 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 		r.Dependency.Version = m.Version
 		r.Dependency.SHA = m.SHA
 		r.Dependency.Indirect = m.Indirect
+		if m.Labels != nil {
+			_ = json.Unmarshal(m.Labels, &r.Dependency.Labels)
+		}
 		resources = append(resources, r)
 	}
 
@@ -1650,21 +1677,22 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
 				f = f.As("json_each.value")
-				q := h.DB(ctx)
-				q = q.Table("Issue")
-				q = q.Joins("m ,json_each(Labels)")
-				q = q.Select("m.ID")
-				q = f.Where(q)
-				qs = append(qs, q)
+				iq := h.DB(ctx)
+				iq = iq.Table("TechDependency")
+				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Select("m.ID")
+				iq = f.Where(iq)
+				qs = append(qs, iq)
 			}
-			q = model.Intersect(qs...)
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("json_each.value")
-			q = h.DB(ctx)
-			q = q.Table("Issue")
-			q = q.Joins("m ,json_each(Labels)")
-			q = q.Select("m.ID")
-			q = f.Where(q)
+			iq := h.DB(ctx)
+			iq = iq.Table("TechDependency")
+			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Select("m.ID")
+			iq = f.Where(iq)
+			q = q.Where("ID IN (?)", iq)
 		}
 	}
 	return
@@ -1884,6 +1912,7 @@ type RuleReport struct {
 	Category     string   `json:"category"`
 	Effort       int      `json:"effort"`
 	Labels       []string `json:"labels"`
+	Links        []Link   `json:"links"`
 	Applications int      `json:"applications"`
 }
 
@@ -1898,6 +1927,7 @@ type IssueReport struct {
 	Category    string   `json:"category"`
 	Effort      int      `json:"effort"`
 	Labels      []string `json:"labels"`
+	Links       []Link   `json:"links"`
 	Files       int      `json:"files"`
 }
 
@@ -1948,12 +1978,13 @@ type DepAppReport struct {
 	Description     string `json:"description"`
 	BusinessService string `json:"businessService"`
 	Dependency      struct {
-		ID       uint   `json:"id"`
-		Provider string `json:"provider"`
-		Name     string `json:"name"`
-		Version  string `json:"version"`
-		SHA      string `json:"rule"`
-		Indirect bool   `json:"indirect"`
+		ID       uint     `json:"id"`
+		Provider string   `json:"provider"`
+		Name     string   `json:"name"`
+		Version  string   `json:"version"`
+		SHA      string   `json:"rule"`
+		Indirect bool     `json:"indirect"`
+		Labels   []string `json:"labels"`
 	} `json:"dependency"`
 }
 

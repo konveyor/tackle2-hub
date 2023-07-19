@@ -170,6 +170,9 @@ func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error
 		return
 	}
 	for _, i := range project.IssueTypes {
+		if i.Subtask {
+			continue
+		}
 		issueType := IssueType{
 			ID:   i.ID,
 			Name: i.Name,

@@ -1,4 +1,4 @@
-package addon
+package binding
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
@@ -7,7 +7,6 @@ import (
 //
 // Setting API.
 type Setting struct {
-	// hub API client.
 	client *Client
 }
 

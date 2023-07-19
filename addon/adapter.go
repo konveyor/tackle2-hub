@@ -8,6 +8,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
 	"os"
 )
@@ -32,11 +33,39 @@ func init() {
 }
 
 //
+// Client
+type Client = binding.Client
+type Params = binding.Params
+type Param = binding.Param
+type Path = binding.Path
+type Field = binding.Field
+
+//
+// Error
+type SoftError = binding.SoftError
+type ResetError = binding.RestError
+type Conflict = binding.Conflict
+type NotFound = binding.NotFound
+
+//
+// Handler
+type Application = binding.Application
+type Bucket = binding.Bucket
+type BucketContent = binding.BucketContent
+type File = binding.File
+type Identity = binding.Identity
+type Proxy = binding.Proxy
+type RuleSet = binding.RuleSet
+type Setting = binding.Setting
+type Tag = binding.Tag
+type TagCategory = binding.TagCategory
+
+//
 // The Adapter provides hub/addon integration.
 type Adapter struct {
 	// Task API.
 	Task
-	// Settings API
+	// Settings API.
 	Setting Setting
 	// Application API.
 	Application Application
@@ -49,9 +78,9 @@ type Adapter struct {
 	// Tag API.
 	Tag Tag
 	// File API.
-	File binding.File
+	File File
 	// RuleSet API
-	RuleSet binding.RuleSet
+	RuleSet RuleSet
 	// client A REST client.
 	client *Client
 }
@@ -78,11 +107,9 @@ func (h *Adapter) Run(addon func() error) {
 		if err != nil {
 			if _, soft := err.(interface{ Soft() *SoftError }); !soft {
 				Log.Error(err, "Addon failed.")
+				os.Exit(1)
 			}
-			if h.client.Error == nil {
-				h.Failed(err.Error())
-			}
-			os.Exit(1)
+			h.Failed(err.Error())
 		}
 	}()
 	//
@@ -96,52 +123,32 @@ func (h *Adapter) Run(addon func() error) {
 	}
 	//
 	// Report addon succeeded.
-	h.Succeeded()
-}
-
-//
-// Client provides the REST client.
-func (h *Adapter) Client() *Client {
-	return h.client
+	switch h.report.Status {
+	case task.Failed,
+		task.Succeeded:
+	default:
+		h.Succeeded()
+	}
 }
 
 //
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
-	//
-	// Build REST client.
-	client := binding.NewClient(Settings.Addon.Hub.URL, Settings.Addon.Hub.Token)
-	//
-	// Build Adapter.
+	richClient := binding.New(Settings.Addon.Hub.URL)
+	richClient.Client.SetToken(Settings.Addon.Hub.Token)
 	adapter = &Adapter{
+		client: richClient.Client,
 		Task: Task{
-			client: client,
+			richClient: richClient,
 		},
-		Setting: Setting{
-			client: client,
-		},
-		Application: Application{
-			client: client,
-		},
-		Identity: Identity{
-			client: client,
-		},
-		Proxy: Proxy{
-			client: client,
-		},
-		TagCategory: TagCategory{
-			client: client,
-		},
-		Tag: Tag{
-			client: client,
-		},
-		File: binding.File{
-			Client: client,
-		},
-		RuleSet: binding.RuleSet{
-			Client: client,
-		},
-		client: client,
+		Setting:     richClient.Setting,
+		Application: richClient.Application,
+		Identity:    richClient.Identity,
+		Proxy:       richClient.Proxy,
+		TagCategory: richClient.TagCategory,
+		Tag:         richClient.Tag,
+		File:        richClient.File,
+		RuleSet:     richClient.RuleSet,
 	}
 
 	Log.Info("Addon (adapter) created.")
