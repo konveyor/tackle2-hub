@@ -13,16 +13,14 @@ buckets follow conventional CRUD life-cycle patterns.
 
 
 ### Content ###
-The Bucket itself has a _virtual_ content subresource that provides GET/PUT/DELETE operations. For example: a route 
-of `/buckets/1/this/that/thing`, `this/that/thing` is the path to the `thing` subresource (file) within the bucket.
+The Bucket itself has a _virtual_ content subresource that provides GET/PUT/DELETE operations.
 
-**GET** returns `thing` as an octet-stream. when `thing` is a directory, it is packaged as a tarball and
-the `X-Directory=Expand` header set. Bucket (content) may be inspected using a Web Browser. A **GET** on 
-a Bucket route with Accept=text/html returns a directory index.
+**GET** returns the file at the specified path as an octet-stream. When the path references a directory, it is 
+packaged as a tarball and the `X-Directory=Expand` header set. A GET with an Accept=text/html header behaves like
+a static file website.
 
-**PUT** stores `thing` in the bucket. Intermediate directories are automatically created. When 
-`thing` is a directory, the client must package it as a tarball and set the `X-Directory=Expand` header.
+**PUT** stores the uploaded file in the bucket at the specified path. The intermediate directories are automatically 
+created. When the file _isA_ directory, the client must upload a tarball and set the `X-Directory=Expand` header.
 The body must be a miltipart form with a field named `file`.
 
 **DELETE** deletes `thing` (but not intermediate directories).
-
