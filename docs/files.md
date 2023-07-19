@@ -9,7 +9,7 @@ life-cycle patterns.
 - Accept=applications/json: The File resource.
 - Accept=(other): The file (content) as an octet-stream.
 
-**PUT** Creates the File resource and stores the file (content).
+**PUT** creates the File resource and stores the file (content).
 The body must be a miltipart form with a field named `file`.
 
 **DELETE** deletes the File resource and associated file (content).
