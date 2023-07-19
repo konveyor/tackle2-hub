@@ -7,14 +7,13 @@ import (
 //
 // Task API.
 type Task struct {
-	// hub API client.
-	Client *Client
+	client *Client
 }
 
 //
 // Create a Task.
 func (h *Task) Create(r *api.Task) (err error) {
-	err = h.Client.Post(api.TasksRoot, &r)
+	err = h.client.Post(api.TasksRoot, &r)
 	return
 }
 
@@ -23,7 +22,7 @@ func (h *Task) Create(r *api.Task) (err error) {
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
 	path := Path(api.TaskRoot).Inject(Params{api.ID: id})
-	err = h.Client.Get(path, r)
+	err = h.client.Get(path, r)
 	return
 }
 
@@ -31,7 +30,7 @@ func (h *Task) Get(id uint) (r *api.Task, err error) {
 // List Tasks.
 func (h *Task) List() (list []api.Task, err error) {
 	list = []api.Task{}
-	err = h.Client.Get(api.TasksRoot, &list)
+	err = h.client.Get(api.TasksRoot, &list)
 	return
 }
 
@@ -39,13 +38,28 @@ func (h *Task) List() (list []api.Task, err error) {
 // Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
 	path := Path(api.TaskRoot).Inject(Params{api.ID: r.ID})
-	err = h.Client.Put(path, r)
+	err = h.client.Put(path, r)
 	return
 }
 
 //
 // Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
-	err = h.Client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))
+	return
+}
+
+//
+// Bucket returns the bucket API.
+func (h *Task) Bucket(id uint) (b *BucketContent) {
+	params := Params{
+		api.ID:       id,
+		api.Wildcard: "",
+	}
+	path := Path(api.TaskBucketContentRoot).Inject(params)
+	b = &BucketContent{
+		root:   path,
+		client: h.client,
+	}
 	return
 }

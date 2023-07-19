@@ -11,9 +11,12 @@ import (
 	"errors"
 	hub "github.com/konveyor/tackle2-hub/addon"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/nas"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"os"
 	"os/exec"
 	pathlib "path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -181,12 +184,14 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 
 //
 // playWithBucket
-func playWithBucket(bucket *hub.Bucket) (err error) {
-	tmpDir2 := "/tmp/list2"
-	_ = os.MkdirAll(tmpDir2, 0777)
+func playWithBucket(bucket *hub.BucketContent) (err error) {
+	tmpDir := tmpDir()
+	defer func() {
+		_ = nas.RmDir(tmpDir)
+	}()
 	//
 	// Download list directory.
-	err = bucket.Get(BucketDir, tmpDir2)
+	err = bucket.Get(BucketDir, tmpDir)
 	if err != nil {
 		return
 	}
@@ -204,7 +209,7 @@ func playWithBucket(bucket *hub.Bucket) (err error) {
 	}
 	//
 	// Add file.
-	elmer := tmpDir2 + "/elmer"
+	elmer := tmpDir + "/elmer"
 	_, _ = os.Create(elmer)
 	err = bucket.Put(elmer, BucketDir+"/networks")
 	if err != nil {
@@ -385,6 +390,12 @@ func ensureTags(category uint, names ...string) (ids []uint, err error) {
 			return
 		}
 	}
+	return
+}
+
+func tmpDir() (p string) {
+	p = "/tmp/pid-" + strconv.Itoa(rand.Int())
+	_ = os.MkdirAll(p, 0777)
 	return
 }
 
