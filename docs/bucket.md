@@ -1,13 +1,5 @@
 ## Buckets ##
-A bucket is _container_ of files/directories sorted in the hub.  The implementation (storage) is a directory which is 
-owned by the Bucket REST resource.  Buckets follow the conventional CRUD life-cycle as other resources but with 
-some notable exceptions. Buckets have the concept of bucket ownership.  Buckets are designed to provide file storage for other resources and cannot
-exist on their own.  A bucket without an owner (parent) is an orphan and subject to garbage collection by the reaper.
-Bucket owners have references to their buckets which are modeled in the API as subresources.
-Current bucket owners:
-- Application
-- TaskGroup
-- Task
+A bucket is a _container_ of files/directories stored in the hub.  The implementation (storage) is a directory which is owned by the Bucket REST resource.  Buckets are owned. Resources like Applications, Tasks, and TaskGroups will have references, modeled as subresources, to their bucket. If a bucket exists without an owner, it is an orphan and will be garbage collected by the Reaper. Otherwise, buckets follow conventional CRUD life-cycle patterns.
 
 **GET** will return the `Bucket`.
 
