@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
 )
 
 //
 // Task API.
 type Task struct {
-	// hub API client.
-	client *Client
+	richClient *binding.RichClient
 	// Task
 	task *api.Task
 	// Task report.
@@ -27,9 +27,7 @@ func (h *Task) Load() {
 			panic(err)
 		}
 	}()
-	h.task = &api.Task{}
-	path := Path(api.TaskRoot).Inject(Params{api.ID: Settings.Addon.Task})
-	err = h.client.Get(path, h.task)
+	h.task, err = h.richClient.Task.Get(uint(Settings.Addon.Task))
 	return
 }
 
@@ -38,12 +36,10 @@ func (h *Task) Load() {
 func (h *Task) Application() (r *api.Application, err error) {
 	appRef := h.task.Application
 	if appRef == nil {
-		err = NotFound{}
+		err = &NotFound{}
 		return
 	}
-	r = &api.Application{}
-	path := Path(api.ApplicationRoot).Inject(Params{api.ID: appRef.ID})
-	err = h.client.Get(path, r)
+	r, err = h.richClient.Application.Get(appRef.ID)
 	return
 }
 
@@ -176,16 +172,8 @@ func (h *Task) Completed(n int) {
 
 //
 // Bucket returns the bucket API.
-func (h *Task) Bucket() (b *Bucket) {
-	params := Params{
-		api.ID:       h.task.ID,
-		api.Wildcard: "",
-	}
-	path := Path(api.TaskBucketContentRoot).Inject(params)
-	b = &Bucket{
-		path:   path,
-		client: h.client,
-	}
+func (h *Task) Bucket() (b *binding.BucketContent) {
+	b = h.richClient.Task.Bucket(h.task.ID)
 	return
 }
 
@@ -205,7 +193,7 @@ func (h *Task) deleteReport() {
 		api.ID: h.task.ID,
 	}
 	path := Path(api.TaskReportRoot).Inject(params)
-	err := h.client.Delete(path)
+	err := h.richClient.Client.Delete(path)
 	if err != nil {
 		panic(err)
 	}
@@ -223,11 +211,12 @@ func (h *Task) pushReport() {
 	params := Params{
 		api.ID: h.task.ID,
 	}
+	client := h.richClient.Client
 	path := Path(api.TaskReportRoot).Inject(params)
 	if h.report.ID == 0 {
-		err = h.client.Post(path, &h.report)
+		err = client.Post(path, &h.report)
 	} else {
-		err = h.client.Put(path, &h.report)
+		err = client.Put(path, &h.report)
 	}
 	return
 }

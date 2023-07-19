@@ -8,13 +8,13 @@ import (
 // Dependency API.
 type Dependency struct {
 	// hub API client.
-	Client *Client
+	client *Client
 }
 
 //
 // Create a Dependency.
 func (h *Dependency) Create(r *api.Dependency) (err error) {
-	err = h.Client.Post(api.DependenciesRoot, &r)
+	err = h.client.Post(api.DependenciesRoot, &r)
 	return
 }
 
@@ -23,7 +23,7 @@ func (h *Dependency) Create(r *api.Dependency) (err error) {
 func (h *Dependency) Get(id uint) (r *api.Dependency, err error) {
 	r = &api.Dependency{}
 	path := Path(api.DependencyRoot).Inject(Params{api.ID: id})
-	err = h.Client.Get(path, r)
+	err = h.client.Get(path, r)
 	return
 }
 
@@ -31,13 +31,13 @@ func (h *Dependency) Get(id uint) (r *api.Dependency, err error) {
 // List Dependencies.
 func (h *Dependency) List() (list []api.Dependency, err error) {
 	list = []api.Dependency{}
-	err = h.Client.Get(api.DependenciesRoot, &list)
+	err = h.client.Get(api.DependenciesRoot, &list)
 	return
 }
 
 //
 // Delete a Dependency.
 func (h *Dependency) Delete(id uint) (err error) {
-	err = h.Client.Delete(Path(api.DependencyRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.DependencyRoot).Inject(Params{api.ID: id}))
 	return
 }

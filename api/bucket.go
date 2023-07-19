@@ -139,7 +139,7 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = os.Remove(m.Path)
+	err = nas.RmDir(m.Path)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			_ = ctx.Error(err)

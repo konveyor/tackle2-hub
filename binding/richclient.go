@@ -29,6 +29,7 @@ type RichClient struct {
 	JobFunction      JobFunction
 	Proxy            Proxy
 	RuleSet          RuleSet
+	Setting          Setting
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
@@ -40,7 +41,7 @@ type RichClient struct {
 	Client *Client
 }
 
-// newRichClient builds a new RichClient object.
+// New builds a new RichClient object.
 func New(baseUrl string) (r *RichClient) {
 	//
 	// Build REST client.
@@ -50,46 +51,49 @@ func New(baseUrl string) (r *RichClient) {
 	// Build RichClient.
 	r = &RichClient{
 		Application: Application{
-			Client: client,
+			client: client,
 		},
 		Bucket: Bucket{
-			Client: client,
+			client: client,
 		},
 		BusinessService: BusinessService{
-			Client: client,
+			client: client,
 		},
 		Dependency: Dependency{
-			Client: client,
+			client: client,
 		},
 		File: File{
-			Client: client,
+			client: client,
 		},
 		Identity: Identity{
-			Client: client,
+			client: client,
 		},
 		JobFunction: JobFunction{
-			Client: client,
+			client: client,
 		},
 		Proxy: Proxy{
-			Client: client,
+			client: client,
 		},
 		RuleSet: RuleSet{
-			Client: client,
+			client: client,
+		},
+		Setting: Setting{
+			client: client,
 		},
 		Stakeholder: Stakeholder{
-			Client: client,
+			client: client,
 		},
 		StakeholderGroup: StakeholderGroup{
-			Client: client,
+			client: client,
 		},
 		Tag: Tag{
-			Client: client,
+			client: client,
 		},
 		TagCategory: TagCategory{
-			Client: client,
+			client: client,
 		},
 		Task: Task{
-			Client: client,
+			client: client,
 		},
 		Client: client,
 	}
@@ -99,12 +103,10 @@ func New(baseUrl string) (r *RichClient) {
 	return
 }
 
+//
+// Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
-	//
-	// Build REST client.
 	login := api.Login{User: user, Password: password}
-
-	// Login.
 	err = r.Client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
 		return
