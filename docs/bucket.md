@@ -13,7 +13,7 @@ buckets follow conventional CRUD life-cycle patterns.
 
 
 ### Content ###
-The Bucket itself has a _virtual_ content subresource that provides GET/PUT/DELETE operations on the directory
+The Bucket itself has a _virtual_ content subresource that provides CRUD operations on the directory
 tree managed by the bucket.
 
 **GET** returns the file at the specified path as an octet-stream. When the path references a directory, it is 
