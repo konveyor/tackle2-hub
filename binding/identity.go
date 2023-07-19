@@ -18,7 +18,7 @@ func (h *Identity) Create(r *api.Identity) (err error) {
 }
 
 //
-// Get a Identity by ID.
+// Get a decrypted Identity by ID.
 func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 	r = &api.Identity{}
 	p := Param{
@@ -31,7 +31,7 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 }
 
 //
-// List Identities.
+// List decrypted Identities.
 func (h *Identity) List() (list []api.Identity, err error) {
 	list = []api.Identity{}
 	p := Param{
