@@ -63,8 +63,9 @@ type TagCategory = binding.TagCategory
 //
 // The Adapter provides hub/addon integration.
 type Adapter struct {
+	// Task API.
 	Task
-	// Settings API
+	// Settings API.
 	Setting Setting
 	// Application API.
 	Application Application
