@@ -5,11 +5,11 @@ Tasks, and TaskGroups will have references, modeled as subresources, to their bu
 exists without an owner, it is an orphan and will be garbage collected by the Reaper. Otherwise, 
 buckets follow conventional CRUD life-cycle patterns.
 
-**GET** returns the `Bucket` resource.
+**GET** returns the Bucket resource.
 
-**POST** Creates the `Bucket` resource and storage directory.
+**POST** Creates the Bucket resource and storage directory.
 
-**DELETE** Deletes the `Bucket` resource and associated storage directory.
+**DELETE** Deletes the Bucket resource and associated storage directory.
 
 
 ### Content ###

@@ -6,10 +6,10 @@ it is an orphan and will be garbage collected by the Reaper. Otherwise, files fo
 life-cycle patterns.
 
 **GET** returns the file based on the Accept header:
-- Accept=applications/json: The `File` resource.
+- Accept=applications/json: The File resource.
 - Accept=(other): The file (content) as an octet-stream.
 
-**PUT** Creates `File` resource and store the file (content).
+**PUT** Creates the File resource and stores the file (content).
 The body must be a miltipart form with a field named `file`.
 
-**DELETE** deletes the `File` resource and associated file (content).
+**DELETE** deletes the File resource and associated file (content).
