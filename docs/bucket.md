@@ -23,4 +23,4 @@ a static file website.
 created. When the file _isA_ directory, the client must upload a tarball and set the `X-Directory=Expand` header.
 The body must be a miltipart form with a field named `file`.
 
-**DELETE** deletes `thing` (but not intermediate directories).
+**DELETE** deletes the file/directory at the specified path (but not intermediate directories).
