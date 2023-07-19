@@ -5,7 +5,7 @@ some notable exceptions. Buckets have the concept of bucket ownership.  Buckets 
 exist on their own.  A bucket without an owner (parent) is an orphan and subject to garbage collection by the reaper.
 Bucket owners have references to their buckets which are modeled in the API as subresources.
 Current bucket owners:
-- Applications
+- Application
 - TaskGroup
 - Task
 
