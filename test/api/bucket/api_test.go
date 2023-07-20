@@ -1,12 +1,10 @@
 package bucket
 
 import (
-	"bytes"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -14,10 +12,8 @@ import (
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-func TestBucket(t *testing.T) {
+func TestBucketCRUD(t *testing.T) {
 	for _, bucket := range Buckets {
-		// Path variable to access across the tests.
-		expectedPath := bucket.Path
 
 		t.Run("Create Bucket and Compare", func(t *testing.T) {
 
@@ -55,164 +51,120 @@ func TestBucket(t *testing.T) {
 			}
 		})
 
-		t.Run("Directory Related Tests on Created Bucket", func(t *testing.T) {
+		t.Run("File and Directory Tests", func(t *testing.T) {
+			expectedBucket := Bucket.Content(bucket.ID)
 
-			// Inject bucket id and location into the path
-			bucketContentPath := binding.Path(api.BucketContentRoot).Inject(binding.Params{api.ID: bucket.ID, api.Wildcard: expectedPath})
+			expectedFile, err := ioutil.TempFile("", "a")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer os.Remove(expectedFile.Name())
 
-			// Add the file to the Bucket.
-			assert.Should(t, Client.BucketPut(expectedPath, bucketContentPath))
-
-			// Get the file from the bucket.
-			pathToGotCSV := "downloadedcsv.csv"
-			_, err := os.Create(pathToGotCSV)
+			data := []byte("Hello World")
+			_, err = expectedFile.Write(data)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			assert.Should(t, Client.BucketGet(bucketContentPath, pathToGotCSV))
+			assert.Should(t, expectedBucket.Put(expectedFile.Name(), expectedFile.Name()))
 
-			// Read the got CSV file.
-			gotCSV, err := ioutil.ReadFile(pathToGotCSV)
-			if err != nil {
-				t.Errorf("Error reading CSV: %s", pathToGotCSV)
-			}
-			gotCSVString := string(gotCSV)
-
-			// Read the expected CSV file.
-			expectedCSV, err := ioutil.ReadFile(expectedPath)
-			if err != nil {
-				t.Errorf("Error reading CSV: %s", expectedPath)
-			}
-			expectedCSVString := string(expectedCSV)
-			if gotCSVString != expectedCSVString {
-				t.Errorf("The CSV files have different content %s and %s", gotCSVString, expectedCSVString)
-			}
-
-			// Delete path for Bucket's Contents
-			assert.Must(t, Client.Delete(bucketContentPath))
-		})
-
-		t.Run("Archive Related Tests on Created Bucket", func(t *testing.T) {
-
-			outputDirectory := "sample"
-			// Generate a unique temporary directory path
-			tempDir, err := ioutil.TempDir(outputDirectory, "")
+			gotFile, err := ioutil.TempFile("", "b")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			defer os.RemoveAll(tempDir)
+			defer os.Remove(gotFile.Name())
 
-			// Construct the destination path for the CSV file in the temporary directory
-			destFilePath := filepath.Join(tempDir, strings.TrimPrefix(expectedPath, "sample/"))
+			assert.Should(t, expectedBucket.Get(expectedFile.Name(), gotFile.Name()))
 
-			// Open the source CSV file for reading
-			srcFile, err := os.Open(expectedPath)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			defer srcFile.Close()
-
-			// Create the destination file in the temporary directory
-			destFile, err := os.Create(destFilePath)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			defer destFile.Close()
-
-			// Copy the contents of the source CSV file to the destination file
-			_, err = io.Copy(destFile, srcFile)
+			expected, err := ioutil.ReadFile(expectedFile.Name())
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// Access the directory , convert to archive and upload its contents.
-			var buf bytes.Buffer
-			assert.Should(t, Bucket.PutDir(&buf, tempDir))
-
-			// Create an archive.
-			var outputBuffer bytes.Buffer
-			err = Bucket.Compress(expectedPath, &outputBuffer)
+			got, err := ioutil.ReadFile(gotFile.Name())
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// write the .tar.gzip
-			fileToWrite, err := os.OpenFile("./compress.tar.gzip", os.O_CREATE|os.O_RDWR, os.FileMode(0777))
+			if len(expected) != len(got) {
+				t.Errorf("Mismatch in outputs")
+			}
+
+			/*----------------------Directory Tests----------------------*/
+
+			// Create a sample directory
+			expectedDir, err := ioutil.TempDir("", "tree")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			defer fileToWrite.Close()
+			defer os.RemoveAll(expectedDir)
 
-			// Copy the csv file to the archive.
-			_, err = io.Copy(fileToWrite, &outputBuffer)
+			// Create and write data to text files in the temporary directory
+			for i := 1; i <= 5; i++ {
+				fileName := fmt.Sprintf("file%d.txt", i)
+				filePath := filepath.Join(expectedDir, fileName)
+
+				// Create a new text file
+				file, err := os.Create(filePath)
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+				defer file.Close()
+
+				// Write data to the file
+				data := []byte("Hello world!")
+				_, err = file.Write(data)
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+			}
+
+			assert.Should(t, expectedBucket.Put(expectedDir, expectedDir))
+
+			gotDir, err := ioutil.TempDir("", "b")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer os.RemoveAll(gotDir)
+
+			assert.Should(t, expectedBucket.Get(expectedDir, gotDir))
+
+			expectedDirContent, err := ioutil.ReadDir(expectedDir)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// Open the file for reading.
-			expectedArchive, err := os.Open("compress.tar.gzip")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			defer expectedArchive.Close()
-
-			// Create the "compress" directory
-			err = os.MkdirAll("compress", 0755)
+			gotDirContent, err := ioutil.ReadDir(gotDir)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
 
-			// Create the "sample" subdirectory inside "compress"
-			err = os.MkdirAll(filepath.Join("compress", "sample"), 0755)
-			if err != nil {
-				t.Errorf(err.Error())
+			// Compare length of expected and got Directory content
+			if len(expectedDirContent) != len(gotDirContent) {
+				t.Errorf("Mismatch in outputs")
 			}
 
-			// Extract the contents in compress/sample directory.
-			assert.Should(t, Bucket.GetDir(expectedArchive, "compress"))
+			// Compare elementwise content of expected and got Directory
+			for i := 0; i < len(expectedDirContent); i++ {
+				expectedDirInfo := expectedDirContent[i]
+				gotDirInfo := gotDirContent[i]
 
-			gotPath := filepath.Join("compress", expectedPath)
+				if expectedDirInfo.Name() != gotDirInfo.Name() {
+					t.Errorf("Mismatch in names expected: %v, got: %v", expectedDirInfo.Name(), gotDirInfo.Name())
+				}
 
-			// Open got file for comparison.
-			gotOutputCSV, err := ioutil.ReadFile(gotPath)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			gotOutputCSVString := string(gotOutputCSV)
+				if expectedDirInfo.Size() != gotDirInfo.Size() {
+					t.Errorf("Mismatch in sizes expected: %v, got %v", expectedDirInfo.Size(), gotDirInfo.Size())
+				}
 
-			// Open expected file for comparison.
-			expectedOutputCSV, err := ioutil.ReadFile(expectedPath)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			expectedOutputCSVString := string(expectedOutputCSV)
+				if expectedDirInfo.Mode() != gotDirInfo.Mode() {
+					t.Errorf("Mismatch in modes expected: %v, got %v", expectedDirInfo.Mode(), gotDirInfo.Mode())
+				}
 
-			// Compare the two csv files.
-			if gotOutputCSVString != expectedOutputCSVString {
-				t.Errorf("The CSV files have different content %s and %s", gotOutputCSVString, expectedOutputCSVString)
 			}
 		})
 
-		t.Run("Delete created Bucket and it's created binaries and archives", func(t *testing.T) {
-
-			// Remove the CSV file created.
-			err := os.Remove("downloadedcsv.csv")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			// Remove the archive(Created by Compress()).
-			err = os.Remove("compress.tar.gzip")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-
-			// Remove the expanded directory(output by GetDir).
-			err = os.RemoveAll("compress")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-		})
+		// Delete the bucket
+		assert.Must(t, Bucket.Delete(bucket.ID))
 	}
 }
