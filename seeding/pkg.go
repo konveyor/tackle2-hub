@@ -1,12 +1,14 @@
 package seeding
 
 import (
+	"errors"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/settings"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
+	"io/fs"
 )
 
 var log = logr.WithName("seeding")
@@ -45,6 +47,11 @@ func Seed() (err error) {
 
 	seeds, checksum, err := libseed.ReadFromDir(settings.Settings.Hub.DB.SeedPath, v)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			log.Info("Seed directory not found.")
+			err = nil
+			return
+		}
 		err = liberr.Wrap(err)
 		return
 	}
