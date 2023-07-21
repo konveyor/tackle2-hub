@@ -34,6 +34,7 @@ func TestBucketCRUD(t *testing.T) {
 					}
 				}
 			}
+			fmt.Println("hello")
 
 			// Inject Expected Buckets's ID into the BucketRoot.
 			bucketID := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: bucket.ID})

@@ -6,15 +6,15 @@ import (
 
 var Buckets = []api.Bucket{
 	{
-		Path: "sample/template_application_import.csv",
+		Path: "sample/sample.txt",
 	},
 	{
-		Path: "sample/template_application_import1.csv",
+		Path: "sample/sample1.txt",
 	},
 	{
-		Path: "sample/template_application_import2.csv",
+		Path: "sample/sample2.txt",
 	},
 	{
-		Path: "sample/template_application_import3.csv",
+		Path: "sample/sample3.txt",
 	},
 }
