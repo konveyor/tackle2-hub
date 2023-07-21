@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+const IssueTypeEpic = "Epic"
+
 //
 // JiraConnector for the Jira Cloud API
 type JiraConnector struct {
@@ -171,6 +173,9 @@ func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error
 	}
 	for _, i := range project.IssueTypes {
 		if i.Subtask {
+			continue
+		}
+		if r.tracker.Kind == JiraOnPrem && i.Name == IssueTypeEpic {
 			continue
 		}
 		issueType := IssueType{
