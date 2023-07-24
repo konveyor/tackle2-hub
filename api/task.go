@@ -518,15 +518,15 @@ type Task struct {
 	Application *Ref        `json:"application,omitempty" yaml:",omitempty"`
 	State       string      `json:"state"`
 	Image       string      `json:"image,omitempty" yaml:",omitempty"`
-	Bucket      *Ref        `json:"bucket,omitempty" yaml:",omitempty"`
-	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
-	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
-	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
-	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
 	Pod         string      `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int         `json:"retries,omitempty" yaml:",omitempty"`
+	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
+	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
 	Canceled    bool        `json:"canceled,omitempty" yaml:",omitempty"`
-	Report      *TaskReport `json:"report,omitempty" yaml:",omitempty"`
+	Bucket      *Ref        `json:"bucket,omitempty" yaml:",omitempty"`
+	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
+	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
+	Activity    []string    `json:"activity,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -549,16 +549,24 @@ func (r *Task) With(m *model.Task) {
 	r.Retries = m.Retries
 	r.Canceled = m.Canceled
 	_ = json.Unmarshal(m.Data, &r.Data)
-	if m.Report != nil {
-		report := &TaskReport{}
-		report.With(m.Report)
-		r.Report = report
-	}
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
 	}
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
+	}
+	if m.Report != nil {
+		report := &TaskReport{}
+		report.With(m.Report)
+		r.Activity = report.Activity
+		r.Errors = append(report.Errors, r.Errors...)
+		switch r.State {
+		case tasking.Succeeded:
+			switch report.Status {
+			case tasking.Failed:
+				r.State = report.Status
+			}
+		}
 	}
 }
 
