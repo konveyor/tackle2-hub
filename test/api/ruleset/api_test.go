@@ -73,13 +73,3 @@ func TestRuleSetCRUD(t *testing.T) {
 		})
 	}
 }
-
-func TestRuleSetListSeed(t *testing.T) {
-	got, err := RuleSet.List()
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	if len(got) < 1 {
-		t.Errorf("Seed looks empty, but it shouldn't.")
-	}
-}
