@@ -159,6 +159,11 @@ func (m *Manager) createPending() {
 	}
 	for i := range list {
 		tracker := &list[i]
+		conn, err := NewConnector(tracker)
+		if err != nil {
+			Log.Error(err, "Unable to build connector for tracker.", "tracker", tracker.ID)
+			continue
+		}
 		for j := range tracker.Tickets {
 			t := &tracker.Tickets[j]
 			ago := t.LastUpdated.Add(IntervalCreateRetry)
@@ -167,7 +172,7 @@ func (m *Manager) createPending() {
 			if t.Created || (t.Error && !ago.Before(time.Now())) {
 				continue
 			}
-			err := m.create(tracker, t)
+			err = m.create(conn, t)
 			if err != nil {
 				Log.Error(err, "Failed to create ticket.", "ticket", t.ID)
 			}
@@ -176,11 +181,7 @@ func (m *Manager) createPending() {
 }
 
 // Create the ticket in its tracker.
-func (m *Manager) create(tracker *model.Tracker, ticket *model.Ticket) (err error) {
-	conn, err := NewConnector(tracker)
-	if err != nil {
-		return
-	}
+func (m *Manager) create(conn Connector, ticket *model.Ticket) (err error) {
 	err = conn.Create(ticket)
 	if err != nil {
 		return
