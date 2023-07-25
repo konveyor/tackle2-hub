@@ -1,4 +1,4 @@
-package seeding
+package seed
 
 import (
 	"errors"
@@ -32,7 +32,8 @@ func (r *TagCategory) With(seed libseed.Seed) (err error) {
 // Apply seeds the database with TagCategories and Tags.
 func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying TagCategories", "count", len(r.categories))
-	for _, tc := range r.categories {
+	for i := range r.categories {
+		tc := r.categories[i]
 		category, found, fErr := r.find(db, "uuid = ?", tc.UUID)
 		if fErr != nil {
 			err = fErr
@@ -72,7 +73,7 @@ func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 		}
 
 		category.Name = tc.Name
-		category.UUID = tc.UUID
+		category.UUID = &tc.UUID
 		category.Color = tc.Color
 		result := db.Save(&category)
 		if result.Error != nil {
@@ -91,9 +92,10 @@ func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 //
 // Seed a TagCategory's tags.
 func (r *TagCategory) applyTags(db *gorm.DB, category *model.TagCategory, tc libseed.TagCategory) (err error) {
-	for _, t := range tc.Tags {
+	for i := range tc.Tags {
+		t := tc.Tags[i]
 		tag := model.Tag{}
-		result := db.First(&tag, model.Tag{UUID: t.UUID})
+		result := db.First(&tag, model.Tag{UUID: &t.UUID})
 		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err = liberr.Wrap(result.Error)
 			return
@@ -107,7 +109,7 @@ func (r *TagCategory) applyTags(db *gorm.DB, category *model.TagCategory, tc lib
 		}
 
 		tag.Name = t.Name
-		tag.UUID = t.UUID
+		tag.UUID = &t.UUID
 		tag.CategoryID = category.ID
 		result = db.Save(&tag)
 		if result.Error != nil {

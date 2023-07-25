@@ -1,4 +1,4 @@
-package seeding
+package seed
 
 import (
 	"encoding/json"
@@ -41,7 +41,8 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 	ruleSetsByUUID := make(map[string]*model.RuleSet)
 	ids := []uint{}
 
-	for _, rs := range r.ruleSets {
+	for i := range r.ruleSets {
+		rs := r.ruleSets[i]
 		ruleSet, found, fErr := r.find(db, "uuid = ?", rs.UUID)
 		if fErr != nil {
 			err = fErr
@@ -86,7 +87,7 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 		}
 		ruleSet.Name = rs.Name
 		ruleSet.Description = rs.Description
-		ruleSet.UUID = rs.UUID
+		ruleSet.UUID = &rs.UUID
 		ruleSet.ImageID = file.ID
 		result := db.Save(ruleSet)
 		if result.Error != nil {
@@ -98,7 +99,7 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 		if err != nil {
 			return
 		}
-		ruleSetsByUUID[ruleSet.UUID] = ruleSet
+		ruleSetsByUUID[rs.UUID] = ruleSet
 		ids = append(ids, ruleSet.ID)
 	}
 

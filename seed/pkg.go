@@ -1,4 +1,4 @@
-package seeding
+package seed
 
 import (
 	"errors"

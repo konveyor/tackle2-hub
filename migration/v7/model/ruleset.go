@@ -6,7 +6,7 @@ import "gorm.io/gorm"
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
-	UUID        string `gorm:"uniqueIndex"`
+	UUID        *string `gorm:"uniqueIndex"`
 	Kind        string
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description string

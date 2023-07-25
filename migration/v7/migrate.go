@@ -16,22 +16,22 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	// and then mark the column unique and create the index via auto-migrate.
 	type TagCategory struct {
 		model.TagCategory
-		UUID string
+		UUID *string
 	}
 
 	type Tag struct {
 		model.Tag
-		UUID string
+		UUID *string
 	}
 
 	type JobFunction struct {
 		model.JobFunction
-		UUID string
+		UUID *string
 	}
 
 	type RuleSet struct {
 		model.RuleSet
-		UUID string
+		UUID *string
 	}
 
 	err = db.AutoMigrate(&TagCategory{}, &Tag{}, &JobFunction{}, &RuleSet{})
