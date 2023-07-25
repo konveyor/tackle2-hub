@@ -123,7 +123,7 @@ func (h *Adapter) Run(addon func() error) {
 	}
 	//
 	// Report addon succeeded.
-	switch h.report.Status {
+	switch h.Report.report.Status {
 	case task.Failed,
 		task.Succeeded:
 	default:
@@ -140,6 +140,10 @@ func newAdapter() (adapter *Adapter) {
 		client: richClient.Client,
 		Task: Task{
 			richClient: richClient,
+			Report: TaskReport{
+				task:   Settings.Addon.Task,
+				client: richClient.Client,
+			},
 		},
 		Setting:     richClient.Setting,
 		Application: richClient.Application,
@@ -150,6 +154,8 @@ func newAdapter() (adapter *Adapter) {
 		File:        richClient.File,
 		RuleSet:     richClient.RuleSet,
 	}
+
+	adapter.Load()
 
 	Log.Info("Addon (adapter) created.")
 
