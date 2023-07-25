@@ -101,7 +101,7 @@ func main() {
 		return
 	})
 
-	addon.Error("Warning", "Test warning.")
+	addon.Errorf("Warning", "Test warning.")
 }
 
 //
