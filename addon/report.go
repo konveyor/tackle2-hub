@@ -23,7 +23,6 @@ type TaskReport struct {
 func (h *TaskReport) Started() {
 	h.delete()
 	h.report.Status = task.Running
-	h.Push()
 	Log.Info("Addon reported started.")
 	return
 }
@@ -33,7 +32,6 @@ func (h *TaskReport) Started() {
 func (h *TaskReport) Succeeded() {
 	h.report.Status = task.Succeeded
 	h.report.Completed = h.report.Total
-	h.Push()
 	Log.Info("Addon reported: succeeded.")
 	return
 }
@@ -50,7 +48,6 @@ func (h *TaskReport) Failed(reason string, x ...interface{}) {
 			Severity:    "Error",
 			Description: reason,
 		})
-	h.Push()
 	Log.Info(
 		"Addon reported: failed.",
 		"reason",
@@ -70,7 +67,6 @@ func (h *TaskReport) Error(severity, description string, x ...interface{}) {
 			Severity:    severity,
 			Description: description,
 		})
-	h.Push()
 	return
 }
 
@@ -82,7 +78,6 @@ func (h *TaskReport) Activity(entry string, x ...interface{}) {
 	h.report.Activity = append(
 		h.report.Activity,
 		entry)
-	h.Push()
 	Log.Info(
 		"Addon reported: activity.",
 		"activity",
@@ -94,7 +89,6 @@ func (h *TaskReport) Activity(entry string, x ...interface{}) {
 // Total report addon total items.
 func (h *TaskReport) Total(n int) {
 	h.report.Total = n
-	h.Push()
 	Log.Info(
 		"Addon updated: total.",
 		"total",
@@ -106,7 +100,6 @@ func (h *TaskReport) Total(n int) {
 // Increment report addon completed (+1) items.
 func (h *TaskReport) Increment() {
 	h.report.Completed++
-	h.Push()
 	Log.Info(
 		"Addon updated: total.",
 		"total",
@@ -118,7 +111,6 @@ func (h *TaskReport) Increment() {
 // Completed report addon completed (N) items.
 func (h *TaskReport) Completed(n int) {
 	h.report.Completed = n
-	h.Push()
 	Log.Info("Addon reported: completed.")
 	return
 }
@@ -127,7 +119,6 @@ func (h *TaskReport) Completed(n int) {
 // Result report addon result.
 func (h *TaskReport) Result(object interface{}) {
 	h.report.Result = object
-	h.Push()
 	Log.Info("Addon reported: result.")
 	return
 }
