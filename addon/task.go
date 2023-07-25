@@ -89,8 +89,8 @@ func (h *Task) Succeeded() {
 //
 // Failed report addon failed.
 // The reason can be a printf style format.
-func (h *Task) Failed(reason string, x ...interface{}) {
-	reason = fmt.Sprintf(reason, x...)
+func (h *Task) Failed(reason string, v ...interface{}) {
+	reason = fmt.Sprintf(reason, v...)
 	h.report.Status = task.Failed
 	h.report.Errors = append(
 		h.report.Errors,
@@ -109,8 +109,8 @@ func (h *Task) Failed(reason string, x ...interface{}) {
 //
 // Error report addon error.
 // The description can be a printf style format.
-func (h *Task) Error(severity, description string, x ...interface{}) {
-	description = fmt.Sprintf(description, x...)
+func (h *Task) Error(severity, description string, v ...interface{}) {
+	description = fmt.Sprintf(description, v...)
 	h.RawError(
 		api.TaskError{
 			Severity:    severity,
