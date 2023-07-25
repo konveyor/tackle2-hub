@@ -1,4 +1,4 @@
-package seeding
+package seed
 
 import (
 	"errors"
@@ -32,7 +32,8 @@ func (r *JobFunction) With(seed libseed.Seed) (err error) {
 // Apply seeds the database with JobFunctions.
 func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying JobFunctions", "count", len(r.jobFunctions))
-	for _, jf := range r.jobFunctions {
+	for i := range r.jobFunctions {
+		jf := r.jobFunctions[i]
 		jobFunction, found, fErr := r.find(db, "uuid = ?", jf.UUID)
 		if fErr != nil {
 			err = fErr
@@ -71,7 +72,7 @@ func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 		}
 
 		jobFunction.Name = jf.Name
-		jobFunction.UUID = jf.UUID
+		jobFunction.UUID = &jf.UUID
 		result := db.Save(&jobFunction)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)

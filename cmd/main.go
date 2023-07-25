@@ -15,7 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/reaper"
-	"github.com/konveyor/tackle2-hub/seeding"
+	"github.com/konveyor/tackle2-hub/seed"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/tracker"
@@ -42,7 +42,7 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	err = seeding.Seed()
+	err = seed.Seed()
 	if err != nil {
 		return
 	}
