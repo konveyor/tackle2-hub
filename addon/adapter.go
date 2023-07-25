@@ -114,6 +114,7 @@ func (h *Adapter) Run(addon func() error) {
 	}()
 	//
 	// Report addon started.
+	h.Load()
 	h.Started()
 	//
 	// Run addon.
