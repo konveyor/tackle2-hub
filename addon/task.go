@@ -6,7 +6,6 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
-	"gopkg.in/yaml.v2"
 	"strings"
 )
 
@@ -91,14 +90,10 @@ func (h *Task) Succeeded() {
 // The reason can be a printf style format.
 func (h *Task) Failed(reason string, v ...interface{}) {
 	reason = fmt.Sprintf(reason, v...)
-	h.report.Status = task.Failed
-	h.report.Errors = append(
-		h.report.Errors,
-		api.TaskError{
-			Severity:    "Error",
-			Description: reason,
-		})
-	h.pushReport()
+	h.Error(api.TaskError{
+		Severity:    "Error",
+		Description: reason,
+	})
 	Log.Info(
 		"Addon reported: failed.",
 		"reason",
@@ -107,30 +102,17 @@ func (h *Task) Failed(reason string, v ...interface{}) {
 }
 
 //
+// Errorf report addon error.
+func (h *Task) Errorf(severity, description string, v ...interface{}) {
+	h.Error(api.TaskError{
+		Severity:    severity,
+		Description: fmt.Sprintf(description, v...),
+	})
+}
+
+//
 // Error report addon error.
-// The description can be a printf style format.
-func (h *Task) Error(severity, description string, v ...interface{}) {
-	description = fmt.Sprintf(description, v...)
-	h.RawError(
-		api.TaskError{
-			Severity:    severity,
-			Description: description,
-		})
-	return
-}
-
-//
-// Activity report addon activity.
-// The description can be a printf style format.
-func (h *Task) Activity(entry string, v ...interface{}) {
-	entry = fmt.Sprintf(entry, v...)
-	h.RawActivity(entry)
-	return
-}
-
-//
-// RawError report addon error.
-func (h *Task) RawError(error ...api.TaskError) {
+func (h *Task) Error(error ...api.TaskError) {
 	h.report.Status = task.Failed
 	for i := range error {
 		h.report.Errors = append(
@@ -146,31 +128,24 @@ func (h *Task) RawError(error ...api.TaskError) {
 }
 
 //
-// RawActivity report addon activity.
-func (h *Task) RawActivity(object interface{}) {
-	switch object.(type) {
-	case string:
-		s := object.(string)
-		h.RawActivity(strings.Split(s, "\n"))
-	case []string:
-		prefix := ""
-		list := object.([]string)
-		if len(list) > 1 {
-			prefix = "> "
+// Activity report addon activity.
+// The description can be a printf style format.
+func (h *Task) Activity(entry string, v ...interface{}) {
+	entry = fmt.Sprintf(entry, v...)
+	lines := strings.Split(entry, "\n")
+	for i := range lines {
+		if i > 0 {
+			entry = "> " + lines[i]
+		} else {
+			entry = lines[i]
 		}
-		for i := range list {
-			entry := prefix + list[i]
-			h.report.Activity = append(
-				h.report.Activity,
-				entry)
-			Log.Info(
-				"Addon reported: activity.",
-				"object",
-				entry)
-		}
-	default:
-		b, _ := yaml.Marshal(object)
-		h.RawActivity(string(b))
+		h.report.Activity = append(
+			h.report.Activity,
+			entry)
+		Log.Info(
+			"Addon reported: activity.",
+			"entry",
+			entry)
 	}
 	h.pushReport()
 	return
