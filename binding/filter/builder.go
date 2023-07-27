@@ -19,8 +19,8 @@ const (
 )
 
 //
-// Any match any.
-type Any []interface{}
+// Or match any.
+type Or []interface{}
 
 //
 // And match all.
@@ -71,16 +71,16 @@ func (p *Predicate) String() (s string) {
 }
 
 //
-// Equals returns a (=) predicate.
-func (p *Predicate) Equals(object interface{}) *Predicate {
+// Eq returns a (=) predicate.
+func (p *Predicate) Eq(object interface{}) *Predicate {
 	p.operator = EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
 //
-// NotEquals returns a (!=) predicate.
-func (p *Predicate) NotEquals(object interface{}) *Predicate {
+// NotEq returns a (!=) predicate.
+func (p *Predicate) NotEq(object interface{}) *Predicate {
 	p.operator = NOT + EQ
 	p.value = p.valueOf(object)
 	return p
@@ -95,32 +95,32 @@ func (p *Predicate) Like(object interface{}) *Predicate {
 }
 
 //
-// GreaterThan returns a (>) predicate.
-func (p *Predicate) GreaterThan(object interface{}) *Predicate {
+// Gt returns a (>) predicate.
+func (p *Predicate) Gt(object interface{}) *Predicate {
 	p.operator = GT
 	p.value = p.valueOf(object)
 	return p
 }
 
 //
-// GreaterThanEq returns a (>=) predicate.
-func (p *Predicate) GreaterThanEq(object interface{}) *Predicate {
+// GtEq returns a (>=) predicate.
+func (p *Predicate) GtEq(object interface{}) *Predicate {
 	p.operator = GT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
 //
-// LessThan returns a (<) predicate.
-func (p *Predicate) LessThan(object interface{}) *Predicate {
+// Lt returns a (<) predicate.
+func (p *Predicate) Lt(object interface{}) *Predicate {
 	p.operator = LT
 	p.value = p.valueOf(object)
 	return p
 }
 
 //
-// LessThanEq returns a (<) predicate.
-func (p *Predicate) LessThanEq(object interface{}) *Predicate {
+// LtEq returns a (<) predicate.
+func (p *Predicate) LtEq(object interface{}) *Predicate {
 	p.operator = LT + EQ
 	p.value = p.valueOf(object)
 	return p
@@ -149,7 +149,7 @@ func (p *Predicate) valueOf(object interface{}) (result string) {
 		}
 		var operator string
 		switch object.(type) {
-		case Any:
+		case Or:
 			operator = OR
 		case And:
 			operator = AND
