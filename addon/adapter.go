@@ -88,13 +88,6 @@ type Adapter struct {
 	client *Client
 }
 
-func init() {
-
-	filter := Filter{}
-	filter.And("name").Equals("jeff")
-	filter.Param()
-}
-
 //
 // Run addon.
 // Reports:
