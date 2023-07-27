@@ -32,8 +32,6 @@ const (
 	TmpDir    = "/tmp/list"
 )
 
-type SoftError = hub.SoftError
-
 //
 // main
 func main() {
