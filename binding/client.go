@@ -37,10 +37,14 @@ type Param struct {
 	Value string
 }
 
+//
+// Filter
 type Filter struct {
 	qf.Filter
 }
 
+//
+// Param returns a filter parameter.
 func (r *Filter) Param() (p Param) {
 	p.Key = api.Filter
 	p.Value = r.String()
