@@ -775,13 +775,16 @@ func (r *Client) restError(response *http.Response) (err error) {
 	switch status {
 	case http.StatusConflict:
 		restError := &Conflict{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	case http.StatusNotFound:
 		restError := &NotFound{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	default:
 		restError := &RestError{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	}
 	return
 }

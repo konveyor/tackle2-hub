@@ -27,7 +27,7 @@ func (e *RestError) Error() (s string) {
 	return
 }
 
-func (e *RestError) With(r *http.Response) *RestError {
+func (e *RestError) With(r *http.Response) {
 	e.Method = r.Request.Method
 	e.Path = r.Request.URL.Path
 	e.Status = r.StatusCode
@@ -50,7 +50,6 @@ func (e *RestError) With(r *http.Response) *RestError {
 		s += e.Body
 	}
 	e.Reason = s
-	return e
 }
 
 //
