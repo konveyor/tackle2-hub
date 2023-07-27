@@ -1,5 +1,16 @@
 package filter
 
+/*
+filter = Filter{}
+filter.And("name").Eq("Elmer")
+filter.And("age").Gt(10)
+filter.And("height").Lt(44)
+filter.And("weight").LtEq(150)
+filter.And("hair").NotEq("blond")
+filter.And("pet").Like("Rov*")
+filter.And("friend").Eq(Any{"Sam","Ed"})
+*/
+
 import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	//qf "github.com/konveyor/tackle2-hub/api/filter"
@@ -19,12 +30,12 @@ const (
 )
 
 //
-// Or match any.
-type Or []interface{}
+// Any match any.
+type Any []interface{}
 
 //
-// And match all.
-type And []interface{}
+// All match all.
+type All []interface{}
 
 //
 // Filter builder.
@@ -149,9 +160,9 @@ func (p *Predicate) valueOf(object interface{}) (result string) {
 		}
 		var operator string
 		switch object.(type) {
-		case Or:
+		case Any:
 			operator = OR
-		case And:
+		case All:
 			operator = AND
 		default:
 			operator = OR

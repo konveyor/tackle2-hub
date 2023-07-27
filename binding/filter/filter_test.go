@@ -8,13 +8,13 @@ import (
 func TestFilter(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	filter := Filter{}
-	list := Or{"One", "Two", "Three"}
+	list := Any{"One", "Two", "Three"}
 	filter.And("name").Eq(list)
 	p := filter.String()
 	g.Expect("name=('One'|'Two'|'Three')").To(gomega.Equal(p))
 
 	filter = Filter{}
-	filter.And("name").Eq(And{"One", "Two", "Three"})
+	filter.And("name").Eq(All{"One", "Two", "Three"})
 	p = filter.String()
 	g.Expect("name=('One','Two','Three')").To(gomega.Equal(p))
 
