@@ -38,7 +38,6 @@ type Client = binding.Client
 type Params = binding.Params
 type Param = binding.Param
 type Path = binding.Path
-type Field = binding.Field
 
 //
 // Error
@@ -59,6 +58,10 @@ type RuleSet = binding.RuleSet
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
+
+//
+// Filter
+type Filter = binding.Filter
 
 //
 // The Adapter provides hub/addon integration.
@@ -83,6 +86,13 @@ type Adapter struct {
 	RuleSet RuleSet
 	// client A REST client.
 	client *Client
+}
+
+func init() {
+
+	filter := Filter{}
+	filter.And("name").Equals("jeff")
+	filter.Param()
 }
 
 //

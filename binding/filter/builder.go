@@ -1,10 +1,21 @@
 package filter
 
 import (
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	//qf "github.com/konveyor/tackle2-hub/api/filter"
 	"reflect"
 	"strconv"
 	"strings"
+)
+
+const (
+	EQ   = string(qf.EQ)
+	NOT  = string(qf.NOT)
+	GT   = string(qf.GT)
+	LT   = string(qf.LT)
+	LIKE = string(qf.LIKE)
+	AND  = string(qf.AND)
+	OR   = string(qf.OR)
 )
 
 //
@@ -18,36 +29,29 @@ type And []interface{}
 //
 // Filter builder.
 type Filter struct {
-	predicates []string
+	predicates []*Predicate
+}
+
+//
+// And adds a predicate.
+// Example: filter.And("name").Equals("Elmer")
+func (f *Filter) And(field string) (p *Predicate) {
+	p = &Predicate{
+		field:    field,
+		operator: EQ,
+	}
+	f.predicates = append(f.predicates, p)
+	return p
 }
 
 //
 // String returns string representation.
 func (f *Filter) String() (s string) {
-	s = strings.Join(f.predicates, ",")
-	return
-}
-
-//
-// And adds a predicate.
-func (f *Filter) And(p *Predicate) *Filter {
-	f.Add(p)
-	return f
-}
-
-//
-// Add a predicate.
-func (f *Filter) Add(p *Predicate) *Filter {
-	f.predicates = append(
-		f.predicates,
-		p.String())
-	return f
-}
-
-//
-// Field returns a field predicate.
-func Field(name string) (p *Predicate) {
-	p = &Predicate{field: name}
+	var preds []string
+	for _, p := range f.predicates {
+		preds = append(preds, p.String())
+	}
+	s = strings.Join(preds, string(qf.COMMA))
 	return
 }
 
@@ -62,14 +66,14 @@ type Predicate struct {
 //
 // String returns a string representation of the predicate.
 func (p *Predicate) String() (s string) {
-	s = p.field + string(p.operator) + p.value
+	s = p.field + p.operator + p.value
 	return
 }
 
 //
 // Equals returns a (=) predicate.
 func (p *Predicate) Equals(object interface{}) *Predicate {
-	p.operator = "="
+	p.operator = EQ
 	p.value = p.valueOf(object)
 	return p
 }
@@ -77,7 +81,7 @@ func (p *Predicate) Equals(object interface{}) *Predicate {
 //
 // NotEquals returns a (!=) predicate.
 func (p *Predicate) NotEquals(object interface{}) *Predicate {
-	p.operator = "!="
+	p.operator = NOT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
@@ -85,7 +89,7 @@ func (p *Predicate) NotEquals(object interface{}) *Predicate {
 //
 // Like returns a (~) predicate.
 func (p *Predicate) Like(object interface{}) *Predicate {
-	p.operator = "~"
+	p.operator = LIKE
 	p.value = p.valueOf(object)
 	return p
 }
@@ -93,7 +97,7 @@ func (p *Predicate) Like(object interface{}) *Predicate {
 //
 // GreaterThan returns a (>) predicate.
 func (p *Predicate) GreaterThan(object interface{}) *Predicate {
-	p.operator = ">"
+	p.operator = GT
 	p.value = p.valueOf(object)
 	return p
 }
@@ -101,7 +105,7 @@ func (p *Predicate) GreaterThan(object interface{}) *Predicate {
 //
 // GreaterThanEq returns a (>=) predicate.
 func (p *Predicate) GreaterThanEq(object interface{}) *Predicate {
-	p.operator = ">="
+	p.operator = GT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
@@ -109,7 +113,7 @@ func (p *Predicate) GreaterThanEq(object interface{}) *Predicate {
 //
 // LessThan returns a (<) predicate.
 func (p *Predicate) LessThan(object interface{}) *Predicate {
-	p.operator = "<"
+	p.operator = LT
 	p.value = p.valueOf(object)
 	return p
 }
@@ -117,7 +121,7 @@ func (p *Predicate) LessThan(object interface{}) *Predicate {
 //
 // LessThanEq returns a (<) predicate.
 func (p *Predicate) LessThanEq(object interface{}) *Predicate {
-	p.operator = "<="
+	p.operator = LT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
@@ -146,11 +150,11 @@ func (p *Predicate) valueOf(object interface{}) (result string) {
 		var operator string
 		switch object.(type) {
 		case Any:
-			operator = "|"
+			operator = OR
 		case And:
-			operator = ","
+			operator = AND
 		default:
-			operator = "|"
+			operator = OR
 		}
 		result = strings.Join(items, operator)
 		result = "(" + result + ")"

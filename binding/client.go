@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
+	qf "github.com/konveyor/tackle2-hub/binding/filter"
 	"io"
 	"mime/multipart"
 	"net"
@@ -34,6 +35,16 @@ const (
 type Param struct {
 	Key   string
 	Value string
+}
+
+type Filter struct {
+	qf.Filter
+}
+
+func (r *Filter) Param() (p Param) {
+	p.Key = api.Filter
+	p.Value = r.String()
+	return
 }
 
 //
