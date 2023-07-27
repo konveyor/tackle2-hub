@@ -13,7 +13,6 @@ filter.And("friend").Eq(Any{"Sam","Ed"})
 
 import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
-	//qf "github.com/konveyor/tackle2-hub/api/filter"
 	"reflect"
 	"strconv"
 	"strings"
