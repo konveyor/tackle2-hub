@@ -137,6 +137,10 @@ func (h RuleSetHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	if ruleset.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
+		return
+	}
 	result = h.DB(ctx).Delete(ruleset, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -163,8 +167,6 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	//
-	// Delete unwanted ruleSets.
 	m := &model.RuleSet{}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
@@ -172,6 +174,12 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	if m.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
+		return
+	}
+	//
+	// Delete unwanted rules.
 	for _, ruleset := range m.Rules {
 		if !r.HasRule(ruleset.ID) {
 			err := h.DB(ctx).Delete(ruleset).Error
@@ -222,15 +230,12 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 // RuleSet REST resource.
 type RuleSet struct {
 	Resource
-	Kind        string      `json:"kind,omitempty"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Image       Ref         `json:"image"`
-	Rules       []Rule      `json:"rules"`
-	Custom      bool        `json:"custom,omitempty"`
-	Repository  *Repository `json:"repository,omitempty"`
-	Identity    *Ref        `json:"identity,omitempty"`
-	DependsOn   []Ref       `json:"dependsOn"`
+	Kind       string      `json:"kind,omitempty"`
+	Name       string      `json:"name"`
+	Rules      []Rule      `json:"rules"`
+	Repository *Repository `json:"repository,omitempty"`
+	Identity   *Ref        `json:"identity,omitempty"`
+	DependsOn  []Ref       `json:"dependsOn"`
 }
 
 //
@@ -239,14 +244,7 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
-	r.Description = m.Description
-	r.Custom = m.Custom
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	imgRef := Ref{ID: m.ImageID}
-	if m.Image != nil {
-		imgRef.Name = m.Image.Name
-	}
-	r.Image = imgRef
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	r.Rules = []Rule{}
 	for i := range m.Rules {
@@ -268,13 +266,10 @@ func (r *RuleSet) With(m *model.RuleSet) {
 // Model builds a model.
 func (r *RuleSet) Model() (m *model.RuleSet) {
 	m = &model.RuleSet{
-		Kind:        r.Kind,
-		Name:        r.Name,
-		Description: r.Description,
-		Custom:      r.Custom,
+		Kind: r.Kind,
+		Name: r.Name,
 	}
 	m.ID = r.ID
-	m.ImageID = r.Image.ID
 	m.IdentityID = r.idPtr(r.Identity)
 	m.Rules = []model.Rule{}
 	for _, rule := range r.Rules {

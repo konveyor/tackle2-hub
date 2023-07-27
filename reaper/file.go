@@ -68,6 +68,7 @@ func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	for _, m := range []interface{}{
 		&model.RuleSet{},
 		&model.Rule{},
+		&model.Target{},
 	} {
 		n, err = ref.Count(m, "file", file.ID)
 		if err != nil {

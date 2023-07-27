@@ -79,16 +79,8 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 				ruleSet = &model.RuleSet{}
 			}
 		}
-
-		file, fErr := r.file(db, rs.Image())
-		if fErr != nil {
-			err = fErr
-			return
-		}
 		ruleSet.Name = rs.Name
-		ruleSet.Description = rs.Description
 		ruleSet.UUID = &rs.UUID
-		ruleSet.ImageID = file.ID
 		result := db.Save(ruleSet)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)
@@ -140,7 +132,7 @@ func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.Rul
 	}
 	for _, rl := range rs.Rules {
 		labels, _ := json.Marshal(rl.Labels())
-		file, fErr := r.file(db, rl.Path)
+		f, fErr := file(db, rl.Path)
 		if fErr != nil {
 			err = liberr.Wrap(fErr)
 			return
@@ -148,7 +140,7 @@ func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.Rul
 		rule := model.Rule{
 			Labels:    labels,
 			RuleSetID: ruleSet.ID,
-			FileID:    &file.ID,
+			FileID:    &f.ID,
 		}
 		result = db.Save(&rule)
 		if result.Error != nil {
@@ -161,7 +153,7 @@ func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.Rul
 
 //
 // Create a File model and copy a real file to its path.
-func (r *RuleSet) file(db *gorm.DB, filePath string) (file *model.File, err error) {
+func file(db *gorm.DB, filePath string) (file *model.File, err error) {
 	file = &model.File{
 		Name: path.Base(filePath),
 	}
