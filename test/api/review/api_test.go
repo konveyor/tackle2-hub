@@ -89,3 +89,45 @@ func TestReviewCRUD(t *testing.T) {
 		})
 	}
 }
+
+func TestReviewList(t *testing.T) {
+	createdReviews := []api.Review{}
+
+	for _, r := range Samples {
+		app := api.Application{
+			Name:        r.Application.Name,
+			Description: "Application for Review",
+		}
+		assert.Must(t, Application.Create(&app))
+
+		r.Application.ID = app.ID
+		assert.Should(t, Review.Create(&r))
+		createdReviews = append(createdReviews, r)
+	}
+
+	// List Reviews.
+	got, err := Review.List()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// check if created Reviews are in the list we got from Review.List()
+	for _, createdReview := range createdReviews {
+		found := false
+		for _, retrievedReview := range got {
+			if assert.FlatEqual(createdReview.ID, retrievedReview.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected review not found in the list: %v", createdReview)
+		}
+	}
+
+	// Delete related reviews and applications.
+	for _, review := range createdReviews {
+		assert.Must(t, Application.Delete(review.ID))
+		assert.Must(t, Review.Delete(review.ID))
+	}
+}
