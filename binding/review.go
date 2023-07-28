@@ -27,7 +27,7 @@ func (h *Review) Get(id uint) (r *api.Review, err error) {
 }
 
 //
-// List Stakeholders.
+// List Reviews.
 func (h *Review) List() (list []api.Review, err error) {
 	list = []api.Review{}
 	err = h.client.Get(api.ReviewsRoot, &list)
@@ -46,5 +46,16 @@ func (h *Review) Update(r *api.Review) (err error) {
 // Delete a Review.
 func (h *Review) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.ReviewRoot).Inject(Params{api.ID: id}))
+	return
+}
+
+//
+// Copy a Review.
+func (h *Review) Copy(reviewID uint, appID uint) (err error) {
+	copyRequest := api.CopyRequest{
+		SourceReview:       reviewID,
+		TargetApplications: []uint{appID},
+	}
+	err = h.client.Post(api.CopyRoot, copyRequest)
 	return
 }

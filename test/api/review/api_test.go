@@ -28,27 +28,12 @@ func TestReviewCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.BusinessCriticality != r.BusinessCriticality {
-				t.Errorf("Different response error. Got %v, expected %v", got.BusinessCriticality, r.BusinessCriticality)
-			}
-			if got.EffortEstimate != r.EffortEstimate {
-				t.Errorf("Different response error. Got %v, expected %v", got.EffortEstimate, r.EffortEstimate)
-			}
-			if got.ProposedAction != r.ProposedAction {
-				t.Errorf("Different response error. Got %v, expected %v", got.ProposedAction, r.ProposedAction)
-			}
-			if got.WorkPriority != r.WorkPriority {
-				t.Errorf("Different response error. Got %v, expected %v", got.WorkPriority, r.WorkPriority)
-			}
-			if got.Comments != r.Comments {
-				t.Errorf("Different response error. Got %v, expected %v", got.Comments, r.Comments)
-			}
-			if got.Application.Name != r.Application.Name {
-				t.Errorf("Different response error. Got %v, expected %v", got.Application.Name, r.Application.Name)
-			}
 
-			// Update Application Name.
-			r.Application.Name = "Updated " + r.Application.Name
+			// Compare got values with expected values.
+			AssertEqualReviews(t, got, r)
+
+			// Update Comments and Effort Estimate.
+			r.Comments = "Updated Comment " + r.Comments
 			assert.Should(t, Review.Update(&r))
 
 			// Find Review and check its parameters with the got(On Updation).
@@ -56,21 +41,9 @@ func TestReviewCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.BusinessCriticality != r.BusinessCriticality {
-				t.Errorf("Different response error. Got %v, expected %v", got.BusinessCriticality, r.BusinessCriticality)
-			}
-			if got.EffortEstimate != r.EffortEstimate {
-				t.Errorf("Different response error. Got %v, expected %v", got.EffortEstimate, r.EffortEstimate)
-			}
-			if got.ProposedAction != r.ProposedAction {
-				t.Errorf("Different response error. Got %v, expected %v", got.ProposedAction, r.ProposedAction)
-			}
-			if got.WorkPriority != r.WorkPriority {
-				t.Errorf("Different response error. Got %v, expected %v", got.WorkPriority, r.WorkPriority)
-			}
-			if got.Comments != r.Comments {
-				t.Errorf("Different response error. Got %v, expected %v", got.Comments, r.Comments)
-			}
+
+			// Check if the unchanged values remain same or not.
+			AssertEqualReviews(t, got, r)
 
 			// Delete Related Applications.
 			assert.Must(t, Application.Delete(app.ID))
@@ -86,6 +59,40 @@ func TestReviewCRUD(t *testing.T) {
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
+		})
+
+		t.Run("Copy Review", func(t *testing.T) {
+
+			// Create Application and Review.
+			app := api.Application{
+				Name:        r.Application.Name,
+				Description: "Application for Review",
+			}
+			assert.Must(t, Application.Create(&app))
+
+			// Update Application ID with the Sample Id.
+			r.Application.ID = app.ID
+
+			assert.Must(t, Review.Create(&r))
+
+			// Create another application to copy
+			destApp := api.Application{
+				Name:        "New App",
+				Description: "Application for Review",
+			}
+			assert.Must(t, Application.Create(&destApp))
+
+			err := Review.Copy(r.ID, destApp.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Delete Applications.
+			assert.Must(t, Application.Delete(app.ID))
+			assert.Must(t, Application.Delete(destApp.ID))
+
+			// Delete Review.
+			assert.Must(t, Review.Delete(r.ID))
 		})
 	}
 }
@@ -129,5 +136,20 @@ func TestReviewList(t *testing.T) {
 	for _, review := range createdReviews {
 		assert.Must(t, Application.Delete(review.ID))
 		assert.Must(t, Review.Delete(review.ID))
+	}
+}
+
+func AssertEqualReviews(t *testing.T, got *api.Review, expected api.Review) {
+	if got.BusinessCriticality != expected.BusinessCriticality {
+		t.Errorf("Different Business Criticality Got %v, expected %v", got.BusinessCriticality, expected.BusinessCriticality)
+	}
+	if got.EffortEstimate != expected.EffortEstimate {
+		t.Errorf("Different Effort Estimate Got %v, expected %v", got.EffortEstimate, expected.EffortEstimate)
+	}
+	if got.ProposedAction != expected.ProposedAction {
+		t.Errorf("Different Proposed Action Got %v, expected %v", got.ProposedAction, expected.ProposedAction)
+	}
+	if got.WorkPriority != expected.WorkPriority {
+		t.Errorf("Different Work Priority Got %v, expected %v", got.WorkPriority, expected.WorkPriority)
 	}
 }
