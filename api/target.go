@@ -23,7 +23,7 @@ type TargetHandler struct {
 
 func (h TargetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("rulesets"), Transaction)
+	routeGroup.Use(Required("targets"), Transaction)
 	routeGroup.GET(TargetsRoot, h.List)
 	routeGroup.GET(TargetsRoot+"/", h.List)
 	routeGroup.POST(TargetsRoot, h.Create)

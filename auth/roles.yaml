@@ -167,6 +167,12 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -323,6 +329,12 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-migrator
   resources:
     - name: addons
@@ -421,6 +433,9 @@
     - name: migrationwaves
       verbs:
         - get
+    - name: targets
+      verb:
+        - get
 - role: tackle-project-manager
   resources:
     - name: addons
@@ -513,3 +528,6 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - get
