@@ -122,7 +122,7 @@ const docTemplate = `{
         },
         "/analyses/dependencies": {
             "get": {
-                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- tag.id\nsort:\n- name\n- version\n- sha",
+                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- version\n- sha",
                 "produces": [
                     "application/json"
                 ],
@@ -211,12 +211,12 @@ const docTemplate = `{
         },
         "/analyses/report/applications": {
             "get": {
-                "description": "List application reports.\nfilters:\n- id\n- name\n- description\n- businessService\n- effort\n- incidents\n- files\n- issue.id\n- issue.name\n- issue.ruleset\n- issue.rule\n- issue.category\n- issue.effort\n- issue.labels\n- application.id\n- application.name\n- businessService.name\nsort:\n- id\n- name\n- description\n- businessService\n- effort\n- incidents\n- files",
+                "description": "List application reports.\nfilters:\n- id\n- name\n- description\n- businessService\n- provider\n- name\n- version\n- sha\n- indirect\n- dep.provider\n- dep.name\n- dep.version\n- dep.sha\n- dep.indirect\n- dep.labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\nsort:\n- name\n- description\n- businessService\n- provider\n- name\n- version\n- sha\n- indirect",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "appreports"
+                    "depappreports"
                 ],
                 "summary": "List application reports.",
                 "responses": {
@@ -225,7 +225,39 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AppReport"
+                                "$ref": "#/definitions/api.DepAppReport"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/analyses/report/applications/{id}/issues": {
+            "get": {
+                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issuereport"
+                ],
+                "summary": "List application issue reports.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.IssueReport"
                             }
                         }
                     }
@@ -257,7 +289,7 @@ const docTemplate = `{
         },
         "/analyses/report/rules": {
             "get": {
-                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
+                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
                 "produces": [
                     "application/json"
                 ],
@@ -3608,6 +3640,144 @@ const docTemplate = `{
                 }
             }
         },
+        "/targets": {
+            "get": {
+                "description": "List all targets.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "targets"
+                ],
+                "summary": "List all targets.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Target"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a target.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "targets"
+                ],
+                "summary": "Create a target.",
+                "parameters": [
+                    {
+                        "description": "Target data",
+                        "name": "target",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Target"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Target"
+                        }
+                    }
+                }
+            }
+        },
+        "/targets/{id}": {
+            "get": {
+                "description": "Get a Target by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "targets"
+                ],
+                "summary": "Get a Target by ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Target"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a target.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "targets"
+                ],
+                "summary": "Update a target.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Target data",
+                        "name": "target",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Target"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a target.",
+                "tags": [
+                    "targets"
+                ],
+                "summary": "Delete a target.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/taskgroups": {
             "get": {
                 "description": "List all task groups.",
@@ -4637,49 +4807,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AppReport": {
-            "type": "object",
-            "properties": {
-                "businessService": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "files": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "incidents": {
-                    "type": "integer"
-                },
-                "issue": {
-                    "type": "object",
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        },
-                        "name": {
-                            "type": "string"
-                        },
-                        "rule": {
-                            "type": "string"
-                        },
-                        "ruleset": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "api.Application": {
             "type": "object",
             "required": [
@@ -4832,6 +4959,52 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "api.DepAppReport": {
+            "type": "object",
+            "properties": {
+                "businessService": {
+                    "type": "string"
+                },
+                "dependency": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "indirect": {
+                            "type": "boolean"
+                        },
+                        "labels": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "provider": {
+                            "type": "string"
+                        },
+                        "rule": {
+                            "type": "string"
+                        },
+                        "version": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -5099,6 +5272,93 @@ const docTemplate = `{
                 }
             }
         },
+        "api.IssueAppReport": {
+            "type": "object",
+            "properties": {
+                "businessService": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "files": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incidents": {
+                    "type": "integer"
+                },
+                "issue": {
+                    "type": "object",
+                    "properties": {
+                        "description": {
+                            "type": "string"
+                        },
+                        "id": {
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "rule": {
+                            "type": "string"
+                        },
+                        "ruleset": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.IssueReport": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "files": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Link"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "type": "string"
+                }
+            }
+        },
         "api.IssueType": {
             "type": "object",
             "properties": {
@@ -5135,6 +5395,17 @@ const docTemplate = `{
                     }
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Label": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -5357,7 +5628,12 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "labels": {},
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "name": {
                     "type": "string"
                 },
@@ -5387,6 +5663,12 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Link"
+                    }
+                },
                 "name": {
                     "type": "string"
                 },
@@ -5407,19 +5689,16 @@ const docTemplate = `{
                 "createUser": {
                     "type": "string"
                 },
-                "custom": {
-                    "type": "boolean"
-                },
-                "description": {
-                    "type": "string"
+                "dependsOn": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
                 },
                 "id": {
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "image": {
                     "$ref": "#/definitions/api.Ref"
                 },
                 "kind": {
@@ -5682,6 +5961,47 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Target": {
+            "type": "object",
+            "properties": {
+                "choice": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "custom": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Label"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "$ref": "#/definitions/api.RuleSet"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Task": {
             "type": "object",
             "required": [
@@ -5689,6 +6009,12 @@ const docTemplate = `{
                 "data"
             ],
             "properties": {
+                "activity": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "addon": {
                     "type": "string"
                 },
@@ -5710,8 +6036,11 @@ const docTemplate = `{
                 "data": {
                     "type": "object"
                 },
-                "error": {
-                    "type": "string"
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TaskError"
+                    }
                 },
                 "id": {
                     "type": "integer"
@@ -5737,9 +6066,6 @@ const docTemplate = `{
                 "purged": {
                     "type": "boolean"
                 },
-                "report": {
-                    "$ref": "#/definitions/api.TaskReport"
-                },
                 "retries": {
                     "type": "integer"
                 },
@@ -5759,6 +6085,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "variant": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TaskError": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "severity": {
                     "type": "string"
                 }
             }
@@ -5822,8 +6159,11 @@ const docTemplate = `{
                 "createUser": {
                     "type": "string"
                 },
-                "error": {
-                    "type": "string"
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TaskError"
+                    }
                 },
                 "id": {
                     "type": "integer"
@@ -5870,6 +6210,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "type": "string"
+                },
+                "provider": {
                     "type": "string"
                 },
                 "sha": {
