@@ -64,14 +64,14 @@ func TestReviewCRUD(t *testing.T) {
 		t.Run("Copy Review", func(t *testing.T) {
 
 			// Create Application and Review.
-			app := api.Application{
+			srcApp := api.Application{
 				Name:        r.Application.Name,
 				Description: "Application for Review",
 			}
-			assert.Must(t, Application.Create(&app))
+			assert.Must(t, Application.Create(&srcApp))
 
 			// Update Application ID with the Sample Id.
-			r.Application.ID = app.ID
+			r.Application.ID = srcApp.ID
 
 			assert.Must(t, Review.Create(&r))
 
@@ -88,7 +88,7 @@ func TestReviewCRUD(t *testing.T) {
 			}
 
 			// Delete Applications.
-			assert.Must(t, Application.Delete(app.ID))
+			assert.Must(t, Application.Delete(srcApp.ID))
 			assert.Must(t, Application.Delete(destApp.ID))
 
 			// Delete Review.
