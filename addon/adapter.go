@@ -41,7 +41,6 @@ type Path = binding.Path
 
 //
 // Error
-type SoftError = binding.SoftError
 type ResetError = binding.RestError
 type Conflict = binding.Conflict
 type NotFound = binding.NotFound
@@ -108,11 +107,8 @@ func (h *Adapter) Run(addon func() error) {
 			}
 		}
 		if err != nil {
-			if _, soft := err.(interface{ Soft() *SoftError }); !soft {
-				Log.Error(err, "Addon failed.")
-				os.Exit(1)
-			}
 			h.Failed(err.Error())
+			os.Exit(1)
 		}
 	}()
 	//

@@ -357,16 +357,20 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 		r.Terminated = &mark
 	case core.PodFailed:
 		r.Error("Error", "Pod failed: %s", pod.Status.Message)
-		if r.Retries < Settings.Hub.Task.Retries {
-			_ = client.Delete(context.TODO(), pod)
-			r.Pod = ""
-			r.State = Ready
-			r.Errors = nil
-			r.Retries++
-		} else {
-			r.State = Failed
-			r.Terminated = &mark
+		switch pod.Status.ContainerStatuses[0].State.Terminated.ExitCode {
+		case 137: // Killed.
+			if r.Retries < Settings.Hub.Task.Retries {
+				_ = client.Delete(context.TODO(), pod)
+				r.Pod = ""
+				r.State = Ready
+				r.Errors = nil
+				r.Retries++
+			} else {
+				r.State = Failed
+				r.Terminated = &mark
+			}
 		}
+
 	}
 
 	return

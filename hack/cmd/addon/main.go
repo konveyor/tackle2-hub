@@ -32,8 +32,6 @@ const (
 	TmpDir    = "/tmp/list"
 )
 
-type SoftError = hub.SoftError
-
 //
 // main
 func main() {
@@ -100,8 +98,6 @@ func main() {
 		}
 		return
 	})
-
-	addon.Errorf("Warning", "Test warning.")
 }
 
 //
@@ -333,7 +329,7 @@ func addTags(application *api.Application, source string, names ...string) (err 
 	tags := addon.Application.Tags(application.ID)
 	tags.Source(source)
 	for _, id := range wanted {
-		err = tags.Add(id)
+		err = tags.Ensure(id)
 		if err != nil {
 			return
 		}

@@ -2,6 +2,7 @@ package binding
 
 import (
 	"bytes"
+	"errors"
 	mime "github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
@@ -171,7 +172,7 @@ func (h *AppTags) List() (list []api.TagRef, err error) {
 }
 
 //
-// Add ensures tag is associated with the application.
+// Add associates a tag with the application.
 func (h *AppTags) Add(id uint) (err error) {
 	path := Path(api.ApplicationTagsRoot).Inject(Params{api.ID: h.appId})
 	tag := api.TagRef{ID: id}
@@ -179,6 +180,16 @@ func (h *AppTags) Add(id uint) (err error) {
 		tag.Source = *h.source
 	}
 	err = h.client.Post(path, &tag)
+	return
+}
+
+//
+// Ensure ensures tag is associated with the application.
+func (h *AppTags) Ensure(id uint) (err error) {
+	err = h.Add(id)
+	if errors.Is(err, &Conflict{}) {
+		err = nil
+	}
 	return
 }
 
