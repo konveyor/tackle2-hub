@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 )
@@ -61,6 +63,8 @@ func (h RuleSetHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all bindings.
 // @description List all bindings.
+// @description filters:
+// @description - labels
 // @tags rulesets
 // @produce json
 // @success 200 {object} []RuleSet
@@ -71,7 +75,16 @@ func (h RuleSetHandler) List(ctx *gin.Context) {
 		h.DB(ctx),
 		clause.Associations,
 		"Rules.File")
-	result := db.Find(&list)
+
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "labels", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	result := db.Where("ID IN (?)", h.ruleSetIDs(ctx, filter)).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -224,6 +237,36 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 	}
 
 	h.Status(ctx, http.StatusNoContent)
+}
+
+func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.RuleSet{})
+	q = q.Select("ID")
+	filter := f
+	if f, found := filter.Field("labels"); found {
+		if f.Value.Operator(qf.AND) {
+			var qs []*gorm.DB
+			for _, f = range f.Expand() {
+				f = f.As("json_each.value")
+				iq := h.DB(ctx)
+				iq = iq.Table("Rule")
+				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Select("m.RuleSetID")
+				qs = append(qs, iq)
+			}
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
+		} else {
+			f = f.As("json_each.value")
+			iq := h.DB(ctx)
+			iq = iq.Table("Rule")
+			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Select("m.RuleSetID")
+			iq = f.Where(iq)
+			q = q.Where("ID IN (?)", iq)
+		}
+	}
+	return
 }
 
 //
