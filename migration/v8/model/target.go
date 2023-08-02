@@ -8,7 +8,7 @@ type Target struct {
 	Name        string  `gorm:"uniqueIndex;not null"`
 	Description string
 	Choice      bool
-	Labels      JSON
+	Labels      JSON `gorm:"type:json"`
 	ImageID     uint `gorm:"index" ref:"file"`
 	Image       *File
 	RuleSetID   *uint `gorm:"index"`

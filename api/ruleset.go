@@ -273,12 +273,13 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 // RuleSet REST resource.
 type RuleSet struct {
 	Resource
-	Kind       string      `json:"kind,omitempty"`
-	Name       string      `json:"name"`
-	Rules      []Rule      `json:"rules"`
-	Repository *Repository `json:"repository,omitempty"`
-	Identity   *Ref        `json:"identity,omitempty"`
-	DependsOn  []Ref       `json:"dependsOn"`
+	Kind        string      `json:"kind,omitempty"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Rules       []Rule      `json:"rules"`
+	Repository  *Repository `json:"repository,omitempty"`
+	Identity    *Ref        `json:"identity,omitempty"`
+	DependsOn   []Ref       `json:"dependsOn"`
 }
 
 //
@@ -287,6 +288,7 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
+	r.Description = m.Description
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	r.Rules = []Rule{}
@@ -309,8 +311,9 @@ func (r *RuleSet) With(m *model.RuleSet) {
 // Model builds a model.
 func (r *RuleSet) Model() (m *model.RuleSet) {
 	m = &model.RuleSet{
-		Kind: r.Kind,
-		Name: r.Name,
+		Kind:        r.Kind,
+		Name:        r.Name,
+		Description: r.Description,
 	}
 	m.ID = r.ID
 	m.IdentityID = r.idPtr(r.Identity)

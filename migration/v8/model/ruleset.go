@@ -6,14 +6,15 @@ import "gorm.io/gorm"
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
-	UUID       *string `gorm:"uniqueIndex"`
-	Kind       string
-	Name       string `gorm:"uniqueIndex;not null"`
-	Repository JSON   `gorm:"type:json"`
-	IdentityID *uint  `gorm:"index"`
-	Identity   *Identity
-	Rules      []Rule    `gorm:"constraint:OnDelete:CASCADE"`
-	DependsOn  []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
+	UUID        *string `gorm:"uniqueIndex"`
+	Kind        string
+	Name        string `gorm:"uniqueIndex;not null"`
+	Description string
+	Repository  JSON  `gorm:"type:json"`
+	IdentityID  *uint `gorm:"index"`
+	Identity    *Identity
+	Rules       []Rule    `gorm:"constraint:OnDelete:CASCADE"`
+	DependsOn   []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
 }
 
 func (r *RuleSet) Builtin() bool {
