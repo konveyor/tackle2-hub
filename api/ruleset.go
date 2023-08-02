@@ -78,6 +78,7 @@ func (h RuleSetHandler) List(ctx *gin.Context) {
 
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
 			{Field: "labels", Kind: qf.STRING},
 		})
 	if err != nil {
@@ -243,6 +244,7 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 	q = h.DB(ctx)
 	q = q.Model(&model.RuleSet{})
 	q = q.Select("ID")
+	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
 		if f.Value.Operator(qf.AND) {
