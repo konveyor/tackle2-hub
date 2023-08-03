@@ -995,7 +995,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 // @description - files
 // @tags issueappreports
 // @produce json
-// @success 200 {object} []api.AppReport
+// @success 200 {object} []api.IssueAppReport
 // @router /analyses/report/applications [get]
 func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 	resources := []IssueAppReport{}
@@ -1448,7 +1448,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 // @description - indirect
 // @tags depappreports
 // @produce json
-// @success 200 {object} []api.AppReport
+// @success 200 {object} []api.DepAppReport
 // @router /analyses/report/applications [get]
 func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 	resources := []DepAppReport{}

@@ -27,34 +27,6 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.AppReport:
-    properties:
-      businessService:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      files:
-        type: integer
-      id:
-        type: integer
-      incidents:
-        type: integer
-      issue:
-        properties:
-          id:
-            type: integer
-          name:
-            type: string
-          rule:
-            type: string
-          ruleset:
-            type: string
-        type: object
-      name:
-        type: string
-    type: object
   api.Application:
     properties:
       binary:
@@ -156,6 +128,36 @@ definitions:
     required:
     - sourceReview
     - targetApplications
+    type: object
+  api.DepAppReport:
+    properties:
+      businessService:
+        type: string
+      dependency:
+        properties:
+          id:
+            type: integer
+          indirect:
+            type: boolean
+          labels:
+            items:
+              type: string
+            type: array
+          name:
+            type: string
+          provider:
+            type: string
+          rule:
+            type: string
+          version:
+            type: string
+        type: object
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
     type: object
   api.Dependency:
     properties:
@@ -333,6 +335,63 @@ definitions:
     - rule
     - ruleset
     type: object
+  api.IssueAppReport:
+    properties:
+      businessService:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      files:
+        type: integer
+      id:
+        type: integer
+      incidents:
+        type: integer
+      issue:
+        properties:
+          description:
+            type: string
+          id:
+            type: integer
+          name:
+            type: string
+          rule:
+            type: string
+          ruleset:
+            type: string
+        type: object
+      name:
+        type: string
+    type: object
+  api.IssueReport:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      files:
+        type: integer
+      id:
+        type: integer
+      labels:
+        items:
+          type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/api.Link'
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+      ruleset:
+        type: string
+    type: object
   api.IssueType:
     properties:
       id:
@@ -358,6 +417,13 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Label:
+    properties:
+      label:
+        type: string
+      name:
+        type: string
     type: object
   api.Link:
     properties:
@@ -502,7 +568,10 @@ definitions:
         $ref: '#/definitions/api.Ref'
       id:
         type: integer
-      labels: {}
+      labels:
+        items:
+          type: string
+        type: array
       name:
         type: string
       updateUser:
@@ -522,6 +591,10 @@ definitions:
         items:
           type: string
         type: array
+      links:
+        items:
+          $ref: '#/definitions/api.Link'
+        type: array
       name:
         type: string
       rule:
@@ -535,15 +608,13 @@ definitions:
         type: string
       createUser:
         type: string
-      custom:
-        type: boolean
-      description:
-        type: string
+      dependsOn:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       id:
         type: integer
       identity:
-        $ref: '#/definitions/api.Ref'
-      image:
         $ref: '#/definitions/api.Ref'
       kind:
         type: string
@@ -716,8 +787,39 @@ definitions:
     required:
     - id
     type: object
+  api.Target:
+    properties:
+      choice:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      custom:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        $ref: '#/definitions/api.Ref'
+      labels:
+        items:
+          $ref: '#/definitions/api.Label'
+        type: array
+      name:
+        type: string
+      ruleset:
+        $ref: '#/definitions/api.RuleSet'
+      updateUser:
+        type: string
+    type: object
   api.Task:
     properties:
+      activity:
+        items:
+          type: string
+        type: array
       addon:
         type: string
       application:
@@ -732,8 +834,10 @@ definitions:
         type: string
       data:
         type: object
-      error:
-        type: string
+      errors:
+        items:
+          $ref: '#/definitions/api.TaskError'
+        type: array
       id:
         type: integer
       image:
@@ -750,8 +854,6 @@ definitions:
         type: integer
       purged:
         type: boolean
-      report:
-        $ref: '#/definitions/api.TaskReport'
       retries:
         type: integer
       started:
@@ -769,6 +871,13 @@ definitions:
     required:
     - addon
     - data
+    type: object
+  api.TaskError:
+    properties:
+      description:
+        type: string
+      severity:
+        type: string
     type: object
   api.TaskGroup:
     properties:
@@ -809,8 +918,10 @@ definitions:
         type: string
       createUser:
         type: string
-      error:
-        type: string
+      errors:
+        items:
+          $ref: '#/definitions/api.TaskError'
+        type: array
       id:
         type: integer
       result:
@@ -839,6 +950,8 @@ definitions:
           type: string
         type: array
       name:
+        type: string
+      provider:
         type: string
       sha:
         type: string
@@ -1034,6 +1147,7 @@ paths:
       description: |-
         Each report collates dependencies by name and SHA.
         filters:
+        - provider
         - name
         - version
         - sha
@@ -1041,8 +1155,11 @@ paths:
         - labels
         - application.id
         - application.name
+        - businessService.id
+        - businessService.name
         - tag.id
         sort:
+        - provider
         - name
         - version
         - sha
@@ -1124,27 +1241,30 @@ paths:
         - name
         - description
         - businessService
-        - effort
-        - incidents
-        - files
-        - issue.id
-        - issue.name
-        - issue.ruleset
-        - issue.rule
-        - issue.category
-        - issue.effort
-        - issue.labels
+        - provider
+        - name
+        - version
+        - sha
+        - indirect
+        - dep.provider
+        - dep.name
+        - dep.version
+        - dep.sha
+        - dep.indirect
+        - dep.labels
         - application.id
         - application.name
+        - businessService.id
         - businessService.name
         sort:
-        - id
         - name
         - description
         - businessService
-        - effort
-        - incidents
-        - files
+        - provider
+        - name
+        - version
+        - sha
+        - indirect
       produces:
       - application/json
       responses:
@@ -1152,11 +1272,45 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.AppReport'
+              $ref: '#/definitions/api.DepAppReport'
             type: array
       summary: List application reports.
       tags:
-      - appreports
+      - depappreports
+  /analyses/report/applications/{id}/issues:
+    get:
+      description: |-
+        Each report collates issues by ruleset/rule.
+        filters:
+        - ruleset
+        - rule
+        - category
+        - effort
+        - labels
+        sort:
+        - ruleset
+        - rule
+        - category
+        - effort
+        - files
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.IssueReport'
+            type: array
+      summary: List application issue reports.
+      tags:
+      - issuereport
   /analyses/report/issues/{id}/files:
     get:
       description: |-
@@ -1194,6 +1348,8 @@ paths:
         - applications
         - application.id
         - application.name
+        - businessService.id
+        - businessService.name
         - tag.id
         sort:
         - ruleset
@@ -3423,6 +3579,97 @@ paths:
       summary: Update a tag.
       tags:
       - tags
+  /targets:
+    get:
+      description: List all targets.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Target'
+            type: array
+      summary: List all targets.
+      tags:
+      - targets
+    post:
+      consumes:
+      - application/json
+      description: Create a target.
+      parameters:
+      - description: Target data
+        in: body
+        name: target
+        required: true
+        schema:
+          $ref: '#/definitions/api.Target'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Target'
+      summary: Create a target.
+      tags:
+      - targets
+  /targets/{id}:
+    delete:
+      description: Delete a target.
+      parameters:
+      - description: Target ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a target.
+      tags:
+      - targets
+    get:
+      description: Get a Target by ID.
+      parameters:
+      - description: Target ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Target'
+      summary: Get a Target by ID.
+      tags:
+      - targets
+    put:
+      consumes:
+      - application/json
+      description: Update a target.
+      parameters:
+      - description: Target ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Target data
+        in: body
+        name: target
+        required: true
+        schema:
+          $ref: '#/definitions/api.Target'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a target.
+      tags:
+      - targets
   /taskgroups:
     get:
       description: List all task groups.

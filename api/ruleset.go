@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 )
@@ -61,6 +63,8 @@ func (h RuleSetHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all bindings.
 // @description List all bindings.
+// @description filters:
+// @description - labels
 // @tags rulesets
 // @produce json
 // @success 200 {object} []RuleSet
@@ -71,7 +75,17 @@ func (h RuleSetHandler) List(ctx *gin.Context) {
 		h.DB(ctx),
 		clause.Associations,
 		"Rules.File")
-	result := db.Find(&list)
+
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	result := db.Where("ID IN (?)", h.ruleSetIDs(ctx, filter)).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -137,6 +151,10 @@ func (h RuleSetHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	if ruleset.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
+		return
+	}
 	result = h.DB(ctx).Delete(ruleset, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -163,8 +181,6 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	//
-	// Delete unwanted ruleSets.
 	m := &model.RuleSet{}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	result := db.First(m, id)
@@ -172,6 +188,12 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	if m.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
+		return
+	}
+	//
+	// Delete unwanted rules.
 	for _, ruleset := range m.Rules {
 		if !r.HasRule(ruleset.ID) {
 			err := h.DB(ctx).Delete(ruleset).Error
@@ -218,6 +240,37 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.RuleSet{})
+	q = q.Select("ID")
+	q = f.Where(q, "-Labels")
+	filter := f
+	if f, found := filter.Field("labels"); found {
+		if f.Value.Operator(qf.AND) {
+			var qs []*gorm.DB
+			for _, f = range f.Expand() {
+				f = f.As("json_each.value")
+				iq := h.DB(ctx)
+				iq = iq.Table("Rule")
+				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Select("m.RuleSetID")
+				qs = append(qs, iq)
+			}
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
+		} else {
+			f = f.As("json_each.value")
+			iq := h.DB(ctx)
+			iq = iq.Table("Rule")
+			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Select("m.RuleSetID")
+			iq = f.Where(iq)
+			q = q.Where("ID IN (?)", iq)
+		}
+	}
+	return
+}
+
 //
 // RuleSet REST resource.
 type RuleSet struct {
@@ -225,9 +278,7 @@ type RuleSet struct {
 	Kind        string      `json:"kind,omitempty"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
-	Image       Ref         `json:"image"`
 	Rules       []Rule      `json:"rules"`
-	Custom      bool        `json:"custom,omitempty"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
 	DependsOn   []Ref       `json:"dependsOn"`
@@ -240,13 +291,7 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Custom = m.Custom
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	imgRef := Ref{ID: m.ImageID}
-	if m.Image != nil {
-		imgRef.Name = m.Image.Name
-	}
-	r.Image = imgRef
 	_ = json.Unmarshal(m.Repository, &r.Repository)
 	r.Rules = []Rule{}
 	for i := range m.Rules {
@@ -271,10 +316,8 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 		Kind:        r.Kind,
 		Name:        r.Name,
 		Description: r.Description,
-		Custom:      r.Custom,
 	}
 	m.ID = r.ID
-	m.ImageID = r.Image.ID
 	m.IdentityID = r.idPtr(r.Identity)
 	m.Rules = []model.Rule{}
 	for _, rule := range r.Rules {

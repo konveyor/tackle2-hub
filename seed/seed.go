@@ -17,6 +17,7 @@ type Hub struct {
 	TagCategory
 	JobFunction
 	RuleSet
+	Target
 }
 
 //
@@ -29,6 +30,8 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 		err = r.JobFunction.With(seed)
 	case libseed.KindRuleSet:
 		err = r.RuleSet.With(seed)
+	case libseed.KindTarget:
+		err = r.Target.With(seed)
 	default:
 		err = liberr.New("unknown kind", "kind", seed.Kind, "file", seed.Filename())
 	}
@@ -47,6 +50,10 @@ func (r *Hub) Apply(db *gorm.DB) (err error) {
 		return
 	}
 	err = r.RuleSet.Apply(db)
+	if err != nil {
+		return
+	}
+	err = r.Target.Apply(db)
 	if err != nil {
 		return
 	}
