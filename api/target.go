@@ -2,8 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 )
@@ -105,15 +108,17 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := target.Model()
+	m.CreateUser = h.CurrentUser(ctx)
 	if target.RuleSet != nil {
-		err := (&RuleSetHandler{}).create(ctx, target.RuleSet)
+		ruleset := target.RuleSet
+		ruleset.Name = fmt.Sprintf("__Target(%s)", m.Name)
+		err := (&RuleSetHandler{}).create(ctx, ruleset)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		m.RuleSetID = &target.RuleSet.ID
+		m.RuleSetID = &ruleset.ID
 	}
-	m.CreateUser = h.CurrentUser(ctx)
 	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -159,10 +164,13 @@ func (h TargetHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	if target.RuleSetID != nil {
-		result = h.DB(ctx).Delete(&model.RuleSet{}, target.RuleSetID)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
+		err := (&RuleSetHandler{}).delete(ctx, *target.RuleSetID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err = nil
+			} else {
+				return
+			}
 		}
 	}
 

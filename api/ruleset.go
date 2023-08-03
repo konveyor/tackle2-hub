@@ -133,19 +133,9 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 // @param id path string true "RuleSet ID"
 func (h RuleSetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	ruleset := &model.RuleSet{}
-	result := h.DB(ctx).First(ruleset, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	if ruleset.Builtin() {
-		h.Status(ctx, http.StatusForbidden)
-		return
-	}
-	result = h.DB(ctx).Delete(ruleset, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.delete(ctx, id)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	h.Status(ctx, http.StatusNoContent)
@@ -281,6 +271,25 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 		if err != nil {
 			return
 		}
+	}
+	return
+}
+
+//
+// delete the ruleset.
+func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
+	ruleset := &model.RuleSet{}
+	err = h.DB(ctx).First(ruleset, id).Error
+	if err != nil {
+		return
+	}
+	if ruleset.Builtin() {
+		err = &Forbidden{"delete on builtin not permitted."}
+		return
+	}
+	err = h.DB(ctx).Delete(ruleset, id).Error
+	if err != nil {
+		return
 	}
 	return
 }
