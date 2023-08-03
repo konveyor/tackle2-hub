@@ -18,7 +18,6 @@ func TestTargetCRUD(t *testing.T) {
 			r.Image.ID = image.ID
 			// RuleSet
 			if r.RuleSet != nil {
-				ruleFiles := []api.File{}
 				rules := []api.Rule{}
 				for _, rule := range r.RuleSet.Rules {
 					ruleFile, err := RichClient.File.Put(rule.File.Name)
@@ -28,7 +27,6 @@ func TestTargetCRUD(t *testing.T) {
 							ID: ruleFile.ID,
 						},
 					})
-					ruleFiles = append(ruleFiles, *ruleFile)
 				}
 				r.RuleSet.Rules = rules
 			}
@@ -50,11 +48,25 @@ func TestTargetCRUD(t *testing.T) {
 
 			// Update.
 			r.Name = "Updated " + r.Name
+			if r.RuleSet != nil {
+				file, err := RichClient.File.Put("./data/rules.yaml")
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+				r.RuleSet.Rules = append(
+					r.RuleSet.Rules,
+					api.Rule{
+						Name: "Added",
+						File: &api.Ref{
+							ID: file.ID,
+						},
+					})
+				r.RuleSet.Rules = r.RuleSet.Rules[1:]
+			}
 			err = Target.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-
 			got, err = Target.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -68,7 +80,6 @@ func TestTargetCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-
 			_, err = Target.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)

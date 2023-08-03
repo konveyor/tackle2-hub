@@ -26,6 +26,11 @@ var (
 						Name: "./data/rules.yaml",
 					},
 				},
+				{
+					File: &api.Ref{
+						Name: "./data/rules.yaml",
+					},
+				},
 			},
 		},
 	}

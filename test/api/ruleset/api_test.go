@@ -11,7 +11,6 @@ func TestRuleSetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Prepare rules files.
-			ruleFiles := []api.File{}
 			rules := []api.Rule{}
 			for _, rule := range r.Rules {
 				ruleFile, err := RichClient.File.Put(rule.File.Name)
@@ -21,7 +20,6 @@ func TestRuleSetCRUD(t *testing.T) {
 						ID: ruleFile.ID,
 					},
 				})
-				ruleFiles = append(ruleFiles, *ruleFile)
 			}
 			r.Rules = rules
 
@@ -42,11 +40,23 @@ func TestRuleSetCRUD(t *testing.T) {
 
 			// Update.
 			r.Name = "Updated " + r.Name
+			file, err := RichClient.File.Put("./data/rules.yaml")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			r.Rules = append(
+				r.Rules,
+				api.Rule{
+					Name: "Added",
+					File: &api.Ref{
+						ID: file.ID,
+					},
+				})
+			r.Rules = r.Rules[1:]
 			err = RuleSet.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-
 			got, err = RuleSet.Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -60,15 +70,9 @@ func TestRuleSetCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-
 			_, err = RuleSet.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
-			}
-
-			// Delete rules file.
-			for _, ruleFile := range ruleFiles {
-				assert.Must(t, RichClient.File.Delete(ruleFile.ID))
 			}
 		})
 	}
