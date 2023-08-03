@@ -111,10 +111,11 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 	m := target.Model()
 	m.CreateUser = h.CurrentUser(ctx)
 	if target.RuleSet != nil {
+		rh := RuleSetHandler{}
 		ruleset := target.RuleSet
 		uuid, _ := uuid2.NewUUID()
 		ruleset.Name = fmt.Sprintf("__Target(%s)-%s", m.Name, uuid.String())
-		err := (&RuleSetHandler{}).create(ctx, ruleset)
+		err := rh.create(ctx, ruleset)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -166,7 +167,8 @@ func (h TargetHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	if target.RuleSetID != nil {
-		err := (&RuleSetHandler{}).delete(ctx, *target.RuleSetID)
+		rh := RuleSetHandler{}
+		err := rh.delete(ctx, *target.RuleSetID)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				_ = ctx.Error(result.Error)
@@ -214,8 +216,9 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	if r.RuleSet != nil {
+		rh := RuleSetHandler{}
 		m.RuleSetID = &r.RuleSet.ID
-		err := (&RuleSetHandler{}).update(ctx, r.RuleSet)
+		err := rh.update(ctx, r.RuleSet)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
