@@ -8,18 +8,12 @@ import (
 var (
 	Minimal = api.RuleSet{
 		Name: "Minimal no rules",
-		Image: api.Ref{
-			ID: 1,
-		},
 		Rules: []api.Rule{},
 	}
 
 	Hazelcast = api.RuleSet{
 		Name:        "Hazelcast",
 		Description: "Hazelcast Java distributed session store ruleset.",
-		Image: api.Ref{
-			ID: 1,
-		},
 		Rules: []api.Rule{
 			{
 				File: &api.Ref{
