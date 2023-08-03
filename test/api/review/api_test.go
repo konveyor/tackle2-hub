@@ -1,6 +1,7 @@
 package review
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -47,15 +48,11 @@ func TestReviewCRUD(t *testing.T) {
 
 			// Delete Related Applications.
 			assert.Must(t, Application.Delete(app.ID))
-		})
-
-		t.Run("Delete Review and its dependencies", func(t *testing.T) {
-
 			// Delete Review.
 			assert.Must(t, Review.Delete(r.ID))
 
 			// Check if the review is present even after deletion or not.
-			_, err := Review.Get(r.ID)
+			_, err = Review.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
@@ -77,8 +74,11 @@ func TestReviewCRUD(t *testing.T) {
 
 			// Create another application to copy
 			destApp := api.Application{
-				Name:        "New App",
+				Name:        "New Application",
 				Description: "Application for Review",
+				Review: &api.Ref{
+					ID: r.ID,
+				},
 			}
 			assert.Must(t, Application.Create(&destApp))
 
@@ -87,12 +87,21 @@ func TestReviewCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			// Delete Applications.
-			assert.Must(t, Application.Delete(srcApp.ID))
-			assert.Must(t, Application.Delete(destApp.ID))
+			gotReview, err := Review.Get(destApp.Review.ID)
+			if err != nil {
+				fmt.Println(err.Error())
+				t.Errorf(err.Error())
+			}
+
+			// Check if the expcted review and got review is same.
+			AssertEqualReviews(t, gotReview, r)
 
 			// Delete Review.
 			assert.Must(t, Review.Delete(r.ID))
+
+			// Delete Applications.
+			assert.Must(t, Application.Delete(srcApp.ID))
+			assert.Must(t, Application.Delete(destApp.ID))
 		})
 	}
 }
