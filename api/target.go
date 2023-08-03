@@ -113,7 +113,7 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 	if target.RuleSet != nil {
 		ruleset := target.RuleSet
 		uuid, _ := uuid2.NewUUID()
-		ruleset.Name = fmt.Sprintf("Target(%s)-%s", m.Name, uuid.String())
+		ruleset.Name = fmt.Sprintf("__Target(%s)-%s", m.Name, uuid.String())
 		err := (&RuleSetHandler{}).create(ctx, ruleset)
 		if err != nil {
 			_ = ctx.Error(err)
