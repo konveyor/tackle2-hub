@@ -168,9 +168,8 @@ func (h TargetHandler) Delete(ctx *gin.Context) {
 	if target.RuleSetID != nil {
 		err := (&RuleSetHandler{}).delete(ctx, *target.RuleSetID)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = nil
-			} else {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				_ = ctx.Error(result.Error)
 				return
 			}
 		}
