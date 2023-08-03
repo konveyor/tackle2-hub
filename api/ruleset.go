@@ -121,6 +121,7 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	
 	h.Respond(ctx, http.StatusCreated, ruleset)
 }
 
@@ -138,6 +139,7 @@ func (h RuleSetHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -164,6 +166,7 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
 	h.Status(ctx, http.StatusNoContent)
 }
 
