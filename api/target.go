@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	uuid2 "github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -111,7 +112,8 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 	m.CreateUser = h.CurrentUser(ctx)
 	if target.RuleSet != nil {
 		ruleset := target.RuleSet
-		ruleset.Name = fmt.Sprintf("__Target(%s)", m.Name)
+		uuid, _ := uuid2.NewUUID()
+		ruleset.Name = fmt.Sprintf("Target(%s)-%s", m.Name, uuid.String())
 		err := (&RuleSetHandler{}).create(ctx, ruleset)
 		if err != nil {
 			_ = ctx.Error(err)
