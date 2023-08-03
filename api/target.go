@@ -43,7 +43,11 @@ func (h TargetHandler) AddRoutes(e *gin.Engine) {
 func (h TargetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	target := &model.Target{}
-	db := h.preLoad(h.DB(ctx), clause.Associations, "RuleSet.Rules", "RuleSet.Rules.File")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"RuleSet.Rules",
+		"RuleSet.Rules.File")
 	result := db.First(target, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -64,7 +68,11 @@ func (h TargetHandler) Get(ctx *gin.Context) {
 // @router /targets [get]
 func (h TargetHandler) List(ctx *gin.Context) {
 	var list []model.Target
-	db := h.preLoad(h.DB(ctx), clause.Associations, "RuleSet.Rules", "RuleSet.Rules.File")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"RuleSet.Rules",
+		"RuleSet.Rules.File")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -93,27 +101,29 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 	target := &Target{}
 	err := h.Bind(ctx, target)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-
-	rs := target.RuleSet.Model()
-	rs.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Create(rs)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-
 	m := target.Model()
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	m.RuleSetID = &rs.ID
-	result = h.DB(ctx).Create(m)
+	if target.RuleSet != nil {
+		err := (&RuleSetHandler{}).create(ctx, target.RuleSet)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		m.RuleSetID = &target.RuleSet.ID
+	}
+	m.CreateUser = h.CurrentUser(ctx)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	db := h.preLoad(h.DB(ctx), clause.Associations, "RuleSet.Rules", "RuleSet.Rules.File")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"RuleSet.Rules",
+		"RuleSet.Rules.File")
 	result = db.First(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -176,9 +186,12 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	m := &model.Target{}
-	db := h.preLoad(h.DB(ctx), clause.Associations, "RuleSet.Rules", "RuleSet.Rules.File")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"RuleSet.Rules",
+		"RuleSet.Rules.File")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -188,59 +201,17 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 		h.Status(ctx, http.StatusForbidden)
 		return
 	}
-
-	rsid := m.RuleSetID
-	if rsid != nil {
-		rs := r.RuleSet.Model()
-		rs.ID = *m.RuleSetID
-		//
-		// Delete unwanted rules.
-		for _, ruleset := range rs.Rules {
-			if !r.RuleSet.HasRule(ruleset.ID) {
-				err := h.DB(ctx).Delete(ruleset).Error
-				if err != nil {
-					_ = ctx.Error(err)
-					return
-				}
-			}
-		}
-		rs.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-		db = h.DB(ctx).Model(rs)
-		db = db.Omit(clause.Associations)
-		result = db.Updates(h.fields(rs))
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
-		err = h.DB(ctx).Model(rs).Association("DependsOn").Replace(rs.DependsOn)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		err = h.DB(ctx).Model(rs).Association("Rules").Replace(rs.Rules)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		//
-		// Update ruleSets.
-		for i := range rs.Rules {
-			rule := &rs.Rules[i]
-			db = h.DB(ctx).Model(rule)
-			err = db.Updates(h.fields(rule)).Error
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
-		}
-	}
-
-	//
-	// Update target.
 	m = r.Model()
 	m.ID = id
-	m.RuleSetID = rsid
-	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
+	m.UpdateUser = h.CurrentUser(ctx)
+	if r.RuleSet != nil {
+		m.RuleSetID = &r.RuleSet.ID
+		err := (&RuleSetHandler{}).update(ctx, r.RuleSet)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	result = db.Updates(h.fields(m))
@@ -301,6 +272,5 @@ func (r *Target) Model() (m *model.Target) {
 	m.ID = r.ID
 	m.ImageID = r.Image.ID
 	m.Labels, _ = json.Marshal(r.Labels)
-
 	return
 }

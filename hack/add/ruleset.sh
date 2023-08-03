@@ -11,8 +11,6 @@ curl -X POST ${host}/rulesets \
 ---
 name: Test
 description: Test ruleset.
-image:
-  id: 1
 rules:
  - name: Example
    file:
