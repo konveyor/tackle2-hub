@@ -10,6 +10,13 @@ import (
 func TestTargetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
+			// Image.
+			image, err := RichClient.File.Put(r.Image.Name)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			r.Image.ID = image.ID
+			// RuleSet
 			if r.RuleSet != nil {
 				ruleFiles := []api.File{}
 				rules := []api.Rule{}
@@ -27,7 +34,7 @@ func TestTargetCRUD(t *testing.T) {
 			}
 
 			// Create.
-			err := Target.Create(&r)
+			err = Target.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -65,6 +72,12 @@ func TestTargetCRUD(t *testing.T) {
 			_, err = Target.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
+			}
+			if r.RuleSet != nil {
+				_, err = RuleSet.Get(r.RuleSet.ID)
+				if err == nil {
+					t.Errorf("Resource exits, but should be deleted: %v", r)
+				}
 			}
 		})
 	}

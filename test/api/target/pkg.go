@@ -8,6 +8,7 @@ import (
 var (
 	RichClient *binding.RichClient
 	Target     binding.Target
+	RuleSet    binding.RuleSet
 )
 
 func init() {
@@ -16,4 +17,5 @@ func init() {
 
 	// Shortcut for RuleSet-related RichClient methods.
 	Target = RichClient.Target
+	RuleSet = RichClient.RuleSet
 }
