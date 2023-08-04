@@ -28,6 +28,7 @@ type RichClient struct {
 	Identity         Identity
 	JobFunction      JobFunction
 	Proxy            Proxy
+	Review           Review
 	RuleSet          RuleSet
 	Setting          Setting
 	Stakeholder      Stakeholder
@@ -72,6 +73,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		Proxy: Proxy{
+			client: client,
+		},
+		Review: Review{
 			client: client,
 		},
 		RuleSet: RuleSet{

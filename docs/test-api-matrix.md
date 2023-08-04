@@ -8,7 +8,7 @@ bucket||||partially within application
 dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 file|:heavy_check_mark:|:heavy_check_mark:||
 import||:heavy_check_mark:||
-review||||
+review|:heavy_check_mark|:heavy_check_mark||
 **Controls**||||
 businessservice|:heavy_check_mark:|:heavy_check_mark:||
 group|:heavy_check_mark:|:heavy_check_mark:||aka StakeholderGroup
