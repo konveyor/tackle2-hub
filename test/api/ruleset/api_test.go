@@ -10,11 +10,18 @@ import (
 func TestRuleSetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
+			var files []*api.File
+			defer func() {
+				for _, f := range files {
+					_ = RichClient.File.Delete(f.ID)
+				}
+			}()
 			// Prepare rules files.
 			rules := []api.Rule{}
 			for _, rule := range r.Rules {
 				ruleFile, err := RichClient.File.Put(rule.File.Name)
 				assert.Should(t, err)
+				files = append(files, ruleFile)
 				rules = append(rules, api.Rule{
 					File: &api.Ref{
 						ID: ruleFile.ID,
@@ -40,10 +47,10 @@ func TestRuleSetCRUD(t *testing.T) {
 
 			// Update.
 			r.Name = "Updated " + r.Name
+			// Add rule.
 			file, err := RichClient.File.Put("./data/rules.yaml")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
+			assert.Should(t, err)
+			files = append(files, file)
 			r.Rules = append(
 				r.Rules,
 				api.Rule{
@@ -52,7 +59,9 @@ func TestRuleSetCRUD(t *testing.T) {
 						ID: file.ID,
 					},
 				})
+			// Rule[0] removed.
 			r.Rules = r.Rules[1:]
+			// update
 			err = RuleSet.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())

@@ -10,21 +10,27 @@ import (
 func TestTargetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
+			var files []*api.File
+			defer func() {
+				for _, f := range files {
+					_ = RichClient.File.Delete(f.ID)
+				}
+			}()
 			// Image.
-			image, err := RichClient.File.Put(r.Image.Name)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			r.Image.ID = image.ID
+			file, err := RichClient.File.Put(r.Image.Name)
+			assert.Should(t, err)
+			files = append(files, file)
+			r.Image.ID = file.ID
 			// RuleSet
 			if r.RuleSet != nil {
 				rules := []api.Rule{}
 				for _, rule := range r.RuleSet.Rules {
-					ruleFile, err := RichClient.File.Put(rule.File.Name)
+					file, err := RichClient.File.Put(rule.File.Name)
 					assert.Should(t, err)
+					files = append(files, file)
 					rules = append(rules, api.Rule{
 						File: &api.Ref{
-							ID: ruleFile.ID,
+							ID: file.ID,
 						},
 					})
 				}
@@ -49,10 +55,10 @@ func TestTargetCRUD(t *testing.T) {
 			// Update.
 			r.Name = "Updated " + r.Name
 			if r.RuleSet != nil {
+				// Add a rule.
 				file, err := RichClient.File.Put("./data/rules.yaml")
-				if err != nil {
-					t.Errorf(err.Error())
-				}
+				assert.Should(t, err)
+				files = append(files, file)
 				r.RuleSet.Rules = append(
 					r.RuleSet.Rules,
 					api.Rule{
@@ -61,6 +67,7 @@ func TestTargetCRUD(t *testing.T) {
 							ID: file.ID,
 						},
 					})
+				// Rule[0] removed.
 				r.RuleSet.Rules = r.RuleSet.Rules[1:]
 			}
 			err = Target.Update(&r)
