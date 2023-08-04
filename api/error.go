@@ -66,6 +66,21 @@ func (r *TrackerError) Is(err error) (matched bool) {
 }
 
 //
+// Forbidden reports auth errors.
+type Forbidden struct {
+	Reason string
+}
+
+func (r *Forbidden) Error() string {
+	return r.Reason
+}
+
+func (r *Forbidden) Is(err error) (matched bool) {
+	_, matched = err.(*Forbidden)
+	return
+}
+
+//
 // ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -124,6 +139,15 @@ func ErrorHandler() gin.HandlerFunc {
 		if errors.Is(err, &TrackerError{}) {
 			rtx.Respond(
 				http.StatusServiceUnavailable,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if errors.Is(err, &Forbidden{}) {
+			rtx.Respond(
+				http.StatusForbidden,
 				gin.H{
 					"error": err.Error(),
 				})

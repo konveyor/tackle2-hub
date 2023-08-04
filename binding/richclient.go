@@ -35,6 +35,7 @@ type RichClient struct {
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
 	TagCategory      TagCategory
+	Target           Target
 	Task             Task
 	Dependency       Dependency
 
@@ -94,6 +95,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		TagCategory: TagCategory{
+			client: client,
+		},
+		Target: Target{
 			client: client,
 		},
 		Task: Task{

@@ -7,7 +7,7 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	Minimal = api.RuleSet{
-		Name: "Minimal no rules",
+		Name:  "Minimal no rules",
 		Rules: []api.Rule{},
 	}
 
@@ -17,7 +17,12 @@ var (
 		Rules: []api.Rule{
 			{
 				File: &api.Ref{
-					Name: "./data/hz.windup.xml",
+					Name: "./data/rules.yaml",
+				},
+			},
+			{
+				File: &api.Ref{
+					Name: "./data/rules.yaml",
 				},
 			},
 		},

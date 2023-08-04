@@ -113,26 +113,15 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 	ruleset := &RuleSet{}
 	err := h.Bind(ctx, ruleset)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	m := ruleset.Model()
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Create(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = h.create(ctx, ruleset)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	db := h.preLoad(
-		h.DB(ctx),
-		clause.Associations,
-		"Rules.File")
-	result = db.First(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	ruleset.With(m)
-
+	
 	h.Respond(ctx, http.StatusCreated, ruleset)
 }
 
@@ -145,19 +134,9 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 // @param id path string true "RuleSet ID"
 func (h RuleSetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	ruleset := &model.RuleSet{}
-	result := h.DB(ctx).First(ruleset, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	if ruleset.Builtin() {
-		h.Status(ctx, http.StatusForbidden)
-		return
-	}
-	result = h.DB(ctx).Delete(ruleset, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.delete(ctx, id)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -181,60 +160,11 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := &model.RuleSet{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	if m.Builtin() {
-		h.Status(ctx, http.StatusForbidden)
-		return
-	}
-	//
-	// Delete unwanted rules.
-	for _, ruleset := range m.Rules {
-		if !r.HasRule(ruleset.ID) {
-			err := h.DB(ctx).Delete(ruleset).Error
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
-		}
-	}
-	//
-	// Update ruleset.
-	m = r.Model()
-	m.ID = id
-	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db = h.DB(ctx).Model(m)
-	db = db.Omit(clause.Associations)
-	result = db.Updates(h.fields(m))
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("DependsOn").Replace(m.DependsOn)
+	r.ID = id
+	err = h.update(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
-	}
-	err = h.DB(ctx).Model(m).Association("Rules").Replace(m.Rules)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	//
-	// Update ruleSets.
-	for i := range m.Rules {
-		m := &m.Rules[i]
-		db = h.DB(ctx).Model(m)
-		err = db.Updates(h.fields(m)).Error
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
 	}
 
 	h.Status(ctx, http.StatusNoContent)
@@ -267,6 +197,102 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 			iq = f.Where(iq)
 			q = q.Where("ID IN (?)", iq)
 		}
+	}
+	return
+}
+
+//
+// create the ruleset.
+func (h *RuleSetHandler) create(ctx *gin.Context, r *RuleSet) (err error) {
+	m := r.Model()
+	err = h.DB(ctx).Create(m).Error
+	if err != nil {
+		return
+	}
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Rules.File")
+	err = db.First(m).Error
+	if err != nil {
+		return
+	}
+	r.With(m)
+	return
+}
+
+//
+// update the ruleset.
+func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
+	m := &model.RuleSet{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(m, r.ID).Error
+	if err != nil {
+		return
+	}
+	if m.Builtin() {
+		err = &Forbidden{"update on builtin not permitted."}
+		return
+	}
+	//
+	// Delete unwanted rules.
+	for _, rule := range m.Rules {
+		if !r.HasRule(rule.ID) {
+			err = h.DB(ctx).Delete(rule).Error
+			if err != nil {
+				return
+			}
+		}
+	}
+	//
+	// Update ruleset.
+	m = r.Model()
+	m.ID = r.ID
+	m.UpdateUser = h.CurrentUser(ctx)
+	db = h.DB(ctx).Model(m)
+	db = db.Omit(clause.Associations)
+	err = db.Updates(h.fields(m)).Error
+	if err != nil {
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("DependsOn").Replace(m.DependsOn)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("Rules").Replace(m.Rules)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	//
+	// Update ruleSets.
+	for i := range m.Rules {
+		m := &m.Rules[i]
+		db = h.DB(ctx).Model(m)
+		err = db.Updates(h.fields(m)).Error
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+//
+// delete the ruleset.
+func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
+	ruleset := &model.RuleSet{}
+	err = h.DB(ctx).First(ruleset, id).Error
+	if err != nil {
+		return
+	}
+	if ruleset.Builtin() {
+		err = &Forbidden{"delete on builtin not permitted."}
+		return
+	}
+	err = h.DB(ctx).Delete(ruleset, id).Error
+	if err != nil {
+		return
 	}
 	return
 }
