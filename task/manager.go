@@ -369,8 +369,10 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 				r.State = Failed
 				r.Terminated = &mark
 			}
+		default:
+			r.State = Failed
+			r.Terminated = &mark
 		}
-
 	}
 
 	return
