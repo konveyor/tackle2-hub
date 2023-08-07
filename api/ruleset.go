@@ -64,6 +64,7 @@ func (h RuleSetHandler) Get(ctx *gin.Context) {
 // @summary List all bindings.
 // @description List all bindings.
 // @description filters:
+// @description - name
 // @description - labels
 // @tags rulesets
 // @produce json
@@ -79,7 +80,7 @@ func (h RuleSetHandler) List(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "name", Kind: qf.STRING},
-			{Field: "labels", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
