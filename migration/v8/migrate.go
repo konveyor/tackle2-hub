@@ -67,6 +67,21 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 			return
 		}
 	}
+	err = db.Migrator().DropConstraint(&model.RuleSet{}, "fk_RuleSet_Image")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Migrator().DropColumn(&model.RuleSet{}, "ImageID")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Migrator().DropColumn(&model.RuleSet{}, "Custom")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 
 	return
 }

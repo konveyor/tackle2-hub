@@ -121,7 +121,7 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	
+
 	h.Respond(ctx, http.StatusCreated, ruleset)
 }
 
