@@ -10,22 +10,29 @@ import (
 
 func TestReviewCRUD(t *testing.T) {
 	for _, r := range Samples {
-		expectedApp := api.Application{
-			Name:        "Sample Application",
-			Description: "Sample application",
+		for _, app := range r.Applications {
+			expectedApp := api.Application{
+				Name:        app.Name,
+				Description: "Sample application",
+			}
+			assert.Must(t, Application.Create(&expectedApp))
 		}
-		assert.Must(t, Application.Create(&expectedApp))
 
-		expectedStakeholder := api.Stakeholder{
-			Name:  "Sample Stakeholder",
-			Email: "sample@example.com",
+		for _, stakeholder := range r.Stakeholders {
+			expectedStakeholder := api.Stakeholder{
+				Name:  stakeholder.Name,
+				Email: "sample@example.com",
+			}
+			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
 		}
-		assert.Must(t, Stakeholder.Create(&expectedStakeholder))
 
-		expectedStakeholderGroup := api.StakeholderGroup{
-			Name: "Sample Stakeholder Group",
+		for _, stakeholderGroup := range r.StakeholderGroups {
+			expectedStakeholderGroup := api.StakeholderGroup{
+				Name:        stakeholderGroup.Name,
+				Description: "Sample Stakeholder Group",
+			}
+			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
 		}
-		assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
 
 		assert.Must(t, MigrationWave.Create(&r))
 
@@ -52,9 +59,15 @@ func TestReviewCRUD(t *testing.T) {
 		AssertEqualMigrationWaves(t, got, r)
 
 		// Delete created Applications, Stakeholders,StakeholdersGroup and MigrationWave
-		assert.Must(t, Application.Delete(expectedApp.ID))
-		assert.Must(t, Stakeholder.Delete(expectedStakeholder.ID))
-		assert.Must(t, StakeholderGroup.Delete(expectedStakeholderGroup.ID))
+		for _, app := range r.Applications {
+			assert.Must(t, Application.Delete(app.ID))
+		}
+		for _, stakeholder := range r.Stakeholders {
+			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
+		}
+		for _, stakeholderGroup := range r.StakeholderGroups {
+			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
+		}
 		assert.Must(t, MigrationWave.Delete(r.ID))
 
 		// Check if the MigrationWave is present even after deletion or not.
@@ -62,6 +75,75 @@ func TestReviewCRUD(t *testing.T) {
 		if err == nil {
 			t.Errorf("Resource exits, but should be deleted: %v", r)
 		}
+	}
+}
+
+func TestMigrationWaveList(t *testing.T) {
+	createdMigrationWaves := []api.MigrationWave{}
+
+	for _, r := range Samples {
+		for _, app := range r.Applications {
+			expectedApp := api.Application{
+				Name:        app.Name,
+				Description: "Sample application",
+			}
+			assert.Must(t, Application.Create(&expectedApp))
+		}
+
+		for _, stakeholder := range r.Stakeholders {
+			expectedStakeholder := api.Stakeholder{
+				Name:  stakeholder.Name,
+				Email: "sample@example.com",
+			}
+			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
+		}
+
+		for _, stakeholderGroup := range r.StakeholderGroups {
+			expectedStakeholderGroup := api.StakeholderGroup{
+				Name:        stakeholderGroup.Name,
+				Description: "Sample Stakeholder Group",
+			}
+			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
+		}
+
+		assert.Must(t, MigrationWave.Create(&r))
+		createdMigrationWaves = append(createdMigrationWaves, r)
+	}
+
+	// List MigrationWaves.
+	got, err := MigrationWave.List()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// Compare contents of migration waves.
+	for _, createdMigrationWave := range createdMigrationWaves {
+		found := false
+		for _, retrievedReview := range got {
+			if assert.FlatEqual(createdMigrationWave.ID, retrievedReview.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected review not found in the list: %v", createdMigrationWave)
+		}
+	}
+
+	// Delete created resources.
+	for _, createdMigrationWave := range createdMigrationWaves {
+		for _, app := range createdMigrationWave.Applications {
+			assert.Must(t, Application.Delete(app.ID))
+		}
+
+		for _, stakeholder := range createdMigrationWave.Stakeholders {
+			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
+		}
+
+		for _, stakeholderGroup := range createdMigrationWave.StakeholderGroups {
+			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
+		}
+		assert.Must(t, MigrationWave.Delete(createdMigrationWave.ID))
 	}
 }
 
