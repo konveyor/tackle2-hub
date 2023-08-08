@@ -1,6 +1,7 @@
 package migrationwave
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -93,19 +94,18 @@ func TestMigrationWaveList(t *testing.T) {
 		for _, stakeholder := range r.Stakeholders {
 			expectedStakeholder := api.Stakeholder{
 				Name:  stakeholder.Name,
-				Email: "sample@example.com",
+				Email: "sample1@example.com",
 			}
 			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
 		}
 
-		for _, stakeholderGroup := range r.StakeholderGroups {
+		for i, stakeholderGroup := range r.StakeholderGroups {
 			expectedStakeholderGroup := api.StakeholderGroup{
-				Name:        stakeholderGroup.Name,
+				Name:        stakeholderGroup.Name + strconv.Itoa(i),
 				Description: "Sample Stakeholder Group",
 			}
 			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
 		}
-
 		assert.Must(t, MigrationWave.Create(&r))
 		createdMigrationWaves = append(createdMigrationWaves, r)
 	}
