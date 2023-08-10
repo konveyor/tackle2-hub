@@ -27,7 +27,7 @@ func (h *MigrationWave) Get(id uint) (r *api.MigrationWave, err error) {
 }
 
 //
-// List Reviews.
+// List MigrationWaves.
 func (h *MigrationWave) List() (list []api.MigrationWave, err error) {
 	list = []api.MigrationWave{}
 	err = h.client.Get(api.MigrationWavesRoot, &list)

@@ -9,7 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-func TestReviewCRUD(t *testing.T) {
+func TestMigrationWaveCRUD(t *testing.T) {
 	for _, r := range Samples {
 		for _, app := range r.Applications {
 			expectedApp := api.Application{
@@ -117,16 +117,16 @@ func TestMigrationWaveList(t *testing.T) {
 	}
 
 	// Compare contents of migration waves.
-	for _, createdMigrationWave := range createdMigrationWaves {
+	for _, createdWave := range createdMigrationWaves {
 		found := false
-		for _, retrievedReview := range got {
-			if assert.FlatEqual(createdMigrationWave.ID, retrievedReview.ID) {
+		for _, retrievedWave := range got {
+			if assert.FlatEqual(createdWave.ID, retrievedWave.ID) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Errorf("Expected review not found in the list: %v", createdMigrationWave)
+			t.Errorf("Expected Wave not found in the list: %v", createdWave)
 		}
 	}
 
