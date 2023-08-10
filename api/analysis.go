@@ -54,16 +54,15 @@ type AnalysisHandler struct {
 //
 // AddRoutes adds routes.
 func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
+	// Primary
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analyses"))
-	// Analyses
 	routeGroup.GET(AnalysisRoot, h.Get)
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
-	// Reports
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
 	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
 	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
