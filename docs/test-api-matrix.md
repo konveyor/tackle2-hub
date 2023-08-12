@@ -26,7 +26,7 @@ ruleset|:heavy_check_mark:|:heavy_check_mark:||
 batch||||
 migrationwave||||
 ticket||||
-tracker||||
+tracker|:heavy_check_mark:|:heavy_check_mark:||
 **Other**||||
 addon || | |
 auth||||
