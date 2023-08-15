@@ -48,3 +48,11 @@ func (h *Tracker) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TrackerRoot).Inject(Params{api.ID: id}))
 	return
 }
+
+//
+// List Projects
+func (h *Tracker) ListProjects(id uint) (projectList []api.Project, err error) {
+	projectList = []api.Project{}
+	err = h.client.Get(Path(api.TrackerProjects).Inject(Params{api.ID: id}), &projectList)
+	return
+}

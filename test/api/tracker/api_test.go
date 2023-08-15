@@ -54,6 +54,35 @@ func TestTrackerCRUD(t *testing.T) {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
 		})
+
+		t.Run("Tracker Project", func(t *testing.T) {
+			// Create a sample identity for the tracker.
+			identity := api.Identity{
+				Kind: r.Kind,
+				Name: r.Identity.Name,
+			}
+			assert.Must(t, Identity.Create(&identity))
+			// Copy the identity name to the tracker.
+			r.Identity.ID = identity.ID
+
+			// Create a tracker.
+			assert.Must(t, Tracker.Create(&r))
+
+			_, err := Tracker.ListProjects(r.ID)
+			if err == nil {
+				t.Errorf(err.Error())
+			}
+
+			// Delete identity and tracker.
+			assert.Must(t, Tracker.Delete(r.ID))
+			assert.Must(t, Identity.Delete(identity.ID))
+
+			// Check if the Tracker is present even after deletion or not.
+			_, err = Tracker.Get(r.ID)
+			if err == nil {
+				t.Errorf("Resource exits, but should be deleted: %v", r)
+			}
+		})
 	}
 }
 
@@ -109,7 +138,16 @@ func AssertEqualTrackers(t *testing.T, got *api.Tracker, expected api.Tracker) {
 	if got.Kind != expected.Kind {
 		t.Errorf("Different Kind Got %v, expected %v", got.Kind, expected.Kind)
 	}
+	if got.Connected != expected.Connected {
+		t.Errorf("Different Connected Got %v, expected %v", got.Connected, expected.Connected)
+	}
+	if got.LastUpdated != expected.LastUpdated {
+		t.Errorf("Different LastUpdated Got %v, expected %v", got.LastUpdated, expected.LastUpdated)
+	}
 	if got.Identity.Name != expected.Identity.Name {
 		t.Errorf("Different Identity's Name Got %v, expected %v", got.Identity.Name, expected.Identity.Name)
+	}
+	if got.Insecure != expected.Insecure {
+		t.Errorf("Different Insecure Got %v, expected %v", got.Insecure, expected.Kind)
 	}
 }
