@@ -60,16 +60,19 @@ func TestMigrationWaveCRUD(t *testing.T) {
 		AssertEqualMigrationWaves(t, got, r)
 
 		// Delete created Applications, Stakeholders,StakeholdersGroup and MigrationWave
-		for _, app := range r.Applications {
-			assert.Must(t, Application.Delete(app.ID))
-		}
-		for _, stakeholder := range r.Stakeholders {
-			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
-		}
+		assert.Must(t, MigrationWave.Delete(r.ID))
+
 		for _, stakeholderGroup := range r.StakeholderGroups {
 			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
 		}
-		assert.Must(t, MigrationWave.Delete(r.ID))
+
+		for _, stakeholder := range r.Stakeholders {
+			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
+		}
+
+		for _, app := range r.Applications {
+			assert.Must(t, Application.Delete(app.ID))
+		}
 
 		// Check if the MigrationWave is present even after deletion or not.
 		_, err = MigrationWave.Get(r.ID)
@@ -132,18 +135,19 @@ func TestMigrationWaveList(t *testing.T) {
 
 	// Delete created resources.
 	for _, createdMigrationWave := range createdMigrationWaves {
-		for _, app := range createdMigrationWave.Applications {
-			assert.Must(t, Application.Delete(app.ID))
+		assert.Must(t, MigrationWave.Delete(createdMigrationWave.ID))
+
+		for _, stakeholderGroup := range createdMigrationWave.StakeholderGroups {
+			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
 		}
 
 		for _, stakeholder := range createdMigrationWave.Stakeholders {
 			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
 		}
 
-		for _, stakeholderGroup := range createdMigrationWave.StakeholderGroups {
-			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
+		for _, app := range createdMigrationWave.Applications {
+			assert.Must(t, Application.Delete(app.ID))
 		}
-		assert.Must(t, MigrationWave.Delete(createdMigrationWave.ID))
 	}
 }
 
@@ -153,5 +157,41 @@ func AssertEqualMigrationWaves(t *testing.T, got *api.MigrationWave, expected ap
 	}
 	if got.StartDate != expected.StartDate {
 		t.Errorf("Different Start Date Got %v, expected %v", got.StartDate, expected.StartDate)
+	}
+	for _, expectedApp := range expected.Applications {
+		found := false
+		for _, gotApp := range got.Applications {
+			if assert.FlatEqual(expectedApp.ID, gotApp.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected Wave not found in the list: %v", expectedApp)
+		}
+	}
+	for _, expectedStakeholders := range expected.Stakeholders {
+		found := false
+		for _, gotStakeholders := range got.Stakeholders {
+			if assert.FlatEqual(expectedStakeholders.ID, gotStakeholders.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected Wave not found in the list: %v", expectedStakeholders)
+		}
+	}
+	for _, expectedStakeholderGroup := range expected.StakeholderGroups {
+		found := false
+		for _, gotStakeholderGroup := range got.StakeholderGroups {
+			if assert.FlatEqual(expectedStakeholderGroup.ID, gotStakeholderGroup.ID) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected Wave not found in the list: %v", expectedStakeholderGroup)
+		}
 	}
 }
