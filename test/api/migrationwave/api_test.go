@@ -1,7 +1,6 @@
 package migrationwave
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -11,29 +10,6 @@ import (
 
 func TestMigrationWaveCRUD(t *testing.T) {
 	for _, r := range Samples {
-		for _, app := range r.Applications {
-			expectedApp := api.Application{
-				Name:        app.Name,
-				Description: "Sample application",
-			}
-			assert.Must(t, Application.Create(&expectedApp))
-		}
-
-		for _, stakeholder := range r.Stakeholders {
-			expectedStakeholder := api.Stakeholder{
-				Name:  stakeholder.Name,
-				Email: "sample@example.com",
-			}
-			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
-		}
-
-		for _, stakeholderGroup := range r.StakeholderGroups {
-			expectedStakeholderGroup := api.StakeholderGroup{
-				Name:        stakeholderGroup.Name,
-				Description: "Sample Stakeholder Group",
-			}
-			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
-		}
 
 		assert.Must(t, MigrationWave.Create(&r))
 
@@ -83,32 +59,9 @@ func TestMigrationWaveCRUD(t *testing.T) {
 }
 
 func TestMigrationWaveList(t *testing.T) {
+
 	createdMigrationWaves := []api.MigrationWave{}
-
 	for _, r := range Samples {
-		for _, app := range r.Applications {
-			expectedApp := api.Application{
-				Name:        app.Name,
-				Description: "Sample application",
-			}
-			assert.Must(t, Application.Create(&expectedApp))
-		}
-
-		for _, stakeholder := range r.Stakeholders {
-			expectedStakeholder := api.Stakeholder{
-				Name:  stakeholder.Name,
-				Email: "sample1@example.com",
-			}
-			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
-		}
-
-		for i, stakeholderGroup := range r.StakeholderGroups {
-			expectedStakeholderGroup := api.StakeholderGroup{
-				Name:        stakeholderGroup.Name + strconv.Itoa(i),
-				Description: "Sample Stakeholder Group",
-			}
-			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
-		}
 		assert.Must(t, MigrationWave.Create(&r))
 		createdMigrationWaves = append(createdMigrationWaves, r)
 	}
@@ -133,19 +86,19 @@ func TestMigrationWaveList(t *testing.T) {
 		}
 	}
 
-	// Delete created resources.
-	for _, createdMigrationWave := range createdMigrationWaves {
-		assert.Must(t, MigrationWave.Delete(createdMigrationWave.ID))
+	for _, r := range createdMigrationWaves {
+		// Delete created Applications, Stakeholders,StakeholdersGroup and MigrationWave
+		assert.Must(t, MigrationWave.Delete(r.ID))
 
-		for _, stakeholderGroup := range createdMigrationWave.StakeholderGroups {
+		for _, stakeholderGroup := range r.StakeholderGroups {
 			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
 		}
 
-		for _, stakeholder := range createdMigrationWave.Stakeholders {
+		for _, stakeholder := range r.Stakeholders {
 			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
 		}
 
-		for _, app := range createdMigrationWave.Applications {
+		for _, app := range r.Applications {
 			assert.Must(t, Application.Delete(app.ID))
 		}
 	}

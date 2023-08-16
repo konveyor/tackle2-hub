@@ -24,7 +24,7 @@ analysis||||
 ruleset|:heavy_check_mark:|:heavy_check_mark:||
 **Migrationwaves and Jira**||||
 batch||||
-migrationwave||||
+migrationwave|:heavy_check_mark:|:heavy_check_mark:||
 ticket||||
 tracker||||
 **Other**||||
