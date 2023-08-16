@@ -27,6 +27,7 @@ type RichClient struct {
 	File             File
 	Identity         Identity
 	JobFunction      JobFunction
+	MigrationWave    MigrationWave
 	Proxy            Proxy
 	Review           Review
 	RuleSet          RuleSet
@@ -71,6 +72,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		JobFunction: JobFunction{
+			client: client,
+		},
+		MigrationWave: MigrationWave{
 			client: client,
 		},
 		Proxy: Proxy{
