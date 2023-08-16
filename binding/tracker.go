@@ -50,9 +50,25 @@ func (h *Tracker) Delete(id uint) (err error) {
 }
 
 //
-// List Projects
+// List Projects.
 func (h *Tracker) ListProjects(id uint) (projectList []api.Project, err error) {
 	projectList = []api.Project{}
 	err = h.client.Get(Path(api.TrackerProjects).Inject(Params{api.ID: id}), &projectList)
+	return
+}
+
+//
+// Get Projects.
+func (h *Tracker) GetProjects(id1 uint, id2 uint) (project api.Project, err error) {
+	project = api.Project{}
+	err = h.client.Get(Path(api.TrackerProject).Inject(Params{api.ID: id1, api.ID2: id2}), &project)
+	return
+}
+
+//
+// List Project Issue Types.
+func (h *Tracker) ListProjectIssueTypes(id1 uint, id2 uint) (issueType []api.IssueType, err error) {
+	issueType = []api.IssueType{}
+	err = h.client.Get(Path(api.TrackerProjectIssueTypes).Inject(Params{api.ID: id1, api.ID2: id2}), &issueType)
 	return
 }
