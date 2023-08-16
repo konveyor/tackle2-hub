@@ -10,6 +10,35 @@ import (
 
 func TestMigrationWaveCRUD(t *testing.T) {
 	for _, r := range Samples {
+		createdApps := []api.Application{}
+		for _, app := range r.Applications {
+			expectedApp := api.Application{
+				Name:        app.Name,
+				Description: "Sample application",
+			}
+			assert.Must(t, Application.Create(&expectedApp))
+			createdApps = append(createdApps, expectedApp)
+		}
+
+		createdStakeholders := []api.Stakeholder{}
+		for _, stakeholder := range r.Stakeholders {
+			expectedStakeholder := api.Stakeholder{
+				Name:  stakeholder.Name,
+				Email: "sample@example.com",
+			}
+			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
+			createdStakeholders = append(createdStakeholders, expectedStakeholder)
+		}
+
+		createdStakeholderGroups := []api.StakeholderGroup{}
+		for _, stakeholderGroup := range r.StakeholderGroups {
+			expectedStakeholderGroup := api.StakeholderGroup{
+				Name:        stakeholderGroup.Name,
+				Description: "Sample Stakeholder Group",
+			}
+			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
+			createdStakeholderGroups = append(createdStakeholderGroups, expectedStakeholderGroup)
+		}
 
 		assert.Must(t, MigrationWave.Create(&r))
 
@@ -38,15 +67,15 @@ func TestMigrationWaveCRUD(t *testing.T) {
 		// Delete created Applications, Stakeholders,StakeholdersGroup and MigrationWave
 		assert.Must(t, MigrationWave.Delete(r.ID))
 
-		for _, stakeholderGroup := range r.StakeholderGroups {
+		for _, stakeholderGroup := range createdStakeholderGroups {
 			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
 		}
 
-		for _, stakeholder := range r.Stakeholders {
+		for _, stakeholder := range createdStakeholders {
 			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
 		}
 
-		for _, app := range r.Applications {
+		for _, app := range createdApps {
 			assert.Must(t, Application.Delete(app.ID))
 		}
 
@@ -61,7 +90,37 @@ func TestMigrationWaveCRUD(t *testing.T) {
 func TestMigrationWaveList(t *testing.T) {
 
 	createdMigrationWaves := []api.MigrationWave{}
+	createdApps := []api.Application{}
+	createdStakeholders := []api.Stakeholder{}
+	createdStakeholderGroups := []api.StakeholderGroup{}
+
 	for _, r := range Samples {
+		for _, app := range r.Applications {
+			expectedApp := api.Application{
+				Name:        app.Name,
+				Description: "Sample application",
+			}
+			assert.Must(t, Application.Create(&expectedApp))
+			createdApps = append(createdApps, expectedApp)
+		}
+
+		for _, stakeholder := range r.Stakeholders {
+			expectedStakeholder := api.Stakeholder{
+				Name:  stakeholder.Name,
+				Email: "sample@example.com",
+			}
+			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
+			createdStakeholders = append(createdStakeholders, expectedStakeholder)
+		}
+
+		for _, stakeholderGroup := range r.StakeholderGroups {
+			expectedStakeholderGroup := api.StakeholderGroup{
+				Name:        stakeholderGroup.Name,
+				Description: "Sample Stakeholder Group",
+			}
+			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
+			createdStakeholderGroups = append(createdStakeholderGroups, expectedStakeholderGroup)
+		}
 		assert.Must(t, MigrationWave.Create(&r))
 		createdMigrationWaves = append(createdMigrationWaves, r)
 	}
@@ -87,20 +146,19 @@ func TestMigrationWaveList(t *testing.T) {
 	}
 
 	for _, r := range createdMigrationWaves {
-		// Delete created Applications, Stakeholders,StakeholdersGroup and MigrationWave
 		assert.Must(t, MigrationWave.Delete(r.ID))
+	}
 
-		for _, stakeholderGroup := range r.StakeholderGroups {
-			assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
-		}
+	for _, stakeholderGroup := range createdStakeholderGroups {
+		assert.Must(t, StakeholderGroup.Delete(stakeholderGroup.ID))
+	}
 
-		for _, stakeholder := range r.Stakeholders {
-			assert.Must(t, Stakeholder.Delete(stakeholder.ID))
-		}
+	for _, stakeholder := range createdStakeholders {
+		assert.Must(t, Stakeholder.Delete(stakeholder.ID))
+	}
 
-		for _, app := range r.Applications {
-			assert.Must(t, Application.Delete(app.ID))
-		}
+	for _, app := range createdApps {
+		assert.Must(t, Application.Delete(app.ID))
 	}
 }
 
