@@ -79,7 +79,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	for i := range reviews {
 		review := &reviews[i]
 		vertex := Vertex{
-			ID:             review.ApplicationID,
+			ID:             *review.ApplicationID,
 			Name:           review.Application.Name,
 			Decision:       review.ProposedAction,
 			EffortEstimate: review.EffortEstimate,

@@ -42,11 +42,14 @@
     - name: applications.stakeholders
       verbs:
         - put
+    - name: applications.assessments
+      verbs:
+        - get
+        - post
     - name: assessments
       verbs:
         - delete
         - get
-        - patch
         - post
         - put
     - name: businessservices
@@ -185,6 +188,22 @@
         - get
         - post
         - put
+    - name: archetypes
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: archetypes.assessments
+      verbs:
+        - get
+        - post
+    - name: questionnaires
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -229,11 +248,14 @@
     - name: applications.stakeholders
       verbs:
         - put
+    - name: applications.assessments
+      verbs:
+        - get
+        - post
     - name: assessments
       verbs:
         - delete
         - get
-        - patch
         - post
         - put
     - name: businessservices
@@ -359,6 +381,16 @@
         - get
         - post
         - put
+    - name: archetypes
+      verbs:
+        - get
+    - name: archetypes.assessments
+      verbs:
+        - get
+        - post
+    - name: questionnaires
+      verbs:
+        - get
 - role: tackle-migrator
   resources:
     - name: addons
@@ -382,10 +414,12 @@
     - name: applications.analyses
       verbs:
         - get
+    - name: applications.assessments
+      verbs:
+        - get
     - name: assessments
       verbs:
         - get
-        - post
     - name: businessservices
       verbs:
         - get
@@ -466,6 +500,15 @@
     - name: analyses
       verbs:
         - get
+    - name: archetypes
+      verbs:
+        - get
+    - name: archetypes.assessments
+      verbs:
+        - get
+    - name: questionnaires
+      verbs:
+        - get
 - role: tackle-project-manager
   resources:
     - name: addons
@@ -492,6 +535,9 @@
     - name: applications.stakeholders
       verbs:
         - put
+    - name: applications.assessments
+      verbs:
+        - get
     - name: assessments
       verbs:
         - get
@@ -565,5 +611,14 @@
       verbs:
         - get
     - name: analyses
+      verbs:
+        - get
+    - name: archetypes
+      verbs:
+        - get
+    - name: archetypes.assessments
+      verbs:
+        - get
+    - name: questionnaires
       verbs:
         - get

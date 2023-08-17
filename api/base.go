@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/reflect"
 	"github.com/konveyor/tackle2-hub/api/sort"
@@ -166,14 +168,65 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 	case "",
 		binding.MIMEPOSTForm,
 		binding.MIMEJSON:
-		err = ctx.BindJSON(r)
+		err = h.BindJSON(ctx, r)
 	case binding.MIMEYAML:
-		err = ctx.BindYAML(r)
+		err = h.BindYAML(ctx, r)
 	default:
 		err = &BadRequestError{"Bind: MIME not supported."}
 	}
 	if err != nil {
 		err = &BadRequestError{err.Error()}
+	}
+	return
+}
+
+//
+// BindJSON attempts to bind a request body to a struct, assuming that the body is JSON.
+// Binding is strict: unknown fields in the input will cause binding to fail.
+func (h *BaseHandler) BindJSON(ctx *gin.Context, r interface{}) (err error) {
+	if ctx.Request == nil || ctx.Request.Body == nil {
+		err = errors.New("invalid request")
+		return
+	}
+	decoder := json.NewDecoder(ctx.Request.Body)
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(r)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = h.Validate(r)
+	return
+}
+
+//
+// BindYAML attempts to bind a request body to a struct, assuming that the body is YAML.
+// Binding is strict: unknown fields in the input will cause binding to fail.
+func (h *BaseHandler) BindYAML(ctx *gin.Context, r interface{}) (err error) {
+	if ctx.Request == nil || ctx.Request.Body == nil {
+		err = errors.New("invalid request")
+		return
+	}
+	decoder := yaml.NewDecoder(ctx.Request.Body)
+	decoder.SetStrict(true)
+	err = decoder.Decode(r)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = h.Validate(r)
+	return
+}
+
+//
+// Validate that the struct field values obey the binding field tags.
+func (h *BaseHandler) Validate(r interface{}) (err error) {
+	if binding.Validator == nil {
+		return
+	}
+	err = binding.Validator.ValidateStruct(r)
+	if err != nil {
+		err = liberr.Wrap(err)
 	}
 	return
 }

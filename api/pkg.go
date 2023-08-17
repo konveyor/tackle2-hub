@@ -79,7 +79,6 @@ func All() []Handler {
 		&TagCategoryHandler{},
 		&TaskHandler{},
 		&TaskGroupHandler{},
-		&PathfinderHandler{},
 		&TicketHandler{},
 		&TrackerHandler{},
 		&BucketHandler{},
@@ -87,6 +86,9 @@ func All() []Handler {
 		&MigrationWaveHandler{},
 		&BatchHandler{},
 		&TargetHandler{},
+		&QuestionnaireHandler{},
+		&AssessmentHandler{},
+		&ArchetypeHandler{},
 	}
 }
 

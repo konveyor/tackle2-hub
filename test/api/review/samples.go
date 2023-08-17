@@ -11,7 +11,7 @@ var Samples = []api.Review{
 		ProposedAction:      "run",
 		WorkPriority:        1,
 		Comments:            "nil",
-		Application: api.Ref{
+		Application: &api.Ref{
 			ID:   1,
 			Name: "Sample Review 1",
 		},
@@ -22,7 +22,7 @@ var Samples = []api.Review{
 		ProposedAction:      "stop",
 		WorkPriority:        2,
 		Comments:            "nil",
-		Application: api.Ref{
+		Application: &api.Ref{
 			ID:   2,
 			Name: "Sample Review 2",
 		},
