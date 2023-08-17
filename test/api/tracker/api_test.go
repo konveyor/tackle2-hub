@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -62,15 +63,53 @@ func TestTrackerCRUD(t *testing.T) {
 				Name: r.Identity.Name,
 			}
 			assert.Must(t, Identity.Create(&identity))
+
 			// Copy the identity name to the tracker.
 			r.Identity.ID = identity.ID
 
 			// Create a tracker.
 			assert.Must(t, Tracker.Create(&r))
 
-			_, err := Tracker.ListProjects(r.ID)
-			if err == nil {
-				t.Errorf(err.Error())
+			projectsList, err := Tracker.ListProjects(r.ID)
+			if err != nil {
+				// check for type of service (maybe Connected?)
+				// if API service then print Not connected to Jira and pass the test
+				// else fail the test
+				if r.Connected == false {
+					t.Logf("Not connected to Jira(Thus passing the API Test)")
+				}
+				if r.Connected == true {
+					t.Errorf(err.Error())
+				}
+			}
+
+			for _, projects := range projectsList {
+
+				// convert project Id's to uint.
+				projectID, err := strconv.Atoi(projects.ID)
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+
+				_, err = Tracker.GetProjects(r.ID, uint(projectID))
+				if err != nil {
+					if r.Connected == false {
+						t.Logf("Not connected to Jira(Thus passing the API Test)")
+					}
+					if r.Connected == true {
+						t.Errorf(err.Error())
+					}
+				}
+
+				_, err = Tracker.ListProjectIssueTypes(r.ID, uint(projectID))
+				if err != nil {
+					if r.Connected == false {
+						t.Logf("Not connected to Jira(Thus passing the API Test)")
+					}
+					if r.Connected == true {
+						t.Errorf(err.Error())
+					}
+				}
 			}
 
 			// Delete identity and tracker.

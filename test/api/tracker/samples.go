@@ -12,7 +12,7 @@ var Samples = []api.Tracker{
 		URL:         "https://konveyor.io/test/api/tracker",
 		Kind:        "jira-onprem",
 		Message:     "Description of tracker",
-		Connected:   true,
+		Connected:   false,
 		LastUpdated: time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local),
 		Identity: api.Ref{
 			ID:   1,
@@ -25,7 +25,7 @@ var Samples = []api.Tracker{
 		URL:         "https://konveyor.io/test/api/tracker1",
 		Kind:        "jira-cloud",
 		Message:     "Description of tracker1",
-		Connected:   true,
+		Connected:   false,
 		LastUpdated: time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local),
 		Identity: api.Ref{
 			ID:   2,
