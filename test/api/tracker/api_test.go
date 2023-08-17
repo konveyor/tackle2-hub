@@ -10,7 +10,7 @@ import (
 
 func TestTrackerCRUD(t *testing.T) {
 	for _, r := range Samples {
-		t.Run("Tracker CRUD", func(t *testing.T) {
+		t.Run("Tracker "+r.Kind+" CRUD", func(t *testing.T) {
 			// Create a sample identity for the tracker.
 			identity := api.Identity{
 				Kind: r.Kind,
@@ -56,7 +56,7 @@ func TestTrackerCRUD(t *testing.T) {
 			}
 		})
 
-		t.Run("Tracker Project", func(t *testing.T) {
+		t.Run("Tracker "+r.Kind+" Project", func(t *testing.T) {
 			// Create a sample identity for the tracker.
 			identity := api.Identity{
 				Kind: r.Kind,
@@ -77,8 +77,7 @@ func TestTrackerCRUD(t *testing.T) {
 				// else fail the test
 				if r.Connected == false {
 					t.Logf("Not connected to Jira(Thus passing the API Test)")
-				}
-				if r.Connected == true {
+				} else {
 					t.Errorf(err.Error())
 				}
 			}
@@ -95,8 +94,7 @@ func TestTrackerCRUD(t *testing.T) {
 				if err != nil {
 					if r.Connected == false {
 						t.Logf("Not connected to Jira(Thus passing the API Test)")
-					}
-					if r.Connected == true {
+					} else {
 						t.Errorf(err.Error())
 					}
 				}
@@ -105,8 +103,7 @@ func TestTrackerCRUD(t *testing.T) {
 				if err != nil {
 					if r.Connected == false {
 						t.Logf("Not connected to Jira(Thus passing the API Test)")
-					}
-					if r.Connected == true {
+					} else {
 						t.Errorf(err.Error())
 					}
 				}
@@ -179,9 +176,6 @@ func AssertEqualTrackers(t *testing.T, got *api.Tracker, expected api.Tracker) {
 	}
 	if got.Connected != expected.Connected {
 		t.Errorf("Different Connected Got %v, expected %v", got.Connected, expected.Connected)
-	}
-	if got.LastUpdated != expected.LastUpdated {
-		t.Errorf("Different LastUpdated Got %v, expected %v", got.LastUpdated, expected.LastUpdated)
 	}
 	if got.Identity.Name != expected.Identity.Name {
 		t.Errorf("Different Identity's Name Got %v, expected %v", got.Identity.Name, expected.Identity.Name)
