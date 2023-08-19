@@ -1,14 +1,10 @@
 package bucket
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -34,14 +30,9 @@ func TestBucketCRUD(t *testing.T) {
 					}
 				}
 			}
-			fmt.Println("hello")
-
-			// Inject Expected Buckets's ID into the BucketRoot.
-			bucketID := binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: bucket.ID})
 
 			// Get specific bucket.
-			gotBucket := api.Bucket{}
-			err = Client.Get(bucketID, &gotBucket)
+			gotBucket, err := Bucket.Get(uint(bucket.ID))
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -93,34 +84,7 @@ func TestBucketCRUD(t *testing.T) {
 
 			/*----------------------Directory Tests----------------------*/
 
-			// Create a sample directory
-			expectedDir, err := ioutil.TempDir("", "tree")
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			defer os.RemoveAll(expectedDir)
-
-			// Create and write data to text files in the temporary directory
-			for i := 1; i <= 5; i++ {
-				fileName := fmt.Sprintf("file%d.txt", i)
-				filePath := filepath.Join(expectedDir, fileName)
-
-				// Create a new text file
-				file, err := os.Create(filePath)
-				if err != nil {
-					t.Errorf(err.Error())
-				}
-				defer file.Close()
-
-				// Write data to the file
-				data := []byte("Hello world!")
-				_, err = file.Write(data)
-				if err != nil {
-					t.Errorf(err.Error())
-				}
-			}
-
-			assert.Should(t, expectedBucket.Put(expectedDir, expectedDir))
+			assert.Should(t, expectedBucket.Put("sample", "sample"))
 
 			gotDir, err := ioutil.TempDir("", "b")
 			if err != nil {
@@ -128,9 +92,9 @@ func TestBucketCRUD(t *testing.T) {
 			}
 			defer os.RemoveAll(gotDir)
 
-			assert.Should(t, expectedBucket.Get(expectedDir, gotDir))
+			assert.Should(t, expectedBucket.Get("sample", gotDir))
 
-			expectedDirContent, err := ioutil.ReadDir(expectedDir)
+			expectedDirContent, err := ioutil.ReadDir("sample")
 			if err != nil {
 				t.Errorf(err.Error())
 			}
