@@ -25,7 +25,7 @@ ruleset|:heavy_check_mark:|:heavy_check_mark:||
 **Migrationwaves and Jira**||||
 batch||||
 migrationwave|:heavy_check_mark:|:heavy_check_mark:||
-ticket||||
+ticket|:heavy_check_mark:|:heavy_check_mark:||
 tracker|:heavy_check_mark:|:heavy_check_mark:||
 **Other**||||
 addon || | |
