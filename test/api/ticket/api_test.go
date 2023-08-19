@@ -48,7 +48,7 @@ func TestTicketCRUD(t *testing.T) {
 			// Compare got values with expected values.
 			AssertEqualTickets(t, got, r)
 
-			// Delete identity and tracker.
+			// Delete ticket and its related resources.
 			assert.Must(t, Ticket.Delete(r.ID))
 			assert.Must(t, Tracker.Delete(tracker.ID))
 			assert.Must(t, Identity.Delete(identity.ID))
@@ -113,7 +113,7 @@ func TestTicketList(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("Expected tracker not found in the list: %v", createdTicket)
+			t.Errorf("Expected ticket not found in the list: %v", createdTicket)
 		}
 	}
 
