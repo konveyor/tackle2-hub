@@ -38,6 +38,7 @@ type RichClient struct {
 	TagCategory      TagCategory
 	Target           Target
 	Task             Task
+	Tracker          Tracker
 	Dependency       Dependency
 
 	// A REST client.
@@ -105,6 +106,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		Task: Task{
+			client: client,
+		},
+		Tracker: Tracker{
 			client: client,
 		},
 		Client: client,
