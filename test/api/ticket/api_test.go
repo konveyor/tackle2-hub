@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	TrackerSamples "github.com/konveyor/tackle2-hub/test/api/tracker"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -25,15 +26,7 @@ func TestTicketCRUD(t *testing.T) {
 			assert.Must(t, Identity.Create(&identity))
 
 			// create a sample tracker for the ticket.
-			tracker := api.Tracker{
-				Name: r.Tracker.Name,
-				URL:  "www.sample.com",
-				Kind: "jira-onprem",
-				Identity: api.Ref{
-					ID:   1,
-					Name: "Sample Identity",
-				},
-			}
+			tracker := TrackerSamples.Samples[0]
 			assert.Must(t, Tracker.Create(&tracker))
 
 			// Create a sample ticket
@@ -64,66 +57,68 @@ func TestTicketCRUD(t *testing.T) {
 }
 
 func TestTicketList(t *testing.T) {
-	createdTickets := []api.Ticket{}
+	t.Run("Successful creation of tickets", func(t *testing.T) {
+		for _, r := range Samples {
 
-	for _, r := range Samples {
-		// Create a sample Application for the ticket.
-		app := api.Application{
-			Name: r.Application.Name,
-		}
-		assert.Must(t, Application.Create(&app))
+			createdTickets := []api.Ticket{}
+			// Create a sample Application for the ticket.
+			app := api.Application{
+				Name: r.Application.Name,
+			}
+			assert.Must(t, Application.Create(&app))
 
-		// Create a sample identity for the tracker
-		identity := api.Identity{
-			Name: "Sample Identity",
-			Kind: "Sample Kind",
-		}
-		assert.Must(t, Identity.Create(&identity))
-
-		// create a sample tracker for the ticket.
-		tracker := api.Tracker{
-			Name: r.Tracker.Name,
-			URL:  "www.sample.com",
-			Kind: "jira-onprem",
-			Identity: api.Ref{
-				ID:   1,
+			// Create a sample identity for the tracker
+			identity := api.Identity{
 				Name: "Sample Identity",
-			},
-		}
-		assert.Must(t, Tracker.Create(&tracker))
+				Kind: "Sample Kind",
+			}
+			assert.Must(t, Identity.Create(&identity))
 
-		// Create a sample ticket
-		assert.Must(t, Ticket.Create(&r))
-		createdTickets = append(createdTickets, r)
-	}
+			// create a sample tracker for the ticket.
+			tracker := TrackerSamples.Samples[0]
+			assert.Must(t, Tracker.Create(&tracker))
 
-	// List Tickets.
-	got, err := Ticket.List()
-	if err != nil {
-		t.Errorf(err.Error())
-	}
+			// Create a sample ticket
+			assert.Must(t, Ticket.Create(&r))
+			createdTickets = append(createdTickets, r)
 
-	// check if created Tickets are in the list we got from Ticket.List()
-	for _, createdTicket := range createdTickets {
-		found := false
-		for _, retrievedTicket := range got {
-			if assert.FlatEqual(createdTicket.ID, retrievedTicket.ID) {
-				found = true
-				break
+			// List Tickets.
+			got, err := Ticket.List()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Filter created Tickets based on application and tracker id's.
+			filteredTickets := []api.Ticket{}
+			for _, createdTicket := range createdTickets {
+				if createdTicket.Application.ID == app.ID && createdTicket.Tracker.ID == tracker.ID {
+					filteredTickets = append(filteredTickets, createdTicket)
+				}
+			}
+
+			// Check if filtered Tickets are in the list we got from Ticket.List().
+			for _, filteredTicket := range filteredTickets {
+				found := false
+				for _, retrievedTicket := range got {
+					if assert.FlatEqual(filteredTicket.ID, retrievedTicket.ID) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected ticket not found in the list: %v", filteredTicket)
+				}
+			}
+
+			// Delete tickets and related resources.
+			for _, ticket := range createdTickets {
+				assert.Must(t, Ticket.Delete(ticket.ID))
+				assert.Must(t, Tracker.Delete(ticket.ID))
+				assert.Must(t, Identity.Delete(ticket.ID))
+				assert.Must(t, Application.Delete(ticket.ID))
 			}
 		}
-		if !found {
-			t.Errorf("Expected ticket not found in the list: %v", createdTicket)
-		}
-	}
-
-	// Delete tickets and related resources.
-	for _, ticket := range createdTickets {
-		assert.Must(t, Ticket.Delete(ticket.ID))
-		assert.Must(t, Tracker.Delete(ticket.ID))
-		assert.Must(t, Identity.Delete(ticket.ID))
-		assert.Must(t, Application.Delete(ticket.ID))
-	}
+	})
 }
 
 func AssertEqualTickets(t *testing.T, got *api.Ticket, expected api.Ticket) {
