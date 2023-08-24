@@ -38,11 +38,9 @@ type Client = binding.Client
 type Params = binding.Params
 type Param = binding.Param
 type Path = binding.Path
-type Field = binding.Field
 
 //
 // Error
-type SoftError = binding.SoftError
 type ResetError = binding.RestError
 type Conflict = binding.Conflict
 type NotFound = binding.NotFound
@@ -59,6 +57,10 @@ type RuleSet = binding.RuleSet
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
+
+//
+// Filter
+type Filter = binding.Filter
 
 //
 // The Adapter provides hub/addon integration.
@@ -105,15 +107,13 @@ func (h *Adapter) Run(addon func() error) {
 			}
 		}
 		if err != nil {
-			if _, soft := err.(interface{ Soft() *SoftError }); !soft {
-				Log.Error(err, "Addon failed.")
-				os.Exit(1)
-			}
 			h.Failed(err.Error())
+			os.Exit(1)
 		}
 	}()
 	//
 	// Report addon started.
+	h.Load()
 	h.Started()
 	//
 	// Run addon.

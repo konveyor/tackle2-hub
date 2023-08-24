@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v6/model"
+	"github.com/konveyor/tackle2-hub/migration/v8/model"
 	"gorm.io/datatypes"
 )
 
@@ -38,6 +38,7 @@ type Stakeholder = model.Stakeholder
 type StakeholderGroup = model.StakeholderGroup
 type Tag = model.Tag
 type TagCategory = model.TagCategory
+type Target = model.Target
 type Task = model.Task
 type TaskGroup = model.TaskGroup
 type TaskReport = model.TaskReport

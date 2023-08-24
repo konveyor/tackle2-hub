@@ -35,6 +35,14 @@ func (h *RuleSet) List() (list []api.RuleSet, err error) {
 }
 
 //
+// Find RuleSets with filter.
+func (h *RuleSet) Find(filter Filter) (list []api.RuleSet, err error) {
+	list = []api.RuleSet{}
+	err = h.client.Get(api.RuleSetsRoot, &list, filter.Param())
+	return
+}
+
+//
 // Update a RuleSet.
 func (h *RuleSet) Update(r *api.RuleSet) (err error) {
 	path := Path(api.RuleSetRoot).Inject(Params{api.ID: r.ID})

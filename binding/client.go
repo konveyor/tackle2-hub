@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
+	qf "github.com/konveyor/tackle2-hub/binding/filter"
 	"io"
 	"mime/multipart"
 	"net"
@@ -34,6 +35,20 @@ const (
 type Param struct {
 	Key   string
 	Value string
+}
+
+//
+// Filter
+type Filter struct {
+	qf.Filter
+}
+
+//
+// Param returns a filter parameter.
+func (r *Filter) Param() (p Param) {
+	p.Key = api.Filter
+	p.Value = r.String()
+	return
 }
 
 //
@@ -775,13 +790,16 @@ func (r *Client) restError(response *http.Response) (err error) {
 	switch status {
 	case http.StatusConflict:
 		restError := &Conflict{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	case http.StatusNotFound:
 		restError := &NotFound{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	default:
 		restError := &RestError{}
-		err = restError.With(response)
+		restError.With(response)
+		err = restError
 	}
 	return
 }

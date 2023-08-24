@@ -355,9 +355,9 @@ func (f *Field) operator() (s string) {
 //
 // Assert -
 type Assert struct {
-	Field    string
-	Kind     byte
-	Relation bool
+	Field string
+	Kind  byte
+	And   bool
 }
 
 //
@@ -372,7 +372,7 @@ func (r *Assert) assert(p *Predicate) (err error) {
 			return
 		}
 	}
-	if !r.Relation {
+	if !r.And {
 		if (&Field{*p}).Value.Operator(AND) {
 			err = Errorf("(,,) cannot be used with '%s'.", name)
 			return

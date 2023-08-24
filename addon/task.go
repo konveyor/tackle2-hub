@@ -6,6 +6,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
+	"strings"
 )
 
 //
@@ -67,7 +68,6 @@ func (h *Task) Variant() string {
 //
 // Started report addon started.
 func (h *Task) Started() {
-	h.Load()
 	h.deleteReport()
 	h.report.Status = task.Running
 	h.pushReport()
@@ -88,16 +88,12 @@ func (h *Task) Succeeded() {
 //
 // Failed report addon failed.
 // The reason can be a printf style format.
-func (h *Task) Failed(reason string, x ...interface{}) {
-	reason = fmt.Sprintf(reason, x...)
-	h.report.Status = task.Failed
-	h.report.Errors = append(
-		h.report.Errors,
-		api.TaskError{
-			Severity:    "Error",
-			Description: reason,
-		})
-	h.pushReport()
+func (h *Task) Failed(reason string, v ...interface{}) {
+	reason = fmt.Sprintf(reason, v...)
+	h.Error(api.TaskError{
+		Severity:    "Error",
+		Description: reason,
+	})
 	Log.Info(
 		"Addon reported: failed.",
 		"reason",
@@ -106,17 +102,27 @@ func (h *Task) Failed(reason string, x ...interface{}) {
 }
 
 //
+// Errorf report addon error.
+func (h *Task) Errorf(severity, description string, v ...interface{}) {
+	h.Error(api.TaskError{
+		Severity:    severity,
+		Description: fmt.Sprintf(description, v...),
+	})
+}
+
+//
 // Error report addon error.
-// The description can be a printf style format.
-func (h *Task) Error(severity, description string, x ...interface{}) {
+func (h *Task) Error(error ...api.TaskError) {
 	h.report.Status = task.Failed
-	description = fmt.Sprintf(description, x...)
-	h.report.Errors = append(
-		h.report.Errors,
-		api.TaskError{
-			Severity:    severity,
-			Description: description,
-		})
+	for i := range error {
+		h.report.Errors = append(
+			h.report.Errors,
+			error[i])
+		Log.Info(
+			"Addon reported: error.",
+			"error",
+			error[i])
+	}
 	h.pushReport()
 	return
 }
@@ -124,16 +130,24 @@ func (h *Task) Error(severity, description string, x ...interface{}) {
 //
 // Activity report addon activity.
 // The description can be a printf style format.
-func (h *Task) Activity(entry string, x ...interface{}) {
-	entry = fmt.Sprintf(entry, x...)
-	h.report.Activity = append(
-		h.report.Activity,
-		entry)
+func (h *Task) Activity(entry string, v ...interface{}) {
+	entry = fmt.Sprintf(entry, v...)
+	lines := strings.Split(entry, "\n")
+	for i := range lines {
+		if i > 0 {
+			entry = "> " + lines[i]
+		} else {
+			entry = lines[i]
+		}
+		h.report.Activity = append(
+			h.report.Activity,
+			entry)
+		Log.Info(
+			"Addon reported: activity.",
+			"entry",
+			entry)
+	}
 	h.pushReport()
-	Log.Info(
-		"Addon reported: activity.",
-		"activity",
-		h.report.Activity)
 	return
 }
 

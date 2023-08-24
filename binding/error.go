@@ -8,28 +8,9 @@ import (
 )
 
 //
-// SoftError A "soft" anticipated error.
-type SoftError struct {
-	Reason string
-}
-
-func (e *SoftError) Error() (s string) {
-	return e.Reason
-}
-
-func (e *SoftError) Is(err error) (matched bool) {
-	_, matched = err.(*SoftError)
-	return
-}
-
-func (e *SoftError) Soft() *SoftError {
-	return e
-}
-
-//
 // RestError reports REST errors.
 type RestError struct {
-	SoftError
+	Reason string
 	Method string
 	Path   string
 	Status int
@@ -46,7 +27,7 @@ func (e *RestError) Error() (s string) {
 	return
 }
 
-func (e *RestError) With(r *http.Response) *RestError {
+func (e *RestError) With(r *http.Response) {
 	e.Method = r.Request.Method
 	e.Path = r.Request.URL.Path
 	e.Status = r.StatusCode
@@ -69,7 +50,6 @@ func (e *RestError) With(r *http.Response) *RestError {
 		s += e.Body
 	}
 	e.Reason = s
-	return e
 }
 
 //

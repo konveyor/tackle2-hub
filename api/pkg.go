@@ -86,6 +86,7 @@ func All() []Handler {
 		&FileHandler{},
 		&MigrationWaveHandler{},
 		&BatchHandler{},
+		&TargetHandler{},
 	}
 }
 

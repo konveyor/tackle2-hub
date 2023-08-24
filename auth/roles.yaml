@@ -33,6 +33,12 @@
         - get
         - post
         - put
+    - name: applications.analyses
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications.stakeholders
       verbs:
         - put
@@ -167,6 +173,18 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: analyses
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-architect
   resources:
     - name: addons
@@ -197,6 +215,12 @@
         - post
         - put
     - name: applications.bucket
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: applications.analyses
       verbs:
         - delete
         - get
@@ -323,6 +347,18 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: analyses
+      verbs:
+        - delete
+        - get
+        - post
+        - put
 - role: tackle-migrator
   resources:
     - name: addons
@@ -341,6 +377,9 @@
       verbs:
         - get
     - name: applications.bucket
+      verbs:
+        - get
+    - name: applications.analyses
       verbs:
         - get
     - name: assessments
@@ -421,6 +460,12 @@
     - name: migrationwaves
       verbs:
         - get
+    - name: targets
+      verb:
+        - get
+    - name: analyses
+      verbs:
+        - get
 - role: tackle-project-manager
   resources:
     - name: addons
@@ -439,6 +484,9 @@
       verbs:
         - get
     - name: applications.bucket
+      verbs:
+        - get
+    - name: applications.analyses
       verbs:
         - get
     - name: applications.stakeholders
@@ -513,3 +561,9 @@
         - get
         - post
         - put
+    - name: targets
+      verbs:
+        - get
+    - name: analyses
+      verbs:
+        - get

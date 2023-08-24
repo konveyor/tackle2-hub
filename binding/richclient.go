@@ -27,14 +27,18 @@ type RichClient struct {
 	File             File
 	Identity         Identity
 	JobFunction      JobFunction
+	MigrationWave    MigrationWave
 	Proxy            Proxy
+	Review           Review
 	RuleSet          RuleSet
 	Setting          Setting
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
 	TagCategory      TagCategory
+	Target           Target
 	Task             Task
+	Tracker          Tracker
 	Dependency       Dependency
 
 	// A REST client.
@@ -71,7 +75,13 @@ func New(baseUrl string) (r *RichClient) {
 		JobFunction: JobFunction{
 			client: client,
 		},
+		MigrationWave: MigrationWave{
+			client: client,
+		},
 		Proxy: Proxy{
+			client: client,
+		},
+		Review: Review{
 			client: client,
 		},
 		RuleSet: RuleSet{
@@ -92,7 +102,13 @@ func New(baseUrl string) (r *RichClient) {
 		TagCategory: TagCategory{
 			client: client,
 		},
+		Target: Target{
+			client: client,
+		},
 		Task: Task{
+			client: client,
+		},
+		Tracker: Tracker{
 			client: client,
 		},
 		Client: client,

@@ -11,6 +11,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
 	github.com/jortel/go-utils v0.1.1
+	github.com/konveyor/tackle2-seed v0.0.0-20230731150314-953199a73e93
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/onsi/gomega v1.27.6
 	github.com/prometheus/client_golang v1.15.0

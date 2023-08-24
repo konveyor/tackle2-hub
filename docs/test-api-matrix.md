@@ -8,7 +8,7 @@ bucket|:heavy_check_mark:|:heavy_check_mark:||partially within application
 dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 file|:heavy_check_mark:|:heavy_check_mark:||
 import||:heavy_check_mark:||
-review||||
+review|:heavy_check_mark|:heavy_check_mark||
 **Controls**||||
 businessservice|:heavy_check_mark:|:heavy_check_mark:||
 group|:heavy_check_mark:|:heavy_check_mark:||aka StakeholderGroup
@@ -24,9 +24,9 @@ analysis||||
 ruleset|:heavy_check_mark:|:heavy_check_mark:||
 **Migrationwaves and Jira**||||
 batch||||
-migrationwave||||
+migrationwave|:heavy_check_mark:|:heavy_check_mark:||
 ticket||||
-tracker||||
+tracker|:heavy_check_mark:|:heavy_check_mark:||
 **Other**||||
 addon || | |
 auth||||

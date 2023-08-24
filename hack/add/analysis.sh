@@ -54,7 +54,6 @@ konveyor.io/target=azure-appservice
 konveyor.io/target=azure-container-apps
 konveyor.io/target=azure-spring-apps
 konveyor.io/target=eap
-konveyor.io/target=eap6
 konveyor.io/target=eap7
 konveyor.io/target=eap8
 konveyor.io/target=drools

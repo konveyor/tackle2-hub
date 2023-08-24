@@ -32,14 +32,10 @@ const (
 	TmpDir    = "/tmp/list"
 )
 
-type SoftError = hub.SoftError
-
 //
 // main
 func main() {
 	addon.Run(func() (err error) {
-		_, _ = addon.Identity.List()
-		_, _ = addon.Identity.Get(1)
 		//
 		// Get the addon data associated with the task.
 		d := &Data{}
@@ -102,8 +98,6 @@ func main() {
 		}
 		return
 	})
-
-	addon.Error("Warning", "Test warning.")
 }
 
 //
@@ -335,7 +329,7 @@ func addTags(application *api.Application, source string, names ...string) (err 
 	tags := addon.Application.Tags(application.ID)
 	tags.Source(source)
 	for _, id := range wanted {
-		err = tags.Add(id)
+		err = tags.Ensure(id)
 		if err != nil {
 			return
 		}

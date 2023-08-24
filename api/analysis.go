@@ -54,23 +54,24 @@ type AnalysisHandler struct {
 //
 // AddRoutes adds routes.
 func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
+	// Primary
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("application"))
-	//
+	routeGroup.Use(Required("analyses"))
 	routeGroup.GET(AnalysisRoot, h.Get)
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
 	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
-	//
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
 	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
 	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
 	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
 	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
-	//
+	// Application
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("applications.analyses"))
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
@@ -405,7 +406,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 			{Field: "version", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
 			{Field: "indirect", Kind: qf.STRING},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -488,7 +489,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -566,10 +567,10 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 			{Field: "name", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -751,13 +752,13 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			{Field: "rule", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -880,7 +881,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 			{Field: "rule", Kind: qf.STRING},
 			{Field: "category", Kind: qf.STRING},
 			{Field: "effort", Kind: qf.LITERAL},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -995,7 +996,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 // @description - files
 // @tags issueappreports
 // @produce json
-// @success 200 {object} []api.AppReport
+// @success 200 {object} []api.IssueAppReport
 // @router /analyses/report/applications [get]
 func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 	resources := []IssueAppReport{}
@@ -1029,12 +1030,12 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 			{Field: "issue.rule", Kind: qf.STRING},
 			{Field: "issue.category", Kind: qf.STRING},
 			{Field: "issue.effort", Kind: qf.LITERAL},
-			{Field: "issue.labels", Kind: qf.STRING, Relation: true},
+			{Field: "issue.labels", Kind: qf.STRING, And: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1246,10 +1247,10 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 			{Field: "version", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
 			{Field: "indirect", Kind: qf.STRING},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1337,13 +1338,13 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			{Field: "version", Kind: qf.STRING},
 			{Field: "sha", Kind: qf.STRING},
 			{Field: "indirect", Kind: qf.STRING},
-			{Field: "labels", Kind: qf.STRING, Relation: true},
+			{Field: "labels", Kind: qf.STRING, And: true},
 			{Field: "applications", Kind: qf.LITERAL},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1448,7 +1449,7 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 // @description - indirect
 // @tags depappreports
 // @produce json
-// @success 200 {object} []api.AppReport
+// @success 200 {object} []api.DepAppReport
 // @router /analyses/report/applications [get]
 func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 	resources := []DepAppReport{}
@@ -1482,12 +1483,12 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 			{Field: "dep.version", Kind: qf.LITERAL},
 			{Field: "dep.sha", Kind: qf.LITERAL},
 			{Field: "dep.indirect", Kind: qf.LITERAL},
-			{Field: "dep.labels", Kind: qf.STRING, Relation: true},
+			{Field: "dep.labels", Kind: qf.STRING, And: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
 			{Field: "businessService.name", Kind: qf.STRING},
-			{Field: "tag.id", Kind: qf.LITERAL, Relation: true},
+			{Field: "tag.id", Kind: qf.LITERAL, And: true},
 		})
 	if err != nil {
 		_ = ctx.Error(err)

@@ -7,23 +7,22 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	Minimal = api.RuleSet{
-		Name: "Minimal no rules",
-		Image: api.Ref{
-			ID: 1,
-		},
+		Name:  "Minimal no rules",
 		Rules: []api.Rule{},
 	}
 
 	Hazelcast = api.RuleSet{
 		Name:        "Hazelcast",
 		Description: "Hazelcast Java distributed session store ruleset.",
-		Image: api.Ref{
-			ID: 1,
-		},
 		Rules: []api.Rule{
 			{
 				File: &api.Ref{
-					Name: "./data/hz.windup.xml",
+					Name: "./data/rules.yaml",
+				},
+			},
+			{
+				File: &api.Ref{
+					Name: "./data/rules.yaml",
 				},
 			},
 		},
