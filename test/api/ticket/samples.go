@@ -7,7 +7,7 @@ import (
 
 var Samples = []api.Ticket{
 	{
-		Kind:      "Sample Ticket",
+		Kind:      "jira-onprem",
 		Reference: "Sample Reference for Ticket",
 		Link:      "www.konveyor.io/ticket",
 		Parent:    "Sample Parent Ticket",
