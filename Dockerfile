@@ -4,11 +4,14 @@ COPY --chown=1001:0 . .
 RUN make docker
 RUN git clone https://github.com/konveyor/tackle2-seed
 
+FROM quay.io/konveyor/static-report as report
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder /opt/app-root/src/tackle2-seed/resources/ /tmp/seed
+COPY --from=report /usr/local/static-report /tmp/report
 
 RUN microdnf -y install \
   sqlite \

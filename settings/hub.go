@@ -26,6 +26,7 @@ const (
 	EnvFileTTL           = "FILE_TTL"
 	EnvAppName           = "APP_NAME"
 	EnvDisconnected      = "DISCONNECTED"
+	EnvReportPath        = "REPORT_PATH"
 )
 
 type Hub struct {
@@ -77,6 +78,10 @@ type Hub struct {
 	Product bool
 	// Disconnected indicates no cluster.
 	Disconnected bool
+	// Report settings.
+	Report struct {
+		Path string
+	}
 }
 
 func (r *Hub) Load() (err error) {
@@ -189,6 +194,10 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Disconnected = b
+	}
+	r.Report.Path, found = os.LookupEnv(EnvReportPath)
+	if !found {
+		r.Report.Path = "/tmp/report"
 	}
 
 	return
