@@ -175,11 +175,12 @@ func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	defer func() {
 		_ = os.Remove(path)
 	}()
+	report := Settings.Analysis.Report.Path
 	tarWriter := tar.NewWriter(ctx.Writer)
 	defer func() {
 		tarWriter.Close()
 	}()
-	err = tarWriter.AssertDir(Settings.Report.Path)
+	err = tarWriter.AssertDir(report)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -191,7 +192,7 @@ func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	}
 	h.Attachment(ctx, fmt.Sprintf("%s.tar.gz", m.Application.Name))
 	ctx.Status(http.StatusOK)
-	_ = tarWriter.AddDir(Settings.Report.Path)
+	_ = tarWriter.AddDir(report)
 	_ = tarWriter.AddFile(path, "output.js")
 }
 

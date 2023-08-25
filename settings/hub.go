@@ -6,27 +6,27 @@ import (
 )
 
 const (
-	EnvNamespace         = "NAMESPACE"
-	EnvDbPath            = "DB_PATH"
-	EnvDbSeedPath        = "DB_SEED_PATH"
-	EnvBucketPath        = "BUCKET_PATH"
-	EnvRwxSupported      = "RWX_SUPPORTED"
-	EnvCachePath         = "CACHE_PATH"
-	EnvCachePvc          = "CACHE_PVC"
-	EnvPassphrase        = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated   = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed    = "TASK_REAP_FAILED"
-	EnvTaskSA            = "TASK_SA"
-	EnvTaskRetries       = "TASK_RETRIES"
-	EnvFrequencyTask     = "FREQUENCY_TASK"
-	EnvFrequencyReaper   = "FREQUENCY_REAPER"
-	EnvDevelopment       = "DEVELOPMENT"
-	EnvBucketTTL         = "BUCKET_TTL"
-	EnvFileTTL           = "FILE_TTL"
-	EnvAppName           = "APP_NAME"
-	EnvDisconnected      = "DISCONNECTED"
-	EnvReportPath        = "REPORT_PATH"
+	EnvNamespace          = "NAMESPACE"
+	EnvDbPath             = "DB_PATH"
+	EnvDbSeedPath         = "DB_SEED_PATH"
+	EnvBucketPath         = "BUCKET_PATH"
+	EnvRwxSupported       = "RWX_SUPPORTED"
+	EnvCachePath          = "CACHE_PATH"
+	EnvCachePvc           = "CACHE_PVC"
+	EnvPassphrase         = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated    = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded  = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed     = "TASK_REAP_FAILED"
+	EnvTaskSA             = "TASK_SA"
+	EnvTaskRetries        = "TASK_RETRIES"
+	EnvFrequencyTask      = "FREQUENCY_TASK"
+	EnvFrequencyReaper    = "FREQUENCY_REAPER"
+	EnvDevelopment        = "DEVELOPMENT"
+	EnvBucketTTL          = "BUCKET_TTL"
+	EnvFileTTL            = "FILE_TTL"
+	EnvAppName            = "APP_NAME"
+	EnvDisconnected       = "DISCONNECTED"
+	EnvAnalysisReportPath = "ANALYSIS_REPORT_PATH"
 )
 
 type Hub struct {
@@ -78,9 +78,11 @@ type Hub struct {
 	Product bool
 	// Disconnected indicates no cluster.
 	Disconnected bool
-	// Report settings.
-	Report struct {
-		Path string
+	// Analysis settings.
+	Analysis struct {
+		Report struct {
+			Path string
+		}
 	}
 }
 
@@ -195,9 +197,9 @@ func (r *Hub) Load() (err error) {
 		b, _ := strconv.ParseBool(s)
 		r.Disconnected = b
 	}
-	r.Report.Path, found = os.LookupEnv(EnvReportPath)
+	r.Analysis.Report.Path, found = os.LookupEnv(EnvAnalysisReportPath)
 	if !found {
-		r.Report.Path = "/tmp/report"
+		r.Analysis.Report.Path = "/tmp/analysis/report"
 	}
 
 	return

@@ -11,7 +11,7 @@ COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder /opt/app-root/src/tackle2-seed/resources/ /tmp/seed
-COPY --from=report /usr/local/static-report /tmp/report
+COPY --from=report /usr/local/static-report /tmp/analysis/report
 
 RUN microdnf -y install \
   sqlite \
