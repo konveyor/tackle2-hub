@@ -80,9 +80,7 @@ type Hub struct {
 	Disconnected bool
 	// Analysis settings.
 	Analysis struct {
-		Report struct {
-			Path string
-		}
+		ReportPath string
 	}
 }
 
@@ -197,9 +195,9 @@ func (r *Hub) Load() (err error) {
 		b, _ := strconv.ParseBool(s)
 		r.Disconnected = b
 	}
-	r.Analysis.Report.Path, found = os.LookupEnv(EnvAnalysisReportPath)
+	r.Analysis.ReportPath, found = os.LookupEnv(EnvAnalysisReportPath)
 	if !found {
-		r.Analysis.Report.Path = "/tmp/analysis/report"
+		r.Analysis.ReportPath = "/tmp/analysis/report"
 	}
 
 	return

@@ -175,7 +175,7 @@ func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	defer func() {
 		_ = os.Remove(path)
 	}()
-	report := Settings.Analysis.Report.Path
+	report := Settings.Analysis.ReportPath
 	tarWriter := tar.NewWriter(ctx.Writer)
 	defer func() {
 		tarWriter.Close()
