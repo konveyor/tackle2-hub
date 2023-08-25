@@ -10,8 +10,8 @@ import (
 
 func TestBucketCRUD(t *testing.T) {
 	for _, bucket := range Buckets {
-
-		t.Run("Create Bucket and Compare", func(t *testing.T) {
+		bucketPath := bucket.Path
+		t.Run("Create Bucket "+bucketPath+" and Compare", func(t *testing.T) {
 
 			// Create a new bucket.
 			assert.Must(t, Bucket.Create(&bucket))
@@ -41,9 +41,16 @@ func TestBucketCRUD(t *testing.T) {
 			if gotBucket.Path != bucket.Path {
 				t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, bucket.Path)
 			}
+
+			// Compare bucket content and len of content
+			// gotBucketContent := Bucket.Content(gotBucket.ID)
+			// expectedBucketContent := Bucket.Content(bucket.ID)
+			// if gotBucketContent != expectedBucketContent {
+			// 	t.Errorf("Mismatch in content: got: %v, expected: %v", gotBucketContent, expectedBucketContent)
+			// }
 		})
 
-		t.Run("File and Directory Tests", func(t *testing.T) {
+		t.Run("File and Directory Tests "+bucketPath, func(t *testing.T) {
 			expectedBucket := Bucket.Content(bucket.ID)
 
 			expectedFile, err := ioutil.TempFile("", "a")
