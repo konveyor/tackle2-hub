@@ -154,46 +154,8 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.Analysis{}
-	db := h.DB(ctx)
-	db = db.Preload("Application")
-	db = db.Preload("Application.Tags")
-	db = db.Preload("Application.Tags.Category")
-	db = db.Where("ApplicationID", id)
-	err := db.Last(&m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	reportWriter := ReportWriter{}
-	reportWriter.ctx = ctx
-	path, err := reportWriter.Create(id)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	defer func() {
-		_ = os.Remove(path)
-	}()
-	report := Settings.Analysis.ReportPath
-	tarWriter := tar.NewWriter(ctx.Writer)
-	defer func() {
-		tarWriter.Close()
-	}()
-	err = tarWriter.AssertDir(report)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = tarWriter.AssertFile(path)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	h.Attachment(ctx, fmt.Sprintf("%s.tar.gz", m.Application.Name))
-	ctx.Status(http.StatusOK)
-	_ = tarWriter.AddDir(report)
-	_ = tarWriter.AddFile(path, "output.js")
+	reportWriter := ReportWriter{ctx: ctx}
+	reportWriter.Write(id)
 }
 
 // AppList godoc
@@ -2209,29 +2171,54 @@ func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 }
 
 //
-// ReportWriter analysis (static) report report writer.
+// ReportWriter analysis report writer.
 type ReportWriter struct {
-	AnalysisWriter
+	encoder
+	ctx *gin.Context
 }
 
 //
-// Create the output.js file.
-func (r *ReportWriter) Create(id uint) (path string, err error) {
-	path = fmt.Sprintf("/tmp/ouput-%d.js", rand.Int())
-	file, err := os.Create(path)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-	err = r.Write(id, file)
+// db returns a db client.
+func (r *ReportWriter) db() (db *gorm.DB) {
+	rtx := WithContext(r.ctx)
+	db = rtx.DB.Debug()
 	return
 }
 
 //
-// Write the report output.js file.
-func (r *ReportWriter) Write(id uint, output io.Writer) (err error) {
+// Write builds and streams the analysis report.
+func (r *ReportWriter) Write(id uint) {
+	path, err := r.buildOutput(id)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	tarWriter := tar.NewWriter(r.ctx.Writer)
+	defer func() {
+		tarWriter.Close()
+	}()
+	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	err = tarWriter.AssertFile(path)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	r.ctx.Status(http.StatusOK)
+	_ = tarWriter.AddDir(Settings.Analysis.ReportPath)
+	_ = tarWriter.AddFile(path, "output.js")
+	return
+}
+
+//
+// buildOutput creates the report output.js file.
+func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	m := &model.Analysis{}
 	db := r.db()
 	db = db.Preload("Application")
@@ -2241,16 +2228,26 @@ func (r *ReportWriter) Write(id uint, output io.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	r.encoder = &jsonEncoder{output: output}
+	path = fmt.Sprintf("/tmp/ouput-%d.js", rand.Int())
+	file, err := os.Create(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	r.encoder = &jsonEncoder{output: file}
 	r.write("window[\"apps\"]=[")
 	r.begin()
 	r.field("id").write(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
-	err = r.addIssues(m)
+	aWriter := AnalysisWriter{ctx: r.ctx}
+	aWriter.encoder = r.encoder
+	err = aWriter.addIssues(m)
 	if err != nil {
 		return
 	}
-	err = r.addDeps(m)
+	err = aWriter.addDeps(m)
 	if err != nil {
 		return
 	}
