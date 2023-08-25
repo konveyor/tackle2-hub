@@ -45,6 +45,7 @@ const (
 	//
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
+	AppAnalysisReportRoot = AppAnalysisRoot + "/report"
 	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
 	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
 )
@@ -84,6 +85,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
+	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
 	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
 }
@@ -114,13 +116,43 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 // AppLatest godoc
 // @summary Get the latest analysis.
 // @description Get the latest analysis for an application.
-// @description When Accept: is application/x-tar, the static report returned.
 // @tags analyses
 // @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /applications/{id}/analysis [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Analysis{}
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	err := db.Last(&m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	writer := AnalysisWriter{ctx: ctx}
+	path, err := writer.Create(id)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
+}
+
+// AppLatestReport godoc
+// @summary Get the latest analysis (static) report.
+// @description Get the latest analysis (static) report.
+// @tags analyses
+// @produce octet-stream
+// @success 200
+// @router /applications/{id}/analysis/report [get]
+// @param id path string true "Application ID"
+func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
 	db := h.DB(ctx)
@@ -133,50 +165,34 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	offered := append(BindMIMEs, TAR)
-	accepted := ctx.NegotiateFormat(offered...)
-	if accepted == TAR {
-		bundleWriter := BundleWriter{}
-		bundleWriter.ctx = ctx
-		path, err := bundleWriter.Create(id)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		defer func() {
-			_ = os.Remove(path)
-		}()
-		tarWriter := tar.NewWriter(ctx.Writer)
-		defer func() {
-			tarWriter.Close()
-		}()
-		err = tarWriter.AssertDir(Settings.Report.Path)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		err = tarWriter.AssertFile(path)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		h.Attachment(ctx, fmt.Sprintf("%s.tar.gz", m.Application.Name))
-		ctx.Status(http.StatusOK)
-		_ = tarWriter.AddDir(Settings.Report.Path)
-		_ = tarWriter.AddFile(path, "output.js")
-	} else {
-		writer := AnalysisWriter{ctx: ctx}
-		path, err := writer.Create(id)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		defer func() {
-			_ = os.Remove(path)
-		}()
-		h.Status(ctx, http.StatusOK)
-		ctx.File(path)
+	reportWriter := ReportWriter{}
+	reportWriter.ctx = ctx
+	path, err := reportWriter.Create(id)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	tarWriter := tar.NewWriter(ctx.Writer)
+	defer func() {
+		tarWriter.Close()
+	}()
+	err = tarWriter.AssertDir(Settings.Report.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = tarWriter.AssertFile(path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	h.Attachment(ctx, fmt.Sprintf("%s.tar.gz", m.Application.Name))
+	ctx.Status(http.StatusOK)
+	_ = tarWriter.AddDir(Settings.Report.Path)
+	_ = tarWriter.AddFile(path, "output.js")
 }
 
 // AppList godoc
@@ -2192,14 +2208,14 @@ func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 }
 
 //
-// BundleWriter analysis (static) report bundle writer.
-type BundleWriter struct {
+// ReportWriter analysis (static) report report writer.
+type ReportWriter struct {
 	AnalysisWriter
 }
 
 //
 // Create the output.js file.
-func (r *BundleWriter) Create(id uint) (path string, err error) {
+func (r *ReportWriter) Create(id uint) (path string, err error) {
 	path = fmt.Sprintf("/tmp/ouput-%d.js", rand.Int())
 	file, err := os.Create(path)
 	if err != nil {
@@ -2213,8 +2229,8 @@ func (r *BundleWriter) Create(id uint) (path string, err error) {
 }
 
 //
-// Write the bundle output.js file.
-func (r *BundleWriter) Write(id uint, output io.Writer) (err error) {
+// Write the report output.js file.
+func (r *ReportWriter) Write(id uint, output io.Writer) (err error) {
 	m := &model.Analysis{}
 	db := r.db()
 	db = db.Preload("Application")
@@ -2248,7 +2264,7 @@ func (r *BundleWriter) Write(id uint, output io.Writer) (err error) {
 
 //
 // addTags writes tags.
-func (r *BundleWriter) addTags(m *model.Analysis) (err error) {
+func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 	r.field("tags")
 	r.beginList()
 	for i := range m.Application.Tags {
