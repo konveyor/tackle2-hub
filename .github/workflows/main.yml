@@ -75,3 +75,21 @@ jobs:
         with:
           tackle-hub-image: tackle2-hub:latest
           tackle-image-pull-policy: IfNotPresent
+
+      - name: save image
+        run: |
+          IMG=quay.io/konveyor/tackle2-hub:latest make docker-build
+          docker save -o /tmp/tackle2-hub.tar quay.io/konveyor/tackle2-hub:latest
+
+      - name: Upload image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tackle2-hub
+          path: /tmp/tackle2-hub.tar
+          retention-days: 1
+
+  test-integration:
+    needs: test-e2e
+    uses: konveyor/ci/.github/workflows/global-ci.yml@main
+    with:
+      component_name: tackle2-hub
