@@ -1,22 +1,15 @@
 package api
 
 import (
-	"archive/tar"
-	"bufio"
-	"bytes"
-	"compress/gzip"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/tar"
 	"io"
 	"net/http"
 	"os"
 	pathlib "path"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -238,30 +231,17 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		return
 	}
 	if st.IsDir() {
-		filter := DirFilter{
-			pattern: ctx.Query(Filter),
-			root:    path,
+		filter := tar.Filter{
+			Pattern: ctx.Query(Filter),
+			Root:    path,
 		}
 		if h.Accepted(ctx, binding.MIMEHTML) {
-			err = h.getFile(ctx, m)
-			if err != nil {
-				_ = ctx.Error(err)
-			}
-			return
+			h.getFile(ctx, m)
 		} else {
-			err := h.getDir(ctx, path, filter)
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
-			h.Status(ctx, http.StatusOK)
+			h.getDir(ctx, path, filter)
 		}
 	} else {
-		err = h.getFile(ctx, m)
-		if err != nil {
-			_ = ctx.Error(err)
-		}
-		return
+		h.getFile(ctx, m)
 	}
 }
 
@@ -315,7 +295,6 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
 		return
 	}
 	fileReader, err := file.Open()
@@ -327,142 +306,41 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	defer func() {
 		_ = fileReader.Close()
 	}()
-	zipReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	defer func() {
-		_ = zipReader.Close()
-	}()
 	err = nas.RmDir(output)
 	if err != nil {
 		return
 	}
-	err = os.MkdirAll(output, 0777)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	tarReader := tar.NewReader(zipReader)
-	for {
-		header, nErr := tarReader.Next()
-		if nErr != nil {
-			if nErr == io.EOF {
-				break
-			} else {
-				err = liberr.Wrap(nErr)
-				return
-			}
-		}
-		switch header.Typeflag {
-		case tar.TypeDir:
-			path := pathlib.Join(output, header.Name)
-			err = os.Mkdir(path, 0777)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		case tar.TypeReg:
-			path := pathlib.Join(output, header.Name)
-			file, nErr := os.Create(path)
-			if nErr != nil {
-				err = liberr.Wrap(nErr)
-				return
-			}
-			_, err = io.Copy(file, tarReader)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-			_ = file.Close()
-		}
-	}
+	tarReader := tar.NewReader()
+	err = tarReader.Extract(output, fileReader)
 	return
 }
 
 //
 // getDir reads a directory from the bucket.
-func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter DirFilter) (err error) {
-	var tarOutput bytes.Buffer
-	tarWriter := tar.NewWriter(&tarOutput)
-	err = filepath.Walk(
-		input,
-		func(path string, info os.FileInfo, wErr error) (err error) {
-			if wErr != nil {
-				err = liberr.Wrap(wErr)
-				return
-			}
-			if path == input {
-				return
-			}
-			if !filter.Match(path) {
-				return
-			}
-			header, err := tar.FileInfoHeader(info, path)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-			header.Name = strings.Replace(path, input, "", 1)
-			switch header.Typeflag {
-			case tar.TypeDir:
-				err = tarWriter.WriteHeader(header)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-			case tar.TypeReg:
-				err = tarWriter.WriteHeader(header)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-				file, nErr := os.Open(path)
-				if err != nil {
-					err = liberr.Wrap(nErr)
-					return
-				}
-				defer func() {
-					_ = file.Close()
-				}()
-				_, err = io.Copy(tarWriter, file)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-			}
-			return
-		})
-	if err != nil {
-		return
-	}
-	err = tarWriter.Close()
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	ctx.Writer.Header().Set(
-		"Content-Disposition",
-		fmt.Sprintf("attachment; filename=\"%s\"", pathlib.Base(input)+".tar.gz"))
-	ctx.Writer.Header().Set(Directory, DirectoryExpand)
-	zipReader := bufio.NewReader(&tarOutput)
-	zipWriter := gzip.NewWriter(ctx.Writer)
+func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter tar.Filter) {
+	tarWriter := tar.NewWriter(ctx.Writer)
+	tarWriter.Filter = filter
 	defer func() {
-		_ = zipWriter.Close()
+		tarWriter.Close()
 	}()
-	_, err = io.Copy(zipWriter, zipReader)
+	err := tarWriter.AssertDir(input)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	} else {
+		h.Attachment(ctx, pathlib.Base(input)+".tar.gz")
+		ctx.Status(http.StatusOK)
+	}
+	_ = tarWriter.AddDir(input)
 	return
 }
 
 //
 // getFile reads a file from the bucket.
-func (h *BucketOwner) getFile(ctx *gin.Context, m *model.Bucket) (err error) {
+func (h *BucketOwner) getFile(ctx *gin.Context, m *model.Bucket) {
 	rPath := ctx.Param(Wildcard)
 	path := pathlib.Join(m.Path, rPath)
 	ctx.File(path)
-	return
 }
 
 //
@@ -500,31 +378,5 @@ func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
 		return
 	}
 	err = os.Chmod(path, 0666)
-	return
-}
-
-//
-// DirFilter supports glob-style filtering.
-type DirFilter struct {
-	root    string
-	pattern string
-	cache   map[string]bool
-}
-
-//
-// Match determines if path matches the filter.
-func (r *DirFilter) Match(path string) (b bool) {
-	if r.pattern == "" {
-		b = true
-		return
-	}
-	if r.cache == nil {
-		r.cache = map[string]bool{}
-		matches, _ := filepath.Glob(pathlib.Join(r.root, r.pattern))
-		for _, p := range matches {
-			r.cache[p] = true
-		}
-	}
-	_, b = r.cache[path]
 	return
 }

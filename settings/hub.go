@@ -6,26 +6,27 @@ import (
 )
 
 const (
-	EnvNamespace         = "NAMESPACE"
-	EnvDbPath            = "DB_PATH"
-	EnvDbSeedPath        = "DB_SEED_PATH"
-	EnvBucketPath        = "BUCKET_PATH"
-	EnvRwxSupported      = "RWX_SUPPORTED"
-	EnvCachePath         = "CACHE_PATH"
-	EnvCachePvc          = "CACHE_PVC"
-	EnvPassphrase        = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated   = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed    = "TASK_REAP_FAILED"
-	EnvTaskSA            = "TASK_SA"
-	EnvTaskRetries       = "TASK_RETRIES"
-	EnvFrequencyTask     = "FREQUENCY_TASK"
-	EnvFrequencyReaper   = "FREQUENCY_REAPER"
-	EnvDevelopment       = "DEVELOPMENT"
-	EnvBucketTTL         = "BUCKET_TTL"
-	EnvFileTTL           = "FILE_TTL"
-	EnvAppName           = "APP_NAME"
-	EnvDisconnected      = "DISCONNECTED"
+	EnvNamespace          = "NAMESPACE"
+	EnvDbPath             = "DB_PATH"
+	EnvDbSeedPath         = "DB_SEED_PATH"
+	EnvBucketPath         = "BUCKET_PATH"
+	EnvRwxSupported       = "RWX_SUPPORTED"
+	EnvCachePath          = "CACHE_PATH"
+	EnvCachePvc           = "CACHE_PVC"
+	EnvPassphrase         = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated    = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded  = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed     = "TASK_REAP_FAILED"
+	EnvTaskSA             = "TASK_SA"
+	EnvTaskRetries        = "TASK_RETRIES"
+	EnvFrequencyTask      = "FREQUENCY_TASK"
+	EnvFrequencyReaper    = "FREQUENCY_REAPER"
+	EnvDevelopment        = "DEVELOPMENT"
+	EnvBucketTTL          = "BUCKET_TTL"
+	EnvFileTTL            = "FILE_TTL"
+	EnvAppName            = "APP_NAME"
+	EnvDisconnected       = "DISCONNECTED"
+	EnvAnalysisReportPath = "ANALYSIS_REPORT_PATH"
 )
 
 type Hub struct {
@@ -77,6 +78,10 @@ type Hub struct {
 	Product bool
 	// Disconnected indicates no cluster.
 	Disconnected bool
+	// Analysis settings.
+	Analysis struct {
+		ReportPath string
+	}
 }
 
 func (r *Hub) Load() (err error) {
@@ -189,6 +194,10 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Disconnected = b
+	}
+	r.Analysis.ReportPath, found = os.LookupEnv(EnvAnalysisReportPath)
+	if !found {
+		r.Analysis.ReportPath = "/tmp/analysis/report"
 	}
 
 	return

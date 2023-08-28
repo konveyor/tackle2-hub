@@ -40,6 +40,7 @@ const (
 // MIME Types.
 const (
 	MIMEOCTETSTREAM = "application/octet-stream"
+	TAR             = "application/x-tar"
 )
 
 //

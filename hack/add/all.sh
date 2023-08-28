@@ -17,3 +17,4 @@ cd ${dir}
 ./business-service.sh
 ./application.sh
 ./review.sh
+./taskgroup.sh

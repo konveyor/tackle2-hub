@@ -1,10 +1,7 @@
 package binding
 
 import (
-	"archive/tar"
-	"bufio"
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +9,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/binding/filter"
+	"github.com/konveyor/tackle2-hub/tar"
 	"io"
 	"mime/multipart"
 	"net"
@@ -20,7 +18,6 @@ import (
 	"net/url"
 	"os"
 	pathlib "path"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -539,106 +536,17 @@ func (r *Client) FileSend(path, method string, fields []Field, object interface{
 //
 // getDir downloads and expands a directory.
 func (r *Client) getDir(body io.Reader, output string) (err error) {
-	zipReader, err := gzip.NewReader(body)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = zipReader.Close()
-	}()
-	tarReader := tar.NewReader(zipReader)
-	for {
-		header, nErr := tarReader.Next()
-		if nErr != nil {
-			if nErr == io.EOF {
-				break
-			} else {
-				err = liberr.Wrap(nErr)
-				return
-			}
-		}
-		path := pathlib.Join(output, header.Name)
-		switch header.Typeflag {
-		case tar.TypeDir:
-			err = os.Mkdir(path, 0777)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		case tar.TypeReg:
-			file, nErr := os.Create(path)
-			if nErr != nil {
-				err = liberr.Wrap(nErr)
-				return
-			}
-			_, err = io.Copy(file, tarReader)
-			_ = file.Close()
-		default:
-		}
-	}
+	tarReader := tar.NewReader()
+	err = tarReader.Extract(output, body)
 	return
 }
 
 //
 // putDir archive and uploads a directory.
 func (r *Client) putDir(writer io.Writer, input string) (err error) {
-	var tarOutput bytes.Buffer
-	tarWriter := tar.NewWriter(&tarOutput)
-	err = filepath.Walk(
-		input,
-		func(path string, entry os.FileInfo, wErr error) (err error) {
-			if wErr != nil {
-				err = liberr.Wrap(wErr)
-				return
-			}
-			if path == input {
-				return
-			}
-			header, nErr := tar.FileInfoHeader(entry, "")
-			if nErr != nil {
-				err = liberr.Wrap(nErr)
-				return
-			}
-			header.Name = path[len(input)+1:]
-			switch header.Typeflag {
-			case tar.TypeDir:
-				err = tarWriter.WriteHeader(header)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-			case tar.TypeReg:
-				err = tarWriter.WriteHeader(header)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-				file, nErr := os.Open(path)
-				if err != nil {
-					err = liberr.Wrap(nErr)
-					return
-				}
-				defer func() {
-					_ = file.Close()
-				}()
-				_, err = io.Copy(tarWriter, file)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-			}
-			return
-		})
-	if err != nil {
-		return
-	}
-	zipReader := bufio.NewReader(&tarOutput)
-	zipWriter := gzip.NewWriter(writer)
-	defer func() {
-		_ = zipWriter.Close()
-	}()
-	_, err = io.Copy(zipWriter, zipReader)
+	tarWriter := tar.NewWriter(writer)
+	defer tarWriter.Close()
+	err = tarWriter.AddDir(input)
 	return
 }
 

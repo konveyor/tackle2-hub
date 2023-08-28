@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"io"
@@ -315,7 +314,7 @@ func (h ImportHandler) DownloadCSV(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", m.Filename))
+	h.Attachment(ctx, m.Filename)
 	ctx.Data(http.StatusOK, "text/csv", m.Content)
 }
 

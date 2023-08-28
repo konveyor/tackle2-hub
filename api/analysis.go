@@ -1,16 +1,25 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/tar"
+	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"io"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 )
 
 //
@@ -36,6 +45,7 @@ const (
 	//
 	AppAnalysesRoot       = ApplicationRoot + "/analyses"
 	AppAnalysisRoot       = ApplicationRoot + "/analysis"
+	AppAnalysisReportRoot = AppAnalysisRoot + "/report"
 	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
 	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
 )
@@ -75,6 +85,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
+	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
 	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
 }
@@ -83,47 +94,68 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 // @summary Get an analysis (report) by ID.
 // @description Get an analysis (report) by ID.
 // @tags analyses
-// @produce json
+// @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /analyses/{id} [get]
 // @param id path string true "Analysis ID"
 func (h AnalysisHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.Analysis{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	writer := AnalysisWriter{ctx: ctx}
+	path, err := writer.Create(id)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	r := Analysis{}
-	r.With(m)
-
-	h.Respond(ctx, http.StatusOK, r)
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
 }
 
 // AppLatest godoc
 // @summary Get the latest analysis.
 // @description Get the latest analysis for an application.
 // @tags analyses
-// @produce json
+// @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /applications/{id}/analysis [get]
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	db = db.Where("ApplicationID = ?", id)
-	result := db.Last(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	err := db.Last(&m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	r := Analysis{}
-	r.With(m)
+	writer := AnalysisWriter{ctx: ctx}
+	path, err := writer.Create(id)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
+}
 
-	h.Respond(ctx, http.StatusOK, r)
+// AppLatestReport godoc
+// @summary Get the latest analysis (static) report.
+// @description Get the latest analysis (static) report.
+// @tags analyses
+// @produce octet-stream
+// @success 200
+// @router /applications/{id}/analysis/report [get]
+// @param id path string true "Application ID"
+func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
+	id := h.pk(ctx)
+	reportWriter := ReportWriter{ctx: ctx}
+	reportWriter.Write(id)
 }
 
 // AppList godoc
@@ -148,7 +180,6 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Analysis{})
 	db = db.Where("ApplicationID = ?", id)
-	db = db.Preload(clause.Associations)
 	db = sort.Sorted(db)
 	var list []model.Analysis
 	var m model.Analysis
@@ -1704,8 +1735,8 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 type Analysis struct {
 	Resource     `yaml:",inline"`
 	Effort       int              `json:"effort"`
-	Issues       []Issue          `json:"issues,omitempty"`
-	Dependencies []TechDependency `json:"dependencies,omitempty"`
+	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
+	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -1992,3 +2023,415 @@ type DepAppReport struct {
 //
 // FactMap map.
 type FactMap map[string]interface{}
+
+//
+// AnalysisWriter used to create a file containing an analysis.
+type AnalysisWriter struct {
+	encoder
+	ctx *gin.Context
+}
+
+//
+// db returns a db client.
+func (r *AnalysisWriter) db() (db *gorm.DB) {
+	rtx := WithContext(r.ctx)
+	db = rtx.DB.Debug()
+	return
+}
+
+//
+// Create an analysis file and returns the path.
+func (r *AnalysisWriter) Create(id uint) (path string, err error) {
+	path = fmt.Sprintf("/tmp/report-%d", rand.Int())
+	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
+	switch accepted {
+	case "",
+		binding.MIMEPOSTForm,
+		binding.MIMEJSON:
+		path += ".json"
+	case binding.MIMEYAML:
+		path += ".yaml"
+	default:
+		err = &BadRequestError{"MIME not supported."}
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	err = r.Write(id, file)
+	return
+}
+
+//
+// Write the analysis file.
+func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
+	m := &model.Analysis{}
+	db := r.db()
+	err = db.First(m, id).Error
+	if err != nil {
+		return
+	}
+	r.encoder, err = r.newEncoder(output)
+	if err != nil {
+		return
+	}
+	r.begin()
+	rx := &Analysis{}
+	rx.With(m)
+	r.embed(rx)
+	err = r.addIssues(m)
+	if err != nil {
+		return
+	}
+	err = r.addDeps(m)
+	if err != nil {
+		return
+	}
+	r.end()
+	return
+}
+
+//
+// newEncoder returns an encoder.
+func (r *AnalysisWriter) newEncoder(output io.Writer) (encoder encoder, err error) {
+	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
+	switch accepted {
+	case "",
+		binding.MIMEPOSTForm,
+		binding.MIMEJSON:
+		encoder = &jsonEncoder{output: output}
+	case binding.MIMEYAML:
+		encoder = &yamlEncoder{output: output}
+	default:
+		err = &BadRequestError{"MIME not supported."}
+	}
+
+	return
+}
+
+//
+// addIssues writes issues.
+func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
+	r.field("issues")
+	r.beginList()
+	batch := 10
+	for b := 0; ; b += batch {
+		db := r.db()
+		db = db.Preload("Incidents")
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		var issues []model.Issue
+		err = db.Find(&issues, "AnalysisID", m.ID).Error
+		if err != nil {
+			return
+		}
+		if len(issues) == 0 {
+			break
+		}
+		for i := range issues {
+			issue := Issue{}
+			issue.With(&issues[i])
+			r.writeItem(b, i, issue)
+		}
+	}
+	r.endList()
+	return
+}
+
+//
+// addDeps writes dependencies.
+func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
+	r.field("dependencies")
+	r.beginList()
+	batch := 100
+	for b := 0; ; b += batch {
+		db := r.db()
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		var deps []model.TechDependency
+		err = db.Find(&deps, "AnalysisID", m.ID).Error
+		if err != nil {
+			return
+		}
+		if len(deps) == 0 {
+			break
+		}
+		for i := range deps {
+			d := TechDependency{}
+			d.With(&deps[i])
+			r.writeItem(b, i, d)
+		}
+	}
+	r.endList()
+	return
+}
+
+//
+// ReportWriter analysis report writer.
+type ReportWriter struct {
+	encoder
+	ctx *gin.Context
+}
+
+//
+// db returns a db client.
+func (r *ReportWriter) db() (db *gorm.DB) {
+	rtx := WithContext(r.ctx)
+	db = rtx.DB.Debug()
+	return
+}
+
+//
+// Write builds and streams the analysis report.
+func (r *ReportWriter) Write(id uint) {
+	path, err := r.buildOutput(id)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	tarWriter := tar.NewWriter(r.ctx.Writer)
+	defer func() {
+		tarWriter.Close()
+	}()
+	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	err = tarWriter.AssertFile(path)
+	if err != nil {
+		_ = r.ctx.Error(err)
+		return
+	}
+	r.ctx.Status(http.StatusOK)
+	_ = tarWriter.AddDir(Settings.Analysis.ReportPath)
+	_ = tarWriter.AddFile(path, "output.js")
+	return
+}
+
+//
+// buildOutput creates the report output.js file.
+func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
+	m := &model.Analysis{}
+	db := r.db()
+	db = db.Preload("Application")
+	db = db.Preload("Application.Tags")
+	db = db.Preload("Application.Tags.Category")
+	err = db.First(m, id).Error
+	if err != nil {
+		return
+	}
+	file, err := os.CreateTemp("", "output-*.js")
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	path = file.Name()
+	r.encoder = &jsonEncoder{output: file}
+	r.write("window[\"apps\"]=[")
+	r.begin()
+	r.field("id").write(strconv.Itoa(int(m.Application.ID)))
+	r.field("name").writeStr(m.Application.Name)
+	aWriter := AnalysisWriter{ctx: r.ctx}
+	aWriter.encoder = r.encoder
+	err = aWriter.addIssues(m)
+	if err != nil {
+		return
+	}
+	err = aWriter.addDeps(m)
+	if err != nil {
+		return
+	}
+	err = r.addTags(m)
+	if err != nil {
+		return
+	}
+	r.end()
+	r.write("]")
+	return
+}
+
+//
+// addTags writes tags.
+func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
+	r.field("tags")
+	r.beginList()
+	for i := range m.Application.Tags {
+		m := m.Application.Tags[i]
+		tag := Tag{}
+		tag.ID = m.ID
+		tag.Name = m.Name
+		tag.Category = Ref{
+			ID:   m.Category.ID,
+			Name: m.Category.Name,
+		}
+		r.writeItem(0, i, tag)
+	}
+	r.endList()
+	return
+}
+
+type encoder interface {
+	begin() encoder
+	end() encoder
+	write(s string) encoder
+	writeStr(s string) encoder
+	field(name string) encoder
+	beginList() encoder
+	endList() encoder
+	writeItem(batch, index int, object any) encoder
+	encode(object any) encoder
+	embed(object any) encoder
+}
+
+type jsonEncoder struct {
+	output io.Writer
+	fields int
+}
+
+func (r *jsonEncoder) begin() encoder {
+	r.write("{")
+	return r
+}
+
+func (r *jsonEncoder) end() encoder {
+	r.write("}")
+	return r
+}
+
+func (r *jsonEncoder) write(s string) encoder {
+	_, _ = r.output.Write([]byte(s))
+	return r
+}
+
+func (r *jsonEncoder) writeStr(s string) encoder {
+	r.write("\"" + s + "\"")
+	return r
+}
+
+func (r *jsonEncoder) field(s string) encoder {
+	if r.fields > 0 {
+		r.write(",")
+	}
+	r.writeStr(s).write(":")
+	r.fields++
+	return r
+}
+
+func (r *jsonEncoder) beginList() encoder {
+	r.write("[")
+	return r
+}
+
+func (r *jsonEncoder) endList() encoder {
+	r.write("]")
+	return r
+}
+
+func (r *jsonEncoder) writeItem(batch, index int, object any) encoder {
+	if batch > 0 || index > 0 {
+		r.write(",")
+	}
+	r.encode(object)
+	return r
+}
+
+func (r *jsonEncoder) encode(object any) encoder {
+	encoder := json.NewEncoder(r.output)
+	_ = encoder.Encode(object)
+	return r
+}
+
+func (r *jsonEncoder) embed(object any) encoder {
+	b := new(bytes.Buffer)
+	encoder := json.NewEncoder(b)
+	_ = encoder.Encode(object)
+	s := b.String()
+	mp := make(map[string]any)
+	err := json.Unmarshal([]byte(s), &mp)
+	if err == nil {
+		r.fields += len(mp)
+		s = s[1 : len(s)-2]
+	}
+	r.write(s)
+	return r
+}
+
+type yamlEncoder struct {
+	output io.Writer
+	fields int
+	depth  int
+}
+
+func (r *yamlEncoder) begin() encoder {
+	r.write("---\n")
+	return r
+}
+
+func (r *yamlEncoder) end() encoder {
+	return r
+}
+
+func (r *yamlEncoder) write(s string) encoder {
+	s += strings.Repeat("  ", r.depth)
+	_, _ = r.output.Write([]byte(s))
+	return r
+}
+
+func (r *yamlEncoder) writeStr(s string) encoder {
+	r.write("\"" + s + "\"")
+	return r
+}
+
+func (r *yamlEncoder) field(s string) encoder {
+	if r.fields > 0 {
+		r.write("\n")
+	}
+	r.write(s).write(": ")
+	r.fields++
+	return r
+}
+
+func (r *yamlEncoder) beginList() encoder {
+	r.write("\n")
+	r.depth++
+	return r
+}
+
+func (r *yamlEncoder) endList() encoder {
+	r.depth--
+	return r
+}
+
+func (r *yamlEncoder) writeItem(batch, index int, object any) encoder {
+	r.encode([]any{object})
+	return r
+}
+
+func (r *yamlEncoder) encode(object any) encoder {
+	encoder := yaml.NewEncoder(r.output)
+	_ = encoder.Encode(object)
+	return r
+}
+
+func (r *yamlEncoder) embed(object any) encoder {
+	b := new(bytes.Buffer)
+	encoder := yaml.NewEncoder(b)
+	_ = encoder.Encode(object)
+	s := b.String()
+	mp := make(map[string]any)
+	err := yaml.Unmarshal([]byte(s), &mp)
+	if err == nil {
+		r.fields += len(mp)
+	}
+	r.write(s)
+	return r
+}

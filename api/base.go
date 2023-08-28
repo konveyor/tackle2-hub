@@ -235,6 +235,15 @@ func (h *BaseHandler) Accepted(ctx *gin.Context, mimes ...string) (b bool) {
 }
 
 //
+// Attachment sets the Content-Disposition header.
+func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
+	attachment := fmt.Sprintf("attachment; filename=\"%s\"", name)
+	ctx.Writer.Header().Set(
+		"Content-Disposition",
+		attachment)
+}
+
+//
 // REST resource.
 type Resource struct {
 	ID         uint      `json:"id,omitempty" yaml:",omitempty"`
