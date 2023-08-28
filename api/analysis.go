@@ -2091,7 +2091,6 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 		return
 	}
 	r.end()
-
 	return
 }
 
