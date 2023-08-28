@@ -2228,14 +2228,14 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	if err != nil {
 		return
 	}
-	path = fmt.Sprintf("/tmp/ouput-%d.js", rand.Int())
-	file, err := os.Create(path)
+	file, err := os.CreateTemp("", "output-*.js")
 	if err != nil {
 		return
 	}
 	defer func() {
 		_ = file.Close()
 	}()
+	path = file.Name()
 	r.encoder = &jsonEncoder{output: file}
 	r.write("window[\"apps\"]=[")
 	r.begin()
