@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
@@ -15,7 +14,6 @@ import (
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"io"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -2042,25 +2040,25 @@ func (r *AnalysisWriter) db() (db *gorm.DB) {
 //
 // Create an analysis file and returns the path.
 func (r *AnalysisWriter) Create(id uint) (path string, err error) {
-	path = fmt.Sprintf("/tmp/report-%d", rand.Int())
+	ext := ".json"
 	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
 	switch accepted {
 	case "",
 		binding.MIMEPOSTForm,
 		binding.MIMEJSON:
-		path += ".json"
 	case binding.MIMEYAML:
-		path += ".yaml"
+		ext = ".yaml"
 	default:
 		err = &BadRequestError{"MIME not supported."}
 	}
-	file, err := os.Create(path)
+	file, err := os.CreateTemp("", "report-*"+ext)
 	if err != nil {
 		return
 	}
 	defer func() {
 		_ = file.Close()
 	}()
+	path = file.Name()
 	err = r.Write(id, file)
 	return
 }
