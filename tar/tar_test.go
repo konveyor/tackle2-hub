@@ -1,10 +1,8 @@
 package tar
 
 import (
-	uuid2 "github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/nas"
-	"github.com/konveyor/tackle2-hub/tar"
 	"github.com/konveyor/tackle2-hub/test/assert"
 	"github.com/onsi/gomega"
 	"os"
@@ -16,9 +14,7 @@ import (
 func TestWriter(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	// Setup
-	uuid, _ := uuid2.NewUUID()
-	tmpDir := "/tmp/" + uuid.String()
-	err := nas.MkDir(tmpDir, 0755)
+	tmpDir, err := os.MkdirTemp("", "tar-*")
 	g.Expect(err).To(gomega.BeNil())
 	defer func() {
 		_ = nas.RmDir(tmpDir)
@@ -28,7 +24,7 @@ func TestWriter(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Write the ./data tree.
-	writer := tar.NewWriter(file)
+	writer := NewWriter(file)
 	err = writer.AddDir("./data")
 	g.Expect(err).To(gomega.BeNil())
 
@@ -39,7 +35,7 @@ func TestWriter(t *testing.T) {
 	_ = file.Close()
 
 	// Read/expand the tarball.
-	reader := tar.NewReader()
+	reader := NewReader()
 	file, err = os.Open(outPath)
 	g.Expect(err).To(gomega.BeNil())
 	err = reader.Extract(tmpDir, file)
