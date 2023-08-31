@@ -7,16 +7,16 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	GitPw = api.Identity{
-		Kind: "git",
-		Name: "git-pw",
-		User: "test-user",
+		Kind:     "git",
+		Name:     "git-pw",
+		User:     "test-user",
 		Password: "test-password-123",
 	}
 	GitKey = api.Identity{
 		Kind: "git",
 		Name: "git-key",
 		User: "test-user",
-		Key:  /* The key was generated only for test purposes, not used anywhere, gitleaks:allow */ `-----BEGIN OPENSSH PRIVATE KEY-----
+		Key: /* The key was generated only for test purposes, not used anywhere, gitleaks:allow */ `-----BEGIN OPENSSH PRIVATE KEY-----
 		b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAlwAAAAdzc2gtcn
 		NhAAAAAwEAAQAAAIEAoDrNL4XSvv5xgPX4ty4nZFn+5nTG9F9Kvx8u+eNN2CdTKjzFUr0N
 		HYFfiBo98RyZO67plzQVi7hK+ooUTAdt+eU6bgF23VF62Cd8GT/l2AMB73tTedEYVmsOi5
@@ -82,7 +82,25 @@ var (
 		  <activeProfiles>
 			<activeProfile>github</activeProfile>
 		  </activeProfiles>
-		</settings>`,	
+		</settings>`,
 	}
-	Samples = []api.Identity{GitPw, GitKey, Mvn}
+	Proxy = api.Identity{
+		Kind:     "proxy",
+		Name:     "Proxy Identity",
+		User:     "test-user",
+		Password: "test-password",
+	}
+	BasicAuth = api.Identity{
+		Kind:        "basic-auth",
+		Description: "Basic Auth (Jira)",
+		Name:        "Basic Auth Identity",
+		User:        "test-user",
+		Password:    "test-password",
+	}
+	BearerToken = api.Identity{
+		Kind: "bearer",
+		Name: "Bearer Token Identity",
+		Key:  "test-key",
+	}
+	Samples = []api.Identity{GitPw, GitKey, Mvn, Proxy, BasicAuth, BearerToken}
 )
