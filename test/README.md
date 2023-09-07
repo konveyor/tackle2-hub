@@ -33,11 +33,11 @@ $ export HUB_BASE_URL=http://localhost:8080
 $ go test -v ./test/api/
 ```
 
-Or tests can run against running Hub installation (example with minikube below).
+Or tests can run against running Konveyor installation (example with minikube below).
 
 ```
 $ export HUB_BASE_URL="http://$(minikube ip)/hub"
-$ export HUB_PASSWORD=="admin"
+$ export HUB_USERNAME="admin"
 $ export HUB_PASSWORD="..."
 $ go test -v ./test/api/
 ```
@@ -67,4 +67,14 @@ go test -v ./test/api/...
     --- PASS: TestApplicationUpdateName/Update_application_Minimal_application (0.01s)
 PASS
 ok  	github.com/konveyor/tackle2-hub/test/api/application	0.194s
+```
+
+### HTTPS
+
+```binding.Client``` validates SSL certificate. In order to add not trusted CA, it is needed import certificate chain to the local machine.
+
+The chain.pem file can be downloaded with web browser from Konveyor UI page (certificate details) and imported. Example:
+```
+# cp apps-mig09-...-chain.pem /etc/pki/ca-trust/source/anchors/
+# update-ca-trust
 ```
