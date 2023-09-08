@@ -82,6 +82,21 @@ def debugPrint(str):
     if args.verbose:
         print(str)
 
+def getHubToken(host, username, password):
+    print("Getting auth token via Hub from %s" % host)
+    url  = "%s/hub/auth/login" % host
+    data = '{"user": "%s", "password": "%s"}' % (username, password)
+
+    r = requests.post(url, data=data, verify=False)
+    if r.ok:
+        respData = json.loads(r.text)
+        debugPrint("Got access token: %s" % respData['token'])
+        return respData['token']
+    else:
+        print("ERROR getting auth token from %s" % url)
+        print(data, r)
+        exit(1)
+
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
     if args.noAuth:
         print("Skipping auth token creation for %s, using empty." % host)
@@ -870,7 +885,7 @@ if cmdWanted(args, "export-tackle1"):
 if cmdWanted(args, "export"):
     cmdExecuted = True
     # Gather Keycloak access tokens for Tackle2
-    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'])
 
     # Setup data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -893,7 +908,7 @@ if cmdWanted(args, "export"):
 if cmdWanted(args, "import"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -915,7 +930,7 @@ if cmdWanted(args, "import"):
 if cmdWanted(args, "clean"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
@@ -929,7 +944,7 @@ if cmdWanted(args, "clean"):
 if cmdWanted(args, "clean-all"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getKeycloakToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'])
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
