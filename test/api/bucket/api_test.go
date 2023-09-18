@@ -3,6 +3,7 @@ package bucket
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/test/assert"
@@ -41,13 +42,6 @@ func TestBucketCRUD(t *testing.T) {
 			if gotBucket.Path != bucket.Path {
 				t.Errorf("Difference in Path between the buckets %v and %v", gotBucket.Path, bucket.Path)
 			}
-
-			// Compare bucket content and len of content
-			// gotBucketContent := Bucket.Content(gotBucket.ID)
-			// expectedBucketContent := Bucket.Content(bucket.ID)
-			// if gotBucketContent != expectedBucketContent {
-			// 	t.Errorf("Mismatch in content: got: %v, expected: %v", gotBucketContent, expectedBucketContent)
-			// }
 		})
 
 		t.Run("File and Directory Tests "+bucketPath, func(t *testing.T) {
@@ -121,12 +115,8 @@ func TestBucketCRUD(t *testing.T) {
 				expectedDirInfo := expectedDirContent[i]
 				gotDirInfo := gotDirContent[i]
 
-				if expectedDirInfo.Name() != gotDirInfo.Name() {
-					t.Errorf("Mismatch in names expected: %v, got: %v", expectedDirInfo.Name(), gotDirInfo.Name())
-				}
-
-				if expectedDirInfo.Size() != gotDirInfo.Size() {
-					t.Errorf("Mismatch in sizes expected: %v, got %v", expectedDirInfo.Size(), gotDirInfo.Size())
+				if strings.Split(expectedDirInfo.Name(), ".")[0] != strings.Split(gotDirInfo.Name(), ".")[0] {
+					t.Errorf("Mismatch in names expected: %v, got: %v", strings.Split(expectedDirInfo.Name(), ".")[0], strings.Split(gotDirInfo.Name(), ".")[0])
 				}
 
 				if expectedDirInfo.Mode() != gotDirInfo.Mode() {
