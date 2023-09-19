@@ -1,8 +1,9 @@
 package binding
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	pathlib "path"
+
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 //
