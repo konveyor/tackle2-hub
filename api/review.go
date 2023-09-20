@@ -96,6 +96,7 @@ func (h ReviewHandler) Create(ctx *gin.Context) {
 	review := Review{}
 	err := h.Bind(ctx, &review)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	m := review.Model()
@@ -193,7 +194,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 			ProposedAction:      m.ProposedAction,
 			WorkPriority:        m.WorkPriority,
 			Comments:            m.Comments,
-			ApplicationID:       id,
+			ApplicationID:       &id,
 		}
 		existing := []model.Review{}
 		result = h.DB(ctx).Find(&existing, "applicationid = ?", id)
@@ -229,7 +230,8 @@ type Review struct {
 	ProposedAction      string `json:"proposedAction"`
 	WorkPriority        uint   `json:"workPriority"`
 	Comments            string `json:"comments"`
-	Application         Ref    `json:"application" binding:"required"`
+	Application         *Ref   `json:"application,omitempty" binding:"required_without=Archetype,excluded_with=Archetype"`
+	Archetype           *Ref   `json:"archetype,omitempty" binding:"required_without=Application,excluded_with=Application"`
 }
 
 // With updates the resource with the model.
@@ -240,7 +242,8 @@ func (r *Review) With(m *model.Review) {
 	r.ProposedAction = m.ProposedAction
 	r.WorkPriority = m.WorkPriority
 	r.Comments = m.Comments
-	r.Application = r.ref(m.ApplicationID, m.Application)
+	r.Application = r.refPtr(m.ApplicationID, m.Application)
+	r.Archetype = r.refPtr(m.ArchetypeID, m.Archetype)
 }
 
 //
@@ -252,9 +255,13 @@ func (r *Review) Model() (m *model.Review) {
 		ProposedAction:      r.ProposedAction,
 		WorkPriority:        r.WorkPriority,
 		Comments:            r.Comments,
-		ApplicationID:       r.Application.ID,
 	}
 	m.ID = r.ID
+	if r.Application != nil {
+		m.ApplicationID = &r.Application.ID
+	} else if r.Archetype != nil {
+		m.ArchetypeID = &r.Archetype.ID
+	}
 	return
 }
 

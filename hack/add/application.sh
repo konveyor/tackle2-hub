@@ -18,11 +18,6 @@ repository:
 identities:
   - id: 1
   - id: 2
-facts:
-  - key: A
-    value: 1
-  - key: B
-    value: 2
 tags:
   - id: 1
 '
@@ -37,11 +32,6 @@ name: Cat
 description: Cat application.
 identities:
   - id: 1
-facts:
-  - key: C
-    value: 3
-  - key: D
-    value: 4
 tags:
   - id: 1
   - id: 2

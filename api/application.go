@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -21,6 +22,8 @@ const (
 	AppBucketRoot        = ApplicationRoot + "/bucket"
 	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
 	AppStakeholdersRoot  = ApplicationRoot + "/stakeholders"
+	AppAssessmentsRoot   = ApplicationRoot + "/assessments"
+	AppAssessmentRoot    = AppAssessmentsRoot + "/:" + ID2
 )
 
 //
@@ -77,6 +80,11 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.stakeholders"))
 	routeGroup.PUT(AppStakeholdersRoot, h.StakeholdersUpdate)
+	// Assessments
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("applications.assessments"))
+	routeGroup.GET(AppAssessmentsRoot, h.AssessmentList)
+	routeGroup.POST(AppAssessmentsRoot, h.AssessmentCreate)
 }
 
 // Get godoc
@@ -106,8 +114,39 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		return
 	}
 
+	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
+	archetypes, err := resolver.Archetypes()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	archetypeTags, err := resolver.ArchetypeTags()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	r := Application{}
 	r.With(m, tags)
+	r.WithArchetypes(archetypes)
+	r.WithSourcedTags(archetypeTags, "archetype")
+	r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+	r.Assessed, err = resolver.Assessed()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -128,6 +167,19 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+
+	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	resources := []Application{}
 	for i := range list {
 		tags := []model.ApplicationTag{}
@@ -137,9 +189,27 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 			_ = ctx.Error(result.Error)
 			return
 		}
-
+		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
+		archetypes, aErr := resolver.Archetypes()
+		if aErr != nil {
+			_ = ctx.Error(aErr)
+			return
+		}
+		archetypeTags, aErr := resolver.ArchetypeTags()
+		if aErr != nil {
+			_ = ctx.Error(aErr)
+			return
+		}
 		r := Application{}
 		r.With(&list[i], tags)
+		r.WithArchetypes(archetypes)
+		r.WithSourcedTags(archetypeTags, "archetype")
+		r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+		r.Assessed, err = resolver.Assessed()
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 		resources = append(resources, r)
 	}
 
@@ -182,7 +252,38 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		}
 	}
 
+	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
+	archetypes, err := resolver.Archetypes()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	archetypeTags, err := resolver.ArchetypeTags()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	r.With(m, tags)
+	r.WithArchetypes(archetypes)
+	r.WithSourcedTags(archetypeTags, "archetype")
+	r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+	r.Assessed, err = resolver.Assessed()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -200,12 +301,6 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
-		return
-	}
-	p := Pathfinder{}
-	err := p.DeleteAssessment([]uint{id}, ctx)
-	if err != nil {
-		_ = ctx.Error(err)
 		return
 	}
 	result = h.DB(ctx).Delete(m)
@@ -227,12 +322,6 @@ func (h ApplicationHandler) Delete(ctx *gin.Context) {
 func (h ApplicationHandler) DeleteList(ctx *gin.Context) {
 	ids := []uint{}
 	err := h.Bind(ctx, &ids)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	p := Pathfinder{}
-	err = p.DeleteAssessment(ids, ctx)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -843,6 +932,115 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// AssessmentList godoc
+// @summary List the assessments of an Application and any it inherits from its archetypes.
+// @description List the assessments of an Application and any it inherits from its archetypes.
+// @tags applications
+// @success 200 {object} []api.Assessment
+// @router /applications/{id}/assessments [get]
+// @param id path int true "Application ID"
+func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
+	m := &model.Application{}
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db = db.Omit("Analyses")
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
+	archetypes, err := resolver.Archetypes()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	assessments := m.Assessments
+	for _, a := range archetypes {
+		assessments = append(assessments, a.Assessments...)
+	}
+
+	resources := []Assessment{}
+	for i := range assessments {
+		r := Assessment{}
+		r.With(&assessments[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// AssessmentCreate godoc
+// @summary Create an application assessment.
+// @description Create an application assessment.
+// @tags applications
+// @accept json
+// @produce json
+// @success 201 {object} api.Assessment
+// @router /applications/{id}/assessments [post]
+// @param assessment body api.Assessment true "Assessment data"
+func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
+	application := &model.Application{}
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db = db.Omit("Analyses")
+	result := db.First(application, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	r := &Assessment{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r.Application = &Ref{ID: id}
+	r.Archetype = nil
+	q := &model.Questionnaire{}
+	db = h.preLoad(h.DB(ctx))
+	result = db.First(q, r.Questionnaire.ID)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	m := r.Model()
+	m.Sections = q.Sections
+	m.Thresholds = q.Thresholds
+	m.RiskMessages = q.RiskMessages
+	m.CreateUser = h.CurrentUser(ctx)
+
+	resolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	assessment.PrepareForApplication(resolver, application, m)
+
+	result = h.DB(ctx).Create(m)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	r.With(m)
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
 //
 // Application REST resource.
 type Application struct {
@@ -860,6 +1058,9 @@ type Application struct {
 	Owner           *Ref        `json:"owner"`
 	Contributors    []Ref       `json:"contributors"`
 	MigrationWave   *Ref        `json:"migrationWave"`
+	Archetypes      []Ref       `json:"archetypes"`
+	Assessments     []Ref       `json:"assessments"`
+	Assessed        bool        `json:"assessed"`
 }
 
 //
@@ -901,6 +1102,32 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 			ref)
 	}
 	r.MigrationWave = r.refPtr(m.MigrationWaveID, m.MigrationWave)
+	r.Assessments = []Ref{}
+	for _, a := range m.Assessments {
+		ref := Ref{}
+		ref.With(a.ID, "")
+		r.Assessments = append(r.Assessments, ref)
+	}
+}
+
+//
+// WithArchetypes updates the resource with archetypes.
+func (r *Application) WithArchetypes(archetypes []model.Archetype) {
+	for _, a := range archetypes {
+		ref := Ref{}
+		ref.With(a.ID, a.Name)
+		r.Archetypes = append(r.Archetypes, ref)
+	}
+}
+
+//
+// WithSourcedTags updates the resource with tags derived from assessments.
+func (r *Application) WithSourcedTags(tags []model.Tag, source string) {
+	for _, t := range tags {
+		ref := TagRef{}
+		ref.With(t.ID, t.Name, source)
+		r.Tags = append(r.Tags, ref)
+	}
 }
 
 //
