@@ -57,14 +57,6 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	archetypes := []model.Archetype{}
-	db = h.preLoad(h.DB(ctx), "Tags", "CriteriaTags")
-	result = db.Find(&archetypes)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
 	applications, err := membership.Applications(m)
 	if err != nil {
@@ -325,6 +317,7 @@ type Archetype struct {
 	StakeholderGroups []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	Applications      []Ref  `json:"applications" yaml:"applications"`
 	Assessments       []Ref  `json:"assessments" yaml:"assessments"`
+	Review            *Ref   `json:"review"`
 }
 
 //
@@ -353,6 +346,11 @@ func (r *Archetype) With(m *model.Archetype) {
 	r.Assessments = []Ref{}
 	for _, a := range m.Assessments {
 		r.Assessments = append(r.Assessments, r.ref(a.ID, &a))
+	}
+	if m.Review != nil {
+		ref := &Ref{}
+		ref.With(m.Review.ID, "")
+		r.Review = ref
 	}
 }
 
