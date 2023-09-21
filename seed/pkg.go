@@ -40,12 +40,7 @@ func Seed() (err error) {
 		}
 	}()
 
-	v, err := migrationVersion(db)
-	if err != nil {
-		return
-	}
-
-	seeds, checksum, err := libseed.ReadFromDir(settings.Settings.Hub.DB.SeedPath, v)
+	seeds, checksum, err := libseed.ReadFromDir(settings.Settings.Hub.DB.SeedPath, libseed.AllVersions)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			log.Info("Seed directory not found.")
