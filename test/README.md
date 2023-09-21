@@ -73,8 +73,9 @@ ok  	github.com/konveyor/tackle2-hub/test/api/application	0.194s
 
 ```binding.Client``` validates SSL certificate. In order to add not trusted CA, it is needed import certificate chain to the local machine.
 
-The chain.pem file can be downloaded with web browser from Konveyor UI page (certificate details) and imported. Example:
+The chain.pem file can be downloaded with ```openssl``` command and imported. Example:
 ```
-# cp apps-mig09-...-chain.pem /etc/pki/ca-trust/source/anchors/
+# openssl s_client -showcerts -connect mta-openshift-mta.example.com:443 </dev/null | sed -n '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > chain.pem
+# cp chain.pem /etc/pki/ca-trust/source/anchors/
 # update-ca-trust
 ```
