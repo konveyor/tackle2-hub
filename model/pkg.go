@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v9/model"
+	"github.com/konveyor/tackle2-hub/migration/v10/model"
 	"gorm.io/datatypes"
 )
 
@@ -18,6 +18,7 @@ type Assessment = model.Assessment
 type TechDependency = model.TechDependency
 type Incident = model.Incident
 type Analysis = model.Analysis
+type ArchivedIssue = model.ArchivedAIssue
 type Issue = model.Issue
 type Bucket = model.Bucket
 type BucketOwner = model.BucketOwner

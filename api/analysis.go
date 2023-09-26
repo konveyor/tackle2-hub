@@ -228,12 +228,17 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	err := h.archive(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	analysis := &model.Analysis{}
 	analysis.ApplicationID = id
 	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db.Logger = db.Logger.LogMode(logger.Error)
-	err := db.Create(analysis).Error
+	err = db.Create(analysis).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1729,6 +1734,61 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 }
 
 //
+// archive
+// - Set the 'archived' field with archived issues.
+// - Delete issues.
+// - Delete dependencies.
+func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
+	appId := h.pk(ctx)
+	var unarchived []model.Analysis
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", appId)
+	db = db.Where("Archived IS NULL")
+	err = db.Find(&unarchived).Error
+	if err != nil {
+		return
+	}
+	for _, m := range unarchived {
+		db := h.DB(ctx)
+		db = db.Select(
+			"i.RuleSet",
+			"i.Rule",
+			"i.Name",
+			"i.Description",
+			"COUNT(n.ID)")
+		db = db.Table("Issue i,")
+		db = db.Joins("Incident n")
+		db = db.Where("n.IssueID = i.ID")
+		db = db.Where("i.AnalysisID", m.ID)
+		db = db.Group("i.ID")
+		archived := []ArchivedIssue{}
+		err = db.Scan(&archived).Error
+		if err != nil {
+			return
+		}
+		m.Archived, _ = json.Marshal(archived)
+		err = db.Update("Archived", archived).Error
+		if err != nil {
+			return
+		}
+		db = h.DB(ctx)
+		db = db.Model(&model.Issue{})
+		err = db.Delete("AnalysisID", m.ID).Error
+		if err != nil {
+			return
+		}
+		db = h.DB(ctx)
+		db = db.Model(&model.TechDependency{})
+		err = db.Delete("AnalysisID", m.ID).Error
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+//
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
@@ -1930,6 +1990,18 @@ func (r *Incident) Model() (m *model.Incident) {
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty" yaml:",omitempty"`
+}
+
+//
+// ArchivedIssue created when issues are archived.
+type ArchivedIssue model.ArchivedIssue
+
+//
+// ArchivedAnalysis resource created when issues are archived.
+type ArchivedAnalysis struct {
+	Resource `yaml:",inline"`
+	Effort   int `json:"effort"`
+	Issues   []ArchivedIssue
 }
 
 //
