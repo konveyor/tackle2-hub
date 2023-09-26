@@ -1755,7 +1755,9 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 			"i.Rule",
 			"i.Name",
 			"i.Description",
-			"COUNT(n.ID)")
+			"i.Category",
+			"i.Effort",
+			"COUNT(n.ID) Incidents")
 		db = db.Table("Issue i,")
 		db = db.Joins("Incident n")
 		db = db.Where("n.IssueID = i.ID")
@@ -1766,8 +1768,10 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 		if err != nil {
 			return
 		}
-		m.Archived, _ = json.Marshal(archived)
-		err = db.Update("Archived", archived).Error
+		db = h.DB(ctx)
+		db = db.Model(m)
+		b, _ := json.Marshal(archived)
+		err = db.Update("Archived", &b).Error
 		if err != nil {
 			return
 		}
