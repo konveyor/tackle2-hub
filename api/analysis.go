@@ -1799,6 +1799,7 @@ type Analysis struct {
 	Effort       int              `json:"effort"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
+	Archived     []ArchivedIssue  `json:"archived,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -1821,6 +1822,9 @@ func (r *Analysis) With(m *model.Analysis) {
 		r.Dependencies = append(
 			r.Dependencies,
 			n)
+	}
+	if m.Archived != nil {
+		_ = json.Unmarshal(m.Archived, &r.Archived)
 	}
 }
 
@@ -1999,14 +2003,6 @@ type Link struct {
 //
 // ArchivedIssue created when issues are archived.
 type ArchivedIssue model.ArchivedIssue
-
-//
-// ArchivedAnalysis resource created when issues are archived.
-type ArchivedAnalysis struct {
-	Resource `yaml:",inline"`
-	Effort   int `json:"effort"`
-	Issues   []ArchivedIssue
-}
 
 //
 // RuleReport REST resource.
