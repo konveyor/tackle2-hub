@@ -1770,20 +1770,20 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 		}
 		db = h.DB(ctx)
 		db = db.Model(m)
-		b, _ := json.Marshal(archived)
-		err = db.Update("Archived", &b).Error
+		m.Archived, _ = json.Marshal(archived)
+		err = db.Update("Archived", &m.Archived).Error
 		if err != nil {
 			return
 		}
 		db = h.DB(ctx)
-		db = db.Model(&model.Issue{})
-		err = db.Delete("AnalysisID", m.ID).Error
+		db = db.Where("AnalysisID", m.ID)
+		err = db.Delete(&model.Issue{}).Error
 		if err != nil {
 			return
 		}
 		db = h.DB(ctx)
-		db = db.Model(&model.TechDependency{})
-		err = db.Delete("AnalysisID", m.ID).Error
+		db = db.Where("AnalysisID", m.ID)
+		err = db.Delete(&model.TechDependency{}).Error
 		if err != nil {
 			return
 		}
