@@ -78,32 +78,3 @@ func TestQuestionnaireList(t *testing.T) {
 		assert.Must(t, Questionnaire.Delete(r.ID))
 	}
 }
-
-//func TestQuestionnaireNotCreateDuplicates(t *testing.T) {
-//	r := GitPw
-//
-//	// Create sample.
-//	assert.Should(t, Questionnaire.Create(&r))
-//
-//	// Try duplicate with the same and different Kind
-//	for _, kind := range []string{r.Kind, "mvn"} {
-//		t.Run(kind, func(t *testing.T) {
-//			// Prepare Questionnaire with duplicate Name.
-//			dup := &api.Questionnaire{
-//				Name: r.Name,
-//			}
-//
-//			// Try create the duplicate.
-//			err := Questionnaire.Create(dup)
-//			if err == nil {
-//				t.Errorf("Created duplicate Questionnaire: %v", dup)
-//
-//				// Clean the duplicate.
-//				assert.Must(t, Questionnaire.Delete(dup.ID))
-//			}
-//		})
-//	}
-//
-//	// Clean.
-//	assert.Must(t, Questionnaire.Delete(r.ID))
-//}
