@@ -228,12 +228,17 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	err := h.archive(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	analysis := &model.Analysis{}
 	analysis.ApplicationID = id
 	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db.Logger = db.Logger.LogMode(logger.Error)
-	err := db.Create(analysis).Error
+	err = db.Create(analysis).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1729,12 +1734,76 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 }
 
 //
+// archive
+// - Set the 'archived' flag.
+// - Set the 'summary' field with archived issues.
+// - Delete issues.
+// - Delete dependencies.
+func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
+	appId := h.pk(ctx)
+	var unarchived []model.Analysis
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", appId)
+	db = db.Where("Archived", false)
+	err = db.Find(&unarchived).Error
+	if err != nil {
+		return
+	}
+	for _, m := range unarchived {
+		db := h.DB(ctx)
+		db = db.Select(
+			"i.RuleSet",
+			"i.Rule",
+			"i.Name",
+			"i.Description",
+			"i.Category",
+			"i.Effort",
+			"COUNT(n.ID) Incidents")
+		db = db.Table("Issue i,")
+		db = db.Joins("Incident n")
+		db = db.Where("n.IssueID = i.ID")
+		db = db.Where("i.AnalysisID", m.ID)
+		db = db.Group("i.ID")
+		summary := []ArchivedIssue{}
+		err = db.Scan(&summary).Error
+		if err != nil {
+			return
+		}
+		db = h.DB(ctx)
+		db = db.Model(m)
+		db = db.Omit(clause.Associations)
+		m.Archived = true
+		m.Summary, _ = json.Marshal(summary)
+		err = db.Updates(h.fields(&m)).Error
+		if err != nil {
+			return
+		}
+		db = h.DB(ctx)
+		db = db.Where("AnalysisID", m.ID)
+		err = db.Delete(&model.Issue{}).Error
+		if err != nil {
+			return
+		}
+		db = h.DB(ctx)
+		db = db.Where("AnalysisID", m.ID)
+		err = db.Delete(&model.TechDependency{}).Error
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+//
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
 	Effort       int              `json:"effort"`
+	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
+	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -1742,6 +1811,7 @@ type Analysis struct {
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
 	r.Effort = m.Effort
+	r.Archived = m.Archived
 	r.Issues = []Issue{}
 	for i := range m.Issues {
 		n := Issue{}
@@ -1757,6 +1827,9 @@ func (r *Analysis) With(m *model.Analysis) {
 		r.Dependencies = append(
 			r.Dependencies,
 			n)
+	}
+	if m.Summary != nil {
+		_ = json.Unmarshal(m.Summary, &r.Summary)
 	}
 }
 
@@ -1931,6 +2004,10 @@ type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty" yaml:",omitempty"`
 }
+
+//
+// ArchivedIssue created when issues are archived.
+type ArchivedIssue model.ArchivedIssue
 
 //
 // RuleReport REST resource.
