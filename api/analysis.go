@@ -1735,7 +1735,8 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 
 //
 // archive
-// - Set the 'archived' field with archived issues.
+// - Set the 'archived' flag.
+// - Set the 'summary' field with archived issues.
 // - Delete issues.
 // - Delete dependencies.
 func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
