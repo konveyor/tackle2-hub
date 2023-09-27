@@ -1743,7 +1743,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 	var unarchived []model.Analysis
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", appId)
-	db = db.Where("Archived IS NULL")
+	db = db.Where("Archived", false)
 	err = db.Find(&unarchived).Error
 	if err != nil {
 		return
@@ -1763,15 +1763,16 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 		db = db.Where("n.IssueID = i.ID")
 		db = db.Where("i.AnalysisID", m.ID)
 		db = db.Group("i.ID")
-		archived := []ArchivedIssue{}
-		err = db.Scan(&archived).Error
+		summary := []ArchivedIssue{}
+		err = db.Scan(&summary).Error
 		if err != nil {
 			return
 		}
 		db = h.DB(ctx)
 		db = db.Model(m)
-		m.Archived, _ = json.Marshal(archived)
-		err = db.Update("Archived", &m.Archived).Error
+		m.Archived = true
+		m.Summary, _ = json.Marshal(summary)
+		err = db.Save(&m).Error
 		if err != nil {
 			return
 		}
@@ -1797,9 +1798,10 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 type Analysis struct {
 	Resource     `yaml:",inline"`
 	Effort       int              `json:"effort"`
+	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
-	Archived     []ArchivedIssue  `json:"archived,omitempty" yaml:",omitempty"`
+	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty"`
 }
 
 //
@@ -1823,8 +1825,8 @@ func (r *Analysis) With(m *model.Analysis) {
 			r.Dependencies,
 			n)
 	}
-	if m.Archived != nil {
-		_ = json.Unmarshal(m.Archived, &r.Archived)
+	if m.Summary != nil {
+		_ = json.Unmarshal(m.Summary, &r.Summary)
 	}
 }
 

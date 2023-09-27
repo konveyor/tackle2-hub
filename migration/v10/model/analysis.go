@@ -5,7 +5,8 @@ package model
 type Analysis struct {
 	Model
 	Effort        int
-	Archived      JSON             `gorm:"type:json"`
+	Archived      bool             `json:"archived"`
+	Summary       JSON             `gorm:"type:json"`
 	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint             `gorm:"index;not null"`
