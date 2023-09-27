@@ -1770,9 +1770,10 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 		}
 		db = h.DB(ctx)
 		db = db.Model(m)
+		db = db.Omit(clause.Associations)
 		m.Archived = true
 		m.Summary, _ = json.Marshal(summary)
-		err = db.Save(&m).Error
+		err = db.Updates(h.fields(&m)).Error
 		if err != nil {
 			return
 		}
@@ -1809,6 +1810,7 @@ type Analysis struct {
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
 	r.Effort = m.Effort
+	r.Archived = m.Archived
 	r.Issues = []Issue{}
 	for i := range m.Issues {
 		n := Issue{}
