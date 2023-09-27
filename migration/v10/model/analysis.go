@@ -66,8 +66,8 @@ type Link struct {
 }
 
 //
-// ArchivedAIssue resource created when issues are archived.
-type ArchivedAIssue struct {
+// ArchivedIssue resource created when issues are archived.
+type ArchivedIssue struct {
 	RuleSet     string `json:"ruleSet"`
 	Rule        string `json:"rule"`
 	Name        string `json:"name,omitempty" yaml:",omitempty"`
