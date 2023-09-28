@@ -8,9 +8,9 @@ import (
 // NewApplicationResolver creates a new ApplicationResolver from an application and other shared resolvers.
 func NewApplicationResolver(app *model.Application, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
 	a = &ApplicationResolver{
-		application: app,
-		tagResolver: tags,
-		membershipResolver: membership,
+		application:           app,
+		tagResolver:           tags,
+		membershipResolver:    membership,
 		questionnaireResolver: questionnaire,
 	}
 	return
@@ -20,10 +20,10 @@ func NewApplicationResolver(app *model.Application, tags *TagResolver, membershi
 // ApplicationResolver wraps an Application model
 // with archetype and assessment resolution behavior.
 type ApplicationResolver struct {
-	application *model.Application
-	archetypes []model.Archetype
-	tagResolver *TagResolver
-	membershipResolver *MembershipResolver
+	application           *model.Application
+	archetypes            []model.Archetype
+	tagResolver           *TagResolver
+	membershipResolver    *MembershipResolver
 	questionnaireResolver *QuestionnaireResolver
 }
 

@@ -19,11 +19,11 @@ func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver) {
 //
 // MembershipResolver resolves archetype membership.
 type MembershipResolver struct {
-	db *gorm.DB
-	archetypes []model.Archetype
-	tagSets map[uint]Set
+	db               *gorm.DB
+	archetypes       []model.Archetype
+	tagSets          map[uint]Set
 	archetypeMembers map[uint][]model.Application
-	membersCached bool
+	membersCached    bool
 }
 
 //
@@ -61,9 +61,9 @@ func (r *MembershipResolver) Archetypes(m *model.Application) (archetypes []mode
 
 	// throw away any archetypes that are a subset of
 	// another archetype-- only keep the most specific matches.
-	loop:
+loop:
 	for _, a1 := range matches {
-		for _, a2 := range matches{
+		for _, a2 := range matches {
 			if a1.ID == a2.ID {
 				continue
 			}

@@ -33,6 +33,13 @@ const (
 )
 
 //
+// Tag Sources
+const (
+	SourceAssessment = "assessment"
+	SourceArchetype  = "archetype"
+)
+
+//
 // ApplicationHandler handles application resource routes.
 type ApplicationHandler struct {
 	BucketOwner
@@ -140,8 +147,8 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	r := Application{}
 	r.With(m, tags)
 	r.WithArchetypes(archetypes)
-	r.WithSourcedTags(archetypeTags, "archetype")
-	r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+	r.WithVirtualTags(archetypeTags, "archetype")
+	r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
 	r.Assessed, err = resolver.Assessed()
 	if err != nil {
 		_ = ctx.Error(err)
@@ -203,8 +210,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		r := Application{}
 		r.With(&list[i], tags)
 		r.WithArchetypes(archetypes)
-		r.WithSourcedTags(archetypeTags, "archetype")
-		r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+		r.WithVirtualTags(archetypeTags, "archetype")
+		r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
 		r.Assessed, err = resolver.Assessed()
 		if err != nil {
 			_ = ctx.Error(err)
@@ -243,7 +250,9 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	tags := []model.ApplicationTag{}
 	if len(r.Tags) > 0 {
 		for _, t := range r.Tags {
-			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+			if !t.Virtual {
+				tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+			}
 		}
 		result = h.DB(ctx).Create(&tags)
 		if result.Error != nil {
@@ -277,8 +286,8 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 
 	r.With(m, tags)
 	r.WithArchetypes(archetypes)
-	r.WithSourcedTags(archetypeTags, "archetype")
-	r.WithSourcedTags(resolver.AssessmentTags(), "assessment")
+	r.WithVirtualTags(archetypeTags, "archetype")
+	r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
 	r.Assessed, err = resolver.Assessed()
 	if err != nil {
 		_ = ctx.Error(err)
@@ -399,7 +408,9 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	if len(r.Tags) > 0 {
 		tags := []model.ApplicationTag{}
 		for _, t := range r.Tags {
-			tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+			if !t.Virtual {
+				tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+			}
 		}
 		result = h.DB(ctx).Create(&tags)
 		if result.Error != nil {
@@ -492,12 +503,12 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Ref
-// @router /applications/{id}/tags/id [get]
+// @router /applications/{id}/tags [get]
 // @param id path string true "Application ID"
 func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
-	result := h.DB(ctx).First(app, id)
+	result := h.DB(ctx).Preload("Tags").First(app, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -518,8 +529,40 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	resources := []TagRef{}
 	for i := range list {
 		r := TagRef{}
-		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source)
+		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source, false)
 		resources = append(resources, r)
+	}
+
+	includeAssessment := !found || source == SourceAssessment
+	includeArchetype := !found || source == SourceArchetype
+	if includeAssessment || includeArchetype {
+		membership := assessment.NewMembershipResolver(h.DB(ctx))
+		tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		resolver := assessment.NewApplicationResolver(app, tagsResolver, membership, nil)
+		if includeArchetype {
+			archetypeTags, err := resolver.ArchetypeTags()
+			if err != nil {
+				_ = ctx.Error(err)
+				return
+			}
+			for i := range archetypeTags {
+				r := TagRef{}
+				r.With(archetypeTags[i].ID, archetypeTags[i].Name, SourceArchetype, true)
+				resources = append(resources, r)
+			}
+		}
+		if includeAssessment {
+			assessmentTags := resolver.AssessmentTags()
+			for i := range assessmentTags {
+				r := TagRef{}
+				r.With(assessmentTags[i].ID, assessmentTags[i].Name, SourceAssessment, true)
+				resources = append(resources, r)
+			}
+		}
 	}
 	h.Respond(ctx, http.StatusOK, resources)
 }
@@ -538,6 +581,11 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	ref := &TagRef{}
 	err := h.Bind(ctx, ref)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if ref.Virtual {
+		err = &BadRequestError{"cannot add virtual tags"}
 		_ = ctx.Error(err)
 		return
 	}
@@ -597,11 +645,13 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 	if len(refs) > 0 {
 		appTags := []model.ApplicationTag{}
 		for _, ref := range refs {
-			appTags = append(appTags, model.ApplicationTag{
-				ApplicationID: id,
-				TagID:         ref.ID,
-				Source:        source,
-			})
+			if !ref.Virtual {
+				appTags = append(appTags, model.ApplicationTag{
+					ApplicationID: id,
+					TagID:         ref.ID,
+					Source:        source,
+				})
+			}
 		}
 		err = db.Create(&appTags).Error
 		if err != nil {
@@ -1089,7 +1139,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 	}
 	for i := range tags {
 		ref := TagRef{}
-		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source)
+		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source, false)
 		r.Tags = append(r.Tags, ref)
 	}
 	r.Owner = r.refPtr(m.OwnerID, m.Owner)
@@ -1121,11 +1171,11 @@ func (r *Application) WithArchetypes(archetypes []model.Archetype) {
 }
 
 //
-// WithSourcedTags updates the resource with tags derived from assessments.
-func (r *Application) WithSourcedTags(tags []model.Tag, source string) {
+// WithVirtualTags updates the resource with tags derived from assessments.
+func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 	for _, t := range tags {
 		ref := TagRef{}
-		ref.With(t.ID, t.Name, source)
+		ref.With(t.ID, t.Name, source, true)
 		r.Tags = append(r.Tags, ref)
 	}
 }

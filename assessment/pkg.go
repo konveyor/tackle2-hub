@@ -10,31 +10,31 @@ import (
 // Assessment risk
 const (
 	RiskUnknown = "unknown"
-	RiskRed = "red"
-	RiskYellow = "yellow"
-	RiskGreen = "green"
+	RiskRed     = "red"
+	RiskYellow  = "yellow"
+	RiskGreen   = "green"
 )
 
 //
 // Confidence adjustment
 const (
-	AdjusterRed = 0.5
+	AdjusterRed    = 0.5
 	AdjusterYellow = 0.98
 )
 
 //
 // Confidence multiplier.
 const (
-	MultiplierRed = 0.6
+	MultiplierRed    = 0.6
 	MultiplierYellow = 0.95
 )
 
 //
 // Risk weights
 const (
-	WeightRed = 1
-	WeightYellow = 80
-	WeightGreen = 100
+	WeightRed     = 1
+	WeightYellow  = 80
+	WeightGreen   = 100
 	WeightUnknown = 70
 )
 
