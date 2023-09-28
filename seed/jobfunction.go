@@ -53,7 +53,7 @@ func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 					return
 				}
 			}
-		} else {
+		} else if !found {
 			jobFunction, found, fErr = r.find(db, "name = ?", jf.Name)
 			if fErr != nil {
 				err = fErr

@@ -18,6 +18,7 @@ type Hub struct {
 	JobFunction
 	RuleSet
 	Target
+	Questionnaire
 }
 
 //
@@ -32,6 +33,8 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 		err = r.RuleSet.With(seed)
 	case libseed.KindTarget:
 		err = r.Target.With(seed)
+	case libseed.KindQuestionnaire:
+		err = r.Questionnaire.With(seed)
 	default:
 		err = liberr.New("unknown kind", "kind", seed.Kind, "file", seed.Filename())
 	}
@@ -54,6 +57,10 @@ func (r *Hub) Apply(db *gorm.DB) (err error) {
 		return
 	}
 	err = r.Target.Apply(db)
+	if err != nil {
+		return
+	}
+	err = r.Questionnaire.Apply(db)
 	if err != nil {
 		return
 	}

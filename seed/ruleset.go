@@ -62,7 +62,7 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 					return
 				}
 			}
-		} else {
+		} else if !found {
 			ruleSet, found, fErr = r.find(db, "name = ?", rs.Name)
 			if fErr != nil {
 				err = fErr
