@@ -3,7 +3,7 @@ package assessment
 //
 // Section represents a group of questions in a questionnaire.
 type Section struct {
-	Order     uint       `json:"order" yaml:"order"`
+	Order     uint       `json:"order" yaml:"order" binding:"required"`
 	Name      string     `json:"name" yaml:"name"`
 	Questions []Question `json:"questions" yaml:"questions"`
 }
@@ -53,7 +53,7 @@ func (r *Section) Tags() (tags []CategorizedTag) {
 //
 // Question represents a question in a questionnaire.
 type Question struct {
-	Order       uint             `json:"order" yaml:"order"`
+	Order       uint             `json:"order" yaml:"order" binding:"required"`
 	Text        string           `json:"text" yaml:"text"`
 	Explanation string           `json:"explanation" yaml:"explanation"`
 	IncludeFor  []CategorizedTag `json:"includeFor,omitempty" yaml:"includeFor,omitempty" binding:"excluded_with=ExcludeFor"`
@@ -98,7 +98,7 @@ func (r *Question) Tags() (tags []CategorizedTag) {
 //
 // Answer represents an answer to a question in a questionnaire.
 type Answer struct {
-	Order         uint             `json:"order" yaml:"order"`
+	Order         uint             `json:"order" yaml:"order" binding:"required"`
 	Text          string           `json:"text" yaml:"text"`
 	Risk          string           `json:"risk" yaml:"risk" binding:"oneof=red,yellow,green,unknown"`
 	Rationale     string           `json:"rationale" yaml:"rationale"`
