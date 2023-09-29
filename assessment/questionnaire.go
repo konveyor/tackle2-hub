@@ -19,7 +19,7 @@ func NewQuestionnaireResolver(db *gorm.DB) (a *QuestionnaireResolver, err error)
 //
 // QuestionnaireResolver resolves questionnaire logic.
 type QuestionnaireResolver struct {
-	db *gorm.DB
+	db                     *gorm.DB
 	requiredQuestionnaires Set
 }
 
@@ -47,7 +47,7 @@ func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
 // questionnaires.
 func (r *QuestionnaireResolver) Assessed(assessments []model.Assessment) (assessed bool) {
 	answered := NewSet()
-	loop:
+loop:
 	for _, a := range assessments {
 		if r.requiredQuestionnaires.Contains(a.QuestionnaireID) {
 			sections := []Section{}

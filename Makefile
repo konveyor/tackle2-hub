@@ -4,12 +4,14 @@ HUB_BASE_URL ?= http://localhost:8080
 
 PKG = ./addon/... \
       ./api/... \
+      ./assessment/... \
       ./auth/... \
       ./cmd/... \
       ./database/... \
       ./encryption/... \
       ./importer/... \
       ./k8s/... \
+      ./metrics/... \
       ./migration/... \
       ./model/... \
       ./settings/... \

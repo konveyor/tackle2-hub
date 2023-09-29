@@ -22,7 +22,7 @@ func NewTagResolver(db *gorm.DB) (t *TagResolver, err error) {
 // TagResolver resolves CategorizedTags to Tag models.
 type TagResolver struct {
 	cache map[string]map[string]*model.Tag
-	db *gorm.DB
+	db    *gorm.DB
 }
 
 //

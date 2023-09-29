@@ -132,4 +132,3 @@ type Thresholds struct {
 	Yellow  uint `json:"yellow" yaml:"yellow"`
 	Unknown uint `json:"unknown" yaml:"unknown"`
 }
-
