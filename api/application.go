@@ -147,8 +147,8 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	r := Application{}
 	r.With(m, tags)
 	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, "archetype")
-	r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
+	r.WithVirtualTags(archetypeTags, SourceArchetype)
+	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
 	r.Assessed, err = resolver.Assessed()
 	if err != nil {
 		_ = ctx.Error(err)
@@ -210,8 +210,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		r := Application{}
 		r.With(&list[i], tags)
 		r.WithArchetypes(archetypes)
-		r.WithVirtualTags(archetypeTags, "archetype")
-		r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
+		r.WithVirtualTags(archetypeTags, SourceArchetype)
+		r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
 		r.Assessed, err = resolver.Assessed()
 		if err != nil {
 			_ = ctx.Error(err)
@@ -286,8 +286,8 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 
 	r.With(m, tags)
 	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, "archetype")
-	r.WithVirtualTags(resolver.AssessmentTags(), "assessment")
+	r.WithVirtualTags(archetypeTags, SourceArchetype)
+	r.WithVirtualTags(resolver.AssessmentTags(), SourceArchetype)
 	r.Assessed, err = resolver.Assessed()
 	if err != nil {
 		_ = ctx.Error(err)
