@@ -56,7 +56,7 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 					return
 				}
 			}
-		} else {
+		} else if !found {
 			target, found, fErr = r.find(db, "name = ?", t.Name)
 			if fErr != nil {
 				err = fErr

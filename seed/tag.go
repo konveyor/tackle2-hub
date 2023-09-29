@@ -53,7 +53,7 @@ func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 					return
 				}
 			}
-		} else {
+		} else if !found {
 			category, found, fErr = r.find(db, "name = ?", tc.Name)
 			if fErr != nil {
 				err = fErr
