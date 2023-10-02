@@ -64,9 +64,16 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		return
 	}
 
+	resolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	r := Archetype{}
 	r.With(m)
 	r.WithApplications(applications)
+	r.Assessed = resolver.Assessed(m.Assessments)
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -86,17 +93,25 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		return
 	}
 
+	resolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
 	resources := []Archetype{}
 	for i := range list {
+		m := &list[i]
 		r := Archetype{}
-		applications, err := membership.Applications(&list[i])
+		applications, err := membership.Applications(m)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		r.With(&list[i])
+		r.With(m)
 		r.WithApplications(applications)
+		r.Assessed = resolver.Assessed(m.Assessments)
 		resources = append(resources, r)
 	}
 
@@ -317,6 +332,7 @@ type Archetype struct {
 	StakeholderGroups []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	Applications      []Ref  `json:"applications" yaml:"applications"`
 	Assessments       []Ref  `json:"assessments" yaml:"assessments"`
+	Assessed          bool   `json:"assessed"`
 	Review            *Ref   `json:"review"`
 }
 
