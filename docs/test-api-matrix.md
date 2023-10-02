@@ -27,6 +27,10 @@ batch||||
 migrationwave|:heavy_check_mark:|:heavy_check_mark:||
 ticket||||
 tracker|:heavy_check_mark:|:heavy_check_mark:||
+**Assessments**||||
+archetype||||
+assessment||||
+questionnaire|:heavy_check_mark:|:heavy_check_mark:||
 **Other**||||
 addon || | |
 auth||||

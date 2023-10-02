@@ -24,11 +24,13 @@ type RichClient struct {
 	Application      Application
 	Bucket           Bucket
 	BusinessService  BusinessService
+	Dependency       Dependency
 	File             File
 	Identity         Identity
 	JobFunction      JobFunction
 	MigrationWave    MigrationWave
 	Proxy            Proxy
+	Questionnaire    Questionnaire
 	Review           Review
 	RuleSet          RuleSet
 	Setting          Setting
@@ -39,7 +41,6 @@ type RichClient struct {
 	Target           Target
 	Task             Task
 	Tracker          Tracker
-	Dependency       Dependency
 
 	// A REST client.
 	Client *Client
@@ -79,6 +80,9 @@ func New(baseUrl string) (r *RichClient) {
 			client: client,
 		},
 		Proxy: Proxy{
+			client: client,
+		},
+		Questionnaire: Questionnaire{
 			client: client,
 		},
 		Review: Review{
