@@ -1,36 +1,14 @@
 package model
 
-import "github.com/konveyor/tackle2-hub/migration/v5/model"
+import "github.com/konveyor/tackle2-hub/settings"
+
+var (
+	Settings = &settings.Settings
+)
 
 //
 // JSON field (data) type.
 type JSON = []byte
-
-type Model = model.Model
-type Application = model.Application
-type Bucket = model.Bucket
-type BucketOwner = model.BucketOwner
-type BusinessService = model.BusinessService
-type Dependency = model.Dependency
-type File = model.File
-type Fact = model.Fact
-type Identity = model.Identity
-type Import = model.Import
-type ImportSummary = model.ImportSummary
-type ImportTag = model.ImportTag
-type JobFunction = model.JobFunction
-type MigrationWave = model.MigrationWave
-type Proxy = model.Proxy
-type Review = model.Review
-type Setting = model.Setting
-type Stakeholder = model.Stakeholder
-type StakeholderGroup = model.StakeholderGroup
-type Tag = model.Tag
-type TagCategory = model.TagCategory
-type Ticket = model.Ticket
-type Tracker = model.Tracker
-type ApplicationTag = model.ApplicationTag
-type DependencyCyclicError = model.DependencyCyclicError
 
 //
 // All builds all models.

@@ -16,7 +16,7 @@ importRoot="github.com/konveyor/tackle2-hub/migration"
 #
 # Determine migration versions.
 #
-migrations=($(find ${root} -maxdepth 1 -type d -name  'v*' -printf '%f\n' | sort))
+migrations=($(find ${root} -maxdepth 1 -type d -name  'v*' -printf '%f\n' | cut -c2-10 | sort -n))
 current=${migrations[-1]}
 n=${current#"v"}
 
@@ -31,9 +31,9 @@ echo "Current: ${currentDir}"
 echo "Next:    ${nextDir}"
 
 #
-# Create directores.
+# New package.
 #
-mkdir -p ${nextDir}/model
+mkdir -p ${nextDir}
 
 #
 # Build migrate.go
@@ -66,40 +66,9 @@ EOF
 echo "${migrate}" > ${file}
 
 #
-# Build model/pkg.go
+# Copy model
 #
-file=${nextDir}/model/pkg.go
-pkg=$(cat << EOF
-package model
-
-import "${importRoot}/${current}/model"
-
-//
-// JSON field (data) type.
-type JSON = []byte
-EOF
-)
-
-echo "${pkg}" > ${file}
-
-echo "" >> ${file}
-models=$(grep "type" model/pkg.go | grep "model")
-echo "${models}"  >> ${file}
-echo -n "
-//
-// All builds all models.
-// Models are enumerated such that each are listed after
-// all the other models on which they may depend.
-func All() []interface{} {
-	return []interface{}{
-" >> ${file}
-models=$(grep "{}," ${currentDir}/model/pkg.go)
-echo "${models}" | while read m
-do
-  echo -e "\t\t${m}" >> ${file}
-done
-echo -e "\t}" >> ${file}
-echo "}" >> ${file}
+cp -r ${currentDir}/model ${nextDir}
 
 #
 # Register new migration.
