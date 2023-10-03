@@ -7,8 +7,6 @@ import "gorm.io/gorm"
 type Analysis struct {
 	Model
 	Effort        int
-	Archived      bool             `json:"archived"`
-	Summary       JSON             `gorm:"type:json"`
 	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint             `gorm:"index;not null"`
@@ -65,18 +63,6 @@ type Incident struct {
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
-}
-
-//
-// ArchivedIssue resource created when issues are archived.
-type ArchivedIssue struct {
-	RuleSet     string `json:"ruleSet"`
-	Rule        string `json:"rule"`
-	Name        string `json:"name,omitempty" yaml:",omitempty"`
-	Description string `json:"description,omitempty" yaml:",omitempty"`
-	Category    string `json:"category"`
-	Effort      int    `json:"effort"`
-	Incidents   int    `json:"incidents"`
 }
 
 //

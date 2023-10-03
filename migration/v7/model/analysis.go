@@ -7,8 +7,6 @@ import "gorm.io/gorm"
 type Analysis struct {
 	Model
 	Effort        int
-	Archived      bool             `json:"archived"`
-	Summary       JSON             `gorm:"type:json"`
 	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint             `gorm:"index;not null"`
@@ -68,18 +66,6 @@ type Link struct {
 }
 
 //
-// ArchivedIssue resource created when issues are archived.
-type ArchivedIssue struct {
-	RuleSet     string `json:"ruleSet"`
-	Rule        string `json:"rule"`
-	Name        string `json:"name,omitempty" yaml:",omitempty"`
-	Description string `json:"description,omitempty" yaml:",omitempty"`
-	Category    string `json:"category"`
-	Effort      int    `json:"effort"`
-	Incidents   int    `json:"incidents"`
-}
-
-//
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
@@ -87,15 +73,14 @@ type RuleSet struct {
 	Kind        string
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description string
-	Repository  JSON  `gorm:"type:json"`
+	Custom      bool
+	Repository  JSON `gorm:"type:json"`
+	ImageID     uint `gorm:"index" ref:"file"`
+	Image       *File
 	IdentityID  *uint `gorm:"index"`
 	Identity    *Identity
 	Rules       []Rule    `gorm:"constraint:OnDelete:CASCADE"`
 	DependsOn   []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
-}
-
-func (r *RuleSet) Builtin() bool {
-	return r.UUID != nil
 }
 
 //
@@ -143,23 +128,4 @@ type Rule struct {
 	RuleSet     *RuleSet
 	FileID      *uint `gorm:"uniqueIndex:RuleA" ref:"file"`
 	File        *File
-}
-
-//
-// Target - analysis rule selector.
-type Target struct {
-	Model
-	UUID        *string `gorm:"uniqueIndex"`
-	Name        string  `gorm:"uniqueIndex;not null"`
-	Description string
-	Choice      bool
-	Labels      JSON `gorm:"type:json"`
-	ImageID     uint `gorm:"index" ref:"file"`
-	Image       *File
-	RuleSetID   *uint `gorm:"index"`
-	RuleSet     *RuleSet
-}
-
-func (r *Target) Builtin() bool {
-	return r.UUID != nil
 }

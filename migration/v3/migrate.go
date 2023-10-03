@@ -17,7 +17,7 @@ type Migration struct{}
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	//
 	// Tags/Categories.
-	err = db.Migrator().RenameTable(model.TagType{}, model.TagCategory{})
+	err = db.Migrator().RenameTable(v2.TagType{}, model.TagCategory{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
