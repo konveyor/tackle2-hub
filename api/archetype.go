@@ -283,17 +283,20 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.Sections = q.Sections
 	m.Thresholds = q.Thresholds
 	m.RiskMessages = q.RiskMessages
 	m.CreateUser = h.CurrentUser(ctx)
-
-	resolver, err := assessment.NewTagResolver(h.DB(ctx))
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	// if sections aren't nil that indicates that this assessment is being
+	// created "as-is" and should not have its sections populated or autofilled.
+	if m.Sections == nil {
+		m.Sections = q.Sections
+		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
+		if rErr != nil {
+			_ = ctx.Error(rErr)
+			return
+		}
+		assessment.PrepareForArchetype(resolver, archetype, m)
 	}
-	assessment.PrepareForArchetype(resolver, archetype, m)
 	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
