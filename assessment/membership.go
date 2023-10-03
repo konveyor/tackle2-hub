@@ -54,7 +54,7 @@ func (r *MembershipResolver) Archetypes(m *model.Application) (archetypes []mode
 
 	matches := []model.Archetype{}
 	for _, a := range r.archetypes {
-		if appTags.Superset(r.tagSets[a.ID]) {
+		if appTags.Superset(r.tagSets[a.ID], false) {
 			matches = append(matches, a)
 		}
 	}
@@ -69,7 +69,7 @@ loop:
 			}
 			a1tags := r.tagSets[a1.ID]
 			a2tags := r.tagSets[a2.ID]
-			if a1tags.Subset(a2tags) {
+			if a1tags.Subset(a2tags, true) {
 				continue loop
 			}
 		}

@@ -64,16 +64,24 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	resolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
+	tags, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+	}
+
+	resolver := assessment.NewArchetypeResolver(m, tags)
+
 	r := Archetype{}
 	r.With(m)
 	r.WithApplications(applications)
-	r.Assessed = resolver.Assessed(m.Assessments)
+	r.WithAssessmentTags(resolver.AssessmentTags())
+	r.Assessed = questionnaires.Assessed(m.Assessments)
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -93,10 +101,14 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		return
 	}
 
-	resolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	tags, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
 	}
 
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
@@ -109,9 +121,11 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
+		resolver := assessment.NewArchetypeResolver(m, tags)
 		r.With(m)
 		r.WithApplications(applications)
-		r.Assessed = resolver.Assessed(m.Assessments)
+		r.WithAssessmentTags(resolver.AssessmentTags())
+		r.Assessed = questionnaires.Assessed(m.Assessments)
 		resources = append(resources, r)
 	}
 
@@ -331,6 +345,7 @@ type Archetype struct {
 	Comments          string `json:"comments" yaml:"comments"`
 	Tags              []Ref  `json:"tags" yaml:"tags"`
 	CriteriaTags      []Ref  `json:"criteriaTags" yaml:"criteriaTags"`
+	AssessmentTags    []Ref  `json:"assessmentTags" yaml:"assessmentTags"`
 	Stakeholders      []Ref  `json:"stakeholders" yaml:"stakeholders"`
 	StakeholderGroups []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	Applications      []Ref  `json:"applications" yaml:"applications"`
@@ -346,6 +361,7 @@ func (r *Archetype) With(m *model.Archetype) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Comments = m.Comments
+	r.AssessmentTags = []Ref{}
 	r.Tags = []Ref{}
 	for _, t := range m.Tags {
 		r.Tags = append(r.Tags, r.ref(t.ID, &t))
@@ -380,6 +396,16 @@ func (r *Archetype) WithApplications(apps []model.Application) {
 		ref := Ref{}
 		ref.With(apps[i].ID, apps[i].Name)
 		r.Applications = append(r.Applications, ref)
+	}
+}
+
+//
+// WithAssessmentTags updates the Archetype resource with tags inherited from assessments.
+func (r *Archetype) WithAssessmentTags(tags []model.Tag) {
+	for _, t := range tags {
+		ref := Ref{}
+		ref.With(t.ID, t.Name)
+		r.AssessmentTags = append(r.AssessmentTags, ref)
 	}
 }
 
