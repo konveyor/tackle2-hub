@@ -372,8 +372,8 @@ func (r *Ref) With(id uint, name string) {
 type TagRef struct {
 	ID      uint   `json:"id" binding:"required"`
 	Name    string `json:"name"`
-	Source  string `json:"source"`
-	Virtual bool   `json:"virtual,omitempty"`
+	Source  string `json:"source,omitempty" yaml:"source,omitempty"`
+	Virtual bool   `json:"virtual,omitempty" yaml:"virtual,omitempty"`
 }
 
 //
