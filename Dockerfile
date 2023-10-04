@@ -2,7 +2,9 @@ FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
 RUN make docker
-RUN git clone https://github.com/konveyor/tackle2-seed
+ARG SEED_PROJECT=konveyor/tackle2-seed
+ARG SEED_BRANCH=main
+RUN git clone --branch ${SEED_BRANCH} https://github.com/${SEED_PROJECT}
 
 FROM quay.io/konveyor/static-report as report
 
