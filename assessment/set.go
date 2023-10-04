@@ -23,8 +23,10 @@ func (r Set) Size() int {
 
 //
 // Add a member to the set.
-func (r Set) Add(member uint) {
-	r.members[member] = true
+func (r Set) Add(members ...uint) {
+	for _, member := range members {
+		r.members[member] = true
+	}
 }
 
 //
@@ -35,7 +37,10 @@ func (r Set) Contains(element uint) bool {
 
 //
 // Superset tests whether every element of other is in the set.
-func (r Set) Superset(other Set) bool {
+func (r Set) Superset(other Set, strict bool) bool {
+	if strict && r.Size() <= other.Size() {
+		return false
+	}
 	for m := range other.members {
 		if !r.Contains(m) {
 			return false
@@ -46,8 +51,8 @@ func (r Set) Superset(other Set) bool {
 
 //
 // Subset tests whether every element of this set is in the other.
-func (r Set) Subset(other Set) bool {
-	return other.Superset(r)
+func (r Set) Subset(other Set, strict bool) bool {
+	return other.Superset(r, strict)
 }
 
 //

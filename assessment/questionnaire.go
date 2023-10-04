@@ -60,7 +60,7 @@ loop:
 			answered.Add(a.QuestionnaireID)
 		}
 	}
-	assessed = answered.Superset(r.requiredQuestionnaires)
+	assessed = answered.Superset(r.requiredQuestionnaires, false)
 
 	return
 }
