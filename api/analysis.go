@@ -130,7 +130,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 		return
 	}
 	writer := AnalysisWriter{ctx: ctx}
-	path, err := writer.Create(id)
+	path, err := writer.Create(m.ID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -152,8 +152,16 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @param id path string true "Application ID"
 func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
+	m := &model.Analysis{}
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	err := db.Last(&m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	reportWriter := ReportWriter{ctx: ctx}
-	reportWriter.Write(id)
+	reportWriter.Write(m.ID)
 }
 
 // AppList godoc
@@ -2315,6 +2323,7 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	r.begin()
 	r.field("id").write(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
+	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
 	aWriter := AnalysisWriter{ctx: r.ctx}
 	aWriter.encoder = r.encoder
 	err = aWriter.addIssues(m)
