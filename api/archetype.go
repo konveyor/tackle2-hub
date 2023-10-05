@@ -315,9 +315,9 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	m.Thresholds = q.Thresholds
 	m.RiskMessages = q.RiskMessages
 	m.CreateUser = h.CurrentUser(ctx)
-	// if sections aren't nil that indicates that this assessment is being
+	// if sections aren't empty that indicates that this assessment is being
 	// created "as-is" and should not have its sections populated or autofilled.
-	if m.Sections == nil {
+	if len(m.Sections) == 0 {
 		m.Sections = q.Sections
 		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
 		if rErr != nil {

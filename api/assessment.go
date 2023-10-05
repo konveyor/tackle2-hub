@@ -220,7 +220,9 @@ func (r *Assessment) With(m *model.Assessment) {
 func (r *Assessment) Model() (m *model.Assessment) {
 	m = &model.Assessment{}
 	m.ID = r.ID
-	m.Sections, _ = json.Marshal(r.Sections)
+	if r.Sections != nil {
+		m.Sections, _ = json.Marshal(r.Sections)
+	}
 	m.QuestionnaireID = r.Questionnaire.ID
 	if r.Archetype != nil {
 		m.ArchetypeID = &r.Archetype.ID
