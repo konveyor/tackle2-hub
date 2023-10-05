@@ -22,6 +22,7 @@ func init() {
 type RichClient struct {
 	// Resources APIs.
 	Application      Application
+	Assessment       Assessment
 	Bucket           Bucket
 	BusinessService  BusinessService
 	Dependency       Dependency
@@ -56,6 +57,9 @@ func New(baseUrl string) (r *RichClient) {
 	// Build RichClient.
 	r = &RichClient{
 		Application: Application{
+			client: client,
+		},
+		Assessment: Assessment{
 			client: client,
 		},
 		Bucket: Bucket{
