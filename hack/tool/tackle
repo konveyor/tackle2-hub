@@ -126,6 +126,9 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     elif method == 'PATCH':
         debugPrint("PATCH data: %s" % json.dumps(data))
         r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    elif method == 'PUT':
+        debugPrint("PUT data: %s" % json.dumps(data))
+        r = requests.put(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
     else: # GET
         r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
 
@@ -722,6 +725,65 @@ class TackleTool:
             # Push the updated assessment
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
+    def migrateAssessments(self, assessmentsFileName="assessments", ignoreErrors=False):
+        cnt = 0
+        ## Export Pathfinder data for each Application
+        #for app in apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token):
+        #    for assm2 in apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % app.id, self.tackle2Token):
+        #        # Prepare Assessment and find its ID
+        #        assm               = Tackle2Object()
+        #        assm.id            = assm2['id']
+        #        assm.applicationId = assm2['applicationId']
+        #        assm.status        = assm2['status']
+        #        # Prepare Assessment questions and answers
+        #        asqa2 = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments/%d" % assm.id, self.tackle2Token)
+        #        asqa               = Tackle2Object()
+        #        asqa.id                = asqa2['id']
+        #        asqa.applicationId     = asqa2['applicationId']
+        #        asqa.status            = asqa2['status']
+        #        asqa.stakeholders      = asqa2['stakeholders']
+        #        asqa.stakeholderGroups = asqa2['stakeholderGroups']
+        #        asqa.questionnaire     = asqa2['questionnaire']
+        #        self.add('assessments', asqa)
+        #saveJSON(os.path.join(self.dataDir, assessmentsFileName), self.data["assessments"])
+
+        # Upload assessment to Konveyor (expecting Pathfinder hard-coded questionnaire)
+        dictCollection = loadDump(os.path.join(self.dataDir, assessmentsFileName + '.json'))
+        print("Processing Pathfinder assessments..")
+        for passmnt in dictCollection:
+            print("# Assessment for Application %s" % passmnt["applicationId"])
+            # Skip if Assessment for given Application already exists
+            if len(apiJSON(self.tackle2Url + "/hub/applications/%d/assessments" % passmnt["applicationId"], self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
+                print("  Assessment already exists, skipping.")
+                continue
+            # Create new assessment
+            assmnt = apiJSON(self.tackle2Url + "/hub/applications/%d/assessments" % passmnt["applicationId"], self.tackle2Token, data={"questionnaire": {"id": 1}}, method='POST')
+            for category in passmnt['questionnaire']['categories']:
+                print("Category %s %s" % (category["order"], category["title"]))
+                for question in category['questions']:
+                    print("  Question %s %s" % (question["order"], question["question"]))
+                    for option in question['options']:
+                        if option['checked'] == True:
+                            # Find corresponding option in newly created assessment and check it
+                            destSection = next(cat for cat in assmnt['sections'] if cat['order'] == category['order'])
+                            destQuestion = next(que for que in destSection['questions'] if que['order'] == question['order'])
+                            destOption = next(opt for opt in destQuestion['answers'] if opt['order'] == option['order'])
+                            print("    Answer %d %s" % (destOption['order'], destOption['text']))
+                            destOption['selected'] = True
+            # Set remaining assessment attributes
+            assmnt['status']            = passmnt['status']
+            assmnt['stakeholders']      = []
+            for sh in passmnt['stakeholders']:
+                assmnt['stakeholders'].append({"id": sh})
+            assmnt['stakeholderGroups'] = []
+            for shg in passmnt['stakeholderGroups']:
+                assmnt['stakeholderGroups'].append({"id": shg})
+            # Push the updated assessment
+            apiJSON(self.tackle2Url + "/hub/assessments/%d" % assmnt['id'], self.tackle2Token, data=assmnt, method='PUT')
+            cnt += 1
+            print("PUT filled Assessment.")
+        return cnt
+
     def preImportCheck(self):
         # Compatibility checks
         # TagCategories on Hub API
@@ -952,6 +1014,22 @@ if cmdWanted(args, "clean-all"):
     # Run the cleanup including seeds
     print("Cleaning ALL data in Tackle2")
     tool.cleanAllTackle2()
+
+# Migrate Pathfinder Assessments to Konveyor Assessments
+if cmdWanted(args, "migrate-assessments"):
+    cmdExecuted = True
+    # Gather Keycloak access token for Tackle 2
+    token2 = getHubToken(c['url'], c['username'], c['password'])
+
+    # Setup Tackle data migration object
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+
+    # Run the import
+    print("Starting Pathfinder Assessments to Konveyor Assessment migration.")
+    appCnt = tool.migrateAssessments(ignoreErrors=args.ignoreImportErrors)
+
+    print("Done. %d new Assessment(s) for Application(s) were migrated!" % appCnt)
+
 
 # Print help if action was not specified
 if not cmdExecuted:
