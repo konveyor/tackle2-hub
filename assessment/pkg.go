@@ -103,6 +103,9 @@ func PrepareForArchetype(tagResolver *TagResolver, archetype *model.Archetype, a
 	for _, t := range archetype.CriteriaTags {
 		tagSet.Add(t.ID)
 	}
+	for _, t := range archetype.Tags {
+		tagSet.Add(t.ID)
+	}
 
 	assessment.Sections, _ = json.Marshal(prepareSections(tagResolver, tagSet, sections))
 
