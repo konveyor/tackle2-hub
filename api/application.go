@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -1074,6 +1075,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	m.CreateUser = h.CurrentUser(ctx)
 	// if sections aren't empty that indicates that this assessment is being
 	// created "as-is" and should not have its sections populated or autofilled.
+	newAssessment := false
 	if len(m.Sections) == 0 {
 		m.Sections = q.Sections
 		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
@@ -1082,11 +1084,15 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 			return
 		}
 		assessment.PrepareForApplication(resolver, application, m)
+		newAssessment = true
 	}
 	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
+	}
+	if newAssessment {
+		metrics.AssessmentsInitiated.Inc()
 	}
 
 	r.With(m)
