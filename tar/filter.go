@@ -57,7 +57,7 @@ func (r *Filter) Exclude(patterns ...string) {
 }
 
 //
-// FilterSet filter predicate.
+// FilterSet is a collection of filter patterns.
 type FilterSet struct {
 	root     string
 	patterns []string
