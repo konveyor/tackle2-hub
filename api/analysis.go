@@ -2284,7 +2284,7 @@ func (r *ReportWriter) Write(id uint) {
 		tarWriter.Close()
 	}()
 	filter := tar.NewFilter(reportDir)
-	filter.Excluded("output.js")
+	filter.Exclude("output.js")
 	tarWriter.Filter = filter
 	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)
 	if err != nil {

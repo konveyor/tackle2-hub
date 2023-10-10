@@ -43,16 +43,16 @@ func (r *Filter) Match(path string) (b bool) {
 }
 
 //
-// Included adds included patterns.
+// Include adds included patterns.
 // Empty ("") patterns are ignored.
-func (r *Filter) Included(patterns ...string) {
+func (r *Filter) Include(patterns ...string) {
 	r.included.Add(patterns...)
 }
 
 //
-// Excluded adds excluded patterns.
+// Exclude adds excluded patterns.
 // Empty ("") patterns are ignored.
-func (r *Filter) Excluded(patterns ...string) {
+func (r *Filter) Exclude(patterns ...string) {
 	r.excluded.Add(patterns...)
 }
 

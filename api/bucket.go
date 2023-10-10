@@ -232,7 +232,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 	}
 	if st.IsDir() {
 		filter := tar.NewFilter(path)
-		filter.Included(ctx.Query(Filter))
+		filter.Include(ctx.Query(Filter))
 		if h.Accepted(ctx, binding.MIMEHTML) {
 			h.getFile(ctx, m)
 		} else {
