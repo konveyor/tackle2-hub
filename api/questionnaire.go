@@ -195,6 +195,7 @@ type Questionnaire struct {
 	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required"`
 	Thresholds   assessment.Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
+	Builtin      bool                    `json:"builtin,omitempty" yaml:"builtin,omitempty"`
 }
 
 // With updates the resource with the model.
@@ -203,6 +204,7 @@ func (r *Questionnaire) With(m *model.Questionnaire) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Required = m.Required
+	r.Builtin = m.Builtin()
 	_ = json.Unmarshal(m.Sections, &r.Sections)
 	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
 	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
