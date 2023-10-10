@@ -752,36 +752,45 @@ class TackleTool:
         print("Processing Pathfinder assessments..")
         for passmnt in dictCollection:
             print("# Assessment for Application %s" % passmnt["applicationId"])
+            appAssessmentsPath = "/hub/applications/%d/assessments" % passmnt["applicationId"]
             # Skip if Assessment for given Application already exists
-            if len(apiJSON(self.tackle2Url + "/hub/applications/%d/assessments" % passmnt["applicationId"], self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
+            if len(apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
                 print("  Assessment already exists, skipping.")
                 continue
-            # Create new assessment
-            assmnt = apiJSON(self.tackle2Url + "/hub/applications/%d/assessments" % passmnt["applicationId"], self.tackle2Token, data={"questionnaire": {"id": 1}}, method='POST')
-            for category in passmnt['questionnaire']['categories']:
-                print("Category %s %s" % (category["order"], category["title"]))
-                for question in category['questions']:
-                    print("  Question %s %s" % (question["order"], question["question"]))
-                    for option in question['options']:
-                        if option['checked'] == True:
-                            # Find corresponding option in newly created assessment and check it
-                            destSection = next(cat for cat in assmnt['sections'] if cat['order'] == category['order'])
-                            destQuestion = next(que for que in destSection['questions'] if que['order'] == question['order'])
-                            destOption = next(opt for opt in destQuestion['answers'] if opt['order'] == option['order'])
-                            print("    Answer %d %s" % (destOption['order'], destOption['text']))
-                            destOption['selected'] = True
-            # Set remaining assessment attributes
-            assmnt['status']            = passmnt['status']
-            assmnt['stakeholders']      = []
+
+            # Prepare new Assessment
+            assmnt = dict()
+            assmnt['questionnaire'] = {"id": 1} # Default new Questionnaire "Pathfinder Legacy"
+            assmnt['application'] = {"id": passmnt["applicationId"]}
+            assmnt['stakeholders'] = []
             for sh in passmnt['stakeholders']:
                 assmnt['stakeholders'].append({"id": sh})
             assmnt['stakeholderGroups'] = []
             for shg in passmnt['stakeholderGroups']:
                 assmnt['stakeholderGroups'].append({"id": shg})
-            # Push the updated assessment
-            apiJSON(self.tackle2Url + "/hub/assessments/%d" % assmnt['id'], self.tackle2Token, data=assmnt, method='PUT')
+
+            # Transformate Questions, Answers and related structures
+            for category in passmnt['questionnaire']['categories']:
+                del category['id']
+                category['name'] = category.pop('title')
+                for question in category["questions"]:
+                    del question['id']
+                    question["text"] = question.pop('question')
+                    question["explanation"] = question.pop('description')
+                    question["answers"] = question.pop('options')
+                    for answer in question['answers']:
+                        del answer['id']
+                        answer['text'] = answer.pop('option')
+                        answer['selected'] = answer.pop('checked')
+                        answer['risk'] = answer['risk'].lower()
+                        if answer['risk'] == "amber":
+                            answer['risk'] = "yellow"
+            assmnt['sections'] = passmnt['questionnaire']['categories']
+
+            # Post the Assessment
+            apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data=assmnt, method='POST')
             cnt += 1
-            print("PUT filled Assessment.")
+            print("Assessment submitted.")
         return cnt
 
     def preImportCheck(self):
