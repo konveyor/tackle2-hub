@@ -123,6 +123,10 @@ func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	if m.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
+		return
+	}
 	result = h.DB(ctx).Delete(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -134,7 +138,9 @@ func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 
 // Update godoc
 // @summary Update a questionnaire.
-// @description Update a questionnaire.
+// @description Update a questionnaire. If the Questionnaire
+// @description is builtin, only its "required" field can be changed
+// @description and all other fields will be ignored.
 // @tags questionnaires
 // @accept json
 // @success 204
@@ -149,12 +155,30 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
-	m.ID = id
-	m.UpdateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
+	m := &model.Questionnaire{}
+	db := h.DB(ctx)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	updated := r.Model()
+	updated.ID = id
+	updated.UpdateUser = h.CurrentUser(ctx)
+	var fields map[string]interface{}
+	if m.Builtin() {
+		fields = map[string]interface{}{
+			"updateUser": updated.UpdateUser,
+			"required":   updated.Required,
+		}
+	} else {
+		fields = h.fields(updated)
+	}
+
+	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result := db.Updates(h.fields(m))
+	result = db.Updates(fields)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return

@@ -12,6 +12,12 @@ type Questionnaire struct {
 	Assessments  []Assessment `gorm:"constraint:OnDelete:CASCADE"`
 }
 
+//
+// Builtin returns true if this is a Konveyor-provided questionnaire.
+func (r *Questionnaire) Builtin() bool {
+	return r.UUID != nil
+}
+
 type Assessment struct {
 	Model
 	ApplicationID     *uint `gorm:"uniqueIndex:AssessmentA"`
