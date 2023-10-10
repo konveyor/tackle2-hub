@@ -2270,6 +2270,7 @@ func (r *ReportWriter) db() (db *gorm.DB) {
 //
 // Write builds and streams the analysis report.
 func (r *ReportWriter) Write(id uint) {
+	reportDir := Settings.Analysis.ReportPath
 	path, err := r.buildOutput(id)
 	if err != nil {
 		_ = r.ctx.Error(err)
@@ -2282,6 +2283,9 @@ func (r *ReportWriter) Write(id uint) {
 	defer func() {
 		tarWriter.Close()
 	}()
+	filter := tar.NewFilter(reportDir)
+	filter.Excluded("output.js")
+	tarWriter.Filter = filter
 	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)
 	if err != nil {
 		_ = r.ctx.Error(err)
