@@ -2325,7 +2325,7 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	r.encoder = &jsonEncoder{output: file}
 	r.write("window[\"apps\"]=[")
 	r.begin()
-	r.field("id").write(strconv.Itoa(int(m.Application.ID)))
+	r.field("id").writeStr(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
 	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
 	aWriter := AnalysisWriter{ctx: r.ctx}
