@@ -1652,7 +1652,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 		iq = iq.Model(&model.BusinessService{})
 		iq = iq.Select("ID")
 		iq = bsFilter.Where(iq)
-		q = q.Where("ID IN (?)", iq)
+		q = q.Where("BusinessServiceID IN (?)", iq)
 		return
 	}
 	return
