@@ -231,10 +231,8 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		return
 	}
 	if st.IsDir() {
-		filter := tar.Filter{
-			Pattern: ctx.Query(Filter),
-			Root:    path,
-		}
+		filter := tar.NewFilter(path)
+		filter.Include(ctx.Query(Filter))
 		if h.Accepted(ctx, binding.MIMEHTML) {
 			h.getFile(ctx, m)
 		} else {
