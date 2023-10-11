@@ -6,6 +6,7 @@ type Section struct {
 	Order     uint       `json:"order" yaml:"order" binding:"required"`
 	Name      string     `json:"name" yaml:"name"`
 	Questions []Question `json:"questions" yaml:"questions"`
+	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
 }
 
 //
