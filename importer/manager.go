@@ -200,6 +200,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	db := m.DB.Preload("Category")
 	db.Find(&allTags)
 
+	seenTags := make(map[uint]bool)
 	appTags := []model.ApplicationTag{}
 	for _, impTag := range imp.ImportTags {
 		// Prepare normalized names for importTag
@@ -270,8 +271,10 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 				return
 			}
 		}
-
-		appTags = append(appTags, model.ApplicationTag{TagID: tag.ID, Source: ""})
+		if !seenTags[tag.ID] {
+			seenTags[tag.ID] = true
+			appTags = append(appTags, model.ApplicationTag{TagID: tag.ID, Source: ""})
+		}
 	}
 
 	result := m.DB.Create(app)
