@@ -97,28 +97,16 @@ func TestTicketList(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
-		// Filter created Tickets based on application and tracker id's.
-		filteredTickets := []api.Ticket{}
 		for _, createdTicket := range createdTickets {
-			for _, tracker := range TrackerSamples.Samples {
-				if createdTicket.Application.ID == app.ID && createdTicket.Tracker.ID == tracker.ID {
-					filteredTickets = append(filteredTickets, createdTicket)
-					break
-				}
-			}
-		}
-
-		// Check if filtered Tickets are in the list we got from Ticket.List().
-		for _, filteredTicket := range filteredTickets {
 			found := false
 			for _, retrievedTicket := range got {
-				if assert.FlatEqual(filteredTicket.ID, retrievedTicket.ID) {
+				if assert.FlatEqual(createdTicket.ID, retrievedTicket.ID) {
 					found = true
 					break
 				}
 			}
 			if !found {
-				t.Errorf("Expected ticket not found in the list: %v", filteredTicket)
+				t.Errorf("Expected ticket not found in the list: %v", createdTicket)
 			}
 		}
 
