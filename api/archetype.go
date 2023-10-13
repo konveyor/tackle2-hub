@@ -83,6 +83,8 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	r.WithApplications(applications)
 	r.WithAssessmentTags(resolver.AssessmentTags())
 	r.Assessed = questionnaires.Assessed(m.Assessments)
+	r.Risk = questionnaires.Risk(m.Assessments)
+	r.Confidence = questionnaires.Confidence(m.Assessments)
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -127,6 +129,8 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		r.WithApplications(applications)
 		r.WithAssessmentTags(resolver.AssessmentTags())
 		r.Assessed = questionnaires.Assessed(m.Assessments)
+		r.Risk = questionnaires.Risk(m.Assessments)
+		r.Confidence = questionnaires.Confidence(m.Assessments)
 		resources = append(resources, r)
 	}
 
@@ -356,6 +360,8 @@ type Archetype struct {
 	Applications      []Ref    `json:"applications" yaml:"applications"`
 	Assessments       []Ref    `json:"assessments" yaml:"assessments"`
 	Assessed          bool     `json:"assessed"`
+	Risk              string   `json:"risk"`
+	Confidence        int      `json:"confidence"`
 	Review            *Ref     `json:"review"`
 }
 
@@ -395,6 +401,7 @@ func (r *Archetype) With(m *model.Archetype) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
+	r.Risk = RiskUnknown
 }
 
 //

@@ -38,10 +38,42 @@ const (
 	WeightUnknown = 70
 )
 
+func RiskLevel(assessment *model.Assessment) string {
+	sections := []Section{}
+	_ = json.Unmarshal(assessment.Sections, &sections)
+	thresholds := Thresholds{}
+	_ = json.Unmarshal(assessment.Thresholds, &thresholds)
+
+	var total uint
+	colors := make(map[string]uint)
+	for _, s := range sections {
+		for _, risk := range s.Risks() {
+			colors[risk]++
+			total++
+		}
+	}
+	if total == 0 {
+		return RiskUnknown
+	}
+	if (float64(colors[RiskRed]) / float64(total)) >= (float64(thresholds.Red) / float64(100)) {
+		return RiskRed
+	}
+	if (float64(colors[RiskYellow]) / float64(total)) >= (float64(thresholds.Yellow) / float64(100)) {
+		return RiskYellow
+	}
+	if (float64(colors[RiskUnknown]) / float64(total)) >= (float64(thresholds.Unknown) / float64(100)) {
+		return RiskUnknown
+	}
+	return RiskGreen
+}
+
 //
 // Confidence calculates a confidence score based on the answers to an assessment's questions.
 // The algorithm is a reimplementation of the calculation done by Pathfinder.
 func Confidence(sections []Section) (score int) {
+	if len(sections) == 0 {
+		return
+	}
 	totalQuestions := 0
 	riskCounts := make(map[string]int)
 	for _, s := range sections {

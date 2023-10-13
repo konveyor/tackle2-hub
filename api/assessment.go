@@ -211,7 +211,7 @@ func (r *Assessment) With(m *model.Assessment) {
 	} else {
 		r.Status = AssessmentEmpty
 	}
-	r.Risk = r.RiskLevel()
+	r.Risk = assessment.RiskLevel(m)
 	r.Confidence = assessment.Confidence(r.Sections)
 }
 
@@ -245,30 +245,6 @@ func (r *Assessment) Model() (m *model.Assessment) {
 			})
 	}
 	return
-}
-
-func (r *Assessment) RiskLevel() string {
-	var total uint
-	colors := make(map[string]uint)
-	for _, s := range r.Sections {
-		for _, risk := range s.Risks() {
-			colors[risk]++
-			total++
-		}
-	}
-	if total == 0 {
-		return RiskGreen
-	}
-	if (float64(colors[RiskRed]) / float64(total)) >= (float64(r.Thresholds.Red) / float64(100)) {
-		return RiskRed
-	}
-	if (float64(colors[RiskYellow]) / float64(total)) >= (float64(r.Thresholds.Yellow) / float64(100)) {
-		return RiskYellow
-	}
-	if (float64(colors[RiskUnknown]) / float64(total)) >= (float64(r.Thresholds.Unknown) / float64(100)) {
-		return RiskUnknown
-	}
-	return RiskGreen
 }
 
 //

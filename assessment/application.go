@@ -91,6 +91,48 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 }
 
 //
+// Risk returns the overall risk level for the application based on its or its archetypes' assessments.
+func (r *ApplicationResolver) Risk() (risk string, err error) {
+	var assessments []model.Assessment
+	if len(r.application.Assessments) > 0 {
+		assessments = r.application.Assessments
+	} else {
+		archetypes, aErr := r.Archetypes()
+		if aErr != nil {
+			err = aErr
+			return
+		}
+		for _, a := range archetypes {
+			assessments = append(assessments, a.Assessments...)
+		}
+	}
+	risk = r.questionnaireResolver.Risk(r.application.Assessments)
+
+	return
+}
+
+//
+// Confidence returns the application's overall assessment confidence score.
+func (r *ApplicationResolver) Confidence() (confidence int, err error) {
+	var assessments []model.Assessment
+	if len(r.application.Assessments) > 0 {
+		assessments = r.application.Assessments
+	} else {
+		archetypes, aErr := r.Archetypes()
+		if aErr != nil {
+			err = aErr
+			return
+		}
+		for _, a := range archetypes {
+			assessments = append(assessments, a.Assessments...)
+		}
+	}
+	confidence = r.questionnaireResolver.Confidence(r.application.Assessments)
+
+	return
+}
+
+//
 // Assessed returns whether the application has been fully assessed.
 func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 	// if the application has any of its own assessments, only consider them for
@@ -104,11 +146,12 @@ func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 	if err != nil {
 		return
 	}
+	assessedCount := 0
 	for _, a := range archetypes {
-		if !r.questionnaireResolver.Assessed(a.Assessments) {
-			return
+		if r.questionnaireResolver.Assessed(a.Assessments) {
+			assessedCount++
 		}
 	}
-	assessed = true
+	assessed = assessedCount > 0 && assessedCount == len(archetypes)
 	return
 }
