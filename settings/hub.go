@@ -106,8 +106,6 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Cache.RWX = b
-	} else {
-		r.Cache.RWX = true
 	}
 	r.Cache.PVC, found = os.LookupEnv(EnvCachePvc)
 	if !found {

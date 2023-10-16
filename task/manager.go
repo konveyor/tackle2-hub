@@ -356,7 +356,7 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 		r.State = Succeeded
 		r.Terminated = &mark
 	case core.PodFailed:
-		r.Error("Error", "Pod failed: %s", pod.Status.Message)
+		r.Error("Error", "Pod failed: %s", pod.Status.ContainerStatuses[0].State.Terminated.Reason)
 		switch pod.Status.ContainerStatuses[0].State.Terminated.ExitCode {
 		case 137: // Killed.
 			if r.Retries < Settings.Hub.Task.Retries {
