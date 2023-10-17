@@ -45,7 +45,7 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 // @description Get an archetype by ID.
 // @tags archetypes
 // @produce json
-// @success 200 {object} api.Archetypes
+// @success 200 {object} api.Archetype
 // @router /archetypes/{id} [get]
 // @param id path string true "Archetype ID"
 func (h ArchetypeHandler) Get(ctx *gin.Context) {

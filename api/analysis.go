@@ -1811,7 +1811,7 @@ type Analysis struct {
 	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
-	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty"`
+	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
 }
 
 //
