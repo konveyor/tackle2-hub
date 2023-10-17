@@ -10,7 +10,7 @@ require (
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
-	github.com/jortel/go-utils v0.1.1
+	github.com/jortel/go-utils v0.1.2
 	github.com/konveyor/tackle2-seed v0.0.0-20230928184719-4a383c5aa887
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/onsi/gomega v1.27.6
