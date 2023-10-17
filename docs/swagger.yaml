@@ -8,6 +8,8 @@ definitions:
     type: object
   api.Analysis:
     properties:
+      archived:
+        type: boolean
       createTime:
         type: string
       createUser:
@@ -24,11 +26,23 @@ definitions:
         items:
           $ref: '#/definitions/api.Issue'
         type: array
+      summary:
+        type: object
       updateUser:
         type: string
     type: object
   api.Application:
     properties:
+      archetypes:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      assessed:
+        type: boolean
+      assessments:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
       binary:
         type: string
       bucket:
@@ -71,6 +85,93 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  api.Archetype:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      assessed:
+        type: boolean
+      assessments:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      comments:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      criteria:
+        items:
+          $ref: '#/definitions/api.TagRef'
+        type: array
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      review:
+        $ref: '#/definitions/api.Ref'
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/api.TagRef'
+        type: array
+      updateUser:
+        type: string
+    type: object
+  api.Assessment:
+    properties:
+      application:
+        $ref: '#/definitions/api.Ref'
+      archetype:
+        $ref: '#/definitions/api.Ref'
+      confidence:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      questionnaire:
+        $ref: '#/definitions/api.Ref'
+      risk:
+        description: read only
+        type: string
+      riskMessages:
+        $ref: '#/definitions/assessment.RiskMessages'
+      sections:
+        items:
+          $ref: '#/definitions/assessment.Section'
+        type: array
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      status:
+        type: string
+      thresholds:
+        $ref: '#/definitions/assessment.Thresholds'
+      updateUser:
+        type: string
+    required:
+    - questionnaire
     type: object
   api.Bucket:
     properties:
@@ -509,6 +610,38 @@ definitions:
       updateUser:
         type: string
     type: object
+  api.Questionnaire:
+    properties:
+      builtin:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      required:
+        type: boolean
+      riskMessages:
+        $ref: '#/definitions/assessment.RiskMessages'
+      sections:
+        items:
+          $ref: '#/definitions/assessment.Section'
+        type: array
+      thresholds:
+        $ref: '#/definitions/assessment.Thresholds'
+      updateUser:
+        type: string
+    required:
+    - name
+    - riskMessages
+    - sections
+    - thresholds
+    type: object
   api.Ref:
     properties:
       id:
@@ -535,6 +668,8 @@ definitions:
     properties:
       application:
         $ref: '#/definitions/api.Ref'
+      archetype:
+        $ref: '#/definitions/api.Ref'
       businessCriticality:
         type: integer
       comments:
@@ -553,8 +688,6 @@ definitions:
         type: string
       workPriority:
         type: integer
-    required:
-    - application
     type: object
   api.Rule:
     properties:
@@ -612,6 +745,8 @@ definitions:
         items:
           $ref: '#/definitions/api.Ref'
         type: array
+      description:
+        type: string
       id:
         type: integer
       identity:
@@ -784,6 +919,8 @@ definitions:
         type: string
       source:
         type: string
+      virtual:
+        type: boolean
     required:
     - id
     type: object
@@ -1035,6 +1172,100 @@ definitions:
     - name
     - url
     type: object
+  assessment.Answer:
+    properties:
+      applyTags:
+        items:
+          $ref: '#/definitions/assessment.CategorizedTag'
+        type: array
+      autoAnswerFor:
+        items:
+          $ref: '#/definitions/assessment.CategorizedTag'
+        type: array
+      autoAnswered:
+        type: boolean
+      mitigation:
+        type: string
+      order:
+        type: integer
+      rationale:
+        type: string
+      risk:
+        enum:
+        - red
+        type: string
+      selected:
+        type: boolean
+      text:
+        type: string
+    required:
+    - order
+    type: object
+  assessment.CategorizedTag:
+    properties:
+      category:
+        type: string
+      tag:
+        type: string
+    type: object
+  assessment.Question:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/assessment.Answer'
+        type: array
+      excludeFor:
+        items:
+          $ref: '#/definitions/assessment.CategorizedTag'
+        type: array
+      explanation:
+        type: string
+      includeFor:
+        items:
+          $ref: '#/definitions/assessment.CategorizedTag'
+        type: array
+      order:
+        type: integer
+      text:
+        type: string
+    required:
+    - order
+    type: object
+  assessment.RiskMessages:
+    properties:
+      green:
+        type: string
+      red:
+        type: string
+      unknown:
+        type: string
+      yellow:
+        type: string
+    type: object
+  assessment.Section:
+    properties:
+      comment:
+        type: string
+      name:
+        type: string
+      order:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/assessment.Question'
+        type: array
+    required:
+    - order
+    type: object
+  assessment.Thresholds:
+    properties:
+      red:
+        type: integer
+      unknown:
+        type: integer
+      yellow:
+        type: integer
+    type: object
 info:
   contact: {}
 paths:
@@ -1133,7 +1364,7 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
         "200":
           description: OK
@@ -1562,7 +1793,7 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/octet-stream
       responses:
         "200":
           description: OK
@@ -1571,6 +1802,65 @@ paths:
       summary: Get the latest analysis.
       tags:
       - analyses
+  /applications/{id}/analysis/report:
+    get:
+      description: Get the latest analysis (static) report.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+      summary: Get the latest analysis (static) report.
+      tags:
+      - analyses
+  /applications/{id}/assessments:
+    get:
+      description: List the assessments of an Application and any it inherits from
+        its archetypes.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Assessment'
+            type: array
+      summary: List the assessments of an Application and any it inherits from its
+        archetypes.
+      tags:
+      - applications
+    post:
+      consumes:
+      - application/json
+      description: Create an application assessment.
+      parameters:
+      - description: Assessment data
+        in: body
+        name: assessment
+        required: true
+        schema:
+          $ref: '#/definitions/api.Assessment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Assessment'
+      summary: Create an application assessment.
+      tags:
+      - applications
   /applications/{id}/bucket/{wildcard}:
     delete:
       description: Delete bucket content by ID and path.
@@ -1806,6 +2096,26 @@ paths:
       tags:
       - applications
   /applications/{id}/tags:
+    get:
+      description: List tag references.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Ref'
+            type: array
+      summary: List tag references.
+      tags:
+      - applications
     patch:
       consumes:
       - application/json
@@ -1875,11 +2185,61 @@ paths:
       summary: Delete tag association.
       tags:
       - applications
-  /applications/{id}/tags/id:
+  /archetypes:
     get:
-      description: List tag references.
+      description: List all archetypes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Archetype'
+            type: array
+      summary: List all archetypes.
+      tags:
+      - archetypes
+    post:
+      consumes:
+      - application/json
+      description: Create an archetype.
       parameters:
-      - description: Application ID
+      - description: Archetype data
+        in: body
+        name: archetype
+        required: true
+        schema:
+          $ref: '#/definitions/api.Archetype'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Archetype'
+      summary: Create an archetype.
+      tags:
+      - archetypes
+  /archetypes/{id}:
+    delete:
+      description: Delete an archetype.
+      parameters:
+      - description: Archetype ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an archetype.
+      tags:
+      - archetypes
+    get:
+      description: Get an archetype by ID.
+      parameters:
+      - description: Archetype ID
         in: path
         name: id
         required: true
@@ -1890,12 +2250,142 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.Ref'
-            type: array
-      summary: List tag references.
+            $ref: '#/definitions/api.Archetype'
+      summary: Get an archetype by ID.
       tags:
-      - applications
+      - archetypes
+    put:
+      consumes:
+      - application/json
+      description: Update an archetype.
+      parameters:
+      - description: Archetype ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Archetype data
+        in: body
+        name: archetype
+        required: true
+        schema:
+          $ref: '#/definitions/api.Archetype'
+      responses:
+        "204":
+          description: No Content
+      summary: Update an archetype.
+      tags:
+      - archetypes
+  /archetypes/{id}/assessments:
+    get:
+      description: List the assessments of an archetype.
+      parameters:
+      - description: Archetype ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Assessment'
+            type: array
+      summary: List the assessments of an archetype.
+      tags:
+      - archetypes
+    post:
+      consumes:
+      - application/json
+      description: Create an archetype assessment.
+      parameters:
+      - description: Assessment data
+        in: body
+        name: assessment
+        required: true
+        schema:
+          $ref: '#/definitions/api.Assessment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Assessment'
+      summary: Create an archetype assessment.
+      tags:
+      - archetypes
+  /assessments:
+    get:
+      description: List all assessments.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Assessment'
+            type: array
+      summary: List all assessments.
+      tags:
+      - assessments
+  /assessments/{id}:
+    delete:
+      description: Delete an assessment.
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an assessment.
+      tags:
+      - assessments
+    get:
+      description: Get an assessment by ID.
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Assessment'
+      summary: Get an assessment by ID.
+      tags:
+      - questionnaires
+    put:
+      consumes:
+      - application/json
+      description: Update an assessment.
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Assessment data
+        in: body
+        name: assessment
+        required: true
+        schema:
+          $ref: '#/definitions/api.Assessment'
+      responses:
+        "204":
+          description: No Content
+      summary: Update an assessment.
+      tags:
+      - assessments
   /auth/login:
     post:
       description: Login and obtain a bearer token.
@@ -2868,6 +3358,100 @@ paths:
       summary: Update an proxy.
       tags:
       - proxies
+  /questionnaires:
+    get:
+      description: List all questionnaires.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Questionnaire'
+            type: array
+      summary: List all questionnaires.
+      tags:
+      - questionnaires
+    post:
+      consumes:
+      - application/json
+      description: Create a questionnaire.
+      parameters:
+      - description: Questionnaire data
+        in: body
+        name: questionnaire
+        required: true
+        schema:
+          $ref: '#/definitions/api.Questionnaire'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Questionnaire'
+      summary: Create a questionnaire.
+      tags:
+      - questionnaires
+  /questionnaires/{id}:
+    delete:
+      description: Delete a questionnaire.
+      parameters:
+      - description: Questionnaire ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a questionnaire.
+      tags:
+      - questionnaires
+    get:
+      description: Get a questionnaire by ID.
+      parameters:
+      - description: Questionnaire ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Questionnaire'
+      summary: Get a questionnaire by ID.
+      tags:
+      - questionnaires
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update a questionnaire. If the Questionnaire
+        is builtin, only its "required" field can be changed
+        and all other fields will be ignored.
+      parameters:
+      - description: Questionnaire ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Questionnaire data
+        in: body
+        name: questionnaire
+        required: true
+        schema:
+          $ref: '#/definitions/api.Questionnaire'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a questionnaire.
+      tags:
+      - questionnaires
   /reviews:
     get:
       description: List all reviews.
@@ -2979,7 +3563,11 @@ paths:
       - reviews
   /rulesets:
     get:
-      description: List all bindings.
+      description: |-
+        List all bindings.
+        filters:
+        - name
+        - labels
       produces:
       - application/json
       responses:
