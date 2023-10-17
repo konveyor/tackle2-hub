@@ -14,7 +14,8 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/swaggo/swag v1.7.8
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
+	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sys v0.13.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gorm.io/datatypes v1.0.5
 	gorm.io/driver/mysql v1.3.5 // indirect
