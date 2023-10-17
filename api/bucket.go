@@ -325,11 +325,10 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter tar.Filter) 
 	if err != nil {
 		_ = ctx.Error(err)
 		return
-	} else {
-		h.Attachment(ctx, pathlib.Base(input)+".tar.gz")
-		ctx.Writer.Header().Set(Directory, DirectoryExpand)
-		ctx.Status(http.StatusOK)
 	}
+	h.Attachment(ctx, pathlib.Base(input)+".tar.gz")
+	ctx.Writer.Header().Set(Directory, DirectoryExpand)
+	ctx.Status(http.StatusOK)
 	_ = tarWriter.AddDir(input)
 	return
 }
