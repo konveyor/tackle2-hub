@@ -160,7 +160,7 @@ func TestTrackerList(t *testing.T) {
 	// Delete related trackers and identities.
 	for _, tracker := range createdTrackers {
 		assert.Must(t, Tracker.Delete(tracker.ID))
-		assert.Must(t, Identity.Delete(tracker.ID))
+		assert.Must(t, Identity.Delete(tracker.Identity.ID))
 	}
 }
 
