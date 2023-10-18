@@ -3,12 +3,34 @@ package assessment
 import "github.com/konveyor/tackle2-hub/model"
 
 //
-// NewArchetypeResolver creates a new ArchetypeResolver.
-func NewArchetypeResolver(archetype *model.Archetype, tags *TagResolver) (a *ArchetypeResolver) {
-	a = &ArchetypeResolver{
-		archetype:   archetype,
-		tagResolver: tags,
+// Archetype represents an Archetype with its assessments.
+type Archetype struct {
+	*model.Archetype
+	Assessments []Assessment
+}
+
+//
+// With updates the Archetype with the db model and deserializes its assessments.
+func (r *Archetype) With(m *model.Archetype) {
+	r.Archetype = m
+	for _, a := range m.Assessments {
+		assessment := Assessment{}
+		assessment.With(&a)
+		r.Assessments = append(r.Assessments, assessment)
 	}
+}
+
+//
+// NewArchetypeResolver creates a new ArchetypeResolver.
+func NewArchetypeResolver(m *model.Archetype, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ArchetypeResolver) {
+	a = &ArchetypeResolver{
+		tags:          tags,
+		membership:    membership,
+		questionnaire: questionnaire,
+	}
+	archetype := Archetype{}
+	archetype.With(m)
+	a.archetype = archetype
 	return
 }
 
@@ -16,17 +38,22 @@ func NewArchetypeResolver(archetype *model.Archetype, tags *TagResolver) (a *Arc
 // ArchetypeResolver wraps an Archetype model
 // with assessment-related functionality.
 type ArchetypeResolver struct {
-	archetype   *model.Archetype
-	tagResolver *TagResolver
+	archetype     Archetype
+	tags          *TagResolver
+	membership    *MembershipResolver
+	questionnaire *QuestionnaireResolver
 }
 
 //
 // AssessmentTags returns the list of tags that the archetype should
 // inherit from the answers given to its assessments.
 func (r *ArchetypeResolver) AssessmentTags() (tags []model.Tag) {
+	if r.tags == nil {
+		return
+	}
 	seenTags := make(map[uint]bool)
 	for _, assessment := range r.archetype.Assessments {
-		aTags := r.tagResolver.Assessment(&assessment)
+		aTags := r.tags.Assessment(assessment)
 		for _, t := range aTags {
 			if _, found := seenTags[t.ID]; !found {
 				seenTags[t.ID] = true
@@ -34,5 +61,39 @@ func (r *ArchetypeResolver) AssessmentTags() (tags []model.Tag) {
 			}
 		}
 	}
+	return
+}
+
+//
+// Risk returns the overall risk level for the archetypes' assessments.
+func (r *ArchetypeResolver) Risk() (risk string) {
+	risk = Risk(r.archetype.Assessments)
+	return
+}
+
+//
+// Confidence returns the archetype's overall assessment confidence score.
+func (r *ArchetypeResolver) Confidence() (confidence int) {
+	confidence = Confidence(r.archetype.Assessments)
+	return
+}
+
+//
+// Assessed returns whether the archetype has been fully assessed.
+func (r *ArchetypeResolver) Assessed() (assessed bool) {
+	if r.questionnaire == nil {
+		return
+	}
+	assessed = r.questionnaire.Assessed(r.archetype.Assessments)
+	return
+}
+
+//
+// Applications returns the archetype's member applications.
+func (r *ArchetypeResolver) Applications() (applications []Application, err error) {
+	if r.membership == nil {
+		return
+	}
+	applications, err = r.membership.Applications(r.archetype)
 	return
 }

@@ -1,7 +1,6 @@
 package assessment
 
 import (
-	"encoding/json"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
@@ -43,68 +42,14 @@ func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
 }
 
 //
-// Risk returns the single highest risk score for a group of assessments.
-func (r *QuestionnaireResolver) Risk(assessments []model.Assessment) (risk string) {
-	risk = RiskUnknown
-	if len(assessments) == 0 {
-		return
-	}
-	yellow := 0
-	unknown := 0
-	green := 0
-	if len(assessments) > 0 {
-		for _, a := range assessments {
-			switch RiskLevel(&a) {
-			case RiskRed:
-				risk = RiskRed
-				return
-			case RiskYellow:
-				yellow++
-			case RiskGreen:
-				green++
-			default:
-				unknown++
-			}
-		}
-	}
-
-	switch {
-	case unknown > 0:
-		risk = RiskUnknown
-	case yellow > 0:
-		risk = RiskYellow
-	case green == len(assessments):
-		risk = RiskGreen
-	}
-
-	return
-}
-
-//
-// Confidence returns a total confidence score for a group of assessments.
-func (r *QuestionnaireResolver) Confidence(assessments []model.Assessment) (confidence int) {
-	allSections := []Section{}
-	for _, a := range assessments {
-		sections := []Section{}
-		_ = json.Unmarshal(a.Sections, &sections)
-		allSections = append(allSections, sections...)
-	}
-	confidence = Confidence(allSections)
-
-	return
-}
-
-//
 // Assessed returns whether a slice contains a completed assessment for each of the required
 // questionnaires.
-func (r *QuestionnaireResolver) Assessed(assessments []model.Assessment) (assessed bool) {
+func (r *QuestionnaireResolver) Assessed(assessments []Assessment) (assessed bool) {
 	answered := NewSet()
 loop:
 	for _, a := range assessments {
 		if r.requiredQuestionnaires.Contains(a.QuestionnaireID) {
-			sections := []Section{}
-			_ = json.Unmarshal(a.Sections, &sections)
-			for _, s := range sections {
+			for _, s := range a.Sections {
 				if !s.Complete() {
 					continue loop
 				}

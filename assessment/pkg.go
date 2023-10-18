@@ -3,7 +3,6 @@ package assessment
 import (
 	"encoding/json"
 	"github.com/konveyor/tackle2-hub/model"
-	"math"
 )
 
 //
@@ -13,6 +12,14 @@ const (
 	RiskRed     = "red"
 	RiskYellow  = "yellow"
 	RiskGreen   = "green"
+)
+
+//
+// Assessment status
+const (
+	StatusEmpty    = "empty"
+	StatusStarted  = "started"
+	StatusComplete = "complete"
 )
 
 //
@@ -38,72 +45,56 @@ const (
 	WeightUnknown = 70
 )
 
-func RiskLevel(assessment *model.Assessment) string {
-	sections := []Section{}
-	_ = json.Unmarshal(assessment.Sections, &sections)
-	thresholds := Thresholds{}
-	_ = json.Unmarshal(assessment.Thresholds, &thresholds)
-
-	var total uint
-	colors := make(map[string]uint)
-	for _, s := range sections {
-		for _, risk := range s.Risks() {
-			colors[risk]++
-			total++
+//
+// Risk returns the single highest risk score for a group of assessments.
+func Risk(assessments []Assessment) (risk string) {
+	risk = RiskUnknown
+	if len(assessments) == 0 {
+		return
+	}
+	red := 0
+	yellow := 0
+	unknown := 0
+	green := 0
+	if len(assessments) > 0 {
+		for _, a := range assessments {
+			switch a.Risk() {
+			case RiskRed:
+				red++
+			case RiskYellow:
+				yellow++
+			case RiskGreen:
+				green++
+			default:
+				unknown++
+			}
 		}
 	}
-	if total == 0 {
-		return RiskUnknown
+
+	switch {
+	case red > 0:
+		risk = RiskRed
+	case unknown > 0:
+		risk = RiskUnknown
+	case yellow > 0:
+		risk = RiskYellow
+	case green == len(assessments):
+		risk = RiskGreen
 	}
-	if (float64(colors[RiskRed]) / float64(total)) >= (float64(thresholds.Red) / float64(100)) {
-		return RiskRed
-	}
-	if (float64(colors[RiskYellow]) / float64(total)) >= (float64(thresholds.Yellow) / float64(100)) {
-		return RiskYellow
-	}
-	if (float64(colors[RiskUnknown]) / float64(total)) >= (float64(thresholds.Unknown) / float64(100)) {
-		return RiskUnknown
-	}
-	return RiskGreen
+
+	return
 }
 
 //
-// Confidence calculates a confidence score based on the answers to an assessment's questions.
-// The algorithm is a reimplementation of the calculation done by Pathfinder.
-func Confidence(sections []Section) (score int) {
-	if len(sections) == 0 {
+// Confidence returns a total confidence score for a group of assessments.
+func Confidence(assessments []Assessment) (confidence int) {
+	if len(assessments) == 0 {
 		return
 	}
-	totalQuestions := 0
-	riskCounts := make(map[string]int)
-	for _, s := range sections {
-		for _, r := range s.Risks() {
-			riskCounts[r]++
-			totalQuestions++
-		}
+	for _, a := range assessments {
+		confidence += a.Confidence()
 	}
-	adjuster := 1.0
-	if riskCounts[RiskRed] > 0 {
-		adjuster = adjuster * math.Pow(AdjusterRed, float64(riskCounts[RiskRed]))
-	}
-	if riskCounts[RiskYellow] > 0 {
-		adjuster = adjuster * math.Pow(AdjusterYellow, float64(riskCounts[RiskYellow]))
-	}
-	confidence := 0.0
-	for i := 0; i < riskCounts[RiskRed]; i++ {
-		confidence *= MultiplierRed
-		confidence += WeightRed * adjuster
-	}
-	for i := 0; i < riskCounts[RiskYellow]; i++ {
-		confidence *= MultiplierYellow
-		confidence += WeightYellow * adjuster
-	}
-	confidence += float64(riskCounts[RiskGreen]) * WeightGreen * adjuster
-	confidence += float64(riskCounts[RiskUnknown]) * WeightUnknown * adjuster
-
-	maxConfidence := WeightGreen * totalQuestions
-	score = int(confidence / float64(maxConfidence) * 100)
-
+	confidence /= len(assessments)
 	return
 }
 

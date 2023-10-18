@@ -1,7 +1,6 @@
 package assessment
 
 import (
-	"encoding/json"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
@@ -34,10 +33,8 @@ func (r *TagResolver) Resolve(category string, tag string) (t *model.Tag, found 
 
 //
 // Assessment returns all the Tag models that should be applied from the assessment.
-func (r *TagResolver) Assessment(assessment *model.Assessment) (tags []model.Tag) {
-	sections := []Section{}
-	_ = json.Unmarshal(assessment.Sections, &sections)
-	for _, s := range sections {
+func (r *TagResolver) Assessment(assessment Assessment) (tags []model.Tag) {
+	for _, s := range assessment.Sections {
 		for _, t := range s.Tags() {
 			tag, found := r.Resolve(t.Category, t.Tag)
 			if found {

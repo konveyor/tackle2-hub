@@ -17,23 +17,6 @@ const (
 )
 
 //
-// Assessment status
-const (
-	AssessmentEmpty    = "empty"
-	AssessmentStarted  = "started"
-	AssessmentComplete = "complete"
-)
-
-//
-// Assessment risks
-const (
-	RiskRed     = "red"
-	RiskYellow  = "yellow"
-	RiskGreen   = "green"
-	RiskUnknown = "unknown"
-)
-
-//
 // AssessmentHandler handles Assessment resource routes.
 type AssessmentHandler struct {
 	BaseHandler
@@ -189,9 +172,6 @@ func (r *Assessment) With(m *model.Assessment) {
 	r.Questionnaire = r.ref(m.QuestionnaireID, &m.Questionnaire)
 	r.Archetype = r.refPtr(m.ArchetypeID, m.Archetype)
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	_ = json.Unmarshal(m.Sections, &r.Sections)
-	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
-	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
 		ref := Ref{}
@@ -204,15 +184,14 @@ func (r *Assessment) With(m *model.Assessment) {
 		ref.With(sg.ID, sg.Name)
 		r.StakeholderGroups = append(r.StakeholderGroups, ref)
 	}
-	if r.Complete() {
-		r.Status = AssessmentComplete
-	} else if r.Started() {
-		r.Status = AssessmentStarted
-	} else {
-		r.Status = AssessmentEmpty
-	}
-	r.Risk = assessment.RiskLevel(m)
-	r.Confidence = assessment.Confidence(r.Sections)
+	a := assessment.Assessment{}
+	a.With(m)
+	r.Risk = a.Risk()
+	r.Confidence = a.Confidence()
+	r.RiskMessages = a.RiskMessages
+	r.Thresholds = a.Thresholds
+	r.Sections = a.Sections
+	r.Status = a.Status()
 }
 
 //
@@ -245,26 +224,4 @@ func (r *Assessment) Model() (m *model.Assessment) {
 			})
 	}
 	return
-}
-
-//
-// Complete returns whether all sections have been completed.
-func (r *Assessment) Complete() bool {
-	for _, s := range r.Sections {
-		if !s.Complete() {
-			return false
-		}
-	}
-	return true
-}
-
-//
-// Started returns whether any sections have been started.
-func (r *Assessment) Started() bool {
-	for _, s := range r.Sections {
-		if s.Started() {
-			return true
-		}
-	}
-	return false
 }

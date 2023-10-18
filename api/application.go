@@ -975,12 +975,12 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	assessments := m.Assessments
-	for _, a := range archetypes {
-		assessments = append(assessments, a.Assessments...)
+	for _, arch := range archetypes {
+		for _, a := range arch.Assessments {
+			assessments = append(assessments, *a.Assessment)
+		}
 	}
-
 	resources := []Assessment{}
 	for i := range assessments {
 		r := Assessment{}
@@ -1125,17 +1125,6 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		ref.With(a.ID, "")
 		r.Assessments = append(r.Assessments, ref)
 	}
-	r.Risk = RiskUnknown
-}
-
-//
-// WithArchetypes updates the resource with archetypes.
-func (r *Application) WithArchetypes(archetypes []model.Archetype) {
-	for _, a := range archetypes {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Archetypes = append(r.Archetypes, ref)
-	}
 }
 
 //
@@ -1156,26 +1145,28 @@ func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (er
 	if err != nil {
 		return
 	}
+	for _, a := range archetypes {
+		ref := Ref{}
+		ref.With(a.ID, a.Name)
+		r.Archetypes = append(r.Archetypes, ref)
+	}
 	archetypeTags, err := resolver.ArchetypeTags()
 	if err != nil {
 		return
 	}
-	r.WithArchetypes(archetypes)
 	r.WithVirtualTags(archetypeTags, SourceArchetype)
 	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
 	r.Assessed, err = resolver.Assessed()
 	if err != nil {
 		return
 	}
-	if r.Assessed {
-		r.Confidence, err = resolver.Confidence()
-		if err != nil {
-			return
-		}
-		r.Risk, err = resolver.Risk()
-		if err != nil {
-			return
-		}
+	r.Confidence, err = resolver.Confidence()
+	if err != nil {
+		return
+	}
+	r.Risk, err = resolver.Risk()
+	if err != nil {
+		return
 	}
 	return
 }

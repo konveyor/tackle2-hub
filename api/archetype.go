@@ -57,34 +57,24 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	applications, err := membership.Applications(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	tags, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-
-	resolver := assessment.NewArchetypeResolver(m, tags)
-
+	resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
 	r := Archetype{}
 	r.With(m)
-	r.WithApplications(applications)
-	r.WithAssessmentTags(resolver.AssessmentTags())
-	r.Assessed = questionnaires.Assessed(m.Assessments)
-	r.Risk = questionnaires.Risk(m.Assessments)
-	r.Confidence = questionnaires.Confidence(m.Assessments)
+	err = r.WithResolver(resolver)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -103,7 +93,6 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
 	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
@@ -113,24 +102,18 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
 	resources := []Archetype{}
 	for i := range list {
 		m := &list[i]
+		resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
 		r := Archetype{}
-		applications, err := membership.Applications(m)
+		r.With(m)
+		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		resolver := assessment.NewArchetypeResolver(m, tags)
-		r.With(m)
-		r.WithApplications(applications)
-		r.WithAssessmentTags(resolver.AssessmentTags())
-		r.Assessed = questionnaires.Assessed(m.Assessments)
-		r.Risk = questionnaires.Risk(m.Assessments)
-		r.Confidence = questionnaires.Confidence(m.Assessments)
 		resources = append(resources, r)
 	}
 
@@ -169,14 +152,13 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 	}
 
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	applications, err := membership.Applications(m)
+	resolver := assessment.NewArchetypeResolver(m, nil, membership, nil)
+	r.With(m)
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	r.With(m)
-	r.WithApplications(applications)
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -401,27 +383,27 @@ func (r *Archetype) With(m *model.Archetype) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
-	r.Risk = RiskUnknown
 }
 
 //
-// WithApplications updates the Archetype resource with the applications.
-func (r *Archetype) WithApplications(apps []model.Application) {
+// WithResolver uses an ArchetypeResolver to update the resource with
+// values derived from the archetype's assessments.
+func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err error) {
+	r.Risk = resolver.Risk()
+	r.Confidence = resolver.Confidence()
+	r.Assessed = resolver.Assessed()
+	apps, err := resolver.Applications()
 	for i := range apps {
 		ref := Ref{}
 		ref.With(apps[i].ID, apps[i].Name)
 		r.Applications = append(r.Applications, ref)
 	}
-}
-
-//
-// WithAssessmentTags updates the Archetype resource with tags inherited from assessments.
-func (r *Archetype) WithAssessmentTags(tags []model.Tag) {
-	for _, t := range tags {
+	for _, t := range resolver.AssessmentTags() {
 		ref := TagRef{}
 		ref.With(t.ID, t.Name, SourceAssessment, true)
 		r.Tags = append(r.Tags, ref)
 	}
+	return
 }
 
 //
