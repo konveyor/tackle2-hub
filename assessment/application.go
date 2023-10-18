@@ -99,16 +99,19 @@ func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 		assessed = r.questionnaireResolver.Assessed(r.application.Assessments)
 		return
 	}
+	assessed = false
+
 	// otherwise the application is assessed if all of its archetypes are fully assessed.
 	archetypes, err := r.Archetypes()
 	if err != nil {
 		return
 	}
+	assessedCount := 0
 	for _, a := range archetypes {
-		if !r.questionnaireResolver.Assessed(a.Assessments) {
-			return
+		if r.questionnaireResolver.Assessed(a.Assessments) {
+			assessedCount++
 		}
 	}
-	assessed = true
+	assessed = assessedCount > 0 && assessedCount == len(archetypes)
 	return
 }
