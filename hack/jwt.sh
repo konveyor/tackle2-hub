@@ -16,7 +16,7 @@ payloadStr=$(echo -n ${payload} \
   | sed 's/\//_/g' \
   | sed -E s/=+$//)
 signStr=$(echo -n "${headerStr}.${payloadStr}" \
-  | openssl dgst -sha512 -mac HMAC -macopt key:${key} -binary \
+  | openssl dgst -sha512 -hmac ${key} -binary \
   | base64  -w 0 \
   | sed s/\+/-/g \
   | sed 's/\//_/g' \
