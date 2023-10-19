@@ -3,11 +3,11 @@
 # Usage: jwt.sh <key>
 #
 key=$1
-hexKey=$(echo -n "key" \
+hexKey=$(echo -n "${key}" \
   | xxd -p \
   | tr -d '\n')
 header='{"alg":"HS512","typ":"JWT"}'
-payload='{"scope":"*:*","user":"operator"}'
+payload='{"scope":"applicaions:get","user":"operator"}'
 headerStr=$(echo -n ${header} \
   | base64 -w 0 \
   | sed s/\+/-/g \
