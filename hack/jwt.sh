@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Usage: hubtoken.sh <key>
+# Usage: jwt.sh <key>
 #
 key=$1
 hexKey=$(echo -n "key" \
