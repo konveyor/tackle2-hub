@@ -185,11 +185,11 @@ func (h MigrationWaveHandler) Delete(ctx *gin.Context) {
 type MigrationWave struct {
 	Resource
 	Name              string    `json:"name"`
-	StartDate         time.Time `json:"startDate"`
-	EndDate           time.Time `json:"endDate"`
+	StartDate         time.Time `json:"startDate" yaml:"startDate"`
+	EndDate           time.Time `json:"endDate" yaml:"endDate"`
 	Applications      []Ref     `json:"applications"`
 	Stakeholders      []Ref     `json:"stakeholders"`
-	StakeholderGroups []Ref     `json:"stakeholderGroups"`
+	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 }
 
 //

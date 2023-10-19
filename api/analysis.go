@@ -1977,7 +1977,7 @@ type Incident struct {
 	File     string  `json:"file"`
 	Line     int     `json:"line"`
 	Message  string  `json:"message"`
-	CodeSnip string  `json:"codeSnip"`
+	CodeSnip string  `json:"codeSnip" yaml:"codeSnip"`
 	Facts    FactMap `json:"facts"`
 }
 

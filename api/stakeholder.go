@@ -193,12 +193,12 @@ type Stakeholder struct {
 	Resource
 	Name             string `json:"name" binding:"required"`
 	Email            string `json:"email" binding:"required"`
-	Groups           []Ref  `json:"stakeholderGroups"`
-	BusinessServices []Ref  `json:"businessServices"`
-	JobFunction      *Ref   `json:"jobFunction"`
+	Groups           []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	BusinessServices []Ref  `json:"businessServices" yaml:"businessServices"`
+	JobFunction      *Ref   `json:"jobFunction" yaml:"jobFunction"`
 	Owns             []Ref  `json:"owns"`
 	Contributes      []Ref  `json:"contributes"`
-	MigrationWaves   []Ref  `json:"migrationWaves"`
+	MigrationWaves   []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
 }
 
 //

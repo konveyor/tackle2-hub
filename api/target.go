@@ -241,11 +241,11 @@ type Target struct {
 	Resource
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
-	Choice      bool     `json:"choice,omitempty"`
-	Custom      bool     `json:"custom,omitempty"`
+	Choice      bool     `json:"choice,omitempty" yaml:",omitempty"`
+	Custom      bool     `json:"custom,omitempty" yaml:",omitempty"`
 	Labels      []Label  `json:"labels"`
 	Image       Ref      `json:"image"`
-	RuleSet     *RuleSet `json:"ruleset,omitempty"`
+	RuleSet     *RuleSet `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
 }
 
 type Label struct {

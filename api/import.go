@@ -421,11 +421,11 @@ type Import map[string]interface{}
 type ImportSummary struct {
 	Resource
 	Filename       string    `json:"filename"`
-	ImportStatus   string    `json:"importStatus"`
-	ImportTime     time.Time `json:"importTime"`
-	ValidCount     int       `json:"validCount"`
-	InvalidCount   int       `json:"invalidCount"`
-	CreateEntities bool      `json:"createEntities"`
+	ImportStatus   string    `json:"importStatus" yaml:"importStatus"`
+	ImportTime     time.Time `json:"importTime" yaml:"importTime"`
+	ValidCount     int       `json:"validCount" yaml:"validCount"`
+	InvalidCount   int       `json:"invalidCount" yaml:"invalidCount"`
+	CreateEntities bool      `json:"createEntities" yaml:"createEntities"`
 }
 
 //

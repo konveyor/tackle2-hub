@@ -225,10 +225,10 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 // Review REST resource.
 type Review struct {
 	Resource
-	BusinessCriticality uint   `json:"businessCriticality"`
-	EffortEstimate      string `json:"effortEstimate"`
-	ProposedAction      string `json:"proposedAction"`
-	WorkPriority        uint   `json:"workPriority"`
+	BusinessCriticality uint   `json:"businessCriticality" yaml:"businessCriticality"`
+	EffortEstimate      string `json:"effortEstimate" yaml:"effortEstimate"`
+	ProposedAction      string `json:"proposedAction" yaml:"proposedAction"`
+	WorkPriority        uint   `json:"workPriority" yaml:"workPriority"`
 	Comments            string `json:"comments"`
 	Application         *Ref   `json:"application,omitempty" binding:"required_without=Archetype,excluded_with=Archetype"`
 	Archetype           *Ref   `json:"archetype,omitempty" binding:"required_without=Application,excluded_with=Application"`

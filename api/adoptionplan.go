@@ -113,13 +113,13 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 //
 // Vertex represents a vertex in the dependency graph.
 type Vertex struct {
-	ID             uint   `json:"applicationId"`
-	Name           string `json:"applicationName"`
+	ID             uint   `json:"applicationId" yaml:"applicationId"`
+	Name           string `json:"applicationName" yaml:"applicationName"`
 	Decision       string `json:"decision"`
-	EffortEstimate string `json:"effortEstimate"`
+	EffortEstimate string `json:"effortEstimate" yaml:"effortEstimate"`
 	Effort         int    `json:"effort"`
-	PositionY      int    `json:"positionY"`
-	PositionX      int    `json:"positionX"`
+	PositionY      int    `json:"positionY" yaml:"positionY"`
+	PositionX      int    `json:"positionX" yaml:"positionX"`
 }
 
 //
