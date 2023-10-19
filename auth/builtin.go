@@ -71,7 +71,8 @@ type Builtin struct {
 //
 // Authenticate the token
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
-	token := request.Token
+	token := strings.Replace(request.Token, "Bearer", "", 1)
+	token = strings.Fields(token)[0]
 	jwToken, err = jwt.Parse(
 		request.Token,
 		func(jwToken *jwt.Token) (secret interface{}, err error) {
