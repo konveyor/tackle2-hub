@@ -1,5 +1,129 @@
 package assessment
 
+import (
+	"encoding/json"
+	"github.com/konveyor/tackle2-hub/model"
+	"math"
+)
+
+//
+// Assessment represents a deserialized Assessment.
+type Assessment struct {
+	*model.Assessment
+	Sections     []Section    `json:"sections"`
+	Thresholds   Thresholds   `json:"thresholds"`
+	RiskMessages RiskMessages `json:"riskMessages"`
+}
+
+//
+// With updates the Assessment with the db model and deserializes its fields.
+func (r *Assessment) With(m *model.Assessment) {
+	r.Assessment = m
+	_ = json.Unmarshal(m.Sections, &r.Sections)
+	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
+	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
+}
+
+//
+// Status returns the started status of the assessment.
+func (r *Assessment) Status() string {
+	if r.Complete() {
+		return StatusComplete
+	} else if r.Started() {
+		return StatusStarted
+	} else {
+		return StatusEmpty
+	}
+}
+
+//
+// Complete returns whether all sections have been completed.
+func (r *Assessment) Complete() bool {
+	for _, s := range r.Sections {
+		if !s.Complete() {
+			return false
+		}
+	}
+	return true
+}
+
+//
+// Started returns whether any sections have been started.
+func (r *Assessment) Started() bool {
+	for _, s := range r.Sections {
+		if s.Started() {
+			return true
+		}
+	}
+	return false
+}
+
+//
+// Risk calculates the risk level (red, yellow, green, unknown) for the application.
+func (r *Assessment) Risk() string {
+	var total uint
+	colors := make(map[string]uint)
+	for _, s := range r.Sections {
+		for _, risk := range s.Risks() {
+			colors[risk]++
+			total++
+		}
+	}
+	if total == 0 {
+		return RiskUnknown
+	}
+	if (float64(colors[RiskRed]) / float64(total)) >= (float64(r.Thresholds.Red) / float64(100)) {
+		return RiskRed
+	}
+	if (float64(colors[RiskYellow]) / float64(total)) >= (float64(r.Thresholds.Yellow) / float64(100)) {
+		return RiskYellow
+	}
+	if (float64(colors[RiskUnknown]) / float64(total)) >= (float64(r.Thresholds.Unknown) / float64(100)) {
+		return RiskUnknown
+	}
+	return RiskGreen
+}
+
+//
+// Confidence calculates a confidence score based on the answers to an assessment's questions.
+// The algorithm is a reimplementation of the calculation done by Pathfinder.
+func (r *Assessment) Confidence() (score int) {
+	totalQuestions := 0
+	riskCounts := make(map[string]int)
+	for _, s := range r.Sections {
+		for _, r := range s.Risks() {
+			riskCounts[r]++
+			totalQuestions++
+		}
+	}
+	if totalQuestions == 0 {
+		return
+	}
+	adjuster := 1.0
+	if riskCounts[RiskRed] > 0 {
+		adjuster = adjuster * math.Pow(AdjusterRed, float64(riskCounts[RiskRed]))
+	}
+	if riskCounts[RiskYellow] > 0 {
+		adjuster = adjuster * math.Pow(AdjusterYellow, float64(riskCounts[RiskYellow]))
+	}
+	confidence := 0.0
+	for i := 0; i < riskCounts[RiskRed]; i++ {
+		confidence *= MultiplierRed
+		confidence += WeightRed * adjuster
+	}
+	for i := 0; i < riskCounts[RiskYellow]; i++ {
+		confidence *= MultiplierYellow
+		confidence += WeightYellow * adjuster
+	}
+	confidence += float64(riskCounts[RiskGreen]) * WeightGreen * adjuster
+	confidence += float64(riskCounts[RiskUnknown]) * WeightUnknown * adjuster
+
+	maxConfidence := WeightGreen * totalQuestions
+	score = int(confidence / float64(maxConfidence) * 100)
+
+	return
+}
+
 //
 // Section represents a group of questions in a questionnaire.
 type Section struct {

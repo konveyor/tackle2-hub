@@ -134,28 +134,13 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		return
 	}
 	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	archetypes, err := resolver.Archetypes()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	archetypeTags, err := resolver.ArchetypeTags()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	r := Application{}
 	r.With(m, tags)
-	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, SourceArchetype)
-	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
-	r.Assessed, err = resolver.Assessed()
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -198,22 +183,9 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 			return
 		}
 		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
-		archetypes, aErr := resolver.Archetypes()
-		if aErr != nil {
-			_ = ctx.Error(aErr)
-			return
-		}
-		archetypeTags, aErr := resolver.ArchetypeTags()
-		if aErr != nil {
-			_ = ctx.Error(aErr)
-			return
-		}
 		r := Application{}
 		r.With(&list[i], tags)
-		r.WithArchetypes(archetypes)
-		r.WithVirtualTags(archetypeTags, SourceArchetype)
-		r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
-		r.Assessed, err = resolver.Assessed()
+		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -274,27 +246,12 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	archetypes, err := resolver.Archetypes()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	archetypeTags, err := resolver.ArchetypeTags()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	r.With(m, tags)
-	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, SourceArchetype)
-	r.WithVirtualTags(resolver.AssessmentTags(), SourceArchetype)
-	r.Assessed, err = resolver.Assessed()
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -1018,12 +975,12 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	assessments := m.Assessments
-	for _, a := range archetypes {
-		assessments = append(assessments, a.Assessments...)
+	for _, arch := range archetypes {
+		for _, a := range arch.Assessments {
+			assessments = append(assessments, *a.Assessment)
+		}
 	}
-
 	resources := []Assessment{}
 	for i := range assessments {
 		r := Assessment{}
@@ -1112,13 +1069,15 @@ type Application struct {
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
 	Tags            []TagRef    `json:"tags"`
-	BusinessService *Ref        `json:"businessService"`
+	BusinessService *Ref        `json:"businessService" yaml:"businessService"`
 	Owner           *Ref        `json:"owner"`
 	Contributors    []Ref       `json:"contributors"`
-	MigrationWave   *Ref        `json:"migrationWave"`
+	MigrationWave   *Ref        `json:"migrationWave" yaml:"migrationWave"`
 	Archetypes      []Ref       `json:"archetypes"`
 	Assessments     []Ref       `json:"assessments"`
 	Assessed        bool        `json:"assessed"`
+	Risk            string      `json:"risk"`
+	Confidence      int         `json:"confidence"`
 }
 
 //
@@ -1169,16 +1128,6 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 }
 
 //
-// WithArchetypes updates the resource with archetypes.
-func (r *Application) WithArchetypes(archetypes []model.Archetype) {
-	for _, a := range archetypes {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Archetypes = append(r.Archetypes, ref)
-	}
-}
-
-//
 // WithVirtualTags updates the resource with tags derived from assessments.
 func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 	for _, t := range tags {
@@ -1186,6 +1135,40 @@ func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 		ref.With(t.ID, t.Name, source, true)
 		r.Tags = append(r.Tags, ref)
 	}
+}
+
+//
+// WithResolver uses an ApplicationResolver to update the resource with
+// values derived from the application's assessments and archetypes.
+func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (err error) {
+	archetypes, err := resolver.Archetypes()
+	if err != nil {
+		return
+	}
+	for _, a := range archetypes {
+		ref := Ref{}
+		ref.With(a.ID, a.Name)
+		r.Archetypes = append(r.Archetypes, ref)
+	}
+	archetypeTags, err := resolver.ArchetypeTags()
+	if err != nil {
+		return
+	}
+	r.WithVirtualTags(archetypeTags, SourceArchetype)
+	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
+	r.Assessed, err = resolver.Assessed()
+	if err != nil {
+		return
+	}
+	r.Confidence, err = resolver.Confidence()
+	if err != nil {
+		return
+	}
+	r.Risk, err = resolver.Risk()
+	if err != nil {
+		return
+	}
+	return
 }
 
 //
