@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const UITargetOrder = "ui.target.order"
+
 //
 // Target applies Target seeds.
 type Target struct {
@@ -34,7 +36,6 @@ func (r *Target) With(seed libseed.Seed) (err error) {
 func (r *Target) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying Targets", "count", len(r.targets))
 
-	ids := []uint{}
 	for i := range r.targets {
 		t := r.targets[i]
 		target, found, fErr := r.find(db, "uuid = ?", t.UUID)
@@ -92,17 +93,51 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 			err = liberr.Wrap(result.Error)
 			return
 		}
-		ids = append(ids, target.ID)
 	}
 
-	value, _ := json.Marshal(ids)
-	uiOrder := model.Setting{Key: "ui.target.order", Value: value}
-	result := db.Where("key", "ui.target.order").Updates(uiOrder)
+	err = r.reorder(db)
+	if err != nil {
+		return
+	}
+	return
+}
+
+//
+// reorder updates the value of the ui.target.order setting
+// to add any missing target ids. (namely, newly added targets.)
+func (r *Target) reorder(db *gorm.DB) (err error) {
+	targets := []model.Target{}
+	result := db.Find(&targets)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-
+	s := model.Setting{}
+	result = db.First(&s, "key", UITargetOrder)
+	if result.Error != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	ordering := []uint{}
+	_ = s.As(&ordering)
+	known := make(map[uint]bool)
+	for _, id := range ordering {
+		known[id] = true
+	}
+	for _, t := range targets {
+		if !known[t.ID] {
+			ordering = append(ordering, t.ID)
+		}
+	}
+	err = s.With(ordering)
+	if err != nil {
+		return
+	}
+	result = db.Where("key", UITargetOrder).Updates(s)
+	if result.Error != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
