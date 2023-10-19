@@ -3,9 +3,6 @@
 # Usage: jwt.sh <key>
 #
 key=$1
-hexKey=$(echo -n "${key}" \
-  | xxd -p \
-  | tr -d '\n')
 header='{"alg":"HS512","typ":"JWT"}'
 payload='{"scope":"applicaions:get","user":"operator"}'
 headerStr=$(echo -n ${header} \
@@ -19,7 +16,7 @@ payloadStr=$(echo -n ${payload} \
   | sed 's/\//_/g' \
   | sed -E s/=+$//)
 signStr=$(echo -n "${headerStr}.${payloadStr}" \
-  | openssl dgst -sha512 -mac HMAC -macopt hexkey:${hexKey} -binary \
+  | openssl dgst -sha512 -mac HMAC -macopt key:${key} -binary \
   | base64  -w 0 \
   | sed s/\+/-/g \
   | sed 's/\//_/g' \
