@@ -1,7 +1,6 @@
 package assessment
 
 import (
-	"encoding/json"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
@@ -45,14 +44,12 @@ func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
 //
 // Assessed returns whether a slice contains a completed assessment for each of the required
 // questionnaires.
-func (r *QuestionnaireResolver) Assessed(assessments []model.Assessment) (assessed bool) {
+func (r *QuestionnaireResolver) Assessed(assessments []Assessment) (assessed bool) {
 	answered := NewSet()
 loop:
 	for _, a := range assessments {
 		if r.requiredQuestionnaires.Contains(a.QuestionnaireID) {
-			sections := []Section{}
-			_ = json.Unmarshal(a.Sections, &sections)
-			for _, s := range sections {
+			for _, s := range a.Sections {
 				if !s.Complete() {
 					continue loop
 				}

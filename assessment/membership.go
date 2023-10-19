@@ -12,7 +12,7 @@ import (
 func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver) {
 	m = &MembershipResolver{db: db}
 	m.tagSets = make(map[uint]Set)
-	m.archetypeMembers = make(map[uint][]model.Application)
+	m.archetypeMembers = make(map[uint][]Application)
 	return
 }
 
@@ -20,15 +20,15 @@ func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver) {
 // MembershipResolver resolves archetype membership.
 type MembershipResolver struct {
 	db               *gorm.DB
-	archetypes       []model.Archetype
+	archetypes       []Archetype
 	tagSets          map[uint]Set
-	archetypeMembers map[uint][]model.Application
+	archetypeMembers map[uint][]Application
 	membersCached    bool
 }
 
 //
 // Applications returns the list of applications that are members of the given archetype.
-func (r *MembershipResolver) Applications(m *model.Archetype) (applications []model.Application, err error) {
+func (r *MembershipResolver) Applications(m Archetype) (applications []Application, err error) {
 	err = r.cacheArchetypeMembers()
 	if err != nil {
 		return
@@ -41,18 +41,18 @@ func (r *MembershipResolver) Applications(m *model.Archetype) (applications []mo
 
 //
 // Archetypes returns the list of archetypes that the application is a member of.
-func (r *MembershipResolver) Archetypes(m *model.Application) (archetypes []model.Archetype, err error) {
+func (r *MembershipResolver) Archetypes(app Application) (archetypes []Archetype, err error) {
 	err = r.cacheArchetypes()
 	if err != nil {
 		return
 	}
 
 	appTags := NewSet()
-	for _, t := range m.Tags {
+	for _, t := range app.Tags {
 		appTags.Add(t.ID)
 	}
 
-	matches := []model.Archetype{}
+	matches := []Archetype{}
 	for _, a := range r.archetypes {
 		if appTags.Superset(r.tagSets[a.ID], false) {
 			matches = append(matches, a)
@@ -74,7 +74,7 @@ loop:
 			}
 		}
 		archetypes = append(archetypes, a1)
-		r.archetypeMembers[a1.ID] = append(r.archetypeMembers[a1.ID], *m)
+		r.archetypeMembers[a1.ID] = append(r.archetypeMembers[a1.ID], app)
 	}
 
 	return
@@ -85,14 +85,18 @@ func (r *MembershipResolver) cacheArchetypes() (err error) {
 		return
 	}
 
+	list := []model.Archetype{}
 	db := r.db.Preload(clause.Associations)
-	result := db.Find(&r.archetypes)
+	result := db.Find(&list)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 
-	for _, a := range r.archetypes {
+	for i := range list {
+		a := Archetype{}
+		a.With(&list[i])
+		r.archetypes = append(r.archetypes, a)
 		set := NewSet()
 		for _, t := range a.CriteriaTags {
 			set.Add(t.ID)
@@ -107,14 +111,17 @@ func (r *MembershipResolver) cacheArchetypeMembers() (err error) {
 	if r.membersCached {
 		return
 	}
-	allApplications := []model.Application{}
-	result := r.db.Preload("Tags").Find(&allApplications)
+	list := []model.Application{}
+	result := r.db.Preload("Tags").Find(&list)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, a := range allApplications {
-		_, aErr := r.Archetypes(&a)
+
+	for i := range list {
+		a := Application{}
+		a.With(&list[i])
+		_, aErr := r.Archetypes(a)
 		if aErr != nil {
 			err = aErr
 			return

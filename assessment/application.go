@@ -5,14 +5,35 @@ import (
 )
 
 //
+// Application represents an Application with its assessments.
+type Application struct {
+	*model.Application
+	Assessments []Assessment
+}
+
+//
+// With updates the Application with the db model and deserializes its assessments.
+func (r *Application) With(m *model.Application) {
+	r.Application = m
+	for _, a := range m.Assessments {
+		assessment := Assessment{}
+		assessment.With(&a)
+		r.Assessments = append(r.Assessments, assessment)
+	}
+}
+
+//
 // NewApplicationResolver creates a new ApplicationResolver from an application and other shared resolvers.
-func NewApplicationResolver(app *model.Application, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
+func NewApplicationResolver(m *model.Application, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
 	a = &ApplicationResolver{
-		application:           app,
 		tagResolver:           tags,
 		membershipResolver:    membership,
 		questionnaireResolver: questionnaire,
 	}
+	app := Application{}
+	app.With(m)
+	a.application = app
+
 	return
 }
 
@@ -20,8 +41,8 @@ func NewApplicationResolver(app *model.Application, tags *TagResolver, membershi
 // ApplicationResolver wraps an Application model
 // with archetype and assessment resolution behavior.
 type ApplicationResolver struct {
-	application           *model.Application
-	archetypes            []model.Archetype
+	application           Application
+	archetypes            []Archetype
 	tagResolver           *TagResolver
 	membershipResolver    *MembershipResolver
 	questionnaireResolver *QuestionnaireResolver
@@ -29,7 +50,7 @@ type ApplicationResolver struct {
 
 //
 // Archetypes returns the list of archetypes the application is a member of.
-func (r *ApplicationResolver) Archetypes() (archetypes []model.Archetype, err error) {
+func (r *ApplicationResolver) Archetypes() (archetypes []Archetype, err error) {
 	if len(r.archetypes) > 0 {
 		archetypes = r.archetypes
 		return
@@ -60,7 +81,7 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 		// inherit assessment tags from any of its archetypes.
 		if len(r.application.Assessments) == 0 {
 			for _, assessment := range a.Assessments {
-				aTags := r.tagResolver.Assessment(&assessment)
+				aTags := r.tagResolver.Assessment(assessment)
 				for _, t := range aTags {
 					if _, found := seenTags[t.ID]; !found {
 						seenTags[t.ID] = true
@@ -79,7 +100,7 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 	seenTags := make(map[uint]bool)
 	for _, assessment := range r.application.Assessments {
-		aTags := r.tagResolver.Assessment(&assessment)
+		aTags := r.tagResolver.Assessment(assessment)
 		for _, t := range aTags {
 			if _, found := seenTags[t.ID]; !found {
 				seenTags[t.ID] = true
@@ -87,6 +108,46 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 			}
 		}
 	}
+	return
+}
+
+//
+// Risk returns the overall risk level for the application based on its or its archetypes' assessments.
+func (r *ApplicationResolver) Risk() (risk string, err error) {
+	var assessments []Assessment
+	if len(r.application.Assessments) > 0 {
+		assessments = r.application.Assessments
+	} else {
+		archetypes, aErr := r.Archetypes()
+		if aErr != nil {
+			err = aErr
+			return
+		}
+		for _, a := range archetypes {
+			assessments = append(assessments, a.Assessments...)
+		}
+	}
+	risk = Risk(assessments)
+	return
+}
+
+//
+// Confidence returns the application's overall assessment confidence score.
+func (r *ApplicationResolver) Confidence() (confidence int, err error) {
+	var assessments []Assessment
+	if len(r.application.Assessments) > 0 {
+		assessments = r.application.Assessments
+	} else {
+		archetypes, aErr := r.Archetypes()
+		if aErr != nil {
+			err = aErr
+			return
+		}
+		for _, a := range archetypes {
+			assessments = append(assessments, a.Assessments...)
+		}
+	}
+	confidence = Confidence(assessments)
 	return
 }
 
@@ -104,11 +165,12 @@ func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 	if err != nil {
 		return
 	}
+	assessedCount := 0
 	for _, a := range archetypes {
-		if !r.questionnaireResolver.Assessed(a.Assessments) {
-			return
+		if r.questionnaireResolver.Assessed(a.Assessments) {
+			assessedCount++
 		}
 	}
-	assessed = true
+	assessed = assessedCount > 0 && assessedCount == len(archetypes)
 	return
 }
