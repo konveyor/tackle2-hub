@@ -4,7 +4,7 @@
 #
 key=$1
 header='{"alg":"HS512","typ":"JWT"}'
-payload='{"scope":"applicaions:get","user":"operator"}'
+payload='{"scope":"*:*","user":"operator"}'
 headerStr=$(echo -n ${header} \
   | base64 -w 0 \
   | sed s/\+/-/g \
