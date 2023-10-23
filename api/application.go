@@ -1128,7 +1128,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 
 	if len(m.Analyses) > 0 {
 		sort.Slice(m.Analyses, func(i, j int) bool {
-			return m.Analyses[i].CreateTime.Before(m.Analyses[j].CreateTime)
+			return m.Analyses[i].ID < m.Analyses[j].ID
 		})
 		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
 	}
