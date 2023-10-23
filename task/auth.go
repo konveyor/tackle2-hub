@@ -29,7 +29,6 @@ func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
 	v, found := claims["task"]
 	id, cast := v.(float64)
 	if !found || !cast {
-		// Not a task token.
 		return
 	}
 	task := &model.Task{}
