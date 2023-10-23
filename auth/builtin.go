@@ -15,6 +15,9 @@ var Validators []Validator
 // Validator provides token validation.
 type Validator interface {
 	// Valid determines if the token is valid.
+	// When valid, return nil.
+	// When not valid, return NotValid error.
+	// On failure, return the (cause) error.
 	Valid(token *jwt.Token, db *gorm.DB) (err error)
 }
 
