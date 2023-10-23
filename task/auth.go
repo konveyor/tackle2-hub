@@ -79,7 +79,7 @@ func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
 		err = &auth.NotValid{
 			Token: token.Raw,
 			Reason: fmt.Sprintf(
-				"Pod (%s) referenced by token: not running. Phase: %s",
+				"Pod (%s) referenced by token: not pending|running. Phase detected: %s",
 				task.Pod,
 				pod.Status.Phase),
 		}
