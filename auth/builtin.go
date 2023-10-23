@@ -15,7 +15,7 @@ var Validators []Validator
 // Validator provides token validation.
 type Validator interface {
 	// Valid determines if the token is valid.
-	Valid(token *jwt.Token, db *gorm.DB) (valid bool)
+	Valid(token *jwt.Token, db *gorm.DB) (err error)
 }
 
 //
@@ -73,8 +73,13 @@ type Builtin struct {
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	token := strings.Replace(request.Token, "Bearer", "", 1)
 	token = strings.Fields(token)[0]
+	defer func() {
+		if err != nil {
+			Log.Info(err.Error())
+		}
+	}()
 	jwToken, err = jwt.Parse(
-		request.Token,
+		token,
 		func(jwToken *jwt.Token) (secret interface{}, err error) {
 			_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
 			if !cast {
@@ -94,32 +99,52 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	}
 	claims, cast := jwToken.Claims.(jwt.MapClaims)
 	if !cast {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Claims not specified.",
+				Token:  token,
+			})
 		return
 	}
 	v, found := claims["user"]
 	if !found {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "user not specified.",
+				Token:  token,
+			})
 		return
 	}
 	_, cast = v.(string)
 	if !cast {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "user not string.",
+				Token:  token,
+			})
 		return
 	}
 	v, found = claims["scope"]
 	if !found {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "scope not specified.",
+				Token:  token,
+			})
 		return
 	}
 	_, cast = v.(string)
 	if !cast {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "scope not string.",
+				Token:  token,
+			})
 		return
 	}
 	for _, v := range Validators {
-		if !v.Valid(jwToken, request.DB) {
-			err = liberr.Wrap(&NotValid{Token: token})
+		err = v.Valid(jwToken, request.DB)
+		if err != nil {
 			return
 		}
 	}

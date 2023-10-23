@@ -1,10 +1,13 @@
 #!/bin/bash
 #
-# Usage: jwt.sh <key>
+# Usage: jwt.sh <key> <scope>
+#
+# scope - (string) space-separated scopes. (default: *:*).
 #
 key=$1
-header='{"alg":"HS512","typ":"JWT"}'
-payload='{"scope":"*:*","user":"operator"}'
+scope="${2:-*:*}"
+header='{"typ":"JWT","alg":"HS512"}'
+payload="{\"user\":\"operator\",\"scope\":\"${scope}\"}"
 headerStr=$(echo -n ${header} \
   | base64 -w 0 \
   | sed s/\+/-/g \

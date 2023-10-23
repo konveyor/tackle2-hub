@@ -2,7 +2,9 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
@@ -22,26 +24,35 @@ type Validator struct {
 //  - The token references a task.
 //  - The task is valid and running.
 //  - The task pod valid and pending|running.
-func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (valid bool) {
-	var err error
+func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
 	claims := token.Claims.(jwt.MapClaims)
 	v, found := claims["task"]
 	id, cast := v.(float64)
 	if !found || !cast {
-		valid = true
+		// Not a task token.
 		return
 	}
 	task := &model.Task{}
 	err = db.First(task, id).Error
 	if err != nil {
-		Log.Info("Task referenced by token: not found.")
+		err = &auth.NotValid{
+			Token: token.Raw,
+			Reason: fmt.Sprintf(
+				"Task (%d) referenced by token: not found.",
+				uint64(id)),
+		}
 		return
 	}
 	switch task.State {
 	case Pending,
 		Running:
 	default:
-		Log.Info("Task referenced by token: not running.")
+		err = &auth.NotValid{
+			Token: token.Raw,
+			Reason: fmt.Sprintf(
+				"Task (%d) referenced by token: not running.",
+				uint64(id)),
+		}
 		return
 	}
 	pod := &core.Pod{}
@@ -53,24 +64,26 @@ func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (valid bool) {
 		},
 		pod)
 	if err != nil {
-		Log.Info(
-			"Pod referenced by token: not found.",
-			"name",
-			task.Pod)
+		err = &auth.NotValid{
+			Token: token.Raw,
+			Reason: fmt.Sprintf(
+				"Pod (%s) referenced by token: not found.",
+				pod.Name),
+		}
 		return
 	}
 	switch pod.Status.Phase {
 	case core.PodPending,
 		core.PodRunning:
 	default:
-		Log.Info(
-			"Pod referenced by token: not running.",
-			"name",
-			task.Pod,
-			"phase",
-			pod.Status.Phase)
+		err = &auth.NotValid{
+			Token: token.Raw,
+			Reason: fmt.Sprintf(
+				"Pod (%s) referenced by token: not running. Phase: %s",
+				task.Pod,
+				pod.Status.Phase),
+		}
 		return
 	}
-	valid = true
 	return
 }
