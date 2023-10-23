@@ -110,7 +110,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "user not specified.",
+				Reason: "User not specified.",
 				Token:  token,
 			})
 		return
@@ -119,7 +119,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "user not string.",
+				Reason: "User not string.",
 				Token:  token,
 			})
 		return
@@ -128,7 +128,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "scope not specified.",
+				Reason: "Scope not specified.",
 				Token:  token,
 			})
 		return
@@ -137,7 +137,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "scope not string.",
+				Reason: "Scope not string.",
 				Token:  token,
 			})
 		return
