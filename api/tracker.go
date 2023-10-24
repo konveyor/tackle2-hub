@@ -317,7 +317,7 @@ type Tracker struct {
 	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-onprem"`
 	Message     string    `json:"message"`
 	Connected   bool      `json:"connected"`
-	LastUpdated time.Time `json:"lastUpdated"`
+	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
 	Identity    Ref       `json:"identity" binding:"required"`
 	Insecure    bool      `json:"insecure"`
 }

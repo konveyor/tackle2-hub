@@ -183,7 +183,7 @@ type StakeholderGroup struct {
 	Name           string `json:"name" binding:"required"`
 	Description    string `json:"description"`
 	Stakeholders   []Ref  `json:"stakeholders"`
-	MigrationWaves []Ref  `json:"migrationWaves"`
+	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
 }
 
 //

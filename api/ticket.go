@@ -154,7 +154,7 @@ type Ticket struct {
 	Error       bool      `json:"error"`
 	Message     string    `json:"message"`
 	Status      string    `json:"status"`
-	LastUpdated time.Time `json:"lastUpdated"`
+	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
 	Fields      Fields    `json:"fields"`
 	Application Ref       `json:"application" binding:"required"`
 	Tracker     Ref       `json:"tracker" binding:"required"`

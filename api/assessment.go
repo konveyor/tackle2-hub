@@ -156,13 +156,13 @@ type Assessment struct {
 	Questionnaire     Ref                  `json:"questionnaire" binding:"required"`
 	Sections          []assessment.Section `json:"sections"`
 	Stakeholders      []Ref                `json:"stakeholders"`
-	StakeholderGroups []Ref                `json:"stakeholderGroups"`
+	StakeholderGroups []Ref                `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	// read only
 	Risk         string                  `json:"risk"`
 	Confidence   int                     `json:"confidence"`
 	Status       string                  `json:"status"`
 	Thresholds   assessment.Thresholds   `json:"thresholds"`
-	RiskMessages assessment.RiskMessages `json:"riskMessages"`
+	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages"`
 }
 
 //
