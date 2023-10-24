@@ -8,6 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -107,7 +108,6 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -154,7 +154,6 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 func (h ApplicationHandler) List(ctx *gin.Context) {
 	var list []model.Application
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	db = db.Omit("Analyses")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -1078,6 +1077,7 @@ type Application struct {
 	Assessed        bool        `json:"assessed"`
 	Risk            string      `json:"risk"`
 	Confidence      int         `json:"confidence"`
+	Effort          int         `json:"effort"`
 }
 
 //
@@ -1124,6 +1124,13 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		ref := Ref{}
 		ref.With(a.ID, "")
 		r.Assessments = append(r.Assessments, ref)
+	}
+
+	if len(m.Analyses) > 0 {
+		sort.Slice(m.Analyses, func(i, j int) bool {
+			return m.Analyses[i].ID < m.Analyses[j].ID
+		})
+		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
 	}
 }
 
