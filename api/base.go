@@ -299,10 +299,10 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 //
 // REST resource.
 type Resource struct {
-	ID         uint      `json:"id,omitempty" yaml:",omitempty"`
-	CreateUser string    `json:"createUser" yaml:",omitempty"`
-	UpdateUser string    `json:"updateUser" yaml:",omitempty"`
-	CreateTime time.Time `json:"createTime" yaml:",omitempty"`
+	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
+	CreateUser string    `json:"createUser" yaml:"createUser,omitempty"`
+	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
+	CreateTime time.Time `json:"createTime" yaml:"createTime,omitempty"`
 }
 
 //

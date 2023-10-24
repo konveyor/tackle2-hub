@@ -308,7 +308,7 @@ type RuleSet struct {
 	Rules       []Rule      `json:"rules"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
-	DependsOn   []Ref       `json:"dependsOn"`
+	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn"`
 }
 
 //
