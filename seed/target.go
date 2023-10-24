@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"container/list"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,6 +37,7 @@ func (r *Target) With(seed libseed.Seed) (err error) {
 func (r *Target) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying Targets", "count", len(r.targets))
 
+	var seedIds []uint
 	for i := range r.targets {
 		t := r.targets[i]
 		target, found, fErr := r.find(db, "uuid = ?", t.UUID)
@@ -93,9 +95,10 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 			err = liberr.Wrap(result.Error)
 			return
 		}
+		seedIds = append(seedIds, target.ID)
 	}
 
-	err = r.reorder(db)
+	err = r.reorder(db, seedIds)
 	if err != nil {
 		return
 	}
@@ -105,39 +108,72 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 //
 // reorder updates the value of the ui.target.order setting
 // to add any missing target ids. (namely, newly added targets.)
-func (r *Target) reorder(db *gorm.DB) (err error) {
+func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
 	targets := []model.Target{}
 	result := db.Find(&targets)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	var targetIds []uint
+	for _, t := range targets {
+		targetIds = append(targetIds, t.ID)
+	}
+
 	s := model.Setting{}
 	result = db.First(&s, "key", UITargetOrder)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	ordering := []uint{}
-	_ = s.As(&ordering)
-	known := make(map[uint]bool)
-	for _, id := range ordering {
-		known[id] = true
-	}
-	for _, t := range targets {
-		if !known[t.ID] {
-			ordering = append(ordering, t.ID)
-		}
-	}
-	err = s.With(ordering)
-	if err != nil {
-		return
-	}
+	userOrder := []uint{}
+	_ = s.As(&userOrder)
+	_ = s.With(merge(userOrder, seedIds, targetIds))
+
 	result = db.Where("key", UITargetOrder).Updates(s)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+//
+// merge new targets into the user's custom target order.
+//   params:
+//     userOrder: slice of target IDs in the user's desired order
+//     seedOrder: slice of target IDs in seedfile order
+//     ids: slice of ids of all the targets in the DB
+func merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) {
+	ll := list.New()
+	known := make(map[uint]*list.Element)
+	for _, id := range userOrder {
+		known[id] = ll.PushBack(id)
+	}
+	for i, id := range seedOrder {
+		if _, found := known[id]; found {
+			continue
+		}
+		if i == 0 {
+			known[id] = ll.PushFront(id)
+		} else {
+			known[id] = ll.InsertAfter(id, known[seedOrder[i-1]])
+		}
+	}
+
+	for _, id := range ids {
+		if _, found := known[id]; found {
+			continue
+		}
+		ll.PushBack(id)
+	}
+
+	for ll.Len() > 0 {
+		e := ll.Front()
+		mergedOrder = append(mergedOrder, e.Value.(uint))
+		ll.Remove(e)
+	}
+
 	return
 }
 
