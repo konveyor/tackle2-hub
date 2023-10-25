@@ -158,6 +158,7 @@ type Target struct {
 	Image       *File
 	RuleSetID   *uint `gorm:"index"`
 	RuleSet     *RuleSet
+	Provider    string `gorm:"index"`
 }
 
 func (r *Target) Builtin() bool {

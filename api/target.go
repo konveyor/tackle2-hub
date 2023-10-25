@@ -246,6 +246,7 @@ type Target struct {
 	Labels      []Label  `json:"labels"`
 	Image       Ref      `json:"image"`
 	RuleSet     *RuleSet `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
+	Provider    string   `json:"provider"`
 }
 
 type Label struct {
@@ -260,6 +261,7 @@ func (r *Target) With(m *model.Target) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Choice = m.Choice
+	r.Provider = m.Provider
 	r.Custom = !m.Builtin()
 	if m.RuleSet != nil {
 		r.RuleSet = &RuleSet{}
@@ -280,6 +282,7 @@ func (r *Target) Model() (m *model.Target) {
 		Name:        r.Name,
 		Description: r.Description,
 		Choice:      r.Choice,
+		Provider:    r.Provider,
 	}
 	m.ID = r.ID
 	m.ImageID = r.Image.ID

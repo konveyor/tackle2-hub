@@ -87,6 +87,7 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 		target.Choice = t.Choice
 		target.ImageID = f.ID
 		target.Labels = labels
+		target.Provider = t.Provider
 		result := db.Save(&target)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)
