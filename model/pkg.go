@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v10/model"
+	"github.com/konveyor/tackle2-hub/migration/v11/model"
 	"gorm.io/datatypes"
 )
 
