@@ -241,6 +241,7 @@ type Target struct {
 	Resource
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
+	Provider    string   `json:"provider"`
 	Choice      bool     `json:"choice,omitempty" yaml:",omitempty"`
 	Custom      bool     `json:"custom,omitempty" yaml:",omitempty"`
 	Labels      []Label  `json:"labels"`
@@ -259,6 +260,7 @@ func (r *Target) With(m *model.Target) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
+	r.Provider = m.Provider
 	r.Choice = m.Choice
 	r.Custom = !m.Builtin()
 	if m.RuleSet != nil {
@@ -279,6 +281,7 @@ func (r *Target) Model() (m *model.Target) {
 	m = &model.Target{
 		Name:        r.Name,
 		Description: r.Description,
+		Provider:    r.Provider,
 		Choice:      r.Choice,
 	}
 	m.ID = r.ID
