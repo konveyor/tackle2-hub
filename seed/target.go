@@ -84,6 +84,7 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 		target.UUID = &t.UUID
 		target.Name = t.Name
 		target.Description = t.Description
+		target.Provider = t.Provider
 		target.Choice = t.Choice
 		target.ImageID = f.ID
 		target.Labels = labels

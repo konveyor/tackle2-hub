@@ -241,7 +241,7 @@ type Target struct {
 	Resource
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
-	Provider    string   `json:"provider"`
+	Provider    string   `json:"provider,omitempty" yaml:",omitempty"`
 	Choice      bool     `json:"choice,omitempty" yaml:",omitempty"`
 	Custom      bool     `json:"custom,omitempty" yaml:",omitempty"`
 	Labels      []Label  `json:"labels"`
