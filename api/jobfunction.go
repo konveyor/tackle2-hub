@@ -167,7 +167,7 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 //
 // JobFunction REST resource.
 type JobFunction struct {
-	Resource
+	Resource     `yaml:",inline"`
 	Name         string `json:"name" binding:"required"`
 	Stakeholders []Ref  `json:"stakeholders"`
 }

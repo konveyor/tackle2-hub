@@ -150,7 +150,7 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 //
 // Assessment REST resource.
 type Assessment struct {
-	Resource
+	Resource          `yaml:",inline"`
 	Application       *Ref                 `json:"application,omitempty" yaml:",omitempty" binding:"excluded_with=Archetype"`
 	Archetype         *Ref                 `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
 	Questionnaire     Ref                  `json:"questionnaire" binding:"required"`

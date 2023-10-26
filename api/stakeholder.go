@@ -190,7 +190,7 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 //
 // Stakeholder REST resource.
 type Stakeholder struct {
-	Resource
+	Resource         `yaml:",inline"`
 	Name             string `json:"name" binding:"required"`
 	Email            string `json:"email" binding:"required"`
 	Groups           []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`

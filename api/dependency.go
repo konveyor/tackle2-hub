@@ -148,9 +148,9 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 //
 // Dependency REST resource.
 type Dependency struct {
-	Resource
-	To   Ref `json:"to"`
-	From Ref `json:"from"`
+	Resource `yaml:",inline"`
+	To       Ref `json:"to"`
+	From     Ref `json:"from"`
 }
 
 //
