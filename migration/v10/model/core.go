@@ -27,6 +27,27 @@ type Setting struct {
 	Value JSON   `gorm:"type:json"`
 }
 
+//
+// With updates the value of the Setting with the json representation
+// of the `value` parameter.
+func (r *Setting) With(value interface{}) (err error) {
+	r.Value, err = json.Marshal(value)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+//
+// As unmarshalls the value of the Setting into the `ptr` parameter.
+func (r *Setting) As(ptr interface{}) (err error) {
+	err = json.Unmarshal(r.Value, ptr)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
 type Bucket struct {
 	Model
 	Path       string `gorm:"<-:create;uniqueIndex"`
