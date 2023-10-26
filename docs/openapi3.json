@@ -1,0 +1,7816 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Konveyor Hub API",
+    "contact": {},
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "0.3.z"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/addons": {
+      "get": {
+        "tags": [
+          "addons"
+        ],
+        "summary": "List all addons.",
+        "description": "List all addons.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Addon"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons/{name}": {
+      "get": {
+        "tags": [
+          "addons"
+        ],
+        "summary": "Get an addon by name.",
+        "description": "Get an addon by name.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Addon name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Addon"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/adoptionplans": {
+      "post": {
+        "tags": [
+          "adoptionplans"
+        ],
+        "summary": "Generate an application dependency graph arranged in topological order.",
+        "description": "Graph generates an application dependency graph arranged in topological order.",
+        "requestBody": {
+          "description": "List of requested App IDs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Vertex"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "requestedApps"
+      }
+    },
+    "/analyses": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "List analyses.",
+        "description": "List analyses for an application.\nResources do not include relations.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Analysis"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/dependencies": {
+      "get": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "List dependency reports.",
+        "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- version\n- sha",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.TechDependency"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/issues": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List all issues.",
+        "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Issue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/issues/{id}": {
+      "get": {
+        "tags": [
+          "issue"
+        ],
+        "summary": "Get an issue.",
+        "description": "Get an issue.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Issue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/issues/{id}/incidents": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List incidents for an issue.",
+        "description": "List incidents for an issue.\nfilters:\n- file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Incident"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/report/applications": {
+      "get": {
+        "tags": [
+          "depappreports"
+        ],
+        "summary": "List application reports.",
+        "description": "List application reports.\nfilters:\n- id\n- name\n- description\n- businessService\n- provider\n- name\n- version\n- sha\n- indirect\n- dep.provider\n- dep.name\n- dep.version\n- dep.sha\n- dep.indirect\n- dep.labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\nsort:\n- name\n- description\n- businessService\n- provider\n- name\n- version\n- sha\n- indirect",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.DepAppReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/report/applications/{id}/issues": {
+      "get": {
+        "tags": [
+          "issuereport"
+        ],
+        "summary": "List application issue reports.",
+        "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.IssueReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/report/issues/{id}/files": {
+      "get": {
+        "tags": [
+          "filereports"
+        ],
+        "summary": "List incident file reports.",
+        "description": "Each report collates incidents by file.\nfilters:\n- file\n- effort\n- incidents\nsort:\n- file\n- effort\n- incidents",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.FileReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/report/rules": {
+      "get": {
+        "tags": [
+          "rulereports"
+        ],
+        "summary": "List rule reports.",
+        "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.RuleReport"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/{id}": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get an analysis (report) by ID.",
+        "description": "Get an analysis (report) by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Analysis ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Analysis"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Delete an analysis by ID.",
+        "description": "Delete an analysis by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Analysis ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/application/{id}/analyses": {
+      "post": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Create an analysis.",
+        "description": "Create an analysis.\nForm fields:\n- file: file that contains the api.Analysis resource.\n- issues: file that multiple api.Issue resources.\n- dependencies: file that multiple api.TechDependency resources.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Analysis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application/{id}/analysis/dependencies": {
+      "get": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "List application dependencies.",
+        "description": "List application dependencies.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.TechDependency"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/application/{id}/analysis/issues": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List application issues.",
+        "description": "List application issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Issue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "List all applications.",
+        "description": "List all applications.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Application"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Create an application.",
+        "description": "Create an application.",
+        "requestBody": {
+          "description": "Application data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Application"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Application"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "application"
+      },
+      "delete": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Delete a applications.",
+        "description": "Delete applications.",
+        "requestBody": {
+          "description": "List of id",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "application"
+      }
+    },
+    "/applications/{id}": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Get an application by ID.",
+        "description": "Get an application by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Application"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Update an application.",
+        "description": "Update an application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Application data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Application"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "application"
+      },
+      "delete": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Delete an application.",
+        "description": "Delete an application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/applications/{id}/analysis": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get the latest analysis.",
+        "description": "Get the latest analysis for an application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Analysis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/analysis/report": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get the latest analysis (static) report.",
+        "description": "Get the latest analysis (static) report.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/applications/{id}/assessments": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "List the assessments of an Application and any it inherits from its archetypes.",
+        "description": "List the assessments of an Application and any it inherits from its archetypes.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Assessment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Create an application assessment.",
+        "description": "Create an application assessment.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Assessment data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Assessment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Assessment"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "assessment"
+      }
+    },
+    "/applications/{id}/bucket/{wildcard}": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Get bucket content by ID and path.",
+        "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Upload bucket content by ID and path.",
+        "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Delete bucket content by ID and path.",
+        "description": "Delete bucket content by ID and path.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/applications/{id}/facts": {
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Create a fact.",
+        "description": "Create a fact.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Fact data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Fact"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "fact"
+      }
+    },
+    "/applications/{id}/facts/{key}": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Get fact by name.",
+        "description": "Get fact by name.\nsee api.FactKey for details on key parameter format.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Fact key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Update (or create) a fact.",
+        "description": "Update (or create) a fact.\nsee api.FactKey for details on key parameter format.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Fact key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Fact value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "fact"
+      },
+      "delete": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Delete a fact.",
+        "description": "Delete a fact.\nsee api.FactKey for details on key parameter format.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Fact key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/applications/{id}/facts/{source}:": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "List facts.",
+        "description": "List facts by source.\nsee api.FactKey for details on key parameter format.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "source",
+            "in": "path",
+            "description": "Source key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.FactMap"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Replace all facts from a source.",
+        "description": "Replace all facts from a source.\nsee api.FactKey for details on key parameter format.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "source",
+            "in": "path",
+            "description": "Fact key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Fact map",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.FactMap"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "factmap"
+      }
+    },
+    "/applications/{id}/stakeholders": {
+      "patch": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Update the owner and contributors of an Application.",
+        "description": "Update the owner and contributors of an Application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Application stakeholders",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Stakeholders"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "application"
+      }
+    },
+    "/applications/{id}/tags": {
+      "get": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "List tag references.",
+        "description": "List tag references.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Ref"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Add tag association.",
+        "description": "Ensure tag is associated with the application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Tag data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Ref"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Ref"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tag"
+      },
+      "patch": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Replace tag associations.",
+        "description": "Replace tag associations.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Source",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Tag references",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/api.TagRef"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "tags"
+      }
+    },
+    "/applications/{id}/tags/{sid}": {
+      "delete": {
+        "tags": [
+          "applications"
+        ],
+        "summary": "Delete tag association.",
+        "description": "Ensure tag is not associated with the application.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sid",
+            "in": "path",
+            "description": "Tag ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/archetypes": {
+      "get": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "List all archetypes.",
+        "description": "List all archetypes.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Archetype"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "Create an archetype.",
+        "description": "Create an archetype.",
+        "requestBody": {
+          "description": "Archetype data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Archetype"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Archetype"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "archetype"
+      }
+    },
+    "/archetypes/{id}": {
+      "get": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "Get an archetype by ID.",
+        "description": "Get an archetype by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Archetype ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Archetype"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "Update an archetype.",
+        "description": "Update an archetype.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Archetype ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Archetype data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Archetype"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "archetype"
+      },
+      "delete": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "Delete an archetype.",
+        "description": "Delete an archetype.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Archetype ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/archetypes/{id}/assessments": {
+      "get": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "List the assessments of an archetype.",
+        "description": "List the assessments of an archetype.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Archetype ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Assessment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "archetypes"
+        ],
+        "summary": "Create an archetype assessment.",
+        "description": "Create an archetype assessment.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Archetype ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Assessment data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Assessment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Assessment"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "assessment"
+      }
+    },
+    "/assessments": {
+      "get": {
+        "tags": [
+          "assessments"
+        ],
+        "summary": "List all assessments.",
+        "description": "List all assessments.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Assessment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessments/{id}": {
+      "get": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "Get an assessment by ID.",
+        "description": "Get an assessment by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Assessment ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Assessment"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "assessments"
+        ],
+        "summary": "Update an assessment.",
+        "description": "Update an assessment.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Assessment ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Assessment data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Assessment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "assessment"
+      },
+      "delete": {
+        "tags": [
+          "assessments"
+        ],
+        "summary": "Delete an assessment.",
+        "description": "Delete an assessment.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Assessment ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login and obtain a bearer token.",
+        "description": "Login and obtain a bearer token.",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Login"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh bearer token.",
+        "description": "Refresh bearer token.",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Login"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batch/tags": {
+      "post": {
+        "tags": [
+          "batch",
+          "tags"
+        ],
+        "summary": "Batch-create Tags.",
+        "description": "Batch-create Tags.",
+        "requestBody": {
+          "description": "Tags data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/api.Tag"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Tag"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tags"
+      }
+    },
+    "/batch/tickets": {
+      "post": {
+        "tags": [
+          "batch",
+          "tickets"
+        ],
+        "summary": "Batch-create Tickets.",
+        "description": "Batch-create Tickets.",
+        "requestBody": {
+          "description": "Tickets data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/api.Ticket"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Ticket"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tickets"
+      }
+    },
+    "/buckets": {
+      "get": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "List all buckets.",
+        "description": "List all buckets.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Bucket"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Create a bucket.",
+        "description": "Create a bucket.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Bucket name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Bucket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buckets/{id}": {
+      "get": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Get a bucket by ID.",
+        "description": "Get a bucket by ID.\nReturns api.Bucket when Accept=application/json.\nElse returns index.html when Accept=text/html.\nElse returns tarball.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Bucket ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Bucket"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Delete a bucket.",
+        "description": "Delete a bucket.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Bucket ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/buckets/{id}/{wildcard}": {
+      "get": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Get bucket content by ID and path.",
+        "description": "Get bucket content by ID and path.\nWhen path is FILE, returns file content.\nWhen path is DIRECTORY and Accept=text/html returns index.html.\n?filter=glob supports directory content filtering.\nElse returns a tarball.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Upload bucket content by ID and path.",
+        "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Bucket ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "buckets"
+        ],
+        "summary": "Delete bucket content by ID and path.",
+        "description": "Delete bucket content by ID and path.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Bucket ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/businessservices": {
+      "get": {
+        "tags": [
+          "businessservices"
+        ],
+        "summary": "List all business services.",
+        "description": "List all business services.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.BusinessService"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "businessservices"
+        ],
+        "summary": "Create a business service.",
+        "description": "Create a business service.",
+        "requestBody": {
+          "description": "Business service data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.BusinessService"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.BusinessService"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "business_service"
+      }
+    },
+    "/businessservices/{id}": {
+      "get": {
+        "tags": [
+          "businessservices"
+        ],
+        "summary": "Get a business service by ID.",
+        "description": "Get a business service by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Business Service ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.BusinessService"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "businessservices"
+        ],
+        "summary": "Update a business service.",
+        "description": "Update a business service.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Business service ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Business service data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.BusinessService"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "business_service"
+      },
+      "delete": {
+        "tags": [
+          "businessservices"
+        ],
+        "summary": "Delete a business service.",
+        "description": "Delete a business service.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Business service ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/cache": {
+      "delete": {
+        "tags": [
+          "cache"
+        ],
+        "summary": "Delete a directory within the cache.",
+        "description": "Delete a directory within the cache.",
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/caches/{wildcard}": {
+      "get": {
+        "tags": [
+          "cache"
+        ],
+        "summary": "Get the cache.",
+        "description": "Get the cache.",
+        "parameters": [
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Cache DIR",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Cache"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dependencies": {
+      "get": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "List all dependencies.",
+        "description": "List all dependencies.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Dependency"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "Create a dependency.",
+        "description": "Create a dependency.",
+        "requestBody": {
+          "description": "Dependency data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Dependency"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Dependency"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "applications_dependency"
+      }
+    },
+    "/dependencies/{id}": {
+      "get": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "Get a dependency by ID.",
+        "description": "Get a dependency by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Dependency ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Dependency"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "Delete a dependency.",
+        "description": "Delete a dependency.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Dependency id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/files": {
+      "get": {
+        "tags": [
+          "file"
+        ],
+        "summary": "List all files.",
+        "description": "List all files.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.File"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "file"
+        ],
+        "summary": "Create a file.",
+        "description": "Create a file.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "File name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.File"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{id}": {
+      "get": {
+        "tags": [
+          "file"
+        ],
+        "summary": "Get a file by ID.",
+        "description": "Get a file by ID. Returns api.File when Accept=application/json else the file content.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "File ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.File"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "file"
+        ],
+        "summary": "Delete a file.",
+        "description": "Delete a file.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "File ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/identities": {
+      "get": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "List all identities.",
+        "description": "List all identities.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Identity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "Create an identity.",
+        "description": "Create an identity.",
+        "requestBody": {
+          "description": "Identity data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Identity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Identity"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "identity"
+      }
+    },
+    "/identities/{id}": {
+      "get": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "Get an identity by ID.",
+        "description": "Get an identity by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identity ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Identity"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "Update an identity.",
+        "description": "Update an identity.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identity ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Identity data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Identity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "identity"
+      },
+      "delete": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "Delete an identity.",
+        "description": "Delete an identity.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identity ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/imports": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "List imports.",
+        "description": "List imports.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Import"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/imports/{id}": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Get an import by ID.",
+        "description": "Get an import by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Import ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Import"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Delete an import.",
+        "description": "Delete an import. This leaves any created application or dependency.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Import ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/importsummaries": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "List import summaries.",
+        "description": "List import summaries.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.ImportSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importsummaries/download": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Export the source CSV for a particular import summary.",
+        "description": "Export the source CSV for a particular import summary.",
+        "parameters": [
+          {
+            "name": "importSummary.id",
+            "in": "query",
+            "description": "ImportSummary ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importsummaries/upload": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Upload a CSV containing applications and dependencies to import.",
+        "description": "Upload a CSV containing applications and dependencies to import.",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.ImportSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/importsummaries/{id}": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Get an import summary by ID.",
+        "description": "Get an import by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ImportSummary ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.ImportSummary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Delete an import summary and associated import records.",
+        "description": "Delete an import summary and associated import records.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ImportSummary ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/jobfunctions": {
+      "get": {
+        "tags": [
+          "jobfunctions"
+        ],
+        "summary": "List all job functions.",
+        "description": "List all job functions.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.JobFunction"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jobfunctions"
+        ],
+        "summary": "Create a job function.",
+        "description": "Create a job function.",
+        "requestBody": {
+          "description": "Job Function data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.JobFunction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.JobFunction"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "job_function"
+      }
+    },
+    "/jobfunctions/{id}": {
+      "get": {
+        "tags": [
+          "jobfunctions"
+        ],
+        "summary": "Get a job function by ID.",
+        "description": "Get a job function by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job Function ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.JobFunction"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "jobfunctions"
+        ],
+        "summary": "Update a job function.",
+        "description": "Update a job function.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job Function ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Job Function data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.JobFunction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "job_function"
+      },
+      "delete": {
+        "tags": [
+          "jobfunctions"
+        ],
+        "summary": "Delete a job function.",
+        "description": "Delete a job function.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Job Function ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Get Prometheus metrics.",
+        "description": "Get Prometheus metrics.\nWrapper for Prometheus-supplied handler.\nServed on port defined by METRICS_PORT environment variable.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/migrationwaves": {
+      "get": {
+        "tags": [
+          "migrationwaves"
+        ],
+        "summary": "List all migration waves.",
+        "description": "List all migration waves.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.MigrationWave"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "migrationwaves"
+        ],
+        "summary": "Create a migration wave.",
+        "description": "Create a migration wave.",
+        "requestBody": {
+          "description": "Migration Wave data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.MigrationWave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.MigrationWave"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "migrationwave"
+      }
+    },
+    "/migrationwaves/{id}": {
+      "get": {
+        "tags": [
+          "migrationwaves"
+        ],
+        "summary": "Get a migration wave by ID.",
+        "description": "Get a migration wave by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Migration Wave ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.MigrationWave"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "migrationwaves"
+        ],
+        "summary": "Update a migration wave.",
+        "description": "Update a migration wave.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "MigrationWave id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "MigrationWave data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.MigrationWave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "migrationWave"
+      },
+      "delete": {
+        "tags": [
+          "migrationwaves"
+        ],
+        "summary": "Delete a migration wave.",
+        "description": "Delete a migration wave.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "MigrationWave id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/proxies": {
+      "get": {
+        "tags": [
+          "proxies"
+        ],
+        "summary": "List all proxies.",
+        "description": "List all proxies.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Proxy"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "proxies"
+        ],
+        "summary": "Create an proxy.",
+        "description": "Create an proxy.",
+        "requestBody": {
+          "description": "Proxy data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Proxy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Proxy"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "proxy"
+      }
+    },
+    "/proxies/{id}": {
+      "get": {
+        "tags": [
+          "proxies"
+        ],
+        "summary": "Get an proxy by ID.",
+        "description": "Get an proxy by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proxy ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Proxy"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "proxies"
+        ],
+        "summary": "Update an proxy.",
+        "description": "Update an proxy.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proxy ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Proxy data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Proxy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "proxy"
+      },
+      "delete": {
+        "tags": [
+          "proxies"
+        ],
+        "summary": "Delete an proxy.",
+        "description": "Delete an proxy.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Proxy ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/questionnaires": {
+      "get": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "List all questionnaires.",
+        "description": "List all questionnaires.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Questionnaire"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "Create a questionnaire.",
+        "description": "Create a questionnaire.",
+        "requestBody": {
+          "description": "Questionnaire data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Questionnaire"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Questionnaire"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "questionnaire"
+      }
+    },
+    "/questionnaires/{id}": {
+      "get": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "Get a questionnaire by ID.",
+        "description": "Get a questionnaire by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Questionnaire ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Questionnaire"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "Update a questionnaire.",
+        "description": "Update a questionnaire. If the Questionnaire\nis builtin, only its \"required\" field can be changed\nand all other fields will be ignored.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Questionnaire ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Questionnaire data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Questionnaire"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "questionnaire"
+      },
+      "delete": {
+        "tags": [
+          "questionnaires"
+        ],
+        "summary": "Delete a questionnaire.",
+        "description": "Delete a questionnaire.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Questionnaire ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/reviews": {
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "List all reviews.",
+        "description": "List all reviews.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Review"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Create a review.",
+        "description": "Create a review.",
+        "requestBody": {
+          "description": "Review data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Review"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Review"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "review"
+      }
+    },
+    "/reviews/copy": {
+      "post": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Copy a review from one application to others.",
+        "description": "Copy a review from one application to others.",
+        "requestBody": {
+          "description": "Review copy request data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.CopyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "copy_request"
+      }
+    },
+    "/reviews/{id}": {
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Get a review by ID.",
+        "description": "Get a review by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Review ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Review"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Update a review.",
+        "description": "Update a review.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Review ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Review data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Review"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "review"
+      },
+      "delete": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Delete a review.",
+        "description": "Delete a review.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Review ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/rulesets": {
+      "get": {
+        "tags": [
+          "rulesets"
+        ],
+        "summary": "List all bindings.",
+        "description": "List all bindings.\nfilters:\n- name\n- labels",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.RuleSet"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "rulesets"
+        ],
+        "summary": "Create a ruleset.",
+        "description": "Create a ruleset.",
+        "requestBody": {
+          "description": "RuleSet data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.RuleSet"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.RuleSet"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "ruleBundle"
+      }
+    },
+    "/rulesets/{id}": {
+      "get": {
+        "tags": [
+          "rulesets"
+        ],
+        "summary": "Get a RuleSet by ID.",
+        "description": "Get a RuleSet by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "RuleSet ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.RuleSet"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "rulesets"
+        ],
+        "summary": "Update a ruleset.",
+        "description": "Update a ruleset.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "RuleSet ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "RuleSet data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.RuleSet"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "ruleBundle"
+      },
+      "delete": {
+        "tags": [
+          "rulesets"
+        ],
+        "summary": "Delete a ruleset.",
+        "description": "Delete a ruleset.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "RuleSet ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/schema": {
+      "get": {
+        "tags": [
+          "schema"
+        ],
+        "summary": "Get the API schema.",
+        "description": "Get the API schema.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Schema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "List all settings.",
+        "description": "List all settings.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Setting"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Create a setting.",
+        "description": "Create a setting.",
+        "requestBody": {
+          "description": "Setting data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Setting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Setting"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "setting"
+      }
+    },
+    "/settings/{key}": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get a setting by its key.",
+        "description": "Get a setting by its key.",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Setting"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Update a setting.",
+        "description": "Update a setting.",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Create a setting.",
+        "description": "Create a setting.",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Setting value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Setting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "setting"
+      },
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Delete a setting.",
+        "description": "Delete a setting.",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/stakeholdergroups": {
+      "get": {
+        "tags": [
+          "stakeholdergroups"
+        ],
+        "summary": "List all stakeholder groups.",
+        "description": "List all stakeholder groups.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.StakeholderGroup"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stakeholdergroups"
+        ],
+        "summary": "Create a stakeholder group.",
+        "description": "Create a stakeholder group.",
+        "requestBody": {
+          "description": "Stakeholder Group data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.StakeholderGroup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.StakeholderGroup"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "stakeholder_group"
+      }
+    },
+    "/stakeholdergroups/{id}": {
+      "get": {
+        "tags": [
+          "stakeholdergroups"
+        ],
+        "summary": "Get a stakeholder group by ID.",
+        "description": "Get a stakeholder group by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder Group ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.StakeholderGroup"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "stakeholdergroups"
+        ],
+        "summary": "Update a stakeholder group.",
+        "description": "Update a stakeholder group.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder Group ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Stakeholder Group data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.StakeholderGroup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "stakeholder_group"
+      },
+      "delete": {
+        "tags": [
+          "stakeholdergroups"
+        ],
+        "summary": "Delete a stakeholder group.",
+        "description": "Delete a stakeholder group.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder Group ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/stakeholders": {
+      "get": {
+        "tags": [
+          "stakeholders"
+        ],
+        "summary": "List all stakeholders.",
+        "description": "List all stakeholders.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Stakeholder"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "stakeholders"
+        ],
+        "summary": "Create a stakeholder.",
+        "description": "Create a stakeholder.",
+        "requestBody": {
+          "description": "Stakeholder data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Stakeholder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Stakeholder"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "stakeholder"
+      }
+    },
+    "/stakeholders/{id}": {
+      "get": {
+        "tags": [
+          "stakeholders"
+        ],
+        "summary": "Get a stakeholder by ID.",
+        "description": "Get a stakeholder by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Stakeholder"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "stakeholders"
+        ],
+        "summary": "Update a stakeholder.",
+        "description": "Update a stakeholder.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Stakeholder data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Stakeholder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "stakeholder"
+      },
+      "delete": {
+        "tags": [
+          "stakeholders"
+        ],
+        "summary": "Delete a stakeholder.",
+        "description": "Delete a stakeholder.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Stakeholder ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tagcategories": {
+      "get": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "List all tag categories.",
+        "description": "List all tag categories.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Optional category name filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.TagCategory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "Create a tag category.",
+        "description": "Create a tag category.",
+        "requestBody": {
+          "description": "Tag Category data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TagCategory"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TagCategory"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tag_type"
+      }
+    },
+    "/tagcategories/{id}": {
+      "get": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "Get a tag category by ID.",
+        "description": "Get a tag category by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag Category ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TagCategory"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "Update a tag category.",
+        "description": "Update a tag category.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag Category ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Tag Category data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TagCategory"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "tag_type"
+      },
+      "delete": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "Delete a tag category.",
+        "description": "Delete a tag category.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag Category ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tagcategories/{id}/tags": {
+      "get": {
+        "tags": [
+          "tagcategories"
+        ],
+        "summary": "List the tags in the tag category.",
+        "description": "List the tags in the tag category.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag Category ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Optional tag name filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Tag"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tags": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "List all tags.",
+        "description": "List all tags.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Tag"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Create a tag.",
+        "description": "Create a tag.",
+        "requestBody": {
+          "description": "Tag data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Tag"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Tag"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tag"
+      }
+    },
+    "/tags/{id}": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Get a tag by ID.",
+        "description": "Get a tag by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Tag"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Update a tag.",
+        "description": "Update a tag.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Tag data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Tag"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "tag"
+      },
+      "delete": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Delete a tag.",
+        "description": "Delete a tag.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/targets": {
+      "get": {
+        "tags": [
+          "targets"
+        ],
+        "summary": "List all targets.",
+        "description": "List all targets.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Target"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "targets"
+        ],
+        "summary": "Create a target.",
+        "description": "Create a target.",
+        "requestBody": {
+          "description": "Target data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Target"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Target"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "target"
+      }
+    },
+    "/targets/{id}": {
+      "get": {
+        "tags": [
+          "targets"
+        ],
+        "summary": "Get a Target by ID.",
+        "description": "Get a Target by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Target ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Target"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "targets"
+        ],
+        "summary": "Update a target.",
+        "description": "Update a target.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Target ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Target data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Target"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "target"
+      },
+      "delete": {
+        "tags": [
+          "targets"
+        ],
+        "summary": "Delete a target.",
+        "description": "Delete a target.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Target ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/taskgroups": {
+      "get": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "List all task groups.",
+        "description": "List all task groups.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.TaskGroup"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Create a task group.",
+        "description": "Create a task group.",
+        "requestBody": {
+          "description": "TaskGroup data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TaskGroup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TaskGroup"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "taskgroup"
+      }
+    },
+    "/taskgroups/{id}": {
+      "get": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Get a task group by ID.",
+        "description": "Get a task group by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "TaskGroup ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TaskGroup"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Update a task group.",
+        "description": "Update a task group.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Task data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TaskGroup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      },
+      "delete": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Delete a task group.",
+        "description": "Delete a task group.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "TaskGroup ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/taskgroups/{id}/bucket/{wildcard}": {
+      "get": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Get bucket content by ID and path.",
+        "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "TaskGroup ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Upload bucket content by ID and path.",
+        "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "TaskGroup ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Delete bucket content by ID and path.",
+        "description": "Delete bucket content by ID and path.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/taskgroups/{id}/submit": {
+      "put": {
+        "tags": [
+          "taskgroups"
+        ],
+        "summary": "Submit a task group.",
+        "description": "Submit a task group.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "TaskGroup ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "TaskGroup data (optional)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TaskGroup"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "taskgroup"
+      }
+    },
+    "/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List all tasks.",
+        "description": "List all tasks.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Task"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create a task.",
+        "description": "Create a task.",
+        "requestBody": {
+          "description": "Task data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Task"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Task"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get a task by ID.",
+        "description": "Get a task by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Task"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Update a task.",
+        "description": "Update a task.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Task data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Task"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete a task.",
+        "description": "Delete a task.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tasks/{id}/bucket/{wildcard}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get bucket content by ID and path.",
+        "description": "Get bucket content by ID and path.\nReturns index.html for directories when Accept=text/html else a tarball.\n?filter=glob supports directory content filtering.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Upload bucket content by ID and path.",
+        "description": "Upload bucket content by ID and path (handles both [post] and [put] requests).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete bucket content by ID and path.",
+        "description": "Delete bucket content by ID and path.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "wildcard",
+            "in": "path",
+            "description": "Content path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tasks/{id}/cancel": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Cancel a task.",
+        "description": "Cancel a task.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tasks/{id}/report": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Update a task report.",
+        "description": "Update a task report.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "TaskReport data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TaskReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TaskReport"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create a task report.",
+        "description": "Update a task report.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "TaskReport data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.TaskReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.TaskReport"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete a task report.",
+        "description": "Delete a task report.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tasks/{id}/submit": {
+      "put": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Submit a task.",
+        "description": "Submit a task.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Task data (optional)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Task"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "task"
+      }
+    },
+    "/tickets": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "List all tickets.",
+        "description": "List all tickets.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Ticket"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Create a ticket.",
+        "description": "Create a ticket.",
+        "requestBody": {
+          "description": "Ticket data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Ticket"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Ticket"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "ticket"
+      }
+    },
+    "/tickets/{id}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Get a ticket by ID.",
+        "description": "Get a ticket by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Ticket"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Delete a ticket.",
+        "description": "Delete a ticket.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Ticket id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/trackers": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "List all trackers.",
+        "description": "List all trackers.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Tracker"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Create a tracker.",
+        "description": "Create a tracker.",
+        "requestBody": {
+          "description": "Tracker data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Tracker"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Tracker"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "tracker"
+      }
+    },
+    "/trackers/{id}": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Get a tracker by ID.",
+        "description": "Get a tracker by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Tracker"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Update a tracker.",
+        "description": "Update a tracker.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Tracker data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Tracker"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "application"
+      },
+      "delete": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Delete a tracker.",
+        "description": "Delete a tracker.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/trackers/{id}/projects": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "List a tracker's projects.",
+        "description": "List a tracker's projects.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Project"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trackers/{id}/projects/{id2}": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Get a tracker project by ID.",
+        "description": "Get a tracker project by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id2",
+            "in": "path",
+            "description": "Project ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Project"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trackers/{id}/projects/{id2}/issuetypes": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "List a tracker project's issue types.",
+        "description": "List a tracker project's issue types.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tracker ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id2",
+            "in": "path",
+            "description": "Project ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.IssueType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "api.Addon": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Analysis": {
+        "type": "object",
+        "properties": {
+          "archived": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TechDependency"
+            }
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Issue"
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {}
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Application": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "archetypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "assessed": {
+            "type": "boolean"
+          },
+          "assessments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "binary": {
+            "type": "string"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "businessService": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "comments": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "integer"
+          },
+          "contributors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "migrationWave": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/api.Repository"
+          },
+          "review": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "risk": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TagRef"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Archetype": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "assessed": {
+            "type": "boolean"
+          },
+          "assessments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "comments": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "integer"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TagRef"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "review": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "risk": {
+            "type": "string"
+          },
+          "stakeholderGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "stakeholders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TagRef"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Assessment": {
+        "required": [
+          "questionnaire"
+        ],
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "archetype": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "confidence": {
+            "type": "integer"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "questionnaire": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "risk": {
+            "type": "string",
+            "description": "read only"
+          },
+          "riskMessages": {
+            "$ref": "#/components/schemas/assessment.RiskMessages"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.Section"
+            }
+          },
+          "stakeholderGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "stakeholders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/assessment.Thresholds"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Bucket": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "expiration": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.BusinessService": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Cache": {
+        "type": "object",
+        "properties": {
+          "capacity": {
+            "type": "string"
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "used": {
+            "type": "string"
+          }
+        }
+      },
+      "api.CopyRequest": {
+        "required": [
+          "sourceReview",
+          "targetApplications"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceReview": {
+            "type": "integer"
+          },
+          "targetApplications": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "api.DepAppReport": {
+        "type": "object",
+        "properties": {
+          "businessService": {
+            "type": "string"
+          },
+          "dependency": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "indirect": {
+                "type": "boolean"
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "name": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Dependency": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "from": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "to": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Fact": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          }
+        }
+      },
+      "api.FactMap": {
+        "type": "object"
+      },
+      "api.Fields": {
+        "type": "object"
+      },
+      "api.File": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "expiration": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.FileReport": {
+        "type": "object",
+        "properties": {
+          "effort": {
+            "type": "integer"
+          },
+          "file": {
+            "type": "string"
+          },
+          "incidents": {
+            "type": "integer"
+          },
+          "issueId": {
+            "type": "integer"
+          }
+        }
+      },
+      "api.Identity": {
+        "required": [
+          "kind",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Import": {
+        "type": "object"
+      },
+      "api.ImportSummary": {
+        "type": "object",
+        "properties": {
+          "createEntities": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "importStatus": {
+            "type": "string"
+          },
+          "importTime": {
+            "type": "string"
+          },
+          "invalidCount": {
+            "type": "integer"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "validCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "api.Incident": {
+        "type": "object",
+        "properties": {
+          "codeSnip": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/api.FactMap"
+          },
+          "file": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Issue": {
+        "required": [
+          "category",
+          "name",
+          "rule",
+          "ruleset"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/api.FactMap"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "incidents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Incident"
+            }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Link"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "ruleset": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.IssueAppReport": {
+        "type": "object",
+        "properties": {
+          "businessService": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "files": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "incidents": {
+            "type": "integer"
+          },
+          "issue": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string"
+              },
+              "ruleset": {
+                "type": "string"
+              }
+            }
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.IssueReport": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "files": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Link"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "ruleset": {
+            "type": "string"
+          }
+        }
+      },
+      "api.IssueType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.JobFunction": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stakeholders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Label": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Link": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Login": {
+        "type": "object",
+        "properties": {
+          "expiry": {
+            "type": "integer"
+          },
+          "password": {
+            "type": "string"
+          },
+          "refresh": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        }
+      },
+      "api.MigrationWave": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stakeholderGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "stakeholders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Proxy": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "excluded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "host": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "http",
+              "https"
+            ]
+          },
+          "port": {
+            "type": "integer"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Questionnaire": {
+        "required": [
+          "name",
+          "riskMessages",
+          "sections",
+          "thresholds"
+        ],
+        "type": "object",
+        "properties": {
+          "builtin": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "riskMessages": {
+            "$ref": "#/components/schemas/assessment.RiskMessages"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.Section"
+            }
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/assessment.Thresholds"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Ref": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Repository": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Review": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "archetype": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "businessCriticality": {
+            "type": "integer"
+          },
+          "comments": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "effortEstimate": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "proposedAction": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "workPriority": {
+            "type": "integer"
+          }
+        }
+      },
+      "api.Rule": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "file": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.RuleReport": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "integer"
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Link"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "ruleset": {
+            "type": "string"
+          }
+        }
+      },
+      "api.RuleSet": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/api.Repository"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Rule"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Schema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Setting": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          }
+        }
+      },
+      "api.Stakeholder": {
+        "required": [
+          "email",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "businessServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "contributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "jobFunction": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "migrationWaves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "owns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "stakeholderGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.StakeholderGroup": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "migrationWaves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "stakeholders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Stakeholders": {
+        "type": "object",
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "owner": {
+            "$ref": "#/components/schemas/api.Ref"
+          }
+        }
+      },
+      "api.TTL": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "pending": {
+            "type": "integer"
+          },
+          "postponed": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "succeeded": {
+            "type": "integer"
+          }
+        }
+      },
+      "api.Tag": {
+        "required": [
+          "category",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TagCategory": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "colour": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TagRef": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "virtual": {
+            "type": "boolean"
+          }
+        }
+      },
+      "api.Target": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "custom": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "image": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Label"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "ruleset": {
+            "$ref": "#/components/schemas/api.RuleSet"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Task": {
+        "required": [
+          "addon",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "addon": {
+            "type": "string"
+          },
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "canceled": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TaskError"
+            }
+          },
+          "id": {
+            "type": "integer"
+          },
+          "image": {
+            "type": "string"
+          },
+          "locator": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pod": {
+            "type": "string"
+          },
+          "policy": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "purged": {
+            "type": "boolean"
+          },
+          "retries": {
+            "type": "integer"
+          },
+          "started": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "terminated": {
+            "type": "string"
+          },
+          "ttl": {
+            "$ref": "#/components/schemas/api.TTL"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TaskError": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TaskGroup": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "addon": {
+            "type": "string"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Task"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TaskReport": {
+        "type": "object",
+        "properties": {
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TaskError"
+            }
+          },
+          "id": {
+            "type": "integer"
+          },
+          "result": {
+            "type": "object",
+            "properties": {}
+          },
+          "status": {
+            "type": "string"
+          },
+          "task": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TechDependency": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "indirect": {
+            "type": "boolean"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "sha": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Ticket": {
+        "required": [
+          "application",
+          "kind",
+          "parent",
+          "tracker"
+        ],
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "error": {
+            "type": "boolean"
+          },
+          "fields": {
+            "$ref": "#/components/schemas/api.Fields"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "lastUpdated": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tracker": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Tracker": {
+        "required": [
+          "identity",
+          "kind",
+          "name",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "insecure": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "jira-cloud",
+              "jira-onprem"
+            ]
+          },
+          "lastUpdated": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Vertex": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "integer"
+          },
+          "applicationName": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "integer"
+          },
+          "effortEstimate": {
+            "type": "string"
+          },
+          "positionX": {
+            "type": "integer"
+          },
+          "positionY": {
+            "type": "integer"
+          }
+        }
+      },
+      "assessment.Answer": {
+        "required": [
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "applyTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.CategorizedTag"
+            }
+          },
+          "autoAnswerFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.CategorizedTag"
+            }
+          },
+          "autoAnswered": {
+            "type": "boolean"
+          },
+          "mitigation": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "red"
+            ]
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "assessment.CategorizedTag": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        }
+      },
+      "assessment.Question": {
+        "required": [
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.Answer"
+            }
+          },
+          "excludeFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.CategorizedTag"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "includeFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.CategorizedTag"
+            }
+          },
+          "order": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "assessment.RiskMessages": {
+        "type": "object",
+        "properties": {
+          "green": {
+            "type": "string"
+          },
+          "red": {
+            "type": "string"
+          },
+          "unknown": {
+            "type": "string"
+          },
+          "yellow": {
+            "type": "string"
+          }
+        }
+      },
+      "assessment.Section": {
+        "required": [
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/assessment.Question"
+            }
+          }
+        }
+      },
+      "assessment.Thresholds": {
+        "type": "object",
+        "properties": {
+          "red": {
+            "type": "integer"
+          },
+          "unknown": {
+            "type": "integer"
+          },
+          "yellow": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
