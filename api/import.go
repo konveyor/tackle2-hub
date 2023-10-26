@@ -67,7 +67,7 @@ func (h ImportHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Import
 // @router /imports/{id} [get]
-// @param id path string true "Import ID"
+// @param id path int true "Import ID"
 func (h ImportHandler) GetImport(ctx *gin.Context) {
 	m := &model.Import{}
 	id := ctx.Param(ID)
@@ -122,7 +122,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 // @tags imports
 // @success 204
 // @router /imports/{id} [delete]
-// @param id path string true "Import ID"
+// @param id path int true "Import ID"
 func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB(ctx).Delete(&model.Import{}, id)
@@ -142,7 +142,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.ImportSummary
 // @router /importsummaries/{id} [get]
-// @param id path string true "ImportSummary ID"
+// @param id path int true "ImportSummary ID"
 func (h ImportHandler) GetSummary(ctx *gin.Context) {
 	m := &model.ImportSummary{}
 	id := ctx.Param(ID)
@@ -188,7 +188,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 // @tags imports
 // @success 204
 // @router /importsummaries/{id} [delete]
-// @param id path string true "ImportSummary ID"
+// @param id path int true "ImportSummary ID"
 func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB(ctx).Delete(&model.ImportSummary{}, id)

@@ -40,8 +40,8 @@ func (h CacheHandler) AddRoutes(e *gin.Engine) {
 // @tags cache
 // @produce json
 // @success 200 {object} api.Cache
-// @router /caches/{id} [get]
-// @param name path string true "Cache DIR"
+// @router /caches/{wildcard} [get]
+// @param wildcard path string true "Cache DIR"
 func (h CacheHandler) Get(ctx *gin.Context) {
 	dir := ctx.Param(Wildcard)
 	r, err := h.cache(dir)

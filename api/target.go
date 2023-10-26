@@ -43,7 +43,7 @@ func (h TargetHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} Target
 // @router /targets/{id} [get]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 func (h TargetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	target := &model.Target{}
@@ -148,7 +148,7 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 // @tags targets
 // @success 204
 // @router /targets/{id} [delete]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 func (h TargetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	target := &model.Target{}
@@ -187,7 +187,7 @@ func (h TargetHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /targets/{id} [put]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 // @param target body Target true "Target data"
 func (h TargetHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)

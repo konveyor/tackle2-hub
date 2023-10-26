@@ -99,7 +99,7 @@ func (h BucketHandler) Create(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200 {object} api.Bucket
 // @router /buckets/{id} [get]
-// @param id path string true "Bucket ID"
+// @param id path int true "Bucket ID"
 func (h BucketHandler) Get(ctx *gin.Context) {
 	m := &model.Bucket{}
 	id := h.pk(ctx)
@@ -123,7 +123,7 @@ func (h BucketHandler) Get(ctx *gin.Context) {
 // @tags buckets
 // @success 204
 // @router /buckets/{id} [delete]
-// @param id path string true "Bucket ID"
+// @param id path int true "Bucket ID"
 func (h BucketHandler) Delete(ctx *gin.Context) {
 	m := &model.Bucket{}
 	id := h.pk(ctx)
@@ -159,7 +159,8 @@ func (h BucketHandler) Delete(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /buckets/{id}/{wildcard} [get]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
+// @param wildcard path string true "Content path"
 // @param filter query string false "Filter"
 func (h BucketHandler) BucketGet(ctx *gin.Context) {
 	h.bucketGet(ctx, h.pk(ctx))
@@ -172,7 +173,8 @@ func (h BucketHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /buckets/{id}/{wildcard} [post]
-// @param id path string true "Bucket ID"
+// @param id path int true "Bucket ID"
+// @param wildcard path string true "Content path"
 func (h BucketHandler) BucketPut(ctx *gin.Context) {
 	h.bucketPut(ctx, h.pk(ctx))
 }
@@ -184,7 +186,8 @@ func (h BucketHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /buckets/{id}/{wildcard} [delete]
-// @param id path string true "Bucket ID"
+// @param id path int true "Bucket ID"
+// @param wildcard path string true "Content path"
 func (h BucketHandler) BucketDelete(ctx *gin.Context) {
 	h.bucketDelete(ctx, h.pk(ctx))
 }

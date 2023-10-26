@@ -43,7 +43,7 @@ func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.TagCategory
 // @router /tagcategories/{id} [get]
-// @param id path string true "Tag Category ID"
+// @param id path int true "Tag Category ID"
 func (h TagCategoryHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TagCategory{}
@@ -122,7 +122,7 @@ func (h TagCategoryHandler) Create(ctx *gin.Context) {
 // @tags tagcategories
 // @success 204
 // @router /tagcategories/{id} [delete]
-// @param id path string true "Tag Category ID"
+// @param id path int true "Tag Category ID"
 func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TagCategory{}
@@ -147,7 +147,7 @@ func (h TagCategoryHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /tagcategories/{id} [put]
-// @param id path string true "Tag Category ID"
+// @param id path int true "Tag Category ID"
 // @param tag_type body api.TagCategory true "Tag Category data"
 func (h TagCategoryHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -178,7 +178,7 @@ func (h TagCategoryHandler) Update(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Tag
 // @router /tagcategories/{id}/tags [get]
-// @param id path string true "Tag Category ID"
+// @param id path int true "Tag Category ID"
 // @param name query string false "Optional tag name filter"
 func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 	id := h.pk(ctx)

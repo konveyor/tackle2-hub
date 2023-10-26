@@ -47,7 +47,7 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Archetype
 // @router /archetypes/{id} [get]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
@@ -168,7 +168,7 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 // @tags archetypes
 // @success 204
 // @router /archetypes/{id} [delete]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Archetype{}
@@ -193,7 +193,7 @@ func (h ArchetypeHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /archetypes/{id} [put]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 // @param archetype body api.Archetype true "Archetype data"
 func (h ArchetypeHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -274,6 +274,7 @@ func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 // @success 201 {object} api.Assessment
 // @router /archetypes/{id}/assessments [post]
 // @param assessment body api.Assessment true "Assessment data"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	archetype := &model.Archetype{}
 	id := h.pk(ctx)

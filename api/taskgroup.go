@@ -55,7 +55,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.TaskGroup
 // @router /taskgroups/{id} [get]
-// @param id path string true "TaskGroup ID"
+// @param id path int true "TaskGroup ID"
 func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
@@ -152,7 +152,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /taskgroups/{id} [put]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 // @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -206,7 +206,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 // @tags taskgroups
 // @success 204
 // @router /taskgroups/{id} [delete]
-// @param id path string true "TaskGroup ID"
+// @param id path int true "TaskGroup ID"
 func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
@@ -251,7 +251,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /taskgroups/{id}/submit [put]
-// @param id path string true "TaskGroup ID"
+// @param id path int true "TaskGroup ID"
 // @param taskgroup body TaskGroup false "TaskGroup data (optional)"
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -285,7 +285,8 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /taskgroups/{id}/bucket/{wildcard} [get]
-// @param id path string true "TaskGroup ID"
+// @param id path int true "TaskGroup ID"
+// @param wildcard path string true "Content path"
 // @param filter query string false "Filter"
 func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 	m := &model.TaskGroup{}
@@ -310,7 +311,8 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [post]
-// @param id path string true "TaskGroup ID"
+// @param id path int true "TaskGroup ID"
+// @param wildcard path string true "Content path"
 func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
@@ -334,7 +336,8 @@ func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /taskgroups/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
+// @param wildcard path string true "Content path"
 func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)

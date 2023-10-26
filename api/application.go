@@ -388,7 +388,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/bucket/{wildcard} [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 // @param filter query string false "Filter"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Application{}
@@ -413,7 +414,8 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -437,7 +439,8 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -461,7 +464,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Ref
 // @router /applications/{id}/tags [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -533,6 +536,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 // @success 201 {object} api.Ref
 // @router /applications/{id}/tags [post]
 // @param tag body Ref true "Tag data"
+// @param id path int true "Application ID"
 func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	id := h.pk(ctx)
 	ref := &TagRef{}
@@ -572,7 +576,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /applications/{id}/tags [patch]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source query string false "Source"
 // @param tags body []TagRef true "Tag references"
 func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
@@ -626,7 +630,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/tags/{sid} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param sid path string true "Tag ID"
 func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -661,7 +665,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.FactMap
 // @router /applications/{id}/facts/{source}: [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source path string true "Source key"
 func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
@@ -693,7 +697,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 // @produce json
 // @success 200 {object} object
 // @router /applications/{id}/facts/{key} [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -738,7 +742,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 // @produce json
 // @success 201
 // @router /applications/{id}/facts [post]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param fact body api.Fact true "Fact data"
 func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -775,7 +779,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/facts/{key} [put]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 // @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
@@ -822,7 +826,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{key} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -854,7 +858,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{source}: [put]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source path string true "Fact key"
 // @param factmap body api.FactMap true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
@@ -998,6 +1002,7 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.Assessment
 // @router /applications/{id}/assessments [post]
+// @param id path int true "Application ID"
 // @param assessment body api.Assessment true "Assessment data"
 func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	application := &model.Application{}

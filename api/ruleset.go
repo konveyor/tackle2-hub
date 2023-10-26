@@ -41,7 +41,7 @@ func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} RuleSet
 // @router /rulesets/{id} [get]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 func (h RuleSetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	ruleset := &model.RuleSet{}
@@ -132,7 +132,7 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 // @tags rulesets
 // @success 204
 // @router /rulesets/{id} [delete]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 func (h RuleSetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	err := h.delete(ctx, id)
@@ -151,7 +151,7 @@ func (h RuleSetHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /rulesets/{id} [put]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 // @param ruleBundle body RuleSet true "RuleSet data"
 func (h RuleSetHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)

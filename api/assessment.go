@@ -41,7 +41,7 @@ func (h AssessmentHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Assessment
 // @router /assessments/{id} [get]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 func (h AssessmentHandler) Get(ctx *gin.Context) {
 	m := &model.Assessment{}
 	id := h.pk(ctx)
@@ -88,7 +88,7 @@ func (h AssessmentHandler) List(ctx *gin.Context) {
 // @tags assessments
 // @success 204
 // @router /assessments/{id} [delete]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 func (h AssessmentHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Assessment{}
@@ -113,7 +113,7 @@ func (h AssessmentHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /assessments/{id} [put]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 // @param assessment body api.Assessment true "Assessment data"
 func (h AssessmentHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)

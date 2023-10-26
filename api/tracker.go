@@ -51,7 +51,7 @@ func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Tracker
 // @router /trackers/{id} [get]
-// @param id path string true "Tracker ID"
+// @param id path int true "Tracker ID"
 func (h TrackerHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tracker{}
@@ -195,7 +195,7 @@ func (h TrackerHandler) Update(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Project
 // @router /trackers/{id}/projects [get]
-// @param id path string true "Tracker ID"
+// @param id path int true "Tracker ID"
 func (h TrackerHandler) ProjectList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tracker{}
@@ -236,7 +236,7 @@ func (h TrackerHandler) ProjectList(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.Project
 // @router /trackers/{id}/projects/{id2} [get]
-// @param id path string true "Tracker ID"
+// @param id path int true "Tracker ID"
 // @param id2 path string true "Project ID"
 func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -274,7 +274,7 @@ func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.IssueType
 // @router /trackers/{id}/projects/{id2}/issuetypes [get]
-// @param id path string true "Tracker ID"
+// @param id path int true "Tracker ID"
 // @param id2 path string true "Project ID"
 func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
 	id := h.pk(ctx)

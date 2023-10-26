@@ -1,5 +1,15 @@
 package api
 
+// @title Konveyor Hub API
+// @version 0.3.z
+// @description
+//
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+//
+// @accept application/json
+// @produce application/json
+
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
