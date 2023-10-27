@@ -87,6 +87,8 @@ func (r *MembershipResolver) cacheArchetypes() (err error) {
 
 	list := []model.Archetype{}
 	db := r.db.Preload(clause.Associations)
+	db = db.Preload("Assessments.Stakeholders")
+	db = db.Preload("Assessments.StakeholderGroups")
 	result := db.Find(&list)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
