@@ -248,7 +248,7 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
