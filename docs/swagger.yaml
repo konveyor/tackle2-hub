@@ -1,3 +1,5 @@
+consumes:
+- application/json
 definitions:
   api.Addon:
     properties:
@@ -51,6 +53,8 @@ definitions:
         $ref: '#/definitions/api.Ref'
       comments:
         type: string
+      confidence:
+        type: integer
       contributors:
         items:
           $ref: '#/definitions/api.Ref'
@@ -61,6 +65,8 @@ definitions:
         type: string
       description:
         type: string
+      effort:
+        type: integer
       id:
         type: integer
       identities:
@@ -77,6 +83,8 @@ definitions:
         $ref: '#/definitions/api.Repository'
       review:
         $ref: '#/definitions/api.Ref'
+      risk:
+        type: string
       tags:
         items:
           $ref: '#/definitions/api.TagRef'
@@ -100,6 +108,8 @@ definitions:
         type: array
       comments:
         type: string
+      confidence:
+        type: integer
       createTime:
         type: string
       createUser:
@@ -116,6 +126,8 @@ definitions:
         type: string
       review:
         $ref: '#/definitions/api.Ref'
+      risk:
+        type: string
       stakeholderGroups:
         items:
           $ref: '#/definitions/api.Ref'
@@ -274,8 +286,6 @@ definitions:
         $ref: '#/definitions/api.Ref'
       updateUser:
         type: string
-    type: object
-  api.DependencyGraph:
     type: object
   api.Fact:
     properties:
@@ -946,6 +956,8 @@ definitions:
         type: array
       name:
         type: string
+      provider:
+        type: string
       ruleset:
         $ref: '#/definitions/api.RuleSet'
       updateUser:
@@ -1172,6 +1184,23 @@ definitions:
     - name
     - url
     type: object
+  api.Vertex:
+    properties:
+      applicationId:
+        type: integer
+      applicationName:
+        type: string
+      decision:
+        type: string
+      effort:
+        type: integer
+      effortEstimate:
+        type: string
+      positionX:
+        type: integer
+      positionY:
+        type: integer
+    type: object
   assessment.Answer:
     properties:
       applyTags:
@@ -1268,6 +1297,11 @@ definitions:
     type: object
 info:
   contact: {}
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Konveyor Hub API
+  version: 0.3.z
 paths:
   /addons:
     get:
@@ -1308,18 +1342,23 @@ paths:
       description: Graph generates an application dependency graph arranged in topological
         order.
       parameters:
-      - description: requested App IDs
-        in: path
+      - description: List of requested App IDs
+        in: body
         name: requestedApps
         required: true
-        type: array
+        schema:
+          items:
+            type: integer
+          type: array
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.DependencyGraph'
+            items:
+              $ref: '#/definitions/api.Vertex'
+            type: array
       summary: Generate an application dependency graph arranged in topological order.
       tags:
       - adoptionplans
@@ -1348,7 +1387,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -1362,7 +1401,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/octet-stream
       responses:
@@ -1435,6 +1474,12 @@ paths:
   /analyses/issues/{id}:
     get:
       description: Get an issue.
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1451,6 +1496,12 @@ paths:
         List incidents for an issue.
         filters:
         - file
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1529,7 +1580,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -1554,6 +1605,12 @@ paths:
         - file
         - effort
         - incidents
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1608,6 +1665,12 @@ paths:
         - file: file that contains the api.Analysis resource.
         - issues: file that multiple api.Issue resources.
         - dependencies: file that multiple api.TechDependency resources.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1633,7 +1696,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -1662,7 +1725,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -1791,7 +1854,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/octet-stream
       responses:
@@ -1810,7 +1873,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/octet-stream
       responses:
@@ -1845,6 +1908,11 @@ paths:
       - application/json
       description: Create an application assessment.
       parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
       - description: Assessment data
         in: body
         name: assessment
@@ -1869,6 +1937,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -1887,6 +1960,11 @@ paths:
       - description: Application ID
         in: path
         name: id
+        required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
         required: true
         type: string
       - description: Filter
@@ -1909,6 +1987,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -1928,7 +2011,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Fact data
         in: body
         name: fact
@@ -1953,7 +2036,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Fact key
         in: path
         name: key
@@ -1974,7 +2057,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Fact key
         in: path
         name: key
@@ -2001,7 +2084,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Fact key
         in: path
         name: key
@@ -2031,7 +2114,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Source key
         in: path
         name: source
@@ -2056,7 +2139,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Fact key
         in: path
         name: source
@@ -2103,7 +2186,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2125,7 +2208,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Source
         in: query
         name: source
@@ -2155,6 +2238,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Ref'
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -2173,7 +2261,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Tag ID
         in: path
         name: sid
@@ -2229,7 +2317,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2243,7 +2331,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2263,7 +2351,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Archetype data
         in: body
         name: archetype
@@ -2306,6 +2394,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Assessment'
+      - description: Archetype ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -2339,7 +2432,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2353,7 +2446,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2373,7 +2466,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Assessment data
         in: body
         name: assessment
@@ -2505,7 +2598,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2523,7 +2616,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/octet-stream
       responses:
@@ -2541,6 +2634,11 @@ paths:
       - description: Bucket ID
         in: path
         name: id
+        required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
         required: true
         type: string
       produces:
@@ -2563,6 +2661,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       - description: Filter
         in: query
@@ -2583,6 +2686,11 @@ paths:
       - description: Bucket ID
         in: path
         name: id
+        required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
         required: true
         type: string
       produces:
@@ -2635,7 +2743,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2649,7 +2757,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2669,7 +2777,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Business service data
         in: body
         name: business_service
@@ -2693,13 +2801,13 @@ paths:
       summary: Delete a directory within the cache.
       tags:
       - cache
-  /caches/{id}:
+  /caches/{wildcard}:
     get:
       description: Get the cache.
       parameters:
       - description: Cache DIR
         in: path
-        name: name
+        name: wildcard
         required: true
         type: string
       produces:
@@ -2758,7 +2866,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2772,7 +2880,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2826,7 +2934,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2841,7 +2949,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/octet-stream
       responses:
@@ -2896,7 +3004,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2910,7 +3018,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -2930,7 +3038,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Identity data
         in: body
         name: identity
@@ -2966,7 +3074,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -2980,7 +3088,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3014,7 +3122,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3028,7 +3136,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3115,7 +3223,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3129,7 +3237,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3149,7 +3257,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Job Function data
         in: body
         name: job_function
@@ -3311,7 +3419,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3325,7 +3433,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3345,7 +3453,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Proxy data
         in: body
         name: proxy
@@ -3402,7 +3510,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3416,7 +3524,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3439,7 +3547,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Questionnaire data
         in: body
         name: questionnaire
@@ -3496,7 +3604,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3510,7 +3618,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3530,7 +3638,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Review data
         in: body
         name: review
@@ -3609,7 +3717,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3623,7 +3731,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3643,7 +3751,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: RuleSet data
         in: body
         name: ruleBundle
@@ -3743,6 +3851,11 @@ paths:
       - application/json
       description: Create a setting.
       parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
       - description: Setting value
         in: body
         name: setting
@@ -3817,7 +3930,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3831,7 +3944,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3851,7 +3964,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Stakeholder Group data
         in: body
         name: stakeholder_group
@@ -3908,7 +4021,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -3922,7 +4035,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -3942,7 +4055,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Stakeholder data
         in: body
         name: stakeholder
@@ -4004,7 +4117,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4018,7 +4131,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4038,7 +4151,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Tag Category data
         in: body
         name: tag_type
@@ -4059,7 +4172,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Optional tag name filter
         in: query
         name: name
@@ -4120,7 +4233,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4134,7 +4247,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4154,7 +4267,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Tag data
         in: body
         name: tag
@@ -4211,7 +4324,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4225,7 +4338,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4245,7 +4358,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Target data
         in: body
         name: target
@@ -4302,7 +4415,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4316,7 +4429,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4336,7 +4449,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Task data
         in: body
         name: task
@@ -4357,6 +4470,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -4375,6 +4493,11 @@ paths:
       - description: TaskGroup ID
         in: path
         name: id
+        required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
         required: true
         type: string
       - description: Filter
@@ -4397,6 +4520,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -4416,7 +4544,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: TaskGroup data (optional)
         in: body
         name: taskgroup
@@ -4472,7 +4600,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4486,7 +4614,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4506,7 +4634,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Task data
         in: body
         name: task
@@ -4527,6 +4655,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -4545,6 +4678,11 @@ paths:
       - description: Task ID
         in: path
         name: id
+        required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
         required: true
         type: string
       - description: Filter
@@ -4567,6 +4705,11 @@ paths:
         in: path
         name: id
         required: true
+        type: integer
+      - description: Content path
+        in: path
+        name: wildcard
+        required: true
         type: string
       produces:
       - application/json
@@ -4584,7 +4727,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: No Content
@@ -4601,7 +4744,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4619,7 +4762,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: TaskReport data
         in: body
         name: task
@@ -4645,7 +4788,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: TaskReport data
         in: body
         name: task
@@ -4672,7 +4815,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Task data (optional)
         in: body
         name: task
@@ -4742,7 +4885,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4811,7 +4954,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4852,7 +4995,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -4873,7 +5016,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Project ID
         in: path
         name: id2
@@ -4897,7 +5040,7 @@ paths:
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Project ID
         in: path
         name: id2
@@ -4915,4 +5058,6 @@ paths:
       summary: List a tracker project's issue types.
       tags:
       - trackers
+produces:
+- application/json
 swagger: "2.0"

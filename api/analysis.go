@@ -95,7 +95,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 // @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /analyses/{id} [get]
-// @param id path string true "Analysis ID"
+// @param id path int true "Analysis ID"
 func (h AnalysisHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	writer := AnalysisWriter{ctx: ctx}
@@ -118,7 +118,7 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /applications/{id}/analysis [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
@@ -149,7 +149,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/analysis/report [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
@@ -229,6 +229,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(&model.Application{}, id)
@@ -398,7 +399,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 // @tags analyses
 // @success 204
 // @router /analyses/{id} [delete]
-// @param id path string true "Analysis ID"
+// @param id path int true "Analysis ID"
 func (h AnalysisHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &model.Analysis{}
@@ -429,7 +430,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.TechDependency
 // @router /application/{id}/analysis/dependencies [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	resources := []TechDependency{}
 	// Latest
@@ -511,7 +512,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Issue
 // @router /application/{id}/analysis/issues [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	resources := []Issue{}
 	// Latest
@@ -673,6 +674,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.Issue
 // @router /analyses/issues/{id} [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) Issue(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Issue{}
@@ -698,6 +700,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Incident
 // @router /analyses/issues/{id}/incidents [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	issueId := ctx.Param(ID)
 	// Filter
@@ -900,7 +903,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.IssueReport
 // @router /analyses/report/applications/{id}/issues [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
@@ -1176,6 +1179,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.FileReport
 // @router /analyses/report/issues/{id}/files [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	resources := []FileReport{}
 	type M struct {
