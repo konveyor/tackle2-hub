@@ -212,7 +212,7 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 //
 // TagCategory REST resource.
 type TagCategory struct {
-	Resource
+	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
 	Username string `json:"username"`
 	Rank     uint   `json:"rank"`

@@ -311,7 +311,7 @@ func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
 
 // Tracker API Resource
 type Tracker struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string    `json:"name" binding:"required"`
 	URL         string    `json:"url" binding:"required"`
 	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-onprem"`

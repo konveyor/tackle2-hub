@@ -192,7 +192,7 @@ func (h BucketHandler) BucketDelete(ctx *gin.Context) {
 //
 // Bucket REST resource.
 type Bucket struct {
-	Resource
+	Resource   `yaml:",inline"`
 	Path       string     `json:"path"`
 	Expiration *time.Time `json:"expiration,omitempty"`
 }

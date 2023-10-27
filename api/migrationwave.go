@@ -183,7 +183,7 @@ func (h MigrationWaveHandler) Delete(ctx *gin.Context) {
 //
 // MigrationWave REST Resource
 type MigrationWave struct {
-	Resource
+	Resource          `yaml:",inline"`
 	Name              string    `json:"name"`
 	StartDate         time.Time `json:"startDate" yaml:"startDate"`
 	EndDate           time.Time `json:"endDate" yaml:"endDate"`

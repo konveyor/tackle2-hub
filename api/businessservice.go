@@ -167,7 +167,7 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 //
 // BusinessService REST resource.
 type BusinessService struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	Stakeholder *Ref   `json:"owner"`

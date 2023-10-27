@@ -1058,7 +1058,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 //
 // Application REST resource.
 type Application struct {
-	Resource
+	Resource        `yaml:",inline"`
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
 	Bucket          *Ref        `json:"bucket"`
