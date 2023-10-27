@@ -40,7 +40,7 @@ func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.JobFunction
 // @router /jobfunctions/{id} [get]
-// @param id path string true "Job Function ID"
+// @param id path int true "Job Function ID"
 func (h JobFunctionHandler) Get(ctx *gin.Context) {
 	m := &model.JobFunction{}
 	id := h.pk(ctx)
@@ -115,7 +115,7 @@ func (h JobFunctionHandler) Create(ctx *gin.Context) {
 // @tags jobfunctions
 // @success 204
 // @router /jobfunctions/{id} [delete]
-// @param id path string true "Job Function ID"
+// @param id path int true "Job Function ID"
 func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.JobFunction{}
@@ -140,7 +140,7 @@ func (h JobFunctionHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /jobfunctions/{id} [put]
-// @param id path string true "Job Function ID"
+// @param id path int true "Job Function ID"
 // @param job_function body api.JobFunction true "Job Function data"
 func (h JobFunctionHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)

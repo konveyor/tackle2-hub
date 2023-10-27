@@ -129,7 +129,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200 {object} api.File
 // @router /files/{id} [get]
-// @param id path string true "File ID"
+// @param id path int true "File ID"
 func (h FileHandler) Get(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)
@@ -157,7 +157,7 @@ func (h FileHandler) Get(ctx *gin.Context) {
 // @tags file
 // @success 204
 // @router /files/{id} [delete]
-// @param id path string true "File ID"
+// @param id path int true "File ID"
 func (h FileHandler) Delete(ctx *gin.Context) {
 	m := &model.File{}
 	id := h.pk(ctx)

@@ -39,7 +39,7 @@ func (h QuestionnaireHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Questionnaire
 // @router /questionnaires/{id} [get]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 func (h QuestionnaireHandler) Get(ctx *gin.Context) {
 	m := &model.Questionnaire{}
 	id := h.pk(ctx)
@@ -114,7 +114,7 @@ func (h QuestionnaireHandler) Create(ctx *gin.Context) {
 // @tags questionnaires
 // @success 204
 // @router /questionnaires/{id} [delete]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Questionnaire{}
@@ -145,7 +145,7 @@ func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /questionnaires/{id} [put]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 // @param questionnaire body api.Questionnaire true "Questionnaire data"
 func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)

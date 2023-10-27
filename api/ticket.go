@@ -43,7 +43,7 @@ func (h TicketHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Ticket
 // @router /tickets/{id} [get]
-// @param id path string true "Ticket ID"
+// @param id path int true "Ticket ID"
 func (h TicketHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Ticket{}

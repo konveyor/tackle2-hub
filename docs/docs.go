@@ -5,11 +5,21 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -79,18 +89,26 @@ const docTemplate = `{
                 "summary": "Generate an application dependency graph arranged in topological order.",
                 "parameters": [
                     {
-                        "type": "array",
-                        "description": "requested App IDs",
+                        "description": "List of requested App IDs",
                         "name": "requestedApps",
-                        "in": "path",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.DependencyGraph"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Vertex"
+                            }
                         }
                     }
                 }
@@ -175,6 +193,15 @@ const docTemplate = `{
                     "issue"
                 ],
                 "summary": "Get an issue.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -195,6 +222,15 @@ const docTemplate = `{
                     "incidents"
                 ],
                 "summary": "List incidents for an issue.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -243,7 +279,7 @@ const docTemplate = `{
                 "summary": "List application issue reports.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -273,6 +309,15 @@ const docTemplate = `{
                     "filereports"
                 ],
                 "summary": "List incident file reports.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -321,7 +366,7 @@ const docTemplate = `{
                 "summary": "Get an analysis (report) by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Analysis ID",
                         "name": "id",
                         "in": "path",
@@ -345,7 +390,7 @@ const docTemplate = `{
                 "summary": "Delete an analysis by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Analysis ID",
                         "name": "id",
                         "in": "path",
@@ -369,6 +414,15 @@ const docTemplate = `{
                     "analyses"
                 ],
                 "summary": "Create an analysis.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -391,7 +445,7 @@ const docTemplate = `{
                 "summary": "List application dependencies.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -423,7 +477,7 @@ const docTemplate = `{
                 "summary": "List application issues.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -619,7 +673,7 @@ const docTemplate = `{
                 "summary": "Get the latest analysis.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -648,7 +702,7 @@ const docTemplate = `{
                 "summary": "Get the latest analysis (static) report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -704,6 +758,13 @@ const docTemplate = `{
                 "summary": "Create an application assessment.",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Assessment data",
                         "name": "assessment",
                         "in": "body",
@@ -735,9 +796,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -765,9 +833,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -789,9 +864,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -818,7 +900,7 @@ const docTemplate = `{
                 "summary": "Create a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -853,7 +935,7 @@ const docTemplate = `{
                 "summary": "Get fact by name.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -890,7 +972,7 @@ const docTemplate = `{
                 "summary": "Update (or create) a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -927,7 +1009,7 @@ const docTemplate = `{
                 "summary": "Delete a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -960,7 +1042,7 @@ const docTemplate = `{
                 "summary": "List facts.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -991,7 +1073,7 @@ const docTemplate = `{
                 "summary": "Replace all facts from a source.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -1065,7 +1147,7 @@ const docTemplate = `{
                 "summary": "List tag references.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -1105,6 +1187,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Ref"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1127,7 +1216,7 @@ const docTemplate = `{
                 "summary": "Replace tag associations.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -1168,7 +1257,7 @@ const docTemplate = `{
                 "summary": "Delete tag association.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -1256,7 +1345,7 @@ const docTemplate = `{
                 "summary": "Get an archetype by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Archetype ID",
                         "name": "id",
                         "in": "path",
@@ -1283,7 +1372,7 @@ const docTemplate = `{
                 "summary": "Update an archetype.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Archetype ID",
                         "name": "id",
                         "in": "path",
@@ -1313,7 +1402,7 @@ const docTemplate = `{
                 "summary": "Delete an archetype.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Archetype ID",
                         "name": "id",
                         "in": "path",
@@ -1376,6 +1465,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Assessment"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1423,7 +1519,7 @@ const docTemplate = `{
                 "summary": "Get an assessment by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Assessment ID",
                         "name": "id",
                         "in": "path",
@@ -1450,7 +1546,7 @@ const docTemplate = `{
                 "summary": "Update an assessment.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Assessment ID",
                         "name": "id",
                         "in": "path",
@@ -1480,7 +1576,7 @@ const docTemplate = `{
                 "summary": "Delete an assessment.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Assessment ID",
                         "name": "id",
                         "in": "path",
@@ -1675,7 +1771,7 @@ const docTemplate = `{
                 "summary": "Get a bucket by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
                         "in": "path",
@@ -1699,7 +1795,7 @@ const docTemplate = `{
                 "summary": "Delete a bucket.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
                         "in": "path",
@@ -1725,9 +1821,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -1755,9 +1858,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -1779,9 +1889,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -1857,7 +1974,7 @@ const docTemplate = `{
                 "summary": "Get a business service by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business Service ID",
                         "name": "id",
                         "in": "path",
@@ -1884,7 +2001,7 @@ const docTemplate = `{
                 "summary": "Update a business service.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business service ID",
                         "name": "id",
                         "in": "path",
@@ -1914,7 +2031,7 @@ const docTemplate = `{
                 "summary": "Delete a business service.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business service ID",
                         "name": "id",
                         "in": "path",
@@ -1945,7 +2062,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/caches/{id}": {
+        "/caches/{wildcard}": {
             "get": {
                 "description": "Get the cache.",
                 "produces": [
@@ -1959,7 +2076,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Cache DIR",
-                        "name": "name",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -2041,7 +2158,7 @@ const docTemplate = `{
                 "summary": "Get a dependency by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Dependency ID",
                         "name": "id",
                         "in": "path",
@@ -2068,7 +2185,7 @@ const docTemplate = `{
                 "summary": "Delete a dependency.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Dependency id",
                         "name": "id",
                         "in": "path",
@@ -2147,7 +2264,7 @@ const docTemplate = `{
                 "summary": "Get a file by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "File ID",
                         "name": "id",
                         "in": "path",
@@ -2171,7 +2288,7 @@ const docTemplate = `{
                 "summary": "Delete a file.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "File ID",
                         "name": "id",
                         "in": "path",
@@ -2252,7 +2369,7 @@ const docTemplate = `{
                 "summary": "Get an identity by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -2279,7 +2396,7 @@ const docTemplate = `{
                 "summary": "Update an identity.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -2309,7 +2426,7 @@ const docTemplate = `{
                 "summary": "Delete an identity.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -2358,7 +2475,7 @@ const docTemplate = `{
                 "summary": "Get an import by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Import ID",
                         "name": "id",
                         "in": "path",
@@ -2382,7 +2499,7 @@ const docTemplate = `{
                 "summary": "Delete an import.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Import ID",
                         "name": "id",
                         "in": "path",
@@ -2480,7 +2597,7 @@ const docTemplate = `{
                 "summary": "Get an import summary by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "ImportSummary ID",
                         "name": "id",
                         "in": "path",
@@ -2504,7 +2621,7 @@ const docTemplate = `{
                 "summary": "Delete an import summary and associated import records.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "ImportSummary ID",
                         "name": "id",
                         "in": "path",
@@ -2585,7 +2702,7 @@ const docTemplate = `{
                 "summary": "Get a job function by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2612,7 +2729,7 @@ const docTemplate = `{
                 "summary": "Update a job function.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2642,7 +2759,7 @@ const docTemplate = `{
                 "summary": "Delete a job function.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2878,7 +2995,7 @@ const docTemplate = `{
                 "summary": "Get an proxy by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
                         "name": "id",
                         "in": "path",
@@ -2905,7 +3022,7 @@ const docTemplate = `{
                 "summary": "Update an proxy.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
                         "name": "id",
                         "in": "path",
@@ -2935,7 +3052,7 @@ const docTemplate = `{
                 "summary": "Delete an proxy.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
                         "name": "id",
                         "in": "path",
@@ -3016,7 +3133,7 @@ const docTemplate = `{
                 "summary": "Get a questionnaire by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Questionnaire ID",
                         "name": "id",
                         "in": "path",
@@ -3043,7 +3160,7 @@ const docTemplate = `{
                 "summary": "Update a questionnaire.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Questionnaire ID",
                         "name": "id",
                         "in": "path",
@@ -3073,7 +3190,7 @@ const docTemplate = `{
                 "summary": "Delete a questionnaire.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Questionnaire ID",
                         "name": "id",
                         "in": "path",
@@ -3182,7 +3299,7 @@ const docTemplate = `{
                 "summary": "Get a review by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -3209,7 +3326,7 @@ const docTemplate = `{
                 "summary": "Update a review.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -3239,7 +3356,7 @@ const docTemplate = `{
                 "summary": "Delete a review.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -3320,7 +3437,7 @@ const docTemplate = `{
                 "summary": "Get a RuleSet by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -3347,7 +3464,7 @@ const docTemplate = `{
                 "summary": "Update a ruleset.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -3377,7 +3494,7 @@ const docTemplate = `{
                 "summary": "Delete a ruleset.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -3532,6 +3649,13 @@ const docTemplate = `{
                 "summary": "Create a setting.",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Setting value",
                         "name": "setting",
                         "in": "body",
@@ -3636,7 +3760,7 @@ const docTemplate = `{
                 "summary": "Get a stakeholder group by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3663,7 +3787,7 @@ const docTemplate = `{
                 "summary": "Update a stakeholder group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3693,7 +3817,7 @@ const docTemplate = `{
                 "summary": "Delete a stakeholder group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3774,7 +3898,7 @@ const docTemplate = `{
                 "summary": "Get a stakeholder by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3801,7 +3925,7 @@ const docTemplate = `{
                 "summary": "Update a stakeholder.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3831,7 +3955,7 @@ const docTemplate = `{
                 "summary": "Delete a stakeholder.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3920,7 +4044,7 @@ const docTemplate = `{
                 "summary": "Get a tag category by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3947,7 +4071,7 @@ const docTemplate = `{
                 "summary": "Update a tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3977,7 +4101,7 @@ const docTemplate = `{
                 "summary": "Delete a tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -4003,7 +4127,7 @@ const docTemplate = `{
                 "summary": "List the tags in the tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -4096,7 +4220,7 @@ const docTemplate = `{
                 "summary": "Get a tag by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -4123,7 +4247,7 @@ const docTemplate = `{
                 "summary": "Update a tag.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -4153,7 +4277,7 @@ const docTemplate = `{
                 "summary": "Delete a tag.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -4234,7 +4358,7 @@ const docTemplate = `{
                 "summary": "Get a Target by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -4261,7 +4385,7 @@ const docTemplate = `{
                 "summary": "Update a target.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -4291,7 +4415,7 @@ const docTemplate = `{
                 "summary": "Delete a target.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -4372,7 +4496,7 @@ const docTemplate = `{
                 "summary": "Get a task group by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -4399,7 +4523,7 @@ const docTemplate = `{
                 "summary": "Update a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4429,7 +4553,7 @@ const docTemplate = `{
                 "summary": "Delete a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -4455,9 +4579,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -4485,9 +4616,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4509,9 +4647,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4535,7 +4680,7 @@ const docTemplate = `{
                 "summary": "Submit a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -4624,7 +4769,7 @@ const docTemplate = `{
                 "summary": "Get a task by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4651,7 +4796,7 @@ const docTemplate = `{
                 "summary": "Update a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4681,7 +4826,7 @@ const docTemplate = `{
                 "summary": "Delete a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4707,9 +4852,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -4737,9 +4889,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4761,9 +4920,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4784,7 +4950,7 @@ const docTemplate = `{
                 "summary": "Cancel a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4813,7 +4979,7 @@ const docTemplate = `{
                 "summary": "Update a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4852,7 +5018,7 @@ const docTemplate = `{
                 "summary": "Create a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4891,7 +5057,7 @@ const docTemplate = `{
                 "summary": "Delete a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4917,7 +5083,7 @@ const docTemplate = `{
                 "summary": "Submit a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -5006,7 +5172,7 @@ const docTemplate = `{
                 "summary": "Get a ticket by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Ticket ID",
                         "name": "id",
                         "in": "path",
@@ -5111,7 +5277,7 @@ const docTemplate = `{
                 "summary": "Get a tracker by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -5194,7 +5360,7 @@ const docTemplate = `{
                 "summary": "List a tracker's projects.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -5226,7 +5392,7 @@ const docTemplate = `{
                 "summary": "Get a tracker project by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -5262,7 +5428,7 @@ const docTemplate = `{
                 "summary": "List a tracker project's issue types.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -5373,6 +5539,9 @@ const docTemplate = `{
                 "comments": {
                     "type": "string"
                 },
+                "confidence": {
+                    "type": "integer"
+                },
                 "contributors": {
                     "type": "array",
                     "items": {
@@ -5387,6 +5556,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -5411,6 +5583,9 @@ const docTemplate = `{
                 },
                 "review": {
                     "$ref": "#/definitions/api.Ref"
+                },
+                "risk": {
+                    "type": "string"
                 },
                 "tags": {
                     "type": "array",
@@ -5444,6 +5619,9 @@ const docTemplate = `{
                 "comments": {
                     "type": "string"
                 },
+                "confidence": {
+                    "type": "integer"
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -5467,6 +5645,9 @@ const docTemplate = `{
                 },
                 "review": {
                     "$ref": "#/definitions/api.Ref"
+                },
+                "risk": {
+                    "type": "string"
                 },
                 "stakeholderGroups": {
                     "type": "array",
@@ -5709,9 +5890,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "api.DependencyGraph": {
-            "type": "object"
         },
         "api.Fact": {
             "type": "object",
@@ -6726,6 +6904,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "provider": {
+                    "type": "string"
+                },
                 "ruleset": {
                     "$ref": "#/definitions/api.RuleSet"
                 },
@@ -7065,6 +7246,32 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Vertex": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "integer"
+                },
+                "applicationName": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "effortEstimate": {
+                    "type": "string"
+                },
+                "positionX": {
+                    "type": "integer"
+                },
+                "positionY": {
+                    "type": "integer"
+                }
+            }
+        },
         "assessment.Answer": {
             "type": "object",
             "required": [
@@ -7214,11 +7421,11 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "0.3.z",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
+	Title:            "Konveyor Hub API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
