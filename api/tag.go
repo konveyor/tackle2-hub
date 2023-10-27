@@ -167,7 +167,7 @@ func (h TagHandler) Update(ctx *gin.Context) {
 //
 // Tag REST resource.
 type Tag struct {
-	Resource
+	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
 	Category Ref    `json:"category" binding:"required"`
 }

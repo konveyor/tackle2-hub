@@ -331,7 +331,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 //
 // Archetype REST resource.
 type Archetype struct {
-	Resource
+	Resource          `yaml:",inline"`
 	Name              string   `json:"name" yaml:"name"`
 	Description       string   `json:"description" yaml:"description"`
 	Comments          string   `json:"comments" yaml:"comments"`

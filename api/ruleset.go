@@ -301,7 +301,7 @@ func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 //
 // RuleSet REST resource.
 type RuleSet struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Kind        string      `json:"kind,omitempty"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
@@ -380,7 +380,7 @@ func (r *RuleSet) HasRule(id uint) (b bool) {
 //
 // Rule - REST Resource.
 type Rule struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string   `json:"name,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Labels      []string `json:"labels,omitempty"`

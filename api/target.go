@@ -238,7 +238,7 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 //
 // Target REST resource.
 type Target struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Provider    string   `json:"provider,omitempty" yaml:",omitempty"`

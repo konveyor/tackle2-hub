@@ -354,13 +354,13 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 //
 // TaskGroup REST resource.
 type TaskGroup struct {
-	Resource
-	Name   string      `json:"name"`
-	Addon  string      `json:"addon"`
-	Data   interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Bucket *Ref        `json:"bucket,omitempty"`
-	State  string      `json:"state"`
-	Tasks  []Task      `json:"tasks"`
+	Resource `yaml:",inline"`
+	Name     string      `json:"name"`
+	Addon    string      `json:"addon"`
+	Data     interface{} `json:"data" swaggertype:"object" binding:"required"`
+	Bucket   *Ref        `json:"bucket,omitempty"`
+	State    string      `json:"state"`
+	Tasks    []Task      `json:"tasks"`
 }
 
 //

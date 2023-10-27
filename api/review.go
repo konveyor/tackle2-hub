@@ -224,7 +224,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 //
 // Review REST resource.
 type Review struct {
-	Resource
+	Resource            `yaml:",inline"`
 	BusinessCriticality uint   `json:"businessCriticality" yaml:"businessCriticality"`
 	EffortEstimate      string `json:"effortEstimate" yaml:"effortEstimate"`
 	ProposedAction      string `json:"proposedAction" yaml:"proposedAction"`

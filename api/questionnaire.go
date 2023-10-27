@@ -188,7 +188,7 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 }
 
 type Questionnaire struct {
-	Resource
+	Resource     `yaml:",inline"`
 	Name         string                  `json:"name" yaml:"name" binding:"required"`
 	Description  string                  `json:"description" yaml:"description"`
 	Required     bool                    `json:"required" yaml:"required"`

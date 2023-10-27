@@ -231,7 +231,7 @@ func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
 //
 // Identity REST resource.
 type Identity struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Kind        string `json:"kind" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`

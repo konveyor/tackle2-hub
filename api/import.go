@@ -419,7 +419,7 @@ type Import map[string]interface{}
 //
 // ImportSummary REST resource.
 type ImportSummary struct {
-	Resource
+	Resource       `yaml:",inline"`
 	Filename       string    `json:"filename"`
 	ImportStatus   string    `json:"importStatus" yaml:"importStatus"`
 	ImportTime     time.Time `json:"importTime" yaml:"importTime"`
