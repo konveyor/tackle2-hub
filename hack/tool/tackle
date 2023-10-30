@@ -35,6 +35,10 @@ parser.add_argument('-n','--no-auth', dest='noAuth', action='store_const', const
                     help='Skip Keycloak token creation, use empty Auth token in Tackle API calls.')
 parser.add_argument('-b','--skip-buckets', dest='skipBuckets', action='store_const', const=True, default=False,
                     help='Skip Tackle 2 Buckets content export.')
+parser.add_argument('-t','--token', type=str, help='Bearer auth token for Hub API (login/password is a fallback to create it).',
+                    nargs='?', default='')
+parser.add_argument('-p','--pathfinder-url', type=str, help='In-cluster Pathfinder endpoint URL.',
+                    nargs='?', default='')
 args = parser.parse_args()
 
 ###############################################################################
@@ -82,20 +86,24 @@ def debugPrint(str):
     if args.verbose:
         print(str)
 
-def getHubToken(host, username, password):
-    print("Getting auth token via Hub from %s" % host)
-    url  = "%s/hub/auth/login" % host
-    data = '{"user": "%s", "password": "%s"}' % (username, password)
-
-    r = requests.post(url, data=data, verify=False)
-    if r.ok:
-        respData = json.loads(r.text)
-        debugPrint("Got access token: %s" % respData['token'])
-        return respData['token']
+def getHubToken(host, username, password, token):
+    if token:
+        print("Skipping login, using provided auth token.")
+        return token
     else:
-        print("ERROR getting auth token from %s" % url)
-        print(data, r)
-        exit(1)
+        print("Getting auth token via Hub from %s" % host)
+        url  = "%s/hub/auth/login" % host
+        data = '{"user": "%s", "password": "%s"}' % (username, password)
+
+        r = requests.post(url, data=data, verify=False)
+        if r.ok:
+            respData = json.loads(r.text)
+            debugPrint("Got access token: %s" % respData['token'])
+            return respData['token']
+        else:
+            print("ERROR getting auth token from %s" % url)
+            print(data, r)
+            exit(1)
 
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
     if args.noAuth:
@@ -126,6 +134,9 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     elif method == 'PATCH':
         debugPrint("PATCH data: %s" % json.dumps(data))
         r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    elif method == 'PUT':
+        debugPrint("PUT data: %s" % json.dumps(data))
+        r = requests.put(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
     else: # GET
         r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
 
@@ -722,6 +733,56 @@ class TackleTool:
             # Push the updated assessment
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
+    # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
+    def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
+        cnt = 0
+        apps = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
+        print("There are %d Applications, looking for their Assessments.." % len(apps))
+        for app in apps:
+            # Export Pathfinder data for each Application
+            for passmnt in apiJSON(pathfinderUrl + "/assessments?applicationId=%d" % app['id'], self.tackle2Token):
+                print("# Assessment for Application %s" % passmnt["applicationId"])
+                appAssessmentsPath = "/hub/applications/%d/assessments" % passmnt["applicationId"]
+                # Skip if Assessment for given Application already exists
+                if len(apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
+                    print("  Assessment already exists, skipping.")
+                    continue
+
+                # Prepare new Assessment
+                assmnt = dict()
+                assmnt['questionnaire'] = {"id": 1} # Default new Questionnaire "Pathfinder Legacy"
+                assmnt['application'] = {"id": passmnt["applicationId"]}
+                assmnt['stakeholders'] = []
+                for sh in passmnt['stakeholders']:
+                    assmnt['stakeholders'].append({"id": sh})
+                assmnt['stakeholderGroups'] = []
+                for shg in passmnt['stakeholderGroups']:
+                    assmnt['stakeholderGroups'].append({"id": shg})
+
+                # Transformate Questions, Answers and related structures
+                for category in passmnt['questionnaire']['categories']:
+                    del category['id']
+                    category['name'] = category.pop('title')
+                    for question in category["questions"]:
+                        del question['id']
+                        question["text"] = question.pop('question')
+                        question["explanation"] = question.pop('description')
+                        question["answers"] = question.pop('options')
+                        for answer in question['answers']:
+                            del answer['id']
+                            answer['text'] = answer.pop('option')
+                            answer['selected'] = answer.pop('checked')
+                            answer['risk'] = answer['risk'].lower()
+                            if answer['risk'] == "amber":
+                                answer['risk'] = "yellow"
+                assmnt['sections'] = passmnt['questionnaire']['categories']
+
+                # Post the Assessment
+                apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data=assmnt, method='POST')
+                cnt += 1
+                print("Assessment submitted.")
+        return cnt
+
     def preImportCheck(self):
         # Compatibility checks
         # TagCategories on Hub API
@@ -885,7 +946,7 @@ if cmdWanted(args, "export-tackle1"):
 if cmdWanted(args, "export"):
     cmdExecuted = True
     # Gather Keycloak access tokens for Tackle2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -908,7 +969,7 @@ if cmdWanted(args, "export"):
 if cmdWanted(args, "import"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -930,7 +991,7 @@ if cmdWanted(args, "import"):
 if cmdWanted(args, "clean"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
@@ -944,7 +1005,7 @@ if cmdWanted(args, "clean"):
 if cmdWanted(args, "clean-all"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
@@ -952,6 +1013,28 @@ if cmdWanted(args, "clean-all"):
     # Run the cleanup including seeds
     print("Cleaning ALL data in Tackle2")
     tool.cleanAllTackle2()
+
+# Migrate Pathfinder Assessments to Konveyor Assessments
+if cmdWanted(args, "migrate-assessments"):
+    cmdExecuted = True
+
+    # Check Pathfinder URL arg
+    if not args.pathfinder_url:
+        print("Error: Pathfinder URL is required, specify it with -p or --pathfinder-url option.")
+        exit(1)
+
+    # Gather Keycloak access token for Tackle 2
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
+
+    # Setup Tackle data migration object
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+
+    # Run the import
+    print("Starting Pathfinder Assessments to Konveyor Assessment migration.")
+    appCnt = tool.migrateAssessments(args.pathfinder_url)
+
+    print("Done. %d new Assessment(s) for Application(s) were migrated!" % appCnt)
+
 
 # Print help if action was not specified
 if not cmdExecuted:
