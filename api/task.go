@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
@@ -587,25 +586,10 @@ func (r *Task) Model() (m *model.Task) {
 		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Data, _ = json.Marshal(r.strMap(r.Data))
+	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.ID = r.ID
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
-	}
-	return
-}
-
-//
-// strMap returns a map[string]any.
-// YAML decoder can produce map[any]any which is not valid for json.
-func (r *Task) strMap(in any) (out any) {
-	if d, cast := in.(map[any]any); cast {
-		mp := make(map[string]any)
-		for k, v := range d {
-			s := fmt.Sprintf("%v", k)
-			mp[s] = r.strMap(v)
-		}
-		r.Data = mp
 	}
 	return
 }
@@ -658,7 +642,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		m.Activity, _ = json.Marshal(r.Activity)
 	}
 	if r.Result != nil {
-		m.Result, _ = json.Marshal(r.Result)
+		m.Result, _ = json.Marshal(StrMap(r.Result))
 	}
 	if r.Errors != nil {
 		m.Errors, _ = json.Marshal(r.Errors)
