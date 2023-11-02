@@ -503,7 +503,7 @@ func (r *Cursor) pageLimited() (b bool) {
 
 //
 // StrMap returns a map[string]any.
-// YAML decoder can produce map[any]any which is not valid for json.
+// The YAML decoder can produce map[any]any which is not valid for json.
 func StrMap(in any) (out any) {
 	out = in
 	if d, cast := in.(map[any]any); cast {
