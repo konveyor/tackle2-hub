@@ -586,7 +586,7 @@ func (r *Task) Model() (m *model.Task) {
 		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Data, _ = json.Marshal(r.Data)
+	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.ID = r.ID
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
@@ -642,7 +642,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		m.Activity, _ = json.Marshal(r.Activity)
 	}
 	if r.Result != nil {
-		m.Result, _ = json.Marshal(r.Result)
+		m.Result, _ = json.Marshal(StrMap(r.Result))
 	}
 	if r.Errors != nil {
 		m.Errors, _ = json.Marshal(r.Errors)

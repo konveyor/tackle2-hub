@@ -399,7 +399,7 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		State: r.State,
 	}
 	m.ID = r.ID
-	m.Data, _ = json.Marshal(r.Data)
+	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.List, _ = json.Marshal(r.Tasks)
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
