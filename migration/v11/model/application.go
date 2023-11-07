@@ -258,6 +258,8 @@ type Import struct {
 	RepositoryURL       string
 	RepositoryBranch    string
 	RepositoryPath      string
+	Owner               string
+	Contributors        string
 }
 
 func (r *Import) AsMap() (m map[string]interface{}) {
