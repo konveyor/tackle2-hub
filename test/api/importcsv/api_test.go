@@ -173,6 +173,12 @@ func TestImportCSV(t *testing.T) {
 
 			// Delete imported Applications.
 			for _, apps := range gotApps {
+				if apps.Owner != nil {
+					assert.Must(t, Stakeholder.Delete(apps.Owner.ID))
+				}
+				for _, contributor := range apps.Contributors {
+					assert.Must(t, Stakeholder.Delete(contributor.ID))
+				}
 				assert.Must(t, Application.Delete(apps.ID))
 			}
 
@@ -180,6 +186,7 @@ func TestImportCSV(t *testing.T) {
 			for _, deps := range gotDeps {
 				assert.Must(t, Dependency.Delete(deps.ID))
 			}
+
 		})
 	}
 }
