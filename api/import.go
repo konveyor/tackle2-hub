@@ -18,6 +18,10 @@ const (
 	RecordTypeDependency  = "2"
 )
 
+const (
+	ExpectedFieldCount = 17
+)
+
 //
 // Import Statuses
 const (
@@ -270,8 +274,8 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		var imp model.Import
 		switch row[0] {
 		case RecordTypeApplication:
-			// Check row format - length, expecting 15 fields + tags
-			if len(row) < 15 {
+			// Check row format - length, expecting 17 fields + tags
+			if len(row) < ExpectedFieldCount {
 				h.Respond(ctx, http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
@@ -396,10 +400,12 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 		RepositoryURL:       row[12],
 		RepositoryBranch:    row[13],
 		RepositoryPath:      row[14],
+		Owner:               row[15],
+		Contributors:        row[16],
 	}
 
 	// Tags
-	for i := 15; i < len(row); i++ {
+	for i := ExpectedFieldCount; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
 				Name:     row[i],

@@ -1,13 +1,13 @@
 package importcsv
 
 import (
+	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/test/assert"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
-	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestImportCSV(t *testing.T) {
@@ -67,6 +67,20 @@ func TestImportCSV(t *testing.T) {
 					}
 					if r.ExpectedApplications[i].BusinessService.Name != gotApp.BusinessService.Name {
 						t.Errorf("Mismatch in name of the BusinessService of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].BusinessService.Name, gotApp.BusinessService.Name)
+					}
+					if gotApp.Owner == nil || r.ExpectedApplications[i].Owner == nil {
+						if gotApp.Owner != r.ExpectedApplications[i].Owner {
+							t.Errorf("Mismatch in value of Owner on imported Application: Expected %v, Actual %v", r.ExpectedApplications[i].Owner, gotApp.BusinessService)
+						}
+					} else if r.ExpectedApplications[i].Owner.Name != gotApp.Owner.Name {
+						t.Errorf("Mismatch in name of the Owner of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Owner.Name, gotApp.BusinessService.Name)
+					}
+					if len(gotApp.Contributors) != len(r.ExpectedApplications[i].Contributors) {
+						t.Errorf("Mismatch in number of Contributors: Expected %d, Actual %d", len(r.ExpectedApplications[i].Contributors), len(gotApp.Contributors))
+					} else {
+						for j, contributor := range gotApp.Contributors {
+							if contributor.Name != r.ExpectedApplications[i].Contributors[j].Name {}
+						}
 					}
 				}
 			}

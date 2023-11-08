@@ -48,6 +48,9 @@ var (
 					BusinessService: &api.Ref{
 						Name: "Retail",
 					},
+					Owner: &api.Ref{
+						Name: "John Doe",
+					},
 				},
 				{
 					Name:        "Inventory",
@@ -82,6 +85,14 @@ var (
 					BusinessService: &api.Ref{
 						Name: "Retail",
 					},
+					Contributors: []api.Ref{
+						{
+							Name: "John Doe",
+						},
+						{
+							Name: "Jane Smith",
+						},
+					},
 				},
 				{
 					Name:        "Gateway",
@@ -111,6 +122,17 @@ var (
 					},
 					BusinessService: &api.Ref{
 						Name: "Retail",
+					},
+					Owner: &api.Ref{
+						Name: "John Doe",
+					},
+					Contributors: []api.Ref{
+						{
+							Name: "John Doe",
+						},
+						{
+							Name: "Jane Smith",
+						},
 					},
 				},
 			},
