@@ -383,7 +383,10 @@
         - put
     - name: archetypes
       verbs:
+        - delete
         - get
+        - post
+        - put
     - name: archetypes.assessments
       verbs:
         - get
