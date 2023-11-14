@@ -15,9 +15,10 @@ type Application struct {
 // With updates the Application with the db model and deserializes its assessments.
 func (r *Application) With(m *model.Application) {
 	r.Application = m
-	for _, a := range m.Assessments {
+	for i := range m.Assessments {
+		a := &m.Assessments[i]
 		assessment := Assessment{}
-		assessment.With(&a)
+		assessment.With(a)
 		r.Assessments = append(r.Assessments, assessment)
 	}
 }

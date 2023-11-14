@@ -46,15 +46,11 @@ func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
 // questionnaires.
 func (r *QuestionnaireResolver) Assessed(assessments []Assessment) (assessed bool) {
 	answered := NewSet()
-loop:
 	for _, a := range assessments {
 		if r.requiredQuestionnaires.Contains(a.QuestionnaireID) {
-			for _, s := range a.Sections {
-				if !s.Complete() {
-					continue loop
-				}
+			if a.Complete() {
+				answered.Add(a.QuestionnaireID)
 			}
-			answered.Add(a.QuestionnaireID)
 		}
 	}
 	assessed = answered.Superset(r.requiredQuestionnaires, false)
