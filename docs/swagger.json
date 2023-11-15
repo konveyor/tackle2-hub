@@ -130,7 +130,7 @@
         },
         "/analyses/dependencies": {
             "get": {
-                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- version\n- sha",
+                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- labels",
                 "produces": [
                     "application/json"
                 ],
@@ -5840,7 +5840,7 @@
                         "provider": {
                             "type": "string"
                         },
-                        "rule": {
+                        "sha": {
                             "type": "string"
                         },
                         "version": {

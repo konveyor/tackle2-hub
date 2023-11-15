@@ -140,7 +140,7 @@
           "dependencies"
         ],
         "summary": "List dependency reports.",
-        "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- version\n- sha",
+        "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- labels",
         "responses": {
           "200": {
             "description": "OK",
@@ -6240,7 +6240,7 @@
               "provider": {
                 "type": "string"
               },
-              "rule": {
+              "sha": {
                 "type": "string"
               },
               "version": {
@@ -6297,10 +6297,12 @@
         }
       },
       "api.FactMap": {
-        "type": "object"
+        "type": "object",
+        "additionalProperties": true
       },
       "api.Fields": {
-        "type": "object"
+        "type": "object",
+        "additionalProperties": true
       },
       "api.File": {
         "type": "object",
@@ -6388,7 +6390,8 @@
         }
       },
       "api.Import": {
-        "type": "object"
+        "type": "object",
+        "additionalProperties": true
       },
       "api.ImportSummary": {
         "type": "object",
@@ -7812,5 +7815,6 @@
         }
       }
     }
-  }
+  },
+  "x-original-swagger-version": "2.0"
 }
