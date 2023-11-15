@@ -1364,8 +1364,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description sort:
 // @description - provider
 // @description - name
-// @description - version
-// @description - sha
+// @description - labels
 // @tags dependencies
 // @produce json
 // @success 200 {object} []api.TechDependency
@@ -1406,16 +1405,15 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
-		"Provider",
-		"Name",
-		"Version",
-		"SHA",
-		"Labels",
-		"COUNT(distinct AnalysisID) Applications")
-	q = q.Model(&model.TechDependency{})
-	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("ID IN (?)", h.depIDs(ctx, filter))
-	q = q.Group("Name,SHA")
+		"d.Provider",
+		"d.Name",
+		"json_group_array(distinct j.value) Labels",
+		"COUNT(distinct d.AnalysisID) Applications")
+	q = q.Table("TechDependency d")
+	q = q.Joins(",json_each(Labels) j")
+	q = q.Where("d.AnalysisID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter))
+	q = q.Group("d.Provider, d.Name")
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
@@ -1448,12 +1446,16 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		r := DepReport{
 			Provider:     m.Provider,
 			Name:         m.Name,
-			Version:      m.Version,
-			SHA:          m.SHA,
 			Applications: m.Applications,
 		}
 		if m.Labels != nil {
-			_ = json.Unmarshal(m.Labels, &r.Labels)
+			var aggregated []string
+			_ = json.Unmarshal(m.Labels, &aggregated)
+			for _, s := range aggregated {
+				if s != "" {
+					r.Labels = append(r.Labels, s)
+				}
+			}
 		}
 		resources = append(resources, r)
 	}
@@ -2083,8 +2085,6 @@ type FileReport struct {
 type DepReport struct {
 	Provider     string   `json:"provider"`
 	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	SHA          string   `json:"sha"`
 	Labels       []string `json:"labels"`
 	Applications int      `json:"applications"`
 }
@@ -2101,7 +2101,7 @@ type DepAppReport struct {
 		Provider string   `json:"provider"`
 		Name     string   `json:"name"`
 		Version  string   `json:"version"`
-		SHA      string   `json:"rule"`
+		SHA      string   `json:"sha"`
 		Indirect bool     `json:"indirect"`
 		Labels   []string `json:"labels"`
 	} `json:"dependency"`
