@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -1966,6 +1967,7 @@ func (r *TechDependency) With(m *model.TechDependency) {
 //
 // Model builds a model.
 func (r *TechDependency) Model() (m *model.TechDependency) {
+	sort.Strings(r.Labels)
 	m = &model.TechDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
