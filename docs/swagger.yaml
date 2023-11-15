@@ -260,7 +260,7 @@ definitions:
             type: string
           provider:
             type: string
-          rule:
+          sha:
             type: string
           version:
             type: string
@@ -1431,8 +1431,7 @@ paths:
         sort:
         - provider
         - name
-        - version
-        - sha
+        - labels
       produces:
       - application/json
       responses:

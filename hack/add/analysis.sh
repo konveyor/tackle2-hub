@@ -156,10 +156,18 @@ done
 file=${dPath}
 echo -n "---
 name: github.com/jboss
+version: 4.0
+labels:
+- konveyor.io/language=java
+- konveyor.io/otherA=dog
+" > ${file}
+echo -n "---
+name: github.com/jboss
 version: 5.0
 labels:
-- konveyor.io/dep-source
-" > ${file}
+- konveyor.io/language=java
+- konveyor.io/otherA=cat
+" >> ${file}
 echo -n "---
 name: github.com/hybernate
 indirect: "true"
