@@ -6,7 +6,7 @@ For more details about the Tackle project, see [Tackle2-Hub README](https://gith
 
 ## Scenarios
 
-### Export and Import data between Tackle 2 instances
+### Export and Import data between Tackle/Konveyor instances
 
 Tackle 2 can be exported and imported to another Tackle 2 instance, expecting it is cleaned-up before import. This focuses on application inventory, but exports and imports most of Tackle 2 objects except TaskGroups&Tasks and Keycloak identitty provider data.
 
@@ -23,21 +23,6 @@ Steps for import (tackle-config.yml file points to destination Tackle 2, existin
 - ```tackle import```
 
 **Note: This export/import functionality doesn't aim to be a backup/restore tool. E.g. it doesn't dump Keycloak data and it requires have the Tackle installation to be running on the destination cluster before importing the data.**
-
-### Migrate data from running Tackle 1.2 to running Tackle 2 instance
-
-Migrate data updating refs to the seed objects matching to the destination Tackle 2 (tags, tag-types and job functions seeded).
-
-- ```tackle export-tackle1```
-- ```tackle import```
-
-### Export data from Tackle 1.2 to be later imported to some Tackle 2 instance
-
-Exports full data dump including seeds to be later imported to currently not available Tackle 2 instance, which needs a cleanup before running the import.
-
-- ```tackle --skip-destination-check export-tackle1```
-- ```tackle clean-all```
-- ```tackle import```
 
 ### If the import failed
 
@@ -72,7 +57,6 @@ Run the tackle tool:
 
 ### Supported actions
 - ```export``` exports Tackle 2 objects into local JSON files and bucket data directory
-- ```export-tackle1``` exports Tackle 1.2 API objects into local JSON files
 - ```import``` creates objects in Tackle 2 from local JSON files and buckets data
 - ```clean``` deletes objects uploaded to Tackle 2 from local JSON files
 - ```clean-all``` deletes ALL data returned by Tackle 2 (including seeds, additional to ```clean```), skips some pathfinder stuff without index action
@@ -84,12 +68,6 @@ Run ```tackle export``` to get dump of Tackle 2 objects into JSON files in local
 The export dommand connects to Tackle2 Hub API and dumps relevant resources to local JSON files. For credentials/identities resources, their sensitive fields are encrypted with ```encryption_passphase``` from config file. Application's bucket data are gathered from API and stored locally as .tar.gz archives.
 
 **Note: the encryption_passphase needs to be the same when running the import.**
-
-### Export Tackle 1.2
-
-Run ```tackle export-tackle1``` to get dump of Tackle 1.2 objects into JSON files in local directory ```./tackle-data```.
-
-The ```export-tackle1``` command looks into Tackle2 to grab seed resources first, then downloads all resources from Tackle 1.2 API, transforms it to format expected by the Tackle 2 Hub and re-map resources to seeds already existing in destination Tackle2 Hub API. The result is serialized and stored into local JSON files.
 
 ### Import to Tackle 2
 
@@ -133,7 +111,7 @@ usage: tackle [-h] [-c [CONFIG]] [-d [DATA_DIR]] [-v] [-s] [-w] [-i] [-n] [-b] [
 Konveyor Tackle maintenance tool.
 
 positional arguments:
-  action                One or more Tackle commands that should be executed, options: export export-tackle1 import clean clean-all
+  action                One or more Tackle commands that should be executed, options: export import clean clean-all
 
 options:
   -h, --help            show this help message and exit
@@ -163,12 +141,6 @@ password:
 
 # Export of Identitiy (credentials) password and key fields should be encrypted, set the passphase
 encryption_passphase:
-
-# Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
-tackle1:
-  url: https://tackle-tackle.apps.mta01.cluster.local
-  username: tackle
-  password:
 
 ```
 
