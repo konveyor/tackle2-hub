@@ -447,8 +447,6 @@
     - name: reviews
       verbs:
         - get
-        - post
-        - put
     - name: settings
       verbs:
         - get
