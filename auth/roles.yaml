@@ -496,7 +496,7 @@
       verbs:
         - get
     - name: targets
-      verb:
+      verbs:
         - get
     - name: analyses
       verbs:
