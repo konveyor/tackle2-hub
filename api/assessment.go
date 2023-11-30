@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -127,7 +128,7 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
-	db = db.Omit(clause.Associations)
+	db = db.Omit(clause.Associations, "Thresholds", "RiskMessages")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
