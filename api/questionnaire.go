@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 // Routes
@@ -192,7 +193,7 @@ type Questionnaire struct {
 	Name         string                  `json:"name" yaml:"name" binding:"required"`
 	Description  string                  `json:"description" yaml:"description"`
 	Required     bool                    `json:"required" yaml:"required"`
-	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required"`
+	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required,dive"`
 	Thresholds   assessment.Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
 	Builtin      bool                    `json:"builtin,omitempty" yaml:"builtin,omitempty"`
