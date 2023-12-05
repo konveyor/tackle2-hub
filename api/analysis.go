@@ -369,7 +369,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		deps = append(deps, r)
 	}
 	sort.Slice(deps, func(i, _ int) bool {
-		return deps[i].Indirect
+		return !deps[i].Indirect
 	})
 	for _, r := range deps {
 		m := r.Model()
