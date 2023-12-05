@@ -353,6 +353,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	var deps []*TechDependency
 	for {
 		r := &TechDependency{}
 		err = d.Decode(r)
@@ -365,8 +366,15 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 				return
 			}
 		}
+		deps = append(deps, r)
+	}
+	sort.Slice(deps, func(i, _ int) bool {
+		return !deps[i].Indirect
+	})
+	for _, r := range deps {
 		m := r.Model()
 		m.AnalysisID = analysis.ID
+		db := db.Clauses(clause.OnConflict{DoNothing: true})
 		err = db.Create(m).Error
 		if err != nil {
 			_ = ctx.Error(err)
