@@ -188,6 +188,10 @@ name: github.com/java
 indirect: "true"
 version: 8
 " >> ${file}
+echo -n "---
+name: github.com/java
+version: 8
+" >> ${file}
 #
 # Analysis
 #
