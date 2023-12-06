@@ -155,7 +155,7 @@ type Assessment struct {
 	Application       *Ref                 `json:"application,omitempty" yaml:",omitempty" binding:"excluded_with=Archetype"`
 	Archetype         *Ref                 `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
 	Questionnaire     Ref                  `json:"questionnaire" binding:"required"`
-	Sections          []assessment.Section `json:"sections"`
+	Sections          []assessment.Section `json:"sections" binding:"dive"`
 	Stakeholders      []Ref                `json:"stakeholders"`
 	StakeholderGroups []Ref                `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	// read only

@@ -2,8 +2,9 @@ package assessment
 
 import (
 	"encoding/json"
-	"github.com/konveyor/tackle2-hub/model"
 	"math"
+
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 //
@@ -129,7 +130,7 @@ func (r *Assessment) Confidence() (score int) {
 type Section struct {
 	Order     uint       `json:"order" yaml:"order" binding:"required"`
 	Name      string     `json:"name" yaml:"name"`
-	Questions []Question `json:"questions" yaml:"questions"`
+	Questions []Question `json:"questions" yaml:"questions" binding:"dive"`
 	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
 }
 
@@ -183,7 +184,7 @@ type Question struct {
 	Explanation string           `json:"explanation" yaml:"explanation"`
 	IncludeFor  []CategorizedTag `json:"includeFor,omitempty" yaml:"includeFor,omitempty" binding:"excluded_with=ExcludeFor"`
 	ExcludeFor  []CategorizedTag `json:"excludeFor,omitempty" yaml:"excludeFor,omitempty" binding:"excluded_with=IncludeFor"`
-	Answers     []Answer         `json:"answers" yaml:"answers"`
+	Answers     []Answer         `json:"answers" yaml:"answers" binding:"dive"`
 }
 
 //
@@ -225,7 +226,7 @@ func (r *Question) Tags() (tags []CategorizedTag) {
 type Answer struct {
 	Order         uint             `json:"order" yaml:"order" binding:"required"`
 	Text          string           `json:"text" yaml:"text"`
-	Risk          string           `json:"risk" yaml:"risk" binding:"oneof=red,yellow,green,unknown"`
+	Risk          string           `json:"risk" yaml:"risk" binding:"oneof=red yellow green unknown"`
 	Rationale     string           `json:"rationale" yaml:"rationale"`
 	Mitigation    string           `json:"mitigation" yaml:"mitigation"`
 	ApplyTags     []CategorizedTag `json:"applyTags,omitempty" yaml:"applyTags,omitempty"`
