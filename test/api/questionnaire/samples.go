@@ -15,26 +15,26 @@ var (
 		RiskMessages: assessment.RiskMessages{},
 		Sections: []assessment.Section{
 			{
-				Order: 1,
+				Order: uint2ptr(1),
 				Name:  "Section 1",
 				Questions: []assessment.Question{
 					{
-						Order:       1,
+						Order:       uint2ptr(1),
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
 						Answers: []assessment.Answer{
 							{
-								Order: 1,
+								Order: uint2ptr(1),
 								Text:  "Red",
 								Risk:  "red",
 							},
 							{
-								Order: 2,
+								Order: uint2ptr(2),
 								Text:  "Green",
 								Risk:  "green",
 							},
 							{
-								Order:    3,
+								Order:    uint2ptr(3),
 								Text:     "Blue",
 								Risk:     "yellow",
 								Selected: true,
@@ -47,3 +47,7 @@ var (
 	}
 	Samples = []api.Questionnaire{Questionnaire1}
 )
+
+func uint2ptr(u uint) *uint {
+	return &u
+}
