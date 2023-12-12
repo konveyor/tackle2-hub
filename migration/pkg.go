@@ -4,6 +4,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	v10 "github.com/konveyor/tackle2-hub/migration/v10"
 	v11 "github.com/konveyor/tackle2-hub/migration/v11"
+	v12 "github.com/konveyor/tackle2-hub/migration/v12"
 	"github.com/konveyor/tackle2-hub/migration/v2"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3"
 	v4 "github.com/konveyor/tackle2-hub/migration/v4"
@@ -55,5 +56,6 @@ func All() []Migration {
 		v9.Migration{},
 		v10.Migration{},
 		v11.Migration{},
+		v12.Migration{},
 	}
 }

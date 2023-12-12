@@ -43,6 +43,15 @@ func (h *File) Put(source string) (r *api.File, err error) {
 }
 
 //
+// Append upload (append) a file.
+func (h *File) Append(source string) (r *api.File, err error) {
+	r = &api.File{}
+	path := Path(api.FileRoot).Inject(Params{api.ID: pathlib.Base(source)})
+	err = h.client.FileAppend(path, source, r)
+	return
+}
+
+//
 // Delete a file.
 func (h *File) Delete(id uint) (err error) {
 	path := Path(api.FileRoot).Inject(Params{api.ID: id})

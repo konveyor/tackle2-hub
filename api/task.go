@@ -530,6 +530,7 @@ type Task struct {
 	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
 	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
 	Activity    []string    `json:"activity,omitempty" yaml:",omitempty"`
+	Logs        []Ref       `json:"logs" yaml:",omitempty"`
 }
 
 //
@@ -558,11 +559,15 @@ func (r *Task) With(m *model.Task) {
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
 	}
+	if m.Errors != nil {
+		_ = json.Unmarshal(m.Errors, &r.Errors)
+	}
 	if m.Report != nil {
 		report := &TaskReport{}
 		report.With(m.Report)
 		r.Activity = report.Activity
 		r.Errors = append(report.Errors, r.Errors...)
+		r.Logs = report.Logs
 		switch r.State {
 		case tasking.Succeeded:
 			switch report.Status {
@@ -603,6 +608,7 @@ type TaskReport struct {
 	Total     int         `json:"total,omitempty" yaml:",omitempty"`
 	Completed int         `json:"completed,omitempty" yaml:",omitempty"`
 	Activity  []string    `json:"activity,omitempty" yaml:",omitempty"`
+	Logs      []Ref       `json:"logs,omitempty" yaml:",omitempty"`
 	Result    interface{} `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
 	TaskID    uint        `json:"task"`
 }
@@ -620,6 +626,9 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	}
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
+	}
+	if m.Logs != nil {
+		_ = json.Unmarshal(m.Logs, &r.Logs)
 	}
 	if m.Result != nil {
 		_ = json.Unmarshal(m.Result, &r.Result)
@@ -646,6 +655,9 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	}
 	if r.Errors != nil {
 		m.Errors, _ = json.Marshal(r.Errors)
+	}
+	if r.Logs != nil {
+		m.Logs, _ = json.Marshal(r.Logs)
 	}
 	m.ID = r.ID
 

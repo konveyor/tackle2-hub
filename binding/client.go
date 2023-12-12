@@ -445,6 +445,29 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 }
 
 //
+// FileAppend uploads a file.
+// Returns the created File resource.
+func (r *Client) FileAppend(path, source string, object interface{}) (err error) {
+	isDir, nErr := r.IsDir(source, true)
+	if nErr != nil {
+		err = nErr
+		return
+	}
+	if isDir {
+		err = liberr.New("Must be regular file.")
+		return
+	}
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
+	}
+	err = r.FileSend(path, http.MethodPatch, fields, object)
+	return
+}
+
+//
 // FilePost uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePost(path, source string, object interface{}) (err error) {
