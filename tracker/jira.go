@@ -3,19 +3,28 @@ package tracker
 import (
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/andygrunwald/go-jira"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	"io"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const IssueTypeEpic = "Epic"
+
+const (
+	JiraEndpointBase    = "rest/api/2"
+	JiraEndpointProject = JiraEndpointBase + "/project"
+	JiraEndpointIssue   = JiraEndpointBase + "/issue"
+	JiraEndpointSearch  = JiraEndpointBase + "/search"
+	JiraEndpointMyself  = JiraEndpointBase + "/myself"
+)
 
 //
 // JiraConnector for the Jira Cloud API
@@ -46,7 +55,14 @@ func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 			Project:     jira.Project{ID: t.Parent},
 		},
 	}
-	issue, response, err := client.Issue.Create(&i)
+
+	req, err := client.NewRequest(http.MethodPost, JiraEndpointIssue, &i)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	response, err := client.Do(req, &i)
 	err = handleJiraError(response, err)
 	if err != nil {
 		t.Error = true
@@ -58,8 +74,8 @@ func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	t.Created = true
 	t.Error = false
 	t.Message = ""
-	t.Reference = issue.Key
-	t.Link = issue.Self
+	t.Reference = i.Key
+	t.Link = i.Self
 	t.LastUpdated = time.Now()
 	metrics.IssuesExported.Inc()
 
@@ -83,13 +99,23 @@ func (r *JiraConnector) RefreshAll() (tickets map[*model.Ticket]bool, err error)
 			tickets[t] = false
 		}
 	}
-
 	if len(keys) == 0 {
 		return
 	}
 
 	jql := fmt.Sprintf("key IN (%s)", strings.Join(keys, ","))
-	issues, response, err := client.Issue.Search(jql, &jira.SearchOptions{Expand: "status"})
+	query := url.Values{}
+	query.Add("expand", "status")
+	query.Add("jql", jql)
+	req, err := client.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", JiraEndpointSearch, query.Encode()), nil)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	results := struct {
+		Issues []jira.Issue `json:"issues"`
+	}{}
+	response, err := client.Do(req, &results)
 	err = handleJiraError(response, err)
 	if err != nil {
 		// JIRA returns a 400 if the search returned no results.
@@ -99,8 +125,8 @@ func (r *JiraConnector) RefreshAll() (tickets map[*model.Ticket]bool, err error)
 		return
 	}
 	issuesByKey := make(map[string]*jira.Issue)
-	for i := range issues {
-		issue := &issues[i]
+	for i := range results.Issues {
+		issue := &results.Issues[i]
 		issuesByKey[issue.Key] = issue
 	}
 	lastUpdated := time.Now()
@@ -124,12 +150,19 @@ func (r *JiraConnector) Projects() (projects []Project, err error) {
 	if err != nil {
 		return
 	}
-	list, response, err := client.Project.GetList()
+
+	req, err := client.NewRequest(http.MethodGet, JiraEndpointProject, nil)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	var list jira.ProjectList
+	response, err := client.Do(req, &list)
 	err = handleJiraError(response, err)
 	if err != nil {
 		return
 	}
-	for _, p := range *list {
+	for _, p := range list {
 		project := Project{
 			ID:   p.ID,
 			Name: p.Name,
@@ -146,7 +179,14 @@ func (r *JiraConnector) Project(id string) (project Project, err error) {
 	if err != nil {
 		return
 	}
-	p, response, err := client.Project.Get(id)
+
+	req, err := client.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", JiraEndpointProject, id), nil)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	var p jira.Project
+	response, err := client.Do(req, &p)
 	err = handleJiraError(response, err)
 	if err != nil {
 		return
@@ -166,16 +206,20 @@ func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error
 	if err != nil {
 		return
 	}
-	project, response, err := client.Project.Get(id)
+
+	req, err := client.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", JiraEndpointProject, id), nil)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	var project jira.Project
+	response, err := client.Do(req, &project)
 	err = handleJiraError(response, err)
 	if err != nil {
 		return
 	}
 	for _, i := range project.IssueTypes {
-		if i.Subtask {
-			continue
-		}
-		if r.tracker.Kind == JiraOnPrem && i.Name == IssueTypeEpic {
+		if i.Subtask || i.Name == IssueTypeEpic {
 			continue
 		}
 		issueType := IssueType{
@@ -214,9 +258,10 @@ func (r *JiraConnector) client() (client *jira.Client, err error) {
 		err = liberr.New("unsupported identity kind", "kind", r.tracker.Identity.Kind)
 		return
 	}
-
-	client, err = jira.NewClient(httpclient, r.tracker.URL)
+	wrapped := clientWrapper{client: httpclient}
+	client, err = jira.NewClient(&wrapped, r.tracker.URL)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	return
@@ -230,9 +275,16 @@ func (r *JiraConnector) TestConnection() (connected bool, err error) {
 		return
 	}
 
-	_, response, err := client.User.GetSelf()
-	err = handleJiraError(response, err)
+	req, err := client.NewRequest(http.MethodGet, JiraEndpointMyself, nil)
 	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	var user jira.User
+	resp, err := client.Do(req, &user)
+	if err != nil {
+		err = handleJiraError(resp, err)
 		return
 	}
 
@@ -280,13 +332,55 @@ func handleJiraError(response *jira.Response, in error) (out error) {
 		return
 	}
 
-	var jiraErr jira.Error
+	var jiraErr jiraError
 	err = json.Unmarshal(body, &jiraErr)
 	if err != nil {
 		out = in
 		return
 	}
 
-	out = errors.New(strings.Join(jiraErr.ErrorMessages, " "))
+	out = &jiraErr
+	return
+}
+
+//
+// clientWrapper wraps the http client used by the jira client.
+type clientWrapper struct {
+	client *http.Client
+}
+
+//
+// Do applies an Accept header before performing the request.
+func (r *clientWrapper) Do(req *http.Request) (*http.Response, error) {
+	req.Header.Add("Accept", "application/json")
+	resp, err := r.client.Do(req)
+	return resp, err
+}
+
+//
+// jiraError is a catch-all structure for the various ways that the
+// Jira API can report an error in JSON format.
+type jiraError struct {
+	Message       string            `json:"message"`
+	ErrorMessages []string          `json:"errorMessages"`
+	Errors        map[string]string `json:"errors"`
+}
+
+//
+// Error reports the consolidated error message.
+func (r *jiraError) Error() (error string) {
+	if len(r.Message) > 0 {
+		error = r.Message
+		return
+	}
+	if len(r.Errors) > 0 {
+		for k, v := range r.Errors {
+			r.ErrorMessages = append(r.ErrorMessages, fmt.Sprintf("%s: %s", k, v))
+		}
+	}
+	if len(r.ErrorMessages) > 0 {
+		error = strings.Join(r.ErrorMessages, ", ")
+		return
+	}
 	return
 }
