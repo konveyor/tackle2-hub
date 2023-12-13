@@ -74,5 +74,3 @@ func TestArchetypeList(t *testing.T) {
 		assert.Must(t, Archetype.Delete(r.ID))
 	}
 }
-
-// TODO(maufart): Add assessment POST&GET methods
