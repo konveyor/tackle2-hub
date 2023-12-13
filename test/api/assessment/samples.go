@@ -9,12 +9,13 @@ import (
 
 // Set of valid resources for tests and reuse.
 var (
-	Assessment1 = api.Assessment{
+	ApplicationAssessment1 = api.Assessment{
 		// Ref resource are created by the test.
 		Application: &api.Ref{
 			Name: application.Minimal.Name,
 		},
 		Questionnaire: api.Ref{
+			ID: 1,
 			Name: questionnaire.Questionnaire1.Name,
 		},
 		Sections: []assessment.Section{
@@ -49,5 +50,5 @@ var (
 			},
 		},
 	}
-	Samples = []api.Assessment{Assessment1}
+	Samples = []api.Assessment{ApplicationAssessment1}
 )

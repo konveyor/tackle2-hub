@@ -320,6 +320,23 @@ func (h *Application) Analysis(id uint) (a Analysis) {
 }
 
 //
+// Create an Application Assessment.
+func (h *Application) CreateAssesment(id uint, r *api.Assessment) (err error) {
+	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: id})
+	err = h.client.Post(path, &r)
+	return
+}
+
+//
+// Get Application Assessments.
+func (h *Application) GetAssesments(id uint) (list []api.Assessment, err error) {
+	list = []api.Assessment{}
+	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: id})
+	err = h.client.Get(path, &list)
+	return
+}
+
+//
 // Analysis API.
 type Analysis struct {
 	client *Client

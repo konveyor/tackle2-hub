@@ -4,16 +4,23 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestAssessmentCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(fmt.Sprintf("%s for application %s", r.Questionnaire.Name, r.Application.Name), func(t *testing.T) {
-			// Create.
-			err := Assessment.Create(&r)
-			if err != nil {
-				t.Errorf(err.Error())
+			// Create via parent resource.
+			if r.Application.Name != "" {
+				app := api.Application{Name: r.Application.Name}
+				assert.Must(t, RichClient.Application.Create(&app))
+				r.Application.ID = app.ID
+				err := RichClient.Application.CreateAssesment(app.ID, &r)
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+				
 			}
 
 			// Get.
@@ -25,9 +32,9 @@ func TestAssessmentCRUD(t *testing.T) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
-			// Update.
-			r.Name = "Updated " + r.Name
-			r.Required = false
+			// Update example - select green instead of blue.
+			r.Sections[0].Questions[0].Answers[2].Selected = false // blue (default)
+			r.Sections[0].Questions[0].Answers[1].Selected = true  // green
 			err = Assessment.Update(&r)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -37,11 +44,11 @@ func TestAssessmentCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.Name != r.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
+			if got.Sections[0].Questions[0].Answers[2].Selected { // blue not selected
+				t.Errorf("Different response error. Blue should not be selected.")
 			}
-			if got.Required != false {
-				t.Errorf("Required should be false after update. Got %+v, expected %+v", got, r)
+			if !got.Sections[0].Questions[0].Answers[1].Selected { // green selected
+				t.Errorf("Different response error. Green should be selected.")
 			}
 
 			// Delete.
@@ -54,28 +61,8 @@ func TestAssessmentCRUD(t *testing.T) {
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
+
+			assert.Must(t, RichClient.Application.Delete(r.Application.ID))
 		})
-	}
-}
-
-func TestAssessmentList(t *testing.T) {
-	samples := Samples
-
-	for name := range samples {
-		sample := samples[name]
-		assert.Must(t, Assessment.Create(&sample))
-		samples[name] = sample
-	}
-
-	got, err := Assessment.List()
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	if assert.FlatEqual(got, &samples) {
-		t.Errorf("Different response error. Got %v, expected %v", got, samples)
-	}
-
-	for _, r := range samples {
-		assert.Must(t, Assessment.Delete(r.ID))
 	}
 }
