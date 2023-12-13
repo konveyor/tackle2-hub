@@ -165,9 +165,12 @@ func (h *Task) Attach(f *api.File) {
 		f.Path)
 	h.report.Files = append(
 		h.report.Files,
-		api.Ref{
-			ID:   f.ID,
-			Name: f.Name,
+		api.FileRef{
+			Index: len(h.report.Activity),
+			Ref: api.Ref{
+				ID:   f.ID,
+				Name: f.Name,
+			},
 		})
 	h.pushReport()
 	return

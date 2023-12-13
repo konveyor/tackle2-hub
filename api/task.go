@@ -7,9 +7,12 @@ import (
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"io/ioutil"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
+	"strings"
 	"time"
+	"sort"
 )
 
 //
@@ -83,6 +86,11 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	}
 	r := Task{}
 	r.With(task)
+	err := r.injectFiles(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
 
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -530,7 +538,7 @@ type Task struct {
 	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
 	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
 	Activity    []string    `json:"activity,omitempty" yaml:",omitempty"`
-	Files       []Ref       `json:"files" yaml:",omitempty"`
+	Files       []FileRef   `json:"files" yaml:",omitempty"`
 }
 
 //
@@ -600,6 +608,48 @@ func (r *Task) Model() (m *model.Task) {
 }
 
 //
+// injectFiles inject files into the activity.
+func (r *Task) injectFiles(db *gorm.DB) (err error) {
+	injected := 0
+	sort.Slice(
+		r.Files,
+		func(i, j int) bool {
+			return r.Files[i].Index < r.Files[j].Index
+		})
+	for _, ref := range r.Files {
+		Log.Info("REF", "index", ref.Index)
+		if ref.Index == 0 {
+			continue
+		}
+		ref.Index += injected
+		if ref.Index > len(r.Activity) {
+			continue
+		}
+		m := &model.File{}
+		err = db.First(m, ref.ID).Error
+		if err != nil {
+			return
+		}
+		b, nErr := ioutil.ReadFile(m.Path)
+		if nErr != nil {
+			err = nErr
+			return
+		}
+		var content []string
+		for _, s := range strings.Split(string(b), "\n") {
+			content = append(
+				content,
+				"> "+s)
+		}
+		r.Activity = append(
+			append(r.Activity[:ref.Index], content...),
+			r.Activity[ref.Index:]...)
+		injected += len(content)
+	}
+	return
+}
+
+//
 // TaskReport REST resource.
 type TaskReport struct {
 	Resource  `yaml:",inline"`
@@ -608,7 +658,7 @@ type TaskReport struct {
 	Total     int         `json:"total,omitempty" yaml:",omitempty"`
 	Completed int         `json:"completed,omitempty" yaml:",omitempty"`
 	Activity  []string    `json:"activity,omitempty" yaml:",omitempty"`
-	Files     []Ref       `json:"files,omitempty" yaml:",omitempty"`
+	Files     []FileRef   `json:"files,omitempty" yaml:",omitempty"`
 	Result    interface{} `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
 	TaskID    uint        `json:"task"`
 }
@@ -662,4 +712,11 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	m.ID = r.ID
 
 	return
+}
+
+//
+// FileRef task report file ref.
+type FileRef struct {
+	Ref   `yaml:",inline"`
+	Index int `json:"index,omitempty" yaml:",omitempty"`
 }
