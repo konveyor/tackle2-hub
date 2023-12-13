@@ -617,7 +617,6 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 			return r.Files[i].Index < r.Files[j].Index
 		})
 	for _, ref := range r.Files {
-		Log.Info("REF", "index", ref.Index)
 		if ref.Index == 0 {
 			continue
 		}
