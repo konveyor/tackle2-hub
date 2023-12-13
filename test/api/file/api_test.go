@@ -51,7 +51,8 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Touch.
-			file, err := File.Touch("Patch-Test")
+			name := "1/Patch-Test"
+			file, err := File.Touch(name)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -75,6 +76,12 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 			defer func() {
 				_ = os.Remove(tmp)
 			}()
+			if file.Name != name {
+				t.Errorf(
+					"File name mismatch. Expected: '%s' found: '%s'",
+					name,
+					file.Name)
+			}
 			f, err := os.Open(file.Path)
 			if err != nil {
 				t.Errorf(err.Error())
