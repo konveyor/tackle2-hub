@@ -154,15 +154,15 @@ func (h *Task) Activity(entry string, v ...interface{}) {
 //
 // Attach ensures the file is attached to the report.
 func (h *Task) Attach(f *api.File) {
-	Log.Info(
-		"Addon attached: %s",
-		"path",
-		f.Path)
 	for _, ref := range h.report.Files {
 		if ref.ID == f.ID {
 			return
 		}
 	}
+	Log.Info(
+		"Addon attached: %s",
+		"path",
+		f.Path)
 	h.report.Files = append(
 		h.report.Files,
 		api.Ref{
