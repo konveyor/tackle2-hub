@@ -42,7 +42,6 @@ const (
 	Authorization = "Authorization"
 	ContentLength = "Content-Length"
 	ContentType   = "Content-Type"
-	Append        = "X-Append"
 	Directory     = "X-Directory"
 	Total         = "X-Total"
 )
