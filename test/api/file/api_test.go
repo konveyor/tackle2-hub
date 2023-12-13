@@ -51,7 +51,7 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Touch.
-			name := "1/Patch-Test"
+			name := "Patch-Test"
 			file, err := File.Touch(name)
 			if err != nil {
 				t.Errorf(err.Error())
