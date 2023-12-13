@@ -196,7 +196,7 @@ type TaskReport struct {
 	Total     int
 	Completed int
 	Activity  JSON `gorm:"type:json"`
-	Logs      JSON `gorm:"type:json" ref:"[]file"`
+	Files     JSON `gorm:"type:json" ref:"[]file"`
 	Result    JSON `gorm:"type:json"`
 	TaskID    uint `gorm:"<-:create;uniqueIndex"`
 	Task      *Task

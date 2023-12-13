@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/test/assert"
+	"k8s.io/apimachinery/pkg/util/rand"
+	"io/ioutil"
+	"strings"
 )
 
 func TestFilePutGetDelete(t *testing.T) {
@@ -36,6 +39,61 @@ func TestFilePutGetDelete(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
+			err = File.Get(file.ID, "/dev/null")
+			if err == nil {
+				t.Errorf("Resource exits, but should be deleted: %v", r)
+			}
+		})
+	}
+}
+
+func TestFileTouchPatchGetDelete(t *testing.T) {
+	for _, r := range Samples {
+		t.Run(r.Name, func(t *testing.T) {
+			// Touch.
+			file, err := File.Touch("Patch-Test")
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			// Patch (append)
+			content := "This is my Test. "
+			for _, p := range strings.Fields(content) {
+				err = File.Patch(file.ID, []byte(p+" "))
+				if err != nil {
+					t.Errorf(err.Error())
+				}
+			}
+			// Get.
+			tmp := fmt.Sprintf(
+				"/tmp/%s-%d",
+				r.Name,
+				rand.Int())
+			err = File.Get(file.ID, tmp)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			defer func() {
+				_ = os.Remove(tmp)
+			}()
+			f, err := os.Open(file.Path)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			read, err := ioutil.ReadAll(f)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			if content != string(read) {
+				t.Errorf(
+					"File content mismatch. Expcected: '%s' read: '%s'",
+					content,
+					string(read))
+			}
+			// Delete.
+			err = File.Delete(file.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 			err = File.Get(file.ID, "/dev/null")
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)

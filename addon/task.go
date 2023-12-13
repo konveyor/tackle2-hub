@@ -152,6 +152,17 @@ func (h *Task) Activity(entry string, v ...interface{}) {
 }
 
 //
+// Attach file.
+func (h *Task) Attach(f *api.File) {
+	Log.Info(
+		"Addon attached: %s",
+		"path",
+		f.Path)
+	h.pushReport()
+	return
+}
+
+//
 // Total report addon total items.
 func (h *Task) Total(n int) {
 	h.report.Total = n

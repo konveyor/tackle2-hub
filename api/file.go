@@ -148,11 +148,6 @@ func (h FileHandler) Append(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Create(&m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	reader, err := input.Open()
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -162,7 +157,7 @@ func (h FileHandler) Append(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	writer, err := os.OpenFile(m.Path, os.O_APPEND, 0666)
+	writer, err := os.OpenFile(m.Path, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

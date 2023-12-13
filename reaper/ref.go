@@ -18,7 +18,7 @@ type RefCounter struct {
 //
 // Count find & count references.
 func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err error) {
-	db := r.DB.Model(m).Debug()
+	db := r.DB.Model(m)
 	fields := 0
 	j := 0
 	add := func(ft reflect.StructField) {
