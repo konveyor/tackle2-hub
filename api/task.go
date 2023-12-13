@@ -610,17 +610,15 @@ func (r *Task) Model() (m *model.Task) {
 //
 // injectFiles inject files into the activity.
 func (r *Task) injectFiles(db *gorm.DB) (err error) {
-	injected := 0
 	sort.Slice(
 		r.Files,
 		func(i, j int) bool {
-			return r.Files[i].Index < r.Files[j].Index
+			return r.Files[i].Index > r.Files[j].Index
 		})
 	for _, ref := range r.Files {
 		if ref.Index == 0 {
 			continue
 		}
-		ref.Index += injected
 		if ref.Index > len(r.Activity) {
 			continue
 		}
@@ -643,7 +641,6 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 		r.Activity = append(
 			append(r.Activity[:ref.Index], content...),
 			r.Activity[ref.Index:]...)
-		injected += len(content)
 	}
 	return
 }
