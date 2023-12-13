@@ -11,13 +11,6 @@ type Assessment struct {
 }
 
 //
-// Create a Assessment.
-func (h *Assessment) Create(r *api.Assessment) (err error) {
-	err = h.client.Post(api.AssessmentsRoot, &r)
-	return
-}
-
-//
 // Get a Assessment by ID.
 func (h *Assessment) Get(id uint) (r *api.Assessment, err error) {
 	r = &api.Assessment{}
