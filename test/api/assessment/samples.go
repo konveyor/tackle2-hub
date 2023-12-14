@@ -15,31 +15,31 @@ var (
 			Name: application.Minimal.Name,
 		},
 		Questionnaire: api.Ref{
-			ID: 1,
+			ID:   1,
 			Name: questionnaire.Questionnaire1.Name,
 		},
 		Sections: []assessment.Section{
 			{
-				Order: 1,
+				Order: uint(1),
 				Name:  "Section 1",
 				Questions: []assessment.Question{
 					{
-						Order:       1,
+						Order:       uint(1),
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
 						Answers: []assessment.Answer{
 							{
-								Order: 1,
+								Order: uint(1),
 								Text:  "Red",
 								Risk:  "red",
 							},
 							{
-								Order: 2,
+								Order: uint(2),
 								Text:  "Green",
 								Risk:  "green",
 							},
 							{
-								Order:    3,
+								Order:    uint(3),
 								Text:     "Blue",
 								Risk:     "yellow",
 								Selected: true,
