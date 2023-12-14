@@ -2,7 +2,9 @@ name: Build Hub
 
 on:
   pull_request:
-    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+  push:
     paths-ignore:
       - '**.md'
 
@@ -94,4 +96,4 @@ jobs:
     uses: konveyor/ci/.github/workflows/global-ci.yml@main
     with:
       component_name: tackle2-hub
-      api_hub_tests_ref: refs/pull/${{ github.ref_name }}
+      api_hub_tests_ref: ${{ github.ref }}
