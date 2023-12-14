@@ -522,27 +522,27 @@ type TaskError struct {
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
-	Name        string      `json:"name"`
-	Locator     string      `json:"locator,omitempty" yaml:",omitempty"`
-	Priority    int         `json:"priority,omitempty" yaml:",omitempty"`
-	Variant     string      `json:"variant,omitempty" yaml:",omitempty"`
-	Policy      string      `json:"policy,omitempty" yaml:",omitempty"`
-	TTL         *TTL        `json:"ttl,omitempty" yaml:",omitempty"`
-	Addon       string      `json:"addon,omitempty" binding:"required" yaml:",omitempty"`
-	Data        interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Application *Ref        `json:"application,omitempty" yaml:",omitempty"`
-	State       string      `json:"state"`
-	Image       string      `json:"image,omitempty" yaml:",omitempty"`
-	Pod         string      `json:"pod,omitempty" yaml:",omitempty"`
-	Retries     int         `json:"retries,omitempty" yaml:",omitempty"`
-	Started     *time.Time  `json:"started,omitempty" yaml:",omitempty"`
-	Terminated  *time.Time  `json:"terminated,omitempty" yaml:",omitempty"`
-	Canceled    bool        `json:"canceled,omitempty" yaml:",omitempty"`
-	Bucket      *Ref        `json:"bucket,omitempty" yaml:",omitempty"`
-	Purged      bool        `json:"purged,omitempty" yaml:",omitempty"`
-	Errors      []TaskError `json:"errors,omitempty" yaml:",omitempty"`
-	Activity    []string    `json:"activity,omitempty" yaml:",omitempty"`
-	Files       []FileRef   `json:"files" yaml:",omitempty"`
+	Name        string       `json:"name"`
+	Locator     string       `json:"locator,omitempty" yaml:",omitempty"`
+	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
+	Variant     string       `json:"variant,omitempty" yaml:",omitempty"`
+	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
+	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
+	Addon       string       `json:"addon,omitempty" binding:"required" yaml:",omitempty"`
+	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
+	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
+	State       string       `json:"state"`
+	Image       string       `json:"image,omitempty" yaml:",omitempty"`
+	Pod         string       `json:"pod,omitempty" yaml:",omitempty"`
+	Retries     int          `json:"retries,omitempty" yaml:",omitempty"`
+	Started     *time.Time   `json:"started,omitempty" yaml:",omitempty"`
+	Terminated  *time.Time   `json:"terminated,omitempty" yaml:",omitempty"`
+	Canceled    bool         `json:"canceled,omitempty" yaml:",omitempty"`
+	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
+	Purged      bool         `json:"purged,omitempty" yaml:",omitempty"`
+	Errors      []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
+	Activity    []string     `json:"activity,omitempty" yaml:",omitempty"`
+	Attached    []Attachment `json:"attached" yaml:",omitempty"`
 }
 
 //
@@ -579,7 +579,7 @@ func (r *Task) With(m *model.Task) {
 		report.With(m.Report)
 		r.Activity = report.Activity
 		r.Errors = append(report.Errors, r.Errors...)
-		r.Files = report.Files
+		r.Attached = report.Attached
 		switch r.State {
 		case tasking.Succeeded:
 			switch report.Status {
@@ -612,14 +612,14 @@ func (r *Task) Model() (m *model.Task) {
 }
 
 //
-// injectFiles inject files into the activity.
+// injectFiles inject attached files into the activity.
 func (r *Task) injectFiles(db *gorm.DB) (err error) {
 	sort.Slice(
-		r.Files,
+		r.Attached,
 		func(i, j int) bool {
-			return r.Files[i].Index > r.Files[j].Index
+			return r.Attached[i].Index > r.Attached[j].Index
 		})
-	for _, ref := range r.Files {
+	for _, ref := range r.Attached {
 		if ref.Index == 0 {
 			continue
 		}
@@ -653,14 +653,14 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 // TaskReport REST resource.
 type TaskReport struct {
 	Resource  `yaml:",inline"`
-	Status    string      `json:"status"`
-	Errors    []TaskError `json:"errors,omitempty" yaml:",omitempty"`
-	Total     int         `json:"total,omitempty" yaml:",omitempty"`
-	Completed int         `json:"completed,omitempty" yaml:",omitempty"`
-	Activity  []string    `json:"activity,omitempty" yaml:",omitempty"`
-	Files     []FileRef   `json:"files,omitempty" yaml:",omitempty"`
-	Result    interface{} `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
-	TaskID    uint        `json:"task"`
+	Status    string       `json:"status"`
+	Errors    []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
+	Total     int          `json:"total,omitempty" yaml:",omitempty"`
+	Completed int          `json:"completed,omitempty" yaml:",omitempty"`
+	Activity  []string     `json:"activity,omitempty" yaml:",omitempty"`
+	Attached  []Attachment `json:"attached,omitempty" yaml:",omitempty"`
+	Result    interface{}  `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
+	TaskID    uint         `json:"task"`
 }
 
 //
@@ -677,8 +677,8 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
 	}
-	if m.Files != nil {
-		_ = json.Unmarshal(m.Files, &r.Files)
+	if m.Attached != nil {
+		_ = json.Unmarshal(m.Attached, &r.Attached)
 	}
 	if m.Result != nil {
 		_ = json.Unmarshal(m.Result, &r.Result)
@@ -706,8 +706,8 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	if r.Errors != nil {
 		m.Errors, _ = json.Marshal(r.Errors)
 	}
-	if r.Files != nil {
-		m.Files, _ = json.Marshal(r.Files)
+	if r.Attached != nil {
+		m.Attached, _ = json.Marshal(r.Attached)
 	}
 	m.ID = r.ID
 
@@ -715,8 +715,8 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 }
 
 //
-// FileRef task report file ref.
-type FileRef struct {
+// Attachment task report attached file ref.
+type Attachment struct {
 	Ref   `yaml:",inline"`
 	Index int `json:"index,omitempty" yaml:",omitempty"`
 }
