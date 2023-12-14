@@ -18,3 +18,7 @@ func init() {
 	// Shortcut for Assessment-related RichClient methods.
 	Assessment = RichClient.Assessment
 }
+
+func uint2ptr(u uint) *uint {
+	return &u
+}

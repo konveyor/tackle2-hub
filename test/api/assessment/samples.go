@@ -20,26 +20,26 @@ var (
 		},
 		Sections: []assessment.Section{
 			{
-				Order: uint(1),
+				Order: uint2ptr(1),
 				Name:  "Section 1",
 				Questions: []assessment.Question{
 					{
-						Order:       uint(1),
+						Order:       uint2ptr(1),
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
 						Answers: []assessment.Answer{
 							{
-								Order: uint(1),
+								Order: uint2ptr(1),
 								Text:  "Red",
 								Risk:  "red",
 							},
 							{
-								Order: uint(2),
+								Order: uint2ptr(2),
 								Text:  "Green",
 								Risk:  "green",
 							},
 							{
-								Order:    uint(3),
+								Order:    uint2ptr(3),
 								Text:     "Blue",
 								Risk:     "yellow",
 								Selected: true,
