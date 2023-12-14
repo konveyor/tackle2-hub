@@ -10,9 +10,10 @@ import (
 	"io/ioutil"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
-	"sort"
 )
 
 //
@@ -86,10 +87,13 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	}
 	r := Task{}
 	r.With(task)
-	err := r.injectFiles(h.DB(ctx))
-	if err != nil {
-		_ = ctx.Error(result.Error)
-		return
+	q := ctx.Query("inject")
+	if b, _ := strconv.ParseBool(q); b {
+		err := r.injectFiles(h.DB(ctx))
+		if err != nil {
+			_ = ctx.Error(result.Error)
+			return
+		}
 	}
 
 	h.Respond(ctx, http.StatusOK, r)
