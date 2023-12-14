@@ -43,7 +43,7 @@ func (h TicketHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Ticket
 // @router /tickets/{id} [get]
-// @param id path string true "Ticket ID"
+// @param id path int true "Ticket ID"
 func (h TicketHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Ticket{}
@@ -146,7 +146,7 @@ func (h TicketHandler) Delete(ctx *gin.Context) {
 
 // Ticket API Resource
 type Ticket struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Kind        string    `json:"kind" binding:"required"`
 	Reference   string    `json:"reference"`
 	Link        string    `json:"link"`
@@ -154,7 +154,7 @@ type Ticket struct {
 	Error       bool      `json:"error"`
 	Message     string    `json:"message"`
 	Status      string    `json:"status"`
-	LastUpdated time.Time `json:"lastUpdated"`
+	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
 	Fields      Fields    `json:"fields"`
 	Application Ref       `json:"application" binding:"required"`
 	Tracker     Ref       `json:"tracker" binding:"required"`

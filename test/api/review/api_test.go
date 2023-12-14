@@ -46,10 +46,11 @@ func TestReviewCRUD(t *testing.T) {
 			// Check if the unchanged values remain same or not.
 			AssertEqualReviews(t, got, r)
 
-			// Delete Related Applications.
-			assert.Must(t, Application.Delete(app.ID))
 			// Delete Review.
 			assert.Must(t, Review.Delete(r.ID))
+
+			// Delete Related Applications.
+			assert.Must(t, Application.Delete(app.ID))
 
 			// Check if the review is present even after deletion or not.
 			_, err = Review.Get(r.ID)
@@ -76,9 +77,6 @@ func TestReviewCRUD(t *testing.T) {
 			destApp := api.Application{
 				Name:        "New Application",
 				Description: "Application for Review",
-				Review: &api.Ref{
-					ID: r.ID,
-				},
 			}
 			assert.Must(t, Application.Create(&destApp))
 
@@ -87,7 +85,8 @@ func TestReviewCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			gotReview, err := Review.Get(destApp.Review.ID)
+			destAppRef, _ := Application.Get(destApp.ID)
+			gotReview, err := Review.Get(destAppRef.Review.ID)
 			if err != nil {
 				fmt.Println(err.Error())
 				t.Errorf(err.Error())
@@ -98,6 +97,7 @@ func TestReviewCRUD(t *testing.T) {
 
 			// Delete Review.
 			assert.Must(t, Review.Delete(r.ID))
+			assert.Must(t, Review.Delete(gotReview.ID))
 
 			// Delete Applications.
 			assert.Must(t, Application.Delete(srcApp.ID))

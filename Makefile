@@ -82,15 +82,19 @@ controller-gen:
 addon: fmt vet
 	go build -o bin/addon github.com/konveyor/tackle2-hub/hack/cmd/addon
 
-docs: docs-swagger docs-binding
+docs: docs-html docs-openapi3 docs-binding
 
 # Build Swagger API spec into ./docs directory
 docs-swagger:
-	${GOBIN}/swag init -g api/base.go
+	${GOBIN}/swag init -g pkg.go --dir api,assessment
+
+# Build OpenAPI 3.0 docs
+docs-openapi3: docs-swagger
+	curl -X POST -H "Content-Type: application/json" -d @docs/swagger.json https://converter.swagger.io/api/convert | jq > docs/openapi3.json
 
 # Build HTML docs from Swagger API spec
-docs-html: docs-swagger
-	redoc-cli bundle -o docs/index.html docs/swagger.json
+docs-html: docs-openapi3
+	redoc-cli bundle -o docs/index.html docs/openapi3.json
 
 # Build binding doc.
 docs-binding:
@@ -131,7 +135,7 @@ test:
 
 # Run Hub REST API tests.
 test-api:
-	HUB_BASE_URL=${HUB_BASE_URL} go test -count=1 -v ./test/api/...
+	HUB_BASE_URL=${HUB_BASE_URL} go test -count=1 -p=1 -v ./test/api/...
 
 # Run Hub test suite.
 test-all: test-unit test-api

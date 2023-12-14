@@ -40,7 +40,7 @@ func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.BusinessService
 // @router /businessservices/{id} [get]
-// @param id path string true "Business Service ID"
+// @param id path int true "Business Service ID"
 func (h BusinessServiceHandler) Get(ctx *gin.Context) {
 	m := &model.BusinessService{}
 	id := h.pk(ctx)
@@ -115,7 +115,7 @@ func (h BusinessServiceHandler) Create(ctx *gin.Context) {
 // @tags businessservices
 // @success 204
 // @router /businessservices/{id} [delete]
-// @param id path string true "Business service ID"
+// @param id path int true "Business service ID"
 func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.BusinessService{}
@@ -140,7 +140,7 @@ func (h BusinessServiceHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /businessservices/{id} [put]
-// @param id path string true "Business service ID"
+// @param id path int true "Business service ID"
 // @param business_service body api.BusinessService true "Business service data"
 func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -167,7 +167,7 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 //
 // BusinessService REST resource.
 type BusinessService struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	Stakeholder *Ref   `json:"owner"`

@@ -6,11 +6,21 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -80,18 +90,26 @@ const docTemplate = `{
                 "summary": "Generate an application dependency graph arranged in topological order.",
                 "parameters": [
                     {
-                        "type": "array",
-                        "description": "requested App IDs",
+                        "description": "List of requested App IDs",
                         "name": "requestedApps",
-                        "in": "path",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.DependencyGraph"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Vertex"
+                            }
                         }
                     }
                 }
@@ -122,7 +140,7 @@ const docTemplate = `{
         },
         "/analyses/dependencies": {
             "get": {
-                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- version\n- sha",
+                "description": "Each report collates dependencies by name and SHA.\nfilters:\n- provider\n- name\n- version\n- sha\n- indirect\n- labels\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- provider\n- name\n- labels",
                 "produces": [
                     "application/json"
                 ],
@@ -176,6 +194,15 @@ const docTemplate = `{
                     "issue"
                 ],
                 "summary": "Get an issue.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -196,6 +223,15 @@ const docTemplate = `{
                     "incidents"
                 ],
                 "summary": "List incidents for an issue.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -244,7 +280,7 @@ const docTemplate = `{
                 "summary": "List application issue reports.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -274,6 +310,15 @@ const docTemplate = `{
                     "filereports"
                 ],
                 "summary": "List incident file reports.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Issue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -314,7 +359,7 @@ const docTemplate = `{
             "get": {
                 "description": "Get an analysis (report) by ID.",
                 "produces": [
-                    "application/json"
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "analyses"
@@ -322,7 +367,7 @@ const docTemplate = `{
                 "summary": "Get an analysis (report) by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Analysis ID",
                         "name": "id",
                         "in": "path",
@@ -346,7 +391,7 @@ const docTemplate = `{
                 "summary": "Delete an analysis by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Analysis ID",
                         "name": "id",
                         "in": "path",
@@ -370,6 +415,15 @@ const docTemplate = `{
                     "analyses"
                 ],
                 "summary": "Create an analysis.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -392,7 +446,7 @@ const docTemplate = `{
                 "summary": "List application dependencies.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -424,7 +478,7 @@ const docTemplate = `{
                 "summary": "List application issues.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -612,7 +666,7 @@ const docTemplate = `{
             "get": {
                 "description": "Get the latest analysis for an application.",
                 "produces": [
-                    "application/json"
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "analyses"
@@ -620,7 +674,7 @@ const docTemplate = `{
                 "summary": "Get the latest analysis.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -632,6 +686,100 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.Analysis"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/analysis/report": {
+            "get": {
+                "description": "Get the latest analysis (static) report.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "analyses"
+                ],
+                "summary": "Get the latest analysis (static) report.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/applications/{id}/assessments": {
+            "get": {
+                "description": "List the assessments of an Application and any it inherits from its archetypes.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "List the assessments of an Application and any it inherits from its archetypes.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Assessment"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an application assessment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Create an application assessment.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assessment data",
+                        "name": "assessment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
                         }
                     }
                 }
@@ -649,9 +797,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -679,9 +834,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -703,9 +865,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -732,7 +901,7 @@ const docTemplate = `{
                 "summary": "Create a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -767,7 +936,7 @@ const docTemplate = `{
                 "summary": "Get fact by name.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -804,7 +973,7 @@ const docTemplate = `{
                 "summary": "Update (or create) a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -841,7 +1010,7 @@ const docTemplate = `{
                 "summary": "Delete a fact.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -874,7 +1043,7 @@ const docTemplate = `{
                 "summary": "List facts.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -905,7 +1074,7 @@ const docTemplate = `{
                 "summary": "Replace all facts from a source.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -968,6 +1137,36 @@ const docTemplate = `{
             }
         },
         "/applications/{id}/tags": {
+            "get": {
+                "description": "List tag references.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "List tag references.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Ref"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Ensure tag is associated with the application.",
                 "consumes": [
@@ -989,6 +1188,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Ref"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1011,7 +1217,7 @@ const docTemplate = `{
                 "summary": "Replace tag associations.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Application ID",
                         "name": "id",
                         "in": "path",
@@ -1043,20 +1249,185 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/tags/id": {
+        "/applications/{id}/tags/{sid}": {
+            "delete": {
+                "description": "Ensure tag is not associated with the application.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Delete tag association.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tag ID",
+                        "name": "sid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/archetypes": {
             "get": {
-                "description": "List tag references.",
+                "description": "List all archetypes.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "applications"
+                    "archetypes"
                 ],
-                "summary": "List tag references.",
+                "summary": "List all archetypes.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Archetype"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an archetype.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "Create an archetype.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Application ID",
+                        "description": "Archetype data",
+                        "name": "archetype",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Archetype"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Archetype"
+                        }
+                    }
+                }
+            }
+        },
+        "/archetypes/{id}": {
+            "get": {
+                "description": "Get an archetype by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "Get an archetype by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Archetype"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an archetype.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "Update an archetype.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Archetype data",
+                        "name": "archetype",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Archetype"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an archetype.",
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "Delete an archetype.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/archetypes/{id}/assessments": {
+            "get": {
+                "description": "List the assessments of an archetype.",
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "List the assessments of an archetype.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1068,32 +1439,147 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Ref"
+                                "$ref": "#/definitions/api.Assessment"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an archetype assessment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "archetypes"
+                ],
+                "summary": "Create an archetype assessment.",
+                "parameters": [
+                    {
+                        "description": "Assessment data",
+                        "name": "assessment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Archetype ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
+                        }
+                    }
+                }
+            }
+        },
+        "/assessments": {
+            "get": {
+                "description": "List all assessments.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assessments"
+                ],
+                "summary": "List all assessments.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Assessment"
                             }
                         }
                     }
                 }
             }
         },
-        "/applications/{id}/tags/{sid}": {
-            "delete": {
-                "description": "Ensure tag is not associated with the application.",
-                "tags": [
-                    "applications"
+        "/assessments/{id}": {
+            "get": {
+                "description": "Get an assessment by ID.",
+                "produces": [
+                    "application/json"
                 ],
-                "summary": "Delete tag association.",
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Get an assessment by ID.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Application ID",
+                        "type": "integer",
+                        "description": "Assessment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an assessment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assessments"
+                ],
+                "summary": "Update an assessment.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Assessment ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Tag ID",
-                        "name": "sid",
+                        "description": "Assessment data",
+                        "name": "assessment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Assessment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an assessment.",
+                "tags": [
+                    "assessments"
+                ],
+                "summary": "Delete an assessment.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Assessment ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1286,7 +1772,7 @@ const docTemplate = `{
                 "summary": "Get a bucket by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
                         "in": "path",
@@ -1310,7 +1796,7 @@ const docTemplate = `{
                 "summary": "Delete a bucket.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
                         "in": "path",
@@ -1336,9 +1822,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -1366,9 +1859,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -1390,9 +1890,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Bucket ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -1468,7 +1975,7 @@ const docTemplate = `{
                 "summary": "Get a business service by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business Service ID",
                         "name": "id",
                         "in": "path",
@@ -1495,7 +2002,7 @@ const docTemplate = `{
                 "summary": "Update a business service.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business service ID",
                         "name": "id",
                         "in": "path",
@@ -1525,7 +2032,7 @@ const docTemplate = `{
                 "summary": "Delete a business service.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Business service ID",
                         "name": "id",
                         "in": "path",
@@ -1556,7 +2063,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/caches/{id}": {
+        "/caches/{wildcard}": {
             "get": {
                 "description": "Get the cache.",
                 "produces": [
@@ -1570,7 +2077,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Cache DIR",
-                        "name": "name",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -1652,7 +2159,7 @@ const docTemplate = `{
                 "summary": "Get a dependency by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Dependency ID",
                         "name": "id",
                         "in": "path",
@@ -1679,7 +2186,7 @@ const docTemplate = `{
                 "summary": "Delete a dependency.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Dependency id",
                         "name": "id",
                         "in": "path",
@@ -1758,7 +2265,7 @@ const docTemplate = `{
                 "summary": "Get a file by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "File ID",
                         "name": "id",
                         "in": "path",
@@ -1782,7 +2289,7 @@ const docTemplate = `{
                 "summary": "Delete a file.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "File ID",
                         "name": "id",
                         "in": "path",
@@ -1863,7 +2370,7 @@ const docTemplate = `{
                 "summary": "Get an identity by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -1890,7 +2397,7 @@ const docTemplate = `{
                 "summary": "Update an identity.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -1920,7 +2427,7 @@ const docTemplate = `{
                 "summary": "Delete an identity.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Identity ID",
                         "name": "id",
                         "in": "path",
@@ -1969,7 +2476,7 @@ const docTemplate = `{
                 "summary": "Get an import by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Import ID",
                         "name": "id",
                         "in": "path",
@@ -1993,7 +2500,7 @@ const docTemplate = `{
                 "summary": "Delete an import.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Import ID",
                         "name": "id",
                         "in": "path",
@@ -2091,7 +2598,7 @@ const docTemplate = `{
                 "summary": "Get an import summary by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "ImportSummary ID",
                         "name": "id",
                         "in": "path",
@@ -2115,7 +2622,7 @@ const docTemplate = `{
                 "summary": "Delete an import summary and associated import records.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "ImportSummary ID",
                         "name": "id",
                         "in": "path",
@@ -2196,7 +2703,7 @@ const docTemplate = `{
                 "summary": "Get a job function by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2223,7 +2730,7 @@ const docTemplate = `{
                 "summary": "Update a job function.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2253,7 +2760,7 @@ const docTemplate = `{
                 "summary": "Delete a job function.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Job Function ID",
                         "name": "id",
                         "in": "path",
@@ -2489,7 +2996,7 @@ const docTemplate = `{
                 "summary": "Get an proxy by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
                         "name": "id",
                         "in": "path",
@@ -2516,7 +3023,7 @@ const docTemplate = `{
                 "summary": "Update an proxy.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
                         "name": "id",
                         "in": "path",
@@ -2546,8 +3053,146 @@ const docTemplate = `{
                 "summary": "Delete an proxy.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Proxy ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/questionnaires": {
+            "get": {
+                "description": "List all questionnaires.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "List all questionnaires.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Questionnaire"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a questionnaire.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Create a questionnaire.",
+                "parameters": [
+                    {
+                        "description": "Questionnaire data",
+                        "name": "questionnaire",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Questionnaire"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Questionnaire"
+                        }
+                    }
+                }
+            }
+        },
+        "/questionnaires/{id}": {
+            "get": {
+                "description": "Get a questionnaire by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Get a questionnaire by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Questionnaire ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Questionnaire"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a questionnaire. If the Questionnaire\nis builtin, only its \"required\" field can be changed\nand all other fields will be ignored.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Update a questionnaire.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Questionnaire ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Questionnaire data",
+                        "name": "questionnaire",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Questionnaire"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a questionnaire.",
+                "tags": [
+                    "questionnaires"
+                ],
+                "summary": "Delete a questionnaire.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Questionnaire ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2655,7 +3300,7 @@ const docTemplate = `{
                 "summary": "Get a review by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -2682,7 +3327,7 @@ const docTemplate = `{
                 "summary": "Update a review.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -2712,7 +3357,7 @@ const docTemplate = `{
                 "summary": "Delete a review.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Review ID",
                         "name": "id",
                         "in": "path",
@@ -2728,7 +3373,7 @@ const docTemplate = `{
         },
         "/rulesets": {
             "get": {
-                "description": "List all bindings.",
+                "description": "List all bindings.\nfilters:\n- name\n- labels",
                 "produces": [
                     "application/json"
                 ],
@@ -2793,7 +3438,7 @@ const docTemplate = `{
                 "summary": "Get a RuleSet by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -2820,7 +3465,7 @@ const docTemplate = `{
                 "summary": "Update a ruleset.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -2850,7 +3495,7 @@ const docTemplate = `{
                 "summary": "Delete a ruleset.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "RuleSet ID",
                         "name": "id",
                         "in": "path",
@@ -3005,6 +3650,13 @@ const docTemplate = `{
                 "summary": "Create a setting.",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Setting value",
                         "name": "setting",
                         "in": "body",
@@ -3109,7 +3761,7 @@ const docTemplate = `{
                 "summary": "Get a stakeholder group by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3136,7 +3788,7 @@ const docTemplate = `{
                 "summary": "Update a stakeholder group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3166,7 +3818,7 @@ const docTemplate = `{
                 "summary": "Delete a stakeholder group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder Group ID",
                         "name": "id",
                         "in": "path",
@@ -3247,7 +3899,7 @@ const docTemplate = `{
                 "summary": "Get a stakeholder by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3274,7 +3926,7 @@ const docTemplate = `{
                 "summary": "Update a stakeholder.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3304,7 +3956,7 @@ const docTemplate = `{
                 "summary": "Delete a stakeholder.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Stakeholder ID",
                         "name": "id",
                         "in": "path",
@@ -3393,7 +4045,7 @@ const docTemplate = `{
                 "summary": "Get a tag category by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3420,7 +4072,7 @@ const docTemplate = `{
                 "summary": "Update a tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3450,7 +4102,7 @@ const docTemplate = `{
                 "summary": "Delete a tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3476,7 +4128,7 @@ const docTemplate = `{
                 "summary": "List the tags in the tag category.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag Category ID",
                         "name": "id",
                         "in": "path",
@@ -3569,7 +4221,7 @@ const docTemplate = `{
                 "summary": "Get a tag by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -3596,7 +4248,7 @@ const docTemplate = `{
                 "summary": "Update a tag.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -3626,7 +4278,7 @@ const docTemplate = `{
                 "summary": "Delete a tag.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tag ID",
                         "name": "id",
                         "in": "path",
@@ -3707,7 +4359,7 @@ const docTemplate = `{
                 "summary": "Get a Target by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -3734,7 +4386,7 @@ const docTemplate = `{
                 "summary": "Update a target.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -3764,7 +4416,7 @@ const docTemplate = `{
                 "summary": "Delete a target.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Target ID",
                         "name": "id",
                         "in": "path",
@@ -3845,7 +4497,7 @@ const docTemplate = `{
                 "summary": "Get a task group by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -3872,7 +4524,7 @@ const docTemplate = `{
                 "summary": "Update a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -3902,7 +4554,7 @@ const docTemplate = `{
                 "summary": "Delete a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -3928,9 +4580,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -3958,9 +4617,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -3982,9 +4648,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4008,7 +4681,7 @@ const docTemplate = `{
                 "summary": "Submit a task group.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
@@ -4097,7 +4770,7 @@ const docTemplate = `{
                 "summary": "Get a task by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4124,7 +4797,7 @@ const docTemplate = `{
                 "summary": "Update a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4154,7 +4827,7 @@ const docTemplate = `{
                 "summary": "Delete a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4180,9 +4853,16 @@ const docTemplate = `{
                 "summary": "Get bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     },
@@ -4210,9 +4890,16 @@ const docTemplate = `{
                 "summary": "Upload bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4234,9 +4921,16 @@ const docTemplate = `{
                 "summary": "Delete bucket content by ID and path.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content path",
+                        "name": "wildcard",
                         "in": "path",
                         "required": true
                     }
@@ -4257,7 +4951,7 @@ const docTemplate = `{
                 "summary": "Cancel a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4286,7 +4980,7 @@ const docTemplate = `{
                 "summary": "Update a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4325,7 +5019,7 @@ const docTemplate = `{
                 "summary": "Create a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4364,7 +5058,7 @@ const docTemplate = `{
                 "summary": "Delete a task report.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4390,7 +5084,7 @@ const docTemplate = `{
                 "summary": "Submit a task.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -4479,7 +5173,7 @@ const docTemplate = `{
                 "summary": "Get a ticket by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Ticket ID",
                         "name": "id",
                         "in": "path",
@@ -4584,7 +5278,7 @@ const docTemplate = `{
                 "summary": "Get a tracker by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -4667,7 +5361,7 @@ const docTemplate = `{
                 "summary": "List a tracker's projects.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -4699,7 +5393,7 @@ const docTemplate = `{
                 "summary": "Get a tracker project by ID.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -4735,7 +5429,7 @@ const docTemplate = `{
                 "summary": "List a tracker project's issue types.",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Tracker ID",
                         "name": "id",
                         "in": "path",
@@ -4778,6 +5472,9 @@ const docTemplate = `{
         "api.Analysis": {
             "type": "object",
             "properties": {
+                "archived": {
+                    "type": "boolean"
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -4802,6 +5499,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.Issue"
                     }
                 },
+                "summary": {
+                    "type": "object"
+                },
                 "updateUser": {
                     "type": "string"
                 }
@@ -4813,6 +5513,21 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "archetypes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "assessed": {
+                    "type": "boolean"
+                },
+                "assessments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
                 "binary": {
                     "type": "string"
                 },
@@ -4824,6 +5539,9 @@ const docTemplate = `{
                 },
                 "comments": {
                     "type": "string"
+                },
+                "confidence": {
+                    "type": "integer"
                 },
                 "contributors": {
                     "type": "array",
@@ -4839,6 +5557,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -4864,11 +5585,151 @@ const docTemplate = `{
                 "review": {
                     "$ref": "#/definitions/api.Ref"
                 },
+                "risk": {
+                    "type": "string"
+                },
                 "tags": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.TagRef"
                     }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Archetype": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "assessed": {
+                    "type": "boolean"
+                },
+                "assessments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "comments": {
+                    "type": "string"
+                },
+                "confidence": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "criteria": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TagRef"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "review": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "risk": {
+                    "type": "string"
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TagRef"
+                    }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Assessment": {
+            "type": "object",
+            "required": [
+                "questionnaire"
+            ],
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "archetype": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "confidence": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "questionnaire": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "risk": {
+                    "description": "read only",
+                    "type": "string"
+                },
+                "riskMessages": {
+                    "$ref": "#/definitions/assessment.RiskMessages"
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.Section"
+                    }
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "thresholds": {
+                    "$ref": "#/definitions/assessment.Thresholds"
                 },
                 "updateUser": {
                     "type": "string"
@@ -4989,7 +5850,7 @@ const docTemplate = `{
                         "provider": {
                             "type": "string"
                         },
-                        "rule": {
+                        "sha": {
                             "type": "string"
                         },
                         "version": {
@@ -5030,9 +5891,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "api.DependencyGraph": {
-            "type": "object"
         },
         "api.Fact": {
             "type": "object",
@@ -5538,6 +6396,53 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Questionnaire": {
+            "type": "object",
+            "required": [
+                "name",
+                "riskMessages",
+                "sections",
+                "thresholds"
+            ],
+            "properties": {
+                "builtin": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "riskMessages": {
+                    "$ref": "#/definitions/assessment.RiskMessages"
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.Section"
+                    }
+                },
+                "thresholds": {
+                    "$ref": "#/definitions/assessment.Thresholds"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Ref": {
             "type": "object",
             "required": [
@@ -5574,11 +6479,11 @@ const docTemplate = `{
         },
         "api.Review": {
             "type": "object",
-            "required": [
-                "application"
-            ],
             "properties": {
                 "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "archetype": {
                     "$ref": "#/definitions/api.Ref"
                 },
                 "businessCriticality": {
@@ -5694,6 +6599,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.Ref"
                     }
+                },
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"
@@ -5958,6 +6866,9 @@ const docTemplate = `{
                 },
                 "source": {
                     "type": "string"
+                },
+                "virtual": {
+                    "type": "boolean"
                 }
             }
         },
@@ -5992,6 +6903,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "type": "string"
+                },
+                "provider": {
                     "type": "string"
                 },
                 "ruleset": {
@@ -6332,17 +7246,187 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.Vertex": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "integer"
+                },
+                "applicationName": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "effortEstimate": {
+                    "type": "string"
+                },
+                "positionX": {
+                    "type": "integer"
+                },
+                "positionY": {
+                    "type": "integer"
+                }
+            }
+        },
+        "assessment.Answer": {
+            "type": "object",
+            "required": [
+                "order"
+            ],
+            "properties": {
+                "applyTags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.CategorizedTag"
+                    }
+                },
+                "autoAnswerFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.CategorizedTag"
+                    }
+                },
+                "autoAnswered": {
+                    "type": "boolean"
+                },
+                "mitigation": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "rationale": {
+                    "type": "string"
+                },
+                "risk": {
+                    "type": "string",
+                    "enum": [
+                        "red"
+                    ]
+                },
+                "selected": {
+                    "type": "boolean"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "assessment.CategorizedTag": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "assessment.Question": {
+            "type": "object",
+            "required": [
+                "order"
+            ],
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.Answer"
+                    }
+                },
+                "excludeFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.CategorizedTag"
+                    }
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "includeFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.CategorizedTag"
+                    }
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "assessment.RiskMessages": {
+            "type": "object",
+            "properties": {
+                "green": {
+                    "type": "string"
+                },
+                "red": {
+                    "type": "string"
+                },
+                "unknown": {
+                    "type": "string"
+                },
+                "yellow": {
+                    "type": "string"
+                }
+            }
+        },
+        "assessment.Section": {
+            "type": "object",
+            "required": [
+                "order"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/assessment.Question"
+                    }
+                }
+            }
+        },
+        "assessment.Thresholds": {
+            "type": "object",
+            "properties": {
+                "red": {
+                    "type": "integer"
+                },
+                "unknown": {
+                    "type": "integer"
+                },
+                "yellow": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "0.3.z",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
+	Title:            "Konveyor Hub API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

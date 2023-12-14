@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jortel/go-utils/logr"
@@ -51,26 +52,29 @@ type NotAuthenticated struct {
 }
 
 func (e *NotAuthenticated) Error() (s string) {
-	return fmt.Sprintf("Token %s not-valid.", e.Token)
+	return fmt.Sprintf("Token [%s] not-authenticated.", e.Token)
 }
 
 func (e *NotAuthenticated) Is(err error) (matched bool) {
-	_, matched = err.(*NotAuthenticated)
+	notAuth := &NotAuthenticated{}
+	matched = errors.As(err, &notAuth)
 	return
 }
 
 //
 // NotValid is returned when a token is not valid.
 type NotValid struct {
-	Token string
+	Reason string
+	Token  string
 }
 
 func (e *NotValid) Error() (s string) {
-	return fmt.Sprintf("Token %s not-valid.", e.Token)
+	return fmt.Sprintf("Token [%s] not-valid: %s", e.Token, e.Reason)
 }
 
 func (e *NotValid) Is(err error) (matched bool) {
-	_, matched = err.(*NotValid)
+	notValid := &NotValid{}
+	matched = errors.As(err, &notValid)
 	return
 }
 

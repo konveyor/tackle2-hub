@@ -35,6 +35,10 @@ parser.add_argument('-n','--no-auth', dest='noAuth', action='store_const', const
                     help='Skip Keycloak token creation, use empty Auth token in Tackle API calls.')
 parser.add_argument('-b','--skip-buckets', dest='skipBuckets', action='store_const', const=True, default=False,
                     help='Skip Tackle 2 Buckets content export.')
+parser.add_argument('-t','--token', type=str, help='Bearer auth token for Hub API (login/password is a fallback to create it).',
+                    nargs='?', default='')
+parser.add_argument('-p','--pathfinder-url', type=str, help='In-cluster Pathfinder endpoint URL.',
+                    nargs='?', default='')
 args = parser.parse_args()
 
 ###############################################################################
@@ -82,20 +86,24 @@ def debugPrint(str):
     if args.verbose:
         print(str)
 
-def getHubToken(host, username, password):
-    print("Getting auth token via Hub from %s" % host)
-    url  = "%s/hub/auth/login" % host
-    data = '{"user": "%s", "password": "%s"}' % (username, password)
-
-    r = requests.post(url, data=data, verify=False)
-    if r.ok:
-        respData = json.loads(r.text)
-        debugPrint("Got access token: %s" % respData['token'])
-        return respData['token']
+def getHubToken(host, username, password, token):
+    if token:
+        print("Skipping login, using provided auth token.")
+        return token
     else:
-        print("ERROR getting auth token from %s" % url)
-        print(data, r)
-        exit(1)
+        print("Getting auth token via Hub from %s" % host)
+        url  = "%s/hub/auth/login" % host
+        data = '{"user": "%s", "password": "%s"}' % (username, password)
+
+        r = requests.post(url, data=data, verify=False)
+        if r.ok:
+            respData = json.loads(r.text)
+            debugPrint("Got access token: %s" % respData['token'])
+            return respData['token']
+        else:
+            print("ERROR getting auth token from %s" % url)
+            print(data, r)
+            exit(1)
 
 def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tackle'):
     if args.noAuth:
@@ -126,6 +134,9 @@ def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
     elif method == 'PATCH':
         debugPrint("PATCH data: %s" % json.dumps(data))
         r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
+    elif method == 'PUT':
+        debugPrint("PUT data: %s" % json.dumps(data))
+        r = requests.put(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
     else: # GET
         r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
 
@@ -289,196 +300,6 @@ class TackleTool:
         # Raise error if still not found
         print("ERROR: %s record ID %d not found." % (objType, id))
         exit(1)
-
-    # Gather Tackle 1.2 API objects and map seeded Tackle2 API objects
-    def dumpTackle1(self):
-        ### TAG TYPES & TAGS ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/tag-type", self.tackle1Token)
-        for tt1 in collection:
-            # Temp holder for tags
-            tags = []
-            # Prepare TagCategories's Tags
-            for tag1 in tt1['tags']:
-                tag             = Tackle2Object(tag1)
-                tag.name        = tag1['name']
-                # TagCategory is injected from tagType processing few lines below
-                # Store Tag only if doesn't exist in Tackle2 destination already
-                self.add('origin-tags', tag)   # tmp tags for merge with seed tags lookup
-                if tag.name.lower() not in self.destData['tags']:
-                    self.add('tags', tag)
-                tags.append(tag)
-            # Prepare TagCategory
-            tt            = Tackle2Object(tt1)
-            tt.name       = tt1['name']
-            tt.colour     = tt1['colour']
-            tt.rank       = tt1['rank']
-            tt.username   = tt1['createUser']
-            for tag in tags:
-                tag.tagCategory = copy.deepcopy(tt)
-            tt.tags = tags
-            # Store only if doesn't exist in Tackle2 destination already
-            if tt.name.lower() not in self.destData['tagcategories']:
-                self.add('tagcategories', tt)
-
-        ### APPLICATION ###
-        collection = apiJSON(self.tackle1Url + "/api/application-inventory/application?page=0&size=10000", self.tackle1Token)
-        for app1 in collection:
-            # Temp holder for tags
-            tags = []
-            # Prepare Tags
-            debugPrint(app1)
-            if app1['tags']:
-                for tagId in app1['tags']:
-                    appTag = self.findById('origin-tags', int(tagId))
-                    # Check if Tag exists in Tackle2 destination
-                    if appTag.name.lower() in self.destData['tags']:
-                        # Re-map to existing Tackle2 Tag
-                        tags.append(self.destData['tags'][appTag.name.lower()])
-                    else:
-                        # Use imported Tag, creating a new one to cut association to Tag type
-                        tag             = Tackle2Object()
-                        tag.id          = appTag.id
-                        tag.name        = appTag.name
-                        tags.append(tag)
-            # Prepare Application
-            app                 = Tackle2Object(app1)
-            app.name            = app1['name']
-            app.description     = app1['description']
-            app.tags            = tags
-            if app1['businessService']:
-                app.businessService = {'id':int(app1['businessService'])}
-            else:
-                print("Warning: Application %d %s has not businessService, which is required by Tackle2. Set it manually in %s/applications.json" % (app.id, app.name, self.dataDir))
-            ### APPLICATION REVIEW ###
-            if app1['review']:
-                rev                 = Tackle2Object(app1['review'])
-                rev.proposedAction      = app1['review']['proposedAction']
-                rev.effortEstimate      = app1['review']['effortEstimate']
-                rev.businessCriticality = app1['review']['businessCriticality']
-                rev.workPriority        = app1['review']['workPriority']
-                rev.comments            = app1['review']['comments']
-                rev.application         = {'id': app.id, 'name': app.name}
-                if app1['review']['copiedFromReviewId']:
-                    rev.copiedFromReviewId  = app1['review']['copiedFromReviewId']
-                self.add('reviews', rev)
-            #app.repository      = app1['repository']   # Not part of 1.2 API 
-            #app.binary          = app1['binary']
-            #app.facts           = app1['facts']
-            self.add('applications', app)
-
-        ### DEPENDENCIES ###
-        collection = apiJSON(self.tackle1Url + "/api/application-inventory/applications-dependency", self.tackle1Token)
-        for dep1 in collection:
-            # Prepare Dependency
-            dep                 = Tackle2Object(dep1)
-            dep.to              = {'id': dep1['to']['id'], 'name': dep1['to']['name']}
-            setattr(dep, 'from', {'id': dep1['from']['id'], 'name': dep1['from']['name']})    # Cannot use "from" as an attribute name directly
-            self.add('dependencies', dep)
-
-        ### ASSESSMENTS & RISKS (per Application) ###
-        for app in self.data['applications']:
-            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments?applicationId=%d" % app.id, self.tackle1Token)
-            for assm1 in collection:
-                # Prepare Assessment
-                assm               = Tackle2Object()
-                assm.id            = assm1['id']
-                assm.applicationId = assm1['applicationId']
-                assm.status        = assm1['status']
-                # Prepare Assessment questions and answers
-                asqa1 = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/%d" % assm.id, self.tackle1Token)
-                asqa               = Tackle2Object()
-                asqa.id                = asqa1['id']
-                asqa.applicationId     = asqa1['applicationId']
-                asqa.status            = asqa1['status']
-                asqa.stakeholders      = asqa1['stakeholders']
-                asqa.stakeholderGroups = asqa1['stakeholderGroups']
-                asqa.questionnaire     = asqa1['questionnaire']
-                self.add('assessments', asqa)
-
-            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/assessment-risk", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
-            for assmr1 in collection:
-                # Prepare Assessment Risk
-                assmr               = Tackle2Object()
-                assmr.assessmentId  = assmr1['assessmentId']
-                assmr.applicationId = assmr1['applicationId']
-                assmr.risk          = assmr1['risk']
-                self.add('assessments--assessment-risk', assmr)
-
-            collection = apiJSON(self.tackle1Url + "/api/pathfinder/assessments/confidence", self.tackle1Token, data=[{"applicationId": app.id}], method='POST')
-            for conf1 in collection:
-                # Prepare Confidence
-                conf               = Tackle2Object()
-                conf.assessmentId  = conf1['assessmentId']
-                conf.applicationId = conf1['applicationId']
-                conf.confidence    = conf1['confidence']
-                self.add('assessments--confidence', conf)
-
-        ### STAKEHOLDER ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/stakeholder", self.tackle1Token)
-        for sh1 in collection:
-            # Temp holder for stakeholder's groups
-            shgs = []
-            # Prepare StakeholderGroups
-            for shg1 in sh1['stakeholderGroups']:
-                shg             = Tackle2Object(shg1)
-                shg.name        = shg1['name']
-                shg.description = shg1['description']
-                self.add('stakeholdergroups', shg)
-                shgs.append(shg)
-            # Prepare StakeHolder
-            sh                   = Tackle2Object(sh1)
-            sh.name              = sh1['displayName']
-            sh.email             = sh1['email']
-            sh.stakeholderGroups = shgs
-            if sh1['jobFunction']:
-                if sh1['jobFunction']['role'] in self.destData['jobfunctions']:
-                    # Re-map to JobFunction existing in Tackle2 destination
-                    sh.jobFunction = self.destData['jobfunctions'][sh1['jobFunction']['role']]
-                else:
-                    # Prepare new JobFunction
-                    jf              = Tackle2Object(sh1['jobFunction'])
-                    jf.name         = sh1['jobFunction']['role']
-                    self.add('jobfunctions', jf)
-                    sh.jobFunction = jf
-            self.add('stakeholders', sh)
-        
-        ### STAKEHOLDER GROUPS ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/stakeholder-group", self.tackle1Token)
-        for shg1 in collection:
-            # Prepare StakeholderGroup
-            shg             = Tackle2Object(shg1)
-            shg.name        = shg1['name']
-            shg.description = shg1['description']
-            self.add('stakeholdergroups', shg)
-
-        ### JOB FUNCTION ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/job-function", self.tackle1Token)
-        for jf1 in collection:
-            # Temp holder for stakeholders
-            shs = []
-            # Prepare JobFunction's Stakeholders
-            for sh1 in jf1['stakeholders']:
-                sh             = Tackle2Object(sh1)
-                sh.name        = sh1['displayName']
-                sh.email       = sh1['email']
-                shs.append(sh)
-            # Prepare JobFunction
-            jf              = Tackle2Object(jf1)
-            jf.name         = jf1['role']
-            jf.stakeholders = shs
-            # Store only if doesn't exist in Tackle2 destination already
-            if jf.name not in self.destData['jobfunctions']:
-                self.add('jobfunctions', jf)
-
-        ### BUSINESS SERVICE ###
-        collection = apiJSON(self.tackle1Url + "/api/controls/business-service", self.tackle1Token)
-        for bs1 in collection:
-            # Prepare JobFunction
-            bs              = Tackle2Object(bs1)
-            bs.name         = bs1['name']
-            bs.description  = bs1['description']
-            bs.owner        = bs1['owner']  # Stakeholder
-            self.add('businessservices', bs)
 
     # Gather Tackle 2 API objects
     def dumpTackle2(self):
@@ -722,6 +543,56 @@ class TackleTool:
             # Push the updated assessment
             apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
 
+    # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
+    def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
+        cnt = 0
+        apps = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
+        print("There are %d Applications, looking for their Assessments.." % len(apps))
+        for app in apps:
+            # Export Pathfinder data for each Application
+            for passmnt in apiJSON(pathfinderUrl + "/assessments?applicationId=%d" % app['id'], self.tackle2Token):
+                print("# Assessment for Application %s" % passmnt["applicationId"])
+                appAssessmentsPath = "/hub/applications/%d/assessments" % passmnt["applicationId"]
+                # Skip if Assessment for given Application already exists
+                if len(apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
+                    print("  Assessment already exists, skipping.")
+                    continue
+
+                # Prepare new Assessment
+                assmnt = dict()
+                assmnt['questionnaire'] = {"id": 1} # Default new Questionnaire "Pathfinder Legacy"
+                assmnt['application'] = {"id": passmnt["applicationId"]}
+                assmnt['stakeholders'] = []
+                for sh in passmnt['stakeholders']:
+                    assmnt['stakeholders'].append({"id": sh})
+                assmnt['stakeholderGroups'] = []
+                for shg in passmnt['stakeholderGroups']:
+                    assmnt['stakeholderGroups'].append({"id": shg})
+
+                # Transformate Questions, Answers and related structures
+                for category in passmnt['questionnaire']['categories']:
+                    del category['id']
+                    category['name'] = category.pop('title')
+                    for question in category["questions"]:
+                        del question['id']
+                        question["text"] = question.pop('question')
+                        question["explanation"] = question.pop('description')
+                        question["answers"] = question.pop('options')
+                        for answer in question['answers']:
+                            del answer['id']
+                            answer['text'] = answer.pop('option')
+                            answer['selected'] = answer.pop('checked')
+                            answer['risk'] = answer['risk'].lower()
+                            if answer['risk'] == "amber":
+                                answer['risk'] = "yellow"
+                assmnt['sections'] = passmnt['questionnaire']['categories']
+
+                # Post the Assessment
+                apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data=assmnt, method='POST')
+                cnt += 1
+                print("Assessment submitted.")
+        return cnt
+
     def preImportCheck(self):
         # Compatibility checks
         # TagCategories on Hub API
@@ -859,33 +730,11 @@ disableSSlWarnings(args.disableSslWarnings)
 c = loadConfig(args.config)
 cmdExecuted = False
 
-# Tackle 1 export steps
-if cmdWanted(args, "export-tackle1"):
-    cmdExecuted = True
-    # Gather Keycloak access tokens for Tackle1&2
-    token1 = getKeycloakToken(c['tackle1']['url'], c['tackle1']['username'], c['tackle1']['password'])
-    token2 = ""
-    if not args.skipDestCheck:
-        token2 = getKeycloakToken(c['url'], c['username'], c['password'])
-
-    # Setup Tackle 1.2->2.0 data migration object
-    tool = TackleTool(args.data_dir, c['tackle1']['url'], token1, c['url'], token2)
-
-    # Run the export
-    if not args.skipDestCheck:
-        print("Loading seed objects from Tackle 2")
-        tool.loadTackle2Seeds()
-    print("Exporting Tackle 1.2 objects (this might take a while..)")
-    tool.dumpTackle1()
-    print("Writing JSON data files into %s" % args.data_dir)
-    tool.store()
-    print("Done. The data could be imported to Tackle 2 using command \"tackle import\"")
-
 # Tackle 2 export steps
 if cmdWanted(args, "export"):
     cmdExecuted = True
     # Gather Keycloak access tokens for Tackle2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -908,7 +757,7 @@ if cmdWanted(args, "export"):
 if cmdWanted(args, "import"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
@@ -930,7 +779,7 @@ if cmdWanted(args, "import"):
 if cmdWanted(args, "clean"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
@@ -944,7 +793,7 @@ if cmdWanted(args, "clean"):
 if cmdWanted(args, "clean-all"):
     cmdExecuted = True
     # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'])
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2)
@@ -952,6 +801,28 @@ if cmdWanted(args, "clean-all"):
     # Run the cleanup including seeds
     print("Cleaning ALL data in Tackle2")
     tool.cleanAllTackle2()
+
+# Migrate Pathfinder Assessments to Konveyor Assessments
+if cmdWanted(args, "migrate-assessments"):
+    cmdExecuted = True
+
+    # Check Pathfinder URL arg
+    if not args.pathfinder_url:
+        print("Error: Pathfinder URL is required, specify it with -p or --pathfinder-url option.")
+        exit(1)
+
+    # Gather Keycloak access token for Tackle 2
+    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
+
+    # Setup Tackle data migration object
+    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+
+    # Run the import
+    print("Starting Pathfinder Assessments to Konveyor Assessment migration.")
+    appCnt = tool.migrateAssessments(args.pathfinder_url)
+
+    print("Done. %d new Assessment(s) for Application(s) were migrated!" % appCnt)
+
 
 # Print help if action was not specified
 if not cmdExecuted:

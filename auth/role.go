@@ -1,11 +1,12 @@
 package auth
 
 import (
+	"io"
+	"os"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gopkg.in/yaml.v2"
-	"io"
-	"os"
 )
 
 var Settings = &settings.Settings
@@ -36,15 +37,15 @@ var AddonRole = []string{
 // Role represents a RBAC role which grants
 // access to particular resources in the hub.
 type Role struct {
-	Name      string     `yaml:"role"`
-	Resources []Resource `yaml:"resources"`
+	Name      string     `yaml:"role" validate:"required"`
+	Resources []Resource `yaml:"resources" validate:"required"`
 }
 
 //
 // Resource is a set of permissions for a hub resource that a role may have.
 type Resource struct {
-	Name  string   `yaml:"name"`
-	Verbs []string `yaml:"verbs"`
+	Name  string   `yaml:"name" validate:"required"`
+	Verbs []string `yaml:"verbs" validate:"required,dive,oneof=get post put patch delete"`
 }
 
 //
@@ -75,7 +76,7 @@ func LoadRoles(path string) (roles []Role, err error) {
 		return
 	}
 
-	err = yaml.Unmarshal(yamlBytes, &roles)
+	err = yaml.UnmarshalStrict(yamlBytes, &roles)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -100,7 +101,7 @@ func LoadUsers(path string) (users []User, err error) {
 		return
 	}
 
-	err = yaml.Unmarshal(yamlBytes, &users)
+	err = yaml.UnmarshalStrict(yamlBytes, &users)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

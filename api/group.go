@@ -40,7 +40,7 @@ func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.StakeholderGroup
 // @router /stakeholdergroups/{id} [get]
-// @param id path string true "Stakeholder Group ID"
+// @param id path int true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.StakeholderGroup{}
@@ -115,7 +115,7 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 // @tags stakeholdergroups
 // @success 204
 // @router /stakeholdergroups/{id} [delete]
-// @param id path string true "Stakeholder Group ID"
+// @param id path int true "Stakeholder Group ID"
 func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.StakeholderGroup{}
@@ -140,7 +140,7 @@ func (h StakeholderGroupHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /stakeholdergroups/{id} [put]
-// @param id path string true "Stakeholder Group ID"
+// @param id path int true "Stakeholder Group ID"
 // @param stakeholder_group body api.StakeholderGroup true "Stakeholder Group data"
 func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -179,11 +179,11 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 //
 // StakeholderGroup REST resource.
 type StakeholderGroup struct {
-	Resource
+	Resource       `yaml:",inline"`
 	Name           string `json:"name" binding:"required"`
 	Description    string `json:"description"`
 	Stakeholders   []Ref  `json:"stakeholders"`
-	MigrationWaves []Ref  `json:"migrationWaves"`
+	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
 }
 
 //

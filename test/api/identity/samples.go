@@ -35,8 +35,8 @@ var (
 		`,
 	}
 	Mvn = api.Identity{
-		Kind: "mvn",
-		Name: "mvn-settings",
+		Kind: "maven",
+		Name: "maven-settings",
 		Settings: `<?xml version="1.0" encoding="UTF-8"?>
 		<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
 				  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -47,7 +47,7 @@ var (
 		  </proxies>
 		  <servers>
 			<server>
-			   <id>tackle-testapp</id>
+			   <id>tackle-testapp-public</id>
 			   <username>GITHUB_USER</username>
 			   <password>GITHUB_TOKEN</password>
 			 </server>
@@ -70,8 +70,8 @@ var (
 				  <url>https://repo1.maven.org/maven2</url>
 				</repository>
 				<repository>
-				  <id>tackle-testapp</id>
-				  <url>https://maven.pkg.github.com/konveyor/tackle-testapp</url>
+				  <id>tackle-testapp-public</id>
+				  <url>https://maven.pkg.github.com/konveyor/tackle-testapp-public</url>
 				  <snapshots>
 					<enabled>true</enabled>
 				  </snapshots>

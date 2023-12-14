@@ -5,6 +5,7 @@ Tackle hub/addon integration.
 package addon
 
 import (
+	logapi "github.com/go-logr/logr"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -67,6 +68,8 @@ type Filter = binding.Filter
 type Adapter struct {
 	// Task API.
 	Task
+	// Log API.
+	Log logapi.Logger
 	// Settings API.
 	Setting Setting
 	// Application API.
@@ -141,6 +144,7 @@ func newAdapter() (adapter *Adapter) {
 		Task: Task{
 			richClient: richClient,
 		},
+		Log:         Log,
 		Setting:     richClient.Setting,
 		Application: richClient.Application,
 		Identity:    richClient.Identity,

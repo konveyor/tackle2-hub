@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -106,7 +108,6 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -133,28 +134,13 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		return
 	}
 	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	archetypes, err := resolver.Archetypes()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	archetypeTags, err := resolver.ArchetypeTags()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	r := Application{}
 	r.With(m, tags)
-	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, SourceArchetype)
-	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
-	r.Assessed, err = resolver.Assessed()
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -168,7 +154,6 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 func (h ApplicationHandler) List(ctx *gin.Context) {
 	var list []model.Application
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	db = db.Omit("Analyses")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -197,22 +182,9 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 			return
 		}
 		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
-		archetypes, aErr := resolver.Archetypes()
-		if aErr != nil {
-			_ = ctx.Error(aErr)
-			return
-		}
-		archetypeTags, aErr := resolver.ArchetypeTags()
-		if aErr != nil {
-			_ = ctx.Error(aErr)
-			return
-		}
 		r := Application{}
 		r.With(&list[i], tags)
-		r.WithArchetypes(archetypes)
-		r.WithVirtualTags(archetypeTags, SourceArchetype)
-		r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
-		r.Assessed, err = resolver.Assessed()
+		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -273,27 +245,12 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	archetypes, err := resolver.Archetypes()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	archetypeTags, err := resolver.ArchetypeTags()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	r.With(m, tags)
-	r.WithArchetypes(archetypes)
-	r.WithVirtualTags(archetypeTags, SourceArchetype)
-	r.WithVirtualTags(resolver.AssessmentTags(), SourceArchetype)
-	r.Assessed, err = resolver.Assessed()
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -431,7 +388,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/bucket/{wildcard} [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 // @param filter query string false "Filter"
 func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Application{}
@@ -456,7 +414,8 @@ func (h ApplicationHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [post]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -480,7 +439,8 @@ func (h ApplicationHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
+// @param wildcard path string true "Content path"
 func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
@@ -504,7 +464,7 @@ func (h ApplicationHandler) BucketDelete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Ref
 // @router /applications/{id}/tags [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	app := &model.Application{}
@@ -576,6 +536,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 // @success 201 {object} api.Ref
 // @router /applications/{id}/tags [post]
 // @param tag body Ref true "Tag data"
+// @param id path int true "Application ID"
 func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 	id := h.pk(ctx)
 	ref := &TagRef{}
@@ -615,7 +576,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /applications/{id}/tags [patch]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source query string false "Source"
 // @param tags body []TagRef true "Tag references"
 func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
@@ -669,7 +630,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/tags/{sid} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param sid path string true "Tag ID"
 func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -704,7 +665,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.FactMap
 // @router /applications/{id}/facts/{source}: [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source path string true "Source key"
 func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
@@ -736,7 +697,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 // @produce json
 // @success 200 {object} object
 // @router /applications/{id}/facts/{key} [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -781,7 +742,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 // @produce json
 // @success 201
 // @router /applications/{id}/facts [post]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param fact body api.Fact true "Fact data"
 func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -818,7 +779,7 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /applications/{id}/facts/{key} [put]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 // @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
@@ -865,7 +826,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{key} [delete]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param key path string true "Fact key"
 func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -897,7 +858,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @tags applications
 // @success 204
 // @router /applications/{id}/facts/{source}: [put]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 // @param source path string true "Fact key"
 // @param factmap body api.FactMap true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
@@ -992,7 +953,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups")
 	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {
@@ -1017,12 +978,12 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	assessments := m.Assessments
-	for _, a := range archetypes {
-		assessments = append(assessments, a.Assessments...)
+	for _, arch := range archetypes {
+		for _, a := range arch.Assessments {
+			assessments = append(assessments, *a.Assessment)
+		}
 	}
-
 	resources := []Assessment{}
 	for i := range assessments {
 		r := Assessment{}
@@ -1041,6 +1002,7 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.Assessment
 // @router /applications/{id}/assessments [post]
+// @param id path int true "Application ID"
 // @param assessment body api.Assessment true "Assessment data"
 func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	application := &model.Application{}
@@ -1069,22 +1031,29 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.Sections = q.Sections
 	m.Thresholds = q.Thresholds
 	m.RiskMessages = q.RiskMessages
 	m.CreateUser = h.CurrentUser(ctx)
-
-	resolver, err := assessment.NewTagResolver(h.DB(ctx))
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	// if sections aren't empty that indicates that this assessment is being
+	// created "as-is" and should not have its sections populated or autofilled.
+	newAssessment := false
+	if len(m.Sections) == 0 {
+		m.Sections = q.Sections
+		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
+		if rErr != nil {
+			_ = ctx.Error(rErr)
+			return
+		}
+		assessment.PrepareForApplication(resolver, application, m)
+		newAssessment = true
 	}
-	assessment.PrepareForApplication(resolver, application, m)
-
 	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
+	}
+	if newAssessment {
+		metrics.AssessmentsInitiated.Inc()
 	}
 
 	r.With(m)
@@ -1094,7 +1063,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 //
 // Application REST resource.
 type Application struct {
-	Resource
+	Resource        `yaml:",inline"`
 	Name            string      `json:"name" binding:"required"`
 	Description     string      `json:"description"`
 	Bucket          *Ref        `json:"bucket"`
@@ -1104,13 +1073,16 @@ type Application struct {
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`
 	Tags            []TagRef    `json:"tags"`
-	BusinessService *Ref        `json:"businessService"`
+	BusinessService *Ref        `json:"businessService" yaml:"businessService"`
 	Owner           *Ref        `json:"owner"`
 	Contributors    []Ref       `json:"contributors"`
-	MigrationWave   *Ref        `json:"migrationWave"`
+	MigrationWave   *Ref        `json:"migrationWave" yaml:"migrationWave"`
 	Archetypes      []Ref       `json:"archetypes"`
 	Assessments     []Ref       `json:"assessments"`
 	Assessed        bool        `json:"assessed"`
+	Risk            string      `json:"risk"`
+	Confidence      int         `json:"confidence"`
+	Effort          int         `json:"effort"`
 }
 
 //
@@ -1158,15 +1130,12 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		ref.With(a.ID, "")
 		r.Assessments = append(r.Assessments, ref)
 	}
-}
 
-//
-// WithArchetypes updates the resource with archetypes.
-func (r *Application) WithArchetypes(archetypes []model.Archetype) {
-	for _, a := range archetypes {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Archetypes = append(r.Archetypes, ref)
+	if len(m.Analyses) > 0 {
+		sort.Slice(m.Analyses, func(i, j int) bool {
+			return m.Analyses[i].ID < m.Analyses[j].ID
+		})
+		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
 	}
 }
 
@@ -1178,6 +1147,40 @@ func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 		ref.With(t.ID, t.Name, source, true)
 		r.Tags = append(r.Tags, ref)
 	}
+}
+
+//
+// WithResolver uses an ApplicationResolver to update the resource with
+// values derived from the application's assessments and archetypes.
+func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (err error) {
+	archetypes, err := resolver.Archetypes()
+	if err != nil {
+		return
+	}
+	for _, a := range archetypes {
+		ref := Ref{}
+		ref.With(a.ID, a.Name)
+		r.Archetypes = append(r.Archetypes, ref)
+	}
+	archetypeTags, err := resolver.ArchetypeTags()
+	if err != nil {
+		return
+	}
+	r.WithVirtualTags(archetypeTags, SourceArchetype)
+	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
+	r.Assessed, err = resolver.Assessed()
+	if err != nil {
+		return
+	}
+	r.Confidence, err = resolver.Confidence()
+	if err != nil {
+		return
+	}
+	r.Risk, err = resolver.Risk()
+	if err != nil {
+		return
+	}
+	return
 }
 
 //

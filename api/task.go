@@ -71,7 +71,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Task
 // @router /tasks/{id} [get]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 func (h TaskHandler) Get(ctx *gin.Context) {
 	task := &model.Task{}
 	id := h.pk(ctx)
@@ -164,7 +164,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 // @tags tasks
 // @success 204
 // @router /tasks/{id} [delete]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 func (h TaskHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	task := &model.Task{}
@@ -197,7 +197,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /tasks/{id} [put]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 // @param task body Task true "Task data"
 func (h TaskHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -239,7 +239,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /tasks/{id}/submit [put]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"
 func (h TaskHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -270,7 +270,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // @tags tasks
 // @success 204
 // @router /tasks/{id}/cancel [put]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Task{}
@@ -317,7 +317,8 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /tasks/{id}/bucket/{wildcard} [get]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
+// @param wildcard path string true "Content path"
 // @param filter query string false "Filter"
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Task{}
@@ -342,7 +343,8 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [post]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
+// @param wildcard path string true "Content path"
 func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
@@ -366,7 +368,8 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/bucket/{wildcard} [delete]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
+// @param wildcard path string true "Content path"
 func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
@@ -391,7 +394,7 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.TaskReport
 // @router /tasks/{id}/report [post]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -420,7 +423,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.TaskReport
 // @router /tasks/{id}/report [put]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -451,7 +454,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /tasks/{id}/report [delete]
-// @param id path string true "Task ID"
+// @param id path int true "Task ID"
 func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TaskReport{}
@@ -583,7 +586,7 @@ func (r *Task) Model() (m *model.Task) {
 		State:         r.State,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Data, _ = json.Marshal(r.Data)
+	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.ID = r.ID
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
@@ -639,7 +642,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		m.Activity, _ = json.Marshal(r.Activity)
 	}
 	if r.Result != nil {
-		m.Result, _ = json.Marshal(r.Result)
+		m.Result, _ = json.Marshal(StrMap(r.Result))
 	}
 	if r.Errors != nil {
 		m.Errors, _ = json.Marshal(r.Errors)

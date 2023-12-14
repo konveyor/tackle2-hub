@@ -40,7 +40,7 @@ func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Dependency
 // @router /dependencies/{id} [get]
-// @param id path string true "Dependency ID"
+// @param id path int true "Dependency ID"
 func (h DependencyHandler) Get(ctx *gin.Context) {
 	m := &model.Dependency{}
 	id := ctx.Param(ID)
@@ -127,7 +127,7 @@ func (h DependencyHandler) Create(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /dependencies/{id} [delete]
-// @param id path string true "Dependency id"
+// @param id path int true "Dependency id"
 func (h DependencyHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Dependency{}
@@ -148,9 +148,9 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 //
 // Dependency REST resource.
 type Dependency struct {
-	Resource
-	To   Ref `json:"to"`
-	From Ref `json:"from"`
+	Resource `yaml:",inline"`
+	To       Ref `json:"to"`
+	From     Ref `json:"from"`
 }
 
 //

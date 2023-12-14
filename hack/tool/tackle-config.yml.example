@@ -6,9 +6,3 @@ password:
 
 # Export of Identitiy (credentials) password and key fields should be encrypted, set the passphase
 encryption_passphase:
-
-# Tackle 1.2 endpoint and credentials, e.g. to dump data and migrate to Tackle2
-tackle1:
-  url: https://tackle-tackle.apps.mta01.cluster.local
-  username: tackle
-  password:

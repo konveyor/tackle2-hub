@@ -40,7 +40,7 @@ func (h TagHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Tag
 // @router /tags/{id} [get]
-// @param id path string true "Tag ID"
+// @param id path int true "Tag ID"
 func (h TagHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tag{}
@@ -115,7 +115,7 @@ func (h TagHandler) Create(ctx *gin.Context) {
 // @tags tags
 // @success 204
 // @router /tags/{id} [delete]
-// @param id path string true "Tag ID"
+// @param id path int true "Tag ID"
 func (h TagHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Tag{}
@@ -140,7 +140,7 @@ func (h TagHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /tags/{id} [put]
-// @param id path string true "Tag ID"
+// @param id path int true "Tag ID"
 // @param tag body api.Tag true "Tag data"
 func (h TagHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -167,7 +167,7 @@ func (h TagHandler) Update(ctx *gin.Context) {
 //
 // Tag REST resource.
 type Tag struct {
-	Resource
+	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
 	Category Ref    `json:"category" binding:"required"`
 }

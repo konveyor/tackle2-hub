@@ -43,7 +43,7 @@ func (h TargetHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} Target
 // @router /targets/{id} [get]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 func (h TargetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	target := &model.Target{}
@@ -148,7 +148,7 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 // @tags targets
 // @success 204
 // @router /targets/{id} [delete]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 func (h TargetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	target := &model.Target{}
@@ -187,7 +187,7 @@ func (h TargetHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /targets/{id} [put]
-// @param id path string true "Target ID"
+// @param id path int true "Target ID"
 // @param target body Target true "Target data"
 func (h TargetHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -238,14 +238,15 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 //
 // Target REST resource.
 type Target struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
-	Choice      bool     `json:"choice,omitempty"`
-	Custom      bool     `json:"custom,omitempty"`
+	Provider    string   `json:"provider,omitempty" yaml:",omitempty"`
+	Choice      bool     `json:"choice,omitempty" yaml:",omitempty"`
+	Custom      bool     `json:"custom,omitempty" yaml:",omitempty"`
 	Labels      []Label  `json:"labels"`
 	Image       Ref      `json:"image"`
-	RuleSet     *RuleSet `json:"ruleset,omitempty"`
+	RuleSet     *RuleSet `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
 }
 
 type Label struct {
@@ -259,6 +260,7 @@ func (r *Target) With(m *model.Target) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
+	r.Provider = m.Provider
 	r.Choice = m.Choice
 	r.Custom = !m.Builtin()
 	if m.RuleSet != nil {
@@ -279,6 +281,7 @@ func (r *Target) Model() (m *model.Target) {
 	m = &model.Target{
 		Name:        r.Name,
 		Description: r.Description,
+		Provider:    r.Provider,
 		Choice:      r.Choice,
 	}
 	m.ID = r.ID

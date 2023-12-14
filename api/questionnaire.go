@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 // Routes
@@ -39,7 +40,7 @@ func (h QuestionnaireHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Questionnaire
 // @router /questionnaires/{id} [get]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 func (h QuestionnaireHandler) Get(ctx *gin.Context) {
 	m := &model.Questionnaire{}
 	id := h.pk(ctx)
@@ -114,13 +115,17 @@ func (h QuestionnaireHandler) Create(ctx *gin.Context) {
 // @tags questionnaires
 // @success 204
 // @router /questionnaires/{id} [delete]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Questionnaire{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
+		return
+	}
+	if m.Builtin() {
+		h.Status(ctx, http.StatusForbidden)
 		return
 	}
 	result = h.DB(ctx).Delete(m)
@@ -134,12 +139,14 @@ func (h QuestionnaireHandler) Delete(ctx *gin.Context) {
 
 // Update godoc
 // @summary Update a questionnaire.
-// @description Update a questionnaire.
+// @description Update a questionnaire. If the Questionnaire
+// @description is builtin, only its "required" field can be changed
+// @description and all other fields will be ignored.
 // @tags questionnaires
 // @accept json
 // @success 204
 // @router /questionnaires/{id} [put]
-// @param id path string true "Questionnaire ID"
+// @param id path int true "Questionnaire ID"
 // @param questionnaire body api.Questionnaire true "Questionnaire data"
 func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -149,12 +156,30 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
-	m.ID = id
-	m.UpdateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
+	m := &model.Questionnaire{}
+	db := h.DB(ctx)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	updated := r.Model()
+	updated.ID = id
+	updated.UpdateUser = h.CurrentUser(ctx)
+	var fields map[string]interface{}
+	if m.Builtin() {
+		fields = map[string]interface{}{
+			"updateUser": updated.UpdateUser,
+			"required":   updated.Required,
+		}
+	} else {
+		fields = h.fields(updated)
+	}
+
+	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result := db.Updates(h.fields(m))
+	result = db.Updates(fields)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -164,13 +189,14 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 }
 
 type Questionnaire struct {
-	Resource
+	Resource     `yaml:",inline"`
 	Name         string                  `json:"name" yaml:"name" binding:"required"`
 	Description  string                  `json:"description" yaml:"description"`
 	Required     bool                    `json:"required" yaml:"required"`
-	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required"`
+	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required,dive"`
 	Thresholds   assessment.Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
+	Builtin      bool                    `json:"builtin,omitempty" yaml:"builtin,omitempty"`
 }
 
 // With updates the resource with the model.
@@ -179,6 +205,7 @@ func (r *Questionnaire) With(m *model.Questionnaire) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Required = m.Required
+	r.Builtin = m.Builtin()
 	_ = json.Unmarshal(m.Sections, &r.Sections)
 	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
 	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)

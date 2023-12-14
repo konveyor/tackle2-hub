@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -44,9 +45,9 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 // @description Get an archetype by ID.
 // @tags archetypes
 // @produce json
-// @success 200 {object} api.Archetypes
+// @success 200 {object} api.Archetype
 // @router /archetypes/{id} [get]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
@@ -56,17 +57,24 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	applications, err := membership.Applications(m)
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
+	tags, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+	}
+	resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
 	r := Archetype{}
 	r.With(m)
-	r.WithApplications(applications)
+	err = r.WithResolver(resolver)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -85,18 +93,27 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	tags, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+	}
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
 	resources := []Archetype{}
 	for i := range list {
+		m := &list[i]
+		resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
 		r := Archetype{}
-		applications, err := membership.Applications(&list[i])
+		r.With(m)
+		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		r.With(&list[i])
-		r.WithApplications(applications)
 		resources = append(resources, r)
 	}
 
@@ -135,14 +152,13 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 	}
 
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	applications, err := membership.Applications(m)
+	resolver := assessment.NewArchetypeResolver(m, nil, membership, nil)
+	r.With(m)
+	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	r.With(m)
-	r.WithApplications(applications)
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -152,7 +168,7 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 // @tags archetypes
 // @success 204
 // @router /archetypes/{id} [delete]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Archetype{}
@@ -177,7 +193,7 @@ func (h ArchetypeHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /archetypes/{id} [put]
-// @param id path string true "Archetype ID"
+// @param id path int true "Archetype ID"
 // @param archetype body api.Archetype true "Archetype data"
 func (h ArchetypeHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -232,7 +248,7 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -258,6 +274,7 @@ func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 // @success 201 {object} api.Assessment
 // @router /archetypes/{id}/assessments [post]
 // @param assessment body api.Assessment true "Assessment data"
+// @param id path int true "Archetype ID"
 func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	archetype := &model.Archetype{}
 	id := h.pk(ctx)
@@ -283,21 +300,29 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.Sections = q.Sections
 	m.Thresholds = q.Thresholds
 	m.RiskMessages = q.RiskMessages
 	m.CreateUser = h.CurrentUser(ctx)
-
-	resolver, err := assessment.NewTagResolver(h.DB(ctx))
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	// if sections aren't empty that indicates that this assessment is being
+	// created "as-is" and should not have its sections populated or autofilled.
+	newAssessment := false
+	if len(m.Sections) == 0 {
+		m.Sections = q.Sections
+		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
+		if rErr != nil {
+			_ = ctx.Error(rErr)
+			return
+		}
+		assessment.PrepareForArchetype(resolver, archetype, m)
+		newAssessment = true
 	}
-	assessment.PrepareForArchetype(resolver, archetype, m)
 	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
+	}
+	if newAssessment {
+		metrics.AssessmentsInitiated.Inc()
 	}
 
 	r.With(m)
@@ -307,17 +332,20 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 //
 // Archetype REST resource.
 type Archetype struct {
-	Resource
-	Name              string `json:"name" yaml:"name"`
-	Description       string `json:"description" yaml:"description"`
-	Comments          string `json:"comments" yaml:"comments"`
-	Tags              []Ref  `json:"tags" yaml:"tags"`
-	CriteriaTags      []Ref  `json:"criteriaTags" yaml:"criteriaTags"`
-	Stakeholders      []Ref  `json:"stakeholders" yaml:"stakeholders"`
-	StakeholderGroups []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	Applications      []Ref  `json:"applications" yaml:"applications"`
-	Assessments       []Ref  `json:"assessments" yaml:"assessments"`
-	Review            *Ref   `json:"review"`
+	Resource          `yaml:",inline"`
+	Name              string   `json:"name" yaml:"name"`
+	Description       string   `json:"description" yaml:"description"`
+	Comments          string   `json:"comments" yaml:"comments"`
+	Tags              []TagRef `json:"tags" yaml:"tags"`
+	Criteria          []TagRef `json:"criteria" yaml:"criteria"`
+	Stakeholders      []Ref    `json:"stakeholders" yaml:"stakeholders"`
+	StakeholderGroups []Ref    `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	Applications      []Ref    `json:"applications" yaml:"applications"`
+	Assessments       []Ref    `json:"assessments" yaml:"assessments"`
+	Assessed          bool     `json:"assessed"`
+	Risk              string   `json:"risk"`
+	Confidence        int      `json:"confidence"`
+	Review            *Ref     `json:"review"`
 }
 
 //
@@ -327,13 +355,17 @@ func (r *Archetype) With(m *model.Archetype) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Comments = m.Comments
-	r.Tags = []Ref{}
+	r.Tags = []TagRef{}
 	for _, t := range m.Tags {
-		r.Tags = append(r.Tags, r.ref(t.ID, &t))
+		ref := TagRef{}
+		ref.With(t.ID, t.Name, "", false)
+		r.Tags = append(r.Tags, ref)
 	}
-	r.CriteriaTags = []Ref{}
+	r.Criteria = []TagRef{}
 	for _, t := range m.CriteriaTags {
-		r.CriteriaTags = append(r.CriteriaTags, r.ref(t.ID, &t))
+		ref := TagRef{}
+		ref.With(t.ID, t.Name, "", false)
+		r.Criteria = append(r.Criteria, ref)
 	}
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
@@ -355,13 +387,24 @@ func (r *Archetype) With(m *model.Archetype) {
 }
 
 //
-// WithApplications updates the Archetype resource with the applications.
-func (r *Archetype) WithApplications(apps []model.Application) {
+// WithResolver uses an ArchetypeResolver to update the resource with
+// values derived from the archetype's assessments.
+func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err error) {
+	r.Risk = resolver.Risk()
+	r.Confidence = resolver.Confidence()
+	r.Assessed = resolver.Assessed()
+	apps, err := resolver.Applications()
 	for i := range apps {
 		ref := Ref{}
 		ref.With(apps[i].ID, apps[i].Name)
 		r.Applications = append(r.Applications, ref)
 	}
+	for _, t := range resolver.AssessmentTags() {
+		ref := TagRef{}
+		ref.With(t.ID, t.Name, SourceAssessment, true)
+		r.Tags = append(r.Tags, ref)
+	}
+	return
 }
 
 //
@@ -374,6 +417,9 @@ func (r *Archetype) Model() (m *model.Archetype) {
 	}
 	m.ID = r.ID
 	for _, ref := range r.Tags {
+		if ref.Virtual {
+			continue
+		}
 		m.Tags = append(
 			m.Tags,
 			model.Tag{
@@ -382,7 +428,7 @@ func (r *Archetype) Model() (m *model.Archetype) {
 				},
 			})
 	}
-	for _, ref := range r.CriteriaTags {
+	for _, ref := range r.Criteria {
 		m.CriteriaTags = append(
 			m.CriteriaTags,
 			model.Tag{

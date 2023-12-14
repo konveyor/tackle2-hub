@@ -1,10 +1,10 @@
 package application
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -16,7 +16,15 @@ func TestApplicationBucket(t *testing.T) {
 	assert.Must(t, Application.Create(&application))
 
 	// Get the bucket to check if it was created.
-	err := Client.BucketGet(binding.Path(api.BucketRoot).Inject(binding.Params{api.ID: application.Bucket.ID}), "/dev/null")
+	destDir, err := ioutil.TempDir("", "destDir")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	defer func() {
+		_ = os.RemoveAll(destDir)
+	}()
+	bucket := RichClient.Application.Bucket(application.ID)
+	err = bucket.Get("", destDir)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

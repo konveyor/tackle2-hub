@@ -10,6 +10,7 @@ var (
 	Client      *binding.Client
 	Application binding.Application
 	Dependency  binding.Dependency
+	Stakeholder binding.Stakeholder
 )
 
 func init() {
@@ -24,4 +25,7 @@ func init() {
 
 	// Access Dependency directly
 	Dependency = RichClient.Dependency
+
+	// Access Stakeholder directly
+	Stakeholder = RichClient.Stakeholder
 }

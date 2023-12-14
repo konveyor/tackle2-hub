@@ -200,6 +200,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	db := m.DB.Preload("Category")
 	db.Find(&allTags)
 
+	seenTags := make(map[uint]bool)
 	appTags := []model.ApplicationTag{}
 	for _, impTag := range imp.ImportTags {
 		// Prepare normalized names for importTag
@@ -270,8 +271,58 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 				return
 			}
 		}
+		if !seenTags[tag.ID] {
+			seenTags[tag.ID] = true
+			appTags = append(appTags, model.ApplicationTag{TagID: tag.ID, Source: ""})
+		}
+	}
 
-		appTags = append(appTags, model.ApplicationTag{TagID: tag.ID, Source: ""})
+	if imp.Owner != "" {
+		name, email, parsed := parseStakeholder(imp.Owner)
+		if !parsed {
+			imp.ErrorMessage = fmt.Sprintf("Could not parse Owner '%s'.", imp.Owner)
+			return
+		}
+		owner, found := m.findStakeholder(email)
+		if !found {
+			if imp.ImportSummary.CreateEntities {
+				var err error
+				owner, err = m.createStakeholder(name, email)
+				if err != nil {
+					imp.ErrorMessage = fmt.Sprintf("Owner '%s' could not be created.", imp.Owner)
+					return
+				}
+			} else {
+				imp.ErrorMessage = fmt.Sprintf("Owner '%s' could not be found.", imp.Owner)
+				return
+			}
+		}
+		app.OwnerID = &owner.ID
+	}
+	if imp.Contributors != "" {
+		fields := strings.Split(imp.Contributors, ",")
+		for _, f := range fields {
+			name, email, parsed := parseStakeholder(f)
+			if !parsed {
+				imp.ErrorMessage = fmt.Sprintf("Could not parse Contributor '%s'.", f)
+				return
+			}
+			contributor, found := m.findStakeholder(email)
+			if !found {
+				if imp.ImportSummary.CreateEntities {
+					var err error
+					contributor, err = m.createStakeholder(name, email)
+					if err != nil {
+						imp.ErrorMessage = fmt.Sprintf("Contributor '%s' could not be created.", imp.Owner)
+						return
+					}
+				} else {
+					imp.ErrorMessage = fmt.Sprintf("Contributor '%s' could not be found.", imp.Owner)
+					return
+				}
+			}
+			app.Contributors = append(app.Contributors, contributor)
+		}
 	}
 
 	result := m.DB.Create(app)
@@ -292,6 +343,25 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	return
 }
 
+func (m *Manager) createStakeholder(name string, email string) (stakeholder model.Stakeholder, err error) {
+	stakeholder.Name = name
+	stakeholder.Email = email
+	err = m.DB.Create(&stakeholder).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+func (m *Manager) findStakeholder(email string) (stakeholder model.Stakeholder, found bool) {
+	result := m.DB.First(&stakeholder, "email = ?", email)
+	if result.Error != nil {
+		return
+	}
+	found = true
+	return
+}
+
 //
 // normalizedName transforms given name to be comparable as same with similar names
 // Example: normalizedName(" F oo-123 bar! ") returns "foo123bar!"
@@ -299,5 +369,22 @@ func normalizedName(name string) (normName string) {
 	invalidSymbols := regexp.MustCompile("[-_\\s]")
 	normName = strings.ToLower(name)
 	normName = invalidSymbols.ReplaceAllString(normName, "")
+	return
+}
+
+//
+// parseStakeholder attempts to parse a stakeholder's name and an email address
+// out of a string  like `John Smith <jsmith@example.com>`. The pattern is very
+// simple and treats anything before the first bracket as the name,
+// and anything within the brackets as the email.
+func parseStakeholder(s string) (name string, email string, parsed bool) {
+	pattern := regexp.MustCompile("(.+)\\s<(.+@.+)>")
+	matches := pattern.FindStringSubmatch(strings.TrimSpace(s))
+	if len(matches) != 3 {
+		return
+	}
+	parsed = true
+	name = matches[1]
+	email = strings.ToLower(matches[2])
 	return
 }

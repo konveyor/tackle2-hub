@@ -18,6 +18,10 @@ const (
 	RecordTypeDependency  = "2"
 )
 
+const (
+	ExpectedFieldCount = 17
+)
+
 //
 // Import Statuses
 const (
@@ -67,7 +71,7 @@ func (h ImportHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Import
 // @router /imports/{id} [get]
-// @param id path string true "Import ID"
+// @param id path int true "Import ID"
 func (h ImportHandler) GetImport(ctx *gin.Context) {
 	m := &model.Import{}
 	id := ctx.Param(ID)
@@ -122,7 +126,7 @@ func (h ImportHandler) ListImports(ctx *gin.Context) {
 // @tags imports
 // @success 204
 // @router /imports/{id} [delete]
-// @param id path string true "Import ID"
+// @param id path int true "Import ID"
 func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB(ctx).Delete(&model.Import{}, id)
@@ -142,7 +146,7 @@ func (h ImportHandler) DeleteImport(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.ImportSummary
 // @router /importsummaries/{id} [get]
-// @param id path string true "ImportSummary ID"
+// @param id path int true "ImportSummary ID"
 func (h ImportHandler) GetSummary(ctx *gin.Context) {
 	m := &model.ImportSummary{}
 	id := ctx.Param(ID)
@@ -188,7 +192,7 @@ func (h ImportHandler) ListSummaries(ctx *gin.Context) {
 // @tags imports
 // @success 204
 // @router /importsummaries/{id} [delete]
-// @param id path string true "ImportSummary ID"
+// @param id path int true "ImportSummary ID"
 func (h ImportHandler) DeleteSummary(ctx *gin.Context) {
 	id := ctx.Param(ID)
 	result := h.DB(ctx).Delete(&model.ImportSummary{}, id)
@@ -270,8 +274,8 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 		var imp model.Import
 		switch row[0] {
 		case RecordTypeApplication:
-			// Check row format - length, expecting 15 fields + tags
-			if len(row) < 15 {
+			// Check row format - length, expecting 17 fields + tags
+			if len(row) < ExpectedFieldCount {
 				h.Respond(ctx, http.StatusBadRequest, gin.H{"errorMessage": "Invalid Application Import CSV format."})
 				return
 			}
@@ -396,10 +400,12 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 		RepositoryURL:       row[12],
 		RepositoryBranch:    row[13],
 		RepositoryPath:      row[14],
+		Owner:               row[15],
+		Contributors:        row[16],
 	}
 
 	// Tags
-	for i := 15; i < len(row); i++ {
+	for i := ExpectedFieldCount; i < len(row); i++ {
 		if i%2 == 0 {
 			tag := model.ImportTag{
 				Name:     row[i],
@@ -419,13 +425,13 @@ type Import map[string]interface{}
 //
 // ImportSummary REST resource.
 type ImportSummary struct {
-	Resource
+	Resource       `yaml:",inline"`
 	Filename       string    `json:"filename"`
-	ImportStatus   string    `json:"importStatus"`
-	ImportTime     time.Time `json:"importTime"`
-	ValidCount     int       `json:"validCount"`
-	InvalidCount   int       `json:"invalidCount"`
-	CreateEntities bool      `json:"createEntities"`
+	ImportStatus   string    `json:"importStatus" yaml:"importStatus"`
+	ImportTime     time.Time `json:"importTime" yaml:"importTime"`
+	ValidCount     int       `json:"validCount" yaml:"validCount"`
+	InvalidCount   int       `json:"invalidCount" yaml:"invalidCount"`
+	CreateEntities bool      `json:"createEntities" yaml:"createEntities"`
 }
 
 //

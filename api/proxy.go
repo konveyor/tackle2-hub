@@ -43,7 +43,7 @@ func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} Proxy
 // @router /proxies/{id} [get]
-// @param id path string true "Proxy ID"
+// @param id path int true "Proxy ID"
 func (h ProxyHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	proxy := &model.Proxy{}
@@ -122,7 +122,7 @@ func (h ProxyHandler) Create(ctx *gin.Context) {
 // @tags proxies
 // @success 204
 // @router /proxies/{id} [delete]
-// @param id path string true "Proxy ID"
+// @param id path int true "Proxy ID"
 func (h ProxyHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	proxy := &model.Proxy{}
@@ -147,7 +147,7 @@ func (h ProxyHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /proxies/{id} [put]
-// @param id path string true "Proxy ID"
+// @param id path int true "Proxy ID"
 // @param proxy body Proxy true "Proxy data"
 func (h ProxyHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -174,7 +174,7 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 //
 // Proxy REST resource.
 type Proxy struct {
-	Resource
+	Resource `yaml:",inline"`
 	Enabled  bool     `json:"enabled"`
 	Kind     string   `json:"kind" binding:"oneof=http https"`
 	Host     string   `json:"host"`

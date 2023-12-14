@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -95,7 +96,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 // @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /analyses/{id} [get]
-// @param id path string true "Analysis ID"
+// @param id path int true "Analysis ID"
 func (h AnalysisHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	writer := AnalysisWriter{ctx: ctx}
@@ -118,7 +119,7 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200 {object} api.Analysis
 // @router /applications/{id}/analysis [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Analysis{}
@@ -130,7 +131,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 		return
 	}
 	writer := AnalysisWriter{ctx: ctx}
-	path, err := writer.Create(id)
+	path, err := writer.Create(m.ID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -149,11 +150,19 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @produce octet-stream
 // @success 200
 // @router /applications/{id}/analysis/report [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
+	m := &model.Analysis{}
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	err := db.Last(&m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	reportWriter := ReportWriter{ctx: ctx}
-	reportWriter.Write(id)
+	reportWriter.Write(m.ID)
 }
 
 // AppList godoc
@@ -221,6 +230,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @produce json
 // @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
 	result := h.DB(ctx).First(&model.Application{}, id)
@@ -343,6 +353,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	var deps []*TechDependency
 	for {
 		r := &TechDependency{}
 		err = d.Decode(r)
@@ -355,8 +366,15 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 				return
 			}
 		}
+		deps = append(deps, r)
+	}
+	sort.Slice(deps, func(i, _ int) bool {
+		return !deps[i].Indirect
+	})
+	for _, r := range deps {
 		m := r.Model()
 		m.AnalysisID = analysis.ID
+		db := db.Clauses(clause.OnConflict{DoNothing: true})
 		err = db.Create(m).Error
 		if err != nil {
 			_ = ctx.Error(err)
@@ -390,7 +408,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 // @tags analyses
 // @success 204
 // @router /analyses/{id} [delete]
-// @param id path string true "Analysis ID"
+// @param id path int true "Analysis ID"
 func (h AnalysisHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &model.Analysis{}
@@ -421,7 +439,7 @@ func (h AnalysisHandler) Delete(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.TechDependency
 // @router /application/{id}/analysis/dependencies [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	resources := []TechDependency{}
 	// Latest
@@ -503,7 +521,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Issue
 // @router /application/{id}/analysis/issues [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	resources := []Issue{}
 	// Latest
@@ -665,6 +683,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} api.Issue
 // @router /analyses/issues/{id} [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) Issue(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Issue{}
@@ -690,6 +709,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.Incident
 // @router /analyses/issues/{id}/incidents [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	issueId := ctx.Param(ID)
 	// Filter
@@ -892,7 +912,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.IssueReport
 // @router /analyses/report/applications/{id}/issues [get]
-// @param id path string true "Application ID"
+// @param id path int true "Application ID"
 func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
@@ -1168,6 +1188,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []api.FileReport
 // @router /analyses/report/issues/{id}/files [get]
+// @param id path int true "Issue ID"
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	resources := []FileReport{}
 	type M struct {
@@ -1352,8 +1373,7 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 // @description sort:
 // @description - provider
 // @description - name
-// @description - version
-// @description - sha
+// @description - labels
 // @tags dependencies
 // @produce json
 // @success 200 {object} []api.TechDependency
@@ -1394,16 +1414,15 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	// Inner Query
 	q := h.DB(ctx)
 	q = q.Select(
-		"Provider",
-		"Name",
-		"Version",
-		"SHA",
-		"Labels",
-		"COUNT(distinct AnalysisID) Applications")
-	q = q.Model(&model.TechDependency{})
-	q = q.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("ID IN (?)", h.depIDs(ctx, filter))
-	q = q.Group("Name,SHA")
+		"d.Provider",
+		"d.Name",
+		"json_group_array(distinct j.value) Labels",
+		"COUNT(distinct d.AnalysisID) Applications")
+	q = q.Table("TechDependency d")
+	q = q.Joins(",json_each(Labels) j")
+	q = q.Where("d.AnalysisID IN (?)", h.analysisIDs(ctx, filter))
+	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter))
+	q = q.Group("d.Provider, d.Name")
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
@@ -1436,12 +1455,16 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 		r := DepReport{
 			Provider:     m.Provider,
 			Name:         m.Name,
-			Version:      m.Version,
-			SHA:          m.SHA,
 			Applications: m.Applications,
 		}
 		if m.Labels != nil {
-			_ = json.Unmarshal(m.Labels, &r.Labels)
+			var aggregated []string
+			_ = json.Unmarshal(m.Labels, &aggregated)
+			for _, s := range aggregated {
+				if s != "" {
+					r.Labels = append(r.Labels, s)
+				}
+			}
 		}
 		resources = append(resources, r)
 	}
@@ -1644,7 +1667,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 		iq = iq.Model(&model.BusinessService{})
 		iq = iq.Select("ID")
 		iq = bsFilter.Where(iq)
-		q = q.Where("ID IN (?)", iq)
+		q = q.Where("BusinessServiceID IN (?)", iq)
 		return
 	}
 	return
@@ -1803,7 +1826,7 @@ type Analysis struct {
 	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
-	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty"`
+	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
 }
 
 //
@@ -1952,6 +1975,7 @@ func (r *TechDependency) With(m *model.TechDependency) {
 //
 // Model builds a model.
 func (r *TechDependency) Model() (m *model.TechDependency) {
+	sort.Strings(r.Labels)
 	m = &model.TechDependency{}
 	m.Name = r.Name
 	m.Version = r.Version
@@ -1969,7 +1993,7 @@ type Incident struct {
 	File     string  `json:"file"`
 	Line     int     `json:"line"`
 	Message  string  `json:"message"`
-	CodeSnip string  `json:"codeSnip"`
+	CodeSnip string  `json:"codeSnip" yaml:"codeSnip"`
 	Facts    FactMap `json:"facts"`
 }
 
@@ -2071,8 +2095,6 @@ type FileReport struct {
 type DepReport struct {
 	Provider     string   `json:"provider"`
 	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	SHA          string   `json:"sha"`
 	Labels       []string `json:"labels"`
 	Applications int      `json:"applications"`
 }
@@ -2089,7 +2111,7 @@ type DepAppReport struct {
 		Provider string   `json:"provider"`
 		Name     string   `json:"name"`
 		Version  string   `json:"version"`
-		SHA      string   `json:"rule"`
+		SHA      string   `json:"sha"`
 		Indirect bool     `json:"indirect"`
 		Labels   []string `json:"labels"`
 	} `json:"dependency"`
@@ -2262,6 +2284,7 @@ func (r *ReportWriter) db() (db *gorm.DB) {
 //
 // Write builds and streams the analysis report.
 func (r *ReportWriter) Write(id uint) {
+	reportDir := Settings.Analysis.ReportPath
 	path, err := r.buildOutput(id)
 	if err != nil {
 		_ = r.ctx.Error(err)
@@ -2274,6 +2297,9 @@ func (r *ReportWriter) Write(id uint) {
 	defer func() {
 		tarWriter.Close()
 	}()
+	filter := tar.NewFilter(reportDir)
+	filter.Exclude("output.js")
+	tarWriter.Filter = filter
 	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)
 	if err != nil {
 		_ = r.ctx.Error(err)
@@ -2313,8 +2339,9 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	r.encoder = &jsonEncoder{output: file}
 	r.write("window[\"apps\"]=[")
 	r.begin()
-	r.field("id").write(strconv.Itoa(int(m.Application.ID)))
+	r.field("id").writeStr(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
+	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
 	aWriter := AnalysisWriter{ctx: r.ctx}
 	aWriter.encoder = r.encoder
 	err = aWriter.addIssues(m)

@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -14,23 +15,6 @@ import (
 const (
 	AssessmentsRoot = "/assessments"
 	AssessmentRoot  = AssessmentsRoot + "/:" + ID
-)
-
-//
-// Assessment status
-const (
-	AssessmentEmpty    = "empty"
-	AssessmentStarted  = "started"
-	AssessmentComplete = "complete"
-)
-
-//
-// Assessment risks
-const (
-	RiskRed     = "red"
-	RiskYellow  = "yellow"
-	RiskGreen   = "green"
-	RiskUnknown = "unknown"
 )
 
 //
@@ -58,7 +42,7 @@ func (h AssessmentHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} api.Assessment
 // @router /assessments/{id} [get]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 func (h AssessmentHandler) Get(ctx *gin.Context) {
 	m := &model.Assessment{}
 	id := h.pk(ctx)
@@ -105,7 +89,7 @@ func (h AssessmentHandler) List(ctx *gin.Context) {
 // @tags assessments
 // @success 204
 // @router /assessments/{id} [delete]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 func (h AssessmentHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Assessment{}
@@ -130,7 +114,7 @@ func (h AssessmentHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /assessments/{id} [put]
-// @param id path string true "Assessment ID"
+// @param id path int true "Assessment ID"
 // @param assessment body api.Assessment true "Assessment data"
 func (h AssessmentHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -144,7 +128,7 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
-	db = db.Omit(clause.Associations)
+	db = db.Omit(clause.Associations, "Thresholds", "RiskMessages")
 	result := db.Updates(h.fields(m))
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -167,19 +151,19 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 //
 // Assessment REST resource.
 type Assessment struct {
-	Resource
+	Resource          `yaml:",inline"`
 	Application       *Ref                 `json:"application,omitempty" yaml:",omitempty" binding:"excluded_with=Archetype"`
 	Archetype         *Ref                 `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
 	Questionnaire     Ref                  `json:"questionnaire" binding:"required"`
-	Sections          []assessment.Section `json:"sections"`
+	Sections          []assessment.Section `json:"sections" binding:"dive"`
 	Stakeholders      []Ref                `json:"stakeholders"`
-	StakeholderGroups []Ref                `json:"stakeholderGroups"`
+	StakeholderGroups []Ref                `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	// read only
 	Risk         string                  `json:"risk"`
 	Confidence   int                     `json:"confidence"`
 	Status       string                  `json:"status"`
 	Thresholds   assessment.Thresholds   `json:"thresholds"`
-	RiskMessages assessment.RiskMessages `json:"riskMessages"`
+	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages"`
 }
 
 //
@@ -189,9 +173,6 @@ func (r *Assessment) With(m *model.Assessment) {
 	r.Questionnaire = r.ref(m.QuestionnaireID, &m.Questionnaire)
 	r.Archetype = r.refPtr(m.ArchetypeID, m.Archetype)
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	_ = json.Unmarshal(m.Sections, &r.Sections)
-	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
-	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
 		ref := Ref{}
@@ -204,15 +185,14 @@ func (r *Assessment) With(m *model.Assessment) {
 		ref.With(sg.ID, sg.Name)
 		r.StakeholderGroups = append(r.StakeholderGroups, ref)
 	}
-	if r.Complete() {
-		r.Status = AssessmentComplete
-	} else if r.Started() {
-		r.Status = AssessmentStarted
-	} else {
-		r.Status = AssessmentEmpty
-	}
-	r.Risk = r.RiskLevel()
-	r.Confidence = assessment.Confidence(r.Sections)
+	a := assessment.Assessment{}
+	a.With(m)
+	r.Risk = a.Risk()
+	r.Confidence = a.Confidence()
+	r.RiskMessages = a.RiskMessages
+	r.Thresholds = a.Thresholds
+	r.Sections = a.Sections
+	r.Status = a.Status()
 }
 
 //
@@ -220,7 +200,9 @@ func (r *Assessment) With(m *model.Assessment) {
 func (r *Assessment) Model() (m *model.Assessment) {
 	m = &model.Assessment{}
 	m.ID = r.ID
-	m.Sections, _ = json.Marshal(r.Sections)
+	if r.Sections != nil {
+		m.Sections, _ = json.Marshal(r.Sections)
+	}
 	m.QuestionnaireID = r.Questionnaire.ID
 	if r.Archetype != nil {
 		m.ArchetypeID = &r.Archetype.ID
@@ -243,50 +225,4 @@ func (r *Assessment) Model() (m *model.Assessment) {
 			})
 	}
 	return
-}
-
-func (r *Assessment) RiskLevel() string {
-	var total uint
-	colors := make(map[string]uint)
-	for _, s := range r.Sections {
-		for _, risk := range s.Risks() {
-			colors[risk]++
-			total++
-		}
-	}
-	if total == 0 {
-		return RiskGreen
-	}
-	if (float64(colors[RiskRed]) / float64(total)) >= (float64(r.Thresholds.Red) / float64(100)) {
-		return RiskRed
-	}
-	if (float64(colors[RiskYellow]) / float64(total)) >= (float64(r.Thresholds.Yellow) / float64(100)) {
-		return RiskYellow
-	}
-	if (float64(colors[RiskUnknown]) / float64(total)) >= (float64(r.Thresholds.Unknown) / float64(100)) {
-		return RiskUnknown
-	}
-	return RiskGreen
-}
-
-//
-// Complete returns whether all sections have been completed.
-func (r *Assessment) Complete() bool {
-	for _, s := range r.Sections {
-		if !s.Complete() {
-			return false
-		}
-	}
-	return true
-}
-
-//
-// Started returns whether any sections have been started.
-func (r *Assessment) Started() bool {
-	for _, s := range r.Sections {
-		if s.Started() {
-			return true
-		}
-	}
-	return false
 }

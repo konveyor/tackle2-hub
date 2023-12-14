@@ -41,7 +41,7 @@ func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} RuleSet
 // @router /rulesets/{id} [get]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 func (h RuleSetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	ruleset := &model.RuleSet{}
@@ -132,7 +132,7 @@ func (h RuleSetHandler) Create(ctx *gin.Context) {
 // @tags rulesets
 // @success 204
 // @router /rulesets/{id} [delete]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 func (h RuleSetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	err := h.delete(ctx, id)
@@ -151,7 +151,7 @@ func (h RuleSetHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /rulesets/{id} [put]
-// @param id path string true "RuleSet ID"
+// @param id path int true "RuleSet ID"
 // @param ruleBundle body RuleSet true "RuleSet data"
 func (h RuleSetHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -301,14 +301,14 @@ func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 //
 // RuleSet REST resource.
 type RuleSet struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Kind        string      `json:"kind,omitempty"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Rules       []Rule      `json:"rules"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
-	DependsOn   []Ref       `json:"dependsOn"`
+	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn"`
 }
 
 //
@@ -380,7 +380,7 @@ func (r *RuleSet) HasRule(id uint) (b bool) {
 //
 // Rule - REST Resource.
 type Rule struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Name        string   `json:"name,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Labels      []string `json:"labels,omitempty"`

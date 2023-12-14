@@ -299,10 +299,10 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 //
 // REST resource.
 type Resource struct {
-	ID         uint      `json:"id,omitempty" yaml:",omitempty"`
-	CreateUser string    `json:"createUser" yaml:",omitempty"`
-	UpdateUser string    `json:"updateUser" yaml:",omitempty"`
-	CreateTime time.Time `json:"createTime" yaml:",omitempty"`
+	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
+	CreateUser string    `json:"createUser" yaml:"createUser,omitempty"`
+	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
+	CreateTime time.Time `json:"createTime" yaml:"createTime,omitempty"`
 }
 
 //
@@ -372,8 +372,8 @@ func (r *Ref) With(id uint, name string) {
 type TagRef struct {
 	ID      uint   `json:"id" binding:"required"`
 	Name    string `json:"name"`
-	Source  string `json:"source"`
-	Virtual bool   `json:"virtual,omitempty"`
+	Source  string `json:"source,omitempty" yaml:"source,omitempty"`
+	Virtual bool   `json:"virtual,omitempty" yaml:"virtual,omitempty"`
 }
 
 //
@@ -498,5 +498,22 @@ func (r *Cursor) pageLimited() (b bool) {
 		return
 	}
 	b = r.Index > int64(r.Limit)
+	return
+}
+
+//
+// StrMap returns a map[string]any.
+// The YAML decoder can produce map[any]any which is not valid for json.
+// Converts map[any]any to map[string]any as needed.
+func StrMap(in any) (out any) {
+	out = in
+	if d, cast := in.(map[any]any); cast {
+		mp := make(map[string]any)
+		for k, v := range d {
+			s := fmt.Sprintf("%v", k)
+			mp[s] = StrMap(v)
+		}
+		out = mp
+	}
 	return
 }

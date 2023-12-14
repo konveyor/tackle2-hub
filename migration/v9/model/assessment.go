@@ -26,3 +26,16 @@ type Assessment struct {
 	Stakeholders      []Stakeholder      `gorm:"many2many:AssessmentStakeholders;constraint:OnDelete:CASCADE"`
 	StakeholderGroups []StakeholderGroup `gorm:"many2many:AssessmentStakeholderGroups;constraint:OnDelete:CASCADE"`
 }
+
+type Review struct {
+	Model
+	BusinessCriticality uint   `gorm:"not null"`
+	EffortEstimate      string `gorm:"not null"`
+	ProposedAction      string `gorm:"not null"`
+	WorkPriority        uint   `gorm:"not null"`
+	Comments            string
+	ApplicationID       *uint `gorm:"uniqueIndex"`
+	Application         *Application
+	ArchetypeID         *uint `gorm:"uniqueIndex"`
+	Archetype           *Archetype
+}

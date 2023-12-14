@@ -128,6 +128,7 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 // @accept json
 // @success 201
 // @router /settings/{key} [post]
+// @param key path string true "Key"
 // @param setting body api.Setting true "Setting value"
 func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 	key := ctx.Param(Key)

@@ -45,7 +45,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 // @produce json
 // @success 200 {object} Identity
 // @router /identities/{id} [get]
-// @param id path string true "Identity ID"
+// @param id path int true "Identity ID"
 func (h IdentityHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Identity{}
@@ -152,7 +152,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 // @tags identities
 // @success 204
 // @router /identities/{id} [delete]
-// @param id path string true "Identity ID"
+// @param id path int true "Identity ID"
 func (h IdentityHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	identity := &model.Identity{}
@@ -177,7 +177,7 @@ func (h IdentityHandler) Delete(ctx *gin.Context) {
 // @accept json
 // @success 204
 // @router /identities/{id} [put]
-// @param id path string true "Identity ID"
+// @param id path int true "Identity ID"
 // @param identity body Identity true "Identity data"
 func (h IdentityHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -231,7 +231,7 @@ func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
 //
 // Identity REST resource.
 type Identity struct {
-	Resource
+	Resource    `yaml:",inline"`
 	Kind        string `json:"kind" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`

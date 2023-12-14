@@ -3,7 +3,6 @@ package assessment
 import (
 	"encoding/json"
 	"github.com/konveyor/tackle2-hub/model"
-	"math"
 )
 
 //
@@ -13,6 +12,14 @@ const (
 	RiskRed     = "red"
 	RiskYellow  = "yellow"
 	RiskGreen   = "green"
+)
+
+//
+// Assessment status
+const (
+	StatusEmpty    = "empty"
+	StatusStarted  = "started"
+	StatusComplete = "complete"
 )
 
 //
@@ -39,39 +46,55 @@ const (
 )
 
 //
-// Confidence calculates a confidence score based on the answers to an assessment's questions.
-// The algorithm is a reimplementation of the calculation done by Pathfinder.
-func Confidence(sections []Section) (score int) {
-	totalQuestions := 0
-	riskCounts := make(map[string]int)
-	for _, s := range sections {
-		for _, r := range s.Risks() {
-			riskCounts[r]++
-			totalQuestions++
+// Risk returns the single highest risk score for a group of assessments.
+func Risk(assessments []Assessment) (risk string) {
+	risk = RiskUnknown
+	if len(assessments) == 0 {
+		return
+	}
+	red := 0
+	yellow := 0
+	unknown := 0
+	green := 0
+	if len(assessments) > 0 {
+		for _, a := range assessments {
+			switch a.Risk() {
+			case RiskRed:
+				red++
+			case RiskYellow:
+				yellow++
+			case RiskGreen:
+				green++
+			default:
+				unknown++
+			}
 		}
 	}
-	adjuster := 1.0
-	if riskCounts[RiskRed] > 0 {
-		adjuster = adjuster * math.Pow(AdjusterRed, float64(riskCounts[RiskRed]))
-	}
-	if riskCounts[RiskYellow] > 0 {
-		adjuster = adjuster * math.Pow(AdjusterYellow, float64(riskCounts[RiskYellow]))
-	}
-	confidence := 0.0
-	for i := 0; i < riskCounts[RiskRed]; i++ {
-		confidence *= MultiplierRed
-		confidence += WeightRed * adjuster
-	}
-	for i := 0; i < riskCounts[RiskYellow]; i++ {
-		confidence *= MultiplierYellow
-		confidence += WeightYellow * adjuster
-	}
-	confidence += float64(riskCounts[RiskGreen]) * WeightGreen * adjuster
-	confidence += float64(riskCounts[RiskUnknown]) * WeightUnknown * adjuster
 
-	maxConfidence := WeightGreen * totalQuestions
-	score = int(confidence / float64(maxConfidence) * 100)
+	switch {
+	case red > 0:
+		risk = RiskRed
+	case unknown > 0:
+		risk = RiskUnknown
+	case yellow > 0:
+		risk = RiskYellow
+	case green == len(assessments):
+		risk = RiskGreen
+	}
 
+	return
+}
+
+//
+// Confidence returns a total confidence score for a group of assessments.
+func Confidence(assessments []Assessment) (confidence int) {
+	if len(assessments) == 0 {
+		return
+	}
+	for _, a := range assessments {
+		confidence += a.Confidence()
+	}
+	confidence /= len(assessments)
 	return
 }
 
@@ -101,6 +124,9 @@ func PrepareForArchetype(tagResolver *TagResolver, archetype *model.Archetype, a
 
 	tagSet := NewSet()
 	for _, t := range archetype.CriteriaTags {
+		tagSet.Add(t.ID)
+	}
+	for _, t := range archetype.Tags {
 		tagSet.Add(t.ID)
 	}
 

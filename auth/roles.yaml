@@ -383,7 +383,10 @@
         - put
     - name: archetypes
       verbs:
+        - delete
         - get
+        - post
+        - put
     - name: archetypes.assessments
       verbs:
         - get
@@ -444,8 +447,6 @@
     - name: reviews
       verbs:
         - get
-        - post
-        - put
     - name: settings
       verbs:
         - get
@@ -495,7 +496,7 @@
       verbs:
         - get
     - name: targets
-      verb:
+      verbs:
         - get
     - name: analyses
       verbs:
