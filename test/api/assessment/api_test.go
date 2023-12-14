@@ -32,6 +32,21 @@ func TestAssessmentCRUD(t *testing.T) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
 			}
 
+			// Get via parent object Application.
+			gotList, err := RichClient.Application.GetAssesments(r.Application.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			found := false
+			for _, gotItem := range gotList {
+				if gotItem.ID == r.ID {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("Cannot find Assessment ID:%d on parent Application ID:%d", r.ID, r.Application.ID)
+			}
+
 			// Update example - select green instead of blue.
 			r.Sections[0].Questions[0].Answers[2].Selected = false // blue (default)
 			r.Sections[0].Questions[0].Answers[1].Selected = true  // green
