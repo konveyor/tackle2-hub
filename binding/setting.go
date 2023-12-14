@@ -38,3 +38,34 @@ func (h *Setting) Int(key string) (n int, err error) {
 	err = h.Get(key, &n)
 	return
 }
+
+//
+// Create a Setting.
+func (h *Setting) Create(r *api.Setting) (err error) {
+	err = h.client.Post(api.SettingsRoot, &r)
+	return
+}
+
+//
+// List Settings.
+func (h *Setting) List() (list []api.Setting, err error) {
+	list = []api.Setting{}
+	err = h.client.Get(api.SettingsRoot, &list)
+	return
+}
+
+//
+// Update a Setting.
+func (h *Setting) Update(r *api.Setting) (err error) {
+	path := Path(api.SettingRoot).Inject(Params{api.Key: r.Key})
+	err = h.client.Put(path, r)
+	return
+}
+
+//
+// Delete a Setting.
+func (h *Setting) Delete(key string) (err error) {
+	path := Path(api.SettingRoot).Inject(Params{api.Key: key})
+	err = h.client.Delete(path)
+	return
+}
