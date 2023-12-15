@@ -718,7 +718,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 }
 
 //
-// Attachment task report attached file ref.
+// Attachment associates Files with a TaskReport.
 type Attachment struct {
 	// Ref references an attached File.
 	Ref `yaml:",inline"`
