@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"k8s.io/utils/strings/slices"
 )
 
 //
@@ -642,9 +643,11 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 				content,
 				"> "+s)
 		}
+		snipA := slices.Clone(r.Activity[:ref.Index])
+		snipB := slices.Clone(r.Activity[ref.Index:])
 		r.Activity = append(
-			append(r.Activity[:ref.Index], content...),
-			r.Activity[ref.Index:]...)
+			append(snipA, content...),
+			snipB...)
 	}
 	return
 }
@@ -717,6 +720,9 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 //
 // Attachment task report attached file ref.
 type Attachment struct {
-	Ref   `yaml:",inline"`
+	// Ref references an attached File.
+	Ref `yaml:",inline"`
+	// Index 1-based association with an activity entry.
+	// Zero(0) indicates not associated.
 	Index int `json:"index,omitempty" yaml:",omitempty"`
 }
