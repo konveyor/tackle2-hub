@@ -87,7 +87,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	}
 	r := Task{}
 	r.With(task)
-	q := ctx.Query("inject")
+	q := ctx.Query("merged")
 	if b, _ := strconv.ParseBool(q); b {
 		err := r.injectFiles(h.DB(ctx))
 		if err != nil {
