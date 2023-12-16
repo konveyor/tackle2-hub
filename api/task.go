@@ -9,12 +9,12 @@ import (
 	"gorm.io/gorm/clause"
 	"io/ioutil"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"k8s.io/utils/strings/slices"
 )
 
 //
@@ -618,13 +618,13 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 	sort.Slice(
 		r.Attached,
 		func(i, j int) bool {
-			return r.Attached[i].Index > r.Attached[j].Index
+			return r.Attached[i].Activity > r.Attached[j].Activity
 		})
 	for _, ref := range r.Attached {
-		if ref.Index == 0 {
+		if ref.Activity == 0 {
 			continue
 		}
-		if ref.Index > len(r.Activity) {
+		if ref.Activity > len(r.Activity) {
 			continue
 		}
 		m := &model.File{}
@@ -643,8 +643,8 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 				content,
 				"> "+s)
 		}
-		snipA := slices.Clone(r.Activity[:ref.Index])
-		snipB := slices.Clone(r.Activity[ref.Index:])
+		snipA := slices.Clone(r.Activity[:ref.Activity])
+		snipB := slices.Clone(r.Activity[ref.Activity:])
 		r.Activity = append(
 			append(snipA, content...),
 			snipB...)
@@ -722,7 +722,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 type Attachment struct {
 	// Ref references an attached File.
 	Ref `yaml:",inline"`
-	// Index 1-based association with an activity entry.
-	// Zero(0) indicates not associated.
-	Index int `json:"index,omitempty" yaml:",omitempty"`
+	// Activity index (1-based) association with an
+	// activity entry. Zero(0) indicates not associated.
+	Activity int `json:"activity,omitempty" yaml:",omitempty"`
 }
