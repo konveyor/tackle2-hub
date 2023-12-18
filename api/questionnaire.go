@@ -193,7 +193,7 @@ type Questionnaire struct {
 	Name         string                  `json:"name" yaml:"name" binding:"required"`
 	Description  string                  `json:"description" yaml:"description"`
 	Required     bool                    `json:"required" yaml:"required"`
-	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required,dive"`
+	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required,min=1,dive"`
 	Thresholds   assessment.Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
 	Builtin      bool                    `json:"builtin,omitempty" yaml:"builtin,omitempty"`
