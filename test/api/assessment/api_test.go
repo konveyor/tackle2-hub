@@ -5,12 +5,18 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/test/api/questionnaire"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestAssessmentCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(fmt.Sprintf("%s for application %s", r.Questionnaire.Name, r.Application.Name), func(t *testing.T) {
+			// Prepare questionnaire
+			questionnaire := questionnaire.Questionnaire1
+			assert.Must(t, RichClient.Questionnaire.Create(&questionnaire))
+			r.Questionnaire.ID = questionnaire.ID
+
 			// Create via parent resource.
 			if r.Application.Name != "" {
 				app := api.Application{Name: r.Application.Name}
@@ -78,6 +84,7 @@ func TestAssessmentCRUD(t *testing.T) {
 			}
 
 			assert.Must(t, RichClient.Application.Delete(r.Application.ID))
+			assert.Must(t, RichClient.Questionnaire.Delete(r.Questionnaire.ID))
 		})
 	}
 }

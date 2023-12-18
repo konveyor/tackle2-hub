@@ -15,7 +15,6 @@ var (
 			Name: application.Minimal.Name,
 		},
 		Questionnaire: api.Ref{
-			ID:   1,
 			Name: questionnaire.Questionnaire1.Name,
 		},
 		Sections: []assessment.Section{
