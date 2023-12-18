@@ -42,6 +42,12 @@ func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
 }
 
 //
+// Required returns whether a questionnaire is required.
+func (r *QuestionnaireResolver) Required(id uint) (required bool) {
+	return r.requiredQuestionnaires.Contains(id)
+}
+
+//
 // Assessed returns whether a slice contains a completed assessment for each of the required
 // questionnaires.
 func (r *QuestionnaireResolver) Assessed(assessments []Assessment) (assessed bool) {

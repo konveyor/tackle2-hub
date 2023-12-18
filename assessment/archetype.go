@@ -66,16 +66,27 @@ func (r *ArchetypeResolver) AssessmentTags() (tags []model.Tag) {
 }
 
 //
+// RequiredAssessments returns the slice of assessments that are for required questionnaires.
+func (r *ArchetypeResolver) RequiredAssessments() (required []Assessment) {
+	for _, a := range r.archetype.Assessments {
+		if r.questionnaire.Required(a.QuestionnaireID) {
+			required = append(required, a)
+		}
+	}
+	return
+}
+
+//
 // Risk returns the overall risk level for the archetypes' assessments.
 func (r *ArchetypeResolver) Risk() (risk string) {
-	risk = Risk(r.archetype.Assessments)
+	risk = Risk(r.RequiredAssessments())
 	return
 }
 
 //
 // Confidence returns the archetype's overall assessment confidence score.
 func (r *ArchetypeResolver) Confidence() (confidence int) {
-	confidence = Confidence(r.archetype.Assessments)
+	confidence = Confidence(r.RequiredAssessments())
 	return
 }
 
@@ -85,7 +96,7 @@ func (r *ArchetypeResolver) Assessed() (assessed bool) {
 	if r.questionnaire == nil {
 		return
 	}
-	assessed = r.questionnaire.Assessed(r.archetype.Assessments)
+	assessed = r.questionnaire.Assessed(r.RequiredAssessments())
 	return
 }
 

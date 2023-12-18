@@ -1,12 +1,13 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
 //
@@ -152,7 +153,12 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 	}
 
 	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	resolver := assessment.NewArchetypeResolver(m, nil, membership, nil)
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resolver := assessment.NewArchetypeResolver(m, nil, membership, questionnaires)
 	r.With(m)
 	err = r.WithResolver(resolver)
 	if err != nil {
@@ -384,15 +390,18 @@ func (r *Archetype) With(m *model.Archetype) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
+	r.Risk = assessment.RiskUnknown
 }
 
 //
 // WithResolver uses an ArchetypeResolver to update the resource with
 // values derived from the archetype's assessments.
 func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err error) {
-	r.Risk = resolver.Risk()
-	r.Confidence = resolver.Confidence()
 	r.Assessed = resolver.Assessed()
+	if r.Assessed {
+		r.Risk = resolver.Risk()
+		r.Confidence = resolver.Confidence()
+	}
 	apps, err := resolver.Applications()
 	for i := range apps {
 		ref := Ref{}

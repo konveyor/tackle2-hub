@@ -2,14 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"sort"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
-	"sort"
-	"strings"
 )
 
 //
@@ -502,7 +503,12 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
-		resolver := assessment.NewApplicationResolver(app, tagsResolver, membership, nil)
+		questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		resolver := assessment.NewApplicationResolver(app, tagsResolver, membership, questionnaire)
 		if includeArchetype {
 			archetypeTags, err := resolver.ArchetypeTags()
 			if err != nil {
@@ -1137,6 +1143,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		})
 		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
 	}
+	r.Risk = assessment.RiskUnknown
 }
 
 //
@@ -1172,13 +1179,15 @@ func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (er
 	if err != nil {
 		return
 	}
-	r.Confidence, err = resolver.Confidence()
-	if err != nil {
-		return
-	}
-	r.Risk, err = resolver.Risk()
-	if err != nil {
-		return
+	if r.Assessed {
+		r.Confidence, err = resolver.Confidence()
+		if err != nil {
+			return
+		}
+		r.Risk, err = resolver.Risk()
+		if err != nil {
+			return
+		}
 	}
 	return
 }
