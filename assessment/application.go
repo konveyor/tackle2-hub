@@ -96,11 +96,22 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 }
 
 //
+// RequiredAssessments returns the slice of assessments that are for required questionnaires.
+func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
+	for _, a := range r.application.Assessments {
+		if r.questionnaireResolver.Required(a.QuestionnaireID) {
+			required = append(required, a)
+		}
+	}
+	return
+}
+
+//
 // AssessmentTags returns the list of tags that the application should inherit from the answers given
 // to its assessments.
 func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 	seenTags := make(map[uint]bool)
-	for _, assessment := range r.application.Assessments {
+	for _, assessment := range r.RequiredAssessments() {
 		aTags := r.tagResolver.Assessment(assessment)
 		for _, t := range aTags {
 			if _, found := seenTags[t.ID]; !found {
@@ -116,8 +127,9 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 // Risk returns the overall risk level for the application based on its or its archetypes' assessments.
 func (r *ApplicationResolver) Risk() (risk string, err error) {
 	var assessments []Assessment
-	if len(r.application.Assessments) > 0 {
-		assessments = r.application.Assessments
+	requiredAssessments := r.RequiredAssessments()
+	if len(requiredAssessments) > 0 {
+		assessments = requiredAssessments
 	} else {
 		archetypes, aErr := r.Archetypes()
 		if aErr != nil {
@@ -125,7 +137,11 @@ func (r *ApplicationResolver) Risk() (risk string, err error) {
 			return
 		}
 		for _, a := range archetypes {
-			assessments = append(assessments, a.Assessments...)
+			for _, assessment := range a.Assessments {
+				if r.questionnaireResolver.Required(assessment.QuestionnaireID) {
+					assessments = append(assessments, assessment)
+				}
+			}
 		}
 	}
 	risk = Risk(assessments)
@@ -136,8 +152,9 @@ func (r *ApplicationResolver) Risk() (risk string, err error) {
 // Confidence returns the application's overall assessment confidence score.
 func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 	var assessments []Assessment
-	if len(r.application.Assessments) > 0 {
-		assessments = r.application.Assessments
+	requiredAssessments := r.RequiredAssessments()
+	if len(requiredAssessments) > 0 {
+		assessments = requiredAssessments
 	} else {
 		archetypes, aErr := r.Archetypes()
 		if aErr != nil {
@@ -145,7 +162,11 @@ func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 			return
 		}
 		for _, a := range archetypes {
-			assessments = append(assessments, a.Assessments...)
+			for _, assessment := range a.Assessments {
+				if r.questionnaireResolver.Required(assessment.QuestionnaireID) {
+					assessments = append(assessments, assessment)
+				}
+			}
 		}
 	}
 	confidence = Confidence(assessments)
@@ -157,8 +178,9 @@ func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 	// if the application has any of its own assessments, only consider them for
 	// determining whether it has been assessed.
-	if len(r.application.Assessments) > 0 {
-		assessed = r.questionnaireResolver.Assessed(r.application.Assessments)
+	assessments := r.RequiredAssessments()
+	if len(assessments) > 0 {
+		assessed = r.questionnaireResolver.Assessed(assessments)
 		return
 	}
 	// otherwise the application is assessed if all of its archetypes are fully assessed.
