@@ -130,7 +130,7 @@ func (r *Assessment) Confidence() (score int) {
 type Section struct {
 	Order     *uint      `json:"order" yaml:"order" binding:"required"`
 	Name      string     `json:"name" yaml:"name"`
-	Questions []Question `json:"questions" yaml:"questions" binding:"dive"`
+	Questions []Question `json:"questions" yaml:"questions" binding:"min=1,dive"`
 	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
 }
 
@@ -184,7 +184,7 @@ type Question struct {
 	Explanation string           `json:"explanation" yaml:"explanation"`
 	IncludeFor  []CategorizedTag `json:"includeFor,omitempty" yaml:"includeFor,omitempty"`
 	ExcludeFor  []CategorizedTag `json:"excludeFor,omitempty" yaml:"excludeFor,omitempty"`
-	Answers     []Answer         `json:"answers" yaml:"answers" binding:"dive"`
+	Answers     []Answer         `json:"answers" yaml:"answers" binding:"min=1,dive"`
 }
 
 //
