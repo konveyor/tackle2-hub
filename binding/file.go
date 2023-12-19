@@ -34,11 +34,37 @@ func (h *File) Get(id uint, destination string) (err error) {
 }
 
 //
+// Touch creates an empty file.
+func (h *File) Touch(name string) (r *api.File, err error) {
+	r = &api.File{}
+	path := Path(api.FileRoot).Inject(Params{api.ID: name})
+	err = h.client.FilePost(path, "", r)
+	return
+}
+
+//
+// Post uploads a file.
+func (h *File) Post(source string) (r *api.File, err error) {
+	r = &api.File{}
+	path := Path(api.FileRoot).Inject(Params{api.ID: pathlib.Base(source)})
+	err = h.client.FilePost(path, source, r)
+	return
+}
+
+//
 // Put uploads a file.
 func (h *File) Put(source string) (r *api.File, err error) {
 	r = &api.File{}
 	path := Path(api.FileRoot).Inject(Params{api.ID: pathlib.Base(source)})
 	err = h.client.FilePut(path, source, r)
+	return
+}
+
+//
+// Patch appends a file.
+func (h *File) Patch(id uint, buffer []byte) (err error) {
+	path := Path(api.FileRoot).Inject(Params{api.ID: id})
+	err = h.client.FilePatch(path, buffer)
 	return
 }
 

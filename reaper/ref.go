@@ -4,6 +4,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
 	"reflect"
+	"fmt"
 )
 
 //
@@ -19,11 +20,29 @@ type RefCounter struct {
 func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err error) {
 	db := r.DB.Model(m)
 	fields := 0
+	j := 0
 	add := func(ft reflect.StructField) {
 		tag, found := ft.Tag.Lookup("ref")
 		if found && tag == kind {
 			db = db.Or(ft.Name, pk)
 			fields++
+			return
+		}
+		if found && tag == "[]"+kind {
+			db = db.Joins(
+				fmt.Sprintf(
+					",json_each(%s) j%d",
+					ft.Name,
+					j))
+			db = db.Or(
+				fmt.Sprintf(
+					"json_extract(j%d.value,?)=?",
+					j),
+				"$.id",
+				pk)
+			fields++
+			j++
+			return
 		}
 	}
 	var find func(interface{})
@@ -55,6 +74,8 @@ func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err
 					find(fv.Interface())
 				}
 			case reflect.Uint:
+				add(ft)
+			case reflect.Slice:
 				add(ft)
 			}
 		}

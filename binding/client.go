@@ -422,9 +422,52 @@ func (r *Client) FileGet(path, destination string) (err error) {
 }
 
 //
+// FilePost uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePost(path, source string, object interface{}) (err error) {
+	if source == "" {
+		fields := []Field{
+			{
+				Name:   api.FileField,
+				Reader: bytes.NewReader([]byte{}),
+			},
+		}
+		err = r.FileSend(path, http.MethodPost, fields, object)
+		return
+	}
+	isDir, nErr := r.IsDir(source, true)
+	if nErr != nil {
+		err = nErr
+		return
+	}
+	if isDir {
+		err = liberr.New("Must be regular file.")
+		return
+	}
+	fields := []Field{
+		{
+			Name: api.FileField,
+			Path: source,
+		},
+	}
+	err = r.FileSend(path, http.MethodPost, fields, object)
+	return
+}
+
+//
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object interface{}) (err error) {
+	if source == "" {
+		fields := []Field{
+			{
+				Name:   api.FileField,
+				Reader: bytes.NewReader([]byte{}),
+			},
+		}
+		err = r.FileSend(path, http.MethodPut, fields, object)
+		return
+	}
 	isDir, nErr := r.IsDir(source, true)
 	if nErr != nil {
 		err = nErr
@@ -445,25 +488,16 @@ func (r *Client) FilePut(path, source string, object interface{}) (err error) {
 }
 
 //
-// FilePost uploads a file.
+// FilePatch appends file.
 // Returns the created File resource.
-func (r *Client) FilePost(path, source string, object interface{}) (err error) {
-	isDir, nErr := r.IsDir(source, true)
-	if nErr != nil {
-		err = nErr
-		return
-	}
-	if isDir {
-		err = liberr.New("Must be regular file.")
-		return
-	}
+func (r *Client) FilePatch(path string, buffer []byte) (err error) {
 	fields := []Field{
 		{
-			Name: api.FileField,
-			Path: source,
+			Name:   api.FileField,
+			Reader: bytes.NewReader(buffer),
 		},
 	}
-	err = r.FileSend(path, http.MethodPost, fields, object)
+	err = r.FileSend(path, http.MethodPatch, fields, nil)
 	return
 }
 

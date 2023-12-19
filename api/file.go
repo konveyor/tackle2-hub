@@ -33,6 +33,7 @@ func (h FileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(FilesRoot+"/", h.List)
 	routeGroup.POST(FileRoot, h.Create)
 	routeGroup.PUT(FileRoot, h.Create)
+	routeGroup.PATCH(FileRoot, h.Append)
 	routeGroup.GET(FileRoot, h.Get)
 	routeGroup.DELETE(FileRoot, h.Delete)
 }
@@ -120,6 +121,65 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	r := File{}
 	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// Append godoc
+// @summary Append a file.
+// @description Append a file.
+// @tags file
+// @accept json
+// @produce json
+// @success 204
+// @router /files/{id} [put]
+// @param name id uint true "File ID"
+func (h FileHandler) Append(ctx *gin.Context) {
+	var err error
+	input, err := ctx.FormFile(FileField)
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
+		return
+	}
+	m := &model.File{}
+	id := h.pk(ctx)
+	db := h.DB(ctx)
+	err = db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	reader, err := input.Open()
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	writer, err := os.OpenFile(m.Path, os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = writer.Close()
+	}()
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db = h.DB(ctx)
+	db = db.Model(m)
+	user := h.BaseHandler.CurrentUser(ctx)
+	err = db.Update("UpdateUser", user).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // Get godoc
