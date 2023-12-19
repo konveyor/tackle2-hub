@@ -57,8 +57,9 @@ func (r *TagResolver) cacheTags() (err error) {
 
 	for _, c := range categories {
 		r.cache[c.Name] = make(map[string]*model.Tag)
-		for _, t := range c.Tags {
-			r.cache[c.Name][t.Name] = &t
+		for i := range c.Tags {
+			t := &c.Tags[i]
+			r.cache[c.Name][t.Name] = t
 		}
 	}
 
