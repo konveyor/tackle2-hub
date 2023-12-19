@@ -82,7 +82,8 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 					name,
 					file.Name)
 			}
-			f, err := os.Open(file.Path)
+
+			f, err := os.Open(tmp)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
