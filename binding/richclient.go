@@ -23,6 +23,7 @@ type RichClient struct {
 	// Resources APIs.
 	Application      Application
 	Archetype        Archetype
+	Assessment       Assessment
 	Bucket           Bucket
 	BusinessService  BusinessService
 	Dependency       Dependency
@@ -60,8 +61,11 @@ func New(baseUrl string) (r *RichClient) {
 		Application: Application{
 			client: client,
 		},
-		Archetype: Archetype{
+    Archetype: Archetype{
 			client: client,
+		},
+		Assessment: Assessment{
+      client: client,
 		},
 		Bucket: Bucket{
 			client: client,
