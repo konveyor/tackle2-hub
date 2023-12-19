@@ -170,8 +170,10 @@ func (h FileHandler) Append(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	err = db.Save(m).Error
+	db = h.DB(ctx)
+	db = db.Model(m)
+	user := h.BaseHandler.CurrentUser(ctx)
+	err = db.Update("UpdateUser", user).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
