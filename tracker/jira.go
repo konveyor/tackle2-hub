@@ -75,7 +75,7 @@ func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	t.Error = false
 	t.Message = ""
 	t.Reference = i.Key
-	t.Link = i.Self
+	t.Link = fmt.Sprintf("%s/browse/%s", r.tracker.URL, i.Key)
 	t.LastUpdated = time.Now()
 	metrics.IssuesExported.Inc()
 
