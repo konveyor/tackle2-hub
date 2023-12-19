@@ -432,7 +432,7 @@ func (r *Client) FilePost(path, source string, object interface{}) (err error) {
 				Reader: bytes.NewReader([]byte{}),
 			},
 		}
-		err = r.FileSend(path, http.MethodPut, fields, object)
+		err = r.FileSend(path, http.MethodPost, fields, object)
 		return
 	}
 	isDir, nErr := r.IsDir(source, true)

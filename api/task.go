@@ -572,9 +572,6 @@ func (r *Task) With(m *model.Task) {
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
 	}
-	if m.Errors != nil {
-		_ = json.Unmarshal(m.Errors, &r.Errors)
-	}
 	if m.Report != nil {
 		report := &TaskReport{}
 		report.With(m.Report)
