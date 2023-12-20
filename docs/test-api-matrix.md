@@ -8,7 +8,7 @@ bucket|:heavy_check_mark:|:heavy_check_mark:||partially within application
 dependency|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 file|:heavy_check_mark:|:heavy_check_mark:||
 import||:heavy_check_mark:||
-review|:heavy_check_mark|:heavy_check_mark||
+review|:heavy_check_mark:|:heavy_check_mark:||
 **Controls**||||
 businessservice|:heavy_check_mark:|:heavy_check_mark:||
 group|:heavy_check_mark:|:heavy_check_mark:||aka StakeholderGroup
@@ -28,14 +28,15 @@ migrationwave|:heavy_check_mark:|:heavy_check_mark:||
 ticket|:heavy_check_mark:|:heavy_check_mark:||
 tracker|:heavy_check_mark:|:heavy_check_mark:||
 **Assessments**||||
-archetype||||
-assessment||||
+archetype|:heavy_check_mark:|:heavy_check_mark:||
+assessment|:heavy_check_mark:|:heavy_check_mark:||
 questionnaire|:heavy_check_mark:|:heavy_check_mark:||
 **Other**||||
 addon || | |
-auth||||
+auth||||used in tests
 cache||||
-setting||||
+schema||:heavy_check_mark:||
+setting|:heavy_check_mark:|:heavy_check_mark:||
 task|:heavy_check_mark:|:heavy_check_mark:||
 taskgroup||||
 
