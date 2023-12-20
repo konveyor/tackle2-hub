@@ -73,6 +73,9 @@ func (r *Assessment) Risk() string {
 	if total == 0 {
 		return RiskUnknown
 	}
+	if (float64(colors[RiskGreen]) / float64(total)) >= (float64(r.Thresholds.Green) / float64(100)) {
+		return RiskGreen
+	}
 	if (float64(colors[RiskRed]) / float64(total)) >= (float64(r.Thresholds.Red) / float64(100)) {
 		return RiskRed
 	}
@@ -256,5 +259,6 @@ type RiskMessages struct {
 type Thresholds struct {
 	Red     uint `json:"red" yaml:"red"`
 	Yellow  uint `json:"yellow" yaml:"yellow"`
+	Green   uint `json:"green" yaml:"green"`
 	Unknown uint `json:"unknown" yaml:"unknown"`
 }
