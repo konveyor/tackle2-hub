@@ -29,7 +29,7 @@ var AddonRole = []string{
 	"tasks:get",
 	"tasks.report:*",
 	"tasks.bucket:get",
-	"files:get",
+	"files:*",
 	"rulesets:get",
 }
 
