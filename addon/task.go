@@ -171,9 +171,11 @@ func (h *Task) AttachAt(f *api.File, activity int) {
 		}
 	}
 	Log.Info(
-		"Addon attached: %s",
-		"path",
-		f.Path,
+		"Addon attached.",
+		"ID",
+		f.ID,
+		"name",
+		f.Name,
 		"activity",
 		activity)
 	h.report.Attached = append(
