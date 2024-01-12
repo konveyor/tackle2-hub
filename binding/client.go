@@ -75,7 +75,7 @@ func (s Path) Inject(p Params) (out string) {
 
 //
 // NewClient Constructs a new client
-func NewClient(url, token string) (client *Client) {
+func NewClient(url string, token api.Login) (client *Client) {
 	client = &Client{
 		baseURL: url,
 		token:   token,
@@ -90,7 +90,7 @@ type Client struct {
 	// baseURL for the nub.
 	baseURL string
 	// addon API token
-	token string
+	token api.Login
 	// transport
 	transport http.RoundTripper
 	// Retry limit.
@@ -101,7 +101,7 @@ type Client struct {
 
 //
 // SetToken sets hub token on client
-func (r *Client) SetToken(token string) {
+func (r *Client) SetToken(token api.Login) {
 	r.token = token
 }
 
@@ -648,6 +648,9 @@ func (r *Client) IsDir(path string, must bool) (b bool, err error) {
 // Send the request.
 // Resilient against transient hub availability.
 func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response, err error) {
+	// refresh token before or after actual API request when its expiration time gets under a threshold (~1 minute, expecting 5 mins token lifetime and waiting loops in e.g. tests with sleep in few to few tents of seconds)
+	// _or_
+	// start a goroutine on client creation with token refresh
 	var request *http.Request
 	if r.Error != nil {
 		err = r.Error
@@ -662,7 +665,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, r.token)
+		request.Header.Set(api.Authorization, r.token.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
