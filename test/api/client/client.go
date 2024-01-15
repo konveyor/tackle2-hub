@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -23,16 +22,13 @@ func PrepareRichClient() (richClient *binding.RichClient) {
 		// Prepare RichClient and login to Hub API
 		richClient = binding.New(settings.Settings.Addon.Hub.URL)
 		err := richClient.Login(os.Getenv(Username), os.Getenv(Password))
-		
-		// Start goroutine with token refresh.
-		go func ()  {
-			time.Sleep(1 * time.Minute)	// TODO: base sleep time on token expiration
-			richClient.RefreshToken()
-		}()
 
 		if err != nil {
 		  panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
 		}
+
+		// Start goroutine with token refresh.
+		richClient.KeepFreshToken()
 	
 		// Disable HTTP requests retry for network-related errors to fail quickly.
 		richClient.Client.Retry = 0
