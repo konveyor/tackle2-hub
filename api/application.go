@@ -959,7 +959,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups")
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups", "Assessments.Questionnaire")
 	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {

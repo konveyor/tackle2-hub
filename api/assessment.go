@@ -164,6 +164,7 @@ type Assessment struct {
 	Status       string                  `json:"status"`
 	Thresholds   assessment.Thresholds   `json:"thresholds"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages"`
+	Required     bool                    `json:"required"`
 }
 
 //
@@ -187,6 +188,7 @@ func (r *Assessment) With(m *model.Assessment) {
 	}
 	a := assessment.Assessment{}
 	a.With(m)
+	r.Required = a.Questionnaire.Required
 	r.Risk = a.Risk()
 	r.Confidence = a.Confidence()
 	r.RiskMessages = a.RiskMessages
