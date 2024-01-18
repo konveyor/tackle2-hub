@@ -6,12 +6,12 @@ package nas
 
 import (
 	"errors"
-	liberr "github.com/jortel/go-utils/error"
 	"os"
 	"os/exec"
+
+	liberr "github.com/jortel/go-utils/error"
 )
 
-//
 // RmDir deletes the directory.
 func RmDir(path string) (err error) {
 	cmd := exec.Command("/usr/bin/rm", "-rf", path)
@@ -19,14 +19,12 @@ func RmDir(path string) (err error) {
 	return
 }
 
-//
 // HasDir return if the path exists.
 func HasDir(path string) (found bool, err error) {
 	found, err = Exists(path)
 	return
 }
 
-//
 // MkDir ensures the directory exists.
 func MkDir(path string, mode os.FileMode) (err error) {
 	err = os.MkdirAll(path, mode)
@@ -43,7 +41,6 @@ func MkDir(path string, mode os.FileMode) (err error) {
 	return
 }
 
-//
 // Exists return if the path exists.
 func Exists(path string) (found bool, err error) {
 	_, err = os.Stat(path)

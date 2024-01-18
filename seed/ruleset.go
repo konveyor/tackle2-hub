@@ -4,22 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
-	"io"
-	"os"
-	"path"
 )
 
-//
 // RuleSet applies RuleSet seeds.
 type RuleSet struct {
 	ruleSets []libseed.RuleSet
 }
 
-//
 // With collects all the RuleSet seeds.
 func (r *RuleSet) With(seed libseed.Seed) (err error) {
 	items, err := seed.DecodeItems()
@@ -33,7 +32,6 @@ func (r *RuleSet) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with RuleSets.
 func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying RuleSets", "count", len(r.ruleSets))
@@ -122,7 +120,6 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Seed a RuleSet's Rules.
 func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.RuleSet) (err error) {
 	result := db.Delete(&model.Rule{}, "RuleSetID = ?", ruleSet.ID)
@@ -151,7 +148,6 @@ func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.Rul
 	return
 }
 
-//
 // Create a File model and copy a real file to its path.
 func file(db *gorm.DB, filePath string) (file *model.File, err error) {
 	file = &model.File{
@@ -182,7 +178,6 @@ func file(db *gorm.DB, filePath string) (file *model.File, err error) {
 	return
 }
 
-//
 // Convenience method to find a RuleSet.
 func (r *RuleSet) find(db *gorm.DB, conditions ...interface{}) (rs *model.RuleSet, found bool, err error) {
 	rs = &model.RuleSet{}
@@ -198,7 +193,6 @@ func (r *RuleSet) find(db *gorm.DB, conditions ...interface{}) (rs *model.RuleSe
 	return
 }
 
-//
 // Rename a RuleSet by adding a suffix.
 func (r *RuleSet) rename(db *gorm.DB, rs *model.RuleSet) (err error) {
 	suffix := 0

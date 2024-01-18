@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 // Routes

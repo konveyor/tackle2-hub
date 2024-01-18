@@ -2,10 +2,11 @@ package metrics
 
 import (
 	"context"
+	"time"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
-	"time"
 )
 
 var (

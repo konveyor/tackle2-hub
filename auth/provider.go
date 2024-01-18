@@ -3,9 +3,10 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jortel/go-utils/logr"
-	"strings"
 )
 
 var (

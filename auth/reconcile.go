@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/Nerzal/gocloak/v10"
-	liberr "github.com/jortel/go-utils/error"
 	"strings"
 	"time"
+
+	"github.com/Nerzal/gocloak/v10"
+	liberr "github.com/jortel/go-utils/error"
 )
 
 // NewReconciler builds a new Keycloak realm reconciler.

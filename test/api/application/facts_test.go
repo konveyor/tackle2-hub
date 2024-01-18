@@ -11,13 +11,13 @@ import (
 
 var SampleFacts = []*api.Fact{
 	{
-		Key:   "pet",
-		Value: "{\"kind\":\"dog\",\"Age\":4}",
+		Key:    "pet",
+		Value:  "{\"kind\":\"dog\",\"Age\":4}",
 		Source: "test",
 	},
 	{
-		Key:   "address",
-		Value: "{\"street\":\"Maple\",\"State\":\"AL\"}",
+		Key:    "address",
+		Value:  "{\"street\":\"Maple\",\"State\":\"AL\"}",
 		Source: "test",
 	},
 }

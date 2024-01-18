@@ -2,6 +2,9 @@ package api
 
 import (
 	"errors"
+	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/konveyor/tackle2-hub/api/filter"
@@ -9,8 +12,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
 )
 
 // BadRequestError reports bad request errors.

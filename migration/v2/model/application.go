@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"gorm.io/gorm"
 	"sync"
+
+	"gorm.io/gorm"
 )
 
 type Application struct {

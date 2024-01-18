@@ -2,9 +2,10 @@ package seed
 
 import (
 	"encoding/json"
+	"os"
+
 	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"gorm.io/gorm"
-	"os"
 )
 
 // RuleBundle seed object.

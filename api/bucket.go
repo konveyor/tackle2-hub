@@ -1,16 +1,17 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
-	"github.com/konveyor/tackle2-hub/tar"
 	"io"
 	"net/http"
 	"os"
 	pathlib "path"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/tar"
 )
 
 // Routes

@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Review API.
 type Review struct {
 	client *Client
 }
 
-//
 // Create a Review.
 func (h *Review) Create(r *api.Review) (err error) {
 	err = h.client.Post(api.ReviewsRoot, &r)
 	return
 }
 
-//
 // Get a Review by ID.
 func (h *Review) Get(id uint) (r *api.Review, err error) {
 	r = &api.Review{}
@@ -26,7 +23,6 @@ func (h *Review) Get(id uint) (r *api.Review, err error) {
 	return
 }
 
-//
 // List Reviews.
 func (h *Review) List() (list []api.Review, err error) {
 	list = []api.Review{}
@@ -34,7 +30,6 @@ func (h *Review) List() (list []api.Review, err error) {
 	return
 }
 
-//
 // Update a Review.
 func (h *Review) Update(r *api.Review) (err error) {
 	path := Path(api.ReviewRoot).Inject(Params{api.ID: r.ID})
@@ -42,14 +37,12 @@ func (h *Review) Update(r *api.Review) (err error) {
 	return
 }
 
-//
 // Delete a Review.
 func (h *Review) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.ReviewRoot).Inject(Params{api.ID: id}))
 	return
 }
 
-//
 // Copy a Review.
 func (h *Review) Copy(reviewID uint, appID uint) (err error) {
 	copyRequest := api.CopyRequest{

@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // RuleSet API.
 type RuleSet struct {
 	client *Client
 }
 
-//
 // Create a RuleSet.
 func (h *RuleSet) Create(r *api.RuleSet) (err error) {
 	err = h.client.Post(api.RuleSetsRoot, &r)
 	return
 }
 
-//
 // Get a RuleSet by ID.
 func (h *RuleSet) Get(id uint) (r *api.RuleSet, err error) {
 	r = &api.RuleSet{}
@@ -26,7 +23,6 @@ func (h *RuleSet) Get(id uint) (r *api.RuleSet, err error) {
 	return
 }
 
-//
 // List RuleSets.
 func (h *RuleSet) List() (list []api.RuleSet, err error) {
 	list = []api.RuleSet{}
@@ -34,7 +30,6 @@ func (h *RuleSet) List() (list []api.RuleSet, err error) {
 	return
 }
 
-//
 // Find RuleSets with filter.
 func (h *RuleSet) Find(filter Filter) (list []api.RuleSet, err error) {
 	list = []api.RuleSet{}
@@ -42,7 +37,6 @@ func (h *RuleSet) Find(filter Filter) (list []api.RuleSet, err error) {
 	return
 }
 
-//
 // Update a RuleSet.
 func (h *RuleSet) Update(r *api.RuleSet) (err error) {
 	path := Path(api.RuleSetRoot).Inject(Params{api.ID: r.ID})
@@ -50,7 +44,6 @@ func (h *RuleSet) Update(r *api.RuleSet) (err error) {
 	return
 }
 
-//
 // Delete a RuleSet.
 func (h *RuleSet) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.RuleSetRoot).Inject(Params{api.ID: id}))

@@ -4,19 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
 )
 
-//
 // Questionnaire applies Questionnaire seeds.
 type Questionnaire struct {
 	questionnaires []libseed.Questionnaire
 }
 
-//
 // With collects all the Questionnaire seeds.
 func (r *Questionnaire) With(seed libseed.Seed) (err error) {
 	items, err := seed.DecodeItems()
@@ -29,7 +28,6 @@ func (r *Questionnaire) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with Questionnaires.
 func (r *Questionnaire) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying Questionnaires", "count", len(r.questionnaires))
@@ -91,7 +89,6 @@ func (r *Questionnaire) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Convenience method to find a Questionnaire.
 func (r *Questionnaire) find(db *gorm.DB, conditions ...interface{}) (q *model.Questionnaire, found bool, err error) {
 	q = &model.Questionnaire{}
@@ -107,7 +104,6 @@ func (r *Questionnaire) find(db *gorm.DB, conditions ...interface{}) (q *model.Q
 	return
 }
 
-//
 // Rename a Questionnaire by adding a suffix.
 func (r *Questionnaire) rename(db *gorm.DB, q *model.Questionnaire) (err error) {
 	suffix := 0

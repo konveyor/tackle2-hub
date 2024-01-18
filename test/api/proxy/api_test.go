@@ -6,7 +6,7 @@ import (
 )
 
 func TestProxyGetUpdate(t *testing.T) {
-	for _, id := range []uint{1,2} {	// Existing proxies in Hub have IDs 1, 2
+	for _, id := range []uint{1, 2} { // Existing proxies in Hub have IDs 1, 2
 		t.Run(fmt.Sprint(id), func(t *testing.T) {
 			// Get.
 			orig, err := Proxy.Get(id)

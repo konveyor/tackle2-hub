@@ -1,21 +1,20 @@
 package reaper
 
 import (
+	"os"
+	"time"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
-//
 // FileReaper file reaper.
 type FileReaper struct {
 	// DB
 	DB *gorm.DB
 }
 
-//
 // Run Executes the reaper.
 // A file is deleted when it is no longer referenced and the TTL has expired.
 func (r *FileReaper) Run() {
@@ -59,7 +58,6 @@ func (r *FileReaper) Run() {
 	}
 }
 
-//
 // busy determines if anything references the file.
 func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	nRef := int64(0)
@@ -82,7 +80,6 @@ func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
 	return
 }
 
-//
 // Delete file.
 func (r *FileReaper) delete(file *model.File) (err error) {
 	err = os.Remove(file.Path)

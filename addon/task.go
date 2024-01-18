@@ -3,10 +3,11 @@ package addon
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
-	"strings"
 )
 
 // Task API.

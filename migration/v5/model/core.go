@@ -2,13 +2,14 @@ package model
 
 import (
 	"encoding/json"
+	"os"
+	"path"
+	"time"
+
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/encryption"
 	"gorm.io/gorm"
-	"os"
-	"path"
-	"time"
 )
 
 // Model Base model.

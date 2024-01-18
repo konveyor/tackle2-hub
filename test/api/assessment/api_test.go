@@ -26,7 +26,7 @@ func TestAssessmentCRUD(t *testing.T) {
 				if err != nil {
 					t.Errorf(err.Error())
 				}
-				
+
 			}
 
 			// Get.

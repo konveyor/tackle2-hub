@@ -3,19 +3,18 @@ package seed
 import (
 	"errors"
 	"fmt"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
 )
 
-//
 // JobFunction applies JobFunction seeds.
 type JobFunction struct {
 	jobFunctions []libseed.JobFunction
 }
 
-//
 // With collects all the JobFunction seeds.
 func (r *JobFunction) With(seed libseed.Seed) (err error) {
 	items, err := seed.DecodeItems()
@@ -28,7 +27,6 @@ func (r *JobFunction) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with JobFunctions.
 func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying JobFunctions", "count", len(r.jobFunctions))
@@ -82,7 +80,6 @@ func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Convenience method to find a JobFunction.
 func (r *JobFunction) find(db *gorm.DB, conditions ...interface{}) (jf *model.JobFunction, found bool, err error) {
 	jf = &model.JobFunction{}
@@ -98,7 +95,6 @@ func (r *JobFunction) find(db *gorm.DB, conditions ...interface{}) (jf *model.Jo
 	return
 }
 
-//
 // Rename a JobFunction by adding a suffix.
 func (r *JobFunction) rename(db *gorm.DB, jf *model.JobFunction) (err error) {
 	suffix := 0

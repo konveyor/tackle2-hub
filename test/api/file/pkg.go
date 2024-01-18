@@ -7,9 +7,8 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	File binding.File
+	File       binding.File
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

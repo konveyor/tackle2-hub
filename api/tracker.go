@@ -1,13 +1,14 @@
 package api
 
 import (
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm/clause"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 // Routes

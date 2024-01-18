@@ -3,11 +3,12 @@ package auth
 import (
 	"context"
 	"crypto/tls"
+	"strings"
+	"time"
+
 	"github.com/Nerzal/gocloak/v10"
 	"github.com/golang-jwt/jwt/v4"
 	liberr "github.com/jortel/go-utils/error"
-	"strings"
-	"time"
 )
 
 // NewKeycloak builds a new Keycloak auth provider.

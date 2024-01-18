@@ -3,16 +3,17 @@ package migration
 import (
 	"encoding/json"
 	"errors"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/database"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
-	"gorm.io/gorm"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
+	"gorm.io/gorm"
 )
 
 // Migrate the hub by applying all necessary Migrations.

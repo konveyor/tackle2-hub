@@ -75,7 +75,6 @@ func TestJobFunctionList(t *testing.T) {
 	}
 }
 
-
 func TestJobFunctionSeed(t *testing.T) {
 	got, err := JobFunction.List()
 	if err != nil {

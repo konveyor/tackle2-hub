@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
@@ -16,11 +21,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
-	"io"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var Log = logr.WithName("api")

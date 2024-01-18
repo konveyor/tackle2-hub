@@ -5,13 +5,14 @@ Tackle hub/addon integration.
 package addon
 
 import (
+	"os"
+
 	logapi "github.com/go-logr/logr"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
-	"os"
 )
 
 var (

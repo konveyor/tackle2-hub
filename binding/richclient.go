@@ -61,11 +61,11 @@ func New(baseUrl string) (r *RichClient) {
 		Application: Application{
 			client: client,
 		},
-    Archetype: Archetype{
+		Archetype: Archetype{
 			client: client,
 		},
 		Assessment: Assessment{
-      client: client,
+			client: client,
 		},
 		Bucket: Bucket{
 			client: client,
@@ -135,7 +135,6 @@ func New(baseUrl string) (r *RichClient) {
 	return
 }
 
-//
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
 	login := api.Login{User: user, Password: password}

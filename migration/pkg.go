@@ -5,7 +5,7 @@ import (
 	v10 "github.com/konveyor/tackle2-hub/migration/v10"
 	v11 "github.com/konveyor/tackle2-hub/migration/v11"
 	v12 "github.com/konveyor/tackle2-hub/migration/v12"
-	"github.com/konveyor/tackle2-hub/migration/v2"
+	v2 "github.com/konveyor/tackle2-hub/migration/v2"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3"
 	v4 "github.com/konveyor/tackle2-hub/migration/v4"
 	v5 "github.com/konveyor/tackle2-hub/migration/v5"

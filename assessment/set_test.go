@@ -1,8 +1,9 @@
 package assessment
 
 import (
-	"github.com/onsi/gomega"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 func TestSet_Superset(t *testing.T) {

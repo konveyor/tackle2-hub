@@ -2,6 +2,7 @@ package assessment
 
 import (
 	"encoding/json"
+
 	"github.com/konveyor/tackle2-hub/model"
 )
 

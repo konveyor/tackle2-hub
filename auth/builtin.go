@@ -1,10 +1,11 @@
 package auth
 
 import (
+	"strings"
+
 	"github.com/golang-jwt/jwt/v4"
 	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
-	"strings"
 )
 
 // Validators provide token validation based on claims.

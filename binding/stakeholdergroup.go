@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // StakeholderGroup API.
 type StakeholderGroup struct {
 	client *Client
 }
 
-//
 // Create a StakeholderGroup.
 func (h *StakeholderGroup) Create(r *api.StakeholderGroup) (err error) {
 	err = h.client.Post(api.StakeholderGroupsRoot, &r)
 	return
 }
 
-//
 // Get a StakeholderGroup by ID.
 func (h *StakeholderGroup) Get(id uint) (r *api.StakeholderGroup, err error) {
 	r = &api.StakeholderGroup{}
@@ -26,7 +23,6 @@ func (h *StakeholderGroup) Get(id uint) (r *api.StakeholderGroup, err error) {
 	return
 }
 
-//
 // List StakeholderGroups.
 func (h *StakeholderGroup) List() (list []api.StakeholderGroup, err error) {
 	list = []api.StakeholderGroup{}
@@ -34,7 +30,6 @@ func (h *StakeholderGroup) List() (list []api.StakeholderGroup, err error) {
 	return
 }
 
-//
 // Update a StakeholderGroup.
 func (h *StakeholderGroup) Update(r *api.StakeholderGroup) (err error) {
 	path := Path(api.StakeholderGroupRoot).Inject(Params{api.ID: r.ID})
@@ -42,7 +37,6 @@ func (h *StakeholderGroup) Update(r *api.StakeholderGroup) (err error) {
 	return
 }
 
-//
 // Delete a StakeholderGroup.
 func (h *StakeholderGroup) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.StakeholderGroupRoot).Inject(Params{api.ID: id}))

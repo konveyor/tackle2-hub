@@ -7,9 +7,8 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	Archetype binding.Archetype
+	Archetype  binding.Archetype
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

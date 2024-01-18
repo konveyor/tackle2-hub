@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/onsi/gomega"
 	"net/http"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/onsi/gomega"
 )
 
 func TestAccepted(t *testing.T) {

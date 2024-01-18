@@ -1,8 +1,9 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 // Intersect returns an SQL intersect of the queries.

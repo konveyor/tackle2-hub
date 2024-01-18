@@ -1,4 +1,5 @@
 GOBIN ?= ${GOPATH}/bin
+GOIMPORTS = ${GOBIN}/goimports
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
@@ -6,6 +7,8 @@ PKG = ./addon/... \
       ./api/... \
       ./assessment/... \
       ./auth/... \
+      ./binding/... \
+      ./controller/... \
       ./cmd/... \
       ./database/... \
       ./encryption/... \
@@ -14,10 +17,16 @@ PKG = ./addon/... \
       ./metrics/... \
       ./migration/... \
       ./model/... \
+      ./nas/... \
+      ./reaper/... \
+      ./seed/... \
       ./settings/... \
-      ./controller/... \
+      ./tar/... \
       ./task/...  \
+      ./test/...  \
       ./tracker/...
+
+DIR = $(subst /...,,${PKG})
 
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 
@@ -25,7 +34,8 @@ BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 cmd: hub addon
 
 # Run go fmt against code
-fmt:
+fmt: ${GOIMPORTS}
+	goimports -w ${DIR}
 	go fmt ${PKG}
 
 # Run go vet against code
@@ -77,6 +87,10 @@ controller-gen:
 	  go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0 ;\
 	  rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	fi ;\
+
+# Ensure goimports installed.
+${GOIMPORTS}:
+	go install golang.org/x/tools/cmd/goimports@latest
 
 # Build SAMPLE ADDON
 addon: fmt vet

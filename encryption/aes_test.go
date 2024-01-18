@@ -1,8 +1,9 @@
 package encryption
 
 import (
-	"github.com/onsi/gomega"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 func TestAES(t *testing.T) {

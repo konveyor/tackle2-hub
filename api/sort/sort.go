@@ -1,10 +1,11 @@
 package sort
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api/reflect"
 	"gorm.io/gorm"
-	"strings"
 )
 
 // Clause sort clause.

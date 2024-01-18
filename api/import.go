@@ -3,12 +3,13 @@ package api
 import (
 	"bytes"
 	"encoding/csv"
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 // Record types

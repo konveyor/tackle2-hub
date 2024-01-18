@@ -3,19 +3,18 @@ package seed
 import (
 	"errors"
 	"fmt"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
 )
 
-//
 // TagCategory applies TagCategory seeds.
 type TagCategory struct {
 	categories []libseed.TagCategory
 }
 
-//
 // With collects all the TagCategory seeds.
 func (r *TagCategory) With(seed libseed.Seed) (err error) {
 	items, err := seed.DecodeItems()
@@ -28,7 +27,6 @@ func (r *TagCategory) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with TagCategories and Tags.
 func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying TagCategories", "count", len(r.categories))
@@ -89,7 +87,6 @@ func (r *TagCategory) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Seed a TagCategory's tags.
 func (r *TagCategory) applyTags(db *gorm.DB, category *model.TagCategory, tc libseed.TagCategory) (err error) {
 	for i := range tc.Tags {
@@ -120,7 +117,6 @@ func (r *TagCategory) applyTags(db *gorm.DB, category *model.TagCategory, tc lib
 	return
 }
 
-//
 // Convenience method to find a TagCategory.
 func (r *TagCategory) find(db *gorm.DB, conditions ...interface{}) (category *model.TagCategory, found bool, err error) {
 	category = &model.TagCategory{}
@@ -136,7 +132,6 @@ func (r *TagCategory) find(db *gorm.DB, conditions ...interface{}) (category *mo
 	return
 }
 
-//
 // Rename a TagCategory by adding a suffix.
 func (r *TagCategory) rename(db *gorm.DB, category *model.TagCategory) (err error) {
 	suffix := 0

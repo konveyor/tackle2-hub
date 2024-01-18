@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"regexp"
 
+	"strings"
+	"time"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
-	"strings"
-	"time"
 )
 
 // Manager for processing application imports.

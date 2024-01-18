@@ -10,7 +10,6 @@ var (
 	Assessment binding.Assessment
 )
 
-
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).
 	RichClient = client.PrepareRichClient()

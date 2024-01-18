@@ -1,10 +1,11 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"gorm.io/gorm"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

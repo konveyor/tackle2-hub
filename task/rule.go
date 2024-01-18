@@ -1,8 +1,9 @@
 package task
 
 import (
-	"github.com/konveyor/tackle2-hub/model"
 	"strings"
+
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 // Rule defines postpone rules.
