@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-//
 // NewKeycloak builds a new Keycloak auth provider.
 func NewKeycloak(host, realm string) (p Provider) {
 	client := gocloak.NewClient(host)
@@ -23,7 +22,6 @@ func NewKeycloak(host, realm string) (p Provider) {
 	return
 }
 
-//
 // Keycloak auth provider
 type Keycloak struct {
 	client gocloak.GoCloak
@@ -31,13 +29,11 @@ type Keycloak struct {
 	realm  string
 }
 
-//
 // NewToken creates a new signed token.
 func (r Keycloak) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
 	return
 }
 
-//
 // Login and obtain a token.
 func (r *Keycloak) Login(user, password string) (token Token, err error) {
 	jwt, err := r.client.Login(
@@ -56,7 +52,6 @@ func (r *Keycloak) Login(user, password string) (token Token, err error) {
 	return
 }
 
-//
 // Refresh token.
 func (r *Keycloak) Refresh(refresh string) (token Token, err error) {
 	jwt, err := r.client.RefreshToken(
@@ -74,7 +69,6 @@ func (r *Keycloak) Refresh(refresh string) (token Token, err error) {
 	return
 }
 
-//
 // Authenticate the token
 func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
@@ -113,7 +107,6 @@ func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error
 	return
 }
 
-//
 // Scopes decodes a list of scopes from the token.
 func (r *Keycloak) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	claims := jwToken.Claims.(*jwt.MapClaims)
@@ -125,7 +118,6 @@ func (r *Keycloak) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	return
 }
 
-//
 // User resolves token to Keycloak username.
 func (r *Keycloak) User(jwToken *jwt.Token) (user string) {
 	claims, _ := jwToken.Claims.(*jwt.MapClaims)

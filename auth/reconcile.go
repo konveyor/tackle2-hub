@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-//
 // NewReconciler builds a new Keycloak realm reconciler.
 func NewReconciler(host, realm, id, secret, admin, pass, adminRealm string) (r Reconciler) {
 	client := gocloak.NewClient(host)
@@ -27,7 +26,6 @@ func NewReconciler(host, realm, id, secret, admin, pass, adminRealm string) (r R
 	return
 }
 
-//
 // Keycloak realm reconciler
 type Reconciler struct {
 	client     gocloak.GoCloak
@@ -40,7 +38,6 @@ type Reconciler struct {
 	token      *gocloak.JWT
 }
 
-//
 // Realm is a container for the users,
 // scopes, and roles that exist in the
 // hub's keycloak realm.
@@ -50,7 +47,6 @@ type Realm struct {
 	Roles  map[string]gocloak.Role
 }
 
-//
 // Reconcile ensures that the Hub realm
 // exists and the expected clients, roles, scopes,
 // and users are present in it.
@@ -90,7 +86,6 @@ func (r *Reconciler) Reconcile() (err error) {
 	return
 }
 
-//
 // loadRealm loads all the scopes, roles, and users from
 // the hub keycloak realm and populates a Realm struct.
 func (r *Reconciler) loadRealm() (realm *Realm, err error) {
@@ -111,7 +106,6 @@ func (r *Reconciler) loadRealm() (realm *Realm, err error) {
 	return
 }
 
-//
 // ensureRealm ensures that the hub realm exists.
 func (r *Reconciler) ensureRealm() (err error) {
 	_, err = r.client.GetRealm(context.Background(), r.token.AccessToken, r.realm)
@@ -138,7 +132,6 @@ func (r *Reconciler) ensureRealm() (err error) {
 	return
 }
 
-//
 // ensureClient ensures that the hub client exists.
 func (r *Reconciler) ensureClient() (err error) {
 	var found bool
@@ -168,7 +161,6 @@ func (r *Reconciler) ensureClient() (err error) {
 	return
 }
 
-//
 // ensureUsers ensures that the hub users exist and have the necessary roles.
 func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 	users, err := LoadUsers(Settings.Auth.UserPath)
@@ -243,7 +235,6 @@ func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 	return
 }
 
-//
 // ensureRoles ensures that hub roles and scopes are present in keycloak by
 // creating them if they are missing and assigning scope mappings.
 func (r *Reconciler) ensureRoles(realm *Realm) (err error) {
@@ -351,7 +342,6 @@ func (r *Reconciler) ensureRoles(realm *Realm) (err error) {
 	return
 }
 
-//
 // getClient returns a keycloak realm client.
 func (r *Reconciler) getClient(clientId string) (client *gocloak.Client, found bool, err error) {
 	max := 1
@@ -372,7 +362,6 @@ func (r *Reconciler) getClient(clientId string) (client *gocloak.Client, found b
 	return
 }
 
-//
 // userMap generates a mapping of usernames to user objects
 func (r *Reconciler) userMap() (userMap map[string]gocloak.User, err error) {
 	userMap = make(map[string]gocloak.User)
@@ -389,7 +378,6 @@ func (r *Reconciler) userMap() (userMap map[string]gocloak.User, err error) {
 	return
 }
 
-//
 // realmRoleMap generates a mapping of realm role names to role objects
 func (r *Reconciler) realmRoleMap() (roleMap map[string]gocloak.Role, err error) {
 	roleMap = make(map[string]gocloak.Role)
@@ -408,7 +396,6 @@ func (r *Reconciler) realmRoleMap() (roleMap map[string]gocloak.Role, err error)
 	return
 }
 
-//
 // scopeMap generates a mapping of client scope names to scope objects
 func (r *Reconciler) scopeMap() (scopeMap map[string]gocloak.ClientScope, err error) {
 	scopeMap = make(map[string]gocloak.ClientScope)
@@ -427,7 +414,6 @@ func (r *Reconciler) scopeMap() (scopeMap map[string]gocloak.ClientScope, err er
 	return
 }
 
-//
 // login logs into the keycloak admin-cli client as the administrator.
 func (r *Reconciler) login() (err error) {
 	for {

@@ -7,21 +7,18 @@ import (
 	"strings"
 )
 
-//
 // Clause sort clause.
 type Clause struct {
 	direction string
 	name      string
 }
 
-//
 // Sort provides sorting.
 type Sort struct {
 	fields  map[string]interface{}
 	clauses []Clause
 }
 
-//
 // With context.
 func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 	param := ctx.Query("sort")
@@ -66,7 +63,6 @@ func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 	return
 }
 
-//
 // Sorted returns sorted DB.
 func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 	out = in
@@ -81,7 +77,6 @@ func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 	return
 }
 
-//
 // inspect object and return fields.
 func (r *Sort) inspect(m interface{}) (fields map[string]interface{}) {
 	fields = reflect.Fields(m)

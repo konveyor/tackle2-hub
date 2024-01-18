@@ -5,7 +5,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 )
 
-//
 // Assessment risk
 const (
 	RiskUnknown = "unknown"
@@ -14,7 +13,6 @@ const (
 	RiskGreen   = "green"
 )
 
-//
 // Assessment status
 const (
 	StatusEmpty    = "empty"
@@ -22,21 +20,18 @@ const (
 	StatusComplete = "complete"
 )
 
-//
 // Confidence adjustment
 const (
 	AdjusterRed    = 0.5
 	AdjusterYellow = 0.98
 )
 
-//
 // Confidence multiplier.
 const (
 	MultiplierRed    = 0.6
 	MultiplierYellow = 0.95
 )
 
-//
 // Risk weights
 const (
 	WeightRed     = 1
@@ -45,7 +40,6 @@ const (
 	WeightUnknown = 70
 )
 
-//
 // Risk returns the single highest risk score for a group of assessments.
 func Risk(assessments []Assessment) (risk string) {
 	risk = RiskUnknown
@@ -85,7 +79,6 @@ func Risk(assessments []Assessment) (risk string) {
 	return
 }
 
-//
 // Confidence returns a total confidence score for a group of assessments.
 func Confidence(assessments []Assessment) (confidence int) {
 	if len(assessments) == 0 {
@@ -98,7 +91,6 @@ func Confidence(assessments []Assessment) (confidence int) {
 	return
 }
 
-//
 // PrepareForApplication prepares the sections of an assessment by including, excluding,
 // or auto-answering questions based on a set of tags.
 func PrepareForApplication(tagResolver *TagResolver, application *model.Application, assessment *model.Assessment) {
@@ -115,7 +107,6 @@ func PrepareForApplication(tagResolver *TagResolver, application *model.Applicat
 	return
 }
 
-//
 // PrepareForArchetype prepares the sections of an assessment by including, excluding,
 // or auto-answering questions based on a set of tags.
 func PrepareForArchetype(tagResolver *TagResolver, archetype *model.Archetype, assessment *model.Assessment) {

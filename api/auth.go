@@ -6,7 +6,6 @@ import (
 	"net/http"
 )
 
-//
 // Routes
 const (
 	AuthRoot        = "/auth"
@@ -14,13 +13,11 @@ const (
 	AuthRefreshRoot = AuthRoot + "/refresh"
 )
 
-//
 // AuthHandler handles auth routes.
 type AuthHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	e.POST(AuthLoginRoot, h.Login)
@@ -87,7 +84,6 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-//
 // Login REST resource.
 type Login struct {
 	User     string `json:"user"`
@@ -97,7 +93,6 @@ type Login struct {
 	Expiry   int    `json:"expiry"`
 }
 
-//
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
 func Required(scope string) func(*gin.Context) {

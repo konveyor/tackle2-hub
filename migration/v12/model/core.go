@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-//
 // Model Base model.
 type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
@@ -27,7 +26,6 @@ type Setting struct {
 	Value JSON   `gorm:"type:json"`
 }
 
-//
 // With updates the value of the Setting with the json representation
 // of the `value` parameter.
 func (r *Setting) With(value interface{}) (err error) {
@@ -38,7 +36,6 @@ func (r *Setting) With(value interface{}) (err error) {
 	return
 }
 
-//
 // As unmarshalls the value of the Setting into the `ptr` parameter.
 func (r *Setting) As(ptr interface{}) (err error) {
 	err = json.Unmarshal(r.Value, ptr)
@@ -156,7 +153,6 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Error appends an error.
 func (m *Task) Error(severity, description string, x ...interface{}) {
 	var list []TaskError
@@ -167,11 +163,9 @@ func (m *Task) Error(severity, description string, x ...interface{}) {
 	m.Errors, _ = json.Marshal(list)
 }
 
-//
 // Map alias.
 type Map = map[string]interface{}
 
-//
 // TTL time-to-live.
 type TTL struct {
 	Created   int `json:"created,omitempty"`
@@ -182,7 +176,6 @@ type TTL struct {
 	Failed    int `json:"failed,omitempty"`
 }
 
-//
 // TaskError used in Task.Errors.
 type TaskError struct {
 	Severity    string `json:"severity"`
@@ -213,7 +206,6 @@ type TaskGroup struct {
 	State string
 }
 
-//
 // Propagate group data into the task.
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
@@ -250,7 +242,6 @@ func (m *TaskGroup) Propagate() (err error) {
 	return
 }
 
-//
 // merge maps B into A.
 // The B map is the authority.
 func (m *TaskGroup) merge(a, b Map) (out Map) {
@@ -287,7 +278,6 @@ func (m *TaskGroup) merge(a, b Map) (out Map) {
 	return
 }
 
-//
 // Proxy configuration.
 // kind = (http|https)
 type Proxy struct {

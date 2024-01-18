@@ -7,21 +7,18 @@ import (
 	"strconv"
 )
 
-//
 // Routes
 const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
 )
 
-//
 // Params.
 const (
 	Decrypted = "decrypted"
 	AppId     = "application"
 )
 
-//
 // IdentityHandler handles identity resource routes.
 type IdentityHandler struct {
 	BaseHandler
@@ -211,7 +208,6 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Set `decrypted` in the context.
 // Results in 403 when the token does not have the required scope.
 func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
@@ -228,7 +224,6 @@ func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
 	return
 }
 
-//
 // Identity REST resource.
 type Identity struct {
 	Resource    `yaml:",inline"`
@@ -241,7 +236,6 @@ type Identity struct {
 	Settings    string `json:"settings"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Identity) With(m *model.Identity) {
 	r.Resource.With(&m.Model)
@@ -254,7 +248,6 @@ func (r *Identity) With(m *model.Identity) {
 	r.Settings = m.Settings
 }
 
-//
 // Model builds a model.
 func (r *Identity) Model() (m *model.Identity) {
 	m = &model.Identity{

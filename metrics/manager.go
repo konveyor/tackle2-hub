@@ -35,7 +35,6 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-//
 // gaugeApplications reports the number of applications in inventory
 func (m *Manager) gaugeApplications() {
 	count := int64(0)

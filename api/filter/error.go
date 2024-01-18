@@ -2,7 +2,6 @@ package filter
 
 import "fmt"
 
-//
 // Error reports bad request errors.
 type Error struct {
 	Reason string
@@ -17,7 +16,6 @@ func (r *Error) Is(err error) (matched bool) {
 	return
 }
 
-//
 // Errorf build error.
 func Errorf(s string, v ...interface{}) (err error) {
 	err = &Error{fmt.Sprintf(s, v...)}

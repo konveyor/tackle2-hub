@@ -350,28 +350,24 @@ func (r *Tracker) Model() (m *model.Tracker) {
 	return
 }
 
-//
 // Project API Resource
 type Project struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Project) With(i *tracker.Project) {
 	r.ID = i.ID
 	r.Name = i.Name
 }
 
-//
 // IssueType API Resource
 type IssueType struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-//
 // With updates the resource with the model.
 func (r *IssueType) With(i *tracker.IssueType) {
 	r.ID = i.ID

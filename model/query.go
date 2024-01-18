@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-//
 // Intersect returns an SQL intersect of the queries.
 func Intersect(q ...*gorm.DB) (intersect *gorm.DB) {
 	var part []string

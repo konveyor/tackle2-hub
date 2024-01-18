@@ -26,20 +26,17 @@ const (
 	JiraEndpointMyself  = JiraEndpointBase + "/myself"
 )
 
-//
 // JiraConnector for the Jira Cloud API
 type JiraConnector struct {
 	tracker *model.Tracker
 }
 
-//
 // With updates the connector with the Tracker model.
 func (r *JiraConnector) With(t *model.Tracker) {
 	r.tracker = t
 	_ = r.tracker.Identity.Decrypt()
 }
 
-//
 // Create the ticket in Jira.
 func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	client, err := r.client()
@@ -82,7 +79,6 @@ func (r *JiraConnector) Create(t *model.Ticket) (err error) {
 	return
 }
 
-//
 // RefreshAll retrieves fresh status information for all the tracker's tickets.
 func (r *JiraConnector) RefreshAll() (tickets map[*model.Ticket]bool, err error) {
 	client, err := r.client()
@@ -143,7 +139,6 @@ func (r *JiraConnector) RefreshAll() (tickets map[*model.Ticket]bool, err error)
 	return
 }
 
-//
 // Projects returns a list of Projects.
 func (r *JiraConnector) Projects() (projects []Project, err error) {
 	client, err := r.client()
@@ -172,7 +167,6 @@ func (r *JiraConnector) Projects() (projects []Project, err error) {
 	return
 }
 
-//
 // Project returns a Project.
 func (r *JiraConnector) Project(id string) (project Project, err error) {
 	client, err := r.client()
@@ -199,7 +193,6 @@ func (r *JiraConnector) Project(id string) (project Project, err error) {
 	return
 }
 
-//
 // IssueTypes returns a list of IssueTypes for a Project.
 func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error) {
 	client, err := r.client()
@@ -231,7 +224,6 @@ func (r *JiraConnector) IssueTypes(id string) (issueTypes []IssueType, err error
 	return
 }
 
-//
 // client builds a Jira API client for the tracker.
 func (r *JiraConnector) client() (client *jira.Client, err error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
@@ -267,7 +259,6 @@ func (r *JiraConnector) client() (client *jira.Client, err error) {
 	return
 }
 
-//
 // TestConnection to Jira Cloud.
 func (r *JiraConnector) TestConnection() (connected bool, err error) {
 	client, err := r.client()
@@ -292,7 +283,6 @@ func (r *JiraConnector) TestConnection() (connected bool, err error) {
 	return
 }
 
-//
 // status returns a normalized status based on the issue status category.
 func status(issue *jira.Issue) (s string) {
 	key := ""
@@ -313,7 +303,6 @@ func status(issue *jira.Issue) (s string) {
 	return
 }
 
-//
 // handleJiraError simplifies dealing with errors from the Jira API.
 func handleJiraError(response *jira.Response, in error) (out error) {
 	if in == nil {
@@ -343,13 +332,11 @@ func handleJiraError(response *jira.Response, in error) (out error) {
 	return
 }
 
-//
 // clientWrapper wraps the http client used by the jira client.
 type clientWrapper struct {
 	client *http.Client
 }
 
-//
 // Do applies an Accept header before performing the request.
 func (r *clientWrapper) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Accept", "application/json")
@@ -357,7 +344,6 @@ func (r *clientWrapper) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-//
 // jiraError is a catch-all structure for the various ways that the
 // Jira API can report an error in JSON format.
 type jiraError struct {
@@ -366,7 +352,6 @@ type jiraError struct {
 	Errors        map[string]string `json:"errors"`
 }
 
-//
 // Error reports the consolidated error message.
 func (r *jiraError) Error() (error string) {
 	if len(r.Message) > 0 {

@@ -4,7 +4,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//
 // Seed the database with models.
 func Seed(db *gorm.DB) {
 	settings := []Setting{

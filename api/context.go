@@ -8,7 +8,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//
 // Context custom settings.
 type Context struct {
 	*gin.Context
@@ -24,14 +23,12 @@ type Context struct {
 	Response Response
 }
 
-//
 // Response values.
 type Response struct {
 	Status int
 	Body   interface{}
 }
 
-//
 // Status sets the values to respond to the request with.
 func (r *Context) Status(status int) {
 	r.Response = Response{
@@ -40,7 +37,6 @@ func (r *Context) Status(status int) {
 	}
 }
 
-//
 // Respond sets the values to respond to the request with.
 func (r *Context) Respond(status int, body interface{}) {
 	r.Response = Response{
@@ -49,7 +45,6 @@ func (r *Context) Respond(status int, body interface{}) {
 	}
 }
 
-//
 // WithContext is a rich context.
 func WithContext(ctx *gin.Context) (n *Context) {
 	key := "RichContext"
@@ -64,7 +59,6 @@ func WithContext(ctx *gin.Context) (n *Context) {
 	return
 }
 
-//
 // Transaction handler.
 func Transaction(ctx *gin.Context) {
 	switch ctx.Request.Method {
@@ -90,7 +84,6 @@ func Transaction(ctx *gin.Context) {
 	}
 }
 
-//
 // Render renders the response based on the Accept: header.
 // Opinionated towards json.
 func Render() gin.HandlerFunc {

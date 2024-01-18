@@ -12,7 +12,6 @@ const (
 	EnvTask       = "TASK"
 )
 
-//
 // Addon settings.
 type Addon struct {
 	// Hub settings.

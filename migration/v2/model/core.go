@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-//
 // Model Base model.
 type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
@@ -84,11 +83,9 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Map alias.
 type Map = map[string]interface{}
 
-//
 // TTL time-to-live.
 type TTL struct {
 	Created   int `json:"created,omitempty"`
@@ -110,7 +107,6 @@ type TaskGroup struct {
 	State string
 }
 
-//
 // Propagate group data into the task.
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
@@ -147,7 +143,6 @@ func (m *TaskGroup) Propagate() (err error) {
 	return
 }
 
-//
 // merge maps B into A.
 // The B map is the authority.
 func (m *TaskGroup) merge(a, b Map) (out Map) {
@@ -196,7 +191,6 @@ type TaskReport struct {
 	Task      *Task
 }
 
-//
 // Proxy configuration.
 // kind = (http|https)
 type Proxy struct {
@@ -210,7 +204,6 @@ type Proxy struct {
 	Identity   *Identity
 }
 
-//
 // Identity represents and identity with a set of credentials.
 type Identity struct {
 	Model

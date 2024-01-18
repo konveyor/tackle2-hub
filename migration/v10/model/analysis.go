@@ -2,7 +2,6 @@ package model
 
 import "gorm.io/gorm"
 
-//
 // Analysis report.
 type Analysis struct {
 	Model
@@ -15,7 +14,6 @@ type Analysis struct {
 	Application   *Application
 }
 
-//
 // TechDependency report dependency.
 type TechDependency struct {
 	Model
@@ -29,7 +27,6 @@ type TechDependency struct {
 	Analysis   *Analysis
 }
 
-//
 // Issue report issue (violation).
 type Issue struct {
 	Model
@@ -47,7 +44,6 @@ type Issue struct {
 	Analysis    *Analysis
 }
 
-//
 // Incident report an issue incident.
 type Incident struct {
 	Model
@@ -60,14 +56,12 @@ type Incident struct {
 	Issue    *Issue
 }
 
-//
 // Link URL link.
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
 }
 
-//
 // ArchivedIssue resource created when issues are archived.
 type ArchivedIssue struct {
 	RuleSet     string `json:"ruleSet"`
@@ -79,7 +73,6 @@ type ArchivedIssue struct {
 	Incidents   int    `json:"incidents"`
 }
 
-//
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
@@ -98,7 +91,6 @@ func (r *RuleSet) Builtin() bool {
 	return r.UUID != nil
 }
 
-//
 // BeforeUpdate hook to avoid cyclic dependencies.
 func (r *RuleSet) BeforeUpdate(db *gorm.DB) (err error) {
 	seen := make(map[uint]bool)
@@ -132,7 +124,6 @@ func (r *RuleSet) BeforeUpdate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Rule - Analysis rule.
 type Rule struct {
 	Model
@@ -145,7 +136,6 @@ type Rule struct {
 	File        *File
 }
 
-//
 // Target - analysis rule selector.
 type Target struct {
 	Model

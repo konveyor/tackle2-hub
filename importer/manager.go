@@ -14,14 +14,12 @@ import (
 	"time"
 )
 
-//
 // Manager for processing application imports.
 type Manager struct {
 	// DB
 	DB *gorm.DB
 }
 
-//
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	go func() {
@@ -37,7 +35,6 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-//
 // processImports creates applications and dependencies from
 // unprocessed imports.
 func (m *Manager) processImports() (err error) {
@@ -75,7 +72,6 @@ func (m *Manager) processImports() (err error) {
 	return
 }
 
-//
 // createDependency creates an application dependency from
 // a dependency import record.
 func (m *Manager) createDependency(imp *model.Import) (ok bool) {
@@ -115,7 +111,6 @@ func (m *Manager) createDependency(imp *model.Import) (ok bool) {
 	return
 }
 
-//
 // createApplication creates an application from an
 // application import record.
 func (m *Manager) createApplication(imp *model.Import) (ok bool) {
@@ -362,7 +357,6 @@ func (m *Manager) findStakeholder(email string) (stakeholder model.Stakeholder, 
 	return
 }
 
-//
 // normalizedName transforms given name to be comparable as same with similar names
 // Example: normalizedName(" F oo-123 bar! ") returns "foo123bar!"
 func normalizedName(name string) (normName string) {
@@ -372,7 +366,6 @@ func normalizedName(name string) (normName string) {
 	return
 }
 
-//
 // parseStakeholder attempts to parse a stakeholder's name and an email address
 // out of a string  like `John Smith <jsmith@example.com>`. The pattern is very
 // simple and treats anything before the first bracket as the name,

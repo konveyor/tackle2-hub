@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-//
 // SchemaHandler providers schema (route) handler.
 type SchemaHandler struct {
 	BaseHandler
@@ -15,7 +14,6 @@ type SchemaHandler struct {
 	Version string
 }
 
-//
 // AddRoutes Adds routes.
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r

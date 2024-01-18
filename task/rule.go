@@ -5,13 +5,11 @@ import (
 	"strings"
 )
 
-//
 // Rule defines postpone rules.
 type Rule interface {
 	Match(candidate, other *model.Task) bool
 }
 
-//
 // RuleUnique running tasks must be unique by:
 //   - application
 //   - variant
@@ -19,7 +17,6 @@ type Rule interface {
 type RuleUnique struct {
 }
 
-//
 // Match determines the match.
 func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
 	if candidate.ApplicationID == nil || other.ApplicationID == nil {
@@ -42,12 +39,10 @@ func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
 	return
 }
 
-//
 // RuleIsolated policy.
 type RuleIsolated struct {
 }
 
-//
 // Match determines the match.
 func (r *RuleIsolated) Match(candidate, other *model.Task) (matched bool) {
 	matched = r.hasPolicy(candidate, Isolated) || r.hasPolicy(other, Isolated)
@@ -63,7 +58,6 @@ func (r *RuleIsolated) Match(candidate, other *model.Task) (matched bool) {
 	return
 }
 
-//
 // Returns true if the task policy includes: isolated
 func (r *RuleIsolated) hasPolicy(task *model.Task, name string) (matched bool) {
 	for _, p := range strings.Split(task.Policy, ";") {

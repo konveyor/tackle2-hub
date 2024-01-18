@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//
 // Routes
 const (
 	ArchetypesRoot           = "/archetypes"
@@ -18,13 +17,11 @@ const (
 	ArchetypeAssessmentsRoot = ArchetypeRoot + "/assessments"
 )
 
-//
 // ArchetypeHandler handles Archetype resource routes.
 type ArchetypeHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -335,7 +332,6 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-//
 // Archetype REST resource.
 type Archetype struct {
 	Resource          `yaml:",inline"`
@@ -354,7 +350,6 @@ type Archetype struct {
 	Review            *Ref     `json:"review"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Archetype) With(m *model.Archetype) {
 	r.Resource.With(&m.Model)
@@ -393,7 +388,6 @@ func (r *Archetype) With(m *model.Archetype) {
 	r.Risk = assessment.RiskUnknown
 }
 
-//
 // WithResolver uses an ArchetypeResolver to update the resource with
 // values derived from the archetype's assessments.
 func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err error) {
@@ -416,7 +410,6 @@ func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err er
 	return
 }
 
-//
 // Model builds a model from the resource.
 func (r *Archetype) Model() (m *model.Archetype) {
 	m = &model.Archetype{

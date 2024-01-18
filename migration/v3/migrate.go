@@ -85,7 +85,6 @@ func (r Migration) Models() []interface{} {
 	return model.All()
 }
 
-//
 // factMigration migrates Application.Facts.
 // This involves changing the Facts type from JSON which maps to
 // a column in the DB to an ORM virtual field. This, and the data
@@ -126,7 +125,6 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // bucketMigration migrates buckets.
 func (r Migration) bucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
@@ -150,7 +148,6 @@ func (r Migration) bucketMigration(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // appBucketMigration migrates application buckets.
 // The (v2) Application.Bucket (string) contains the bucket storage path. Migration needs to
 // build a `Bucket` object using this path for each and set v3 BucketID.
@@ -195,7 +192,6 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // taskBucketMigration migrates task buckets.
 // The (v2) Task.Bucket (string) contains the bucket storage path. Migration needs to
 // build a `Bucket` object using this path for each and set v3 BucketID.
@@ -240,7 +236,6 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // taskGroupBucketMigration migrates task group buckets.
 // The (v2) TaskGroup.Bucket (string) contains the bucket storage path. Migration needs to
 // build a `Bucket` object using this path for each and set v3 BucketID.

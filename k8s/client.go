@@ -13,7 +13,6 @@ import (
 
 var Settings = &settings.Settings
 
-//
 // NewClient builds new k8s client.
 func NewClient() (newClient client.Client, err error) {
 	if Settings.Disconnected {

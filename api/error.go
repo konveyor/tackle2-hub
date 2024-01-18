@@ -13,7 +13,6 @@ import (
 	"os"
 )
 
-//
 // BadRequestError reports bad request errors.
 type BadRequestError struct {
 	Reason string
@@ -28,7 +27,6 @@ func (r *BadRequestError) Is(err error) (matched bool) {
 	return
 }
 
-//
 // BatchError reports errors stemming from batch operations.
 type BatchError struct {
 	Message string
@@ -49,7 +47,6 @@ func (r BatchError) Is(err error) (matched bool) {
 	return
 }
 
-//
 // TrackerError reports an error stemming from the Hub being unable
 // to communicate with an external issue tracker.
 type TrackerError struct {
@@ -65,7 +62,6 @@ func (r *TrackerError) Is(err error) (matched bool) {
 	return
 }
 
-//
 // Forbidden reports auth errors.
 type Forbidden struct {
 	Reason string
@@ -80,7 +76,6 @@ func (r *Forbidden) Is(err error) (matched bool) {
 	return
 }
 
-//
 // ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {

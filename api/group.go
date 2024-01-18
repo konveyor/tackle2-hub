@@ -7,20 +7,17 @@ import (
 	"net/http"
 )
 
-//
 // Routes
 const (
 	StakeholderGroupsRoot = "/stakeholdergroups"
 	StakeholderGroupRoot  = StakeholderGroupsRoot + "/:" + ID
 )
 
-//
 // StakeholderGroupHandler handles stakeholder group routes.
 type StakeholderGroupHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -176,7 +173,6 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // StakeholderGroup REST resource.
 type StakeholderGroup struct {
 	Resource       `yaml:",inline"`
@@ -186,7 +182,6 @@ type StakeholderGroup struct {
 	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
 }
 
-//
 // With updates the resource with the model.
 func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
 	r.Resource.With(&m.Model)
@@ -206,7 +201,6 @@ func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *StakeholderGroup) Model() (m *model.StakeholderGroup) {
 	m = &model.StakeholderGroup{

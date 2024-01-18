@@ -8,20 +8,17 @@ import (
 	"time"
 )
 
-//
 // Routes
 const (
 	MigrationWavesRoot = "/migrationwaves"
 	MigrationWaveRoot  = MigrationWavesRoot + "/:" + ID
 )
 
-//
 // MigrationWaveHandler handles Migration Wave resource routes.
 type MigrationWaveHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h MigrationWaveHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -180,7 +177,6 @@ func (h MigrationWaveHandler) Delete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // MigrationWave REST Resource
 type MigrationWave struct {
 	Resource          `yaml:",inline"`
@@ -192,7 +188,6 @@ type MigrationWave struct {
 	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 }
 
-//
 // With updates the resource using the model.
 func (r *MigrationWave) With(m *model.MigrationWave) {
 	r.Resource.With(&m.Model)
@@ -219,7 +214,6 @@ func (r *MigrationWave) With(m *model.MigrationWave) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *MigrationWave) Model() (m *model.MigrationWave) {
 	m = &model.MigrationWave{

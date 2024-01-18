@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-//
 // Fields returns a map of fields.
 func Fields(m interface{}) (mp map[string]interface{}) {
 	var inspect func(r interface{})
@@ -61,7 +60,6 @@ func Fields(m interface{}) (mp map[string]interface{}) {
 	return
 }
 
-//
 // NameOf returns the name of a model.
 func NameOf(m interface{}) (name string) {
 	mt := reflect.TypeOf(m)

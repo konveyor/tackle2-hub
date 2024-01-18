@@ -23,7 +23,6 @@ type Application struct {
 	BusinessService   *BusinessService
 }
 
-//
 // depMutex ensures Dependency.Create() is not executed concurrently.
 var depMutex sync.Mutex
 
@@ -35,7 +34,6 @@ type Dependency struct {
 	From   *Application `gorm:"foreignKey:FromID;constraint:OnDelete:CASCADE"`
 }
 
-//
 // Create a dependency synchronized using a mutex.
 func (r *Dependency) Create(db *gorm.DB) (err error) {
 	depMutex.Lock()
@@ -44,7 +42,6 @@ func (r *Dependency) Create(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Validation Hook to avoid cyclic dependencies.
 func (r *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 	var nextDeps []*Dependency
@@ -65,7 +62,6 @@ func (r *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Custom error type to allow API recognize Cyclic Dependency error and assign proper status code.
 type DependencyCyclicError struct{}
 

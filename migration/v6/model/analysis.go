@@ -2,7 +2,6 @@ package model
 
 import "gorm.io/gorm"
 
-//
 // Analysis report.
 type Analysis struct {
 	Model
@@ -13,7 +12,6 @@ type Analysis struct {
 	Application   *Application
 }
 
-//
 // TechDependency report dependency.
 type TechDependency struct {
 	Model
@@ -27,7 +25,6 @@ type TechDependency struct {
 	Analysis   *Analysis
 }
 
-//
 // Issue report issue (violation).
 type Issue struct {
 	Model
@@ -45,7 +42,6 @@ type Issue struct {
 	Analysis    *Analysis
 }
 
-//
 // Incident report an issue incident.
 type Incident struct {
 	Model
@@ -58,14 +54,12 @@ type Incident struct {
 	Issue    *Issue
 }
 
-//
 // Link URL link.
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
 }
 
-//
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
@@ -82,7 +76,6 @@ type RuleSet struct {
 	DependsOn   []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
 }
 
-//
 // BeforeUpdate hook to avoid cyclic dependencies.
 func (r *RuleSet) BeforeUpdate(db *gorm.DB) (err error) {
 	seen := make(map[uint]bool)
@@ -116,7 +109,6 @@ func (r *RuleSet) BeforeUpdate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Rule - Analysis rule.
 type Rule struct {
 	Model

@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-//
 // Routes
 const (
 	BatchRoot        = "/batch"
@@ -16,13 +15,11 @@ const (
 	BatchTagsRoot    = BatchRoot + TagsRoot
 )
 
-//
 // BatchHandler handles batch resource creation routes.
 type BatchHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h BatchHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")

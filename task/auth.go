@@ -12,18 +12,16 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//
 // Validator validates task tokens.
 type Validator struct {
 	// k8s client.
 	Client k8s.Client
 }
 
-//
 // Valid token when:
-//  - The token references a task.
-//  - The task is valid and running.
-//  - The task pod valid and pending|running.
+//   - The token references a task.
+//   - The task is valid and running.
+//   - The task pod valid and pending|running.
 func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
 	claims := token.Claims.(jwt.MapClaims)
 	v, found := claims["task"]

@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-//
 // Task API.
 type Task struct {
 	richClient *binding.RichClient
@@ -19,7 +18,6 @@ type Task struct {
 	report api.TaskReport
 }
 
-//
 // Load a task by ID.
 func (h *Task) Load() {
 	var err error
@@ -32,7 +30,6 @@ func (h *Task) Load() {
 	return
 }
 
-//
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
 	appRef := h.task.Application
@@ -44,14 +41,12 @@ func (h *Task) Application() (r *api.Application, err error) {
 	return
 }
 
-//
 // Data returns the addon data.
 func (h *Task) Data() (d map[string]interface{}) {
 	d = h.task.Data.(map[string]interface{})
 	return
 }
 
-//
 // DataWith populates the addon data object.
 func (h *Task) DataWith(object interface{}) (err error) {
 	b, _ := json.Marshal(h.task.Data)
@@ -59,13 +54,11 @@ func (h *Task) DataWith(object interface{}) (err error) {
 	return
 }
 
-//
 // Variant returns the task variant.
 func (h *Task) Variant() string {
 	return h.task.Variant
 }
 
-//
 // Started report addon started.
 func (h *Task) Started() {
 	h.deleteReport()
@@ -75,7 +68,6 @@ func (h *Task) Started() {
 	return
 }
 
-//
 // Succeeded report addon succeeded.
 func (h *Task) Succeeded() {
 	h.report.Status = task.Succeeded
@@ -85,7 +77,6 @@ func (h *Task) Succeeded() {
 	return
 }
 
-//
 // Failed report addon failed.
 // The reason can be a printf style format.
 func (h *Task) Failed(reason string, v ...interface{}) {
@@ -101,7 +92,6 @@ func (h *Task) Failed(reason string, v ...interface{}) {
 	return
 }
 
-//
 // Errorf report addon error.
 func (h *Task) Errorf(severity, description string, v ...interface{}) {
 	h.Error(api.TaskError{
@@ -110,7 +100,6 @@ func (h *Task) Errorf(severity, description string, v ...interface{}) {
 	})
 }
 
-//
 // Error report addon error.
 func (h *Task) Error(error ...api.TaskError) {
 	h.report.Status = task.Failed
@@ -127,7 +116,6 @@ func (h *Task) Error(error ...api.TaskError) {
 	return
 }
 
-//
 // Activity report addon activity.
 // The description can be a printf style format.
 func (h *Task) Activity(entry string, v ...interface{}) {
@@ -151,7 +139,6 @@ func (h *Task) Activity(entry string, v ...interface{}) {
 	return
 }
 
-//
 // Attach ensures the file is attached to the report
 // associated with the last entry in the activity.
 func (h *Task) Attach(f *api.File) {
@@ -160,7 +147,6 @@ func (h *Task) Attach(f *api.File) {
 	return
 }
 
-//
 // AttachAt ensures the file is attached to
 // the report indexed to the activity.
 // The activity is a 1-based index. Zero(0) means NOT associated.
@@ -191,7 +177,6 @@ func (h *Task) AttachAt(f *api.File, activity int) {
 	return
 }
 
-//
 // Total report addon total items.
 func (h *Task) Total(n int) {
 	h.report.Total = n
@@ -203,7 +188,6 @@ func (h *Task) Total(n int) {
 	return
 }
 
-//
 // Increment report addon completed (+1) items.
 func (h *Task) Increment() {
 	h.report.Completed++
@@ -215,7 +199,6 @@ func (h *Task) Increment() {
 	return
 }
 
-//
 // Completed report addon completed (N) items.
 func (h *Task) Completed(n int) {
 	h.report.Completed = n
@@ -224,14 +207,12 @@ func (h *Task) Completed(n int) {
 	return
 }
 
-//
 // Bucket returns the bucket API.
 func (h *Task) Bucket() (b *binding.BucketContent) {
 	b = h.richClient.Task.Bucket(h.task.ID)
 	return
 }
 
-//
 // Result report addon result.
 func (h *Task) Result(object interface{}) {
 	h.report.Result = object
@@ -240,7 +221,6 @@ func (h *Task) Result(object interface{}) {
 	return
 }
 
-//
 // deleteReport deletes the task report.
 func (h *Task) deleteReport() {
 	params := Params{
@@ -253,7 +233,6 @@ func (h *Task) deleteReport() {
 	}
 }
 
-//
 // pushReport create/update the task report.
 func (h *Task) pushReport() {
 	var err error

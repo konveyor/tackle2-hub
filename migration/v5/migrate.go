@@ -130,7 +130,6 @@ func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // updateBundleSeed updates the description for Open Liberty.
 func (r Migration) updateBundleSeed(db *gorm.DB) (err error) {
 	db = db.Model(&model.RuleSet{})
@@ -142,7 +141,6 @@ func (r Migration) updateBundleSeed(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // migrateIdentitiesUniqName de-duplicates identity names.
 func (r Migration) migrateIdentitiesUniqName(db *gorm.DB) (err error) {
 	var identities []v3.Identity

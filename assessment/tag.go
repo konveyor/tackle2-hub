@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//
 // NewTagResolver builds a TagResolver.
 func NewTagResolver(db *gorm.DB) (t *TagResolver, err error) {
 	t = &TagResolver{
@@ -17,21 +16,18 @@ func NewTagResolver(db *gorm.DB) (t *TagResolver, err error) {
 	return
 }
 
-//
 // TagResolver resolves CategorizedTags to Tag models.
 type TagResolver struct {
 	cache map[string]map[string]*model.Tag
 	db    *gorm.DB
 }
 
-//
 // Resolve a category and tag name to a Tag model.
 func (r *TagResolver) Resolve(category string, tag string) (t *model.Tag, found bool) {
 	t, found = r.cache[category][tag]
 	return
 }
 
-//
 // Assessment returns all the Tag models that should be applied from the assessment.
 func (r *TagResolver) Assessment(assessment Assessment) (tags []model.Tag) {
 	for _, s := range assessment.Sections {

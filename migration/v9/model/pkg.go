@@ -2,7 +2,6 @@ package model
 
 import "github.com/konveyor/tackle2-hub/settings"
 
-//
 // JSON field (data) type.
 type JSON = []byte
 
@@ -10,7 +9,6 @@ var (
 	Settings = &settings.Settings
 )
 
-//
 // All builds all models.
 // Models are enumerated such that each are listed after
 // all the other models on which they may depend.
