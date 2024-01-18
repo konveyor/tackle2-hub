@@ -33,10 +33,9 @@ BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 # Build ALL commands.
 cmd: hub addon
 
-# Run go fmt against code
+# Format the code.
 fmt: ${GOIMPORTS}
 	goimports -w ${PKGDIR}
-	go fmt ${PKG}
 
 # Run go vet against code
 vet:
