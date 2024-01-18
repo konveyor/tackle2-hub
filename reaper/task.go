@@ -159,7 +159,7 @@ func (r *TaskReaper) release(m *model.Task) {
 
 // delete task.
 func (r *TaskReaper) delete(m *model.Task) {
-	rt := Task{m}
+	rt := Task{Task: m}
 	err := rt.Delete(r.Client)
 	if err != nil {
 		Log.Error(err, "")
