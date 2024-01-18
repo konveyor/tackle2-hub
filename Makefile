@@ -26,7 +26,7 @@ PKG = ./addon/... \
       ./test/...  \
       ./tracker/...
 
-DIR = $(subst /...,,${PKG})
+PKGDIR = $(subst /...,,${PKG})
 
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 
@@ -35,7 +35,7 @@ cmd: hub addon
 
 # Run go fmt against code
 fmt: ${GOIMPORTS}
-	goimports -w ${DIR}
+	goimports -w ${PKGDIR}
 	go fmt ${PKG}
 
 # Run go vet against code
