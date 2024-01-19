@@ -1,5 +1,6 @@
 GOBIN ?= ${GOPATH}/bin
 GOIMPORTS = ${GOBIN}/goimports
+CONTROLLERGEN = ${GOBIN}/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
@@ -67,25 +68,18 @@ run-addon:
 	go run ./hack/cmd/addon/main.go
 
 # Generate manifests e.g. CRD, Webhooks
-manifests: controller-gen
-	controller-gen ${CRD_OPTIONS} \
+manifests: ${CONTROLLERGEN}
+	${CONTROLLERGEN} ${CRD_OPTIONS} \
 		crd rbac:roleName=manager-role \
 		paths="./..." output:crd:artifacts:config=generated/crd/bases output:crd:dir=generated/crd
 
 # Generate code
-generate: controller-gen
-	controller-gen object:headerFile="./generated/boilerplate" paths="./..."
+generate: ${CONTROLLERGEN}
+	${CONTROLLERGEN} object:headerFile="./generated/boilerplate" paths="./..."
 
-# Find or download controller-gen.
-controller-gen:
-	if [ "$(shell which controller-gen)" = "" ]; then \
-	  set -e ;\
-	  CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	  cd $$CONTROLLER_GEN_TMP_DIR ;\
-	  go mod init tmp ;\
-	  go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0 ;\
-	  rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	fi ;\
+# Ensure controller-gen installed.
+${CONTROLLERGEN}:
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0
 
 # Ensure goimports installed.
 ${GOIMPORTS}:
