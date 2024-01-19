@@ -1,3 +1,4 @@
+GOPATH ?= $(HOME)/go
 GOBIN ?= $(GOPATH)/bin
 GOIMPORTS = $(GOBIN)/goimports
 CONTROLLERGEN = $(GOBIN)/controller-gen
