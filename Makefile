@@ -36,7 +36,7 @@ cmd: hub addon
 
 # Format the code.
 fmt: $(GOIMPORTS)
-	goimports -w $(PKGDIR)
+	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
 vet:
