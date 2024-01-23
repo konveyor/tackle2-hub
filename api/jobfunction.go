@@ -1,26 +1,24 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	JobFunctionsRoot = "/jobfunctions"
 	JobFunctionRoot  = JobFunctionsRoot + "/:" + ID
 )
 
-//
 // JobFunctionHandler handles job-function routes.
 type JobFunctionHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -164,7 +162,6 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // JobFunction REST resource.
 type JobFunction struct {
 	Resource     `yaml:",inline"`
@@ -172,7 +169,6 @@ type JobFunction struct {
 	Stakeholders []Ref  `json:"stakeholders"`
 }
 
-//
 // With updates the resource with the model.
 func (r *JobFunction) With(m *model.JobFunction) {
 	r.Resource.With(&m.Model)
@@ -184,7 +180,6 @@ func (r *JobFunction) With(m *model.JobFunction) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *JobFunction) Model() (m *model.JobFunction) {
 	m = &model.JobFunction{

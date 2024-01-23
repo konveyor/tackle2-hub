@@ -7,7 +7,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 )
 
-//
 // Assessment represents a deserialized Assessment.
 type Assessment struct {
 	*model.Assessment
@@ -16,7 +15,6 @@ type Assessment struct {
 	RiskMessages RiskMessages `json:"riskMessages"`
 }
 
-//
 // With updates the Assessment with the db model and deserializes its fields.
 func (r *Assessment) With(m *model.Assessment) {
 	r.Assessment = m
@@ -25,7 +23,6 @@ func (r *Assessment) With(m *model.Assessment) {
 	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
 }
 
-//
 // Status returns the started status of the assessment.
 func (r *Assessment) Status() string {
 	if r.Complete() {
@@ -37,7 +34,6 @@ func (r *Assessment) Status() string {
 	}
 }
 
-//
 // Complete returns whether all sections have been completed.
 func (r *Assessment) Complete() bool {
 	for _, s := range r.Sections {
@@ -48,7 +44,6 @@ func (r *Assessment) Complete() bool {
 	return true
 }
 
-//
 // Started returns whether any sections have been started.
 func (r *Assessment) Started() bool {
 	for _, s := range r.Sections {
@@ -59,7 +54,6 @@ func (r *Assessment) Started() bool {
 	return false
 }
 
-//
 // Risk calculates the risk level (red, yellow, green, unknown) for the application.
 func (r *Assessment) Risk() string {
 	var total uint
@@ -85,7 +79,6 @@ func (r *Assessment) Risk() string {
 	return RiskGreen
 }
 
-//
 // Confidence calculates a confidence score based on the answers to an assessment's questions.
 // The algorithm is a reimplementation of the calculation done by Pathfinder.
 func (r *Assessment) Confidence() (score int) {
@@ -125,7 +118,6 @@ func (r *Assessment) Confidence() (score int) {
 	return
 }
 
-//
 // Section represents a group of questions in a questionnaire.
 type Section struct {
 	Order     *uint      `json:"order" yaml:"order" binding:"required"`
@@ -134,7 +126,6 @@ type Section struct {
 	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
 }
 
-//
 // Complete returns whether all questions in the section have been answered.
 func (r *Section) Complete() bool {
 	for _, q := range r.Questions {
@@ -145,7 +136,6 @@ func (r *Section) Complete() bool {
 	return true
 }
 
-//
 // Started returns whether any questions in the section have been answered.
 func (r *Section) Started() bool {
 	for _, q := range r.Questions {
@@ -156,7 +146,6 @@ func (r *Section) Started() bool {
 	return false
 }
 
-//
 // Risks returns a slice of the risks of each of its questions.
 func (r *Section) Risks() []string {
 	risks := []string{}
@@ -166,7 +155,6 @@ func (r *Section) Risks() []string {
 	return risks
 }
 
-//
 // Tags returns all the tags that should be applied based on how
 // the questions in the section have been answered.
 func (r *Section) Tags() (tags []CategorizedTag) {
@@ -176,7 +164,6 @@ func (r *Section) Tags() (tags []CategorizedTag) {
 	return
 }
 
-//
 // Question represents a question in a questionnaire.
 type Question struct {
 	Order       *uint            `json:"order" yaml:"order" binding:"required"`
@@ -187,7 +174,6 @@ type Question struct {
 	Answers     []Answer         `json:"answers" yaml:"answers" binding:"min=1,dive"`
 }
 
-//
 // Risk returns the risk level for the question based on how it has been answered.
 func (r *Question) Risk() string {
 	for _, a := range r.Answers {
@@ -198,7 +184,6 @@ func (r *Question) Risk() string {
 	return RiskUnknown
 }
 
-//
 // Answered returns whether the question has had an answer selected.
 func (r *Question) Answered() bool {
 	for _, a := range r.Answers {
@@ -209,7 +194,6 @@ func (r *Question) Answered() bool {
 	return false
 }
 
-//
 // Tags returns any tags to be applied based on how the question is answered.
 func (r *Question) Tags() (tags []CategorizedTag) {
 	for _, answer := range r.Answers {
@@ -221,7 +205,6 @@ func (r *Question) Tags() (tags []CategorizedTag) {
 	return
 }
 
-//
 // Answer represents an answer to a question in a questionnaire.
 type Answer struct {
 	Order         *uint            `json:"order" yaml:"order" binding:"required"`
@@ -235,14 +218,12 @@ type Answer struct {
 	AutoAnswered  bool             `json:"autoAnswered,omitempty" yaml:"autoAnswered,omitempty"`
 }
 
-//
 // CategorizedTag represents a human-readable pair of category and tag.
 type CategorizedTag struct {
 	Category string `json:"category" yaml:"category"`
 	Tag      string `json:"tag" yaml:"tag"`
 }
 
-//
 // RiskMessages contains messages to display for each risk level.
 type RiskMessages struct {
 	Red     string `json:"red" yaml:"red"`
@@ -251,7 +232,6 @@ type RiskMessages struct {
 	Unknown string `json:"unknown" yaml:"unknown"`
 }
 
-//
 // Thresholds contains the threshold values for determining risk for the questionnaire.
 type Thresholds struct {
 	Red     uint `json:"red" yaml:"red"`

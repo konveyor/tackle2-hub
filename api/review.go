@@ -1,13 +1,13 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	ReviewsRoot = "/reviews"
@@ -15,13 +15,11 @@ const (
 	CopyRoot    = ReviewsRoot + "/copy"
 )
 
-//
 // ReviewHandler handles review routes.
 type ReviewHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -221,7 +219,6 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Review REST resource.
 type Review struct {
 	Resource            `yaml:",inline"`
@@ -246,7 +243,6 @@ func (r *Review) With(m *model.Review) {
 	r.Archetype = r.refPtr(m.ArchetypeID, m.Archetype)
 }
 
-//
 // Model builds a model.
 func (r *Review) Model() (m *model.Review) {
 	m = &model.Review{
@@ -265,7 +261,6 @@ func (r *Review) Model() (m *model.Review) {
 	return
 }
 
-//
 // CopyRequest REST resource.
 type CopyRequest struct {
 	SourceReview       uint   `json:"sourceReview" binding:"required"`

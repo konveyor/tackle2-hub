@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
 	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -22,15 +23,12 @@ const (
 	Name = "addon"
 )
 
-//
 // Package logger.
 var log = logr2.WithName(Name)
 
-//
 // Settings defines applcation settings.
 var Settings = &settings.Settings
 
-//
 // Add the controller.
 func Add(mgr manager.Manager, db *gorm.DB) error {
 	reconciler := &Reconciler{
@@ -60,7 +58,6 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 	return nil
 }
 
-//
 // Reconciler reconciles addon CRs.
 type Reconciler struct {
 	record.EventRecorder
@@ -69,7 +66,6 @@ type Reconciler struct {
 	Log logr.Logger
 }
 
-//
 // Reconcile a Addon CR.
 // Note: Must not a pointer receiver to ensure that the
 // logger and other state is not shared.
@@ -108,13 +104,11 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	return
 }
 
-//
 // addonChanged an addon has been created/updated.
 func (r *Reconciler) addonChanged(addon *api.Addon) (err error) {
 	return
 }
 
-//
 // addonDeleted an addon has been deleted.
 func (r *Reconciler) addonDeleted(name string) (err error) {
 	return

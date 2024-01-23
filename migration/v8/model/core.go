@@ -3,16 +3,16 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path"
+	"time"
+
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/encryption"
 	"gorm.io/gorm"
-	"os"
-	"path"
-	"time"
 )
 
-//
 // Model Base model.
 type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
@@ -135,7 +135,6 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // Error appends an error.
 func (m *Task) Error(severity, description string, x ...interface{}) {
 	var list []TaskError
@@ -146,11 +145,9 @@ func (m *Task) Error(severity, description string, x ...interface{}) {
 	m.Errors, _ = json.Marshal(list)
 }
 
-//
 // Map alias.
 type Map = map[string]interface{}
 
-//
 // TTL time-to-live.
 type TTL struct {
 	Created   int `json:"created,omitempty"`
@@ -161,7 +158,6 @@ type TTL struct {
 	Failed    int `json:"failed,omitempty"`
 }
 
-//
 // TaskError used in Task.Errors.
 type TaskError struct {
 	Severity    string `json:"severity"`
@@ -191,7 +187,6 @@ type TaskGroup struct {
 	State string
 }
 
-//
 // Propagate group data into the task.
 func (m *TaskGroup) Propagate() (err error) {
 	for i := range m.Tasks {
@@ -228,7 +223,6 @@ func (m *TaskGroup) Propagate() (err error) {
 	return
 }
 
-//
 // merge maps B into A.
 // The B map is the authority.
 func (m *TaskGroup) merge(a, b Map) (out Map) {
@@ -265,7 +259,6 @@ func (m *TaskGroup) merge(a, b Map) (out Map) {
 	return
 }
 
-//
 // Proxy configuration.
 // kind = (http|https)
 type Proxy struct {

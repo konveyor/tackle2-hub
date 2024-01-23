@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
@@ -13,15 +20,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"io"
-	"net/http"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
 )
 
-//
 // Routes
 const (
 	AnalysesRoot          = "/analyses"
@@ -54,13 +54,11 @@ const (
 	DepField   = "dependencies"
 )
 
-//
 // AnalysisHandler handles analysis resource routes.
 type AnalysisHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	// Primary
@@ -1628,7 +1626,6 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-//
 // appIDs provides application IDs.
 // filter:
 // - application.(id|name)
@@ -1673,7 +1670,6 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	return
 }
 
-//
 // analysisIDs provides analysis IDs.
 func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
@@ -1684,10 +1680,10 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 	return
 }
 
-//
 // issueIDs returns issue filtered issue IDs.
 // Filter:
-//  issue.*
+//
+//	issue.*
 func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Issue{})
@@ -1720,10 +1716,10 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	return
 }
 
-//
 // depIDs returns issue filtered issue IDs.
 // Filter:
-//  techDeps.*
+//
+//	techDeps.*
 func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.TechDependency{})
@@ -1756,7 +1752,6 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	return
 }
 
-//
 // archive
 // - Set the 'archived' flag.
 // - Set the 'summary' field with archived issues.
@@ -1818,7 +1813,6 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 	return
 }
 
-//
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
@@ -1829,7 +1823,6 @@ type Analysis struct {
 	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
@@ -1856,7 +1849,6 @@ func (r *Analysis) With(m *model.Analysis) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
@@ -1878,7 +1870,6 @@ func (r *Analysis) Model() (m *model.Analysis) {
 	return
 }
 
-//
 // Issue REST resource.
 type Issue struct {
 	Resource    `yaml:",inline"`
@@ -1894,7 +1885,6 @@ type Issue struct {
 	Labels      []string   `json:"labels"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Issue) With(m *model.Issue) {
 	r.Resource.With(&m.Model)
@@ -1923,7 +1913,6 @@ func (r *Issue) With(m *model.Issue) {
 	r.Effort = m.Effort
 }
 
-//
 // Model builds a model.
 func (r *Issue) Model() (m *model.Issue) {
 	m = &model.Issue{}
@@ -1946,7 +1935,6 @@ func (r *Issue) Model() (m *model.Issue) {
 	return
 }
 
-//
 // TechDependency REST resource.
 type TechDependency struct {
 	Resource `yaml:",inline"`
@@ -1958,7 +1946,6 @@ type TechDependency struct {
 	SHA      string   `json:"sha,omitempty" yaml:",omitempty"`
 }
 
-//
 // With updates the resource with the model.
 func (r *TechDependency) With(m *model.TechDependency) {
 	r.Resource.With(&m.Model)
@@ -1972,7 +1959,6 @@ func (r *TechDependency) With(m *model.TechDependency) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *TechDependency) Model() (m *model.TechDependency) {
 	sort.Strings(r.Labels)
@@ -1986,7 +1972,6 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 	return
 }
 
-//
 // Incident REST resource.
 type Incident struct {
 	Resource `yaml:",inline"`
@@ -1997,7 +1982,6 @@ type Incident struct {
 	Facts    FactMap `json:"facts"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Incident) With(m *model.Incident) {
 	r.Resource.With(&m.Model)
@@ -2010,7 +1994,6 @@ func (r *Incident) With(m *model.Incident) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *Incident) Model() (m *model.Incident) {
 	m = &model.Incident{}
@@ -2022,18 +2005,15 @@ func (r *Incident) Model() (m *model.Incident) {
 	return
 }
 
-//
 // Link analysis report link.
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty" yaml:",omitempty"`
 }
 
-//
 // ArchivedIssue created when issues are archived.
 type ArchivedIssue model.ArchivedIssue
 
-//
 // RuleReport REST resource.
 type RuleReport struct {
 	RuleSet      string   `json:"ruleset"`
@@ -2047,7 +2027,6 @@ type RuleReport struct {
 	Applications int      `json:"applications"`
 }
 
-//
 // IssueReport REST resource.
 type IssueReport struct {
 	ID          uint     `json:"id"`
@@ -2062,7 +2041,6 @@ type IssueReport struct {
 	Files       int      `json:"files"`
 }
 
-//
 // IssueAppReport REST resource.
 type IssueAppReport struct {
 	ID              uint   `json:"id"`
@@ -2081,7 +2059,6 @@ type IssueAppReport struct {
 	} `json:"issue"`
 }
 
-//
 // FileReport REST resource.
 type FileReport struct {
 	IssueID   uint   `json:"issueId" yaml:"issueId"`
@@ -2090,7 +2067,6 @@ type FileReport struct {
 	Effort    int    `json:"effort"`
 }
 
-//
 // DepReport REST resource.
 type DepReport struct {
 	Provider     string   `json:"provider"`
@@ -2099,7 +2075,6 @@ type DepReport struct {
 	Applications int      `json:"applications"`
 }
 
-//
 // DepAppReport REST resource.
 type DepAppReport struct {
 	ID              uint   `json:"id"`
@@ -2117,18 +2092,15 @@ type DepAppReport struct {
 	} `json:"dependency"`
 }
 
-//
 // FactMap map.
 type FactMap map[string]interface{}
 
-//
 // AnalysisWriter used to create a file containing an analysis.
 type AnalysisWriter struct {
 	encoder
 	ctx *gin.Context
 }
 
-//
 // db returns a db client.
 func (r *AnalysisWriter) db() (db *gorm.DB) {
 	rtx := WithContext(r.ctx)
@@ -2136,7 +2108,6 @@ func (r *AnalysisWriter) db() (db *gorm.DB) {
 	return
 }
 
-//
 // Create an analysis file and returns the path.
 func (r *AnalysisWriter) Create(id uint) (path string, err error) {
 	ext := ".json"
@@ -2162,7 +2133,6 @@ func (r *AnalysisWriter) Create(id uint) (path string, err error) {
 	return
 }
 
-//
 // Write the analysis file.
 func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	m := &model.Analysis{}
@@ -2191,7 +2161,6 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	return
 }
 
-//
 // newEncoder returns an encoder.
 func (r *AnalysisWriter) newEncoder(output io.Writer) (encoder encoder, err error) {
 	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
@@ -2209,7 +2178,6 @@ func (r *AnalysisWriter) newEncoder(output io.Writer) (encoder encoder, err erro
 	return
 }
 
-//
 // addIssues writes issues.
 func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 	r.field("issues")
@@ -2238,7 +2206,6 @@ func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 	return
 }
 
-//
 // addDeps writes dependencies.
 func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 	r.field("dependencies")
@@ -2266,14 +2233,12 @@ func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 	return
 }
 
-//
 // ReportWriter analysis report writer.
 type ReportWriter struct {
 	encoder
 	ctx *gin.Context
 }
 
-//
 // db returns a db client.
 func (r *ReportWriter) db() (db *gorm.DB) {
 	rtx := WithContext(r.ctx)
@@ -2281,7 +2246,6 @@ func (r *ReportWriter) db() (db *gorm.DB) {
 	return
 }
 
-//
 // Write builds and streams the analysis report.
 func (r *ReportWriter) Write(id uint) {
 	reportDir := Settings.Analysis.ReportPath
@@ -2316,7 +2280,6 @@ func (r *ReportWriter) Write(id uint) {
 	return
 }
 
-//
 // buildOutput creates the report output.js file.
 func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	m := &model.Analysis{}
@@ -2361,7 +2324,6 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	return
 }
 
-//
 // addTags writes tags.
 func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 	r.field("tags")

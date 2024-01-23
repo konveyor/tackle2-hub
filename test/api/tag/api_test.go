@@ -75,7 +75,6 @@ func TestTagList(t *testing.T) {
 	}
 }
 
-
 func TestTagSeed(t *testing.T) {
 	got, err := Tag.List()
 	if err != nil {

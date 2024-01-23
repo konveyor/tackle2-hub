@@ -2,29 +2,27 @@ package seed
 
 import (
 	"errors"
+	"io/fs"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/settings"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
-	"io/fs"
 )
 
 var log = logr.WithName("seeding")
 
-//
 // SeedKey identifies the setting containing the applied seed digest.
 const SeedKey = ".hub.db.seed"
 
-//
 // Seeder specifies an interface for seeding DB models.
 type Seeder interface {
 	With(libseed.Seed) error
 	Apply(*gorm.DB) error
 }
 
-//
 // Seed applies DB seeds.
 func Seed() (err error) {
 	var db *gorm.DB

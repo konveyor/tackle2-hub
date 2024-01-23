@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-//
 // Compare two files content using sha256sum function.
 func EqualFileContent(gotPath, expectedPath string) bool {
 	got, err := os.Open(gotPath)

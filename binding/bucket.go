@@ -6,20 +6,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Bucket API.
 type Bucket struct {
 	client *Client
 }
 
-//
 // Create a Bucket.
 func (h *Bucket) Create(r *api.Bucket) (err error) {
 	err = h.client.Post(api.BucketsRoot, &r)
 	return
 }
 
-//
 // Get a bucket.
 func (h *Bucket) Get(id uint) (r *api.Bucket, err error) {
 	r = &api.Bucket{}
@@ -28,7 +25,6 @@ func (h *Bucket) Get(id uint) (r *api.Bucket, err error) {
 	return
 }
 
-//
 // List buckets.
 func (h *Bucket) List() (list []api.Bucket, err error) {
 	list = []api.Bucket{}
@@ -36,14 +32,12 @@ func (h *Bucket) List() (list []api.Bucket, err error) {
 	return
 }
 
-//
 // Delete a bucket.
 func (h *Bucket) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.BucketRoot).Inject(Params{api.ID: id}))
 	return
 }
 
-//
 // Content returns content API.
 func (h *Bucket) Content(id uint) (b *BucketContent) {
 	params := Params{
@@ -58,14 +52,12 @@ func (h *Bucket) Content(id uint) (b *BucketContent) {
 	return
 }
 
-//
 // BucketContent API.
 type BucketContent struct {
 	client *Client
 	root   string
 }
 
-//
 // Get reads from the bucket.
 // The source (root) is relative to the bucket root.
 func (h *BucketContent) Get(source, destination string) (err error) {
@@ -73,7 +65,6 @@ func (h *BucketContent) Get(source, destination string) (err error) {
 	return
 }
 
-//
 // Put writes to the bucket.
 // The destination (root) is relative to the bucket root.
 func (h *BucketContent) Put(source, destination string) (err error) {
@@ -81,7 +72,6 @@ func (h *BucketContent) Put(source, destination string) (err error) {
 	return
 }
 
-//
 // Delete deletes content at the specified root.
 // The source is relative to the bucket root.
 func (h *BucketContent) Delete(path string) (err error) {

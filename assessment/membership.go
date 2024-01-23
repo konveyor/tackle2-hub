@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//
 // NewMembershipResolver builds a MembershipResolver.
 func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver) {
 	m = &MembershipResolver{db: db}
@@ -16,7 +15,6 @@ func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver) {
 	return
 }
 
-//
 // MembershipResolver resolves archetype membership.
 type MembershipResolver struct {
 	db               *gorm.DB
@@ -26,7 +24,6 @@ type MembershipResolver struct {
 	membersCached    bool
 }
 
-//
 // Applications returns the list of applications that are members of the given archetype.
 func (r *MembershipResolver) Applications(m Archetype) (applications []Application, err error) {
 	err = r.cacheArchetypeMembers()
@@ -39,7 +36,6 @@ func (r *MembershipResolver) Applications(m Archetype) (applications []Applicati
 	return
 }
 
-//
 // Archetypes returns the list of archetypes that the application is a member of.
 func (r *MembershipResolver) Archetypes(app Application) (archetypes []Archetype, err error) {
 	err = r.cacheArchetypes()

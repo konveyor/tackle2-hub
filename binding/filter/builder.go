@@ -12,10 +12,11 @@ filter.And("friend").Eq(Any{"Sam","Ed"})
 */
 
 import (
-	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"reflect"
 	"strconv"
 	"strings"
+
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 )
 
 const (
@@ -28,21 +29,17 @@ const (
 	OR   = string(qf.OR)
 )
 
-//
 // Any match any.
 type Any []interface{}
 
-//
 // All match all.
 type All []interface{}
 
-//
 // Filter builder.
 type Filter struct {
 	predicates []*Predicate
 }
 
-//
 // And adds a predicate.
 // Example: filter.And("name").Equals("Elmer")
 func (f *Filter) And(field string) (p *Predicate) {
@@ -54,7 +51,6 @@ func (f *Filter) And(field string) (p *Predicate) {
 	return p
 }
 
-//
 // String returns string representation.
 func (f *Filter) String() (s string) {
 	var preds []string
@@ -65,7 +61,6 @@ func (f *Filter) String() (s string) {
 	return
 }
 
-//
 // Predicate is a filter query predicate.
 type Predicate struct {
 	field    string
@@ -73,14 +68,12 @@ type Predicate struct {
 	value    string
 }
 
-//
 // String returns a string representation of the predicate.
 func (p *Predicate) String() (s string) {
 	s = p.field + p.operator + p.value
 	return
 }
 
-//
 // Eq returns a (=) predicate.
 func (p *Predicate) Eq(object interface{}) *Predicate {
 	p.operator = EQ
@@ -88,7 +81,6 @@ func (p *Predicate) Eq(object interface{}) *Predicate {
 	return p
 }
 
-//
 // NotEq returns a (!=) predicate.
 func (p *Predicate) NotEq(object interface{}) *Predicate {
 	p.operator = NOT + EQ
@@ -96,7 +88,6 @@ func (p *Predicate) NotEq(object interface{}) *Predicate {
 	return p
 }
 
-//
 // Like returns a (~) predicate.
 func (p *Predicate) Like(object interface{}) *Predicate {
 	p.operator = LIKE
@@ -104,7 +95,6 @@ func (p *Predicate) Like(object interface{}) *Predicate {
 	return p
 }
 
-//
 // Gt returns a (>) predicate.
 func (p *Predicate) Gt(object interface{}) *Predicate {
 	p.operator = GT
@@ -112,7 +102,6 @@ func (p *Predicate) Gt(object interface{}) *Predicate {
 	return p
 }
 
-//
 // GtEq returns a (>=) predicate.
 func (p *Predicate) GtEq(object interface{}) *Predicate {
 	p.operator = GT + EQ
@@ -120,7 +109,6 @@ func (p *Predicate) GtEq(object interface{}) *Predicate {
 	return p
 }
 
-//
 // Lt returns a (<) predicate.
 func (p *Predicate) Lt(object interface{}) *Predicate {
 	p.operator = LT
@@ -128,7 +116,6 @@ func (p *Predicate) Lt(object interface{}) *Predicate {
 	return p
 }
 
-//
 // LtEq returns a (<) predicate.
 func (p *Predicate) LtEq(object interface{}) *Predicate {
 	p.operator = LT + EQ

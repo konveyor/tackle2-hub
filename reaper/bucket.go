@@ -1,22 +1,21 @@
 package reaper
 
 import (
+	"os"
+	"time"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
-//
 // BucketReaper bucket reaper.
 type BucketReaper struct {
 	// DB
 	DB *gorm.DB
 }
 
-//
 // Run Executes the reaper.
 // A bucket is deleted when it is no longer referenced and the TTL has expired.
 func (r *BucketReaper) Run() {
@@ -60,7 +59,6 @@ func (r *BucketReaper) Run() {
 	}
 }
 
-//
 // busy determines if anything references the bucket.
 func (r *BucketReaper) busy(bucket *model.Bucket) (busy bool, err error) {
 	nRef := int64(0)
@@ -82,7 +80,6 @@ func (r *BucketReaper) busy(bucket *model.Bucket) (busy bool, err error) {
 	return
 }
 
-//
 // Delete bucket.
 func (r *BucketReaper) delete(bucket *model.Bucket) (err error) {
 	err = nas.RmDir(bucket.Path)

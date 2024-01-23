@@ -2,12 +2,10 @@ package filter
 
 import "math"
 
-//
 // Parser used to parse the filter.
 type Parser struct {
 }
 
-//
 // Filter parses the filter and builds a Filter.
 func (r *Parser) Filter(filter string) (f Filter, err error) {
 	if filter == "" {
@@ -67,7 +65,6 @@ func (r *Parser) Filter(filter string) (f Filter, err error) {
 	return
 }
 
-//
 // Predicate filter predicate.
 type Predicate struct {
 	Unused   Token
@@ -76,11 +73,9 @@ type Predicate struct {
 	Value    Value
 }
 
-//
 // Value term value.
 type Value []Token
 
-//
 // ByKind returns values by kind.
 func (r Value) ByKind(kind ...byte) (matched []Token) {
 	for _, t := range r {
@@ -93,7 +88,6 @@ func (r Value) ByKind(kind ...byte) (matched []Token) {
 	return
 }
 
-//
 // Operator returns true when contains the specified operator.
 func (r *Value) Operator(operator byte) (matched bool) {
 	operators := r.ByKind(OPERATOR)
@@ -103,14 +97,12 @@ func (r *Value) Operator(operator byte) (matched bool) {
 	return
 }
 
-//
 // List construct.
 // Example: (red|blue|green)
 type List struct {
 	*Lexer
 }
 
-//
 // Build the value.
 func (r *List) Build() (v Value, err error) {
 	for {
@@ -145,7 +137,6 @@ func (r *List) Build() (v Value, err error) {
 	return
 }
 
-//
 // validate the result.
 func (r *List) validate(v Value) (err error) {
 	lastOp := byte(0)

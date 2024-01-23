@@ -1,6 +1,5 @@
 package addon
 
-//
 // SoftError A "soft" anticipated error.
 // Deprecated:
 type SoftError struct {

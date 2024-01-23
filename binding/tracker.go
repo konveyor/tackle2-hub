@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Tracker API.
 type Tracker struct {
 	client *Client
 }
 
-//
 // Create a Tracker.
 func (h *Tracker) Create(r *api.Tracker) (err error) {
 	err = h.client.Post(api.TrackersRoot, &r)
 	return
 }
 
-//
 // Get a Tracker by ID.
 func (h *Tracker) Get(id uint) (r *api.Tracker, err error) {
 	r = &api.Tracker{}
@@ -26,7 +23,6 @@ func (h *Tracker) Get(id uint) (r *api.Tracker, err error) {
 	return
 }
 
-//
 // List Trackers.
 func (h *Tracker) List() (list []api.Tracker, err error) {
 	list = []api.Tracker{}
@@ -34,7 +30,6 @@ func (h *Tracker) List() (list []api.Tracker, err error) {
 	return
 }
 
-//
 // Update a Tracker.
 func (h *Tracker) Update(r *api.Tracker) (err error) {
 	path := Path(api.TrackerRoot).Inject(Params{api.ID: r.ID})
@@ -42,14 +37,12 @@ func (h *Tracker) Update(r *api.Tracker) (err error) {
 	return
 }
 
-//
 // Delete a Tracker.
 func (h *Tracker) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TrackerRoot).Inject(Params{api.ID: id}))
 	return
 }
 
-//
 // List Projects.
 func (h *Tracker) ListProjects(id uint) (projectList []api.Project, err error) {
 	projectList = []api.Project{}
@@ -57,7 +50,6 @@ func (h *Tracker) ListProjects(id uint) (projectList []api.Project, err error) {
 	return
 }
 
-//
 // Get Projects.
 func (h *Tracker) GetProjects(id1 uint, id2 uint) (project api.Project, err error) {
 	project = api.Project{}
@@ -65,7 +57,6 @@ func (h *Tracker) GetProjects(id1 uint, id2 uint) (project api.Project, err erro
 	return
 }
 
-//
 // List Project Issue Types.
 func (h *Tracker) ListProjectIssueTypes(id1 uint, id2 uint) (issueType []api.IssueType, err error) {
 	issueType = []api.IssueType{}

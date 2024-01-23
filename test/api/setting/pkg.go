@@ -7,9 +7,8 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	Setting binding.Setting
+	Setting    binding.Setting
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

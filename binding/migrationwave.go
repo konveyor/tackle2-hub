@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // MigrationWave API.
 type MigrationWave struct {
 	client *Client
 }
 
-//
 // Create a MigrationWave.
 func (h *MigrationWave) Create(r *api.MigrationWave) (err error) {
 	err = h.client.Post(api.MigrationWavesRoot, &r)
 	return
 }
 
-//
 // Get a MigrationWave by ID.
 func (h *MigrationWave) Get(id uint) (r *api.MigrationWave, err error) {
 	r = &api.MigrationWave{}
@@ -26,7 +23,6 @@ func (h *MigrationWave) Get(id uint) (r *api.MigrationWave, err error) {
 	return
 }
 
-//
 // List MigrationWaves.
 func (h *MigrationWave) List() (list []api.MigrationWave, err error) {
 	list = []api.MigrationWave{}
@@ -34,7 +30,6 @@ func (h *MigrationWave) List() (list []api.MigrationWave, err error) {
 	return
 }
 
-//
 // Update a MigrationWave.
 func (h *MigrationWave) Update(r *api.MigrationWave) (err error) {
 	path := Path(api.MigrationWaveRoot).Inject(Params{api.ID: r.ID})
@@ -42,7 +37,6 @@ func (h *MigrationWave) Update(r *api.MigrationWave) (err error) {
 	return
 }
 
-//
 // Delete a MigrationWave.
 func (h *MigrationWave) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.MigrationWaveRoot).Inject(Params{api.ID: id}))

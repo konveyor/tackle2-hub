@@ -2,7 +2,6 @@ package sort
 
 import "fmt"
 
-//
 // SortError reports sorting error.
 type SortError struct {
 	field string

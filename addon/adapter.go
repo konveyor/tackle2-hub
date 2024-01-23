@@ -5,13 +5,14 @@ Tackle hub/addon integration.
 package addon
 
 import (
+	"os"
+
 	logapi "github.com/go-logr/logr"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
-	"os"
 )
 
 var (
@@ -19,7 +20,6 @@ var (
 	Log      = logr.WithName("addon")
 )
 
-//
 // Addon An addon adapter configured for a task execution.
 var Addon *Adapter
 
@@ -33,20 +33,17 @@ func init() {
 	Addon = newAdapter()
 }
 
-//
 // Client
 type Client = binding.Client
 type Params = binding.Params
 type Param = binding.Param
 type Path = binding.Path
 
-//
 // Error
 type ResetError = binding.RestError
 type Conflict = binding.Conflict
 type NotFound = binding.NotFound
 
-//
 // Handler
 type Application = binding.Application
 type Bucket = binding.Bucket
@@ -59,11 +56,9 @@ type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
 
-//
 // Filter
 type Filter = binding.Filter
 
-//
 // The Adapter provides hub/addon integration.
 type Adapter struct {
 	// Task API.
@@ -90,12 +85,11 @@ type Adapter struct {
 	client *Client
 }
 
-//
 // Run addon.
 // Reports:
-//  - Started
-//  - Succeeded
-//  - Failed (when addon returns error).
+//   - Started
+//   - Succeeded
+//   - Failed (when addon returns error).
 func (h *Adapter) Run(addon func() error) {
 	var err error
 	//
@@ -134,7 +128,6 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-//
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
 	richClient := binding.New(Settings.Addon.Hub.URL)

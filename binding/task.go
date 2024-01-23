@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Task API.
 type Task struct {
 	client *Client
 }
 
-//
 // Create a Task.
 func (h *Task) Create(r *api.Task) (err error) {
 	err = h.client.Post(api.TasksRoot, &r)
 	return
 }
 
-//
 // Get a Task by ID.
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
@@ -26,7 +23,6 @@ func (h *Task) Get(id uint) (r *api.Task, err error) {
 	return
 }
 
-//
 // List Tasks.
 func (h *Task) List() (list []api.Task, err error) {
 	list = []api.Task{}
@@ -34,7 +30,6 @@ func (h *Task) List() (list []api.Task, err error) {
 	return
 }
 
-//
 // Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
 	path := Path(api.TaskRoot).Inject(Params{api.ID: r.ID})
@@ -42,14 +37,12 @@ func (h *Task) Update(r *api.Task) (err error) {
 	return
 }
 
-//
 // Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))
 	return
 }
 
-//
 // Bucket returns the bucket API.
 func (h *Task) Bucket(id uint) (b *BucketContent) {
 	params := Params{

@@ -34,7 +34,6 @@ func (r *TackleSettings) Load() (err error) {
 	return
 }
 
-//
 // Get boolean.
 func getEnvBool(name string, def bool) bool {
 	boolean := def

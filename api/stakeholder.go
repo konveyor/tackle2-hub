@@ -1,26 +1,24 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	StakeholdersRoot = "/stakeholders"
 	StakeholderRoot  = StakeholdersRoot + "/:" + ID
 )
 
-//
 // StakeholderHandler handles stakeholder routes.
 type StakeholderHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -187,7 +185,6 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Stakeholder REST resource.
 type Stakeholder struct {
 	Resource         `yaml:",inline"`
@@ -201,7 +198,6 @@ type Stakeholder struct {
 	MigrationWaves   []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Stakeholder) With(m *model.Stakeholder) {
 	r.Resource.With(&m.Model)
@@ -240,7 +236,6 @@ func (r *Stakeholder) With(m *model.Stakeholder) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *Stakeholder) Model() (m *model.Stakeholder) {
 	m = &model.Stakeholder{

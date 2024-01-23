@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
@@ -13,13 +14,11 @@ import (
 
 const UITargetOrder = "ui.target.order"
 
-//
 // Target applies Target seeds.
 type Target struct {
 	targets []libseed.Target
 }
 
-//
 // With collects all the Target seeds.
 func (r *Target) With(seed libseed.Seed) (err error) {
 	items, err := seed.DecodeItems()
@@ -32,7 +31,6 @@ func (r *Target) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with JobFunctions.
 func (r *Target) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying Targets", "count", len(r.targets))
@@ -106,7 +104,6 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // reorder updates the value of the ui.target.order setting
 // to add any missing target ids. (namely, newly added targets.)
 func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
@@ -139,12 +136,12 @@ func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
 	return
 }
 
-//
 // merge new targets into the user's custom target order.
-//   params:
-//     userOrder: slice of target IDs in the user's desired order
-//     seedOrder: slice of target IDs in seedfile order
-//     ids: slice of ids of all the targets in the DB
+//
+//	params:
+//	  userOrder: slice of target IDs in the user's desired order
+//	  seedOrder: slice of target IDs in seedfile order
+//	  ids: slice of ids of all the targets in the DB
 func merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) {
 	ll := list.New()
 	known := make(map[uint]*list.Element)
@@ -178,7 +175,6 @@ func merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) 
 	return
 }
 
-//
 // Convenience method to find a Target.
 func (r *Target) find(db *gorm.DB, conditions ...interface{}) (t *model.Target, found bool, err error) {
 	t = &model.Target{}
@@ -194,7 +190,6 @@ func (r *Target) find(db *gorm.DB, conditions ...interface{}) (t *model.Target, 
 	return
 }
 
-//
 // Rename a Target by adding a suffix.
 func (r *Target) rename(db *gorm.DB, t *model.Target) (err error) {
 	suffix := 0

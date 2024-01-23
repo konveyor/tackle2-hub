@@ -3,26 +3,24 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
 )
 
-//
 // Routes
 const (
 	SettingsRoot = "/settings"
 	SettingRoot  = SettingsRoot + "/:" + Key
 )
 
-//
 // SettingHandler handles setting routes.
 type SettingHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes add routes.
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -229,7 +227,6 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Setting REST Resource
 type Setting struct {
 	Key   string      `json:"key"`

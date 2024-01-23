@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"syscall"
+
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -21,10 +24,8 @@ import (
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"syscall"
 )
 
 var Settings = &settings.Settings
@@ -35,7 +36,6 @@ func init() {
 	_ = Settings.Load()
 }
 
-//
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
 	err = migration.Migrate(migration.All())
@@ -53,14 +53,12 @@ func Setup() (db *gorm.DB, err error) {
 	return
 }
 
-//
 // buildScheme adds CRDs to the k8s scheme.
 func buildScheme() (err error) {
 	err = crd.AddToScheme(scheme.Scheme)
 	return
 }
 
-//
 // addonManager
 func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	cfg, err := config.GetConfig()
@@ -86,7 +84,6 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	return
 }
 
-//
 // main.
 func main() {
 	log.Info("Started", "settings", Settings)

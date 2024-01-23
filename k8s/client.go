@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/settings"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -13,7 +14,6 @@ import (
 
 var Settings = &settings.Settings
 
-//
 // NewClient builds new k8s client.
 func NewClient() (newClient client.Client, err error) {
 	if Settings.Disconnected {

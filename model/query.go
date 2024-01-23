@@ -1,11 +1,11 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
-//
 // Intersect returns an SQL intersect of the queries.
 func Intersect(q ...*gorm.DB) (intersect *gorm.DB) {
 	var part []string

@@ -1,4 +1,7 @@
-GOBIN ?= ${GOPATH}/bin
+GOPATH ?= $(HOME)/go
+GOBIN ?= $(GOPATH)/bin
+GOIMPORTS = $(GOBIN)/goimports
+CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
@@ -6,6 +9,8 @@ PKG = ./addon/... \
       ./api/... \
       ./assessment/... \
       ./auth/... \
+      ./binding/... \
+      ./controller/... \
       ./cmd/... \
       ./database/... \
       ./encryption/... \
@@ -14,41 +19,47 @@ PKG = ./addon/... \
       ./metrics/... \
       ./migration/... \
       ./model/... \
+      ./nas/... \
+      ./reaper/... \
+      ./seed/... \
       ./settings/... \
-      ./controller/... \
+      ./tar/... \
       ./task/...  \
+      ./test/...  \
       ./tracker/...
+
+PKGDIR = $(subst /...,,$(PKG))
 
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 
 # Build ALL commands.
 cmd: hub addon
 
-# Run go fmt against code
-fmt:
-	go fmt ${PKG}
+# Format the code.
+fmt: $(GOIMPORTS)
+	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
 vet:
-	go vet ${PKG}
+	go vet $(PKG)
 
 # Build hub
 hub: generate fmt vet
-	go build ${BUILD}
+	go build $(BUILD)
 
 # Build image
 docker-build:
-	docker build -t ${IMG} .
+	docker build -t $(IMG) .
 
 podman-build:
-	podman build -t ${IMG} .
+	podman build -t $(IMG) .
 	
 # Build manager binary with compiler optimizations disabled
 debug: generate fmt vet
-	go build -gcflags=all="-N -l" ${BUILD}
+	go build -gcflags=all="-N -l" $(BUILD)
 
 docker: vet
-	go build ${BUILD}
+	go build $(BUILD)
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: fmt vet
@@ -58,25 +69,22 @@ run-addon:
 	go run ./hack/cmd/addon/main.go
 
 # Generate manifests e.g. CRD, Webhooks
-manifests: controller-gen
-	controller-gen ${CRD_OPTIONS} \
+manifests: $(CONTROLLERGEN)
+	$(CONTROLLERGEN) $(CRD_OPTIONS) \
 		crd rbac:roleName=manager-role \
 		paths="./..." output:crd:artifacts:config=generated/crd/bases output:crd:dir=generated/crd
 
 # Generate code
-generate: controller-gen
-	controller-gen object:headerFile="./generated/boilerplate" paths="./..."
+generate: $(CONTROLLERGEN)
+	$(CONTROLLERGEN) object:headerFile="./generated/boilerplate" paths="./..."
 
-# Find or download controller-gen.
-controller-gen:
-	if [ "$(shell which controller-gen)" = "" ]; then \
-	  set -e ;\
-	  CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	  cd $$CONTROLLER_GEN_TMP_DIR ;\
-	  go mod init tmp ;\
-	  go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0 ;\
-	  rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	fi ;\
+# Ensure controller-gen installed.
+$(CONTROLLERGEN):
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0
+
+# Ensure goimports installed.
+$(GOIMPORTS):
+	go install golang.org/x/tools/cmd/goimports@latest
 
 # Build SAMPLE ADDON
 addon: fmt vet
@@ -86,7 +94,7 @@ docs: docs-html docs-openapi3 docs-binding
 
 # Build Swagger API spec into ./docs directory
 docs-swagger:
-	${GOBIN}/swag init -g pkg.go --dir api,assessment
+	$(GOBIN)/swag init -g pkg.go --dir api,assessment
 
 # Build OpenAPI 3.0 docs
 docs-openapi3: docs-swagger
@@ -135,7 +143,7 @@ test:
 
 # Run Hub REST API tests.
 test-api:
-	HUB_BASE_URL=${HUB_BASE_URL} go test -count=1 -p=1 -v ./test/api/...
+	HUB_BASE_URL=$(HUB_BASE_URL) go test -count=1 -p=1 -v ./test/api/...
 
 # Run Hub test suite.
 test-all: test-unit test-api

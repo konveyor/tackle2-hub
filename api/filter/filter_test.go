@@ -1,8 +1,9 @@
 package filter
 
 import (
-	"github.com/onsi/gomega"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 func TestLexer(t *testing.T) {

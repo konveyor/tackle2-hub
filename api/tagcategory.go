@@ -1,13 +1,13 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	TagCategoriesRoot   = "/tagcategories"
@@ -15,13 +15,11 @@ const (
 	TagCategoryTagsRoot = TagCategoryRoot + "/tags"
 )
 
-//
 // TagCategoryHandler handles the tag-type route.
 type TagCategoryHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -209,7 +207,6 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resources)
 }
 
-//
 // TagCategory REST resource.
 type TagCategory struct {
 	Resource `yaml:",inline"`
@@ -220,7 +217,6 @@ type TagCategory struct {
 	Tags     []Ref  `json:"tags"`
 }
 
-//
 // With updates the resource with the model.
 func (r *TagCategory) With(m *model.TagCategory) {
 	r.Resource.With(&m.Model)
@@ -236,7 +232,6 @@ func (r *TagCategory) With(m *model.TagCategory) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *TagCategory) Model() (m *model.TagCategory) {
 	m = &model.TagCategory{

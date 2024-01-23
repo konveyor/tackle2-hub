@@ -3,12 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-//
 // Routes
 const (
 	BatchRoot        = "/batch"
@@ -16,13 +16,11 @@ const (
 	BatchTagsRoot    = BatchRoot + TagsRoot
 )
 
-//
 // BatchHandler handles batch resource creation routes.
 type BatchHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h BatchHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")

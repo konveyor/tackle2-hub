@@ -1,17 +1,16 @@
 package binding
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	pathlib "path"
+
+	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // File API.
 type File struct {
 	client *Client
 }
 
-//
 // Get downloads a file.
 func (h *File) Get(id uint, destination string) (err error) {
 	path := Path(api.FileRoot).Inject(Params{api.ID: id})
@@ -33,7 +32,6 @@ func (h *File) Get(id uint, destination string) (err error) {
 	return
 }
 
-//
 // Touch creates an empty file.
 func (h *File) Touch(name string) (r *api.File, err error) {
 	r = &api.File{}
@@ -42,7 +40,6 @@ func (h *File) Touch(name string) (r *api.File, err error) {
 	return
 }
 
-//
 // Post uploads a file.
 func (h *File) Post(source string) (r *api.File, err error) {
 	r = &api.File{}
@@ -51,7 +48,6 @@ func (h *File) Post(source string) (r *api.File, err error) {
 	return
 }
 
-//
 // Put uploads a file.
 func (h *File) Put(source string) (r *api.File, err error) {
 	r = &api.File{}
@@ -60,7 +56,6 @@ func (h *File) Put(source string) (r *api.File, err error) {
 	return
 }
 
-//
 // Patch appends a file.
 func (h *File) Patch(id uint, buffer []byte) (err error) {
 	path := Path(api.FileRoot).Inject(Params{api.ID: id})
@@ -68,7 +63,6 @@ func (h *File) Patch(id uint, buffer []byte) (err error) {
 	return
 }
 
-//
 // Delete a file.
 func (h *File) Delete(id uint) (err error) {
 	path := Path(api.FileRoot).Inject(Params{api.ID: id})

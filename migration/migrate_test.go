@@ -2,12 +2,13 @@ package migration
 
 import (
 	"encoding/json"
+	"os"
+	"testing"
+
 	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
-	"os"
-	"testing"
 )
 
 func TestFreshInstall(t *testing.T) {

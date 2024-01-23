@@ -2,22 +2,22 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/task"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"io/ioutil"
-	k8serr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
+	tasking "github.com/konveyor/tackle2-hub/task"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/strings/slices"
 )
 
-//
 // Routes
 const (
 	TasksRoot             = "/tasks"
@@ -33,13 +33,11 @@ const (
 	LocatorParam = "locator"
 )
 
-//
 // TaskHandler handles task routes.
 type TaskHandler struct {
 	BucketOwner
 }
 
-//
 // AddRoutes adds routes.
 func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -482,7 +480,6 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Fields omitted by:
 //   - Create
 //   - Update.
@@ -501,7 +498,6 @@ func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
 	return
 }
 
-//
 // TTL time-to-live.
 type TTL struct {
 	Created   int `json:"created,omitempty"`
@@ -512,14 +508,12 @@ type TTL struct {
 	Failed    int `json:"failed,omitempty"`
 }
 
-//
 // TaskError used in Task.Errors.
 type TaskError struct {
 	Severity    string `json:"severity"`
 	Description string `json:"description"`
 }
 
-//
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
@@ -546,7 +540,6 @@ type Task struct {
 	Attached    []Attachment `json:"attached" yaml:",omitempty"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
@@ -588,7 +581,6 @@ func (r *Task) With(m *model.Task) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
@@ -609,7 +601,6 @@ func (r *Task) Model() (m *model.Task) {
 	return
 }
 
-//
 // injectFiles inject attached files into the activity.
 func (r *Task) injectFiles(db *gorm.DB) (err error) {
 	sort.Slice(
@@ -649,7 +640,6 @@ func (r *Task) injectFiles(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // TaskReport REST resource.
 type TaskReport struct {
 	Resource  `yaml:",inline"`
@@ -663,7 +653,6 @@ type TaskReport struct {
 	TaskID    uint         `json:"task"`
 }
 
-//
 // With updates the resource with the model.
 func (r *TaskReport) With(m *model.TaskReport) {
 	r.Resource.With(&m.Model)
@@ -685,7 +674,6 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *TaskReport) Model() (m *model.TaskReport) {
 	if r.Activity == nil {
@@ -714,7 +702,6 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	return
 }
 
-//
 // Attachment associates Files with a TaskReport.
 type Attachment struct {
 	// Ref references an attached File.
