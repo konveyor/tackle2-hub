@@ -26,12 +26,9 @@ func PrepareRichClient() (richClient *binding.RichClient) {
 		if err != nil {
 		  panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
 		}
-
-		// Start goroutine with token refresh.
-		richClient.KeepFreshToken()
 	
 		// Disable HTTP requests retry for network-related errors to fail quickly.
-		richClient.Client.Retry = 0
+		richClient.Client.Retry = 1
 
 		return
 }

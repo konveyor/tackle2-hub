@@ -648,9 +648,6 @@ func (r *Client) IsDir(path string, must bool) (b bool, err error) {
 // Send the request.
 // Resilient against transient hub availability.
 func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response, err error) {
-	// refresh token before or after actual API request when its expiration time gets under a threshold (~1 minute, expecting 5 mins token lifetime and waiting loops in e.g. tests with sleep in few to few tents of seconds)
-	// _or_
-	// start a goroutine on client creation with token refresh
 	var request *http.Request
 	if r.Error != nil {
 		err = r.Error
@@ -682,6 +679,23 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 				}
 			} else {
 				err = liberr.Wrap(err)
+				return
+			}
+		} else if r.refreshToken(response.StatusCode) {
+			unAuthErr := errors.New("401 Unauthorized")
+			if i < r.Retry {
+				token := api.Login{Refresh: r.token.Refresh}
+				refreshErr := r.Post(api.AuthRefreshRoot, &token)	// calls itself.. ensure no deadlock/stacktoodeep
+				if refreshErr != nil {
+					Log.Error(err, "Token refresh failed.")
+					time.Sleep(RetryDelay)
+				} else {
+					r.SetToken(token)
+				}
+				continue
+			} else {
+				r.Error = liberr.Wrap(unAuthErr)
+				err = r.Error
 				return
 			}
 		} else {
@@ -799,5 +813,12 @@ func (f *Field) encoding() (mt string) {
 // disposition returns content-disposition.
 func (f *Field) disposition() (d string) {
 	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
+	return
+}
+
+func (r *Client) refreshToken(status int) (refresh bool) {
+	if status == 401 && r.token.Refresh != "" {
+		refresh = true
+	}
 	return
 }

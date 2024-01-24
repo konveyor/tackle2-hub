@@ -148,24 +148,3 @@ func (r *RichClient) Login(user, password string) (err error) {
 	r.Client.SetToken(login)
 	return
 }
-
-//
-// Refresh client token.
-func (r *RichClient) KeepFreshToken() (err error) {
-	if r.Client.token.Refresh != "" && r.Client.token.Expiry > 1 {
-		go func() {
-			for {
-				refreshIn := time.Duration(float64(r.Client.token.Expiry) * 0.9)
-				time.Sleep(refreshIn * time.Second)
-
-				login := api.Login{Refresh: r.Client.token.Refresh}
-				err = r.Client.Post(api.AuthRefreshRoot, &login)
-				if err != nil {
-					return
-				}
-				r.Client.SetToken(login)
-			}
-		}()
-	}
-	return
-}
