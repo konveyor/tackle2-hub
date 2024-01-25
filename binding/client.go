@@ -681,13 +681,14 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 				err = liberr.Wrap(err)
 				return
 			}
-		} else if r.refreshToken(response.StatusCode) {
+		} else if r.refreshToken(response.StatusCode, request.URL.Path) {
 			unAuthErr := errors.New("401 Unauthorized")
 			if i < r.Retry {
+				Log.Info("|401|  Unauthorized, refreshing auth token.")
 				token := api.Login{Refresh: r.token.Refresh}
-				refreshErr := r.Post(api.AuthRefreshRoot, &token)	// calls itself.. ensure no deadlock/stacktoodeep
+				refreshErr := r.Post(api.AuthRefreshRoot, &token)
 				if refreshErr != nil {
-					Log.Error(err, "Token refresh failed.")
+					Log.Error(refreshErr, "Token refresh failed.")
 					time.Sleep(RetryDelay)
 				} else {
 					r.SetToken(token)
@@ -816,8 +817,8 @@ func (f *Field) disposition() (d string) {
 	return
 }
 
-func (r *Client) refreshToken(status int) (refresh bool) {
-	if status == 401 && r.token.Refresh != "" {
+func (r *Client) refreshToken(status int, path string) (refresh bool) {
+	if status == 401 && !strings.HasSuffix(path, api.AuthRefreshRoot) && r.token.Refresh != "" {
 		refresh = true
 	}
 	return

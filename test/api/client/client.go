@@ -27,8 +27,8 @@ func PrepareRichClient() (richClient *binding.RichClient) {
 		  panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
 		}
 	
-		// Disable HTTP requests retry for network-related errors to fail quickly.
-		richClient.Client.Retry = 1
+	// Disable HTTP requests retry for network-related errors to fail quickly.
+	richClient.Client.Retry = 1
 
 		return
 }

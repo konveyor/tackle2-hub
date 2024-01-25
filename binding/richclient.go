@@ -1,8 +1,6 @@
 package binding
 
 import (
-	"time"
-
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/settings"
