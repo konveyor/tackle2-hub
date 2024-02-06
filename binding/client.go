@@ -681,24 +681,6 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 				err = liberr.Wrap(err)
 				return
 			}
-		} else if r.refreshToken(response.StatusCode, request.URL.Path) {
-			unAuthErr := errors.New("401 Unauthorized")
-			if i < r.Retry {
-				Log.Info("|401|  Unauthorized, refreshing auth token.")
-				token := api.Login{Refresh: r.token.Refresh}
-				refreshErr := r.Post(api.AuthRefreshRoot, &token)
-				if refreshErr != nil {
-					Log.Error(refreshErr, "Token refresh failed.")
-					time.Sleep(RetryDelay)
-				} else {
-					r.SetToken(token)
-				}
-				continue
-			} else {
-				r.Error = liberr.Wrap(unAuthErr)
-				err = r.Error
-				return
-			}
 		} else {
 			Log.Info(
 				fmt.Sprintf(
@@ -706,6 +688,17 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					response.StatusCode,
 					request.Method,
 					request.URL.Path))
+                if response.StatusCode == http.StatusUnauthorized {
+	            refreshed, nErr := r.refreshToken(request)
+	            if nErr != nil {
+	                r.Error = liberr.Wrap(nErr)
+	                err = r.Error
+	                return
+	            }
+	            if refreshed {
+	               continue
+	            }
+	        }
 			break
 		}
 	}
@@ -817,9 +810,21 @@ func (f *Field) disposition() (d string) {
 	return
 }
 
-func (r *Client) refreshToken(status int, path string) (refresh bool) {
-	if status == 401 && !strings.HasSuffix(path, api.AuthRefreshRoot) && r.token.Refresh != "" {
-		refresh = true
-	}
-	return
+// refreshToken refreshes the token.
+func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
+    if r.token.Token == "" ||
+        strings.HasSuffix(request.URL.Path, api.AuthRefreshRoot) {
+        return
+    }
+    login := &api.Login{Refresh: r.token.Refresh}
+    err = r.Post(api.AuthRefreshRoot, login)
+    if err == nil {
+        r.token.Token = login.Token
+        refreshed = true
+        return
+    }
+    if errors.Is(err, &RestError{}) {
+        err = nil
+    }
+    return
 }
