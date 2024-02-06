@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Stakeholder API.
 type Stakeholder struct {
 	client *Client
 }
 
-//
 // Create a Stakeholder.
 func (h *Stakeholder) Create(r *api.Stakeholder) (err error) {
 	err = h.client.Post(api.StakeholdersRoot, &r)
 	return
 }
 
-//
 // Get a Stakeholder by ID.
 func (h *Stakeholder) Get(id uint) (r *api.Stakeholder, err error) {
 	r = &api.Stakeholder{}
@@ -26,7 +23,6 @@ func (h *Stakeholder) Get(id uint) (r *api.Stakeholder, err error) {
 	return
 }
 
-//
 // List Stakeholders.
 func (h *Stakeholder) List() (list []api.Stakeholder, err error) {
 	list = []api.Stakeholder{}
@@ -34,7 +30,6 @@ func (h *Stakeholder) List() (list []api.Stakeholder, err error) {
 	return
 }
 
-//
 // Update a Stakeholder.
 func (h *Stakeholder) Update(r *api.Stakeholder) (err error) {
 	path := Path(api.StakeholderRoot).Inject(Params{api.ID: r.ID})
@@ -42,7 +37,6 @@ func (h *Stakeholder) Update(r *api.Stakeholder) (err error) {
 	return
 }
 
-//
 // Delete a Stakeholder.
 func (h *Stakeholder) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.StakeholderRoot).Inject(Params{api.ID: id}))

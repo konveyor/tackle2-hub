@@ -3,9 +3,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/konveyor/tackle2-hub/model"
 	"os"
 	"testing"
+
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 var N = 800

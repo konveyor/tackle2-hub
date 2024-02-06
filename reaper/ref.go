@@ -1,13 +1,13 @@
 package reaper
 
 import (
+	"fmt"
+	"reflect"
+
 	liberr "github.com/jortel/go-utils/error"
 	"gorm.io/gorm"
-	"reflect"
-	"fmt"
 )
 
-//
 // RefCounter provides model inspection for files
 // tagged with: ref:<kind>.
 type RefCounter struct {
@@ -15,7 +15,6 @@ type RefCounter struct {
 	DB *gorm.DB
 }
 
-//
 // Count find & count references.
 func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err error) {
 	db := r.DB.Model(m)

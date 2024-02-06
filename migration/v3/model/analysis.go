@@ -1,6 +1,5 @@
 package model
 
-//
 // RuleBundle - Analysis rules.
 type RuleBundle struct {
 	Model
@@ -16,7 +15,6 @@ type RuleBundle struct {
 	RuleSets    []RuleSet `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-//
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model

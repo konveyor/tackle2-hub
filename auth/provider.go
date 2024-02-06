@@ -3,9 +3,10 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jortel/go-utils/logr"
-	"strings"
 )
 
 var (
@@ -22,7 +23,6 @@ func init() {
 	Remote = &NoAuth{}
 }
 
-//
 // Provider provides RBAC.
 type Provider interface {
 	// NewToken creates a signed token.
@@ -45,7 +45,6 @@ type Token struct {
 	Expiry  int
 }
 
-//
 // NotAuthenticated is returned when a token cannot be authenticated.
 type NotAuthenticated struct {
 	Token string
@@ -61,7 +60,6 @@ func (e *NotAuthenticated) Is(err error) (matched bool) {
 	return
 }
 
-//
 // NotValid is returned when a token is not valid.
 type NotValid struct {
 	Reason string
@@ -78,7 +76,6 @@ func (e *NotValid) Is(err error) (matched bool) {
 	return
 }
 
-//
 // Scope represents an authorization scope.
 type Scope interface {
 	// Match returns whether the scope is a match.
@@ -87,14 +84,12 @@ type Scope interface {
 	String() (s string)
 }
 
-//
 // BaseScope provides base behavior.
 type BaseScope struct {
 	Resource string
 	Method   string
 }
 
-//
 // With parses a scope and populate fields.
 // Format: <resource>:<method>
 func (r *BaseScope) With(s string) {
@@ -109,7 +104,6 @@ func (r *BaseScope) With(s string) {
 	return
 }
 
-//
 // Match returns whether the scope is a match.
 func (r *BaseScope) Match(resource string, method string) (b bool) {
 	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&
@@ -117,7 +111,6 @@ func (r *BaseScope) Match(resource string, method string) (b bool) {
 	return
 }
 
-//
 // String representations of the scope.
 func (r *BaseScope) String() (s string) {
 	s = strings.Join([]string{r.Resource, r.Method}, ":")

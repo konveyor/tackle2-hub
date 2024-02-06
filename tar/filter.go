@@ -5,14 +5,12 @@ import (
 	"path/filepath"
 )
 
-//
 // NewFilter returns a filter.
 func NewFilter(root string) (f Filter) {
 	f = Filter{Root: root}
 	return
 }
 
-//
 // Filter supports glob-style filtering.
 type Filter struct {
 	included FilterSet
@@ -20,7 +18,6 @@ type Filter struct {
 	Root     string
 }
 
-//
 // Match determines if path matches the filter.
 func (r *Filter) Match(path string) (b bool) {
 	r.included.root = r.Root
@@ -42,21 +39,18 @@ func (r *Filter) Match(path string) (b bool) {
 	return
 }
 
-//
 // Include adds included patterns.
 // Empty ("") patterns are ignored.
 func (r *Filter) Include(patterns ...string) {
 	r.included.Add(patterns...)
 }
 
-//
 // Exclude adds excluded patterns.
 // Empty ("") patterns are ignored.
 func (r *Filter) Exclude(patterns ...string) {
 	r.excluded.Add(patterns...)
 }
 
-//
 // FilterSet is a collection of filter patterns.
 type FilterSet struct {
 	root     string
@@ -64,7 +58,6 @@ type FilterSet struct {
 	cache    map[string]bool
 }
 
-//
 // Match returns true when the path matches.
 func (r *FilterSet) Match(path string) (match bool) {
 	r.build()
@@ -72,7 +65,6 @@ func (r *FilterSet) Match(path string) (match bool) {
 	return
 }
 
-//
 // Add pattern.
 // Empty ("") patterns are ignored.
 func (r *FilterSet) Add(patterns ...string) {
@@ -87,13 +79,11 @@ func (r *FilterSet) Add(patterns ...string) {
 	}
 }
 
-//
 // Len returns number of patterns.
 func (r *FilterSet) Len() (n int) {
 	return len(r.patterns)
 }
 
-//
 // build populates the cache as needed.
 func (r *FilterSet) build() {
 	if r.cache != nil {

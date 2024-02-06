@@ -25,14 +25,12 @@ const (
 	OPERATOR = 0x03
 )
 
-//
 // Lexer token reader.
 type Lexer struct {
 	tokens []Token
 	index  int
 }
 
-//
 // With builds with the specified filter.
 func (r *Lexer) With(filter string) (err error) {
 	reader := Reader{input: filter}
@@ -100,7 +98,6 @@ func (r *Lexer) With(filter string) (err error) {
 	return
 }
 
-//
 // next returns the next token.
 func (r *Lexer) next() (token Token, next bool) {
 	if r.index < len(r.tokens) {
@@ -111,7 +108,6 @@ func (r *Lexer) next() (token Token, next bool) {
 	return
 }
 
-//
 // Put rewinds the lexer by 1 token.
 func (r *Lexer) put() {
 	if r.index > 0 {
@@ -119,21 +115,18 @@ func (r *Lexer) put() {
 	}
 }
 
-//
 // Token scanned token.
 type Token struct {
 	Kind  byte
 	Value string
 }
 
-//
 // Reader scan the input.
 type Reader struct {
 	input string
 	index int
 }
 
-//
 // Next character.
 // Returns 0 at EOF.
 func (r *Reader) next() (ch byte) {
@@ -144,7 +137,6 @@ func (r *Reader) next() (ch byte) {
 	return
 }
 
-//
 // Put rewinds one character.
 func (r *Reader) put() {
 	if r.index > 0 {
@@ -152,13 +144,11 @@ func (r *Reader) put() {
 	}
 }
 
-//
 // Quoted string token reader.
 type Quoted struct {
 	*Reader
 }
 
-//
 // Read token.
 func (q *Quoted) Read() (token Token, err error) {
 	lastCh := byte(0)
@@ -185,13 +175,11 @@ func (q *Quoted) Read() (token Token, err error) {
 	return
 }
 
-//
 // Operator token reader.
 type Operator struct {
 	*Reader
 }
 
-//
 // Read token.
 func (q *Operator) Read() (token Token, err error) {
 	var bfr []byte

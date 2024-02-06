@@ -1,30 +1,28 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/nas"
 	"net/http"
 	"os"
 	"os/exec"
 	pathlib "path"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/nas"
 )
 
-//
 // Routes
 const (
 	CacheRoot    = "/cache"
 	CacheDirRoot = CacheRoot + "/*" + Wildcard
 )
 
-//
 // CacheHandler handles cache routes.
 type CacheHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h CacheHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -91,7 +89,6 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // cache builds the resource.
 func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 	cache = &Cache{}
@@ -143,7 +140,6 @@ func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 	return
 }
 
-//
 // Cache REST resource.
 type Cache struct {
 	Path     string `json:"path"`

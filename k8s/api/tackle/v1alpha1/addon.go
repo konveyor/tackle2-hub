@@ -21,7 +21,6 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
 	// Addon fqin.
@@ -34,7 +33,6 @@ type AddonSpec struct {
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
-//
 // AddonStatus defines the observed state of Addon
 type AddonStatus struct {
 	// The most recent generation observed by the controller.
@@ -42,7 +40,6 @@ type AddonStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-//
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -56,7 +53,6 @@ type Addon struct {
 	Status          AddonStatus `json:"status,omitempty"`
 }
 
-//
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonList struct {
 	meta.TypeMeta `json:",inline"`

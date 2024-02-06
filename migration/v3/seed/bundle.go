@@ -2,12 +2,12 @@ package seed
 
 import (
 	"encoding/json"
+	"os"
+
 	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"gorm.io/gorm"
-	"os"
 )
 
-//
 // RuleBundle seed object.
 type RuleBundle struct {
 	model.RuleBundle
@@ -15,7 +15,6 @@ type RuleBundle struct {
 	excluded bool
 }
 
-//
 // Create resources and files.
 func (r *RuleBundle) Create(db *gorm.DB) {
 	r.Image = &model.File{Name: "file.svg"}
@@ -37,7 +36,6 @@ func (r *RuleBundle) Create(db *gorm.DB) {
 	_ = db.Create(&r.RuleBundle)
 }
 
-//
 // Metadata builds windup metadata.
 func Metadata(source, target string) (b []byte) {
 	type MD struct {
@@ -51,7 +49,6 @@ func Metadata(source, target string) (b []byte) {
 	return
 }
 
-//
 // Target builds metadata.
 func Target(t string) (b []byte) {
 	return Metadata("", t)

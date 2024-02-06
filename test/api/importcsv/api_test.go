@@ -1,13 +1,14 @@
 package importcsv
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
-	"github.com/konveyor/tackle2-hub/test/assert"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestImportCSV(t *testing.T) {
@@ -26,14 +27,14 @@ func TestImportCSV(t *testing.T) {
 
 			var outputImportSummaries []api.ImportSummary
 			outputMatchingSummary := api.ImportSummary{}
-			for{
+			for {
 				assert.Should(t, Client.Get(api.SummariesRoot, &outputImportSummaries))
 				for _, gotImport := range outputImportSummaries {
 					if uint(gotImport.ID) == inputData.ID {
 						outputMatchingSummary = gotImport
 					}
 				}
-				if(outputMatchingSummary.ValidCount + outputMatchingSummary.InvalidCount == len(r.ExpectedApplications)+len(r.ExpectedDependencies)){
+				if outputMatchingSummary.ValidCount+outputMatchingSummary.InvalidCount == len(r.ExpectedApplications)+len(r.ExpectedDependencies) {
 					break
 				}
 				time.Sleep(time.Second)
@@ -79,7 +80,8 @@ func TestImportCSV(t *testing.T) {
 						t.Errorf("Mismatch in number of Contributors: Expected %d, Actual %d", len(r.ExpectedApplications[i].Contributors), len(gotApp.Contributors))
 					} else {
 						for j, contributor := range gotApp.Contributors {
-							if contributor.Name != r.ExpectedApplications[i].Contributors[j].Name {}
+							if contributor.Name != r.ExpectedApplications[i].Contributors[j].Name {
+							}
 						}
 					}
 				}
@@ -98,7 +100,7 @@ func TestImportCSV(t *testing.T) {
 						t.Errorf("Mismatch in imported Dependency: Expected %s, Actual %s", r.ExpectedDependencies[i].From.Name, importedDep.From.Name)
 					}
 				}
-			}	
+			}
 
 			// Get summaries of the Input ID.
 			outputImportSummary := api.ImportSummary{}
@@ -107,12 +109,12 @@ func TestImportCSV(t *testing.T) {
 			// Get all imports.
 			var outputImports []api.Import
 			assert.Should(t, Client.Get(api.ImportsRoot, &outputImports))
-			
+
 			// Check for number of imports.
 			if len(outputImports) != len(r.ExpectedApplications)+len(r.ExpectedDependencies) {
 				t.Errorf("Mismatch in number of imports")
 			}
-			
+
 			// Checks for individual applications and dependencies.
 			j, k := 0, 0
 			for _, imp := range outputImports {

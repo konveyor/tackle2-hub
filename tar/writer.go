@@ -3,15 +3,15 @@ package tar
 import (
 	"archive/tar"
 	"compress/gzip"
-	liberr "github.com/jortel/go-utils/error"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	liberr "github.com/jortel/go-utils/error"
 )
 
-//
 // NewWriter returns a new writer.
 func NewWriter(output io.Writer) (writer *Writer) {
 	writer = &Writer{}
@@ -24,7 +24,6 @@ func NewWriter(output io.Writer) (writer *Writer) {
 	return
 }
 
-//
 // Writer is a Zipped TAR streamed writer.
 type Writer struct {
 	Filter Filter
@@ -37,7 +36,6 @@ type Writer struct {
 	}
 }
 
-//
 // Open the writer.
 func (r *Writer) Open(output io.Writer) {
 	if r.tarWriter != nil {
@@ -56,7 +54,6 @@ func (r *Writer) Open(output io.Writer) {
 	}()
 }
 
-//
 // AssertDir validates the path is a readable directory.
 func (r *Writer) AssertDir(pathIn string) (err error) {
 	st, err := os.Stat(pathIn)
@@ -100,7 +97,6 @@ func (r *Writer) AssertDir(pathIn string) (err error) {
 	return
 }
 
-//
 // AddDir adds a directory.
 func (r *Writer) AddDir(pathIn string) (err error) {
 	if r.tarWriter == nil {
@@ -162,7 +158,6 @@ func (r *Writer) AddDir(pathIn string) (err error) {
 	return
 }
 
-//
 // AssertFile validates the path is a readable file.
 func (r *Writer) AssertFile(pathIn string) (err error) {
 	st, err := os.Stat(pathIn)
@@ -183,7 +178,6 @@ func (r *Writer) AssertFile(pathIn string) (err error) {
 	return
 }
 
-//
 // AddFile adds a file.
 func (r *Writer) AddFile(pathIn, destPath string) (err error) {
 	if r.tarWriter == nil {
@@ -226,7 +220,6 @@ func (r *Writer) AddFile(pathIn, destPath string) (err error) {
 	return
 }
 
-//
 // Close the writer.
 func (r *Writer) Close() {
 	if r.tarWriter == nil {

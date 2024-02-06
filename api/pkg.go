@@ -23,7 +23,6 @@ var (
 	log      = logr.WithName("api")
 )
 
-//
 // Params
 const (
 	ID        = "id"
@@ -35,7 +34,6 @@ const (
 	FileField = "file"
 )
 
-//
 // Headers
 const (
 	Accept        = "Accept"
@@ -46,25 +44,21 @@ const (
 	Total         = "X-Total"
 )
 
-//
 // MIME Types.
 const (
 	MIMEOCTETSTREAM = "application/octet-stream"
 	TAR             = "application/x-tar"
 )
 
-//
 // BindMIMEs supported binding MIME types.
 var BindMIMEs = []string{binding.MIMEJSON, binding.MIMEYAML}
 
-//
 // Header Values
 const (
 	DirectoryArchive = "archive"
 	DirectoryExpand  = "expand"
 )
 
-//
 // All builds all handlers.
 func All() []Handler {
 	return []Handler{
@@ -103,7 +97,6 @@ func All() []Handler {
 	}
 }
 
-//
 // Handler API.
 type Handler interface {
 	AddRoutes(e *gin.Engine)

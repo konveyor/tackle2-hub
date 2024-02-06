@@ -3,27 +3,25 @@ package tar
 import (
 	"archive/tar"
 	"compress/gzip"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/nas"
 	"io"
 	"os"
 	pathlib "path"
+
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/nas"
 )
 
-//
 // NewReader returns a new reader.
 func NewReader() (reader *Reader) {
 	reader = &Reader{}
 	return
 }
 
-//
 // Reader archive reader.
 type Reader struct {
 	Filter Filter
 }
 
-//
 // Extract archive content to the destination path.
 func (r *Reader) Extract(outDir string, reader io.Reader) (err error) {
 	zipReader, err := gzip.NewReader(reader)

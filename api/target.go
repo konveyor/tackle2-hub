@@ -4,22 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	uuid2 "github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	TargetsRoot = "/targets"
 	TargetRoot  = TargetsRoot + "/:" + ID
 )
 
-//
 // TargetHandler handles Target resource routes.
 type TargetHandler struct {
 	BaseHandler
@@ -235,7 +234,6 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Target REST resource.
 type Target struct {
 	Resource    `yaml:",inline"`
@@ -254,7 +252,6 @@ type Label struct {
 	Label string `json:"label"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Target) With(m *model.Target) {
 	r.Resource.With(&m.Model)
@@ -275,7 +272,6 @@ func (r *Target) With(m *model.Target) {
 	_ = json.Unmarshal(m.Labels, &r.Labels)
 }
 
-//
 // Model builds a model.
 func (r *Target) Model() (m *model.Target) {
 	m = &model.Target{

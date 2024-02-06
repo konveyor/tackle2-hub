@@ -1,6 +1,5 @@
 package model
 
-//
 // Analysis report.
 type Analysis struct {
 	Model
@@ -11,7 +10,6 @@ type Analysis struct {
 	Application   *Application
 }
 
-//
 // TechDependency report dependency.
 type TechDependency struct {
 	Model
@@ -24,7 +22,6 @@ type TechDependency struct {
 	Analysis   *Analysis
 }
 
-//
 // Issue report issue (violation).
 type Issue struct {
 	Model
@@ -42,7 +39,6 @@ type Issue struct {
 	Analysis    *Analysis
 }
 
-//
 // Incident report an issue incident.
 type Incident struct {
 	Model
@@ -55,14 +51,12 @@ type Incident struct {
 	Issue    *Issue
 }
 
-//
 // Link URL link.
 type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
 }
 
-//
 // RuleSet - Analysis ruleset.
 type RuleSet struct {
 	Model
@@ -78,7 +72,6 @@ type RuleSet struct {
 	Rules       []Rule `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-//
 // Rule - Analysis rule.
 type Rule struct {
 	Model

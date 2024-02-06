@@ -2,14 +2,11 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/migration/v12/model"
-	"gorm.io/datatypes"
 )
 
-//
 // Field (data) types.
-type JSON = datatypes.JSON
+type JSON = model.JSON
 
-//
 // Models
 type Model = model.Model
 type Application = model.Application
@@ -49,13 +46,10 @@ type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
 
-//
 type TTL = model.TTL
 
-//
 // Join tables
 type ApplicationTag = model.ApplicationTag
 
-//
 // Errors
 type DependencyCyclicError = model.DependencyCyclicError

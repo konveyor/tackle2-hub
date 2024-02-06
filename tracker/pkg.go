@@ -11,7 +11,6 @@ const (
 	JiraOnPrem = "jira-onprem"
 )
 
-//
 // Ticket status
 const (
 	New        = "New"
@@ -20,7 +19,6 @@ const (
 	Unknown    = "Unknown"
 )
 
-//
 // Auth kinds
 const (
 	BearerAuth = "bearer"
@@ -57,7 +55,6 @@ func NewConnector(t *model.Tracker) (conn Connector, err error) {
 	return
 }
 
-//
 // Project represents an external ticket tracker's project
 // in which an issue can be created.
 type Project struct {
@@ -65,7 +62,6 @@ type Project struct {
 	Name string
 }
 
-//
 // IssueType represents a type of issue that can be created on
 // an external issue tracker.
 type IssueType struct {

@@ -1,8 +1,9 @@
 package seed
 
 import (
-	"github.com/onsi/gomega"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 func TestMerge(t *testing.T) {

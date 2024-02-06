@@ -1,9 +1,10 @@
 package auth
 
 import (
+	"testing"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 type _TestProvider struct {

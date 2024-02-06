@@ -1,9 +1,10 @@
 package assessment
 
 import (
+	"testing"
+
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/onsi/gomega"
-	"testing"
 )
 
 func TestPrepareSections(t *testing.T) {

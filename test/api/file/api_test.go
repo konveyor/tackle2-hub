@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/test/assert"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"io/ioutil"
 	"strings"
+
+	"github.com/konveyor/tackle2-hub/test/assert"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 func TestFilePutGetDelete(t *testing.T) {

@@ -10,20 +10,17 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//
 // Routes
 const (
 	AssessmentsRoot = "/assessments"
 	AssessmentRoot  = AssessmentsRoot + "/:" + ID
 )
 
-//
 // AssessmentHandler handles Assessment resource routes.
 type AssessmentHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h AssessmentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -148,7 +145,6 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-//
 // Assessment REST resource.
 type Assessment struct {
 	Resource          `yaml:",inline"`
@@ -164,9 +160,9 @@ type Assessment struct {
 	Status       string                  `json:"status"`
 	Thresholds   assessment.Thresholds   `json:"thresholds"`
 	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages"`
+	Required     bool                    `json:"required"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Assessment) With(m *model.Assessment) {
 	r.Resource.With(&m.Model)
@@ -187,6 +183,7 @@ func (r *Assessment) With(m *model.Assessment) {
 	}
 	a := assessment.Assessment{}
 	a.With(m)
+	r.Required = a.Questionnaire.Required
 	r.Risk = a.Risk()
 	r.Confidence = a.Confidence()
 	r.RiskMessages = a.RiskMessages
@@ -195,7 +192,6 @@ func (r *Assessment) With(m *model.Assessment) {
 	r.Status = a.Status()
 }
 
-//
 // Model builds a model.
 func (r *Assessment) Model() (m *model.Assessment) {
 	m = &model.Assessment{}

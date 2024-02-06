@@ -6,14 +6,12 @@ import (
 	"strconv"
 )
 
-//
 // Environment variables.
 const (
 	MetricsEnabled = "METRICS_ENABLED"
 	MetricsPort    = "METRICS_PORT"
 )
 
-//
 // Metrics settings
 type Metrics struct {
 	// Metrics port.
@@ -22,7 +20,6 @@ type Metrics struct {
 	Enabled bool
 }
 
-//
 // Load settings.
 func (r *Metrics) Load() error {
 	// Enabled
@@ -37,7 +34,6 @@ func (r *Metrics) Load() error {
 	return nil
 }
 
-//
 // Address on which to serve metrics.
 func (r *Metrics) Address() string {
 	return fmt.Sprintf(":%d", r.Port)

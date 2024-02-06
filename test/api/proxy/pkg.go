@@ -7,9 +7,8 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	Proxy binding.Proxy
+	Proxy      binding.Proxy
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

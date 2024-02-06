@@ -3,15 +3,15 @@ package seed
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
-	"strings"
 )
 
-//
 // Hub is responsible for collecting and applying Hub seeds.
 type Hub struct {
 	TagCategory
@@ -21,7 +21,6 @@ type Hub struct {
 	Questionnaire
 }
 
-//
 // With collects the resources to be seeded.
 func (r *Hub) With(seed libseed.Seed) (err error) {
 	switch strings.ToLower(seed.Kind) {
@@ -41,7 +40,6 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 	return
 }
 
-//
 // Apply seeds the database with resources from the seed files.
 func (r *Hub) Apply(db *gorm.DB) (err error) {
 	err = r.TagCategory.Apply(db)
@@ -68,7 +66,6 @@ func (r *Hub) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-//
 // compareChecksum compares the seed checksum to the stored checksum.
 func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 	setting := &model.Setting{}
@@ -90,7 +87,6 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 	return
 }
 
-//
 // saveChecksum saves the seed checksum to the setting specified by SeedKey.
 func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 	setting := &model.Setting{Key: SeedKey}
@@ -104,7 +100,6 @@ func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 	return
 }
 
-//
 // migrationVersion gets the current migration version.
 func migrationVersion(db *gorm.DB) (version uint, err error) {
 	setting := &model.Setting{}

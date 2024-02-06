@@ -4,14 +4,12 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 )
 
-//
 // Application represents an Application with its assessments.
 type Application struct {
 	*model.Application
 	Assessments []Assessment
 }
 
-//
 // With updates the Application with the db model and deserializes its assessments.
 func (r *Application) With(m *model.Application) {
 	r.Application = m
@@ -23,7 +21,6 @@ func (r *Application) With(m *model.Application) {
 	}
 }
 
-//
 // NewApplicationResolver creates a new ApplicationResolver from an application and other shared resolvers.
 func NewApplicationResolver(m *model.Application, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
 	a = &ApplicationResolver{
@@ -38,7 +35,6 @@ func NewApplicationResolver(m *model.Application, tags *TagResolver, membership 
 	return
 }
 
-//
 // ApplicationResolver wraps an Application model
 // with archetype and assessment resolution behavior.
 type ApplicationResolver struct {
@@ -49,7 +45,6 @@ type ApplicationResolver struct {
 	questionnaireResolver *QuestionnaireResolver
 }
 
-//
 // Archetypes returns the list of archetypes the application is a member of.
 func (r *ApplicationResolver) Archetypes() (archetypes []Archetype, err error) {
 	if len(r.archetypes) > 0 {
@@ -61,7 +56,6 @@ func (r *ApplicationResolver) Archetypes() (archetypes []Archetype, err error) {
 	return
 }
 
-//
 // ArchetypeTags returns the list of tags that the application should inherit from the archetypes it is a member of,
 // including any tags that would be inherited due to answers given to the archetypes' assessments.
 func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
@@ -95,7 +89,6 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 	return
 }
 
-//
 // RequiredAssessments returns the slice of assessments that are for required questionnaires.
 func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
 	for _, a := range r.application.Assessments {
@@ -106,7 +99,6 @@ func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
 	return
 }
 
-//
 // AssessmentTags returns the list of tags that the application should inherit from the answers given
 // to its assessments.
 func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
@@ -123,7 +115,6 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 	return
 }
 
-//
 // Risk returns the overall risk level for the application based on its or its archetypes' assessments.
 func (r *ApplicationResolver) Risk() (risk string, err error) {
 	var assessments []Assessment
@@ -148,7 +139,6 @@ func (r *ApplicationResolver) Risk() (risk string, err error) {
 	return
 }
 
-//
 // Confidence returns the application's overall assessment confidence score.
 func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 	var assessments []Assessment
@@ -173,7 +163,6 @@ func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 	return
 }
 
-//
 // Assessed returns whether the application has been fully assessed.
 func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
 	// if the application has any of its own assessments, only consider them for

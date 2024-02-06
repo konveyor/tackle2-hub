@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
+	"strconv"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -16,13 +20,9 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"time"
 )
 
-//
 // States
 const (
 	Created   = "Created"
@@ -35,7 +35,6 @@ const (
 	Canceled  = "Canceled"
 )
 
-//
 // Policies
 const (
 	Isolated = "isolated"
@@ -50,7 +49,6 @@ var (
 	Log      = logr.WithName("task-scheduler")
 )
 
-//
 // AddonNotFound used to report addon referenced
 // by a task but cannot be found.
 type AddonNotFound struct {
@@ -66,7 +64,6 @@ func (e *AddonNotFound) Is(err error) (matched bool) {
 	return
 }
 
-//
 // Manager provides task management.
 type Manager struct {
 	// DB
@@ -77,7 +74,6 @@ type Manager struct {
 	Scopes []string
 }
 
-//
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	auth.Validators = append(
@@ -101,14 +97,12 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-//
 // Pause.
 func (m *Manager) pause() {
 	d := Unit * time.Duration(Settings.Frequency.Task)
 	time.Sleep(d)
 }
 
-//
 // startReady starts pending tasks.
 func (m *Manager) startReady() {
 	list := []model.Task{}
@@ -178,7 +172,6 @@ func (m *Manager) startReady() {
 	}
 }
 
-//
 // updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
@@ -214,7 +207,6 @@ func (m *Manager) updateRunning() {
 	}
 }
 
-//
 // postpone Postpones a task as needed based on rules.
 func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool) {
 	ruleSet := []Rule{
@@ -241,7 +233,6 @@ func (m *Manager) postpone(ready *model.Task, list []model.Task) (postponed bool
 	return
 }
 
-//
 // The task has been canceled.
 func (m *Manager) canceled(task *model.Task) {
 	rt := Task{task}
@@ -258,14 +249,12 @@ func (m *Manager) canceled(task *model.Task) {
 	return
 }
 
-//
 // Task is an runtime task.
 type Task struct {
 	// model.
 	*model.Task
 }
 
-//
 // Run the specified task.
 func (r *Task) Run(client k8s.Client) (err error) {
 	mark := time.Now()
@@ -328,7 +317,6 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	return
 }
 
-//
 // Reflect finds the associated pod and updates the task state.
 func (r *Task) Reflect(client k8s.Client) (err error) {
 	pod := &core.Pod{}
@@ -381,7 +369,6 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 	return
 }
 
-//
 // Delete the associated pod as needed.
 func (r *Task) Delete(client k8s.Client) (err error) {
 	if r.Pod == "" {
@@ -411,7 +398,6 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 	return
 }
 
-//
 // Cancel the task.
 func (r *Task) Cancel(client k8s.Client) (err error) {
 	err = r.Delete(client)
@@ -427,7 +413,6 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 	return
 }
 
-//
 // findAddon by name.
 func (r *Task) findAddon(client k8s.Client, name string) (addon *crd.Addon, err error) {
 	addon = &crd.Addon{}
@@ -450,7 +435,6 @@ func (r *Task) findAddon(client k8s.Client, name string) (addon *crd.Addon, err 
 	return
 }
 
-//
 // findTackle returns the tackle CR.
 func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
 	list := crd.TackleList{}
@@ -470,7 +454,6 @@ func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
 	return
 }
 
-//
 // pod build the pod.
 func (r *Task) pod(addon *crd.Addon, owner *crd.Tackle, secret *core.Secret) (pod core.Pod) {
 	pod = core.Pod{
@@ -493,7 +476,6 @@ func (r *Task) pod(addon *crd.Addon, owner *crd.Tackle, secret *core.Secret) (po
 	return
 }
 
-//
 // specification builds a Pod specification.
 func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specification core.PodSpec) {
 	cache := core.Volume{
@@ -524,7 +506,6 @@ func (r *Task) specification(addon *crd.Addon, secret *core.Secret) (specificati
 	return
 }
 
-//
 // container builds the pod container.
 func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.Container) {
 	userid := int64(0)
@@ -572,7 +553,6 @@ func (r *Task) container(addon *crd.Addon, secret *core.Secret) (container core.
 	return
 }
 
-//
 // secret builds the pod secret.
 func (r *Task) secret(addon *crd.Addon) (secret core.Secret) {
 	user := "addon:" + addon.Name
@@ -596,13 +576,11 @@ func (r *Task) secret(addon *crd.Addon) (secret core.Secret) {
 	return
 }
 
-//
 // k8sName returns a name suitable to be used for k8s resources.
 func (r *Task) k8sName() string {
 	return fmt.Sprintf("task-%d-", r.ID)
 }
 
-//
 // labels builds k8s labels.
 func (r *Task) labels() map[string]string {
 	return map[string]string{

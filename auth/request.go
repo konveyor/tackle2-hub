@@ -2,11 +2,11 @@ package auth
 
 import (
 	"errors"
+
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 )
 
-//
 // Request auth request.
 type Request struct {
 	Token  string
@@ -15,7 +15,6 @@ type Request struct {
 	DB     *gorm.DB
 }
 
-//
 // Permit the specified request.
 func (r *Request) Permit() (result Result, err error) {
 	var (

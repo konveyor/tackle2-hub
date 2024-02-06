@@ -4,20 +4,17 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Archetype API.
 type Archetype struct {
 	client *Client
 }
 
-//
 // Create a Archetype.
 func (h *Archetype) Create(r *api.Archetype) (err error) {
 	err = h.client.Post(api.ArchetypesRoot, &r)
 	return
 }
 
-//
 // Get a Archetype by ID.
 func (h *Archetype) Get(id uint) (r *api.Archetype, err error) {
 	r = &api.Archetype{}
@@ -26,7 +23,6 @@ func (h *Archetype) Get(id uint) (r *api.Archetype, err error) {
 	return
 }
 
-//
 // List Archetypes.
 func (h *Archetype) List() (list []api.Archetype, err error) {
 	list = []api.Archetype{}
@@ -34,7 +30,6 @@ func (h *Archetype) List() (list []api.Archetype, err error) {
 	return
 }
 
-//
 // Update a Archetype.
 func (h *Archetype) Update(r *api.Archetype) (err error) {
 	path := Path(api.ArchetypeRoot).Inject(Params{api.ID: r.ID})
@@ -42,7 +37,6 @@ func (h *Archetype) Update(r *api.Archetype) (err error) {
 	return
 }
 
-//
 // Delete a Archetype.
 func (h *Archetype) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.ArchetypeRoot).Inject(Params{api.ID: id}))

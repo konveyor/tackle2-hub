@@ -75,7 +75,6 @@ func TestTagCategoryList(t *testing.T) {
 	}
 }
 
-
 func TestTagCategorySeed(t *testing.T) {
 	got, err := TagCategory.List()
 	if err != nil {

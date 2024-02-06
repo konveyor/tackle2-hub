@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-//
 // RestError reports REST errors.
 type RestError struct {
 	Reason string
@@ -52,7 +51,6 @@ func (e *RestError) With(r *http.Response) {
 	e.Reason = s
 }
 
-//
 // Conflict reports 409 error.
 type Conflict struct {
 	RestError
@@ -63,7 +61,6 @@ func (e *Conflict) Is(err error) (matched bool) {
 	return
 }
 
-//
 // NotFound reports 404 error.
 type NotFound struct {
 	RestError

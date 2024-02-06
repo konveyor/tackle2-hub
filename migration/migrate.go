@@ -3,19 +3,19 @@ package migration
 import (
 	"encoding/json"
 	"errors"
-	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/database"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
-	"gorm.io/gorm"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
+	"gorm.io/gorm"
 )
 
-//
 // Migrate the hub by applying all necessary Migrations.
 func Migrate(migrations []Migration) (err error) {
 	var db *gorm.DB
@@ -109,7 +109,6 @@ func Migrate(migrations []Migration) (err error) {
 	return
 }
 
-//
 // Set the version record.
 func setVersion(db *gorm.DB, version int) (err error) {
 	setting := &model.Setting{Key: VersionKey}
@@ -124,7 +123,6 @@ func setVersion(db *gorm.DB, version int) (err error) {
 	return
 }
 
-//
 // AutoMigrate the database.
 func autoMigrate(db *gorm.DB, models []interface{}) (err error) {
 	db, err = database.Open(false)
@@ -145,7 +143,6 @@ func autoMigrate(db *gorm.DB, models []interface{}) (err error) {
 	return
 }
 
-//
 // writeSchema - writes the migrated schema to a file.
 func writeSchema(db *gorm.DB, version int) (err error) {
 	var list []struct {

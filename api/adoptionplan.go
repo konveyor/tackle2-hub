@@ -1,14 +1,14 @@
 package api
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
-	"net/http"
-	"strings"
 )
 
-//
 // Effort estimates
 const (
 	EffortS  = "small"
@@ -17,19 +17,15 @@ const (
 	EffortXL = "extra_large"
 )
 
-//
 // Routes
 const (
 	AdoptionPlansRoot = "/reports/adoptionplan"
 )
 
-//
-//
 type AdoptionPlanHandler struct {
 	BaseHandler
 }
 
-//
 // AddRoutes adds routes.
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -110,7 +106,6 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, sorted)
 }
 
-//
 // Vertex represents a vertex in the dependency graph.
 type Vertex struct {
 	ID             uint   `json:"applicationId" yaml:"applicationId"`
@@ -122,7 +117,6 @@ type Vertex struct {
 	PositionX      int    `json:"positionX" yaml:"positionX"`
 }
 
-//
 // NewDependencyGraph creates an empty dependency graph.
 func NewDependencyGraph() (graph DependencyGraph) {
 	graph.vertices = make(map[uint]*Vertex)
@@ -132,7 +126,6 @@ func NewDependencyGraph() (graph DependencyGraph) {
 	return
 }
 
-//
 // DependencyGraph is an application dependency graph.
 type DependencyGraph struct {
 	// all applications
@@ -145,27 +138,23 @@ type DependencyGraph struct {
 	costs map[uint]int
 }
 
-//
 // AddVertex adds a vertex to the graph.
 func (r *DependencyGraph) AddVertex(v *Vertex) {
 	r.vertices[v.ID] = v
 }
 
-//
 // HasVertex checks for the presence of a vertex in the graph.
 func (r *DependencyGraph) HasVertex(v uint) (ok bool) {
 	_, ok = r.vertices[v]
 	return
 }
 
-//
 // AddEdge adds an edge between two vertices.
 func (r *DependencyGraph) AddEdge(v, w uint) {
 	r.edges[v] = append(r.edges[v], w)
 	r.incoming[w] = append(r.incoming[w], v)
 }
 
-//
 // CalculateCost calculates the total cost to reach a given vertex.
 // Costs are memoized.
 func (r *DependencyGraph) CalculateCost(v uint) (cumulativeCost int) {
@@ -189,7 +178,6 @@ func (r *DependencyGraph) CalculateCost(v uint) (cumulativeCost int) {
 	return
 }
 
-//
 // TopologicalSort sorts the graph such that the vertices
 // with fewer dependencies are first, and detects cycles.
 func (r *DependencyGraph) TopologicalSort() (sorted []*Vertex, ok bool) {

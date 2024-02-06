@@ -6,10 +6,9 @@ import (
 )
 
 var (
-	RichClient *binding.RichClient
+	RichClient  *binding.RichClient
 	JobFunction binding.JobFunction
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

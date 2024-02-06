@@ -2,22 +2,21 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	RuleSetsRoot = "/rulesets"
 	RuleSetRoot  = RuleSetsRoot + "/:" + ID
 )
 
-//
 // RuleSetHandler handles ruleset resource routes.
 type RuleSetHandler struct {
 	BaseHandler
@@ -202,7 +201,6 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 	return
 }
 
-//
 // create the ruleset.
 func (h *RuleSetHandler) create(ctx *gin.Context, r *RuleSet) (err error) {
 	m := r.Model()
@@ -222,7 +220,6 @@ func (h *RuleSetHandler) create(ctx *gin.Context, r *RuleSet) (err error) {
 	return
 }
 
-//
 // update the ruleset.
 func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	m := &model.RuleSet{}
@@ -279,7 +276,6 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	return
 }
 
-//
 // delete the ruleset.
 func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 	ruleset := &model.RuleSet{}
@@ -298,7 +294,6 @@ func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 	return
 }
 
-//
 // RuleSet REST resource.
 type RuleSet struct {
 	Resource    `yaml:",inline"`
@@ -311,7 +306,6 @@ type RuleSet struct {
 	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn"`
 }
 
-//
 // With updates the resource with the model.
 func (r *RuleSet) With(m *model.RuleSet) {
 	r.Resource.With(&m.Model)
@@ -336,7 +330,6 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *RuleSet) Model() (m *model.RuleSet) {
 	m = &model.RuleSet{
@@ -365,7 +358,6 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 	return
 }
 
-//
 // HasRule - determine if the ruleset is referenced.
 func (r *RuleSet) HasRule(id uint) (b bool) {
 	for _, ruleset := range r.Rules {
@@ -377,7 +369,6 @@ func (r *RuleSet) HasRule(id uint) (b bool) {
 	return
 }
 
-//
 // Rule - REST Resource.
 type Rule struct {
 	Resource    `yaml:",inline"`
@@ -387,7 +378,6 @@ type Rule struct {
 	File        *Ref     `json:"file,omitempty"`
 }
 
-//
 // With updates the resource with the model.
 func (r *Rule) With(m *model.Rule) {
 	r.Resource.With(&m.Model)
@@ -396,7 +386,6 @@ func (r *Rule) With(m *model.Rule) {
 	r.File = r.refPtr(m.FileID, m.File)
 }
 
-//
 // Model builds a model.
 func (r *Rule) Model() (m *model.Rule) {
 	m = &model.Rule{}

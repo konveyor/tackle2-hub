@@ -2,15 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
-	"net/http"
 )
 
-//
 // Routes
 const (
 	TaskGroupsRoot             = "/taskgroups"
@@ -20,13 +20,11 @@ const (
 	TaskGroupSubmitRoot        = TaskGroupRoot + "/submit"
 )
 
-//
 // TaskGroupHandler handles task group routes.
 type TaskGroupHandler struct {
 	BucketOwner
 }
 
-//
 // AddRoutes adds routes.
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -354,7 +352,6 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	h.bucketDelete(ctx, *m.BucketID)
 }
 
-//
 // TaskGroup REST resource.
 type TaskGroup struct {
 	Resource `yaml:",inline"`
@@ -366,7 +363,6 @@ type TaskGroup struct {
 	Tasks    []Task      `json:"tasks"`
 }
 
-//
 // With updates the resource with the model.
 func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
@@ -390,7 +386,6 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	}
 }
 
-//
 // Model builds a model.
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{

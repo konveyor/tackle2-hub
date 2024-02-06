@@ -2,10 +2,11 @@ package metrics
 
 import (
 	"context"
+	"time"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
-	"time"
 )
 
 var (
@@ -35,7 +36,6 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-//
 // gaugeApplications reports the number of applications in inventory
 func (m *Manager) gaugeApplications() {
 	count := int64(0)

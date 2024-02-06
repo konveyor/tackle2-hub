@@ -4,13 +4,11 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 )
 
-//
 // Assessment API.
 type Assessment struct {
 	client *Client
 }
 
-//
 // Get a Assessment by ID.
 func (h *Assessment) Get(id uint) (r *api.Assessment, err error) {
 	r = &api.Assessment{}
@@ -19,7 +17,6 @@ func (h *Assessment) Get(id uint) (r *api.Assessment, err error) {
 	return
 }
 
-//
 // List Assessments.
 func (h *Assessment) List() (list []api.Assessment, err error) {
 	list = []api.Assessment{}
@@ -27,7 +24,6 @@ func (h *Assessment) List() (list []api.Assessment, err error) {
 	return
 }
 
-//
 // Update a Assessment.
 func (h *Assessment) Update(r *api.Assessment) (err error) {
 	path := Path(api.AssessmentRoot).Inject(Params{api.ID: r.ID})
@@ -35,7 +31,6 @@ func (h *Assessment) Update(r *api.Assessment) (err error) {
 	return
 }
 
-//
 // Delete a Assessment.
 func (h *Assessment) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.AssessmentRoot).Inject(Params{api.ID: id}))

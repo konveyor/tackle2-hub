@@ -6,10 +6,9 @@ import (
 )
 
 var (
-	RichClient *binding.RichClient
+	RichClient       *binding.RichClient
 	StakeholderGroup binding.StakeholderGroup
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

@@ -7,9 +7,8 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	RuleSet binding.RuleSet
+	RuleSet    binding.RuleSet
 )
-
 
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).

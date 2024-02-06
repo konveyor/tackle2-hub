@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//
 // Routes
 const (
 	ApplicationsRoot     = "/applications"
@@ -29,26 +28,22 @@ const (
 	AppAssessmentRoot    = AppAssessmentsRoot + "/:" + ID2
 )
 
-//
 // Params
 const (
 	Source = "source"
 )
 
-//
 // Tag Sources
 const (
 	SourceAssessment = "assessment"
 	SourceArchetype  = "archetype"
 )
 
-//
 // ApplicationHandler handles application resource routes.
 type ApplicationHandler struct {
 	BucketOwner
 }
 
-//
 // AddRoutes adds routes.
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
@@ -959,7 +954,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups")
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups", "Assessments.Questionnaire")
 	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {
@@ -1066,7 +1061,6 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-//
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
@@ -1091,7 +1085,6 @@ type Application struct {
 	Effort          int         `json:"effort"`
 }
 
-//
 // With updates the resource using the model.
 func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 	r.Resource.With(&m.Model)
@@ -1146,7 +1139,6 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 	r.Risk = assessment.RiskUnknown
 }
 
-//
 // WithVirtualTags updates the resource with tags derived from assessments.
 func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 	for _, t := range tags {
@@ -1156,7 +1148,6 @@ func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 	}
 }
 
-//
 // WithResolver uses an ApplicationResolver to update the resource with
 // values derived from the application's assessments and archetypes.
 func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (err error) {
@@ -1192,7 +1183,6 @@ func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (er
 	return
 }
 
-//
 // Model builds a model.
 func (r *Application) Model() (m *model.Application) {
 	m = &model.Application{
@@ -1245,7 +1235,6 @@ func (r *Application) Model() (m *model.Application) {
 	return
 }
 
-//
 // Repository REST nested resource.
 type Repository struct {
 	Kind   string `json:"kind"`
@@ -1255,7 +1244,6 @@ type Repository struct {
 	Path   string `json:"path"`
 }
 
-//
 // Fact REST nested resource.
 type Fact struct {
 	Key    string      `json:"key"`
@@ -1277,20 +1265,21 @@ func (r *Fact) Model() (m *model.Fact) {
 	return
 }
 
-//
 // FactKey is a fact source and fact name separated by a colon.
-//   Example: 'analysis:languages'
+//
+//	Example: 'analysis:languages'
 //
 // A FactKey can be used to identify an anonymous fact.
-//   Example: 'languages' or ':languages'
+//
+//	Example: 'languages' or ':languages'
 //
 // A FactKey can also be used to identify just a source. This use must include the trailing
 // colon to distinguish it from an anonymous fact. This is used when listing or replacing
 // all facts that belong to a source.
-//   Example: 'analysis:"
+//
+//	Example: 'analysis:"
 type FactKey string
 
-//
 // Qualify qualifies the name with the source.
 func (r *FactKey) Qualify(source string) {
 	*r = FactKey(
@@ -1299,7 +1288,6 @@ func (r *FactKey) Qualify(source string) {
 			":"))
 }
 
-//
 // Source returns the source portion of a fact key.
 func (r FactKey) Source() (source string) {
 	s, _, found := strings.Cut(string(r), ":")
@@ -1309,7 +1297,6 @@ func (r FactKey) Source() (source string) {
 	return
 }
 
-//
 // Name returns the name portion of a fact key.
 func (r FactKey) Name() (name string) {
 	_, n, found := strings.Cut(string(r), ":")
@@ -1321,7 +1308,6 @@ func (r FactKey) Name() (name string) {
 	return
 }
 
-//
 // Stakeholders REST subresource.
 type Stakeholders struct {
 	Owner        *Ref  `json:"owner"`

@@ -4,7 +4,6 @@ import (
 	"os"
 )
 
-//
 // Environment variables
 const (
 	EnvAuthRequired          = "AUTH_REQUIRED"
