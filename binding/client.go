@@ -69,7 +69,7 @@ func (s Path) Inject(p Params) (out string) {
 }
 
 // NewClient Constructs a new client
-func NewClient(url, token string) (client *Client) {
+func NewClient(url string, token api.Login) (client *Client) {
 	client = &Client{
 		baseURL: url,
 		token:   token,
@@ -83,7 +83,7 @@ type Client struct {
 	// baseURL for the nub.
 	baseURL string
 	// addon API token
-	token string
+	token api.Login
 	// transport
 	transport http.RoundTripper
 	// Retry limit.
@@ -93,7 +93,7 @@ type Client struct {
 }
 
 // SetToken sets hub token on client
-func (r *Client) SetToken(token string) {
+func (r *Client) SetToken(token api.Login) {
 	r.token = token
 }
 
@@ -636,7 +636,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, r.token)
+		request.Header.Set(api.Authorization, r.token.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -662,6 +662,17 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					response.StatusCode,
 					request.Method,
 					request.URL.Path))
+                if response.StatusCode == http.StatusUnauthorized {
+	            refreshed, nErr := r.refreshToken(request)
+	            if nErr != nil {
+	                r.Error = liberr.Wrap(nErr)
+	                err = r.Error
+	                return
+	            }
+	            if refreshed {
+	               continue
+	            }
+	        }
 			break
 		}
 	}
@@ -764,4 +775,23 @@ func (f *Field) encoding() (mt string) {
 func (f *Field) disposition() (d string) {
 	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
 	return
+}
+
+// refreshToken refreshes the token.
+func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
+    if r.token.Token == "" ||
+        strings.HasSuffix(request.URL.Path, api.AuthRefreshRoot) {
+        return
+    }
+    login := &api.Login{Refresh: r.token.Refresh}
+    err = r.Post(api.AuthRefreshRoot, login)
+    if err == nil {
+        r.token.Token = login.Token
+        refreshed = true
+        return
+    }
+    if errors.Is(err, &RestError{}) {
+        err = nil
+    }
+    return
 }

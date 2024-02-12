@@ -9,6 +9,7 @@ import (
 
 	logapi "github.com/go-logr/logr"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
@@ -131,7 +132,7 @@ func (h *Adapter) Run(addon func() error) {
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
 	richClient := binding.New(Settings.Addon.Hub.URL)
-	richClient.Client.SetToken(Settings.Addon.Hub.Token)
+	richClient.Client.SetToken(api.Login{Token: Settings.Addon.Hub.Token})
 	adapter = &Adapter{
 		client: richClient.Client,
 		Task: Task{
