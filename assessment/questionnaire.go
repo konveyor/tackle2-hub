@@ -47,6 +47,9 @@ func (r *QuestionnaireResolver) Required(id uint) (required bool) {
 // Assessed returns whether a slice contains a completed assessment for each of the required
 // questionnaires.
 func (r *QuestionnaireResolver) Assessed(assessments []Assessment) (assessed bool) {
+	if r.requiredQuestionnaires.Size() == 0 {
+		return false
+	}
 	answered := NewSet()
 	for _, a := range assessments {
 		if r.requiredQuestionnaires.Contains(a.QuestionnaireID) {
