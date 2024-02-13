@@ -917,13 +917,25 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		model.Issue
 		Files int
 	}
-	// Latest
 	id := h.pk(ctx)
+	err := h.DB(ctx).First(&model.Application{}, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Latest
 	analysis := &model.Analysis{}
 	db := h.DB(ctx).Where("ApplicationID", id)
-	result := db.Last(analysis)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = db.Last(analysis).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.Respond(
+				ctx,
+				http.StatusOK,
+				resources)
+		} else {
+			_ = ctx.Error(err)
+		}
 		return
 	}
 	// Filter
