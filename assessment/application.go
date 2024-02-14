@@ -56,8 +56,7 @@ func (r *ApplicationResolver) Archetypes() (archetypes []Archetype, err error) {
 	return
 }
 
-// ArchetypeTags returns the list of tags that the application should inherit from the archetypes it is a member of,
-// including any tags that would be inherited due to answers given to the archetypes' assessments.
+// ArchetypeTags returns the list of tags that the application should inherit from the archetypes it is a member of.
 func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 	archetypes, err := r.Archetypes()
 	if err != nil {
@@ -70,19 +69,6 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 			if _, found := seenTags[t.ID]; !found {
 				seenTags[t.ID] = true
 				tags = append(tags, t)
-			}
-		}
-		// if an application has any of its own assessments then it should not
-		// inherit assessment tags from any of its archetypes.
-		if len(r.application.Assessments) == 0 {
-			for _, assessment := range a.Assessments {
-				aTags := r.tagResolver.Assessment(assessment)
-				for _, t := range aTags {
-					if _, found := seenTags[t.ID]; !found {
-						seenTags[t.ID] = true
-						tags = append(tags, t)
-					}
-				}
 			}
 		}
 	}
@@ -100,15 +86,37 @@ func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
 }
 
 // AssessmentTags returns the list of tags that the application should inherit from the answers given
-// to its assessments.
+// to its assessments or those of its archetypes. Archetype assessments are only inherited if the application
+// does not have any answers to required questionnaires.
 func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 	seenTags := make(map[uint]bool)
-	for _, assessment := range r.RequiredAssessments() {
-		aTags := r.tagResolver.Assessment(assessment)
-		for _, t := range aTags {
-			if _, found := seenTags[t.ID]; !found {
-				seenTags[t.ID] = true
-				tags = append(tags, t)
+	if len(r.RequiredAssessments()) > 0 {
+		for _, assessment := range r.RequiredAssessments() {
+			aTags := r.tagResolver.Assessment(assessment)
+			for _, t := range aTags {
+				if _, found := seenTags[t.ID]; !found {
+					seenTags[t.ID] = true
+					tags = append(tags, t)
+				}
+			}
+		}
+		return
+	}
+
+	archetypes, err := r.Archetypes()
+	if err != nil {
+		return
+	}
+	for _, a := range archetypes {
+		for _, assessment := range a.Assessments {
+			if r.questionnaireResolver.Required(assessment.QuestionnaireID) {
+				aTags := r.tagResolver.Assessment(assessment)
+				for _, t := range aTags {
+					if _, found := seenTags[t.ID]; !found {
+						seenTags[t.ID] = true
+						tags = append(tags, t)
+					}
+				}
 			}
 		}
 	}
