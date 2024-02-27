@@ -24,14 +24,12 @@ import (
 
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
-	// Addon kind.
-	// +kubebuilder:default=command
-	// +kubebuilder:validation:Enum=init;daemon;command
-	Kind string `json:"kind,omitempty"`
-	// Addon container.
+	// Container main container.
 	Container core.Container `json:"container,omitempty"`
-	// Resource requirements.
-	Configuration map[string]runtime.RawExtension `json:"configuration,omitempty"`
+	// ComponentSelector label selector.
+	ComponentSelector []string `json:"componentSelector,omitempty"`
+	// Config data.
+	Config map[string]runtime.RawExtension `json:"config,omitempty"`
 }
 
 // AddonStatus defines the observed state of Addon

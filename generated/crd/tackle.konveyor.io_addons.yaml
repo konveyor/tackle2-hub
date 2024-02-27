@@ -41,14 +41,19 @@ spec:
           spec:
             description: AddonSpec defines the desired state of Addon
             properties:
-              configuration:
+              componentSelector:
+                description: ComponentSelector label selector.
+                items:
+                  type: string
+                type: array
+              config:
                 additionalProperties:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-                description: Resource requirements.
+                description: Config data.
                 type: object
               container:
-                description: Addon container.
+                description: Container main container.
                 properties:
                   args:
                     description: 'Arguments to the entrypoint. The container image''s
@@ -1245,14 +1250,6 @@ spec:
                 required:
                 - name
                 type: object
-              kind:
-                default: command
-                description: Addon kind.
-                enum:
-                - init
-                - daemon
-                - command
-                type: string
             type: object
           status:
             description: AddonStatus defines the observed state of Addon

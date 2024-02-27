@@ -26,7 +26,7 @@ func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
 	if *candidate.ApplicationID != *other.ApplicationID {
 		return
 	}
-	if candidate.Kind != other.Kind {
+	if candidate.Addon != other.Addon {
 		return
 	}
 	matched = true

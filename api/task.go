@@ -517,12 +517,12 @@ type TaskError struct {
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
-	Kind        string       `json:"kind"`
 	Name        string       `json:"name"`
 	Locator     string       `json:"locator,omitempty" yaml:",omitempty"`
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
 	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
 	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
+	Addon       string       `json:"addon" binding:"required"`
 	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
 	State       string       `json:"state"`
@@ -542,8 +542,8 @@ type Task struct {
 // With updates the resource with the model.
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
-	r.Kind = m.Kind
 	r.Name = m.Name
+	r.Addon = m.Addon
 	r.Locator = m.Locator
 	r.Priority = m.Priority
 	r.Policy = m.Policy
@@ -584,8 +584,8 @@ func (r *Task) With(m *model.Task) {
 // Model builds a model.
 func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
-		Kind:          r.Kind,
 		Name:          r.Name,
+		Addon:         r.Addon,
 		Locator:       r.Locator,
 		Priority:      r.Priority,
 		Policy:        r.Policy,

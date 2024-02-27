@@ -17,26 +17,23 @@ limitations under the License.
 package v1alpha1
 
 import (
+	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type Tag struct {
-	Category string `json:"category"`
-	Label    string `json:"label"`
+// ComponentSpec defines the desired state of Component
+type ComponentSpec struct {
+	// InitContainer init-container.
+	InitContainer *core.Container `json:"initContainer,omitempty"`
+	// Container container.
+	Container *core.Container `json:"container,omitempty"`
+	// Resource requirements.
+	Config map[string]runtime.RawExtension `json:"config,omitempty"`
 }
 
-type Match struct {
-	Tag []Tag `json:"tag,omitempty"`
-}
-
-// TaskSpec defines the desired state of Task
-type TaskSpec struct {
-	// Task kind.
-	Match Match `json:"match,omitempty"`
-}
-
-// TaskStatus defines the observed state of Task
-type TaskStatus struct {
+// ComponentStatus defines the observed state of Component
+type ComponentStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -48,20 +45,20 @@ type TaskStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-type Task struct {
+type Component struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            TaskSpec   `json:"spec,omitempty"`
-	Status          TaskStatus `json:"status,omitempty"`
+	Spec            ComponentSpec   `json:"spec,omitempty"`
+	Status          ComponentStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type TaskList struct {
+type ComponentList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Task `json:"items"`
+	Items         []Component `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Task{}, &TaskList{})
+	SchemeBuilder.Register(&Component{}, &ComponentList{})
 }

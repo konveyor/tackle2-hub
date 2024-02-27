@@ -118,8 +118,8 @@ func (m *File) BeforeCreate(db *gorm.DB) (err error) {
 type Task struct {
 	Model
 	BucketOwner
-	Kind          string `gorm:"index"`
 	Name          string `gorm:"index"`
+	Addon         string `gorm:"index"`
 	Locator       string `gorm:"index"`
 	Priority      int
 	Policy        string
@@ -205,8 +205,8 @@ type TaskReport struct {
 type TaskGroup struct {
 	Model
 	BucketOwner
-	Kind  string
 	Name  string
+	Addon string
 	Data  JSON   `gorm:"type:json"`
 	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
 	List  JSON   `gorm:"type:json"`
@@ -219,8 +219,8 @@ func (m *TaskGroup) Propagate() (err error) {
 		task := &m.Tasks[i]
 		task.State = m.State
 		task.SetBucket(m.BucketID)
-		if task.Kind == "" {
-			task.Kind = m.Kind
+		if task.Addon == "" {
+			task.Addon = m.Addon
 		}
 		if m.Data == nil {
 			continue

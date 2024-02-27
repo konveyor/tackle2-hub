@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -24,15 +25,8 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	TaskLabel    = "konveyor.io/task"
-	AddonInit    = "init"
-	AddonDaemon  = "daemon"
-	AddonCommand = "command"
-	AddonKindEnv = "ADDON_KIND"
 )
 
 // States
@@ -66,32 +60,18 @@ var (
 	Log      = logr.WithName("task-scheduler")
 )
 
-// NotFound used to report kind referenced
+// AddonNotFound used to report addon referenced
 // by a task but cannot be found.
-type NotFound struct {
+type AddonNotFound struct {
 	Name string
 }
 
-func (e *NotFound) Error() (s string) {
-	return fmt.Sprintf("Task (kind): '%s' not-found.", e.Name)
+func (e *AddonNotFound) Error() (s string) {
+	return fmt.Sprintf("Addon: '%s' not-found.", e.Name)
 }
 
-func (e *NotFound) Is(err error) (matched bool) {
-	_, matched = err.(*NotFound)
-	return
-}
-
-// NoAddonsMatched used to report task kind not matched to addons.
-type NoAddonsMatched struct {
-	Task string
-}
-
-func (e *NoAddonsMatched) Error() (s string) {
-	return fmt.Sprintf("Task: '%s' no kind=%s addons matched.", AddonCommand, e.Task)
-}
-
-func (e *NoAddonsMatched) Is(err error) (matched bool) {
-	_, matched = err.(*NoAddonsMatched)
+func (e *AddonNotFound) Is(err error) (matched bool) {
+	_, matched = err.(*AddonNotFound)
 	return
 }
 
@@ -408,7 +388,11 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
-	addons, err := r.findAddons(client)
+	addon, err := r.findAddon(client)
+	if err != nil {
+		return
+	}
+	components, err := r.findComponents(addon, client)
 	if err != nil {
 		return
 	}
@@ -423,7 +407,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 			_ = client.Delete(context.TODO(), &secret)
 		}
 	}()
-	pod := r.pod(addons, owner, &secret)
+	pod := r.pod(addon, components, owner, &secret)
 	err = client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -554,35 +538,15 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 // podRunning handles pod running.
 func (r *Task) podRunning(pod *core.Pod, client k8s.Client) {
 	r.State = Running
-	command := map[string]bool{}
-	for _, container := range pod.Spec.Containers {
-		for _, env := range container.Env {
-			if env.Name == AddonKindEnv && env.Value == AddonCommand {
-				command[container.Name] = false
-			}
+	addonStatus := pod.Status.ContainerStatuses[0]
+	if addonStatus.State.Terminated != nil {
+		switch addonStatus.State.Terminated.ExitCode {
+		case 0:
+			r.podSucceeded(pod)
+		default: // failed.
+			r.podFailed(pod, client)
+			return
 		}
-	}
-	for _, status := range pod.Status.ContainerStatuses {
-		if status.State.Terminated != nil {
-			switch status.State.Terminated.ExitCode {
-			case 0:
-				if _, found := command[status.Name]; found {
-					command[status.Name] = true
-				}
-			default: // failed.
-				r.podFailed(pod, client)
-				return
-			}
-		}
-	}
-	n := len(command)
-	for _, succeeded := range command {
-		if succeeded {
-			n--
-		}
-	}
-	if n == 0 {
-		r.podSucceeded(pod)
 	}
 }
 
@@ -633,42 +597,55 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 }
 
 // findAddon by name.
-func (r *Task) findAddons(client k8s.Client) (addons []crd.Addon, err error) {
-	def := &crd.Task{}
+func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
+	addon = &crd.Addon{}
 	err = client.Get(
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
-			Name:      r.Kind,
+			Name:      r.Addon,
 		},
-		def)
+		addon)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
-			err = &NotFound{r.Kind}
+			err = &AddonNotFound{r.Addon}
 		} else {
 			err = liberr.Wrap(err)
 		}
 		return
 	}
-	addonList := crd.AddonList{}
+
+	return
+}
+
+// findComponents by selector.
+func (r *Task) findComponents(addon *crd.Addon, client k8s.Client) (components []crd.Component, err error) {
+	selector := addon.Spec.ComponentSelector
+	if len(selector) == 0 {
+		return
+	}
+	mp := map[string]string{}
+	for i := range selector {
+		part := strings.SplitN(selector[i], "=", 2)
+		if len(part) == 2 {
+			mp[part[0]] = part[1]
+		} else {
+			mp[part[0]] = ""
+		}
+	}
+	list := crd.ComponentList{}
 	err = client.List(
 		context.TODO(),
-		&addonList,
+		&list,
 		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			TaskLabel: r.Kind,
+		k8s.MatchingLabelsSelector{
+			Selector: labels.SelectorFromSet(mp),
 		})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, addon := range addonList.Items {
-		if addon.Spec.Kind == AddonCommand {
-			addons = addonList.Items
-			return
-		}
-	}
-	err = &NoAddonsMatched{Task: r.Name}
+	components = list.Items
 	return
 }
 
@@ -692,9 +669,13 @@ func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
 }
 
 // pod build the pod.
-func (r *Task) pod(addons []crd.Addon, owner *crd.Tackle, secret *core.Secret) (pod core.Pod) {
+func (r *Task) pod(
+	addon *crd.Addon,
+	components []crd.Component,
+	owner *crd.Tackle,
+	secret *core.Secret) (pod core.Pod) {
 	pod = core.Pod{
-		Spec: r.specification(addons, secret),
+		Spec: r.specification(addon, components, secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
 			GenerateName: r.k8sName(),
@@ -714,7 +695,10 @@ func (r *Task) pod(addons []crd.Addon, owner *crd.Tackle, secret *core.Secret) (
 }
 
 // specification builds a Pod specification.
-func (r *Task) specification(addons []crd.Addon, secret *core.Secret) (specification core.PodSpec) {
+func (r *Task) specification(
+	addon *crd.Addon,
+	components []crd.Component,
+	secret *core.Secret) (specification core.PodSpec) {
 	shared := core.Volume{
 		Name: Shared,
 		VolumeSource: core.VolumeSource{
@@ -735,7 +719,7 @@ func (r *Task) specification(addons []crd.Addon, secret *core.Secret) (specifica
 			EmptyDir: &core.EmptyDirVolumeSource{},
 		}
 	}
-	init, plain := r.containers(addons, secret)
+	init, plain := r.containers(addon, components, secret)
 	specification = core.PodSpec{
 		ServiceAccountName: Settings.Hub.Task.SA,
 		RestartPolicy:      core.RestartPolicyNever,
@@ -752,7 +736,8 @@ func (r *Task) specification(addons []crd.Addon, secret *core.Secret) (specifica
 
 // container builds the pod containers.
 func (r *Task) containers(
-	addons []crd.Addon,
+	addon *crd.Addon,
+	components []crd.Component,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
 	userid := int64(0)
 	token := &core.EnvVarSource{
@@ -763,47 +748,67 @@ func (r *Task) containers(
 			},
 		},
 	}
-	for i := range addons {
-		addon := addons[i]
-		container := addon.Spec.Container
-		container.SecurityContext = &core.SecurityContext{
-			RunAsUser: &userid,
+	plain = append(plain, addon.Spec.Container)
+	for _, component := range components {
+		container := component.Spec.Container
+		if container != nil {
+			container.SecurityContext = &core.SecurityContext{
+				RunAsUser: &userid,
+			}
+			container.VolumeMounts = append(
+				container.VolumeMounts,
+				core.VolumeMount{
+					Name:      Shared,
+					MountPath: Settings.Shared.Path,
+				},
+				core.VolumeMount{
+					Name:      Cache,
+					MountPath: Settings.Cache.Path,
+				})
+			container.Env = append(
+				container.Env,
+				core.EnvVar{
+					Name:  settings.EnvHubBaseURL,
+					Value: Settings.Addon.Hub.URL,
+				},
+				core.EnvVar{
+					Name:  settings.EnvTask,
+					Value: strconv.Itoa(int(r.Task.ID)),
+				},
+				core.EnvVar{
+					Name:      settings.EnvHubToken,
+					ValueFrom: token,
+				})
 		}
-		container.VolumeMounts = append(
-			container.VolumeMounts,
-			core.VolumeMount{
-				Name:      Shared,
-				MountPath: Settings.Shared.Path,
-			},
-			core.VolumeMount{
-				Name:      Cache,
-				MountPath: Settings.Cache.Path,
-			})
-		container.Env = append(
-			container.Env,
-			core.EnvVar{
-				Name:  AddonKindEnv,
-				Value: addon.Spec.Kind,
-			},
-			core.EnvVar{
-				Name:  settings.EnvHubBaseURL,
-				Value: Settings.Addon.Hub.URL,
-			},
-			core.EnvVar{
-				Name:  settings.EnvTask,
-				Value: strconv.Itoa(int(r.Task.ID)),
-			},
-			core.EnvVar{
-				Name:      settings.EnvHubToken,
-				ValueFrom: token,
-			})
-		switch addon.Spec.Kind {
-		case AddonInit:
-			init = append(init, container)
-		case AddonDaemon:
-			plain = append(plain, container)
-		case AddonCommand:
-			plain = append(plain, container)
+		container = component.Spec.InitContainer
+		if container != nil {
+			container.SecurityContext = &core.SecurityContext{
+				RunAsUser: &userid,
+			}
+			container.VolumeMounts = append(
+				container.VolumeMounts,
+				core.VolumeMount{
+					Name:      Shared,
+					MountPath: Settings.Shared.Path,
+				},
+				core.VolumeMount{
+					Name:      Cache,
+					MountPath: Settings.Cache.Path,
+				})
+			container.Env = append(
+				container.Env,
+				core.EnvVar{
+					Name:  settings.EnvHubBaseURL,
+					Value: Settings.Addon.Hub.URL,
+				},
+				core.EnvVar{
+					Name:  settings.EnvTask,
+					Value: strconv.Itoa(int(r.Task.ID)),
+				},
+				core.EnvVar{
+					Name:      settings.EnvHubToken,
+					ValueFrom: token,
+				})
 		}
 	}
 	return
@@ -811,7 +816,7 @@ func (r *Task) containers(
 
 // secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret) {
-	user := "task:" + r.Kind
+	user := "addon:" + r.Addon
 	token, _ := auth.Hub.NewToken(
 		user,
 		auth.AddonRole,

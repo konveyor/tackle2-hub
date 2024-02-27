@@ -355,8 +355,8 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 // TaskGroup REST resource.
 type TaskGroup struct {
 	Resource `yaml:",inline"`
-	Kind     string      `json:"kind"`
 	Name     string      `json:"name"`
+	Addon    string      `json:"addon"`
 	Data     interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Bucket   *Ref        `json:"bucket,omitempty"`
 	State    string      `json:"state"`
@@ -366,8 +366,8 @@ type TaskGroup struct {
 // With updates the resource with the model.
 func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
-	r.Kind = m.Kind
 	r.Name = m.Name
+	r.Addon = m.Addon
 	r.State = m.State
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
@@ -390,7 +390,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{
 		Name:  r.Name,
-		Kind:  r.Kind,
+		Addon: r.Addon,
 		State: r.State,
 	}
 	m.ID = r.ID
