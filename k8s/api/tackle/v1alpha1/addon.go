@@ -22,12 +22,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// ComponentRef references components.
+type ComponentRef struct {
+	// Name list of names.
+	Name []string `json:"name,omitempty"`
+	// Selector label selector.
+	Selector string `json:"selector,omitempty"`
+}
+
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
 	// Container main container.
 	Container core.Container `json:"container,omitempty"`
 	// ComponentSelector label selector.
-	ComponentSelector []string `json:"componentSelector,omitempty"`
+	Component ComponentRef `json:"component,omitempty"`
 	// Config data.
 	Config map[string]runtime.RawExtension `json:"config,omitempty"`
 }

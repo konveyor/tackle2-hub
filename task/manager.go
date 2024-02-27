@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -25,7 +24,6 @@ import (
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -620,18 +618,18 @@ func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
 
 // findComponents by selector.
 func (r *Task) findComponents(addon *crd.Addon, client k8s.Client) (components []crd.Component, err error) {
-	selector := addon.Spec.ComponentSelector
-	if len(selector) == 0 {
+	if addon.Spec.Component.Selector == "" {
 		return
 	}
-	mp := map[string]string{}
-	for i := range selector {
-		part := strings.SplitN(selector[i], "=", 2)
-		if len(part) == 2 {
-			mp[part[0]] = part[1]
-		} else {
-			mp[part[0]] = ""
-		}
+	parsed, err := meta.ParseToLabelSelector(addon.Spec.Component.Selector)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	selector, err := meta.LabelSelectorAsSelector(parsed)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 	list := crd.ComponentList{}
 	err = client.List(
@@ -639,13 +637,13 @@ func (r *Task) findComponents(addon *crd.Addon, client k8s.Client) (components [
 		&list,
 		k8s.InNamespace(Settings.Hub.Namespace),
 		k8s.MatchingLabelsSelector{
-			Selector: labels.SelectorFromSet(mp),
+			Selector: selector,
 		})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	components = list.Items
+	components = append(components, list.Items...)
 	return
 }
 
