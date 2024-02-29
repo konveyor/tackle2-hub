@@ -29,7 +29,7 @@ type ComponentSpec struct {
 	// Capability provided.
 	Capability string `json:"capability,omitempty"`
 	// Container details.
-	Container *core.Container `json:"container,omitempty"`
+	Container core.Container `json:"container"`
 	// Config details.
 	Config map[string]runtime.RawExtension `json:"config,omitempty"`
 }

@@ -761,35 +761,36 @@ func (r *Task) containers(
 	plain = append(plain, addon.Spec.Container)
 	for _, component := range components {
 		container := component.Spec.Container
-		if container != nil {
-			container.SecurityContext = &core.SecurityContext{
-				RunAsUser: &userid,
-			}
-			container.VolumeMounts = append(
-				container.VolumeMounts,
-				core.VolumeMount{
-					Name:      Shared,
-					MountPath: Settings.Shared.Path,
-				},
-				core.VolumeMount{
-					Name:      Cache,
-					MountPath: Settings.Cache.Path,
-				})
-			container.Env = append(
-				container.Env,
-				core.EnvVar{
-					Name:  settings.EnvHubBaseURL,
-					Value: Settings.Addon.Hub.URL,
-				},
-				core.EnvVar{
-					Name:  settings.EnvTask,
-					Value: strconv.Itoa(int(r.Task.ID)),
-				},
-				core.EnvVar{
-					Name:      settings.EnvHubToken,
-					ValueFrom: token,
-				})
+		container.SecurityContext = &core.SecurityContext{
+			RunAsUser: &userid,
 		}
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			core.VolumeMount{
+				Name:      Shared,
+				MountPath: Settings.Shared.Path,
+			},
+			core.VolumeMount{
+				Name:      Cache,
+				MountPath: Settings.Cache.Path,
+			})
+		container.Env = append(
+			container.Env,
+			core.EnvVar{
+				Name:  settings.EnvHubBaseURL,
+				Value: Settings.Addon.Hub.URL,
+			},
+			core.EnvVar{
+				Name:  settings.EnvTask,
+				Value: strconv.Itoa(int(r.Task.ID)),
+			},
+			core.EnvVar{
+				Name:      settings.EnvHubToken,
+				ValueFrom: token,
+			})
+		plain = append(
+			plain,
+			container)
 	}
 	return
 }

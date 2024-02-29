@@ -592,6 +592,7 @@ func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
 		Name:          r.Name,
 		Addon:         r.Addon,
+		Profile:       r.Profile,
 		Locator:       r.Locator,
 		Priority:      r.Priority,
 		Policy:        r.Policy,
@@ -602,6 +603,9 @@ func (r *Task) Model() (m *model.Task) {
 	m.ID = r.ID
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
+	}
+	if r.Components != nil {
+		m.Components, _ = json.Marshal(r.Components)
 	}
 	return
 }
