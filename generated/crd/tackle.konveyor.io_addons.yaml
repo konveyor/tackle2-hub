@@ -41,26 +41,22 @@ spec:
           spec:
             description: AddonSpec defines the desired state of Addon
             properties:
-              component:
-                description: ComponentSelector label selector.
-                properties:
-                  name:
-                    description: Name list of names.
-                    items:
-                      type: string
-                    type: array
-                  selector:
-                    description: Selector label selector.
-                    type: string
-                type: object
+              capability:
+                description: Capability provided.
+                type: string
+              components:
+                description: Components references.
+                items:
+                  type: string
+                type: array
               config:
                 additionalProperties:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-                description: Config data.
+                description: Config details.
                 type: object
               container:
-                description: Container main container.
+                description: Container details.
                 properties:
                   args:
                     description: 'Arguments to the entrypoint. The container image''s

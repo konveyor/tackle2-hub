@@ -24,11 +24,13 @@ import (
 
 // ComponentSpec defines the desired state of Component
 type ComponentSpec struct {
-	// InitContainer init-container.
-	InitContainer *core.Container `json:"initContainer,omitempty"`
-	// Container container.
+	// Addon compatibility.
+	Addon string `json:"addon"`
+	// Capability provided.
+	Capability string `json:"capability,omitempty"`
+	// Container details.
 	Container *core.Container `json:"container,omitempty"`
-	// Resource requirements.
+	// Config details.
 	Config map[string]runtime.RawExtension `json:"config,omitempty"`
 }
 

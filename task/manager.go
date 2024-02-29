@@ -73,6 +73,21 @@ func (e *AddonNotFound) Is(err error) (matched bool) {
 	return
 }
 
+// ComponentNotFound used to report addon referenced
+// by a task but cannot be found.
+type ComponentNotFound struct {
+	Name string
+}
+
+func (e *ComponentNotFound) Error() (s string) {
+	return fmt.Sprintf("Component: '%s' not-found.", e.Name)
+}
+
+func (e *ComponentNotFound) Is(err error) (matched bool) {
+	_, matched = err.(*ComponentNotFound)
+	return
+}
+
 // Manager provides task management.
 type Manager struct {
 	// DB
@@ -390,7 +405,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
-	components, err := r.findComponents(addon, client)
+	components, err := r.findComponents(client)
 	if err != nil {
 		return
 	}
@@ -617,33 +632,30 @@ func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
 }
 
 // findComponents by selector.
-func (r *Task) findComponents(addon *crd.Addon, client k8s.Client) (components []crd.Component, err error) {
-	if addon.Spec.Component.Selector == "" {
-		return
+func (r *Task) findComponents(client k8s.Client) (components []crd.Component, err error) {
+	var names []string
+	_ = json.Unmarshal(r.Components, &names)
+	for _, name := range names {
+		component := crd.Component{}
+		err = client.Get(
+			context.TODO(),
+			k8s.ObjectKey{
+				Namespace: Settings.Hub.Namespace,
+				Name:      name,
+			},
+			&component)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &ComponentNotFound{name}
+			} else {
+				err = liberr.Wrap(err)
+			}
+			return
+		}
+		components = append(
+			components,
+			component)
 	}
-	parsed, err := meta.ParseToLabelSelector(addon.Spec.Component.Selector)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	selector, err := meta.LabelSelectorAsSelector(parsed)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	list := crd.ComponentList{}
-	err = client.List(
-		context.TODO(),
-		&list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabelsSelector{
-			Selector: selector,
-		})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	components = append(components, list.Items...)
 	return
 }
 
@@ -749,36 +761,6 @@ func (r *Task) containers(
 	plain = append(plain, addon.Spec.Container)
 	for _, component := range components {
 		container := component.Spec.Container
-		if container != nil {
-			container.SecurityContext = &core.SecurityContext{
-				RunAsUser: &userid,
-			}
-			container.VolumeMounts = append(
-				container.VolumeMounts,
-				core.VolumeMount{
-					Name:      Shared,
-					MountPath: Settings.Shared.Path,
-				},
-				core.VolumeMount{
-					Name:      Cache,
-					MountPath: Settings.Cache.Path,
-				})
-			container.Env = append(
-				container.Env,
-				core.EnvVar{
-					Name:  settings.EnvHubBaseURL,
-					Value: Settings.Addon.Hub.URL,
-				},
-				core.EnvVar{
-					Name:  settings.EnvTask,
-					Value: strconv.Itoa(int(r.Task.ID)),
-				},
-				core.EnvVar{
-					Name:      settings.EnvHubToken,
-					ValueFrom: token,
-				})
-		}
-		container = component.Spec.InitContainer
 		if container != nil {
 			container.SecurityContext = &core.SecurityContext{
 				RunAsUser: &userid,

@@ -522,7 +522,9 @@ type Task struct {
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
 	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
 	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
-	Addon       string       `json:"addon" binding:"required"`
+	Profile     string       `json:"profile,omitempty" yaml:",omitempty"`
+	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
+	Components  []string     `json:"components,omitempty" yaml:",omitempty"`
 	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
 	State       string       `json:"state"`
@@ -543,6 +545,7 @@ type Task struct {
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
+	r.Profile = m.Profile
 	r.Addon = m.Addon
 	r.Locator = m.Locator
 	r.Priority = m.Priority
@@ -558,6 +561,9 @@ func (r *Task) With(m *model.Task) {
 	_ = json.Unmarshal(m.Data, &r.Data)
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
+	}
+	if m.Components != nil {
+		_ = json.Unmarshal(m.Components, &r.Components)
 	}
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)

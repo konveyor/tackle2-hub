@@ -119,7 +119,9 @@ type Task struct {
 	Model
 	BucketOwner
 	Name          string `gorm:"index"`
+	Profile       string
 	Addon         string `gorm:"index"`
+	Components    JSON   `gorm:"type:json"`
 	Locator       string `gorm:"index"`
 	Priority      int
 	Policy        string
@@ -205,12 +207,14 @@ type TaskReport struct {
 type TaskGroup struct {
 	Model
 	BucketOwner
-	Name  string
-	Addon string
-	Data  JSON   `gorm:"type:json"`
-	Tasks []Task `gorm:"constraint:OnDelete:CASCADE"`
-	List  JSON   `gorm:"type:json"`
-	State string
+	Name       string
+	Profile    string
+	Addon      string
+	Components JSON   `gorm:"type:json"`
+	Data       JSON   `gorm:"type:json"`
+	Tasks      []Task `gorm:"constraint:OnDelete:CASCADE"`
+	List       JSON   `gorm:"type:json"`
+	State      string
 }
 
 // Propagate group data into the task.
@@ -219,8 +223,14 @@ func (m *TaskGroup) Propagate() (err error) {
 		task := &m.Tasks[i]
 		task.State = m.State
 		task.SetBucket(m.BucketID)
+		if task.Profile == "" {
+			task.Profile = m.Profile
+		}
 		if task.Addon == "" {
 			task.Addon = m.Addon
+		}
+		if task.Components != nil {
+			task.Components = m.Components
 		}
 		if m.Data == nil {
 			continue
