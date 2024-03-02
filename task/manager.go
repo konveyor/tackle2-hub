@@ -19,6 +19,7 @@ import (
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/task/profile"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
@@ -57,6 +58,21 @@ var (
 	Settings = &settings.Settings
 	Log      = logr.WithName("task-scheduler")
 )
+
+// ProfileNotFound used to report profile referenced
+// by a task but cannot be found.
+type ProfileNotFound struct {
+	Name string
+}
+
+func (e *ProfileNotFound) Error() (s string) {
+	return fmt.Sprintf("Profile: '%s' not-found.", e.Name)
+}
+
+func (e *ProfileNotFound) Is(err error) (matched bool) {
+	_, matched = err.(*ProfileNotFound)
+	return
+}
 
 // AddonNotFound used to report addon referenced
 // by a task but cannot be found.
@@ -121,11 +137,6 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-func (m *Manager) db() (db *gorm.DB) {
-	db = m.DB.Session(&gorm.Session{})
-	return
-}
-
 // Pause.
 func (m *Manager) pause() {
 	d := Unit * time.Duration(Settings.Frequency.Task)
@@ -135,7 +146,8 @@ func (m *Manager) pause() {
 // startReady starts pending tasks.
 func (m *Manager) startReady() {
 	list := []model.Task{}
-	db := m.db().Order("priority DESC, id")
+	db := m.DB.Session(&gorm.Session{})
+	db = db.Order("priority DESC, id")
 	result := db.Find(
 		&list,
 		"state IN ?",
@@ -156,7 +168,8 @@ func (m *Manager) startReady() {
 			task.State = Failed
 			task.Terminated = &mark
 			task.Error("Error", "Hub is disconnected.")
-			sErr := m.db().Save(task).Error
+			db := m.DB.Session(&gorm.Session{})
+			sErr := db.Save(task).Error
 			Log.Error(sErr, "")
 			continue
 		}
@@ -171,7 +184,8 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				sErr := m.db().Save(ready).Error
+				db := m.DB.Session(&gorm.Session{})
+				sErr := db.Save(ready).Error
 				Log.Error(sErr, "")
 				continue
 			}
@@ -179,14 +193,16 @@ func (m *Manager) startReady() {
 				metrics.TasksInitiated.Inc()
 			}
 			rt := Task{ready}
-			err := rt.Run(m.Client)
+			db := m.DB.Session(&gorm.Session{})
+			err := rt.Run(db, m.Client)
 			if err != nil {
 				ready.State = Failed
 				Log.Error(err, "")
 			} else {
 				Log.Info("Task started.", "id", ready.ID)
 			}
-			err = m.db().Save(ready).Error
+			db = m.DB.Session(&gorm.Session{})
+			err = db.Save(ready).Error
 			Log.Error(err, "")
 		default:
 			// Ignored.
@@ -199,7 +215,8 @@ func (m *Manager) startReady() {
 // updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
-	db := m.db().Order("priority DESC, id")
+	db := m.DB.Session(&gorm.Session{})
+	db = db.Order("priority DESC, id")
 	result := db.Find(
 		&list,
 		"state IN ?",
@@ -217,7 +234,8 @@ func (m *Manager) updateRunning() {
 			continue
 		}
 		rt := Task{&running}
-		pod, err := rt.Reflect(m.Client)
+		db := m.DB.Session(&gorm.Session{})
+		pod, err := rt.Reflect(db, m.Client)
 		if err != nil {
 			Log.Error(err, "")
 			continue
@@ -234,7 +252,8 @@ func (m *Manager) updateRunning() {
 				continue
 			}
 		}
-		err = m.db().Save(&running).Error
+		db = m.DB.Session(&gorm.Session{})
+		err = db.Save(&running).Error
 		if err != nil {
 			Log.Error(result.Error, "")
 			continue
@@ -277,9 +296,11 @@ func (m *Manager) canceled(task *model.Task) {
 	if err != nil {
 		return
 	}
-	err = m.db().Save(task).Error
+	db := m.DB.Session(&gorm.Session{})
+	err = db.Save(task).Error
 	Log.Error(err, "")
-	db := m.db().Model(&model.TaskReport{})
+	db = m.DB.Session(&gorm.Session{})
+	db = db.Model(&model.TaskReport{})
 	err = db.Delete("taskid", task.ID).Error
 	Log.Error(err, "")
 	return
@@ -308,7 +329,8 @@ func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 // podDescription builds pod resource description.
 func (m *Manager) podDescription(pod *core.Pod) (file *model.File, err error) {
 	file = &model.File{Name: "pod.yaml"}
-	err = m.db().Create(file).Error
+	db := m.DB.Session(&gorm.Session{})
+	err = db.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -360,7 +382,8 @@ func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.Fil
 		_ = reader.Close()
 	}()
 	file = &model.File{Name: container + ".log"}
-	err = m.db().Create(file).Error
+	db := m.DB.Session(&gorm.Session{})
+	err = db.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -388,7 +411,7 @@ type Task struct {
 }
 
 // Run the specified task.
-func (r *Task) Run(client k8s.Client) (err error) {
+func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 	mark := time.Now()
 	defer func() {
 		if err != nil {
@@ -400,6 +423,17 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	owner, err := r.findTackle(client)
 	if err != nil {
 		return
+	}
+	tp, err := r.findProfile(client)
+	if err != nil {
+		return
+	}
+	if tp != nil {
+		p := profile.New(tp)
+		err = p.Apply(db, client, r.Task)
+		if err != nil {
+			return
+		}
 	}
 	addon, err := r.findAddon(client)
 	if err != nil {
@@ -453,7 +487,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 }
 
 // Reflect finds the associated pod and updates the task state.
-func (r *Task) Reflect(client k8s.Client) (pod *core.Pod, err error) {
+func (r *Task) Reflect(db *gorm.DB, client k8s.Client) (pod *core.Pod, err error) {
 	pod = &core.Pod{}
 	err = client.Get(
 		context.TODO(),
@@ -464,7 +498,7 @@ func (r *Task) Reflect(client k8s.Client) (pod *core.Pod, err error) {
 		pod)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
-			err = r.Run(client)
+			err = r.Run(db, client)
 		} else {
 			err = liberr.Wrap(err)
 		}
@@ -607,6 +641,32 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 			return
 		}
 	}
+}
+
+// findProfile by name.
+func (r *Task) findProfile(client k8s.Client) (profile *crd.TaskProfile, err error) {
+	if r.Profile == "" {
+		return
+	}
+	profile = &crd.TaskProfile{}
+	err = client.Get(
+		context.TODO(),
+		k8s.ObjectKey{
+			Namespace: Settings.Hub.Namespace,
+			Name:      r.Addon,
+		},
+		profile)
+	if err != nil {
+		profile = nil
+		if k8serr.IsNotFound(err) {
+			err = &ProfileNotFound{r.Addon}
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+
+	return
 }
 
 // findAddon by name.
