@@ -82,11 +82,21 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 		}
 		if parsed.name == "" || tag.Name == parsed.name {
 			if r.Name != "" {
-				matched = append(matched, r.Name)
+				name := strings.Replace(
+					"$*",
+					r.Name,
+					tag.Name,
+					1)
+				matched = append(matched, name)
 			}
 			if r.Capability != "" {
 				var names []string
-				names, err = r.resolver.Match(r.Capability)
+				capability := strings.Replace(
+					"$*",
+					r.Capability,
+					tag.Name,
+					1)
+				names, err = r.resolver.Match(capability)
 				if err == nil {
 					matched = append(matched, names...)
 				} else {
