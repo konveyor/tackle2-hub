@@ -93,8 +93,8 @@ func (in *AddonSpec) DeepCopyInto(out *AddonSpec) {
 		copy(*out, *in)
 	}
 	in.Container.DeepCopyInto(&out.Container)
-	if in.Config != nil {
-		in, out := &in.Config, &out.Config
+	if in.Extension != nil {
+		in, out := &in.Extension, &out.Extension
 		*out = make(map[string]runtime.RawExtension, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
@@ -190,8 +190,8 @@ func (in *ComponentList) DeepCopyObject() runtime.Object {
 func (in *ComponentSpec) DeepCopyInto(out *ComponentSpec) {
 	*out = *in
 	in.Container.DeepCopyInto(&out.Container)
-	if in.Config != nil {
-		in, out := &in.Config, &out.Config
+	if in.Extension != nil {
+		in, out := &in.Extension, &out.Extension
 		*out = make(map[string]runtime.RawExtension, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()

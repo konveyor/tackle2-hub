@@ -31,7 +31,7 @@ type ComponentSpec struct {
 	// Container details.
 	Container core.Container `json:"container"`
 	// Config details.
-	Config map[string]runtime.RawExtension `json:"config,omitempty"`
+	Extension map[string]runtime.RawExtension `json:"extension,omitempty"`
 }
 
 // ComponentStatus defines the observed state of Component

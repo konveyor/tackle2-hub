@@ -31,7 +31,7 @@ type AddonSpec struct {
 	// Container details.
 	Container core.Container `json:"container,omitempty"`
 	// Config details.
-	Config map[string]runtime.RawExtension `json:"config,omitempty"`
+	Extension map[string]runtime.RawExtension `json:"extension,omitempty"`
 }
 
 // AddonStatus defines the observed state of Addon
