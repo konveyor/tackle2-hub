@@ -13,6 +13,7 @@ const (
 	EnvRwxSupported       = "RWX_SUPPORTED"
 	EnvCachePath          = "CACHE_PATH"
 	EnvCachePvc           = "CACHE_PVC"
+	EnvSharedPath         = "SHARED_PATH"
 	EnvPassphrase         = "ENCRYPTION_PASSPHRASE"
 	EnvTaskReapCreated    = "TASK_REAP_CREATED"
 	EnvTaskReapSucceeded  = "TASK_REAP_SUCCEEDED"
@@ -51,6 +52,10 @@ type Hub struct {
 		RWX  bool
 		Path string
 		PVC  string
+	}
+	// Shared mount settings.
+	Shared struct {
+		Path string
 	}
 	// Encryption settings.
 	Encryption struct {
@@ -114,6 +119,10 @@ func (r *Hub) Load() (err error) {
 	r.Cache.Path, found = os.LookupEnv(EnvCachePath)
 	if !found {
 		r.Cache.Path = "/cache"
+	}
+	r.Shared.Path, found = os.LookupEnv(EnvSharedPath)
+	if !found {
+		r.Shared.Path = "/shared"
 	}
 	r.Encryption.Passphrase, found = os.LookupEnv(EnvPassphrase)
 	if !found {

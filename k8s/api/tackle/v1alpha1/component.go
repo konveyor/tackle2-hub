@@ -22,20 +22,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of Addon
-type AddonSpec struct {
+// ComponentSpec defines the desired state of Component
+type ComponentSpec struct {
+	// Addon compatibility.
+	Addon string `json:"addon"`
 	// Capability provided.
 	Capability string `json:"capability,omitempty"`
-	// Components references.
-	Components []string `json:"components,omitempty"`
 	// Container details.
-	Container core.Container `json:"container,omitempty"`
+	Container core.Container `json:"container"`
 	// Config details.
 	Extension map[string]runtime.RawExtension `json:"extension,omitempty"`
 }
 
-// AddonStatus defines the observed state of Addon
-type AddonStatus struct {
+// ComponentStatus defines the observed state of Component
+type ComponentStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -47,20 +47,20 @@ type AddonStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-type Addon struct {
+type Component struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
+	Spec            ComponentSpec   `json:"spec,omitempty"`
+	Status          ComponentStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AddonList struct {
+type ComponentList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Addon `json:"items"`
+	Items         []Component `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Addon{}, &AddonList{})
+	SchemeBuilder.Register(&Component{}, &ComponentList{})
 }

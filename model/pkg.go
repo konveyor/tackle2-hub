@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v12/model"
+	"github.com/konveyor/tackle2-hub/migration/v13/model"
 )
 
 // Field (data) types.
@@ -47,6 +47,7 @@ type Ticket = model.Ticket
 type Tracker = model.Tracker
 
 type TTL = model.TTL
+type Ref = model.Ref
 
 // Join tables
 type ApplicationTag = model.ApplicationTag

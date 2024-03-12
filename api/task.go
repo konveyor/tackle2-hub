@@ -520,10 +520,11 @@ type Task struct {
 	Name        string       `json:"name"`
 	Locator     string       `json:"locator,omitempty" yaml:",omitempty"`
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
-	Variant     string       `json:"variant,omitempty" yaml:",omitempty"`
 	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
 	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
-	Addon       string       `json:"addon,omitempty" binding:"required" yaml:",omitempty"`
+	Profile     string       `json:"profile,omitempty" yaml:",omitempty"`
+	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
+	Components  []string     `json:"components,omitempty" yaml:",omitempty"`
 	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
 	State       string       `json:"state"`
@@ -544,12 +545,11 @@ type Task struct {
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	r.Image = m.Image
+	r.Profile = m.Profile
 	r.Addon = m.Addon
 	r.Locator = m.Locator
 	r.Priority = m.Priority
 	r.Policy = m.Policy
-	r.Variant = m.Variant
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.State = m.State
@@ -562,15 +562,21 @@ func (r *Task) With(m *model.Task) {
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
 	}
+	if m.Components != nil {
+		_ = json.Unmarshal(m.Components, &r.Components)
+	}
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
+	}
+	if m.Attached != nil {
+		_ = json.Unmarshal(m.Attached, &r.Attached)
 	}
 	if m.Report != nil {
 		report := &TaskReport{}
 		report.With(m.Report)
 		r.Activity = report.Activity
-		r.Errors = append(report.Errors, r.Errors...)
-		r.Attached = report.Attached
+		r.Errors = append(r.Errors, report.Errors...)
+		r.Attached = append(r.Attached, report.Attached...)
 		switch r.State {
 		case tasking.Succeeded:
 			switch report.Status {
@@ -586,8 +592,8 @@ func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
 		Name:          r.Name,
 		Addon:         r.Addon,
+		Profile:       r.Profile,
 		Locator:       r.Locator,
-		Variant:       r.Variant,
 		Priority:      r.Priority,
 		Policy:        r.Policy,
 		State:         r.State,
@@ -597,6 +603,9 @@ func (r *Task) Model() (m *model.Task) {
 	m.ID = r.ID
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
+	}
+	if r.Components != nil {
+		m.Components, _ = json.Marshal(r.Components)
 	}
 	return
 }

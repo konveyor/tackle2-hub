@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -94,12 +95,12 @@ func (h AddonHandler) List(ctx *gin.Context) {
 
 // Addon REST resource.
 type Addon struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	Name      string         `json:"name"`
+	Container core.Container `json:"container"`
 }
 
 // With model.
 func (r *Addon) With(m *crd.Addon) {
 	r.Name = m.Name
-	r.Image = m.Spec.Image
+	r.Container = m.Spec.Container
 }

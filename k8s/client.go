@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -26,9 +27,15 @@ func NewClient() (newClient client.Client, err error) {
 		client.Options{
 			Scheme: scheme.Scheme,
 		})
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
+	err = liberr.Wrap(err)
+	return
+}
+
+// NewClientSet builds new k8s client.
+func NewClientSet() (newClient *k8s.Clientset, err error) {
+	cfg, _ := config.GetConfig()
+	newClient, err = k8s.NewForConfig(cfg)
+	err = liberr.Wrap(err)
 	return
 }
 

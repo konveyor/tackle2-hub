@@ -55,11 +55,6 @@ func (h *Task) DataWith(object interface{}) (err error) {
 	return
 }
 
-// Variant returns the task variant.
-func (h *Task) Variant() string {
-	return h.task.Variant
-}
-
 // Started report addon started.
 func (h *Task) Started() {
 	h.deleteReport()
