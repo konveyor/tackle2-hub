@@ -142,7 +142,7 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 			name := strings.Replace(
 				r.Name,
 				"$*",
-				tag.Name,
+				strings.ToLower(tag.Name),
 				1)
 			matched = append(matched, name)
 		}
