@@ -144,6 +144,7 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 				"$*",
 				tag.Name,
 				1)
+			name = strings.ToLower(name)
 			matched = append(matched, name)
 		}
 		if r.Capability != "" {
