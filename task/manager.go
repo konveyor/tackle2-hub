@@ -309,7 +309,7 @@ func (m *Manager) canceled(task *model.Task) {
 // snapshotPod attaches a pod description and logs.
 func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 	var files []*model.File
-	d, err := m.podDescription(pod)
+	d, err := m.podYAML(pod)
 	if err != nil {
 		return
 	}
@@ -326,8 +326,8 @@ func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 	return
 }
 
-// podDescription builds pod resource description.
-func (m *Manager) podDescription(pod *core.Pod) (file *model.File, err error) {
+// podYAML builds pod resource description.
+func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	file = &model.File{Name: "pod.yaml"}
 	db := m.DB.Session(&gorm.Session{})
 	err = db.Create(file).Error

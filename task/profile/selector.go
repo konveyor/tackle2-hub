@@ -82,6 +82,7 @@ func (r *BaseSelector) Match(db *gorm.DB, task *model.Task) (matched []string, e
 	}
 	if r.Capability != "" {
 		matched, err = r.resolver.Match(r.Capability)
+		return
 	}
 	return
 }
@@ -134,13 +135,13 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 		if cat.ID != tag.CategoryID {
 			continue
 		}
-		if !(parsed.name == "" || tag.Name == parsed.name) {
+		if !(parsed.value == "" || tag.Name == parsed.value) {
 			continue
 		}
 		if r.Name != "" {
 			name := strings.Replace(
-				"$*",
 				r.Name,
+				"$*",
 				tag.Name,
 				1)
 			matched = append(matched, name)
@@ -148,8 +149,8 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 		if r.Capability != "" {
 			var names []string
 			capability := strings.Replace(
-				"$*",
 				r.Capability,
+				"$*",
 				tag.Name,
 				1)
 			names, err = r.resolver.Match(capability)
