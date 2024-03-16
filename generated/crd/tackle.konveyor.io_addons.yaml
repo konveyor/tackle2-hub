@@ -49,12 +49,6 @@ spec:
                 items:
                   type: string
                 type: array
-              config:
-                additionalProperties:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                description: Config details.
-                type: object
               container:
                 description: Container details.
                 properties:
@@ -1252,6 +1246,12 @@ spec:
                     type: string
                 required:
                 - name
+                type: object
+              extension:
+                additionalProperties:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                description: Config details.
                 type: object
             type: object
           status:

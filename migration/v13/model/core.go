@@ -223,15 +223,9 @@ func (m *TaskGroup) Propagate() (err error) {
 		task := &m.Tasks[i]
 		task.State = m.State
 		task.SetBucket(m.BucketID)
-		if task.Profile == "" {
-			task.Profile = m.Profile
-		}
-		if task.Addon == "" {
-			task.Addon = m.Addon
-		}
-		if task.Components != nil {
-			task.Components = m.Components
-		}
+		task.Profile = m.Profile
+		task.Addon = m.Addon
+		task.Components = m.Components
 		if m.Data == nil {
 			continue
 		}

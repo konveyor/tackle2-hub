@@ -73,7 +73,7 @@ func (p *Profile) setComponent(db *gorm.DB, client k8s.Client, task *model.Task)
 	for i := range p.Component {
 		var selector Selector
 		var matched []string
-		resolver := &AddonResolver{}
+		resolver := &ComponentResolver{}
 		resolver.client = client
 		selector, err = NewSelector(p.Component[i], resolver)
 		if err != nil {

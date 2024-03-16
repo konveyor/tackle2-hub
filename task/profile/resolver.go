@@ -1,6 +1,15 @@
 package profile
 
-import k8s "sigs.k8s.io/controller-runtime/pkg/client"
+import (
+	"context"
+
+	liberr "github.com/jortel/go-utils/error"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	"github.com/konveyor/tackle2-hub/settings"
+	k8s "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var Settings = &settings.Settings
 
 type Resolver interface {
 	Match(capability string) (names []string, err error)
@@ -15,6 +24,22 @@ type AddonResolver struct {
 }
 
 func (r *AddonResolver) Match(capability string) (names []string, err error) {
+	addons := crd.AddonList{}
+	err = r.client.List(
+		context.TODO(),
+		&addons,
+		k8s.InNamespace(Settings.Hub.Namespace))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, addon := range addons.Items {
+		if addon.Spec.Capability == capability {
+			names = append(
+				names,
+				addon.Name)
+		}
+	}
 	return
 }
 
@@ -23,5 +48,21 @@ type ComponentResolver struct {
 }
 
 func (r *ComponentResolver) Match(capability string) (names []string, err error) {
+	components := crd.ComponentList{}
+	err = r.client.List(
+		context.TODO(),
+		&components,
+		k8s.InNamespace(Settings.Hub.Namespace))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, component := range components.Items {
+		if component.Spec.Capability == capability {
+			names = append(
+				names,
+				component.Name)
+		}
+	}
 	return
 }

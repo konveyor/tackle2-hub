@@ -653,7 +653,7 @@ func (r *Task) findProfile(client k8s.Client) (profile *crd.TaskProfile, err err
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
-			Name:      r.Addon,
+			Name:      r.Profile,
 		},
 		profile)
 	if err != nil {
