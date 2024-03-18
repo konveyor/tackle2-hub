@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"fmt"
 
 	liberr "github.com/jortel/go-utils/error"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -10,6 +11,20 @@ import (
 )
 
 var Settings = &settings.Settings
+
+type NotResolved struct {
+	Kind string
+	Name string
+}
+
+func (e *NotResolved) Error() (s string) {
+	return fmt.Sprintf("%s: '%s' not-resolved.", e.Kind, e.Name)
+}
+
+func (e *NotResolved) Is(err error) (matched bool) {
+	_, matched = err.(*NotResolved)
+	return
+}
 
 type Resolver interface {
 	Match(capability string) (names []string, err error)

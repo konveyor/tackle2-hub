@@ -10,17 +10,15 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type NotResolved struct {
-	Kind string
-	Name string
+type AddonNotSelected struct {
 }
 
-func (e *NotResolved) Error() (s string) {
-	return fmt.Sprintf("%s: '%s' not-resolved.", e.Kind, e.Name)
+func (e *AddonNotSelected) Error() (s string) {
+	return fmt.Sprintf("Addon not selected.")
 }
 
-func (e *NotResolved) Is(err error) (matched bool) {
-	_, matched = err.(*NotResolved)
+func (e *AddonNotSelected) Is(err error) (matched bool) {
+	_, matched = err.(*AddonNotSelected)
 	return
 }
 
@@ -61,7 +59,7 @@ func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (er
 			return
 		}
 		if len(matched) == 0 {
-			err = &NotResolved{Kind: "addon"}
+			err = &AddonNotSelected{}
 			return
 		}
 		task.Addon = matched[0]
