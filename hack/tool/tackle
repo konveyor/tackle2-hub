@@ -215,8 +215,6 @@ def apiFilePost(url, token, filePath, ignoreErrors=False):
     return resp.text
 
 def tackle2path(obj):
-    if 'assessment' in obj:
-        return "/hub/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
     return "/hub/%s" % obj
 
 def loadDump(path, fallback_value = []):
@@ -244,7 +242,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'analyses', 'proxies', 'dependencies', 'questionnaires', 'archetypes', 'assessments', 'reviews']
+    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'questionnaires', 'archetypes', 'assessments', 'reviews']
     NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
     TACKLE2_SEED_TYPES = ['tagcategories', 'tags', 'jobfunctions']
 
@@ -303,9 +301,10 @@ class TackleTool:
 
     # Gather Tackle 2 API objects
     def dumpTackle2(self):
+        ensureDataDir(self.dataDir)
         for t in self.TYPES:
             print("Exporting %s.." % t)
-            if "identities" in t:
+            if t == "identities":
                 dictCollection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
                 for dictObj in dictCollection:
                     dictObj['key'] = self.encrypt(dictObj['key'])
@@ -313,6 +312,11 @@ class TackleTool:
                     dictObj['settings'] = self.encrypt(dictObj['settings'])
             else:
                 dictCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
+
+            # Remove legacy locked questionnaire from export to not cause conflict in import (should be 1st one)
+            if t == "questionnaires":
+                dictCollection = dictCollection[1:]
+
             # Save data locally
             saveJSON(os.path.join(self.dataDir, t), dictCollection)
 
@@ -526,8 +530,6 @@ if cmdWanted(args, "export"):
 
     # Setup data migration object
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
-
-    ensureDataDir(self.dataDir)
 
     # Run the export expecting clean destination
     print("Exporting Tackle 2 objects into %s (this might take a while..)" % args.data_dir)
