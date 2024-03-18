@@ -89,7 +89,7 @@ func (e *AddonNotFound) Is(err error) (matched bool) {
 	return
 }
 
-// ExtensionNotFound used to report addon referenced
+// ExtensionNotFound used to report extension referenced
 // by a task but cannot be found.
 type ExtensionNotFound struct {
 	Name string
@@ -101,6 +101,21 @@ func (e *ExtensionNotFound) Error() (s string) {
 
 func (e *ExtensionNotFound) Is(err error) (matched bool) {
 	_, matched = err.(*ExtensionNotFound)
+	return
+}
+
+// ExtensionNotValid used to report extension referenced
+// by a task not valid with addon.
+type ExtensionNotValid struct {
+	Name string
+}
+
+func (e *ExtensionNotValid) Error() (s string) {
+	return fmt.Sprintf("Extension: '%s' not-valid with addon.", e.Name)
+}
+
+func (e *ExtensionNotValid) Is(err error) (matched bool) {
+	_, matched = err.(*ExtensionNotValid)
 	return
 }
 
@@ -442,6 +457,12 @@ func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 	extensions, err := r.findExtensions(client)
 	if err != nil {
 		return
+	}
+	for _, extension := range extensions {
+		if r.Addon != extension.Spec.Addon {
+			err = &ExtensionNotValid{extension.Name}
+			return
+		}
 	}
 	secret := r.secret()
 	err = client.Create(context.TODO(), &secret)
