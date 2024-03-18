@@ -514,34 +514,11 @@ class TackleTool:
                 debugPrint(dictObj)
                 apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
 
-        # Assessments / Pathfinder stuff import
+        # Assessment import
         dictCollection = loadDump(os.path.join(self.dataDir, 'assessments.json'))
         print("Uploading assessments..")
-        for assmnt1 in dictCollection:
-            # Start the assessment
-            assmnt2 = apiJSON(self.tackle2Url + tackle2path('assessments'), self.tackle2Token, data={"applicationId": assmnt1['applicationId']}, method='POST', ignoreErrors=ignoreErrors)
-            # Populate the assessment questionnaire
-            assmnt2 = apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, ignoreErrors=ignoreErrors)
-            # Fill the assessment going through assessment to be imported and setting values to the newly created in Tackle2 (IDs changed, pairing with Order)
-            for category in assmnt1['questionnaire']['categories']:
-                debugPrint("Category %s" % category["order"])
-                for question in category['questions']:
-                    debugPrint("Question %s" % question["order"])
-                    for option in question['options']:
-                        debugPrint("Option %s" % option)
-                        if option['checked'] == True:
-                            # Find corresponding option in newly created assessment and check it
-                            destCategory = next(cat for cat in assmnt2['questionnaire']['categories'] if cat['order'] == category['order'])
-                            destQuestion = next(que for que in destCategory['questions'] if que['order'] == question['order'])
-                            destOption = next(opt for opt in destQuestion['options'] if opt['order'] == option['order'])
-                            debugPrint("Checking Tackle2 assessment option: %s" % destOption)
-                            destOption['checked'] = True
-            # Set remaining assessment attributes
-            assmnt2['status']            = assmnt1['status']
-            assmnt2['stakeholders']      = assmnt1['stakeholders']
-            assmnt2['stakeholderGroups'] = assmnt1['stakeholderGroups']
-            # Push the updated assessment
-            apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
+        for assessment in dictCollection:
+            apiJSON(self.tackle2Url + "/hub/applications/%d/assessments" % assessment['application']['id'], self.tackle2Token, data=assessment, method='POST', ignoreErrors=ignoreErrors)
 
     # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
     def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
