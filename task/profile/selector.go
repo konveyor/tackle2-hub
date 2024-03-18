@@ -77,7 +77,9 @@ type BaseSelector struct {
 
 func (r *BaseSelector) Match(db *gorm.DB, task *model.Task) (matched []string, err error) {
 	if r.Name != "" {
-		matched = []string{r.Name}
+		if r.resolver.Find(r.Name) {
+			matched = []string{r.Name}
+		}
 		return
 	}
 	if r.Capability != "" {
@@ -144,7 +146,9 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 				"$*",
 				strings.ToLower(tag.Name),
 				1)
-			matched = append(matched, name)
+			if r.resolver.Find(name) {
+				matched = append(matched, name)
+			}
 		}
 		if r.Capability != "" {
 			var names []string

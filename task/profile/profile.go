@@ -50,7 +50,10 @@ func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (er
 		var selector Selector
 		var matched []string
 		resolver := &AddonResolver{}
-		resolver.client = client
+		err = resolver.Load(client)
+		if err != nil {
+			return
+		}
 		selector, err = NewSelector(p.Addon[i], resolver)
 		if err != nil {
 			return
@@ -75,8 +78,13 @@ func (p *Profile) setExtension(db *gorm.DB, client k8s.Client, task *model.Task)
 	for i := range p.Extension {
 		var selector Selector
 		var matched []string
-		resolver := &ExtensionResolver{}
-		resolver.client = client
+		resolver := &ExtensionResolver{
+			addon: task.Addon,
+		}
+		err = resolver.Load(client)
+		if err != nil {
+			return
+		}
 		selector, err = NewSelector(p.Extension[i], resolver)
 		if err != nil {
 			return
