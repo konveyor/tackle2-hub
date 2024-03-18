@@ -45,6 +45,7 @@ func (p *Profile) Apply(db *gorm.DB, client k8s.Client, task *model.Task) (err e
 }
 
 func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
+	selected := ""
 	for i := range p.Addon {
 		var selector Selector
 		var matched []string
@@ -58,16 +59,19 @@ func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (er
 		if err != nil {
 			return
 		}
-		if len(matched) == 0 {
-			err = &AddonNotSelected{}
-			return
-		}
-		task.Addon = matched[0]
+		selected = matched[0]
+		break
 	}
+	if selected == "" {
+		err = &AddonNotSelected{}
+		return
+	}
+	task.Addon = selected
 	return
 }
 
 func (p *Profile) setComponent(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
+	var selected []string
 	for i := range p.Component {
 		var selector Selector
 		var matched []string
@@ -81,7 +85,10 @@ func (p *Profile) setComponent(db *gorm.DB, client k8s.Client, task *model.Task)
 		if err != nil {
 			return
 		}
-		task.Components, _ = json.Marshal(matched)
+		selected = append(
+			selected,
+			matched...)
 	}
+	task.Components, _ = json.Marshal(selected)
 	return
 }
