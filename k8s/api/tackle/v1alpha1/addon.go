@@ -26,12 +26,12 @@ import (
 type AddonSpec struct {
 	// Capability provided.
 	Capability string `json:"capability,omitempty"`
-	// Components references.
-	Components []string `json:"components,omitempty"`
+	// Extensions references.
+	Extensions []string `json:"extensions,omitempty"`
 	// Container details.
 	Container core.Container `json:"container,omitempty"`
-	// Config details.
-	Extension map[string]runtime.RawExtension `json:"extension,omitempty"`
+	// Metadata details.
+	Metadata map[string]runtime.RawExtension `json:"metadata,omitempty"`
 }
 
 // AddonStatus defines the observed state of Addon

@@ -33,8 +33,8 @@ type ProfileSelector struct {
 type TaskProfileSpec struct {
 	// Addon selector.
 	Addon []ProfileSelector `json:"addon,omitempty"`
-	// Component selector.
-	Component []ProfileSelector `json:"component,omitempty"`
+	// Extension selector.
+	Extension []ProfileSelector `json:"extension,omitempty"`
 }
 
 // TaskProfileStatus defines the observed state of TaskProfile

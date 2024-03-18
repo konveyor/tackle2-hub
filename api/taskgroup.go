@@ -358,7 +358,7 @@ type TaskGroup struct {
 	Name       string      `json:"name"`
 	Profile    string      `json:"profile,omitempty" yaml:",omitempty"`
 	Addon      string      `json:"addon,omitempty" yaml:",omitempty"`
-	Components []string    `json:"components,omitempty" yaml:",omitempty"`
+	Extensions []string    `json:"extensions,omitempty" yaml:",omitempty"`
 	Data       interface{} `json:"data" swaggertype:"object" binding:"required"`
 	Bucket     *Ref        `json:"bucket,omitempty"`
 	State      string      `json:"state"`
@@ -374,7 +374,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.State = m.State
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
-	_ = json.Unmarshal(m.Components, &r.Components)
+	_ = json.Unmarshal(m.Extensions, &r.Extensions)
 	_ = json.Unmarshal(m.Data, &r.Data)
 	switch m.State {
 	case "", tasking.Created:
@@ -401,8 +401,8 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m.ID = r.ID
 	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.List, _ = json.Marshal(r.Tasks)
-	if r.Components != nil {
-		m.Components, _ = json.Marshal(r.Components)
+	if r.Extensions != nil {
+		m.Extensions, _ = json.Marshal(r.Extensions)
 	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID

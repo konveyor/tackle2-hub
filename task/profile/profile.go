@@ -37,7 +37,7 @@ func (p *Profile) Apply(db *gorm.DB, client k8s.Client, task *model.Task) (err e
 	if err != nil {
 		return
 	}
-	err = p.setComponent(db, client, task)
+	err = p.setExtension(db, client, task)
 	if err != nil {
 		return
 	}
@@ -70,14 +70,14 @@ func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (er
 	return
 }
 
-func (p *Profile) setComponent(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
+func (p *Profile) setExtension(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
 	var selected []string
-	for i := range p.Component {
+	for i := range p.Extension {
 		var selector Selector
 		var matched []string
-		resolver := &ComponentResolver{}
+		resolver := &ExtensionResolver{}
 		resolver.client = client
-		selector, err = NewSelector(p.Component[i], resolver)
+		selector, err = NewSelector(p.Extension[i], resolver)
 		if err != nil {
 			return
 		}
@@ -89,6 +89,6 @@ func (p *Profile) setComponent(db *gorm.DB, client k8s.Client, task *model.Task)
 			selected,
 			matched...)
 	}
-	task.Components, _ = json.Marshal(selected)
+	task.Extensions, _ = json.Marshal(selected)
 	return
 }

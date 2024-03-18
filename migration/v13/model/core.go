@@ -121,7 +121,7 @@ type Task struct {
 	Name          string `gorm:"index"`
 	Profile       string
 	Addon         string `gorm:"index"`
-	Components    JSON   `gorm:"type:json"`
+	Extensions    JSON   `gorm:"type:json"`
 	Locator       string `gorm:"index"`
 	Priority      int
 	Policy        string
@@ -210,7 +210,7 @@ type TaskGroup struct {
 	Name       string
 	Profile    string
 	Addon      string
-	Components JSON   `gorm:"type:json"`
+	Extensions JSON   `gorm:"type:json"`
 	Data       JSON   `gorm:"type:json"`
 	Tasks      []Task `gorm:"constraint:OnDelete:CASCADE"`
 	List       JSON   `gorm:"type:json"`
@@ -225,7 +225,7 @@ func (m *TaskGroup) Propagate() (err error) {
 		task.SetBucket(m.BucketID)
 		task.Profile = m.Profile
 		task.Addon = m.Addon
-		task.Components = m.Components
+		task.Extensions = m.Extensions
 		if m.Data == nil {
 			continue
 		}

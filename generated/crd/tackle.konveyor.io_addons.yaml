@@ -44,11 +44,6 @@ spec:
               capability:
                 description: Capability provided.
                 type: string
-              components:
-                description: Components references.
-                items:
-                  type: string
-                type: array
               container:
                 description: Container details.
                 properties:
@@ -1247,11 +1242,16 @@ spec:
                 required:
                 - name
                 type: object
-              extension:
+              extensions:
+                description: Extensions references.
+                items:
+                  type: string
+                type: array
+              metadata:
                 additionalProperties:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-                description: Config details.
+                description: Metadata details.
                 type: object
             type: object
           status:

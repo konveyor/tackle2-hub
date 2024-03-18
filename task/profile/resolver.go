@@ -58,25 +58,25 @@ func (r *AddonResolver) Match(capability string) (names []string, err error) {
 	return
 }
 
-type ComponentResolver struct {
+type ExtensionResolver struct {
 	BaseResolver
 }
 
-func (r *ComponentResolver) Match(capability string) (names []string, err error) {
-	components := crd.ComponentList{}
+func (r *ExtensionResolver) Match(capability string) (names []string, err error) {
+	extensions := crd.ExtensionList{}
 	err = r.client.List(
 		context.TODO(),
-		&components,
+		&extensions,
 		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, component := range components.Items {
-		if component.Spec.Capability == capability {
+	for _, extension := range extensions.Items {
+		if extension.Spec.Capability == capability {
 			names = append(
 				names,
-				component.Name)
+				extension.Name)
 		}
 	}
 	return

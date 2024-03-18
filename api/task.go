@@ -524,7 +524,7 @@ type Task struct {
 	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
 	Profile     string       `json:"profile,omitempty" yaml:",omitempty"`
 	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
-	Components  []string     `json:"components,omitempty" yaml:",omitempty"`
+	Extensions  []string     `json:"extensions,omitempty" yaml:",omitempty"`
 	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
 	State       string       `json:"state"`
@@ -562,8 +562,8 @@ func (r *Task) With(m *model.Task) {
 	if m.TTL != nil {
 		_ = json.Unmarshal(m.TTL, &r.TTL)
 	}
-	if m.Components != nil {
-		_ = json.Unmarshal(m.Components, &r.Components)
+	if m.Extensions != nil {
+		_ = json.Unmarshal(m.Extensions, &r.Extensions)
 	}
 	if m.Errors != nil {
 		_ = json.Unmarshal(m.Errors, &r.Errors)
@@ -604,8 +604,8 @@ func (r *Task) Model() (m *model.Task) {
 	if r.TTL != nil {
 		m.TTL, _ = json.Marshal(r.TTL)
 	}
-	if r.Components != nil {
-		m.Components, _ = json.Marshal(r.Components)
+	if r.Extensions != nil {
+		m.Extensions, _ = json.Marshal(r.Extensions)
 	}
 	return
 }

@@ -89,18 +89,18 @@ func (e *AddonNotFound) Is(err error) (matched bool) {
 	return
 }
 
-// ComponentNotFound used to report addon referenced
+// ExtensionNotFound used to report addon referenced
 // by a task but cannot be found.
-type ComponentNotFound struct {
+type ExtensionNotFound struct {
 	Name string
 }
 
-func (e *ComponentNotFound) Error() (s string) {
-	return fmt.Sprintf("Component: '%s' not-found.", e.Name)
+func (e *ExtensionNotFound) Error() (s string) {
+	return fmt.Sprintf("Extension: '%s' not-found.", e.Name)
 }
 
-func (e *ComponentNotFound) Is(err error) (matched bool) {
-	_, matched = err.(*ComponentNotFound)
+func (e *ExtensionNotFound) Is(err error) (matched bool) {
+	_, matched = err.(*ExtensionNotFound)
 	return
 }
 
@@ -439,7 +439,7 @@ func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
-	components, err := r.findComponents(client)
+	extensions, err := r.findExtensions(client)
 	if err != nil {
 		return
 	}
@@ -454,7 +454,7 @@ func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 			_ = client.Delete(context.TODO(), &secret)
 		}
 	}()
-	pod := r.pod(addon, components, owner, &secret)
+	pod := r.pod(addon, extensions, owner, &secret)
 	err = client.Create(context.TODO(), &pod)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -691,30 +691,30 @@ func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
 	return
 }
 
-// findComponents by selector.
-func (r *Task) findComponents(client k8s.Client) (components []crd.Component, err error) {
+// findExtensions by selector.
+func (r *Task) findExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
 	var names []string
-	_ = json.Unmarshal(r.Components, &names)
+	_ = json.Unmarshal(r.Extensions, &names)
 	for _, name := range names {
-		component := crd.Component{}
+		extension := crd.Extension{}
 		err = client.Get(
 			context.TODO(),
 			k8s.ObjectKey{
 				Namespace: Settings.Hub.Namespace,
 				Name:      name,
 			},
-			&component)
+			&extension)
 		if err != nil {
 			if k8serr.IsNotFound(err) {
-				err = &ComponentNotFound{name}
+				err = &ExtensionNotFound{name}
 			} else {
 				err = liberr.Wrap(err)
 			}
 			return
 		}
-		components = append(
-			components,
-			component)
+		extensions = append(
+			extensions,
+			extension)
 	}
 	return
 }
@@ -741,11 +741,11 @@ func (r *Task) findTackle(client k8s.Client) (owner *crd.Tackle, err error) {
 // pod build the pod.
 func (r *Task) pod(
 	addon *crd.Addon,
-	components []crd.Component,
+	extensions []crd.Extension,
 	owner *crd.Tackle,
 	secret *core.Secret) (pod core.Pod) {
 	pod = core.Pod{
-		Spec: r.specification(addon, components, secret),
+		Spec: r.specification(addon, extensions, secret),
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
 			GenerateName: r.k8sName(),
@@ -767,7 +767,7 @@ func (r *Task) pod(
 // specification builds a Pod specification.
 func (r *Task) specification(
 	addon *crd.Addon,
-	components []crd.Component,
+	extensions []crd.Extension,
 	secret *core.Secret) (specification core.PodSpec) {
 	shared := core.Volume{
 		Name: Shared,
@@ -789,7 +789,7 @@ func (r *Task) specification(
 			EmptyDir: &core.EmptyDirVolumeSource{},
 		}
 	}
-	init, plain := r.containers(addon, components, secret)
+	init, plain := r.containers(addon, extensions, secret)
 	specification = core.PodSpec{
 		ServiceAccountName: Settings.Hub.Task.SA,
 		RestartPolicy:      core.RestartPolicyNever,
@@ -807,7 +807,7 @@ func (r *Task) specification(
 // container builds the pod containers.
 func (r *Task) containers(
 	addon *crd.Addon,
-	components []crd.Component,
+	extensions []crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
 	userid := int64(0)
 	token := &core.EnvVarSource{
@@ -819,8 +819,8 @@ func (r *Task) containers(
 		},
 	}
 	plain = append(plain, addon.Spec.Container)
-	for _, component := range components {
-		container := component.Spec.Container
+	for _, extension := range extensions {
+		container := extension.Spec.Container
 		container.SecurityContext = &core.SecurityContext{
 			RunAsUser: &userid,
 		}
