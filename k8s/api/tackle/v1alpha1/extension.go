@@ -31,7 +31,7 @@ type ExtensionSpec struct {
 	// Container details.
 	Container core.Container `json:"container"`
 	// Metadata details.
-	Metadata map[string]runtime.RawExtension `json:"metadata,omitempty"`
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
 // ExtensionStatus defines the observed state of Extension

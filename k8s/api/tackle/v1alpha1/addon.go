@@ -31,7 +31,7 @@ type AddonSpec struct {
 	// Container details.
 	Container core.Container `json:"container,omitempty"`
 	// Metadata details.
-	Metadata map[string]runtime.RawExtension `json:"metadata,omitempty"`
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
 // AddonStatus defines the observed state of Addon

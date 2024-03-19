@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,8 +14,9 @@ import (
 
 // Routes
 const (
-	AddonsRoot = "/addons"
-	AddonRoot  = AddonsRoot + "/:" + Name
+	AddonsRoot   = "/addons"
+	AddonRoot    = AddonsRoot + "/:" + Name
+	AddonExtRoot = AddonRoot + "/extensions"
 )
 
 // AddonHandler handles addon routes.
@@ -29,6 +31,7 @@ func (h AddonHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AddonsRoot, h.List)
 	routeGroup.GET(AddonsRoot+"/", h.List)
 	routeGroup.GET(AddonRoot, h.Get)
+	routeGroup.GET(AddonExtRoot, h.ListExtensions)
 }
 
 // Get godoc
@@ -93,14 +96,65 @@ func (h AddonHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, content)
 }
 
+// ListExtensions godoc
+// @summary List all addons.
+// @description List all addons.
+// @tags addons
+// @produce json
+// @success 200 {object} []api.Addon
+// @router /addons [get]
+func (h AddonHandler) ListExtensions(ctx *gin.Context) {
+	list := &crd.ExtensionList{}
+	err := h.Client(ctx).List(
+		context.TODO(),
+		list,
+		&k8s.ListOptions{
+			Namespace: Settings.Namespace,
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	content := []Extension{}
+	for _, m := range list.Items {
+		extension := Extension{}
+		extension.With(&m)
+		content = append(content, extension)
+	}
+
+	h.Respond(ctx, http.StatusOK, content)
+}
+
 // Addon REST resource.
 type Addon struct {
-	Name      string         `json:"name"`
-	Container core.Container `json:"container"`
+	Name       string         `json:"name"`
+	Capability string         `json:"capability,omitempty"`
+	Container  core.Container `json:"container"`
+	Metadata   any            `json:"metadata,omitempty"`
 }
 
 // With model.
 func (r *Addon) With(m *crd.Addon) {
 	r.Name = m.Name
+	r.Capability = m.Spec.Capability
 	r.Container = m.Spec.Container
+	_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
+}
+
+// Extension REST resource.
+type Extension struct {
+	Name       string         `json:"name"`
+	Addon      string         `json:"addon"`
+	Capability string         `json:"capability,omitempty"`
+	Container  core.Container `json:"container"`
+	Metadata   any            `json:"metadata,omitempty"`
+}
+
+// With model.
+func (r *Extension) With(m *crd.Extension) {
+	r.Name = m.Name
+	r.Addon = m.Spec.Capability
+	r.Capability = m.Spec.Capability
+	r.Container = m.Spec.Container
+	_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 }
