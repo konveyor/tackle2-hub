@@ -360,8 +360,15 @@ class TackleTool:
                     dictObj['password'] = self.decrypt(dictObj['password'])
                     dictObj['settings'] = self.decrypt(dictObj['settings'])
 
+                path = tackle2path(t)
+                if "assessments" in t:
+                    if 'application' in dictObj:
+                        path = tackle2path("applications/%d/assessments" % dictObj['application']['id'])
+                    elif 'archetype' in dictObj:
+                        path = tackle2path("archetypes/%d/assessments" % dictObj['archetype']['id'])
                 debugPrint(dictObj)
-                apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+                apiJSON(self.tackle2Url + path, self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+
 
     # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
     def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
