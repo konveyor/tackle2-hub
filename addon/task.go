@@ -42,6 +42,17 @@ func (h *Task) Application() (r *api.Application, err error) {
 	return
 }
 
+// Addon returns the application associated with the task.
+func (h *Task) Addon() (r *api.Addon, err error) {
+	name := h.task.Addon
+	if name == "" {
+		err = &NotFound{}
+		return
+	}
+	r, err = h.richClient.Addon.Get(name)
+	return
+}
+
 // Data returns the addon data.
 func (h *Task) Data() (d map[string]interface{}) {
 	d = h.task.Data.(map[string]interface{})
