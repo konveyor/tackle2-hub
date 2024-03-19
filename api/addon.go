@@ -138,7 +138,9 @@ func (r *Addon) With(m *crd.Addon) {
 	r.Name = m.Name
 	r.Capability = m.Spec.Capability
 	r.Container = m.Spec.Container
-	_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
+	if m.Spec.Metadata.Raw != nil {
+		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
+	}
 }
 
 // Extension REST resource.
@@ -156,5 +158,7 @@ func (r *Extension) With(m *crd.Extension) {
 	r.Addon = m.Spec.Capability
 	r.Capability = m.Spec.Capability
 	r.Container = m.Spec.Container
-	_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
+	if m.Spec.Metadata.Raw != nil {
+		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
+	}
 }
