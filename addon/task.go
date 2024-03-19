@@ -42,7 +42,7 @@ func (h *Task) Application() (r *api.Application, err error) {
 	return
 }
 
-// Addon returns the application associated with the task.
+// Addon returns the addon associated with the task.
 func (h *Task) Addon() (r *api.Addon, err error) {
 	name := h.task.Addon
 	if name == "" {
