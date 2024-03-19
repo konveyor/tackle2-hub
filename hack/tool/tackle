@@ -360,6 +360,9 @@ class TackleTool:
                     dictObj['password'] = self.decrypt(dictObj['password'])
                     dictObj['settings'] = self.decrypt(dictObj['settings'])
 
+                if "stakeholdergroups" in t:
+                    dictObj['stakeholders'] = [] # empty stakeholders to not create it with parent stakeholdergroup, but in separate call
+
                 path = tackle2path(t)
                 if "assessments" in t:
                     if 'application' in dictObj:
