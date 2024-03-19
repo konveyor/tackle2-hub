@@ -100,11 +100,11 @@ type TagSelector struct {
 	BaseSelector
 }
 
-func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, err error) {
+func (r *TagSelector) Match(dbIn *gorm.DB, task *model.Task) (matched []string, err error) {
 	parsed := r.parsed
-	nDB := db.Session(&gorm.Session{})
+	db := dbIn.Session(&gorm.Session{})
 	cat := &model.TagCategory{}
-	err = nDB.First(cat, "name=?", parsed.name).Error
+	err = db.First(cat, "name=?", parsed.name).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			Log.Info(
@@ -117,10 +117,10 @@ func (r *TagSelector) Match(db *gorm.DB, task *model.Task) (matched []string, er
 		}
 		return
 	}
-	nDB = db.Session(&gorm.Session{})
-	nDB = nDB.Preload("Tags")
+	db = dbIn.Session(&gorm.Session{})
+	db = db.Preload("Tags")
 	application := &model.Application{}
-	err = nDB.First(application, task.ApplicationID).Error
+	err = db.First(application, task.ApplicationID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			Log.Info(

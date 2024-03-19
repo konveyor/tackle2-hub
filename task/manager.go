@@ -161,8 +161,7 @@ func (m *Manager) pause() {
 // startReady starts pending tasks.
 func (m *Manager) startReady() {
 	list := []model.Task{}
-	db := m.DB.Session(&gorm.Session{})
-	db = db.Order("priority DESC, id")
+	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
 		&list,
 		"state IN ?",
@@ -183,8 +182,7 @@ func (m *Manager) startReady() {
 			task.State = Failed
 			task.Terminated = &mark
 			task.Error("Error", "Hub is disconnected.")
-			db := m.DB.Session(&gorm.Session{})
-			sErr := db.Save(task).Error
+			sErr := m.DB.Save(task).Error
 			Log.Error(sErr, "")
 			continue
 		}
@@ -199,8 +197,7 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				db := m.DB.Session(&gorm.Session{})
-				sErr := db.Save(ready).Error
+				sErr := m.DB.Save(ready).Error
 				Log.Error(sErr, "")
 				continue
 			}
@@ -208,16 +205,14 @@ func (m *Manager) startReady() {
 				metrics.TasksInitiated.Inc()
 			}
 			rt := Task{ready}
-			db := m.DB.Session(&gorm.Session{})
-			err := rt.Run(db, m.Client)
+			err := rt.Run(m.DB, m.Client)
 			if err != nil {
 				ready.State = Failed
 				Log.Error(err, "")
 			} else {
 				Log.Info("Task started.", "id", ready.ID)
 			}
-			db = m.DB.Session(&gorm.Session{})
-			err = db.Save(ready).Error
+			err = m.DB.Save(ready).Error
 			Log.Error(err, "")
 		default:
 			// Ignored.
@@ -230,8 +225,7 @@ func (m *Manager) startReady() {
 // updateRunning tasks to reflect pod state.
 func (m *Manager) updateRunning() {
 	list := []model.Task{}
-	db := m.DB.Session(&gorm.Session{})
-	db = db.Order("priority DESC, id")
+	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
 		&list,
 		"state IN ?",
@@ -249,8 +243,7 @@ func (m *Manager) updateRunning() {
 			continue
 		}
 		rt := Task{&running}
-		db := m.DB.Session(&gorm.Session{})
-		pod, err := rt.Reflect(db, m.Client)
+		pod, err := rt.Reflect(m.DB, m.Client)
 		if err != nil {
 			Log.Error(err, "")
 			continue
@@ -267,8 +260,7 @@ func (m *Manager) updateRunning() {
 				continue
 			}
 		}
-		db = m.DB.Session(&gorm.Session{})
-		err = db.Save(&running).Error
+		err = m.DB.Save(&running).Error
 		if err != nil {
 			Log.Error(result.Error, "")
 			continue
@@ -311,11 +303,9 @@ func (m *Manager) canceled(task *model.Task) {
 	if err != nil {
 		return
 	}
-	db := m.DB.Session(&gorm.Session{})
-	err = db.Save(task).Error
+	err = m.DB.Save(task).Error
 	Log.Error(err, "")
-	db = m.DB.Session(&gorm.Session{})
-	db = db.Model(&model.TaskReport{})
+	db := m.DB.Model(&model.TaskReport{})
 	err = db.Delete("taskid", task.ID).Error
 	Log.Error(err, "")
 	return
@@ -344,8 +334,7 @@ func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 // podYAML builds pod resource description.
 func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	file = &model.File{Name: "pod.yaml"}
-	db := m.DB.Session(&gorm.Session{})
-	err = db.Create(file).Error
+	err = m.DB.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -397,8 +386,7 @@ func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.Fil
 		_ = reader.Close()
 	}()
 	file = &model.File{Name: container + ".log"}
-	db := m.DB.Session(&gorm.Session{})
-	err = db.Create(file).Error
+	err = m.DB.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
