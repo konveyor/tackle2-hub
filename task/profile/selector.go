@@ -14,19 +14,22 @@ import (
 
 var Log = logr.WithName("task-selector")
 
+// UnknownSelector reports unknown selector.
 type UnknownSelector struct {
 	Kind string
 }
 
 func (e *UnknownSelector) Error() (s string) {
-	return fmt.Sprintf("Selector: '%s' unknown", e.Kind)
+	return fmt.Sprintf("Selector: '%s' unknown. Not supported.", e.Kind)
 }
 
 func (e *UnknownSelector) Is(err error) (matched bool) {
-	_, matched = err.(*UnknownSelector)
+	var unknownSelector *UnknownSelector
+	matched = errors.As(err, &unknownSelector)
 	return
 }
 
+// NewSelector returns a configured selector.
 func NewSelector(p crd.ProfileSelector, r Resolver) (selector Selector, err error) {
 	match := p.Match
 	parsed := ParsedSelector{}
@@ -65,16 +68,20 @@ func NewSelector(p crd.ProfileSelector, r Resolver) (selector Selector, err erro
 	return
 }
 
+// Selector find resources based on criteria.
 type Selector interface {
+	// Match returns resources matching a criteria.
 	Match(db *gorm.DB, task *model.Task) (matched []string, err error)
 }
 
+// BaseSelector -
 type BaseSelector struct {
 	crd.ProfileSelector
 	resolver Resolver
 	parsed   ParsedSelector
 }
 
+// Match returns resources directly by name or criteria.
 func (r *BaseSelector) Match(db *gorm.DB, task *model.Task) (matched []string, err error) {
 	if r.Name != "" {
 		if r.resolver.Find(r.Name) {
@@ -89,6 +96,7 @@ func (r *BaseSelector) Match(db *gorm.DB, task *model.Task) (matched []string, e
 	return
 }
 
+// ParsedSelector -
 type ParsedSelector struct {
 	ns    string
 	kind  string
@@ -96,10 +104,17 @@ type ParsedSelector struct {
 	value string
 }
 
+// TagSelector matches resources by tag.
 type TagSelector struct {
 	BaseSelector
 }
 
+// Match returns resources by matching the tags.
+// Format: tag:<category>=<tag>
+// When <tag> is not specified, $* represents the tag.
+// Example:
+//- match: platform:target=
+//  capability: $*-analysis
 func (r *TagSelector) Match(dbIn *gorm.DB, task *model.Task) (matched []string, err error) {
 	parsed := r.parsed
 	db := dbIn.Session(&gorm.Session{})

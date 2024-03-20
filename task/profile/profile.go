@@ -2,6 +2,7 @@ package profile
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -10,6 +11,7 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// AddonNotSelected report that an addon has not been selected.
 type AddonNotSelected struct {
 }
 
@@ -18,32 +20,37 @@ func (e *AddonNotSelected) Error() (s string) {
 }
 
 func (e *AddonNotSelected) Is(err error) (matched bool) {
-	_, matched = err.(*AddonNotSelected)
+	var addonNotSelected *AddonNotSelected
+	matched = errors.As(err, &addonNotSelected)
 	return
 }
 
+// New returns a profile.
 func New(tp *crd.TaskProfile) (p *Profile) {
 	p = &Profile{}
 	p.TaskProfileSpec = tp.Spec
 	return
 }
 
+// Profile defines a kind of task.
 type Profile struct {
 	crd.TaskProfileSpec
 }
 
+// Apply the profile to the task. Sets the task addon and extensions.
 func (p *Profile) Apply(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
 	err = p.setAddon(db, client, task)
 	if err != nil {
 		return
 	}
-	err = p.setExtension(db, client, task)
+	err = p.setExtensions(db, client, task)
 	if err != nil {
 		return
 	}
 	return
 }
 
+// setAddon sets the task addon.
 func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
 	selected := ""
 	for i := range p.Addon {
@@ -73,8 +80,9 @@ func (p *Profile) setAddon(db *gorm.DB, client k8s.Client, task *model.Task) (er
 	return
 }
 
-func (p *Profile) setExtension(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
-	var selected []string
+// setExtensions sets the task extensions.
+func (p *Profile) setExtensions(db *gorm.DB, client k8s.Client, task *model.Task) (err error) {
+	names := make(map[string]int)
 	for i := range p.Extension {
 		var selector Selector
 		var matched []string
@@ -93,10 +101,16 @@ func (p *Profile) setExtension(db *gorm.DB, client k8s.Client, task *model.Task)
 		if err != nil {
 			return
 		}
-		selected = append(
-			selected,
-			matched...)
+		for _, name := range matched {
+			names[name] = 0
+		}
 	}
-	task.Extensions, _ = json.Marshal(selected)
+	extensions := make([]string, len(names))
+	for name := range names {
+		extensions = append(
+			extensions,
+			name)
+	}
+	task.Extensions, _ = json.Marshal(extensions)
 	return
 }

@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -12,6 +13,7 @@ import (
 
 var Settings = &settings.Settings
 
+// NotResolved report name/capability not resolved.
 type NotResolved struct {
 	Kind string
 	Name string
@@ -22,24 +24,32 @@ func (e *NotResolved) Error() (s string) {
 }
 
 func (e *NotResolved) Is(err error) (matched bool) {
-	_, matched = err.(*NotResolved)
+	var notResolved *NotResolved
+	matched = errors.As(err, &notResolved)
 	return
 }
 
+// Resolver used to resolve names and categories.
 type Resolver interface {
+	// Load resources.
 	Load(client k8s.Client) (err error)
+	// Find returns true when the named resource exists.
 	Find(name string) (found bool)
+	// Match returns the resources that provide the capability.
 	Match(capability string) (names []string, err error)
 }
 
+// BaseResolver -
 type BaseResolver struct {
 }
 
+// AddonResolver resolves addons.
 type AddonResolver struct {
 	BaseResolver
 	addons map[string]*crd.Addon
 }
 
+// Load addons.
 func (r *AddonResolver) Load(client k8s.Client) (err error) {
 	addons := crd.AddonList{}
 	err = client.List(
@@ -58,11 +68,13 @@ func (r *AddonResolver) Load(client k8s.Client) (err error) {
 	return
 }
 
+// Find returns true when the addon exists.
 func (r *AddonResolver) Find(name string) (found bool) {
 	_, found = r.addons[name]
 	return
 }
 
+// Match returns the addons that provide the capability.
 func (r *AddonResolver) Match(capability string) (names []string, err error) {
 	for _, addon := range r.addons {
 		if addon.Spec.Capability == capability {
@@ -74,17 +86,14 @@ func (r *AddonResolver) Match(capability string) (names []string, err error) {
 	return
 }
 
+// ExtensionResolver resolves extensions.
 type ExtensionResolver struct {
 	BaseResolver
 	extensions map[string]*crd.Extension
 	addon      string
 }
 
-func (r *ExtensionResolver) Find(name string) (found bool) {
-	_, found = r.extensions[name]
-	return
-}
-
+// Load extensions compatible with the addon.
 func (r *ExtensionResolver) Load(client k8s.Client) (err error) {
 	extensions := crd.ExtensionList{}
 	err = client.List(
@@ -105,6 +114,13 @@ func (r *ExtensionResolver) Load(client k8s.Client) (err error) {
 	return
 }
 
+// Find returns true when the extension exists.
+func (r *ExtensionResolver) Find(name string) (found bool) {
+	_, found = r.extensions[name]
+	return
+}
+
+// Match returns the extensions that provide the capability.
 func (r *ExtensionResolver) Match(capability string) (names []string, err error) {
 	for _, extension := range r.extensions {
 		if extension.Spec.Capability == capability {
