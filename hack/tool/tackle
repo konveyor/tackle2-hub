@@ -215,8 +215,6 @@ def apiFilePost(url, token, filePath, ignoreErrors=False):
     return resp.text
 
 def tackle2path(obj):
-    if 'assessment' in obj:
-        return "/hub/pathfinder/%s" % obj.replace("--", "/")    # Nested path decoding (e.g. assessments/assessment-risk)
     return "/hub/%s" % obj
 
 def loadDump(path, fallback_value = []):
@@ -244,7 +242,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'assessments', 'reviews']
+    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'questionnaires', 'archetypes', 'assessments', 'reviews']
     NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
     TACKLE2_SEED_TYPES = ['tagcategories', 'tags', 'jobfunctions']
 
@@ -303,163 +301,24 @@ class TackleTool:
 
     # Gather Tackle 2 API objects
     def dumpTackle2(self):
-        ### TAG TYPES & TAGS ###
-        collection = apiJSON(self.tackle2Url + "/hub/tagcategories", self.tackle2Token)
-        for tt2 in collection:
-            # Temp holder for tags
-            tags = []
-            # Prepare TagCategories's Tags
-            for tag2 in tt2['tags']:
-                tag             = Tackle2Object()
-                tag.id          = tag2['id']
-                tag.name        = tag2['name']
-                # TagCategories is injected from TagCategory processing few lines below
-                self.add('tags', tag)
-                tags.append(tag)
-            # Prepare TagCategory
-            tt            = Tackle2Object()
-            tt.id         = tt2['id']
-            tt.name       = tt2['name']
-            tt.colour     = tt2['colour']
-            tt.rank       = tt2['rank']
-            tt.username   = tt2['username']
-            for tag in tags:
-                tag.category = copy.deepcopy(tt)
-            tt.tags = tags
-            self.add('tagcategories', tt)
+        ensureDataDir(self.dataDir)
+        for t in self.TYPES:
+            print("Exporting %s.." % t)
+            if t == "identities":
+                dictCollection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
+                for dictObj in dictCollection:
+                    dictObj['key'] = self.encrypt(dictObj['key'])
+                    dictObj['password'] = self.encrypt(dictObj['password'])
+                    dictObj['settings'] = self.encrypt(dictObj['settings'])
+            else:
+                dictCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
 
-        ### APPLICATION ###
-        collection = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
-        for app2 in collection:
-            # Temp holder for tags
-            tags = []
-            # Prepare Tags
-            debugPrint(app2)
-            if app2['tags']:
-                for tag2 in app2['tags']:
-                    appTag = self.findById('tags', int(tag2['id']))
-                    # Use imported Tag, creating a new one to cut association to Tag type
-                    tag             = Tackle2Object()
-                    tag.id          = appTag.id
-                    tag.name        = appTag.name
-                    tags.append(tag)
-            # Prepare Application
-            app                 = Tackle2Object(app2)
-            app.name            = app2['name']
-            app.description     = app2['description']
-            app.tags            = tags
-            app.businessService = app2['businessService']
-            app.repository      = app2['repository'] 
-            app.binary          = app2['binary']
-            app.identities      = app2['identities']
-            self.add('temp-buckets', {'owner': "applications/%s" % app.id})
-            self.add('applications', app)
+            # Remove legacy locked questionnaire from export to not cause conflict in import (should be 1st one)
+            if t == "questionnaires":
+                dictCollection = dictCollection[1:]
 
-        ### DEPENDENCIES ###
-        collection = apiJSON(self.tackle2Url + "/hub/dependencies", self.tackle2Token)
-        for dep2 in collection:
-            # Prepare Dependency
-            dep                 = Tackle2Object(dep2)
-            dep.to              = {'id': dep2['to']['id'], 'name': dep2['to']['name']}
-            setattr(dep, 'from', {'id': dep2['from']['id'], 'name': dep2['from']['name']})    # Cannot use "from" as an attribute name directly
-            self.add('dependencies', dep)
-
-
-        ### APPLICATION REVIEW ###
-        collection = apiJSON(self.tackle2Url + "/hub/reviews", self.tackle2Token)
-        for rew2 in collection:
-            rev                 = Tackle2Object(rew2)
-            rev.proposedAction      = rew2['proposedAction']
-            rev.effortEstimate      = rew2['effortEstimate']
-            rev.businessCriticality = rew2['businessCriticality']
-            rev.workPriority        = rew2['workPriority']
-            rev.comments            = rew2['comments']
-            rev.application         = rew2['application']
-            self.add('reviews', rev)
-
-        ### ASSESSMENTS & RISKS (per Application) ###
-        for app in self.data['applications']:
-            collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % app.id, self.tackle2Token)
-            for assm2 in collection:
-                # Prepare Assessment
-                assm               = Tackle2Object()
-                assm.id            = assm2['id']
-                assm.applicationId = assm2['applicationId']
-                assm.status        = assm2['status']
-                # Prepare Assessment questions and answers
-                asqa2 = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments/%d" % assm.id, self.tackle2Token)
-                asqa               = Tackle2Object()
-                asqa.id                = asqa2['id']
-                asqa.applicationId     = asqa2['applicationId']
-                asqa.status            = asqa2['status']
-                asqa.stakeholders      = asqa2['stakeholders']
-                asqa.stakeholderGroups = asqa2['stakeholderGroups']
-                asqa.questionnaire     = asqa2['questionnaire']
-                self.add('assessments', asqa)
-
-        ### STAKEHOLDER ###
-        collection = apiJSON(self.tackle2Url + "/hub/stakeholders", self.tackle2Token)
-        for sh2 in collection:
-            # Prepare StakeHolder
-            sh             = Tackle2Object(sh2)
-            sh.name        = sh2['name']
-            sh.email       = sh2['email']
-            sh.groups      = sh2['stakeholderGroups']
-            sh.jobFunction = sh2['jobFunction']
-            self.add('stakeholders', sh)
-
-        ### STAKEHOLDER GROUPS ###
-        collection = apiJSON(self.tackle2Url + "/hub/stakeholdergroups", self.tackle2Token)
-        for shg2 in collection:
-            # Prepare StakeholderGroup
-            shg             = Tackle2Object(shg2)
-            shg.name        = shg2['name']
-            shg.description = shg2['description']
-            self.add('stakeholdergroups', shg)
-
-        ### JOB FUNCTION ###
-        collection = apiJSON(self.tackle2Url + "/hub/jobfunctions", self.tackle2Token)
-        for jf2 in collection:
-            # Prepare JobFunction
-            jf              = Tackle2Object(jf2)
-            jf.name         = jf2['name']
-            jf.stakeholders = jf2['stakeholders']
-            self.add('jobfunctions', jf)
-
-        ### BUSINESS SERVICE ###
-        collection = apiJSON(self.tackle2Url + "/hub/businessservices", self.tackle2Token)
-        for bs2 in collection:
-            bs              = Tackle2Object(bs2)
-            bs.name         = bs2['name']
-            bs.description  = bs2['description']
-            bs.owner        = bs2['owner']  # Stakeholder
-            self.add('businessservices', bs)
-
-        ### IDENTITY ###
-        collection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
-        for id2 in collection:
-            id             = Tackle2Object(id2)
-            id.kind        = id2['kind']
-            id.name        = id2['name']
-            id.description = id2['description']
-            id.user        = id2['user']
-            id.password    = self.encrypt(id2['password'])
-            id.key         = self.encrypt(id2['key'])
-            id.settings    = self.encrypt(id2['settings'])
-            self.add('identities', id)
-
-        ### PROXY ###
-        collection = apiJSON(self.tackle2Url + "/hub/proxies", self.tackle2Token)
-        for pr2 in collection:
-            pr          = Tackle2Object(pr2)
-            pr.enabled  = pr2['enabled']
-            pr.kind     = pr2['kind']
-            pr.host     = pr2['host']
-            pr.port     = pr2['port']
-            pr.excluded = pr2['excluded']
-            pr.identity = pr2['identity']
-            self.add('proxies', pr)
-
+            # Save data locally
+            saveJSON(os.path.join(self.dataDir, t), dictCollection)
 
     def dumpTackle2Buckets(self):
         bucketDir = "%s/buckets" % self.dataDir
@@ -490,18 +349,8 @@ class TackleTool:
                 return
         self.data[type].append(item)
 
-    def store(self):
-        ensureDataDir(self.dataDir)
-        for t in self.TYPES:
-            saveJSON(os.path.join(self.dataDir, t), self.data[t])
-
     def uploadTackle2(self, ignoreErrors=False):
-        # Hub objects
         for t in self.TYPES:
-            # Skip separated imported objects
-            if "assessment" in t:
-                continue    # Pathfinder objects are imported separately
-
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             print("Uploading %s.." % t)
             for dictObj in dictCollection:
@@ -511,37 +360,18 @@ class TackleTool:
                     dictObj['password'] = self.decrypt(dictObj['password'])
                     dictObj['settings'] = self.decrypt(dictObj['settings'])
 
-                debugPrint(dictObj)
-                apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+                if "stakeholdergroups" in t:
+                    dictObj['stakeholders'] = [] # empty stakeholders to not create it with parent stakeholdergroup, but in separate call
 
-        # Assessments / Pathfinder stuff import
-        dictCollection = loadDump(os.path.join(self.dataDir, 'assessments.json'))
-        print("Uploading assessments..")
-        for assmnt1 in dictCollection:
-            # Start the assessment
-            assmnt2 = apiJSON(self.tackle2Url + tackle2path('assessments'), self.tackle2Token, data={"applicationId": assmnt1['applicationId']}, method='POST', ignoreErrors=ignoreErrors)
-            # Populate the assessment questionnaire
-            assmnt2 = apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, ignoreErrors=ignoreErrors)
-            # Fill the assessment going through assessment to be imported and setting values to the newly created in Tackle2 (IDs changed, pairing with Order)
-            for category in assmnt1['questionnaire']['categories']:
-                debugPrint("Category %s" % category["order"])
-                for question in category['questions']:
-                    debugPrint("Question %s" % question["order"])
-                    for option in question['options']:
-                        debugPrint("Option %s" % option)
-                        if option['checked'] == True:
-                            # Find corresponding option in newly created assessment and check it
-                            destCategory = next(cat for cat in assmnt2['questionnaire']['categories'] if cat['order'] == category['order'])
-                            destQuestion = next(que for que in destCategory['questions'] if que['order'] == question['order'])
-                            destOption = next(opt for opt in destQuestion['options'] if opt['order'] == option['order'])
-                            debugPrint("Checking Tackle2 assessment option: %s" % destOption)
-                            destOption['checked'] = True
-            # Set remaining assessment attributes
-            assmnt2['status']            = assmnt1['status']
-            assmnt2['stakeholders']      = assmnt1['stakeholders']
-            assmnt2['stakeholderGroups'] = assmnt1['stakeholderGroups']
-            # Push the updated assessment
-            apiJSON(self.tackle2Url + tackle2path("assessments/%d" % assmnt2['id']), self.tackle2Token, data=assmnt2, method='PATCH', ignoreErrors=ignoreErrors)
+                path = tackle2path(t)
+                if "assessments" in t:
+                    if 'application' in dictObj:
+                        path = tackle2path("applications/%d/assessments" % dictObj['application']['id'])
+                    elif 'archetype' in dictObj:
+                        path = tackle2path("archetypes/%d/assessments" % dictObj['archetype']['id'])
+                debugPrint(dictObj)
+                apiJSON(self.tackle2Url + path, self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+
 
     # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
     def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
@@ -613,20 +443,10 @@ class TackleTool:
 
         # Duplication checks
         for t in self.TYPES:
-            # Pathfinder objects are dependent on Application which was checked before (and its check'd require iterating applications)
-            if "assessment" in t:
-                continue
             print("Checking %s in destination Tackle2.." % t)
             destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
             localCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for importObj in localCollection:
-                # Pathfinder resources are dependent on Application, cheking it via applicationId
-                if t == "applications":
-                    # Check Application's Assessments first
-                    asmnts = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % importObj['id'], self.tackle2Token, ignoreErrors=True)
-                    if len(asmnts) > 0:
-                        print("ERROR: Pathfinder assessment for application ID %d already exists. Clean it before running the import with: tackle clean" % importObj['id'])
-                        exit(1)
                 for destObj in destCollection:
                     if importObj['id'] == destObj['id']:
                         print("ERROR: Resource %s/%d \"%s\" already exists in Tackle2 destination as \"%s\". Clean it before running the import with: tackle clean" % (t, importObj['id'], importObj['name'], destObj['name']))
@@ -637,15 +457,6 @@ class TackleTool:
         for t in self.TYPES:
             dictCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for dictObj in dictCollection:
-                if "assessment" in t:
-                    continue
-                # Pathfinder resources are dependent on Application
-                if t == "applications":
-                    # Delete related Application's Assessment resources first
-                    collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
-                    for assm in collection:
-                        print("Trying delete assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
-                        apiJSON("%s/hub/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
                 # Hub resources
                 print("Trying delete %s/%s" % (t, dictObj['id']))
                 apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
@@ -653,17 +464,8 @@ class TackleTool:
     def cleanAllTackle2(self):
         self.TYPES.reverse()
         for t in self.NOT_IMPORTED_TYPES + self.TYPES:
-            # Pathfinder resources are dependent on Application, skip it
-            if "assessment" in t:
-                continue
             destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
             for dictObj in destCollection:
-                if t == "applications":
-                    # Delete related Application's Assessment resources first
-                    collection = apiJSON(self.tackle2Url + "/hub/pathfinder/assessments?applicationId=%d" % dictObj['id'], self.tackle2Token, ignoreErrors=True)
-                    for assm in collection:
-                        print("Deleting assessment %s for applicationId=%s" % (assm['id'], dictObj['id']))
-                        apiJSON("%s/hub/pathfinder/assessments/%s" % (self.tackle2Url, assm['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
                 # Hub resources
                 print("Deleting %s/%s" % (t, dictObj['id']))
                 apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
@@ -740,10 +542,8 @@ if cmdWanted(args, "export"):
     tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
 
     # Run the export expecting clean destination
-    print("Exporting Tackle 2 objects (this might take a while..)")
+    print("Exporting Tackle 2 objects into %s (this might take a while..)" % args.data_dir)
     tool.dumpTackle2()
-    print("Writing JSON data files into %s" % args.data_dir)
-    tool.store()
     tool.saveManifest()
     if args.skipBuckets:
         print("Skipping Buckets file content export.")
