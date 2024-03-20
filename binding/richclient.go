@@ -57,6 +57,9 @@ func New(baseUrl string) (r *RichClient) {
 	//
 	// Build RichClient.
 	r = &RichClient{
+		Addon: Addon{
+			client: client,
+		},
 		Application: Application{
 			client: client,
 		},

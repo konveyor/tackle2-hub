@@ -879,6 +879,12 @@ func (r *Task) containers(
 	plain = append(plain, addon.Spec.Container)
 	for _, extension := range extensions {
 		container := extension.Spec.Container
+		plain = append(
+			plain,
+			container)
+	}
+	for i := range plain {
+		container := &plain[i]
 		container.SecurityContext = &core.SecurityContext{
 			RunAsUser: &userid,
 		}
@@ -906,9 +912,6 @@ func (r *Task) containers(
 				Name:      settings.EnvHubToken,
 				ValueFrom: token,
 			})
-		plain = append(
-			plain,
-			container)
 	}
 	return
 }
