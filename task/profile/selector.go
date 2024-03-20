@@ -113,8 +113,8 @@ type TagSelector struct {
 // Format: tag:<category>=<tag>
 // When <tag> is not specified, $* represents the tag.
 // Example:
-//- match: platform:target=
-//  capability: $*-analysis
+//   - match: platform:target=
+//     capability: $*-analysis
 func (r *TagSelector) Match(dbIn *gorm.DB, task *model.Task) (matched []string, err error) {
 	parsed := r.parsed
 	db := dbIn.Session(&gorm.Session{})

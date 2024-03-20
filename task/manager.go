@@ -312,6 +312,10 @@ func (m *Manager) canceled(task *model.Task) {
 }
 
 // snapshotPod attaches a pod description and logs.
+// Includes:
+//   - pod YAML
+//   - pod Events
+//   - container Logs
 func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 	var files []*model.File
 	d, err := m.podYAML(pod)
@@ -333,6 +337,10 @@ func (m *Manager) snapshotPod(task *Task, pod *core.Pod) (err error) {
 
 // podYAML builds pod resource description.
 func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
+	events, err := m.podEvent(pod)
+	if err != nil {
+		return
+	}
 	file = &model.File{Name: "pod.yaml"}
 	err = m.DB.Create(file).Error
 	if err != nil {
@@ -347,8 +355,49 @@ func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	b, _ := yaml.Marshal(pod)
+	type Pod struct {
+		core.Pod `yaml:",inline"`
+		Events   []Event `yaml:",omitempty"`
+	}
+	d := Pod{
+		Pod:    *pod,
+		Events: events,
+	}
+	b, _ := yaml.Marshal(d)
 	_, _ = f.Write(b)
+	return
+}
+
+// podEvent get pod events.
+func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
+	clientSet, err := k8s2.NewClientSet()
+	if err != nil {
+		return
+	}
+	options := meta.ListOptions{
+		FieldSelector: "involvedObject.name=" + pod.Name,
+		TypeMeta: meta.TypeMeta{
+			Kind: "Pod",
+		},
+	}
+	eventClient := clientSet.CoreV1().Events(Settings.Hub.Namespace)
+	eventList, err := eventClient.List(context.TODO(), options)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, event := range eventList.Items {
+		duration := event.LastTimestamp.Sub(event.FirstTimestamp.Time)
+		events = append(
+			events,
+			Event{
+				Type:     event.Type,
+				Reason:   event.Reason,
+				Age:      duration.String(),
+				Reporter: event.ReportingController,
+				Message:  event.Message,
+			})
+	}
 	return
 }
 
@@ -912,4 +961,12 @@ func (r *Task) attach(file *model.File) {
 			Name: file.Name,
 		})
 	r.Attached, _ = json.Marshal(attached)
+}
+
+type Event struct {
+	Type     string
+	Reason   string
+	Age      string
+	Reporter string
+	Message  string
 }

@@ -105,7 +105,7 @@ func (p *Profile) setExtensions(db *gorm.DB, client k8s.Client, task *model.Task
 			names[name] = 0
 		}
 	}
-	extensions := make([]string, len(names))
+	extensions := make([]string, 0)
 	for name := range names {
 		extensions = append(
 			extensions,
