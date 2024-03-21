@@ -1242,15 +1242,26 @@ spec:
                 required:
                 - name
                 type: object
-              extensions:
-                description: Extensions references.
+              extension:
+                description: Extension selector.
                 items:
-                  type: string
+                  description: AddonSelector tag:category=tag platform:target=kind
+                  properties:
+                    capability:
+                      type: string
+                    match:
+                      type: string
+                    name:
+                      type: string
+                  type: object
                 type: array
               metadata:
                 description: Metadata details.
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              task:
+                description: Task (kind) compatibility.
+                type: string
             type: object
           status:
             description: AddonStatus defines the observed state of Addon

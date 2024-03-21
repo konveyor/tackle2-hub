@@ -24,10 +24,12 @@ import (
 
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
+	// Task (kind) compatibility.
+	Task string `json:"task,omitempty"`
 	// Capability provided.
 	Capability string `json:"capability,omitempty"`
-	// Extensions references.
-	Extensions []string `json:"extensions,omitempty"`
+	// Extension selector.
+	Extension []AddonSelector `json:"extension,omitempty"`
 	// Container details.
 	Container core.Container `json:"container,omitempty"`
 	// Metadata details.

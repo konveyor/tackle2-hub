@@ -356,7 +356,7 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 type TaskGroup struct {
 	Resource   `yaml:",inline"`
 	Name       string      `json:"name"`
-	Profile    string      `json:"profile,omitempty" yaml:",omitempty"`
+	Kind       string      `json:"kind,omitempty" yaml:",omitempty"`
 	Addon      string      `json:"addon,omitempty" yaml:",omitempty"`
 	Extensions []string    `json:"extensions,omitempty" yaml:",omitempty"`
 	Data       interface{} `json:"data" swaggertype:"object" binding:"required"`
@@ -369,7 +369,7 @@ type TaskGroup struct {
 func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	r.Profile = m.Profile
+	r.Kind = m.Kind
 	r.Addon = m.Addon
 	r.State = m.State
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
@@ -393,10 +393,10 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 // Model builds a model.
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{
-		Name:    r.Name,
-		Profile: r.Profile,
-		Addon:   r.Addon,
-		State:   r.State,
+		Name:  r.Name,
+		Kind:  r.Kind,
+		Addon: r.Addon,
+		State: r.State,
 	}
 	m.ID = r.ID
 	m.Data, _ = json.Marshal(StrMap(r.Data))

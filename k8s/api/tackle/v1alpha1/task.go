@@ -20,25 +20,23 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ProfileSelector
+// AddonSelector
 // tag:category=tag
 // platform:target=kind
-type ProfileSelector struct {
+type AddonSelector struct {
 	Match      string `json:"match,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Capability string `json:"capability,omitempty"`
 }
 
-// TaskProfileSpec defines the desired state of TaskProfile
-type TaskProfileSpec struct {
+// TaskSpec defines the desired state of Task
+type TaskSpec struct {
 	// Addon selector.
-	Addon []ProfileSelector `json:"addon,omitempty"`
-	// Extension selector.
-	Extension []ProfileSelector `json:"extension,omitempty"`
+	Addon []AddonSelector `json:"addon,omitempty"`
 }
 
-// TaskProfileStatus defines the observed state of TaskProfile
-type TaskProfileStatus struct {
+// TaskStatus defines the observed state of Task
+type TaskStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -50,20 +48,20 @@ type TaskProfileStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-type TaskProfile struct {
+type Task struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            TaskProfileSpec   `json:"spec,omitempty"`
-	Status          TaskProfileStatus `json:"status,omitempty"`
+	Spec            TaskSpec   `json:"spec,omitempty"`
+	Status          TaskStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type TaskProfileList struct {
+type TaskList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []TaskProfile `json:"items"`
+	Items         []Task `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&TaskProfile{}, &TaskProfileList{})
+	SchemeBuilder.Register(&Task{}, &TaskList{})
 }

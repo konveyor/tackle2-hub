@@ -19,7 +19,6 @@ import (
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/task/profile"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
@@ -58,66 +57,6 @@ var (
 	Settings = &settings.Settings
 	Log      = logr.WithName("task-scheduler")
 )
-
-// ProfileNotFound used to report profile referenced
-// by a task but cannot be found.
-type ProfileNotFound struct {
-	Name string
-}
-
-func (e *ProfileNotFound) Error() (s string) {
-	return fmt.Sprintf("Profile: '%s' not-found.", e.Name)
-}
-
-func (e *ProfileNotFound) Is(err error) (matched bool) {
-	_, matched = err.(*ProfileNotFound)
-	return
-}
-
-// AddonNotFound used to report addon referenced
-// by a task but cannot be found.
-type AddonNotFound struct {
-	Name string
-}
-
-func (e *AddonNotFound) Error() (s string) {
-	return fmt.Sprintf("Addon: '%s' not-found.", e.Name)
-}
-
-func (e *AddonNotFound) Is(err error) (matched bool) {
-	_, matched = err.(*AddonNotFound)
-	return
-}
-
-// ExtensionNotFound used to report extension referenced
-// by a task but cannot be found.
-type ExtensionNotFound struct {
-	Name string
-}
-
-func (e *ExtensionNotFound) Error() (s string) {
-	return fmt.Sprintf("Extension: '%s' not-found.", e.Name)
-}
-
-func (e *ExtensionNotFound) Is(err error) (matched bool) {
-	_, matched = err.(*ExtensionNotFound)
-	return
-}
-
-// ExtensionNotValid used to report extension referenced
-// by a task not valid with addon.
-type ExtensionNotValid struct {
-	Name string
-}
-
-func (e *ExtensionNotValid) Error() (s string) {
-	return fmt.Sprintf("Extension: '%s' not-valid with addon.", e.Name)
-}
-
-func (e *ExtensionNotValid) Is(err error) (matched bool) {
-	_, matched = err.(*ExtensionNotValid)
-	return
-}
 
 // Manager provides task management.
 type Manager struct {
@@ -476,22 +415,19 @@ func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 	if err != nil {
 		return
 	}
-	tp, err := r.findProfile(client)
+	err = r.selectAddon(db, client)
 	if err != nil {
 		return
 	}
-	if tp != nil {
-		p := profile.New(tp)
-		err = p.Apply(db, client, r.Task)
-		if err != nil {
-			return
-		}
-	}
-	addon, err := r.findAddon(client)
+	addon, err := r.getAddon(client)
 	if err != nil {
 		return
 	}
-	extensions, err := r.findExtensions(client)
+	err = r.selectExtensions(db, client, addon)
+	if err != nil {
+		return
+	}
+	extensions, err := r.getExtensions(client)
 	if err != nil {
 		return
 	}
@@ -701,23 +637,24 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 	}
 }
 
-// findProfile by name.
-func (r *Task) findProfile(client k8s.Client) (profile *crd.TaskProfile, err error) {
-	if r.Profile == "" {
+// getKind by name.
+func (r *Task) getKind(client k8s.Client) (kind *crd.Task, err error) {
+	if r.Kind == "" {
+		err = &KindNotFound{r.Addon}
 		return
 	}
-	profile = &crd.TaskProfile{}
+	kind = &crd.Task{}
 	err = client.Get(
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,
-			Name:      r.Profile,
+			Name:      r.Kind,
 		},
-		profile)
+		kind)
 	if err != nil {
-		profile = nil
+		kind = nil
 		if k8serr.IsNotFound(err) {
-			err = &ProfileNotFound{r.Addon}
+			err = &KindNotFound{r.Addon}
 		} else {
 			err = liberr.Wrap(err)
 		}
@@ -727,8 +664,46 @@ func (r *Task) findProfile(client k8s.Client) (profile *crd.TaskProfile, err err
 	return
 }
 
-// findAddon by name.
-func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
+// selectAddon select an addon when not specified.
+func (r *Task) selectAddon(db *gorm.DB, client k8s.Client) (err error) {
+	if r.Addon != "" {
+		return
+	}
+	p, err := r.getKind(client)
+	if err != nil {
+		return
+	}
+	selected := ""
+	addons := p.Spec.Addon
+	for i := range addons {
+		var selector Selector
+		var matched []string
+		resolver := &AddonResolver{}
+		err = resolver.Load(client)
+		if err != nil {
+			return
+		}
+		selector, err = NewSelector(addons[i], resolver)
+		if err != nil {
+			return
+		}
+		matched, err = selector.Match(db, r.Task)
+		if err != nil {
+			return
+		}
+		selected = matched[0]
+		break
+	}
+	if selected == "" {
+		err = &AddonNotSelected{}
+		return
+	}
+	r.Addon = selected
+	return
+}
+
+// getAddon by name.
+func (r *Task) getAddon(client k8s.Client) (addon *crd.Addon, err error) {
 	addon = &crd.Addon{}
 	err = client.Get(
 		context.TODO(),
@@ -749,8 +724,51 @@ func (r *Task) findAddon(client k8s.Client) (addon *crd.Addon, err error) {
 	return
 }
 
-// findExtensions by selector.
-func (r *Task) findExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
+// selectExtensions select extensions when not specified.
+func (r *Task) selectExtensions(db *gorm.DB, client k8s.Client, addon *crd.Addon) (err error) {
+	var extensions []string
+	if r.Extensions != nil {
+		_ = json.Unmarshal(r.Extensions, &extensions)
+	}
+	if len(extensions) > 0 {
+		return
+	}
+	names := make(map[string]int)
+	selectors := addon.Spec.Extension
+	for i := range selectors {
+		var selector Selector
+		var matched []string
+		resolver := &ExtensionResolver{
+			addon: addon.Name,
+		}
+		err = resolver.Load(client)
+		if err != nil {
+			return
+		}
+		selector, err = NewSelector(selectors[i], resolver)
+		if err != nil {
+			return
+		}
+		matched, err = selector.Match(db, r.Task)
+		if err != nil {
+			return
+		}
+		for _, name := range matched {
+			names[name] = 0
+		}
+	}
+	extensions = make([]string, 0)
+	for name := range names {
+		extensions = append(
+			extensions,
+			name)
+	}
+	r.Extensions, _ = json.Marshal(extensions)
+	return
+}
+
+// getExtensions by name.
+func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
 	var names []string
 	_ = json.Unmarshal(r.Extensions, &names)
 	for _, name := range names {

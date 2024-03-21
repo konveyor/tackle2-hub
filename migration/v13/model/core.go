@@ -119,7 +119,7 @@ type Task struct {
 	Model
 	BucketOwner
 	Name          string `gorm:"index"`
-	Profile       string
+	Kind          string
 	Addon         string `gorm:"index"`
 	Extensions    JSON   `gorm:"type:json"`
 	Locator       string `gorm:"index"`
@@ -208,7 +208,7 @@ type TaskGroup struct {
 	Model
 	BucketOwner
 	Name       string
-	Profile    string
+	Kind       string
 	Addon      string
 	Extensions JSON   `gorm:"type:json"`
 	Data       JSON   `gorm:"type:json"`
@@ -223,7 +223,7 @@ func (m *TaskGroup) Propagate() (err error) {
 		task := &m.Tasks[i]
 		task.State = m.State
 		task.SetBucket(m.BucketID)
-		task.Profile = m.Profile
+		task.Kind = m.Kind
 		task.Addon = m.Addon
 		task.Extensions = m.Extensions
 		if m.Data == nil {

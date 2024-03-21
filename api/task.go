@@ -522,7 +522,7 @@ type Task struct {
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
 	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
 	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
-	Profile     string       `json:"profile,omitempty" yaml:",omitempty"`
+	Kind        string       `json:"kind,omitempty" yaml:",omitempty"`
 	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
 	Extensions  []string     `json:"extensions,omitempty" yaml:",omitempty"`
 	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
@@ -545,7 +545,7 @@ type Task struct {
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	r.Profile = m.Profile
+	r.Kind = m.Kind
 	r.Addon = m.Addon
 	r.Locator = m.Locator
 	r.Priority = m.Priority
@@ -592,7 +592,7 @@ func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
 		Name:          r.Name,
 		Addon:         r.Addon,
-		Profile:       r.Profile,
+		Kind:          r.Kind,
 		Locator:       r.Locator,
 		Priority:      r.Priority,
 		Policy:        r.Policy,

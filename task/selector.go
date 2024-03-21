@@ -1,36 +1,17 @@
-package profile
+package task
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/jortel/go-utils/logr"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 )
 
-var Log = logr.WithName("task-selector")
-
-// UnknownSelector reports unknown selector.
-type UnknownSelector struct {
-	Kind string
-}
-
-func (e *UnknownSelector) Error() (s string) {
-	return fmt.Sprintf("Selector: '%s' unknown. Not supported.", e.Kind)
-}
-
-func (e *UnknownSelector) Is(err error) (matched bool) {
-	var unknownSelector *UnknownSelector
-	matched = errors.As(err, &unknownSelector)
-	return
-}
-
 // NewSelector returns a configured selector.
-func NewSelector(p crd.ProfileSelector, r Resolver) (selector Selector, err error) {
+func NewSelector(p crd.AddonSelector, r Resolver) (selector Selector, err error) {
 	match := p.Match
 	parsed := ParsedSelector{}
 	part := strings.SplitN(match, "/", 2)
@@ -51,16 +32,16 @@ func NewSelector(p crd.ProfileSelector, r Resolver) (selector Selector, err erro
 	switch parsed.kind {
 	case "":
 		selector = &BaseSelector{
-			ProfileSelector: p,
-			resolver:        r,
-			parsed:          parsed,
+			AddonSelector: p,
+			resolver:      r,
+			parsed:        parsed,
 		}
 	case "tag":
 		selector = &TagSelector{
 			BaseSelector: BaseSelector{
-				ProfileSelector: p,
-				resolver:        r,
-				parsed:          parsed,
+				AddonSelector: p,
+				resolver:      r,
+				parsed:        parsed,
 			}}
 	default:
 		err = &UnknownSelector{Kind: parsed.kind}
@@ -76,7 +57,7 @@ type Selector interface {
 
 // BaseSelector -
 type BaseSelector struct {
-	crd.ProfileSelector
+	crd.AddonSelector
 	resolver Resolver
 	parsed   ParsedSelector
 }

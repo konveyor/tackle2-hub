@@ -1,33 +1,12 @@
-package profile
+package task
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	liberr "github.com/jortel/go-utils/error"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/settings"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var Settings = &settings.Settings
-
-// NotResolved report name/capability not resolved.
-type NotResolved struct {
-	Kind string
-	Name string
-}
-
-func (e *NotResolved) Error() (s string) {
-	return fmt.Sprintf("%s: '%s' not-resolved.", e.Kind, e.Name)
-}
-
-func (e *NotResolved) Is(err error) (matched bool) {
-	var notResolved *NotResolved
-	matched = errors.As(err, &notResolved)
-	return
-}
 
 // Resolver used to resolve names and categories.
 type Resolver interface {
