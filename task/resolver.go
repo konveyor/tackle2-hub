@@ -26,6 +26,7 @@ type BaseResolver struct {
 type AddonResolver struct {
 	BaseResolver
 	addons map[string]*crd.Addon
+	task   string
 }
 
 // Load addons.
@@ -42,7 +43,9 @@ func (r *AddonResolver) Load(client k8s.Client) (err error) {
 	r.addons = make(map[string]*crd.Addon)
 	for i := range addons.Items {
 		addon := &addons.Items[i]
-		r.addons[addon.Name] = addon
+		if addon.Spec.Task == r.task {
+			r.addons[addon.Name] = addon
+		}
 	}
 	return
 }

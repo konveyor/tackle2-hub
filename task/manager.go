@@ -678,7 +678,9 @@ func (r *Task) selectAddon(db *gorm.DB, client k8s.Client) (err error) {
 	for i := range addons {
 		var selector Selector
 		var matched []string
-		resolver := &AddonResolver{}
+		resolver := &AddonResolver{
+			task: kind.Name,
+		}
 		err = resolver.Load(client)
 		if err != nil {
 			return
