@@ -669,12 +669,12 @@ func (r *Task) selectAddon(db *gorm.DB, client k8s.Client) (err error) {
 	if r.Addon != "" {
 		return
 	}
-	p, err := r.getKind(client)
+	kind, err := r.getKind(client)
 	if err != nil {
 		return
 	}
 	selected := ""
-	addons := p.Spec.Addon
+	addons := kind.Spec.Addon
 	for i := range addons {
 		var selector Selector
 		var matched []string
