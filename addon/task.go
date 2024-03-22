@@ -291,26 +291,26 @@ func (r *EnvInjector) Inject(extensions []api.Extension) {
 }
 
 // inject ENVAR into extension metadata.
-func (r *EnvInjector) inject(mp map[string]any) {
-	for k, v := range mp {
-		switch node := v.(type) {
-		case map[string]any:
-			r.inject(node)
-		case string:
-			for {
-				match := EnvRegex.FindStringSubmatch(node)
-				if len(match) < 3 {
-					break
-				}
-				node = strings.Replace(
-					node,
-					match[0],
-					os.Getenv(match[1]),
-					-1)
-				mp[k] = node
-			}
-		default:
-			Log.Info("OTHER")
+func (r *EnvInjector) inject(in any) (out any) {
+	switch node := in.(type) {
+	case map[string]any:
+		for k, v := range node {
+			node[k] = r.inject(v)
 		}
+		out = node
+	case string:
+		for {
+			match := EnvRegex.FindStringSubmatch(node)
+			if len(match) < 3 {
+				break
+			}
+			node = strings.Replace(
+				node,
+				match[0],
+				os.Getenv(match[1]),
+				-1)
+		}
+		out = node
 	}
+	return
 }
