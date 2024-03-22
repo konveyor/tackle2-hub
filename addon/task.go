@@ -3,6 +3,8 @@ package addon
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -43,13 +45,21 @@ func (h *Task) Application() (r *api.Application, err error) {
 }
 
 // Addon returns the addon associated with the task.
-func (h *Task) Addon() (r *api.Addon, err error) {
+// inject: perform injection.
+func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	name := h.task.Addon
 	if name == "" {
 		err = &NotFound{}
 		return
 	}
 	r, err = h.richClient.Addon.Get(name)
+	if err != nil {
+		return
+	}
+	if inject {
+		injector := EnvInjector{}
+		injector.Inject(r.Extensions)
+	}
 	return
 }
 
@@ -259,4 +269,43 @@ func (h *Task) pushReport() {
 		err = client.Put(path, &h.report)
 	}
 	return
+}
+
+// EnvInjector inject ENVAR into extension metadata.
+type EnvInjector struct {
+}
+
+// Inject inject ENVAR into extension metadata.
+func (r *EnvInjector) Inject(extensions []api.Extension) {
+	p := regexp.MustCompile(`(\${)([^}]+)(})`)
+	for i := range extensions {
+		extension := &extensions[i]
+		mp := make(map[string]any)
+		b, _ := json.Marshal(extension.Metadata)
+		_ = json.Unmarshal(b, &mp)
+		r.inject(p, mp)
+	}
+}
+
+// inject ENVAR into extension metadata.
+func (r *EnvInjector) inject(p *regexp.Regexp, mp map[string]any) {
+	for k, v := range mp {
+		switch node := v.(type) {
+		case map[string]any:
+			r.inject(p, node)
+		case string:
+			for {
+				match := p.FindStringSubmatch(node)
+				if len(match) < 3 {
+					break
+				}
+				node = strings.Replace(
+					node,
+					match[0],
+					os.Getenv(match[1]),
+					-1)
+				mp[k] = node
+			}
+		}
+	}
 }

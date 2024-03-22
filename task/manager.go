@@ -896,8 +896,11 @@ func (r *Task) containers(
 			},
 		},
 	}
+	injector := Injector{}
 	plain = append(plain, addon.Spec.Container)
-	for _, extension := range extensions {
+	for i := range extensions {
+		extension := &extensions[i]
+		injector.Inject(extension)
 		container := extension.Spec.Container
 		plain = append(
 			plain,
@@ -986,6 +989,7 @@ func (r *Task) attach(file *model.File) {
 	r.Attached, _ = json.Marshal(attached)
 }
 
+// Event represents a pod event.
 type Event struct {
 	Type     string
 	Reason   string
