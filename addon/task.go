@@ -298,6 +298,14 @@ func (r *EnvInjector) inject(in any) (out any) {
 			node[k] = r.inject(v)
 		}
 		out = node
+	case []any:
+		var injected []any
+		for _, n := range node {
+			injected = append(
+				injected,
+				r.inject(n))
+		}
+		out = injected
 	case string:
 		for {
 			match := EnvRegex.FindStringSubmatch(node)
@@ -307,9 +315,11 @@ func (r *EnvInjector) inject(in any) (out any) {
 			node = strings.Replace(
 				node,
 				match[0],
-				os.Getenv(match[1]),
+				os.Getenv(match[2]),
 				-1)
 		}
+		out = node
+	default:
 		out = node
 	}
 	return
