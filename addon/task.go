@@ -283,7 +283,7 @@ type EnvInjector struct {
 func (r *EnvInjector) Inject(extensions []api.Extension) {
 	for i := range extensions {
 		extension := &extensions[i]
-		mp := make(map[any]any)
+		mp := make(map[string]any)
 		b, _ := json.Marshal(extension.Metadata)
 		_ = json.Unmarshal(b, &mp)
 		r.inject(mp)
@@ -291,10 +291,10 @@ func (r *EnvInjector) Inject(extensions []api.Extension) {
 }
 
 // inject ENVAR into extension metadata.
-func (r *EnvInjector) inject(mp map[any]any) {
+func (r *EnvInjector) inject(mp map[string]any) {
 	for k, v := range mp {
 		switch node := v.(type) {
-		case map[any]any:
+		case map[string]any:
 			r.inject(node)
 		case string:
 			for {
@@ -309,6 +309,8 @@ func (r *EnvInjector) inject(mp map[any]any) {
 					-1)
 				mp[k] = node
 			}
+		default:
+			Log.Info("OTHER")
 		}
 	}
 }
