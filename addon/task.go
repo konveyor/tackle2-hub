@@ -3,13 +3,13 @@ package addon
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
+	"k8s.io/utils/env"
 )
 
 // Task API.
@@ -315,7 +315,7 @@ func (r *EnvInjector) inject(in any) (out any) {
 			node = strings.Replace(
 				node,
 				match[0],
-				os.Getenv(match[2]),
+				env.GetString(match[2], match[0]),
 				-1)
 		}
 		out = node
