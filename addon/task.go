@@ -271,31 +271,34 @@ func (h *Task) pushReport() {
 	return
 }
 
+var (
+	EnvRegex = regexp.MustCompile(`(\${)([^}]+)(})`)
+)
+
 // EnvInjector inject ENVAR into extension metadata.
 type EnvInjector struct {
 }
 
 // Inject inject ENVAR into extension metadata.
 func (r *EnvInjector) Inject(extensions []api.Extension) {
-	p := regexp.MustCompile(`(\${)([^}]+)(})`)
 	for i := range extensions {
 		extension := &extensions[i]
 		mp := make(map[string]any)
 		b, _ := json.Marshal(extension.Metadata)
 		_ = json.Unmarshal(b, &mp)
-		r.inject(p, mp)
+		r.inject(mp)
 	}
 }
 
 // inject ENVAR into extension metadata.
-func (r *EnvInjector) inject(p *regexp.Regexp, mp map[string]any) {
+func (r *EnvInjector) inject(mp map[string]any) {
 	for k, v := range mp {
 		switch node := v.(type) {
 		case map[string]any:
-			r.inject(p, node)
+			r.inject(node)
 		case string:
 			for {
-				match := p.FindStringSubmatch(node)
+				match := EnvRegex.FindStringSubmatch(node)
 				if len(match) < 3 {
 					break
 				}

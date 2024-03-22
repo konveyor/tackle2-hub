@@ -896,18 +896,18 @@ func (r *Task) containers(
 			},
 		},
 	}
-	injector := Injector{}
 	plain = append(plain, addon.Spec.Container)
 	for i := range extensions {
 		extension := &extensions[i]
-		injector.Inject(extension)
 		container := extension.Spec.Container
 		plain = append(
 			plain,
 			container)
 	}
+	injector := Injector{}
 	for i := range plain {
 		container := &plain[i]
+		injector.Inject(container)
 		container.SecurityContext = &core.SecurityContext{
 			RunAsUser: &userid,
 		}

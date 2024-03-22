@@ -5,7 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	core "k8s.io/api/core/v1"
+)
+
+var (
+	PortRegex = regexp.MustCompile(`(\$\(port:)([0-9]+)\)`)
 )
 
 // Injector macro processor.
@@ -14,65 +18,37 @@ type Injector struct {
 }
 
 // Inject process macros.
-func (r *Injector) Inject(extension *crd.Extension) {
-	container := &extension.Spec.Container
+func (r *Injector) Inject(container *core.Container) {
 	for _, env := range container.Env {
 		env.Value = r.port.inject(env.Value)
 	}
-	r.port.next()
-}
-
-// Port port allocation.
-type Port struct {
-	next    int
-	matched int
 }
 
 // PortInjector provides $(port:<base>) injection.
 type PortInjector struct {
-	pattern *regexp.Regexp
-	portMap map[int]Port
-}
-
-// init object.
-func (r *PortInjector) init() {
-	if r.pattern != nil {
-		return
-	}
-	r.pattern = regexp.MustCompile(`(\$\(port:)([0-9]+)\)`)
-	r.portMap = make(map[int]Port)
+	portMap map[int]int
 }
 
 // inject port.
 func (r *PortInjector) inject(in string) (out string) {
-	r.init()
+	if r.portMap == nil {
+		r.portMap = make(map[int]int)
+	}
 	out = in
 	for {
-		match := r.pattern.FindStringSubmatch(out)
+		match := PortRegex.FindStringSubmatch(out)
 		if len(match) < 3 {
 			break
 		}
 		base, _ := strconv.Atoi(match[2])
-		port := r.portMap[base]
+		offset := r.portMap[base]
 		out = strings.Replace(
 			out,
 			match[0],
-			strconv.Itoa(base+port.next),
+			strconv.Itoa(base+offset),
 			-1)
-		port.matched++
-		r.portMap[base] = port
+		offset++
+		r.portMap[base] = offset
 	}
 	return
-}
-
-// next increment offsets and reset matched.
-func (r *PortInjector) next() {
-	r.init()
-	for base, port := range r.portMap {
-		if port.matched > 0 {
-			port.matched = 0
-			port.next++
-			r.portMap[base] = port
-		}
-	}
 }
