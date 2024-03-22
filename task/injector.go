@@ -19,7 +19,28 @@ type Injector struct {
 
 // Inject process macros.
 func (r *Injector) Inject(container *core.Container) {
-	for _, env := range container.Env {
+	var injected []string
+	for i := range container.Command {
+		if i > 0 {
+			injected = append(
+				injected,
+				r.port.inject(container.Command[i]))
+		} else {
+			injected = append(
+				injected,
+				container.Command[i])
+		}
+	}
+	container.Command = injected
+	injected = nil
+	for i := range container.Args {
+		injected = append(
+			injected,
+			r.port.inject(container.Args[i]))
+	}
+	container.Args = injected
+	for i := range container.Env {
+		env := &container.Env[i]
 		env.Value = r.port.inject(env.Value)
 	}
 }
