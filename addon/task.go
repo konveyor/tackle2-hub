@@ -287,7 +287,7 @@ func (r *EnvInjector) Inject(extensions []api.Extension) {
 		b, _ := json.Marshal(extension.Metadata)
 		_ = json.Unmarshal(b, &mp)
 		mp = r.inject(mp).(map[string]any)
-		extension.Metadata, _ = json.Marshal(mp)
+		extension.Metadata = mp
 	}
 }
 
