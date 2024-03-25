@@ -129,12 +129,6 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-// Client returns the binding rich-client.
-func (h *Adapter) Client() (client binding.Client) {
-	client = *h.client
-	return
-}
-
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
 	richClient := binding.New(Settings.Addon.Hub.URL)

@@ -31,12 +31,6 @@ func (h *Task) Load() {
 	return
 }
 
-// Task returns the embedded resource.
-func (h *Task) Task() (r api.Task) {
-	r = *h.task
-	return
-}
-
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
 	appRef := h.task.Application
