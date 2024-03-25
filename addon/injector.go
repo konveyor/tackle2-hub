@@ -69,13 +69,11 @@ func (r *ResourceInjector) Build(task *Task, extension *api.Extension) (dict map
 				err = nErr
 				return
 			}
-			if !found {
-				err = &NotFound{}
-				return
-			}
-			err = r.add(&injector, identity)
-			if err != nil {
-				return
+			if found {
+				err = r.add(&injector, identity)
+				if err != nil {
+					return
+				}
 			}
 		default:
 			err = &UnknownInjector{Kind: parsed[0]}
