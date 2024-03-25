@@ -31,6 +31,12 @@ func (h *Task) Load() {
 	return
 }
 
+// Task returns the embedded resource.
+func (h *Task) Task() (r api.Task) {
+	r = *h.task
+	return
+}
+
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
 	appRef := h.task.Application
@@ -59,14 +65,8 @@ func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	}
 	for i := range r.Extensions {
 		extension := &r.Extensions[i]
-		rj := ResourceInjector{}
-		var dict map[string]string
-		dict, err = rj.Build(h, extension)
-		if err != nil {
-			return
-		}
-		mj := MetaInjector{dict: dict}
-		mj.Inject(extension)
+		injector := EnvInjector{}
+		injector.Inject(extension)
 	}
 	return
 }
