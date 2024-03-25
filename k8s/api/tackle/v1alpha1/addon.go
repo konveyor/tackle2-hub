@@ -32,8 +32,6 @@ type AddonSpec struct {
 	Extension []Selector `json:"extension,omitempty"`
 	// Container details.
 	Container core.Container `json:"container,omitempty"`
-	// Resources
-	Resources []Injector `json:"resources"`
 	// Metadata details.
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }

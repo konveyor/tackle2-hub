@@ -30,8 +30,6 @@ type ExtensionSpec struct {
 	Capability string `json:"capability,omitempty"`
 	// Container details.
 	Container core.Container `json:"container"`
-	// Resource injectors.
-	Resources []Injector `json:"resources"`
 	// Metadata details.
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
