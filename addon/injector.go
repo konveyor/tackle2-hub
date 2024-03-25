@@ -32,7 +32,7 @@ func (e *UnknownInjector) Is(err error) (matched bool) {
 	return
 }
 
-// UnknownField used to report an unknown injector.
+// UnknownField used to report an unknown resource field..
 type UnknownField struct {
 	Kind  string
 	Field string
@@ -48,10 +48,12 @@ func (e *UnknownField) Is(err error) (matched bool) {
 	return
 }
 
+// ResourceInjector supports hub resource injection.
 type ResourceInjector struct {
 	dict map[string]string
 }
 
+// Build returns  the built resource dictionary.
 func (r *ResourceInjector) Build(task *Task, extension *api.Extension) (dict map[string]string, err error) {
 	richClient := task.richClient
 	r.dict = make(map[string]string)
@@ -84,6 +86,7 @@ func (r *ResourceInjector) Build(task *Task, extension *api.Extension) (dict map
 	return
 }
 
+// add the resource fields specified in the injector.
 func (r *ResourceInjector) add(injector *crd.Injector, object any) (err error) {
 	objectMap := r.objectMap(object)
 	for _, f := range injector.Fields {
@@ -105,6 +108,7 @@ func (r *ResourceInjector) add(injector *crd.Injector, object any) (err error) {
 	return
 }
 
+// write a resource field value to a file.
 func (r *ResourceInjector) write(path string, s string) (err error) {
 	f, err := os.Create(path)
 	if err == nil {
@@ -114,6 +118,7 @@ func (r *ResourceInjector) write(path string, s string) (err error) {
 	return
 }
 
+// string returns a string representation of a field value.
 func (r *ResourceInjector) string(object any) (s string) {
 	if object != nil {
 		s = fmt.Sprintf("%v", object)
@@ -121,6 +126,7 @@ func (r *ResourceInjector) string(object any) (s string) {
 	return
 }
 
+// objectMap returns a map for a resource object.
 func (r *ResourceInjector) objectMap(object any) (mp map[string]any) {
 	b, _ := json.Marshal(object)
 	mp = make(map[string]any)
@@ -144,6 +150,9 @@ func (r *MetaInjector) Inject(extension *api.Extension) {
 	extension.Metadata = mp
 }
 
+// buildEnv builds the `env`.
+// Maps EXTENSION_<extension>_<envar> found in the addon environment to its
+// original unqualified name in the extension environment.
 func (r *MetaInjector) buildEnv(extension *api.Extension) {
 	r.env = make(map[string]string)
 	for _, env := range extension.Container.Env {
@@ -158,6 +167,8 @@ func (r *MetaInjector) buildEnv(extension *api.Extension) {
 	}
 }
 
+// inject replaces both `dict` keys and `env` environment
+// variables referenced in metadata.
 func (r *MetaInjector) inject(in any) (out any) {
 	switch node := in.(type) {
 	case map[string]any:
