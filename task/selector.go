@@ -11,7 +11,7 @@ import (
 )
 
 // NewSelector returns a configured selector.
-func NewSelector(p crd.AddonSelector, r Resolver) (selector Selector, err error) {
+func NewSelector(p crd.Selector, r Resolver) (selector Selector, err error) {
 	match := p.Match
 	parsed := ParsedSelector{}
 	part := strings.SplitN(match, "/", 2)
@@ -32,16 +32,16 @@ func NewSelector(p crd.AddonSelector, r Resolver) (selector Selector, err error)
 	switch parsed.kind {
 	case "":
 		selector = &BaseSelector{
-			AddonSelector: p,
-			resolver:      r,
-			parsed:        parsed,
+			Selector: p,
+			resolver: r,
+			parsed:   parsed,
 		}
 	case "tag":
 		selector = &TagSelector{
 			BaseSelector: BaseSelector{
-				AddonSelector: p,
-				resolver:      r,
-				parsed:        parsed,
+				Selector: p,
+				resolver: r,
+				parsed:   parsed,
 			}}
 	default:
 		err = &UnknownSelector{Kind: parsed.kind}
@@ -57,7 +57,7 @@ type Selector interface {
 
 // BaseSelector -
 type BaseSelector struct {
-	crd.AddonSelector
+	crd.Selector
 	resolver Resolver
 	parsed   ParsedSelector
 }

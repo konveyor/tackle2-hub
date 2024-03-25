@@ -20,19 +20,10 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AddonSelector
-// tag:category=tag
-// platform:target=kind
-type AddonSelector struct {
-	Match      string `json:"match,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Capability string `json:"capability,omitempty"`
-}
-
 // TaskSpec defines the desired state of Task
 type TaskSpec struct {
 	// Addon selector.
-	Addon []AddonSelector `json:"addon,omitempty"`
+	Addon []Selector `json:"addon,omitempty"`
 }
 
 // TaskStatus defines the observed state of Task

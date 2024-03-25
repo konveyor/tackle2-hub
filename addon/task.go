@@ -3,8 +3,6 @@ package addon
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"regexp"
 	"strings"
 
 	"github.com/konveyor/tackle2-hub/api"
@@ -56,9 +54,19 @@ func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	if err != nil {
 		return
 	}
-	if inject {
-		injector := EnvInjector{}
-		injector.Inject(r.Extensions)
+	if !inject {
+		return
+	}
+	for i := range r.Extensions {
+		extension := &r.Extensions[i]
+		rj := ResourceInjector{}
+		var dict map[string]string
+		dict, err = rj.Build(h, extension)
+		if err != nil {
+			return
+		}
+		mj := MetaInjector{dict: dict}
+		mj.Inject(extension)
 	}
 	return
 }
@@ -267,61 +275,6 @@ func (h *Task) pushReport() {
 		err = client.Post(path, &h.report)
 	} else {
 		err = client.Put(path, &h.report)
-	}
-	return
-}
-
-var (
-	EnvRegex = regexp.MustCompile(`(\${)([^}]+)(})`)
-)
-
-// EnvInjector inject ENVAR into extension metadata.
-type EnvInjector struct {
-}
-
-// Inject inject ENVAR into extension metadata.
-func (r *EnvInjector) Inject(extensions []api.Extension) {
-	for i := range extensions {
-		extension := &extensions[i]
-		mp := make(map[string]any)
-		b, _ := json.Marshal(extension.Metadata)
-		_ = json.Unmarshal(b, &mp)
-		mp = r.inject(mp).(map[string]any)
-		extension.Metadata = mp
-	}
-}
-
-// inject ENVAR into extension metadata.
-func (r *EnvInjector) inject(in any) (out any) {
-	switch node := in.(type) {
-	case map[string]any:
-		for k, v := range node {
-			node[k] = r.inject(v)
-		}
-		out = node
-	case []any:
-		var injected []any
-		for _, n := range node {
-			injected = append(
-				injected,
-				r.inject(n))
-		}
-		out = injected
-	case string:
-		for {
-			match := EnvRegex.FindStringSubmatch(node)
-			if len(match) < 3 {
-				break
-			}
-			node = strings.Replace(
-				node,
-				match[0],
-				os.Getenv(match[2]),
-				-1)
-		}
-		out = node
-	default:
-		out = node
 	}
 	return
 }

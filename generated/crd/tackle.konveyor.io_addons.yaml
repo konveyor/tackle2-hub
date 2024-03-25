@@ -1245,7 +1245,7 @@ spec:
               extension:
                 description: Extension selector.
                 items:
-                  description: AddonSelector tag:category=tag platform:target=kind
+                  description: Selector tag:category=tag platform:target=kind
                   properties:
                     capability:
                       type: string

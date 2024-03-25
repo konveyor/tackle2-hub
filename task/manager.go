@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -897,9 +898,11 @@ func (r *Task) containers(
 		},
 	}
 	plain = append(plain, addon.Spec.Container)
+	plain[0].Name = "addon"
 	for i := range extensions {
 		extension := &extensions[i]
 		container := extension.Spec.Container
+		container.Name = extension.Name
 		plain = append(
 			plain,
 			container)
@@ -908,6 +911,7 @@ func (r *Task) containers(
 	for i := range plain {
 		container := &plain[i]
 		injector.Inject(container)
+		r.propagateEnv(&plain[0], container)
 		container.SecurityContext = &core.SecurityContext{
 			RunAsUser: &userid,
 		}
@@ -937,6 +941,25 @@ func (r *Task) containers(
 			})
 	}
 	return
+}
+
+// propagateEnv copies extension container Env.* to the addon container.
+// Prefixed with EXTENSION_<name>.
+func (r *Task) propagateEnv(addon, extension *core.Container) {
+	for _, env := range extension.Env {
+		addon.Env = append(
+			addon.Env,
+			core.EnvVar{
+				Name: strings.Join(
+					[]string{
+						"EXTENSION",
+						strings.ToUpper(extension.Name),
+						env.Name,
+					},
+					"_"),
+				Value: env.Value,
+			})
+	}
 }
 
 // secret builds the pod secret.
