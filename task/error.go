@@ -70,11 +70,15 @@ func (e *ExtensionNotFound) Is(err error) (matched bool) {
 // ExtensionNotValid used to report extension referenced
 // by a task not valid with addon.
 type ExtensionNotValid struct {
-	Name string
+	Name  string
+	Addon string
 }
 
 func (e *ExtensionNotValid) Error() (s string) {
-	return fmt.Sprintf("Extension: '%s' not-valid with addon.", e.Name)
+	return fmt.Sprintf(
+		"Extension: '%s' not-valid with addon '%s'.",
+		e.Name,
+		e.Addon)
 }
 
 func (e *ExtensionNotValid) Is(err error) (matched bool) {
@@ -83,17 +87,17 @@ func (e *ExtensionNotValid) Is(err error) (matched bool) {
 	return
 }
 
-// UnknownSelector reports unknown selector.
-type UnknownSelector struct {
+// SelectorNotSupported reports unknown selector.
+type SelectorNotSupported struct {
 	Kind string
 }
 
-func (e *UnknownSelector) Error() (s string) {
-	return fmt.Sprintf("Selector: '%s' unknown. Not supported.", e.Kind)
+func (e *SelectorNotSupported) Error() (s string) {
+	return fmt.Sprintf("Selector: '%s' not supported.", e.Kind)
 }
 
-func (e *UnknownSelector) Is(err error) (matched bool) {
-	var inst *UnknownSelector
+func (e *SelectorNotSupported) Is(err error) (matched bool) {
+	var inst *SelectorNotSupported
 	matched = errors.As(err, &inst)
 	return
 }

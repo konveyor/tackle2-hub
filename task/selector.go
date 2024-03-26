@@ -29,7 +29,9 @@ func NewSelector(p crd.Selector, r Resolver) (selector Selector, err error) {
 				parsed:   parsed,
 			}}
 	default:
-		err = &UnknownSelector{Kind: parsed.kind}
+		err = &SelectorNotSupported{
+			Kind: parsed.kind,
+		}
 	}
 	return
 }

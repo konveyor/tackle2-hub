@@ -434,7 +434,10 @@ func (r *Task) Run(db *gorm.DB, client k8s.Client) (err error) {
 	}
 	for _, extension := range extensions {
 		if r.Addon != extension.Spec.Addon {
-			err = &ExtensionNotValid{extension.Name}
+			err = &ExtensionNotValid{
+				Name:  extension.Name,
+				Addon: addon.Name,
+			}
 			return
 		}
 	}

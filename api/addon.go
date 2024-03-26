@@ -111,7 +111,6 @@ type Addon struct {
 	Capability string         `json:"capability,omitempty"`
 	Container  core.Container `json:"container"`
 	Extensions []Extension    `json:"extensions,omitempty"`
-	Resources  []crd.Injector `json:"resources"`
 	Metadata   any            `json:"metadata,omitempty"`
 }
 
@@ -120,7 +119,6 @@ func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 	r.Name = m.Name
 	r.Capability = m.Spec.Capability
 	r.Container = m.Spec.Container
-	r.Resources = m.Spec.Resources
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}
@@ -139,7 +137,6 @@ type Extension struct {
 	Addon      string         `json:"addon"`
 	Capability string         `json:"capability,omitempty"`
 	Container  core.Container `json:"container"`
-	Resources  []crd.Injector `json:"resources"`
 	Metadata   any            `json:"metadata,omitempty"`
 }
 
@@ -149,7 +146,6 @@ func (r *Extension) With(m *crd.Extension) {
 	r.Addon = m.Spec.Capability
 	r.Capability = m.Spec.Capability
 	r.Container = m.Spec.Container
-	r.Resources = m.Spec.Resources
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}
