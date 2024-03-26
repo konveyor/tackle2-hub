@@ -12,23 +12,8 @@ import (
 
 // NewSelector returns a configured selector.
 func NewSelector(p crd.Selector, r Resolver) (selector Selector, err error) {
-	match := p.Match
 	parsed := ParsedSelector{}
-	part := strings.SplitN(match, "/", 2)
-	if len(part) > 1 {
-		parsed.ns = part[0]
-		match = part[1]
-	}
-	part = strings.SplitN(match, ":", 2)
-	if len(part) > 1 {
-		parsed.kind = part[0]
-		match = part[1]
-	}
-	part = strings.SplitN(match, "=", 2)
-	parsed.name = part[0]
-	if len(part) > 1 {
-		parsed.value = part[1]
-	}
+	parsed.With(p.Match)
 	switch parsed.kind {
 	case "":
 		selector = &BaseSelector{
@@ -83,6 +68,25 @@ type ParsedSelector struct {
 	kind  string
 	name  string
 	value string
+}
+
+// With parses and populates the selector.
+func (p *ParsedSelector) With(s string) {
+	part := strings.SplitN(s, "/", 2)
+	if len(part) > 1 {
+		p.ns = part[0]
+		s = part[1]
+	}
+	part = strings.SplitN(s, ":", 2)
+	if len(part) > 1 {
+		p.kind = part[0]
+		s = part[1]
+	}
+	part = strings.SplitN(s, "=", 2)
+	p.name = part[0]
+	if len(part) > 1 {
+		p.value = part[1]
+	}
 }
 
 // TagSelector matches resources by tag.
