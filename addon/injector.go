@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	EnvRegex = regexp.MustCompile(`(\${)([^}]+)(})`)
+	EnvRegex = regexp.MustCompile(`(\$\()([^)]+)(\))`)
 )
 
 // EnvInjector inject key into extension metadata.
@@ -30,7 +30,7 @@ func (r *EnvInjector) Inject(extension *api.Extension) {
 }
 
 // buildEnv builds the `env`.
-// Maps EXTENSION_<extension>_<envar> found in the addon environment to its
+// Maps EXTENSION_<extension>_<var> found in the addon environment to its
 // original unqualified name in the extension environment.
 func (r *EnvInjector) buildEnv(extension *api.Extension) {
 	r.env = make(map[string]string)
