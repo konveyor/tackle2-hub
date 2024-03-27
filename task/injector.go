@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	PortRegex = regexp.MustCompile(`(\${port:)([0-9]+)}`)
+	SeqRegex = regexp.MustCompile(`(\${seq:)([0-9]+)}`)
 )
 
 // Injector macro processor.
 type Injector struct {
-	port PortInjector
+	seq SeqInjector
 }
 
 // Inject process macros.
@@ -24,7 +24,7 @@ func (r *Injector) Inject(container *core.Container) {
 		if i > 0 {
 			injected = append(
 				injected,
-				r.port.inject(container.Command[i]))
+				r.seq.inject(container.Command[i]))
 		} else {
 			injected = append(
 				injected,
@@ -36,28 +36,28 @@ func (r *Injector) Inject(container *core.Container) {
 	for i := range container.Args {
 		injected = append(
 			injected,
-			r.port.inject(container.Args[i]))
+			r.seq.inject(container.Args[i]))
 	}
 	container.Args = injected
 	for i := range container.Env {
 		env := &container.Env[i]
-		env.Value = r.port.inject(env.Value)
+		env.Value = r.seq.inject(env.Value)
 	}
 }
 
-// PortInjector provides ${port:<pool>} injection.
-type PortInjector struct {
+// SeqInjector provides ${seq:<pool>} sequence injection.
+type SeqInjector struct {
 	portMap map[int]int
 }
 
-// inject port.
-func (r *PortInjector) inject(in string) (out string) {
+// inject next integer.
+func (r *SeqInjector) inject(in string) (out string) {
 	if r.portMap == nil {
 		r.portMap = make(map[int]int)
 	}
 	out = in
 	for {
-		match := PortRegex.FindStringSubmatch(out)
+		match := SeqRegex.FindStringSubmatch(out)
 		if len(match) < 3 {
 			break
 		}
