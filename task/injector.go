@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	PortRegex = regexp.MustCompile(`(%{port:)([0-9]+)}`)
+	PortRegex = regexp.MustCompile(`(\${port:)([0-9]+)}`)
 )
 
 // Injector macro processor.
@@ -45,7 +45,7 @@ func (r *Injector) Inject(container *core.Container) {
 	}
 }
 
-// PortInjector provides %{port:<pool>} injection.
+// PortInjector provides ${port:<pool>} injection.
 type PortInjector struct {
 	portMap map[int]int
 }
