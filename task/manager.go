@@ -931,6 +931,14 @@ func (r *Task) containers(
 		container.Env = append(
 			container.Env,
 			core.EnvVar{
+				Name:  settings.EnvSharedPath,
+				Value: Settings.Shared.Path,
+			},
+			core.EnvVar{
+				Name:  settings.EnvCachePath,
+				Value: Settings.Cache.Path,
+			},
+			core.EnvVar{
 				Name:  settings.EnvHubBaseURL,
 				Value: Settings.Addon.Hub.URL,
 			},
