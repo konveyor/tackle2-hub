@@ -636,7 +636,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, r.token.Token)
+		request.Header.Set(api.Authorization, "Bearer "+r.token.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
