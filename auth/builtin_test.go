@@ -27,6 +27,14 @@ func TestParseToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "Empty Bearer token no whitespace",
+			args: args{
+				requestToken: "Bearer",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
 			name: "Empty request Token",
 			args: args{
 				requestToken: "",
@@ -45,13 +53,13 @@ func TestParseToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseToken(tt.args.requestToken)
+			got, err := parseToken(tt.args.requestToken)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseToken() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("ParseToken() = %v, want %v", got, tt.want)
+				t.Errorf("parseToken() = %v, want %v", got, tt.want)
 			}
 		})
 	}

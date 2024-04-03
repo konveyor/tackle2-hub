@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -22,7 +21,8 @@ type Validator interface {
 }
 
 // NoAuth provider always permits access.
-type NoAuth struct{}
+type NoAuth struct {
+}
 
 // NewToken creates a new signed token.
 func (r NoAuth) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
@@ -59,33 +59,31 @@ func (r *NoAuth) Refresh(refresh string) (token Token, err error) {
 }
 
 // Builtin auth provider.
-type Builtin struct{}
+type Builtin struct {
+}
 
 // Parse Token out of a string
-func ParseToken(requestToken string) (string, error) {
-	splitToken := strings.Split(requestToken, " ")
-	if splitToken[0] != "Bearer" {
-		return "", errors.New("authentication header not of type bearer")
+func parseToken(requestToken string) (token string, err error) {
+	splitToken := strings.Fields(requestToken)
+	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
+		err = liberr.Wrap(&NotValid{Token: requestToken})
+		return
 	}
-	token := strings.TrimSpace(splitToken[1])
-	if len(token) < 1 {
-		return "", errors.New("no authentication header found")
-	}
-
-	return token, nil
+	token = splitToken[1]
+	return
 }
 
 // Authenticate the token
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
-	token, err := ParseToken(request.Token)
-	if err != nil {
-		return nil, err
-	}
 	defer func() {
 		if err != nil {
 			Log.Info(err.Error())
 		}
 	}()
+	token, err := parseToken(request.Token)
+	if err != nil {
+		return
+	}
 	jwToken, err = jwt.Parse(
 		token,
 		func(jwToken *jwt.Token) (secret interface{}, err error) {
