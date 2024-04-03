@@ -385,7 +385,7 @@ func (r *Archetype) With(m *model.Archetype) {
 		ref.With(m.Review.ID, "")
 		r.Review = ref
 	}
-	r.Risk = assessment.RiskUnknown
+	r.Risk = assessment.RiskUnassessed
 }
 
 // WithResolver uses an ArchetypeResolver to update the resource with
