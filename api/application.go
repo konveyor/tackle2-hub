@@ -1136,7 +1136,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 		})
 		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
 	}
-	r.Risk = assessment.RiskUnknown
+	r.Risk = assessment.RiskUnassessed
 }
 
 // WithVirtualTags updates the resource with tags derived from assessments.

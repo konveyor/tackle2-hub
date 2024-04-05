@@ -8,10 +8,11 @@ import (
 
 // Assessment risk
 const (
-	RiskUnknown = "unknown"
-	RiskRed     = "red"
-	RiskYellow  = "yellow"
-	RiskGreen   = "green"
+	RiskUnassessed = "unassessed"
+	RiskUnknown    = "unknown"
+	RiskRed        = "red"
+	RiskYellow     = "yellow"
+	RiskGreen      = "green"
 )
 
 // Assessment status
@@ -43,26 +44,23 @@ const (
 
 // Risk returns the single highest risk score for a group of assessments.
 func Risk(assessments []Assessment) (risk string) {
-	risk = RiskUnknown
+	// Return "unassessed" immediately if there are no assessments
 	if len(assessments) == 0 {
-		return
+		return RiskUnassessed
 	}
-	red := 0
-	yellow := 0
-	unknown := 0
-	green := 0
-	if len(assessments) > 0 {
-		for _, a := range assessments {
-			switch a.Risk() {
-			case RiskRed:
-				red++
-			case RiskYellow:
-				yellow++
-			case RiskGreen:
-				green++
-			default:
-				unknown++
-			}
+
+	red, yellow, unknown, green := 0, 0, 0, 0
+
+	for _, a := range assessments {
+		switch a.Risk() {
+		case RiskRed:
+			red++
+		case RiskYellow:
+			yellow++
+		case RiskGreen:
+			green++
+		default:
+			unknown++
 		}
 	}
 
