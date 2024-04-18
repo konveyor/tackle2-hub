@@ -178,7 +178,7 @@ func (m *Manager) startReady() {
 				continue
 			}
 			rt := Task{ready}
-			err := rt.Run(m.Client)
+			started, err := rt.Run(m.Client)
 			if err != nil {
 				if errors.Is(err, &AddonNotFound{}) {
 					ready.Error("Error", err.Error())
@@ -189,7 +189,7 @@ func (m *Manager) startReady() {
 				Log.Error(err, "")
 				continue
 			}
-			if ready.State == Pending {
+			if started {
 				Log.Info("Task started.", "id", ready.ID)
 				if ready.Retries == 0 {
 					metrics.TasksInitiated.Inc()
@@ -287,7 +287,7 @@ type Task struct {
 }
 
 // Run the specified task.
-func (r *Task) Run(client k8s.Client) (err error) {
+func (r *Task) Run(client k8s.Client) (started bool, err error) {
 	mark := time.Now()
 	defer func() {
 		if err == nil {
@@ -350,6 +350,7 @@ func (r *Task) Run(client k8s.Client) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	started = true
 	r.Started = &mark
 	r.State = Pending
 	r.Pod = path.Join(
