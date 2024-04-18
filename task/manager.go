@@ -180,15 +180,15 @@ func (m *Manager) startReady() {
 			rt := Task{ready}
 			started, err := rt.Run(m.Client)
 			if err != nil {
-				if errors.Is(err, &AddonNotFound{}) {
-					ready.Error("Error", err.Error())
-					ready.State = Failed
-					sErr := m.DB.Save(ready).Error
-					Log.Error(sErr, "")
-				}
 				Log.Error(err, "")
+				ready.Error("Error", err.Error())
+				ready.State = Failed
+				sErr := m.DB.Save(ready).Error
+				Log.Error(sErr, "")
 				continue
 			}
+			err = m.DB.Save(ready).Error
+			Log.Error(err, "")
 			if started {
 				Log.Info("Task started.", "id", ready.ID)
 				if ready.Retries == 0 {
@@ -298,9 +298,13 @@ func (r *Task) Run(client k8s.Client) (started bool, err error) {
 			err = nil
 			return
 		}
-		r.Error("Error", err.Error())
-		r.Terminated = &mark
-		r.State = Failed
+		if errors.Is(err, &AddonNotFound{}) {
+			r.Error("Error", err.Error())
+			r.Terminated = &mark
+			r.State = Failed
+			err = nil
+			return
+		}
 	}()
 	addon, err := r.findAddon(client, r.Addon)
 	if err != nil {
@@ -374,9 +378,9 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 			r.Pod = ""
 			r.State = Ready
 			err = nil
-			return
+		} else {
+			err = liberr.Wrap(err)
 		}
-		err = liberr.Wrap(err)
 		return
 	}
 	mark := time.Now()
