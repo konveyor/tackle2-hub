@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -61,6 +62,36 @@ func (e *AddonNotFound) Error() (s string) {
 
 func (e *AddonNotFound) Is(err error) (matched bool) {
 	_, matched = err.(*AddonNotFound)
+	return
+}
+
+// QuotaExceeded report quota exceeded.
+type QuotaExceeded struct {
+	Reason string
+}
+
+// Match returns true when the error is Forbidden due to quota exceeded.
+func (e *QuotaExceeded) Match(err error) (matched bool) {
+	if k8serr.IsForbidden(err) {
+		matched = true
+		e.Reason = err.Error()
+		for _, s := range []string{"quota", "exceeded"} {
+			matched = strings.Contains(e.Reason, s)
+			if !matched {
+				break
+			}
+		}
+	}
+	return
+}
+
+func (e *QuotaExceeded) Error() (s string) {
+	return e.Reason
+}
+
+func (e *QuotaExceeded) Is(err error) (matched bool) {
+	var inst *QuotaExceeded
+	matched = errors.As(err, &inst)
 	return
 }
 
@@ -146,9 +177,6 @@ func (m *Manager) startReady() {
 				Log.Error(sErr, "")
 				continue
 			}
-			if ready.Retries == 0 {
-				metrics.TasksInitiated.Inc()
-			}
 			rt := Task{ready}
 			err := rt.Run(m.Client)
 			if err != nil {
@@ -161,9 +189,12 @@ func (m *Manager) startReady() {
 				Log.Error(err, "")
 				continue
 			}
-			Log.Info("Task started.", "id", ready.ID)
-			err = m.DB.Save(ready).Error
-			Log.Error(err, "")
+			if ready.State == Pending {
+				Log.Info("Task started.", "id", ready.ID)
+				if ready.Retries == 0 {
+					metrics.TasksInitiated.Inc()
+				}
+			}
 		default:
 			// Ignored.
 			// Other states included to support
@@ -259,11 +290,17 @@ type Task struct {
 func (r *Task) Run(client k8s.Client) (err error) {
 	mark := time.Now()
 	defer func() {
-		if err != nil {
-			r.Error("Error", err.Error())
-			r.Terminated = &mark
-			r.State = Failed
+		if err == nil {
+			return
 		}
+		if errors.Is(err, &QuotaExceeded{}) {
+			Log.V(1).Info(err.Error())
+			err = nil
+			return
+		}
+		r.Error("Error", err.Error())
+		r.Terminated = &mark
+		r.State = Failed
 	}()
 	addon, err := r.findAddon(client, r.Addon)
 	if err != nil {
@@ -288,6 +325,10 @@ func (r *Task) Run(client k8s.Client) (err error) {
 	pod := r.pod(addon, owner, &secret)
 	err = client.Create(context.TODO(), &pod)
 	if err != nil {
+		qe := &QuotaExceeded{err.Error()}
+		if qe.Match(err) {
+			err = qe
+		}
 		err = liberr.Wrap(err)
 		return
 	}
@@ -329,10 +370,12 @@ func (r *Task) Reflect(client k8s.Client) (err error) {
 		pod)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
-			err = r.Run(client)
-		} else {
-			err = liberr.Wrap(err)
+			r.Pod = ""
+			r.State = Ready
+			err = nil
+			return
 		}
+		err = liberr.Wrap(err)
 		return
 	}
 	mark := time.Now()
