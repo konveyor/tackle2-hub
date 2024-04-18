@@ -173,8 +173,8 @@ func (m *Manager) startReady() {
 			if m.postpone(ready, list) {
 				ready.State = Postponed
 				Log.Info("Task postponed.", "id", ready.ID)
-				sErr := m.DB.Save(ready).Error
-				Log.Error(sErr, "")
+				err := m.DB.Save(ready).Error
+				Log.Error(err, "")
 				continue
 			}
 			rt := Task{ready}
@@ -183,8 +183,8 @@ func (m *Manager) startReady() {
 				Log.Error(err, "")
 				ready.Error("Error", err.Error())
 				ready.State = Failed
-				sErr := m.DB.Save(ready).Error
-				Log.Error(sErr, "")
+				err = m.DB.Save(ready).Error
+				Log.Error(err, "")
 				continue
 			}
 			err = m.DB.Save(ready).Error
