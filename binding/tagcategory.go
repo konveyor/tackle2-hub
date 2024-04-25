@@ -74,10 +74,10 @@ func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 		}
 		found := false
 		if errors.Is(err, &Conflict{}) {
-			var fetched *api.TagCategory
-			fetched, found, err = h.Find(wanted.Name)
+			var cat *api.TagCategory
+			cat, found, err = h.Find(wanted.Name)
 			if found {
-				*wanted = *fetched
+				*wanted = *cat
 				break
 			}
 		}
