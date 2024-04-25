@@ -68,7 +68,7 @@ func (h *Tag) Find(name string, category uint) (r *api.Tag, found bool, err erro
 
 // Ensure a tag exists.
 func (h *Tag) Ensure(wanted *api.Tag) (err error) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		err = h.Create(wanted)
 		if err == nil {
 			return

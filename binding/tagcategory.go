@@ -67,7 +67,7 @@ func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err err
 
 // Ensure a tag-type exists.
 func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		err = h.Create(wanted)
 		if err == nil {
 			return
