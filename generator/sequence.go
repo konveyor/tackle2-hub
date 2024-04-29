@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/konveyor/tackle2-hub/migration/v3/model"
 	"gorm.io/gorm"
 )
 
@@ -19,19 +18,19 @@ type generator struct {
 }
 
 // Load highest key for all models.
-func (r *generator) Load(db *gorm.DB) (err error) {
+func (r *generator) Load(db *gorm.DB, models []any) (err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.keySet = make(map[string]uint)
-	for _, m := range model.All() {
+	for _, m := range models {
 		mt := reflect.TypeOf(m)
 		list := make([]map[string]any, 0)
 		kind := strings.ToUpper(mt.Name())
-		db = db.Table(kind)
-		q := db.Select("ID")
+		q := db.Table(kind)
+		q = q.Select("ID")
 		err = q.Find(&list).Error
 		if err != nil {
-			r.keySet[kind] = uint(9999999)
+			r.keySet[kind] = uint(0)
 			continue
 		}
 		for _, m := range list {
@@ -64,14 +63,14 @@ func (r *generator) Load(db *gorm.DB) (err error) {
 }
 
 // Next returns the next primary key.
-func (r *generator) Next(m any) (id uint) {
+func (r *generator) Next(kind string) (id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	mt := reflect.TypeOf(m)
-	kind := strings.ToUpper(mt.Name())
+	kind = strings.ToUpper(kind)
 	id, found := r.keySet[kind]
 	if found {
-		r.keySet[kind] = id + 1
+		id++
+		r.keySet[kind] = id
 	}
 	return
 }

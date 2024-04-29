@@ -7,6 +7,8 @@ import (
 // Field (data) types.
 type JSON = model.JSON
 
+var ALL = model.All()
+
 // Models
 type Model = model.Model
 type Application = model.Application

@@ -18,6 +18,7 @@ import (
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/migration"
+	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/seed"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -51,7 +52,7 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	err = generator.Sequence.Load(db)
+	err = generator.Sequence.Load(db, model.ALL)
 	if err != nil {
 		return
 	}
