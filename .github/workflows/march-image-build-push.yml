@@ -28,6 +28,8 @@ jobs:
         image_name: "tackle2-hub"
         image_namespace: "konveyor"
         image_registry: "quay.io"
+        extra-args: |
+          --build-arg SEED_BRANCH=${{ github.ref_name }} --build-arg STATIC_REPORT_TAG=${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
         quay_publish_robot: ${{ secrets.QUAY_PUBLISH_ROBOT }}
         quay_publish_token: ${{ secrets.QUAY_PUBLISH_TOKEN }}
         ref: ${{ github.ref }}

@@ -10,7 +10,8 @@ RUN if [ ! -d "${SEED_ROOT}" ]; then \
       git clone --branch ${SEED_BRANCH} https://github.com/${SEED_PROJECT} ${SEED_ROOT}; \
     fi
 
-FROM quay.io/konveyor/static-report as report
+ARG STATIC_REPORT_TAG=latest
+FROM quay.io/konveyor/static-report:${STATIC_REPORT_TAG} as report
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 ARG SEED_ROOT
