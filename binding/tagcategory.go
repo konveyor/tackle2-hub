@@ -1,8 +1,6 @@
 package binding
 
 import (
-	"errors"
-
 	"github.com/konveyor/tackle2-hub/api"
 )
 
@@ -67,20 +65,14 @@ func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err err
 
 // Ensure a tag-type exists.
 func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
-	for i := 0; i < 10; i++ {
+	tp, found, err := h.Find(wanted.Name)
+	if err != nil {
+		return
+	}
+	if !found {
 		err = h.Create(wanted)
-		if err == nil {
-			return
-		}
-		found := false
-		if errors.Is(err, &Conflict{}) {
-			var cat *api.TagCategory
-			cat, found, err = h.Find(wanted.Name)
-			if found {
-				*wanted = *cat
-				break
-			}
-		}
+	} else {
+		*wanted = *tp
 	}
 	return
 }

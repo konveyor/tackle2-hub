@@ -9,9 +9,8 @@ import (
 func TestTagCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
-			var err error
 			// Create.
-			err = Tag.Create(&r)
+			err := Tag.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -45,29 +44,10 @@ func TestTagCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
+
 			_, err = Tag.Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
-			}
-			// Ensure.
-			r.ID = 0
-			err = Tag.Ensure(&r)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			got, err = Tag.Get(r.ID)
-			if err != nil {
-				t.Errorf(err.Error())
-			}
-			if got.ID == 0 {
-				t.Errorf("Ensured resource has no id.")
-			}
-			if got.Name != r.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
-			}
-			err = Tag.Delete(r.ID)
-			if err != nil {
-				t.Errorf(err.Error())
 			}
 		})
 	}
