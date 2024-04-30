@@ -97,3 +97,4 @@ jobs:
     with:
       component_name: tackle2-hub
       api_hub_tests_ref: ${{ github.ref }}
+      api_tests_ref: release-0.3
