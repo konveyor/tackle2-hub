@@ -1,4 +1,4 @@
-package generator
+package generated
 
 import (
 	"reflect"
@@ -8,17 +8,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// Sequence singleton generator.
-var Sequence generator
+// PK singleton pk generator.
+var PK _PK
 
-// generator provides a primary key sequence.
-type generator struct {
+// PK provides a primary key sequence.
+type _PK struct {
 	keySet map[string]uint
 	mutex  sync.Mutex
 }
 
 // Load highest key for all models.
-func (r *generator) Load(db *gorm.DB, models []any) (err error) {
+func (r *_PK) Load(db *gorm.DB, models []any) (err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.keySet = make(map[string]uint)
@@ -31,6 +31,7 @@ func (r *generator) Load(db *gorm.DB, models []any) (err error) {
 		err = q.Find(&list).Error
 		if err != nil {
 			r.keySet[kind] = uint(0)
+			err = nil
 			continue
 		}
 		for _, m := range list {
@@ -63,7 +64,7 @@ func (r *generator) Load(db *gorm.DB, models []any) (err error) {
 }
 
 // Next returns the next primary key.
-func (r *generator) Next(kind string) (id uint) {
+func (r *_PK) Next(kind string) (id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	kind = strings.ToUpper(kind)

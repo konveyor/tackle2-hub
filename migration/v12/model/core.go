@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/encryption"
-	"github.com/konveyor/tackle2-hub/generator"
 	"gorm.io/gorm"
 )
 
@@ -20,13 +19,6 @@ type Model struct {
 	CreateTime time.Time `gorm:"<-:create;autoCreateTime"`
 	CreateUser string    `gorm:"<-:create"`
 	UpdateUser string
-}
-
-func (m *Model) BeforeCreate(db *gorm.DB) (err error) {
-	if m.ID == 0 {
-		m.ID = generator.Sequence.Next(db.Statement.Table)
-	}
-	return
 }
 
 type Setting struct {

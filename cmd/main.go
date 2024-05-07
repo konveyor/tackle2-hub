@@ -12,7 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/controller"
 	"github.com/konveyor/tackle2-hub/database"
-	"github.com/konveyor/tackle2-hub/generator"
+	"github.com/konveyor/tackle2-hub/generated"
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
@@ -52,7 +52,7 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	err = generator.Sequence.Load(db, model.ALL)
+	err = generated.PK.Load(db, model.ALL)
 	if err != nil {
 		return
 	}

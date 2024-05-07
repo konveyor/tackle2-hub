@@ -11,6 +11,7 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/generated"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
@@ -72,6 +73,10 @@ func Migrate(migrations []Migration) (err error) {
 		f := func(db *gorm.DB) (err error) {
 			log.Info("Running migration.", "version", ver)
 			err = m.Apply(db)
+			if err != nil {
+				return
+			}
+			err = generated.PK.Load(db, m.Models())
 			if err != nil {
 				return
 			}
