@@ -1604,6 +1604,14 @@ type Cluster struct {
 }
 
 func (k *Cluster) Refresh() (err error) {
+	if Settings.Hub.Disconnected {
+		k.tackle = &crd.Tackle{}
+		k.addons = make(map[string]*crd.Addon)
+		k.extensions = make(map[string]*crd.Extension)
+		k.tasks = make(map[string]*crd.Task)
+		k.pods = make(map[string]*core.Pod)
+		return
+	}
 	err = k.getTackle()
 	if err != nil {
 		return
