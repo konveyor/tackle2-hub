@@ -1249,6 +1249,8 @@ spec:
               task:
                 description: Task (kind) compatibility.
                 type: string
+            required:
+            - container
             type: object
           status:
             description: AddonStatus defines the observed state of Addon

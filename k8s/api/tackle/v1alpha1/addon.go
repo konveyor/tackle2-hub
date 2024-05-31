@@ -29,7 +29,7 @@ type AddonSpec struct {
 	// Selector
 	Selector string `json:"selector,omitempty"`
 	// Container details.
-	Container core.Container `json:"container,omitempty"`
+	Container core.Container `json:"container"`
 	// Metadata details.
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
