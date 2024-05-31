@@ -99,6 +99,7 @@ type Manager struct {
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
 	auth.Validators = append(
 		auth.Validators,
