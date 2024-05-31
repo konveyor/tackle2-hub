@@ -1572,6 +1572,7 @@ func (p *Priority) graph(task *Task, ready []*Task) (deps []*Task) {
 				continue
 			}
 			deps = append(deps, r)
+			deps = append(deps, p.graph(r, ready)...)
 		}
 	}
 	return
