@@ -1,42 +1,94 @@
 package task
 
 import (
-	"strings"
-
-	"github.com/konveyor/tackle2-hub/model"
+	"fmt"
+	"time"
 )
 
 // Rule defines postpone rules.
 type Rule interface {
-	Match(candidate, other *model.Task) bool
+	Match(ready, other *Task) (matched bool, reason string)
 }
 
 // RuleUnique running tasks must be unique by:
 //   - application
-//   - variant
 //   - addon.
 type RuleUnique struct {
+	matched map[uint]uint
 }
 
 // Match determines the match.
-func (r *RuleUnique) Match(candidate, other *model.Task) (matched bool) {
-	if candidate.ApplicationID == nil || other.ApplicationID == nil {
+func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
+	if ready.ApplicationID == nil || other.ApplicationID == nil {
 		return
 	}
-	if *candidate.ApplicationID != *other.ApplicationID {
+	if *ready.ApplicationID != *other.ApplicationID {
 		return
 	}
-	if candidate.Addon != other.Addon {
+	if ready.Addon != other.Addon {
+		return
+	}
+	if _, found := r.matched[other.ID]; found {
 		return
 	}
 	matched = true
-	Log.Info(
-		"Rule:Unique matched.",
-		"candidate",
-		candidate.ID,
-		"by",
+	r.matched[ready.ID] = other.ID
+	reason = fmt.Sprintf(
+		"Rule:Unique matched:%d, other:%d",
+		ready.ID,
 		other.ID)
+	Log.Info(reason)
+	return
+}
 
+// RuleDeps - Task kind dependencies.
+type RuleDeps struct {
+	cluster Cluster
+}
+
+// Match determines the match.
+func (r *RuleDeps) Match(ready, other *Task) (matched bool, reason string) {
+	if ready.Kind == "" || other.Kind == "" {
+		return
+	}
+	if *ready.ApplicationID != *other.ApplicationID {
+		return
+	}
+	def, found := r.cluster.tasks[ready.Kind]
+	if !found {
+		return
+	}
+	matched = def.HasDep(other.Kind)
+	reason = fmt.Sprintf(
+		"Rule:Dependency matched:%d, other:%d",
+		ready.ID,
+		other.ID)
+	Log.Info(reason)
+	return
+}
+
+// RulePreempted - preempted tasks postponed to prevent thrashing.
+type RulePreempted struct {
+}
+
+// Match determines the match.
+// Postpone based on a duration after the last preempted event.
+func (r *RulePreempted) Match(ready, _ *Task) (matched bool, reason string) {
+	preemption := Settings.Hub.Task.Preemption
+	if !preemption.Enabled {
+		return
+	}
+	mark := time.Now()
+	event, found := ready.LastEvent(Preempted)
+	if found {
+		if mark.Sub(event.Last) < preemption.Postponed {
+			matched = true
+			reason = fmt.Sprintf(
+				"Rule:Preempted id:%d",
+				ready.ID)
+			Log.Info(reason)
+		}
+	}
 	return
 }
 
@@ -45,30 +97,12 @@ type RuleIsolated struct {
 }
 
 // Match determines the match.
-func (r *RuleIsolated) Match(candidate, other *model.Task) (matched bool) {
-	matched = r.hasPolicy(candidate, Isolated) || r.hasPolicy(other, Isolated)
-	if matched {
-		Log.Info(
-			"Rule:Isolated matched.",
-			"candidate",
-			candidate.ID,
-			"by",
-			other.ID)
-	}
-
-	return
-}
-
-// Returns true if the task policy includes: isolated
-func (r *RuleIsolated) hasPolicy(task *model.Task, name string) (matched bool) {
-	for _, p := range strings.Split(task.Policy, ";") {
-		p = strings.TrimSpace(p)
-		p = strings.ToLower(p)
-		if p == name {
-			matched = true
-			break
-		}
-	}
-
+func (r *RuleIsolated) Match(ready, other *Task) (matched bool, reason string) {
+	matched = ready.Policy.Isolated || other.Policy.Isolated
+	reason = fmt.Sprintf(
+		"Rule:Isolated matched:%d, other:%d",
+		ready.ID,
+		other.ID)
+	Log.Info(reason)
 	return
 }

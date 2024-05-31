@@ -10,6 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/model"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
@@ -170,6 +171,15 @@ func ErrorHandler() gin.HandlerFunc {
 				http.StatusBadRequest,
 				bErr.Items,
 			)
+			return
+		}
+
+		if errors.Is(err, &tasking.BadRequest{}) {
+			rtx.Respond(
+				http.StatusBadRequest,
+				gin.H{
+					"error": err.Error(),
+				})
 			return
 		}
 

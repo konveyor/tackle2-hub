@@ -12,5 +12,6 @@ curl -X PUT ${host}/tasks/${id}/report -d \
     "status": "Running",
     "total": 10,
     "completed": 9,
-    "activity": "reading /files/application/dog.java."
+    "activity": ["reading /files/application/dog.java."],
+    "attached": [{"id":4,"name":"Test","activity":9}]
 }'

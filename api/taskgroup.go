@@ -1,14 +1,16 @@
 package api
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routes
@@ -110,18 +112,44 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = h.findRefs(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
+	db = db.Omit(clause.Associations)
 	m := r.Model()
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	switch r.State {
 	case "":
 		m.State = tasking.Created
 		fallthrough
 	case tasking.Created:
-		db = h.DB(ctx).Omit(clause.Associations)
+		result := db.Create(&m)
+		if result.Error != nil {
+			_ = ctx.Error(result.Error)
+			return
+		}
 	case tasking.Ready:
 		err := m.Propagate()
 		if err != nil {
 			return
+		}
+		result := db.Create(&m)
+		if result.Error != nil {
+			_ = ctx.Error(result.Error)
+			return
+		}
+		rtx := WithContext(ctx)
+		for i := range m.Tasks {
+			task := &tasking.Task{}
+			task.With(&m.Tasks[i])
+			task, err = rtx.TaskManager.Create(h.DB(ctx), task)
+			if err != nil {
+				_ = ctx.Error(err)
+				return
+			}
 		}
 	default:
 		h.Respond(ctx,
@@ -129,12 +157,6 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be ('''|Created|Ready)",
 			})
-		return
-	}
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := db.Create(&m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
 		return
 	}
 
@@ -165,19 +187,45 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = h.findRefs(ctx, updated)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Omit(
+		clause.Associations,
+		"BucketID",
+		"Bucket")
 	m := updated.Model()
-	m.ID = current.ID
+	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
-
-	omit := []string{"BucketID", "Bucket"}
 	switch updated.State {
 	case "", tasking.Created:
-		omit = append(omit, clause.Associations)
+		err = db.Save(m).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	case tasking.Ready:
 		err := m.Propagate()
 		if err != nil {
 			return
+		}
+		err = db.Save(m).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		rtx := WithContext(ctx)
+		for i := range m.Tasks {
+			task := &tasking.Task{}
+			task.With(&m.Tasks[i])
+			err = rtx.TaskManager.Update(h.DB(ctx), task)
+			if err != nil {
+				_ = ctx.Error(err)
+				return
+			}
 		}
 	default:
 		h.Respond(ctx,
@@ -185,13 +233,6 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			gin.H{
 				"error": "state must be (Created|Ready)",
 			})
-		return
-	}
-	db = db.Omit(omit...)
-	db = db.Where("state IN ?", []string{"", tasking.Created})
-	err = db.Updates(h.fields(m)).Error
-	if err != nil {
-		_ = ctx.Error(err)
 		return
 	}
 
@@ -208,31 +249,22 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	db := h.DB(ctx).Preload(clause.Associations)
+	db := h.DB(ctx)
+	db = db.Omit(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	for _, task := range m.Tasks {
-		if task.Pod != "" {
-			rt := tasking.Task{Task: &task}
-			err := rt.Delete(h.Client(ctx))
-			if err != nil {
-				if !k8serr.IsNotFound(err) {
-					_ = ctx.Error(err)
-					return
-				}
-			}
-		}
-		db := h.DB(ctx).Select(clause.Associations)
-		err = db.Delete(task).Error
+	rtx := WithContext(ctx)
+	for i := range m.Tasks {
+		task := &m.Tasks[i]
+		err = rtx.TaskManager.Delete(h.DB(ctx), task.ID)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 	}
-	db = h.DB(ctx).Select(clause.Associations)
 	err = db.Delete(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -254,6 +286,11 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &TaskGroup{}
+	err := h.findRefs(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	mod := func(withBody bool) (err error) {
 		if !withBody {
 			m := r.Model()
@@ -266,7 +303,7 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 		r.State = tasking.Ready
 		return
 	}
-	err := h.modBody(ctx, r, mod)
+	err = h.modBody(ctx, r, mod)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -352,29 +389,113 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	h.bucketDelete(ctx, *m.BucketID)
 }
 
+// findRefs find referenced resources.
+// - addon
+// - extensions
+// - kind
+// - priority
+// The priority is defaulted to the kind as needed.
+func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) {
+	client := h.Client(ctx)
+	if r.Addon != "" {
+		addon := &crd.Addon{}
+		name := r.Addon
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			addon)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Addon: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	for _, name := range r.Extensions {
+		ext := &crd.Extension{}
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      r.Kind,
+				Namespace: Settings.Hub.Namespace,
+			},
+			ext)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Extension: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	if r.Kind != "" {
+		kind := &crd.Task{}
+		name := r.Kind
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			kind)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Task: " + name + " not found",
+				}
+			}
+			return
+		}
+		if r.Priority == 0 {
+			r.Priority = kind.Spec.Priority
+		}
+	}
+	return
+}
+
 // TaskGroup REST resource.
 type TaskGroup struct {
-	Resource `yaml:",inline"`
-	Name     string      `json:"name"`
-	Addon    string      `json:"addon"`
-	Data     interface{} `json:"data" swaggertype:"object" binding:"required"`
-	Bucket   *Ref        `json:"bucket,omitempty"`
-	State    string      `json:"state"`
-	Tasks    []Task      `json:"tasks"`
+	Resource   `yaml:",inline"`
+	Name       string     `json:"name"`
+	Kind       string     `json:"kind,omitempty" yaml:",omitempty"`
+	Addon      string     `json:"addon,omitempty" yaml:",omitempty"`
+	Extensions []string   `json:"extensions,omitempty" yaml:",omitempty"`
+	State      string     `json:"state"`
+	Priority   int        `json:"priority,omitempty" yaml:",omitempty"`
+	Policy     TaskPolicy `json:"policy,omitempty" yaml:",omitempty"`
+	Data       Map        `json:"data" swaggertype:"object" binding:"required"`
+	Bucket     *Ref       `json:"bucket,omitempty"`
+	Tasks      []Task     `json:"tasks"`
 }
 
 // With updates the resource with the model.
 func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
+	r.Kind = m.Kind
 	r.Addon = m.Addon
+	r.Extensions = m.Extensions
 	r.State = m.State
+	r.Priority = m.Priority
+	r.Policy = TaskPolicy(m.Policy)
+	r.Data = m.Data
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
-	_ = json.Unmarshal(m.Data, &r.Data)
 	switch m.State {
 	case "", tasking.Created:
-		_ = json.Unmarshal(m.List, &r.Tasks)
+		for _, task := range m.List {
+			member := Task{}
+			member.With(&task)
+			r.Tasks = append(
+				r.Tasks,
+				member)
+		}
 	default:
 		for _, task := range m.Tasks {
 			member := Task{}
@@ -389,13 +510,19 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 // Model builds a model.
 func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m = &model.TaskGroup{
-		Name:  r.Name,
-		Addon: r.Addon,
-		State: r.State,
+		Name:       r.Name,
+		Kind:       r.Kind,
+		Addon:      r.Addon,
+		Extensions: r.Extensions,
+		State:      r.State,
+		Priority:   r.Priority,
+		Policy:     model.TaskPolicy(r.Policy),
+		Data:       r.Data,
 	}
 	m.ID = r.ID
-	m.Data, _ = json.Marshal(StrMap(r.Data))
-	m.List, _ = json.Marshal(r.Tasks)
+	for _, task := range r.Tasks {
+		m.List = append(m.List, *task.Model())
+	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
 	}

@@ -1,10 +1,8 @@
 package reaper
 
 import (
-	"encoding/json"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
@@ -61,12 +59,11 @@ func (r *TaskReaper) Run() {
 	}
 	for i := range list {
 		m := &list[i]
-		ttl := r.TTL(m)
 		switch m.State {
 		case task.Created:
 			mark := m.CreateTime
-			if ttl.Created > 0 {
-				d := time.Duration(ttl.Created) * Unit
+			if m.TTL.Created > 0 {
+				d := time.Duration(m.TTL.Created) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
@@ -78,32 +75,30 @@ func (r *TaskReaper) Run() {
 			}
 		case task.Pending:
 			mark := m.CreateTime
-			if ttl.Pending > 0 {
-				d := time.Duration(ttl.Pending) * Unit
-				if time.Since(mark) > d {
-					r.delete(m)
-				}
-			}
-		case task.Postponed:
-			mark := m.CreateTime
-			if ttl.Postponed > 0 {
-				d := time.Duration(ttl.Postponed) * Unit
+			if m.TTL.Pending > 0 {
+				d := time.Duration(m.TTL.Pending) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
 			}
 		case task.Running:
-			mark := *m.Started
-			if ttl.Running > 0 {
-				d := time.Duration(ttl.Running) * Unit
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Started
+			}
+			if m.TTL.Running > 0 {
+				d := time.Duration(m.TTL.Running) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
 			}
 		case task.Succeeded:
-			mark := *m.Terminated
-			if ttl.Succeeded > 0 {
-				d := time.Duration(ttl.Succeeded) * Unit
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Terminated
+			}
+			if m.TTL.Succeeded > 0 {
+				d := time.Duration(m.TTL.Succeeded) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
@@ -114,9 +109,12 @@ func (r *TaskReaper) Run() {
 				}
 			}
 		case task.Failed:
-			mark := *m.Terminated
-			if ttl.Succeeded > 0 {
-				d := time.Duration(ttl.Failed) * Unit
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Terminated
+			}
+			if m.TTL.Succeeded > 0 {
+				d := time.Duration(m.TTL.Failed) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
@@ -149,6 +147,8 @@ func (r *TaskReaper) release(m *model.Task) {
 		nChanged++
 	}
 	if nChanged > 0 {
+		rt := task.Task{Task: m}
+		rt.Event(task.Released)
 		err := r.DB.Save(m).Error
 		if err != nil {
 			Log.Error(err, "")
@@ -170,15 +170,6 @@ func (r *TaskReaper) delete(m *model.Task) {
 	} else {
 		Log.Error(err, "")
 	}
-}
-
-// TTL returns the task TTL.
-func (r *TaskReaper) TTL(m *model.Task) (ttl api.TTL) {
-	if m.TTL != nil {
-		_ = json.Unmarshal(m.TTL, &ttl)
-	}
-
-	return
 }
 
 //

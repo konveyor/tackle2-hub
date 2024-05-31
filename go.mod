@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/Nerzal/gocloak/v10 v10.0.1
+	github.com/PaesslerAG/gval v1.2.2
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.2.4
@@ -77,6 +78,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,6 +23,8 @@ type Context struct {
 	Client client.Client
 	// Response
 	Response Response
+	// Task manager.
+	TaskManager *tasking.Manager
 }
 
 // Response values.

@@ -199,6 +199,7 @@ func main() {
 			rtx := api.WithContext(ctx)
 			rtx.DB = db
 			rtx.Client = client
+			rtx.TaskManager = &taskManager
 		})
 	for _, h := range api.All() {
 		h.AddRoutes(router)
