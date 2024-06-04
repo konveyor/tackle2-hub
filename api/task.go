@@ -109,6 +109,13 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tasks.
 // @description List all tasks.
+// @description Filters:
+// @description - kind
+// @description - addon
+// @description - name
+// @description - locator
+// @description - state
+// @description - application.id
 // @tags tasks
 // @produce json
 // @success 200 {object} []api.Task
