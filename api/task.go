@@ -122,7 +122,6 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
 	resources := []Task{}
-	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "kind", Kind: qf.STRING},
@@ -136,7 +135,6 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Issue{})
 	if err != nil {
@@ -149,7 +147,6 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	db = sort.Sorted(db)
 	filter = filter.Renamed("application.id", "applicationId")
 	db = filter.Where(db)
-
 	var m model.Task
 	var list []model.Task
 	page := Page{}
