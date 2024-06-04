@@ -12,6 +12,7 @@ import os
 import re
 import requests
 import shutil
+import time
 import yaml
 
 ###############################################################################
@@ -124,96 +125,6 @@ def getKeycloakToken(host, username, password, client_id='tackle-ui', realm='tac
         print(data, r)
         exit(1)
 
-def apiJSON(url, token, data=None, method='GET', ignoreErrors=False):
-    debugPrint("Querying: %s" % url)
-    if method == 'DELETE':
-        r = requests.delete(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-    elif method == 'POST':
-        debugPrint("POST data: %s" % json.dumps(data))
-        r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-    elif method == 'PATCH':
-        debugPrint("PATCH data: %s" % json.dumps(data))
-        r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-    elif method == 'PUT':
-        debugPrint("PUT data: %s" % json.dumps(data))
-        r = requests.put(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-    else: # GET
-        r = requests.get(url, headers={"Authorization": "Bearer %s" % token, "Content-Type": "application/json"}, verify=False)
-
-    if not r.ok:
-        if ignoreErrors:
-            debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
-        else:
-            print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
-            exit(1)
-
-    if r.text is None or r.text ==  '':
-        return
-
-    debugPrint("Response: %s" % r.text)
-
-    respData = json.loads(r.text)
-    if '_embedded' in respData:
-        debugPrint("Unwrapping Tackle1 JSON")
-        return respData['_embedded'][url.rsplit('/')[-1].rsplit('?')[0]] # unwrap Tackle1 JSON response (e.g. _embedded -> application -> [{...}])
-    else:
-        return respData # raw return JSON (Tackle2, Pathfinder)
-
-def apiRaw(url, token, data=None, method='GET', ignoreErrors=False):
-    debugPrint("Querying: %s" % url)
-    if method == 'DELETE':
-        r = requests.delete(url, headers={"Authorization": "Bearer %s" % token}, verify=False)
-    elif method == 'POST':
-        debugPrint("POST data: %s" % json.dumps(data))
-        r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token}, verify=False)
-    elif method == 'PATCH':
-        debugPrint("PATCH data: %s" % json.dumps(data))
-        r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % token}, verify=False)
-    else: # GET
-        r = requests.get(url, headers={"Authorization": "Bearer %s" % token}, verify=False)
-
-    if not r.ok:
-        if ignoreErrors:
-            debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
-        else:
-            print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
-            exit(1)
-
-    return r.text
-
-def apiFileGet(url, token, destinationPath, ignoreErrors=False):
-    debugPrint("Getting file from %s" % url)
-    # Get via streamed request
-    with requests.get(url, headers={"Authorization": "Bearer %s" % token, "X-Directory": "archive"}, verify=False, stream=True) as resp:
-        # Check for errors
-        if not resp.ok:
-            if ignoreErrors:
-                debugPrint("Got status %d for get file %s, ignoring" % (resp.status_code, url))
-            else:
-                print("ERROR: File get API request failed with status %d for %s" % (resp.status_code, url))
-                exit(1)
-        # Store to local destination file
-        with open(destinationPath, 'wb') as destFile:
-            shutil.copyfileobj(resp.raw, destFile)
-        destFile.close
-
-    return destFile.name
-
-def apiFilePost(url, token, filePath, ignoreErrors=False):
-    debugPrint("Uploading file %s to %s" % (filePath, url))
-    # Open local file
-    with open(filePath, 'rb') as f:
-        # Upload the content
-        resp = requests.post(url, files={'file': f}, headers={"Authorization": "Bearer %s" % token, "X-Directory": "expand"}, verify=False)
-        # Check for errors
-        if not resp.ok:
-            if ignoreErrors:
-                debugPrint("Got status %d for post file %s, ignoring" % (resp.status_code, url))
-            else:
-                print("ERROR: File post API request failed with status %d for %s" % (resp.status_code, url))
-                exit(1)
-    return resp.text
-
 def tackle2path(obj):
     return "/hub/%s" % obj
 
@@ -246,12 +157,12 @@ class TackleTool:
     NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
     TACKLE2_SEED_TYPES = ['tagcategories', 'tags', 'jobfunctions']
 
-    def __init__(self, dataDir, tackle1Url, tackle1Token, tackle2Url, tackle2Token, encKey = ""):
+    def __init__(self, dataDir, tackle2Url, tackle2Token, encKey = ""):
         self.dataDir      = dataDir
-        self.tackle1Url   = tackle1Url
-        self.tackle1Token = tackle1Token
-        self.tackle2Url   = tackle2Url
-        self.tackle2Token = tackle2Token
+        self.Url   = tackle2Url
+        # Gather Keycloak access token for Tackle
+        self.Token =  getHubToken(tackle2Url, c['username'], c['password'], tackle2Token)
+        self.TokenRenewAfter = int(time.time()) + 4*60 # 4 minutes to refresh token
 
         self.encKeyVerified = False
         if encKey != "":
@@ -268,28 +179,6 @@ class TackleTool:
         for t in self.TYPES:
             self.destData[t] = dict()
 
-    # Gather existing seeded objects from Tackle2
-    def loadTackle2Seeds(self):
-        # Tackle 2 TagCategories and Tags
-        collection = apiJSON(tool.tackle2Url + "/hub/tagcategories", tool.tackle2Token)
-        for tt2 in collection:
-            tt  = Tackle2Object(tt2)
-            tt.name = tt2['name']
-            self.destData['tagcategories'][tt.name.lower()] = tt
-            if tt2['tags']:
-                for t2 in tt2['tags']:
-                    tag             = Tackle2Object()
-                    tag.id          = t2['id']
-                    tag.name        = t2['name']
-                    self.destData['tags'][tag.name.lower()] = tag
-
-        # Tackle 2 JobFunctions
-        collection = apiJSON(tool.tackle2Url + "/hub/jobfunctions", tool.tackle2Token)
-        for jf2 in collection:
-            jf              = Tackle2Object(jf2)
-            jf.name         = jf2['name']
-            self.destData['jobfunctions'][jf.name] = jf
-
     def findById(self, objType, id):
         # Search in data to be imported
         for obj in self.data[objType]:
@@ -299,19 +188,118 @@ class TackleTool:
         print("ERROR: %s record ID %d not found." % (objType, id))
         exit(1)
 
+    def checkTokenLifetime(self):
+        if self.TokenRenewAfter < int(time.time()):
+             self.Token =  getHubToken(self.Url, c['username'], c['password'], False)
+             self.TokenRenewAfter = int(time.time()) + 4*60 # 4 minutes to refresh token
+
+    def apiJSON(self, url, data=None, method='GET', ignoreErrors=False):
+        debugPrint("Querying: %s" % url)
+        self.checkTokenLifetime()
+        if method == 'DELETE':
+            r = requests.delete(url, headers={"Authorization": "Bearer %s" % self.Token, "Content-Type": "application/json"}, verify=False)
+        elif method == 'POST':
+            debugPrint("POST data: %s" % json.dumps(data))
+            r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % self.Token, "Content-Type": "application/json"}, verify=False)
+        elif method == 'PATCH':
+            debugPrint("PATCH data: %s" % json.dumps(data))
+            r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % self.Token, "Content-Type": "application/json"}, verify=False)
+        elif method == 'PUT':
+            debugPrint("PUT data: %s" % json.dumps(data))
+            r = requests.put(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % self.Token, "Content-Type": "application/json"}, verify=False)
+        else: # GET
+            r = requests.get(url, headers={"Authorization": "Bearer %s" % self.Token, "Content-Type": "application/json"}, verify=False)
+    
+        if not r.ok:
+            if ignoreErrors:
+                debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
+            else:
+                print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
+                exit(1)
+    
+        if r.text is None or r.text ==  '':
+            return
+    
+        debugPrint("Response: %s" % r.text)
+    
+        respData = json.loads(r.text)
+        if '_embedded' in respData:
+            debugPrint("Unwrapping Tackle1 JSON")
+            return respData['_embedded'][url.rsplit('/')[-1].rsplit('?')[0]] # unwrap Tackle1 JSON response (e.g. _embedded -> application -> [{...}])
+        else:
+            return respData # raw return JSON (Tackle2, Pathfinder)
+    
+    def apiRaw(self, url, data=None, method='GET', ignoreErrors=False):
+        debugPrint("Querying: %s" % url)
+        self.checkTokenLifetime()
+        if method == 'DELETE':
+            r = requests.delete(url, headers={"Authorization": "Bearer %s" % self.Token}, verify=False)
+        elif method == 'POST':
+            debugPrint("POST data: %s" % json.dumps(data))
+            r = requests.post(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % self.Token}, verify=False)
+        elif method == 'PATCH':
+            debugPrint("PATCH data: %s" % json.dumps(data))
+            r = requests.patch(url, data=json.dumps(data), headers={"Authorization": "Bearer %s" % self.Token}, verify=False)
+        else: # GET
+            r = requests.get(url, headers={"Authorization": "Bearer %s" % self.Token}, verify=False)
+    
+        if not r.ok:
+            if ignoreErrors:
+                debugPrint("Got status %d for %s, ignoring" % (r.status_code, url))
+            else:
+                print("ERROR: API request failed with status %d for %s" % (r.status_code, url))
+                exit(1)
+    
+        return r.text
+    
+    def apiFileGet(self, url, destinationPath, ignoreErrors=False):
+        debugPrint("Getting file from %s" % url)
+        self.checkTokenLifetime()
+        # Get via streamed request
+        with requests.get(url, headers={"Authorization": "Bearer %s" % self.Token, "X-Directory": "archive"}, verify=False, stream=True) as resp:
+            # Check for errors
+            if not resp.ok:
+                if ignoreErrors:
+                    debugPrint("Got status %d for get file %s, ignoring" % (resp.status_code, url))
+                else:
+                    print("ERROR: File get API request failed with status %d for %s" % (resp.status_code, url))
+                    exit(1)
+            # Store to local destination file
+            with open(destinationPath, 'wb') as destFile:
+                shutil.copyfileobj(resp.raw, destFile)
+            destFile.close
+    
+        return destFile.name
+    
+    def apiFilePost(self, url, filePath, ignoreErrors=False):
+        debugPrint("Uploading file %s to %s" % (filePath, url))
+        self.checkTokenLifetime()
+        # Open local file
+        with open(filePath, 'rb') as f:
+            # Upload the content
+            resp = requests.post(url, files={'file': f}, headers={"Authorization": "Bearer %s" % self.Token, "X-Directory": "expand"}, verify=False)
+            # Check for errors
+            if not resp.ok:
+                if ignoreErrors:
+                    debugPrint("Got status %d for post file %s, ignoring" % (resp.status_code, url))
+                else:
+                    print("ERROR: File post API request failed with status %d for %s" % (resp.status_code, url))
+                    exit(1)
+        return resp.text
+
     # Gather Tackle 2 API objects
     def dumpTackle2(self):
         ensureDataDir(self.dataDir)
         for t in self.TYPES:
             print("Exporting %s.." % t)
             if t == "identities":
-                dictCollection = apiJSON(self.tackle2Url + "/hub/identities?decrypted=1", self.tackle2Token)
+                dictCollection = self.apiJSON(self.Url + "/hub/identities?decrypted=1")
                 for dictObj in dictCollection:
                     dictObj['key'] = self.encrypt(dictObj['key'])
                     dictObj['password'] = self.encrypt(dictObj['password'])
                     dictObj['settings'] = self.encrypt(dictObj['settings'])
             else:
-                dictCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
+                dictCollection = self.apiJSON(self.Url + tackle2path(t))
 
             # Remove legacy locked questionnaire from export to not cause conflict in import (should be 1st one)
             if t == "questionnaires":
@@ -327,7 +315,7 @@ class TackleTool:
         for bucket in self.data['temp-buckets']:
             debugPrint("Downloading bucket content for %s" % bucket['owner'])
             bucketFilename = bucket['owner'].replace("/", "--")
-            apiFileGet(self.tackle2Url + "/hub/" + bucket['owner'] + "/bucket/", self.tackle2Token, bucketDir + "/%s.tar.gz" % bucketFilename)
+            self.apiFileGet(self.Url + "/hub/" + bucket['owner'] + "/bucket/", bucketDir + "/%s.tar.gz" % bucketFilename)
 
     def uploadTackle2Buckets(self):
         bucketDir = "%s/buckets/" % self.dataDir
@@ -338,7 +326,7 @@ class TackleTool:
             ownerPath = bucketArchive.replace("--", "/").replace(".tar.gz", "")
             if os.path.getsize(bucketDir + bucketArchive) > 0:
                 print("Uploading bucket archive for %s.." % ownerPath)
-                apiFilePost(self.tackle2Url + "/hub/" + ownerPath + "/bucket/", self.tackle2Token, bucketDir + bucketArchive)
+                self.apiFilePost(self.Url + "/hub/" + ownerPath + "/bucket/", bucketDir + bucketArchive)
             else:
                 debugPrint("Skipping empty bucket archive upload %s" % bucketArchive)
 
@@ -370,21 +358,21 @@ class TackleTool:
                     elif 'archetype' in dictObj:
                         path = tackle2path("archetypes/%d/assessments" % dictObj['archetype']['id'])
                 debugPrint(dictObj)
-                apiJSON(self.tackle2Url + path, self.tackle2Token, dictObj, method='POST', ignoreErrors=ignoreErrors)
+                self.apiJSON(self.Url + path, dictObj, method='POST', ignoreErrors=ignoreErrors)
 
 
     # Migrate Pathfinder Assessment to Konveyor (expecting Pathfinder hard-coded questionnaire ID=1)
     def migrateAssessments(self, pathfinderUrl, ignoreErrors=False):
         cnt = 0
-        apps = apiJSON(self.tackle2Url + "/hub/applications", self.tackle2Token)
+        apps = self.apiJSON(self.Url + "/hub/applications")
         print("There are %d Applications, looking for their Assessments.." % len(apps))
         for app in apps:
             # Export Pathfinder data for each Application
-            for passmnt in apiJSON(pathfinderUrl + "/assessments?applicationId=%d" % app['id'], self.tackle2Token):
+            for passmnt in self.apiJSON(pathfinderUrl + "/assessments?applicationId=%d" % app['id']):
                 print("# Assessment for Application %s" % passmnt["applicationId"])
                 appAssessmentsPath = "/hub/applications/%d/assessments" % passmnt["applicationId"]
                 # Skip if Assessment for given Application already exists
-                if len(apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data={"questionnaire": {"id": 1}})) > 0:
+                if len(self.apiJSON(self.Url + appAssessmentsPath, data={"questionnaire": {"id": 1}})) > 0:
                     print("  Assessment already exists, skipping.")
                     continue
 
@@ -418,7 +406,7 @@ class TackleTool:
                 assmnt['sections'] = passmnt['questionnaire']['categories']
 
                 # Post the Assessment
-                apiJSON(self.tackle2Url + appAssessmentsPath, self.tackle2Token, data=assmnt, method='POST')
+                self.apiJSON(self.Url + appAssessmentsPath, data=assmnt, method='POST')
                 cnt += 1
                 print("Assessment submitted.")
         return cnt
@@ -426,7 +414,7 @@ class TackleTool:
     def preImportCheck(self):
         # Compatibility checks
         # TagCategories on Hub API
-        if apiJSON(self.tackle2Url + "/hub/tagcategories", self.tackle2Token, ignoreErrors=True) is None:
+        if self.apiJSON(self.Url + "/hub/tagcategories", ignoreErrors=True) is None:
             print("ERROR: The API doesn't know TagCategories, use older version of this tool.")
             exit(1)
 
@@ -444,7 +432,7 @@ class TackleTool:
         # Duplication checks
         for t in self.TYPES:
             print("Checking %s in destination Tackle2.." % t)
-            destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
+            destCollection = self.apiJSON(self.Url + tackle2path(t))
             localCollection = loadDump(os.path.join(self.dataDir, t + '.json'))
             for importObj in localCollection:
                 for destObj in destCollection:
@@ -459,16 +447,16 @@ class TackleTool:
             for dictObj in dictCollection:
                 # Hub resources
                 print("Trying delete %s/%s" % (t, dictObj['id']))
-                apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                self.apiJSON("%s/hub/%s/%d" % (self.Url, t, dictObj['id']), method='DELETE', ignoreErrors=True)
 
     def cleanAllTackle2(self):
         self.TYPES.reverse()
         for t in self.NOT_IMPORTED_TYPES + self.TYPES:
-            destCollection = apiJSON(self.tackle2Url + tackle2path(t), self.tackle2Token)
+            destCollection = self.apiJSON(self.Url + tackle2path(t))
             for dictObj in destCollection:
                 # Hub resources
                 print("Deleting %s/%s" % (t, dictObj['id']))
-                apiJSON("%s/hub/%s/%d" % (self.tackle2Url, t, dictObj['id']), self.tackle2Token, method='DELETE', ignoreErrors=True)
+                self.apiJSON("%s/hub/%s/%d" % (self.Url, t, dictObj['id']), method='DELETE', ignoreErrors=True)
 
     def encrypt(self, plain):
         if plain == "":
@@ -535,11 +523,9 @@ cmdExecuted = False
 # Tackle 2 export steps
 if cmdWanted(args, "export"):
     cmdExecuted = True
-    # Gather Keycloak access tokens for Tackle2
-    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
+    tool = TackleTool(args.data_dir, c['url'], args.token, c['encryption_passphase'])
 
     # Run the export expecting clean destination
     print("Exporting Tackle 2 objects into %s (this might take a while..)" % args.data_dir)
@@ -556,11 +542,9 @@ if cmdWanted(args, "export"):
 # Tackle 2 import steps
 if cmdWanted(args, "import"):
     cmdExecuted = True
-    # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
 
     # Setup Tackle 1.2->2.0 data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2, c['encryption_passphase'])
+    tool = TackleTool(args.data_dir, c['url'], args.token, c['encryption_passphase'])
 
     # Run the import
     print("Importing data to Tackle2")
@@ -578,11 +562,9 @@ if cmdWanted(args, "import"):
 # Clean created objects in Tackle2
 if cmdWanted(args, "clean"):
     cmdExecuted = True
-    # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
-
+    
     # Setup Tackle 1.2->2.0 data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, c['url'], args.token)
 
     # Run the cleanup
     print("Cleaning data created in Tackle2")
@@ -592,11 +574,9 @@ if cmdWanted(args, "clean"):
 # Clean ALL objects in Tackle2
 if cmdWanted(args, "clean-all"):
     cmdExecuted = True
-    # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
-
+    
     # Setup Tackle 1.2->2.0 data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, c['url'], args.token)
 
     # Run the cleanup including seeds
     print("Cleaning ALL data in Tackle2")
@@ -611,11 +591,8 @@ if cmdWanted(args, "migrate-assessments"):
         print("Error: Pathfinder URL is required, specify it with -p or --pathfinder-url option.")
         exit(1)
 
-    # Gather Keycloak access token for Tackle 2
-    token2 = getHubToken(c['url'], c['username'], c['password'], args.token)
-
     # Setup Tackle data migration object
-    tool = TackleTool(args.data_dir, '', '', c['url'], token2)
+    tool = TackleTool(args.data_dir, c['url'], args.token)
 
     # Run the import
     print("Starting Pathfinder Assessments to Konveyor Assessment migration.")
