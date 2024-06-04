@@ -127,6 +127,21 @@ func (f *Filter) With(selector ...string) (out Filter) {
 	return
 }
 
+// Renamed filter with predicate field renamed.
+func (f *Filter) Renamed(name, renamed string) (out Filter) {
+	var predicates []Predicate
+	for _, p := range f.predicates {
+		if p.Field.Value == name {
+			p.Field.Value = renamed
+		}
+		predicates = append(
+			predicates,
+			p)
+	}
+	out.predicates = predicates
+	return
+}
+
 // Delete specified fields.
 func (f *Filter) Delete(name string) (found bool) {
 	var wanted []Predicate

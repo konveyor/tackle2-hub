@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tar"
@@ -113,22 +114,60 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []api.Task
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
-	var list []model.Task
-	db := h.DB(ctx)
-	locator := ctx.Query(LocatorParam)
-	if locator != "" {
-		db = db.Where("locator", locator)
-	}
-	db = db.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	resources := []Task{}
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "addon", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "locator", Kind: qf.STRING},
+			{Field: "state", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	resources := []Task{}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &model.Issue{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Model(&model.Task{})
+	db = db.Preload(clause.Associations)
+	db = sort.Sorted(db)
+	filter = filter.Renamed("application.id", "applicationId")
+	db = filter.Where(db)
+
+	var m model.Task
+	var list []model.Task
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	for i := range list {
+		m := &list[i]
 		r := Task{}
-		r.With(&list[i])
+		r.With(m)
 		resources = append(resources, r)
 	}
 
