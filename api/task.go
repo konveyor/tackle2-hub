@@ -26,6 +26,8 @@ import (
 // Routes
 const (
 	TasksRoot             = "/tasks"
+	TasksReportRoot       = TasksRoot + "/report"
+	TasksReportQueueRoot  = TasksReportRoot + "/queue"
 	TaskRoot              = TasksRoot + "/:" + ID
 	TaskReportRoot        = TaskRoot + "/report"
 	TaskAttachedRoot      = TaskRoot + "/attached"
@@ -54,6 +56,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
+	routeGroup.GET(TasksReportQueueRoot, h.Queued)
 	// Actions
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
@@ -116,6 +119,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @description - locator
 // @description - state
 // @description - application.id
+// @description The state=queued is an alias for queued states.
 // @tags tasks
 // @produce json
 // @success 200 {object} []api.Task
@@ -134,6 +138,24 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	if state, found := filter.Field("state"); found {
+		values := qf.Value{}
+		for _, v := range state.Value.ByKind(qf.LITERAL, qf.STRING) {
+			switch v.Value {
+			case "queued":
+				values = append(
+					values,
+					qf.Token{Kind: qf.STRING, Value: tasking.Ready},
+					qf.Token{Kind: qf.STRING, Value: tasking.Postponed},
+					qf.Token{Kind: qf.STRING, Value: tasking.Pending},
+					qf.Token{Kind: qf.STRING, Value: tasking.Running})
+			default:
+				values = append(values, v)
+			}
+		}
+		values = values.Join(qf.OR)
+		filter = filter.Revalued("state", values)
 	}
 	sort := Sort{}
 	err = sort.With(ctx, &model.Issue{})
@@ -176,6 +198,64 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// Queued godoc
+// @summary Queued queued task report.
+// @description Queued queued task report.
+// @description Filters:
+// @description - addon
+// @tags tasks
+// @produce json
+// @success 200 {object} []api.TaskQueue
+// @router /tasks [get]
+func (h TaskHandler) Queued(ctx *gin.Context) {
+	r := TaskQueue{}
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "addon", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Table("task")
+	db = filter.Where(db)
+	type M struct {
+		State string
+		Count int
+	}
+	db = db.Select("State", "COUNT(*)")
+	db = db.Where(
+		"State", []string{
+			tasking.Ready,
+			tasking.Postponed,
+			tasking.Pending,
+			tasking.Ready,
+		})
+	db = db.Group("State")
+	var list []M
+	err = db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for _, q := range list {
+		r.Total += q.Count
+		switch q.State {
+		case tasking.Ready:
+			r.Ready = q.Count
+		case tasking.Postponed:
+			r.Postponed = q.Count
+		case tasking.Pending:
+			r.Pending = q.Count
+		case tasking.Running:
+			r.Running = q.Count
+		}
+	}
+
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // Create godoc
@@ -804,4 +884,13 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		m.Attached = append(m.Attached, model.Attachment(at))
 	}
 	return
+}
+
+// TaskQueue report.
+type TaskQueue struct {
+	Total     int `json:"total"`
+	Ready     int `json:"ready"`
+	Postponed int `json:"postponed"`
+	Pending   int `json:"pending"`
+	Running   int `json:"running"`
 }
