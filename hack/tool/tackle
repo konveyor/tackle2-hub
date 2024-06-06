@@ -154,7 +154,7 @@ def cmdWanted(args, action):
 
 class TackleTool:
     # TYPES order matters for import/upload to Tackle2
-    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'questionnaires', 'archetypes', 'assessments', 'reviews']
+    TYPES = ['tagcategories', 'tags', 'jobfunctions', 'migrationwaves', 'stakeholdergroups', 'stakeholders', 'businessservices', 'identities', 'applications', 'proxies', 'dependencies', 'questionnaires', 'archetypes', 'assessments', 'reviews']
     NOT_IMPORTED_TYPES = ['taskgroups', 'tasks']
     TACKLE2_SEED_TYPES = ['tagcategories', 'tags', 'jobfunctions']
 
@@ -351,6 +351,17 @@ class TackleTool:
 
                 if "stakeholdergroups" in t:
                     dictObj['stakeholders'] = [] # empty stakeholders to not create it with parent stakeholdergroup, but in separate call
+
+                if "stakeholders" in t:
+                     # Empty stakeholders Refs to Application, linked from Application created later
+                    dictObj['owns'] = []
+                    dictObj['contributes'] = []
+
+                if "migrationwaves" in t:
+                    # Empty migrationvawe's Refs to avoid circular dependency problem, association is linked from the opposite side
+                    dictObj['applications'] = []
+                    dictObj['stakeholders'] = []
+                    dictObj['stakeholdergroups'] = []
 
                 path = tackle2path(t)
                 if "assessments" in t:
