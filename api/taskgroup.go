@@ -145,17 +145,16 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		for i := range m.Tasks {
 			task := &tasking.Task{}
 			task.With(&m.Tasks[i])
-			task, err = rtx.TaskManager.Create(h.DB(ctx), task)
+			err = rtx.TaskManager.Create(h.DB(ctx), task)
 			if err != nil {
 				_ = ctx.Error(err)
 				return
 			}
 		}
 	default:
-		h.Respond(ctx,
-			http.StatusBadRequest,
-			gin.H{
-				"error": "state must be ('''|Created|Ready)",
+		_ = ctx.Error(
+			&BadRequestError{
+				Reason: "state must be ('''|Created|Ready)",
 			})
 		return
 	}
@@ -208,6 +207,16 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
+		for i := range m.Tasks {
+			task := &m.Tasks[i]
+			if task.ID > 0 {
+				_ = ctx.Error(
+					&BadRequestError{
+						Reason: "already submitted.",
+					})
+				return
+			}
+		}
 		err := m.Propagate()
 		if err != nil {
 			return
@@ -221,17 +230,16 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		for i := range m.Tasks {
 			task := &tasking.Task{}
 			task.With(&m.Tasks[i])
-			err = rtx.TaskManager.Update(h.DB(ctx), task)
+			err = rtx.TaskManager.Create(h.DB(ctx), task)
 			if err != nil {
 				_ = ctx.Error(err)
 				return
 			}
 		}
 	default:
-		h.Respond(ctx,
-			http.StatusBadRequest,
-			gin.H{
-				"error": "state must be (Created|Ready)",
+		_ = ctx.Error(
+			&BadRequestError{
+				Reason: "state must be (Created|Ready)",
 			})
 		return
 	}
