@@ -130,8 +130,8 @@ func (m *Manager) Run(ctx context.Context) {
 }
 
 // Create a task.
-func (m *Manager) Create(db *gorm.DB, requested *Task) (task *Task, err error) {
-	task = &Task{&model.Task{}}
+func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
+	task := &Task{&model.Task{}}
 	switch requested.State {
 	case "":
 		requested.State = Created
@@ -161,6 +161,7 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (task *Task, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	requested.Task = task.Task
 	return
 }
 

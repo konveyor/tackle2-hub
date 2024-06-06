@@ -160,13 +160,13 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	task.With(r.Model())
 	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	rtx := WithContext(ctx)
-	created, err := rtx.TaskManager.Create(h.DB(ctx), task)
+	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	r.With(created.Task)
+	r.With(task.Task)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
