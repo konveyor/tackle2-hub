@@ -20,6 +20,7 @@ identities:
   - id: 2
 tags:
   - id: 1
+  - id: 16
 '
 
 curl -X POST ${host}/applications \

@@ -3,30 +3,36 @@ package settings
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 const (
-	EnvNamespace          = "NAMESPACE"
-	EnvDbPath             = "DB_PATH"
-	EnvDbSeedPath         = "DB_SEED_PATH"
-	EnvBucketPath         = "BUCKET_PATH"
-	EnvRwxSupported       = "RWX_SUPPORTED"
-	EnvCachePath          = "CACHE_PATH"
-	EnvCachePvc           = "CACHE_PVC"
-	EnvPassphrase         = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated    = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded  = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed     = "TASK_REAP_FAILED"
-	EnvTaskSA             = "TASK_SA"
-	EnvTaskRetries        = "TASK_RETRIES"
-	EnvFrequencyTask      = "FREQUENCY_TASK"
-	EnvFrequencyReaper    = "FREQUENCY_REAPER"
-	EnvDevelopment        = "DEVELOPMENT"
-	EnvBucketTTL          = "BUCKET_TTL"
-	EnvFileTTL            = "FILE_TTL"
-	EnvAppName            = "APP_NAME"
-	EnvDisconnected       = "DISCONNECTED"
-	EnvAnalysisReportPath = "ANALYSIS_REPORT_PATH"
+	EnvNamespace            = "NAMESPACE"
+	EnvDbPath               = "DB_PATH"
+	EnvDbSeedPath           = "DB_SEED_PATH"
+	EnvBucketPath           = "BUCKET_PATH"
+	EnvRwxSupported         = "RWX_SUPPORTED"
+	EnvCachePath            = "CACHE_PATH"
+	EnvCachePvc             = "CACHE_PVC"
+	EnvSharedPath           = "SHARED_PATH"
+	EnvPassphrase           = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated      = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded    = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed       = "TASK_REAP_FAILED"
+	EnvTaskSA               = "TASK_SA"
+	EnvTaskRetries          = "TASK_RETRIES"
+	EnvTaskPreemptEnabled   = "TASK_PREEMPT_ENABLED"
+	EnvTaskPreemptDelayed   = "TASK_PREEMPT_DELAYED"
+	EnvTaskPreemptPostponed = "TASK_PREEMPT_POSTPONED"
+	EnvTaskPreemptRate      = "TASK_PREEMPT_RATE"
+	EnvFrequencyTask        = "FREQUENCY_TASK"
+	EnvFrequencyReaper      = "FREQUENCY_REAPER"
+	EnvDevelopment          = "DEVELOPMENT"
+	EnvBucketTTL            = "BUCKET_TTL"
+	EnvFileTTL              = "FILE_TTL"
+	EnvAppName              = "APP_NAME"
+	EnvDisconnected         = "DISCONNECTED"
+	EnvAnalysisReportPath   = "ANALYSIS_REPORT_PATH"
 )
 
 type Hub struct {
@@ -52,6 +58,10 @@ type Hub struct {
 		Path string
 		PVC  string
 	}
+	// Shared mount settings.
+	Shared struct {
+		Path string
+	}
 	// Encryption settings.
 	Encryption struct {
 		Passphrase string
@@ -64,6 +74,12 @@ type Hub struct {
 			Created   int
 			Succeeded int
 			Failed    int
+		}
+		Preemption struct { // seconds.
+			Enabled   bool
+			Delayed   time.Duration
+			Postponed time.Duration
+			Rate      int
 		}
 	}
 	// Frequency
@@ -115,6 +131,10 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.Cache.Path = "/cache"
 	}
+	r.Shared.Path, found = os.LookupEnv(EnvSharedPath)
+	if !found {
+		r.Shared.Path = "/shared"
+	}
 	r.Encryption.Passphrase, found = os.LookupEnv(EnvPassphrase)
 	if !found {
 		r.Encryption.Passphrase = "tackle"
@@ -164,6 +184,38 @@ func (r *Hub) Load() (err error) {
 		r.Frequency.Reaper = n
 	} else {
 		r.Frequency.Reaper = 1 // 1 minute.
+	}
+	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Task.Preemption.Enabled = b
+	}
+	s, found = os.LookupEnv(EnvTaskPreemptDelayed)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Preemption.Delayed = time.Duration(n) * time.Second
+	} else {
+		r.Task.Preemption.Delayed = time.Minute
+	}
+	s, found = os.LookupEnv(EnvTaskPreemptPostponed)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Preemption.Postponed = time.Duration(n) * time.Second
+	} else {
+		r.Task.Preemption.Postponed = time.Minute
+	}
+	s, found = os.LookupEnv(EnvTaskPreemptRate)
+	if found {
+		n, _ := strconv.Atoi(s)
+		if n < 0 {
+			n = 0
+		}
+		if n > 100 {
+			n = 100
+		}
+		r.Task.Preemption.Rate = n
+	} else {
+		r.Task.Preemption.Rate = 10
 	}
 	s, found = os.LookupEnv(EnvDevelopment)
 	if found {

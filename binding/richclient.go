@@ -20,7 +20,7 @@ func init() {
 
 // The RichClient provides API integration.
 type RichClient struct {
-	// Resources APIs.
+	Addon            Addon
 	Application      Application
 	Archetype        Archetype
 	Assessment       Assessment
@@ -44,8 +44,7 @@ type RichClient struct {
 	Task             Task
 	Ticket           Ticket
 	Tracker          Tracker
-
-	// A REST client.
+	// REST client.
 	Client *Client
 }
 
@@ -58,6 +57,9 @@ func New(baseUrl string) (r *RichClient) {
 	//
 	// Build RichClient.
 	r = &RichClient{
+		Addon: Addon{
+			client: client,
+		},
 		Application: Application{
 			client: client,
 		},

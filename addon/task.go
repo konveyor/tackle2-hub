@@ -42,9 +42,48 @@ func (h *Task) Application() (r *api.Application, err error) {
 	return
 }
 
+// Addon returns the addon associated with the task.
+// The extensions are filtered to include those specified in the task.
+// inject: perform injection.
+func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
+	name := h.task.Addon
+	if name == "" {
+		err = &NotFound{}
+		return
+	}
+	r, err = h.richClient.Addon.Get(name)
+	if err != nil {
+		return
+	}
+	// filter
+	included := map[string]int{}
+	for _, name := range h.task.Extensions {
+		included[name] = 0
+	}
+	var extensions []api.Extension
+	for i := range r.Extensions {
+		extension := r.Extensions[i]
+		if _, found := included[extension.Name]; found {
+			extensions = append(
+				extensions,
+				extension)
+		}
+	}
+	r.Extensions = extensions
+	// inject
+	if inject {
+		for i := range r.Extensions {
+			extension := &r.Extensions[i]
+			injector := EnvInjector{}
+			injector.Inject(extension)
+		}
+	}
+	return
+}
+
 // Data returns the addon data.
-func (h *Task) Data() (d map[string]interface{}) {
-	d = h.task.Data.(map[string]interface{})
+func (h *Task) Data() (d api.Map) {
+	d = h.task.Data
 	return
 }
 
@@ -53,11 +92,6 @@ func (h *Task) DataWith(object interface{}) (err error) {
 	b, _ := json.Marshal(h.task.Data)
 	err = json.Unmarshal(b, object)
 	return
-}
-
-// Variant returns the task variant.
-func (h *Task) Variant() string {
-	return h.task.Variant
 }
 
 // Started report addon started.
@@ -169,10 +203,8 @@ func (h *Task) AttachAt(f *api.File, activity int) {
 		h.report.Attached,
 		api.Attachment{
 			Activity: activity,
-			Ref: api.Ref{
-				ID:   f.ID,
-				Name: f.Name,
-			},
+			ID:       f.ID,
+			Name:     f.Name,
 		})
 	h.pushReport()
 	return
@@ -215,7 +247,7 @@ func (h *Task) Bucket() (b *binding.BucketContent) {
 }
 
 // Result report addon result.
-func (h *Task) Result(object interface{}) {
+func (h *Task) Result(object api.Map) {
 	h.report.Result = object
 	h.pushReport()
 	Log.Info("Addon reported: result.")

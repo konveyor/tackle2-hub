@@ -1,7 +1,8 @@
 package api
 
 import (
-	"encoding/json"
+	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -10,12 +11,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/tar"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/strings/slices"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routes
@@ -23,6 +27,7 @@ const (
 	TasksRoot             = "/tasks"
 	TaskRoot              = TasksRoot + "/:" + ID
 	TaskReportRoot        = TaskRoot + "/report"
+	TaskAttachedRoot      = TaskRoot + "/attached"
 	TaskBucketRoot        = TaskRoot + "/bucket"
 	TaskBucketContentRoot = TaskBucketRoot + "/*" + Wildcard
 	TaskSubmitRoot        = TaskRoot + "/submit"
@@ -65,6 +70,8 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TaskReportRoot, h.CreateReport)
 	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
 	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)
+	// Attached
+	routeGroup.GET(TaskAttachedRoot, h.GetAttached)
 }
 
 // Get godoc
@@ -138,33 +145,28 @@ func (h TaskHandler) List(ctx *gin.Context) {
 // @router /tasks [post]
 // @param task body api.Task true "Task data"
 func (h TaskHandler) Create(ctx *gin.Context) {
-	r := Task{}
-	err := h.Bind(ctx, &r)
+	r := &Task{}
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	switch r.State {
-	case "":
-		r.State = tasking.Created
-	case tasking.Created,
-		tasking.Ready:
-	default:
-		h.Respond(ctx,
-			http.StatusBadRequest,
-			gin.H{
-				"error": "state must be (''|Created|Ready)",
-			})
+	err = h.findRefs(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Create(&m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	task := &tasking.Task{}
+	task.With(r.Model())
+	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	rtx := WithContext(ctx)
+	created, err := rtx.TaskManager.Create(h.DB(ctx), task)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	r.With(m)
+
+	r.With(created.Task)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -178,23 +180,10 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 // @param id path int true "Task ID"
 func (h TaskHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	task := &model.Task{}
-	result := h.DB(ctx).First(task, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	rt := tasking.Task{Task: task}
-	err := rt.Delete(h.Client(ctx))
+	rtx := WithContext(ctx)
+	err := rtx.TaskManager.Delete(h.DB(ctx), id)
 	if err != nil {
-		if !k8serr.IsNotFound(err) {
-			_ = ctx.Error(err)
-			return
-		}
-	}
-	result = h.DB(ctx).Delete(task)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -217,26 +206,14 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	switch r.State {
-	case tasking.Created,
-		tasking.Ready:
-	default:
-		h.Respond(ctx,
-			http.StatusBadRequest,
-			gin.H{
-				"error": "state must be (Created|Ready)",
-			})
-		return
-	}
-	m := r.Model()
-	m.Reset()
-	db := h.DB(ctx).Model(m)
-	db = db.Where("id", id)
-	db = db.Where("state", tasking.Created)
-	db = h.omitted(db)
-	result := db.Updates(h.fields(m))
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	r.ID = id
+	rtx := WithContext(ctx)
+	task := &tasking.Task{}
+	task.With(r.Model())
+	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
+	err = rtx.TaskManager.Update(h.DB(ctx), task)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -255,6 +232,11 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 func (h TaskHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
 	r := &Task{}
+	err := h.findRefs(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	mod := func(withBody bool) (err error) {
 		if !withBody {
 			m := r.Model()
@@ -267,7 +249,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 		r.State = tasking.Ready
 		return
 	}
-	err := h.modBody(ctx, r, mod)
+	err = h.modBody(ctx, r, mod)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -284,33 +266,8 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // @param id path int true "Task ID"
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.Task{}
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	switch m.State {
-	case tasking.Succeeded,
-		tasking.Failed,
-		tasking.Canceled:
-		h.Respond(ctx,
-			http.StatusBadRequest,
-			gin.H{
-				"error": "state must not be (Succeeded|Failed|Canceled)",
-			})
-		return
-	}
-	db := h.DB(ctx).Model(m)
-	db = db.Where("id", id)
-	db = db.Where(
-		"state not IN ?",
-		[]string{
-			tasking.Succeeded,
-			tasking.Failed,
-			tasking.Canceled,
-		})
-	err := db.Update("Canceled", true).Error
+	rtx := WithContext(ctx)
+	err := rtx.TaskManager.Cancel(h.DB(ctx), id)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -432,7 +389,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // @tags tasks
 // @accept json
 // @produce json
-// @success 200 {object} api.TaskReport
+// @success 204
 // @router /tasks/{id}/report [put]
 // @param id path int true "Task ID"
 // @param task body api.TaskReport true "TaskReport data"
@@ -448,13 +405,12 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Where("taskid", id)
-	result := db.Updates(h.fields(m))
+	result := db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 	}
-	report.With(m)
 
-	h.Respond(ctx, http.StatusOK, report)
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // DeleteReport godoc
@@ -480,33 +436,131 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-// Fields omitted by:
-//   - Create
-//   - Update.
-func (h *TaskHandler) omitted(db *gorm.DB) (out *gorm.DB) {
-	out = db.Omit([]string{
-		"BucketID",
-		"Bucket",
-		"Image",
-		"Pod",
-		"Started",
-		"Terminated",
-		"Canceled",
-		"Error",
-		"Retries",
-	}...)
+// GetAttached godoc
+// @summary Get attached files.
+// @description Get attached files.
+// @description Returns a tarball with attached files.
+// @tags tasks
+// @produce octet-stream
+// @success 200
+// @router /tasks/{id}/attached [get]
+// @param id path int true "Task ID"
+func (h TaskHandler) GetAttached(ctx *gin.Context) {
+	m := &model.Task{}
+	id := h.pk(ctx)
+	db := h.DB(ctx).Preload(clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	tarWriter := tar.NewWriter(ctx.Writer)
+	defer func() {
+		tarWriter.Close()
+	}()
+	r := Task{}
+	r.With(m)
+	var files []*model.File
+	for _, ref := range r.Attached {
+		file := &model.File{}
+		err = h.DB(ctx).First(file, ref.ID).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		err = tarWriter.AssertFile(file.Path)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		files = append(files, file)
+	}
+	ctx.Status(http.StatusOK)
+	for _, file := range files {
+		_ = tarWriter.AddFile(
+			file.Path,
+			fmt.Sprintf("%.3d-%s", file.ID, file.Name))
+	}
+}
+
+// findRefs find referenced resources.
+// - addon
+// - extensions
+// - kind
+// - priority
+// The priority is defaulted to the kind as needed.
+func (h *TaskHandler) findRefs(ctx *gin.Context, r *Task) (err error) {
+	client := h.Client(ctx)
+	if r.Addon != "" {
+		addon := &crd.Addon{}
+		name := r.Addon
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			addon)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Addon: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	for _, name := range r.Extensions {
+		ext := &crd.Extension{}
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			ext)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Extension: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	if r.Kind != "" {
+		kind := &crd.Task{}
+		name := r.Kind
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			kind)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Task: " + name + " not found",
+				}
+			}
+			return
+		}
+		if r.Priority == 0 {
+			r.Priority = kind.Spec.Priority
+		}
+	}
 	return
 }
 
 // TTL time-to-live.
-type TTL struct {
-	Created   int `json:"created,omitempty"`
-	Pending   int `json:"pending,omitempty"`
-	Postponed int `json:"postponed,omitempty"`
-	Running   int `json:"running,omitempty"`
-	Succeeded int `json:"succeeded,omitempty"`
-	Failed    int `json:"failed,omitempty"`
-}
+type TTL model.TTL
+
+// TaskPolicy scheduling policies.
+type TaskPolicy model.TaskPolicy
+
+// Map unstructured object.
+type Map model.Map
 
 // TaskError used in Task.Errors.
 type TaskError struct {
@@ -514,27 +568,33 @@ type TaskError struct {
 	Description string `json:"description"`
 }
 
+// TaskEvent task event.
+type TaskEvent model.TaskEvent
+
+// Attachment file attachment.
+type Attachment model.Attachment
+
 // Task REST resource.
 type Task struct {
 	Resource    `yaml:",inline"`
-	Name        string       `json:"name"`
+	Name        string       `json:"name,omitempty" yaml:",omitempty"`
+	Kind        string       `json:"kind,omitempty" yaml:",omitempty"`
+	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
+	Extensions  []string     `json:"extensions,omitempty" yaml:",omitempty"`
+	State       string       `json:"state,omitempty" yaml:",omitempty"`
 	Locator     string       `json:"locator,omitempty" yaml:",omitempty"`
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
-	Variant     string       `json:"variant,omitempty" yaml:",omitempty"`
-	Policy      string       `json:"policy,omitempty" yaml:",omitempty"`
-	TTL         *TTL         `json:"ttl,omitempty" yaml:",omitempty"`
-	Addon       string       `json:"addon,omitempty" binding:"required" yaml:",omitempty"`
-	Data        interface{}  `json:"data" swaggertype:"object" binding:"required"`
+	Policy      TaskPolicy   `json:"policy,omitempty" yaml:",omitempty"`
+	TTL         TTL          `json:"ttl,omitempty" yaml:",omitempty"`
+	Data        Map          `json:"data,omitempty" yaml:",omitempty"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
-	State       string       `json:"state"`
-	Image       string       `json:"image,omitempty" yaml:",omitempty"`
+	Actions     []string     `json:"actions,omitempty" yaml:",omitempty"`
+	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
 	Pod         string       `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int          `json:"retries,omitempty" yaml:",omitempty"`
 	Started     *time.Time   `json:"started,omitempty" yaml:",omitempty"`
 	Terminated  *time.Time   `json:"terminated,omitempty" yaml:",omitempty"`
-	Canceled    bool         `json:"canceled,omitempty" yaml:",omitempty"`
-	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
-	Purged      bool         `json:"purged,omitempty" yaml:",omitempty"`
+	Events      []TaskEvent  `json:"events,omitempty" yaml:",omitempty"`
 	Errors      []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
 	Activity    []string     `json:"activity,omitempty" yaml:",omitempty"`
 	Attached    []Attachment `json:"attached" yaml:",omitempty"`
@@ -544,33 +604,36 @@ type Task struct {
 func (r *Task) With(m *model.Task) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	r.Image = m.Image
+	r.Kind = m.Kind
 	r.Addon = m.Addon
+	r.Extensions = m.Extensions
+	r.State = m.State
 	r.Locator = m.Locator
 	r.Priority = m.Priority
-	r.Policy = m.Policy
-	r.Variant = m.Variant
+	r.Policy = TaskPolicy(m.Policy)
+	r.TTL = TTL(m.TTL)
+	r.Data = m.Data
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
-	r.State = m.State
-	r.Started = m.Started
-	r.Terminated = m.Terminated
 	r.Pod = m.Pod
 	r.Retries = m.Retries
-	r.Canceled = m.Canceled
-	_ = json.Unmarshal(m.Data, &r.Data)
-	if m.TTL != nil {
-		_ = json.Unmarshal(m.TTL, &r.TTL)
+	r.Started = m.Started
+	r.Terminated = m.Terminated
+	r.Events = nil
+	r.Errors = nil
+	r.Attached = nil
+	for _, event := range m.Events {
+		r.Events = append(r.Events, TaskEvent(event))
 	}
-	if m.Errors != nil {
-		_ = json.Unmarshal(m.Errors, &r.Errors)
+	for _, err := range m.Errors {
+		r.Errors = append(r.Errors, TaskError(err))
 	}
 	if m.Report != nil {
 		report := &TaskReport{}
 		report.With(m.Report)
 		r.Activity = report.Activity
-		r.Errors = append(report.Errors, r.Errors...)
-		r.Attached = report.Attached
+		r.Errors = append(r.Errors, report.Errors...)
+		r.Attached = append(r.Attached, report.Attached...)
 		switch r.State {
 		case tasking.Succeeded:
 			switch report.Status {
@@ -579,25 +642,30 @@ func (r *Task) With(m *model.Task) {
 			}
 		}
 	}
+	for _, a := range m.Attached {
+		r.Attached = append(r.Attached, Attachment(a))
+	}
+	if Settings.Hub.Task.Preemption.Enabled {
+		r.Policy.PreemptEnabled = true
+	}
 }
 
 // Model builds a model.
 func (r *Task) Model() (m *model.Task) {
 	m = &model.Task{
 		Name:          r.Name,
+		Kind:          r.Kind,
 		Addon:         r.Addon,
-		Locator:       r.Locator,
-		Variant:       r.Variant,
-		Priority:      r.Priority,
-		Policy:        r.Policy,
+		Extensions:    r.Extensions,
 		State:         r.State,
+		Locator:       r.Locator,
+		Priority:      r.Priority,
+		Policy:        model.TaskPolicy(r.Policy),
+		TTL:           model.TTL(r.TTL),
+		Data:          r.Data,
 		ApplicationID: r.idPtr(r.Application),
 	}
-	m.Data, _ = json.Marshal(StrMap(r.Data))
 	m.ID = r.ID
-	if r.TTL != nil {
-		m.TTL, _ = json.Marshal(r.TTL)
-	}
 	return
 }
 
@@ -649,7 +717,7 @@ type TaskReport struct {
 	Completed int          `json:"completed,omitempty" yaml:",omitempty"`
 	Activity  []string     `json:"activity,omitempty" yaml:",omitempty"`
 	Attached  []Attachment `json:"attached,omitempty" yaml:",omitempty"`
-	Result    interface{}  `json:"result,omitempty" yaml:",omitempty" swaggertype:"object"`
+	Result    Map          `json:"result,omitempty" yaml:",omitempty"`
 	TaskID    uint         `json:"task"`
 }
 
@@ -660,17 +728,15 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	r.Total = m.Total
 	r.Completed = m.Completed
 	r.TaskID = m.TaskID
-	if m.Activity != nil {
-		_ = json.Unmarshal(m.Activity, &r.Activity)
+	r.Activity = m.Activity
+	r.Result = m.Result
+	r.Errors = nil
+	r.Attached = nil
+	for _, err := range m.Errors {
+		r.Errors = append(r.Errors, TaskError(err))
 	}
-	if m.Errors != nil {
-		_ = json.Unmarshal(m.Errors, &r.Errors)
-	}
-	if m.Attached != nil {
-		_ = json.Unmarshal(m.Attached, &r.Attached)
-	}
-	if m.Result != nil {
-		_ = json.Unmarshal(m.Result, &r.Result)
+	for _, a := range m.Attached {
+		r.Attached = append(r.Attached, Attachment(a))
 	}
 }
 
@@ -683,30 +749,16 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		Status:    r.Status,
 		Total:     r.Total,
 		Completed: r.Completed,
+		Activity:  r.Activity,
+		Result:    r.Result,
 		TaskID:    r.TaskID,
 	}
-	if r.Activity != nil {
-		m.Activity, _ = json.Marshal(r.Activity)
-	}
-	if r.Result != nil {
-		m.Result, _ = json.Marshal(StrMap(r.Result))
-	}
-	if r.Errors != nil {
-		m.Errors, _ = json.Marshal(r.Errors)
-	}
-	if r.Attached != nil {
-		m.Attached, _ = json.Marshal(r.Attached)
-	}
 	m.ID = r.ID
-
+	for _, err := range r.Errors {
+		m.Errors = append(m.Errors, model.TaskError(err))
+	}
+	for _, at := range r.Attached {
+		m.Attached = append(m.Attached, model.Attachment(at))
+	}
 	return
-}
-
-// Attachment associates Files with a TaskReport.
-type Attachment struct {
-	// Ref references an attached File.
-	Ref `yaml:",inline"`
-	// Activity index (1-based) association with an
-	// activity entry. Zero(0) indicates not associated.
-	Activity int `json:"activity,omitempty" yaml:",omitempty"`
 }
