@@ -173,7 +173,7 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 		if err != nil {
 			return
 		}
-		switch requested.State {
+		switch task.State {
 		case Created,
 			Ready:
 			task.UpdateUser = requested.UpdateUser
