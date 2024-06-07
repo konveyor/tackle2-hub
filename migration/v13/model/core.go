@@ -232,8 +232,8 @@ func (m *TaskGroup) Propagate() (err error) {
 		task.State = m.State
 		task.SetBucket(m.BucketID)
 		if m.Data != nil {
-			mA, castA := m.Data.(Map)
-			mB, castB := task.Data.(Map)
+			mA, castA := m.Data.(map[string]any)
+			mB, castB := task.Data.(map[string]any)
 			if castA && castB {
 				task.Data = m.merge(mA, mB)
 			} else {
