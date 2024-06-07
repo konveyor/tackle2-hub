@@ -586,7 +586,7 @@ type Task struct {
 	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
 	Policy      TaskPolicy   `json:"policy,omitempty" yaml:",omitempty"`
 	TTL         TTL          `json:"ttl,omitempty" yaml:",omitempty"`
-	Data        Map          `json:"data,omitempty" yaml:",omitempty"`
+	Data        any          `json:"data,omitempty" yaml:",omitempty"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
 	Actions     []string     `json:"actions,omitempty" yaml:",omitempty"`
 	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
@@ -717,7 +717,7 @@ type TaskReport struct {
 	Completed int          `json:"completed,omitempty" yaml:",omitempty"`
 	Activity  []string     `json:"activity,omitempty" yaml:",omitempty"`
 	Attached  []Attachment `json:"attached,omitempty" yaml:",omitempty"`
-	Result    Map          `json:"result,omitempty" yaml:",omitempty"`
+	Result    any          `json:"result,omitempty" yaml:",omitempty"`
 	TaskID    uint         `json:"task"`
 }
 

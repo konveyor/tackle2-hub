@@ -82,7 +82,7 @@ func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 }
 
 // Data returns the addon data.
-func (h *Task) Data() (d api.Map) {
+func (h *Task) Data() (d any) {
 	d = h.task.Data
 	return
 }

@@ -477,7 +477,7 @@ type TaskGroup struct {
 	State      string     `json:"state"`
 	Priority   int        `json:"priority,omitempty" yaml:",omitempty"`
 	Policy     TaskPolicy `json:"policy,omitempty" yaml:",omitempty"`
-	Data       Map        `json:"data" swaggertype:"object" binding:"required"`
+	Data       any        `json:"data" swaggertype:"object" binding:"required"`
 	Bucket     *Ref       `json:"bucket,omitempty"`
 	Tasks      []Task     `json:"tasks"`
 }
