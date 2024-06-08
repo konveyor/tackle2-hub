@@ -477,7 +477,7 @@ type TaskGroup struct {
 	State      string     `json:"state"`
 	Priority   int        `json:"priority,omitempty" yaml:",omitempty"`
 	Policy     TaskPolicy `json:"policy,omitempty" yaml:",omitempty"`
-	Data       Map        `json:"data" swaggertype:"object" binding:"required"`
+	Data       any        `json:"data" swaggertype:"object" binding:"required"`
 	Bucket     *Ref       `json:"bucket,omitempty"`
 	Tasks      []Task     `json:"tasks"`
 }
@@ -492,7 +492,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	r.State = m.State
 	r.Priority = m.Priority
 	r.Policy = TaskPolicy(m.Policy)
-	r.Data = m.Data
+	r.Data = m.Data.Any
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Tasks = []Task{}
 	switch m.State {
@@ -525,9 +525,9 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 		State:      r.State,
 		Priority:   r.Priority,
 		Policy:     model.TaskPolicy(r.Policy),
-		Data:       r.Data,
 	}
 	m.ID = r.ID
+	m.Data.Any = r.Data
 	for _, task := range r.Tasks {
 		m.List = append(m.List, *task.Model())
 	}

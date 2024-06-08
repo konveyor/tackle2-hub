@@ -126,7 +126,7 @@ type Task struct {
 	Priority      int
 	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
 	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          Map        `gorm:"type:json;serializer:json"`
+	Data          Data       `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
 	Errors        []TaskError `gorm:"type:json;serializer:json"`
@@ -156,6 +156,14 @@ type TaskEvent struct {
 
 // Map alias.
 type Map = map[string]any
+
+// Any alias.
+type Any any
+
+// Data json any field.
+type Data struct {
+	Any
+}
 
 // TTL time-to-live.
 type TTL struct {
@@ -200,7 +208,7 @@ type TaskReport struct {
 	Activity  []string     `gorm:"type:json;serializer:json"`
 	Errors    []TaskError  `gorm:"type:json;serializer:json"`
 	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    Map          `gorm:"type:json;serializer:json"`
+	Result    Data         `gorm:"type:json;serializer:json"`
 	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -215,7 +223,7 @@ type TaskGroup struct {
 	State      string
 	Priority   int
 	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       Map        `gorm:"type:json;serializer:json"`
+	Data       Data       `gorm:"type:json;serializer:json"`
 	List       []Task     `gorm:"type:json;serializer:json"`
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
@@ -231,8 +239,14 @@ func (m *TaskGroup) Propagate() (err error) {
 		task.Policy = m.Policy
 		task.State = m.State
 		task.SetBucket(m.BucketID)
-		if m.Data != nil {
-			task.Data = m.merge(m.Data, task.Data)
+		if m.Data.Any != nil {
+			mA, castA := m.Data.Any.(map[string]any)
+			mB, castB := task.Data.Any.(map[string]any)
+			if castA && castB {
+				task.Data.Any = m.merge(mA, mB)
+			} else {
+				task.Data.Any = m.Data
+			}
 		}
 	}
 
