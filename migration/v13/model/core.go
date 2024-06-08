@@ -126,7 +126,7 @@ type Task struct {
 	Priority      int
 	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
 	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          Object     `gorm:"type:json;serializer:json"`
+	Data          Data       `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
 	Errors        []TaskError `gorm:"type:json;serializer:json"`
@@ -160,8 +160,8 @@ type Map = map[string]any
 // Any alias.
 type Any any
 
-// Object json any field.
-type Object struct {
+// Data json any field.
+type Data struct {
 	Any
 }
 
@@ -208,7 +208,7 @@ type TaskReport struct {
 	Activity  []string     `gorm:"type:json;serializer:json"`
 	Errors    []TaskError  `gorm:"type:json;serializer:json"`
 	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    Object       `gorm:"type:json;serializer:json"`
+	Result    Data         `gorm:"type:json;serializer:json"`
 	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -223,7 +223,7 @@ type TaskGroup struct {
 	State      string
 	Priority   int
 	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       Object     `gorm:"type:json;serializer:json"`
+	Data       Data       `gorm:"type:json;serializer:json"`
 	List       []Task     `gorm:"type:json;serializer:json"`
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }

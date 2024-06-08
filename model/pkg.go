@@ -49,7 +49,7 @@ type Tracker = model.Tracker
 type TTL = model.TTL
 type Ref = model.Ref
 type Map = model.Map
-type Object = model.Object
+type Data = model.Data
 
 type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent
