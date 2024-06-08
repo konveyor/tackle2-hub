@@ -612,16 +612,16 @@ func (r *Task) With(m *model.Task) {
 	r.Priority = m.Priority
 	r.Policy = TaskPolicy(m.Policy)
 	r.TTL = TTL(m.TTL)
-	r.Data = m.Data
+	r.Data = m.Data.Any
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Pod = m.Pod
 	r.Retries = m.Retries
 	r.Started = m.Started
 	r.Terminated = m.Terminated
-	r.Events = nil
-	r.Errors = nil
-	r.Attached = nil
+	r.Events = make([]TaskEvent, 0)
+	r.Errors = make([]TaskError, 0)
+	r.Attached = make([]Attachment, 0)
 	for _, event := range m.Events {
 		r.Events = append(r.Events, TaskEvent(event))
 	}
@@ -662,10 +662,10 @@ func (r *Task) Model() (m *model.Task) {
 		Priority:      r.Priority,
 		Policy:        model.TaskPolicy(r.Policy),
 		TTL:           model.TTL(r.TTL),
-		Data:          r.Data,
 		ApplicationID: r.idPtr(r.Application),
 	}
 	m.ID = r.ID
+	m.Data.Any = r.Data
 	return
 }
 
@@ -729,9 +729,9 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	r.Completed = m.Completed
 	r.TaskID = m.TaskID
 	r.Activity = m.Activity
-	r.Result = m.Result
-	r.Errors = nil
-	r.Attached = nil
+	r.Result = m.Result.Any
+	r.Errors = make([]TaskError, 0)
+	r.Attached = make([]Attachment, 0)
 	for _, err := range m.Errors {
 		r.Errors = append(r.Errors, TaskError(err))
 	}
@@ -750,10 +750,10 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		Total:     r.Total,
 		Completed: r.Completed,
 		Activity:  r.Activity,
-		Result:    r.Result,
 		TaskID:    r.TaskID,
 	}
 	m.ID = r.ID
+	m.Result.Any = r.Result
 	for _, err := range r.Errors {
 		m.Errors = append(m.Errors, model.TaskError(err))
 	}

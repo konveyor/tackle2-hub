@@ -32,7 +32,15 @@ func (r jsonSerializer) Scan(ctx context.Context, field *schema.Field, dst refle
 		}
 		if len(b) > 0 {
 			ptr := fieldValue.Interface()
+			switch object := ptr.(type) {
+			case *Object:
+				ptr = &object.Any
+			default:
+			}
 			err = json.Unmarshal(b, ptr)
+			if err != nil {
+				return
+			}
 		}
 	}
 	v := fieldValue.Elem()
@@ -43,6 +51,11 @@ func (r jsonSerializer) Scan(ctx context.Context, field *schema.Field, dst refle
 // Value implements serializer.
 func (r jsonSerializer) Value(_ context.Context, _ *schema.Field, _ reflect.Value, fieldValue any) (v any, err error) {
 	mp := r.jMap(fieldValue)
+	switch object := mp.(type) {
+	case Object:
+		mp = object.Any
+	default:
+	}
 	v, err = json.Marshal(mp)
 	return
 }
