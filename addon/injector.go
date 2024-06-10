@@ -62,10 +62,15 @@ func (r *EnvInjector) inject(in any) (out any) {
 			if len(match) < 3 {
 				break
 			}
+			k := match[2]
+			v := r.env[k]
+			if v == "" {
+				break
+			}
 			node = strings.Replace(
 				node,
 				match[0],
-				r.env[match[2]],
+				v,
 				-1)
 		}
 		out = node
