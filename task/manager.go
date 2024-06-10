@@ -282,10 +282,18 @@ func (m *Manager) pause() {
 
 // action executes an asynchronous action.
 func (m *Manager) action(action func() error) (err error) {
-	d := time.Hour
+	d := time.Minute
 	ch := make(chan error)
 	m.queue <- func() {
-		defer close(ch)
+		defer func() {
+			p := recover()
+			if p != nil {
+				if err, cast := p.(error); cast {
+					ch <- err
+				}
+			}
+			close(ch)
+		}()
 		select {
 		case ch <- action():
 		default:
