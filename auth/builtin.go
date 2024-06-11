@@ -62,15 +62,28 @@ func (r *NoAuth) Refresh(refresh string) (token Token, err error) {
 type Builtin struct {
 }
 
+// Parse Token out of a string
+func parseToken(requestToken string) (token string, err error) {
+	splitToken := strings.Fields(requestToken)
+	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
+		err = liberr.Wrap(&NotValid{Token: requestToken})
+		return
+	}
+	token = splitToken[1]
+	return
+}
+
 // Authenticate the token
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
-	token := strings.Replace(request.Token, "Bearer", "", 1)
-	token = strings.Fields(token)[0]
 	defer func() {
 		if err != nil {
 			Log.Info(err.Error())
 		}
 	}()
+	token, err := parseToken(request.Token)
+	if err != nil {
+		return
+	}
 	jwToken, err = jwt.Parse(
 		token,
 		func(jwToken *jwt.Token) (secret interface{}, err error) {
