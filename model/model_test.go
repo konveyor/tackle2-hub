@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -35,6 +36,14 @@ func TestMapArrayStruct(t *testing.T) {
 	g.Expect(list[1].(Attachment).ID).To(gomega.Equal(in[1].ID))
 	g.Expect(list[0].(Attachment).Activity).To(gomega.Equal(in[0].Activity))
 	g.Expect(list[1].(Attachment).Activity).To(gomega.Equal(in[1].Activity))
+
+	m, err := json.Marshal(list[0])
+	g.Expect(err).To(gomega.BeNil())
+	m2 := make(map[string]any)
+	err = json.Unmarshal(m, &m2)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m2["id"]).To(gomega.Equal(float64(1)))
+	g.Expect(m2["activity"]).To(gomega.Equal(float64(18)))
 }
 
 func TestMapData(t *testing.T) {
