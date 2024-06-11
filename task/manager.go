@@ -255,10 +255,10 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 			}
 			pod, found := m.cluster.pods[path.Base(task.Pod)]
 			if found {
-				err = m.podSnapshot(task, pod)
-				if err != nil {
-					return
-				}
+				snErr := m.podSnapshot(task, pod)
+				Log.Error(
+					snErr,
+					"Snapshot not created.")
 			}
 			err = task.Cancel(m.Client)
 			if err != nil {
