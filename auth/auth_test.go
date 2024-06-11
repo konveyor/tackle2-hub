@@ -33,7 +33,7 @@ func TestValid(t *testing.T) {
 	g.Expect(len(signed) > 0).To(gomega.BeTrue())
 	//
 	// Authenticate
-	jwToken, err := p.Authenticate(&Request{Token: signed})
+	jwToken, err := p.Authenticate(&Request{Token: "Bearer " + signed})
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(jwToken != nil).To(gomega.BeTrue())
 	//
@@ -67,13 +67,13 @@ func TestNotValid(t *testing.T) {
 	g.Expect(len(signed) > 0).To(gomega.BeTrue())
 	//
 	// Valid
-	jwToken, err := p.Authenticate(&Request{Token: signed})
+	jwToken, err := p.Authenticate(&Request{Token: "Bearer " + signed})
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(jwToken != nil).To(gomega.BeTrue())
 	//
 	// Not valid.
 	Settings.Auth.Token.Key = "NotMyKey"
-	jwToken, err = p.Authenticate(&Request{Token: signed})
+	jwToken, err = p.Authenticate(&Request{Token: "Bearer " + signed})
 	g.Expect(err != nil).To(gomega.BeTrue())
 }
 
@@ -128,7 +128,7 @@ func TestRequestHubPermit(t *testing.T) {
 	//
 	// Permit
 	request := Request{
-		Token:  signed,
+		Token:  "Bearer " + signed,
 		Scope:  "things",
 		Method: "GET",
 	}
@@ -159,7 +159,7 @@ func TestRequestRemotePermit(t *testing.T) {
 	//
 	// Permit
 	request := Request{
-		Token:  signed,
+		Token:  "Bearer " + signed,
 		Scope:  "things",
 		Method: "GET",
 	}
@@ -210,7 +210,7 @@ func TestRequestHubPermitNotAuthorized(t *testing.T) {
 	//
 	// Permit
 	request := Request{
-		Token:  signed,
+		Token:  "Bearer " + signed,
 		Scope:  "things",
 		Method: "PUT",
 	}
@@ -239,7 +239,7 @@ func TestRequestRemotePermitNotAuthorized(t *testing.T) {
 	//
 	// Permit
 	request := Request{
-		Token:  signed,
+		Token:  "Bearer " + signed,
 		Scope:  "things",
 		Method: "PUT",
 	}
