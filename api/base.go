@@ -278,6 +278,38 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 		attachment)
 }
 
+// Merge maps B into A.
+// The B map is the authority.
+func (h *BaseHandler) Merge(a, b map[string]any) (out map[string]any) {
+	if a == nil {
+		a = map[string]any{}
+	}
+	if b == nil {
+		b = map[string]any{}
+	}
+	out = map[string]any{}
+	for k, v := range a {
+		out[k] = v
+		if bv, found := b[k]; found {
+			out[k] = bv
+			if av, cast := v.(map[string]any); cast {
+				if bv, cast := bv.(map[string]any); cast {
+					out[k] = h.Merge(av, bv)
+				} else {
+					out[k] = bv
+				}
+			}
+		}
+	}
+	for k, v := range b {
+		if _, found := a[k]; !found {
+			out[k] = v
+		}
+	}
+
+	return
+}
+
 // REST resource.
 type Resource struct {
 	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
