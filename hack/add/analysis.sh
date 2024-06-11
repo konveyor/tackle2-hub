@@ -197,6 +197,7 @@ version: 8
 #
 file=${aPath}
 echo -n "---
+commit: "42b22a90"
 issues:
 dependencies:
 " > ${file}
