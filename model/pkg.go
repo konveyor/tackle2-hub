@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/migration/v13/model"
+	"github.com/konveyor/tackle2-hub/migration/v14/model"
 )
 
 // Field (data) types.
