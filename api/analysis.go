@@ -790,6 +790,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @description List all incidents.
 // @description filters:
 // @description - file
+// @description - issue.id
 // @tags incidents
 // @produce json
 // @success 200 {object} []api.Incident
@@ -799,11 +800,13 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "file", Kind: qf.STRING},
+			{Field: "issue.id", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	filter = filter.Renamed("issue.id", "issueid")
 	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Incident{})
