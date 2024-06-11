@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tar"
@@ -25,6 +26,8 @@ import (
 // Routes
 const (
 	TasksRoot             = "/tasks"
+	TasksReportRoot       = TasksRoot + "/report"
+	TasksReportQueueRoot  = TasksReportRoot + "/queue"
 	TaskRoot              = TasksRoot + "/:" + ID
 	TaskReportRoot        = TaskRoot + "/report"
 	TaskAttachedRoot      = TaskRoot + "/attached"
@@ -53,6 +56,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
+	routeGroup.GET(TasksReportQueueRoot, h.Queued)
 	// Actions
 	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
@@ -108,31 +112,150 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all tasks.
 // @description List all tasks.
+// @description Filters:
+// @description - kind
+// @description - addon
+// @description - name
+// @description - locator
+// @description - state
+// @description - application.id
+// @description The state=queued is an alias for queued states.
 // @tags tasks
 // @produce json
 // @success 200 {object} []api.Task
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
-	var list []model.Task
-	db := h.DB(ctx)
-	locator := ctx.Query(LocatorParam)
-	if locator != "" {
-		db = db.Where("locator", locator)
-	}
-	db = db.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	resources := []Task{}
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "addon", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "locator", Kind: qf.STRING},
+			{Field: "state", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	resources := []Task{}
+	if state, found := filter.Field("state"); found {
+		values := qf.Value{}
+		for _, v := range state.Value.ByKind(qf.LITERAL, qf.STRING) {
+			switch v.Value {
+			case "queued":
+				values = append(
+					values,
+					qf.Token{Kind: qf.STRING, Value: tasking.Ready},
+					qf.Token{Kind: qf.STRING, Value: tasking.Postponed},
+					qf.Token{Kind: qf.STRING, Value: tasking.Pending},
+					qf.Token{Kind: qf.STRING, Value: tasking.Running})
+			default:
+				values = append(values, v)
+			}
+		}
+		values = values.Join(qf.OR)
+		filter = filter.Revalued("state", values)
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.Issue{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Model(&model.Task{})
+	db = db.Preload(clause.Associations)
+	db = sort.Sorted(db)
+	filter = filter.Renamed("application.id", "applicationId")
+	db = filter.Where(db)
+	var m model.Task
+	var list []model.Task
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	for i := range list {
+		m := &list[i]
 		r := Task{}
-		r.With(&list[i])
+		r.With(m)
 		resources = append(resources, r)
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// Queued godoc
+// @summary Queued queued task report.
+// @description Queued queued task report.
+// @description Filters:
+// @description - addon
+// @tags tasks
+// @produce json
+// @success 200 {object} []api.TaskQueue
+// @router /tasks [get]
+func (h TaskHandler) Queued(ctx *gin.Context) {
+	r := TaskQueue{}
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "addon", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx)
+	db = db.Table("task")
+	db = filter.Where(db)
+	type M struct {
+		State string
+		Count int
+	}
+	db = db.Select("State", "COUNT(*)")
+	db = db.Where(
+		"State", []string{
+			tasking.Ready,
+			tasking.Postponed,
+			tasking.Pending,
+			tasking.Ready,
+		})
+	db = db.Group("State")
+	var list []M
+	err = db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for _, q := range list {
+		r.Total += q.Count
+		switch q.State {
+		case tasking.Ready:
+			r.Ready = q.Count
+		case tasking.Postponed:
+			r.Postponed = q.Count
+		case tasking.Pending:
+			r.Pending = q.Count
+		case tasking.Running:
+			r.Running = q.Count
+		}
+	}
+
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // Create godoc
@@ -761,4 +884,13 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 		m.Attached = append(m.Attached, model.Attachment(at))
 	}
 	return
+}
+
+// TaskQueue report.
+type TaskQueue struct {
+	Total     int `json:"total"`
+	Ready     int `json:"ready"`
+	Postponed int `json:"postponed"`
+	Pending   int `json:"pending"`
+	Running   int `json:"running"`
 }

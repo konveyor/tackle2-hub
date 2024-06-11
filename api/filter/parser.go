@@ -97,6 +97,17 @@ func (r *Value) Operator(operator byte) (matched bool) {
 	return
 }
 
+// Join values with operator.
+func (r *Value) Join(operator byte) (out Value) {
+	for i := range r.ByKind(LITERAL, STRING) {
+		if i > 0 {
+			out = append(out, Token{Kind: OPERATOR, Value: string(operator)})
+		}
+		out = append(out, (*r)[i])
+	}
+	return
+}
+
 // List construct.
 // Example: (red|blue|green)
 type List struct {
