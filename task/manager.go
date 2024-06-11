@@ -794,19 +794,18 @@ func (m *Manager) updateRunning() {
 		}
 		running := task
 		pod, found := running.Reflect(m.cluster)
-		if !found {
-			continue
-		}
-		if task.StateIn(Succeeded, Failed) {
-			err = m.podSnapshot(running, pod)
-			if err != nil {
-				Log.Error(err, "")
-				continue
-			}
-			err = running.Delete(m.Client)
-			if err != nil {
-				Log.Error(err, "")
-				continue
+		if found {
+			if task.StateIn(Succeeded, Failed) {
+				err = m.podSnapshot(running, pod)
+				if err != nil {
+					Log.Error(err, "")
+					continue
+				}
+				err = running.Delete(m.Client)
+				if err != nil {
+					Log.Error(err, "")
+					continue
+				}
 			}
 		}
 		err = m.DB.Save(&running).Error
