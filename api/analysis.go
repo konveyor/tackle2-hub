@@ -2123,26 +2123,8 @@ type Analysis struct {
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
 	r.Effort = m.Effort
+	r.Commit = m.Commit
 	r.Archived = m.Archived
-	r.Issues = []Issue{}
-	for i := range m.Issues {
-		n := Issue{}
-		n.With(&m.Issues[i])
-		r.Issues = append(
-			r.Issues,
-			n)
-	}
-	r.Dependencies = []TechDependency{}
-	for i := range m.Dependencies {
-		n := TechDependency{}
-		n.With(&m.Dependencies[i])
-		r.Dependencies = append(
-			r.Dependencies,
-			n)
-	}
-	if m.Summary != nil {
-		_ = json.Unmarshal(m.Summary, &r.Summary)
-	}
 }
 
 // Model builds a model.
@@ -2151,19 +2133,6 @@ func (r *Analysis) Model() (m *model.Analysis) {
 	m.Effort = r.Effort
 	m.Commit = r.Commit
 	m.Issues = []model.Issue{}
-	for i := range r.Issues {
-		n := r.Issues[i].Model()
-		m.Issues = append(
-			m.Issues,
-			*n)
-	}
-	m.Dependencies = []model.TechDependency{}
-	for i := range r.Dependencies {
-		n := r.Dependencies[i].Model()
-		m.Dependencies = append(
-			m.Dependencies,
-			*n)
-	}
 	return
 }
 
