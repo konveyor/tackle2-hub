@@ -671,6 +671,14 @@ func (h *TaskHandler) findRefs(ctx *gin.Context, r *Task) (err error) {
 		}
 		if r.Priority == 0 {
 			r.Priority = kind.Spec.Priority
+			kindData := h.AsMap(kind.Spec.Data)
+			mA := kindData
+			mB, castB := r.Data.(map[string]any)
+			if castB {
+				r.Data = h.Merge(mA, mB)
+			} else {
+				r.Data = mA
+			}
 		}
 	}
 	return

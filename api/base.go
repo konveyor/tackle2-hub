@@ -310,6 +310,14 @@ func (h *BaseHandler) Merge(a, b map[string]any) (out map[string]any) {
 	return
 }
 
+// AsMap returns the object as a map.
+func (h *BaseHandler) AsMap(object any) (mp map[string]any) {
+	b, _ := json.Marshal(object)
+	mp = make(map[string]any)
+	_ = json.Unmarshal(b, &mp)
+	return
+}
+
 // REST resource.
 type Resource struct {
 	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
