@@ -26,10 +26,14 @@ import (
 const (
 	AnalysesRoot          = "/analyses"
 	AnalysisRoot          = AnalysesRoot + "/:" + ID
+	AnalysisArchiveRoot   = AnalysisRoot + "/archive"
+	AnalysisIssuesRoot    = AnalysisRoot + "/issues"
+	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
 	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
 	AnalysesIssuesRoot    = AnalysesRoot + "/issues"
 	AnalysesIssueRoot     = AnalysesIssuesRoot + "/:" + ID
-	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
+	AnalysesIncidentsRoot = AnalysesRoot + "/incidents"
+	AnalysesIncidentRoot  = AnalysesIncidentsRoot + "/:" + ID
 	//
 	AnalysesReportRoot           = AnalysesRoot + "/report"
 	AnalysisReportDepsRoot       = AnalysesReportRoot + "/dependencies"
@@ -65,11 +69,17 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analyses"))
 	routeGroup.GET(AnalysisRoot, h.Get)
+	routeGroup.POST(AnalysisArchiveRoot, h.Archive)
+	routeGroup.GET(AnalysesRoot, h.List)
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
 	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
 	routeGroup.GET(AnalysesIssueRoot, h.Issue)
-	routeGroup.GET(AnalysisIncidentsRoot, h.Incidents)
+	routeGroup.GET(AnalysesIncidentsRoot, h.Incidents)
+	routeGroup.GET(AnalysesIncidentRoot, h.Incident)
+	routeGroup.GET(AnalysisIssuesRoot, h.AnalysisIssues)
+	routeGroup.GET(AnalysisIncidentsRoot, h.IssueIncidents)
+	// Report
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
 	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
 	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
@@ -110,6 +120,64 @@ func (h AnalysisHandler) Get(ctx *gin.Context) {
 	ctx.File(path)
 }
 
+// List godoc
+// @summary List analyses.
+// @description List analyses.
+// @description Resources do not include relations.
+// @tags analyses
+// @produce json
+// @success 200 {object} []api.Analysis
+// @router /analyses [get]
+func (h AnalysisHandler) List(ctx *gin.Context) {
+	resources := []Analysis{}
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "id", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	sort := Sort{}
+	err = sort.With(ctx, &model.Analysis{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Find
+	db := h.DB(ctx)
+	db = db.Model(&model.Analysis{})
+	db = db.Preload("Application")
+	db = db.Omit("Summary")
+	db = filter.Where(db)
+	db = sort.Sorted(db)
+	var list []model.Analysis
+	var m model.Analysis
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	// Render
+	for i := range list {
+		m := &list[i]
+		r := Analysis{}
+		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
 // AppLatest godoc
 // @summary Get the latest analysis.
 // @description Get the latest analysis for an application.
@@ -139,6 +207,32 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	}()
 	h.Status(ctx, http.StatusOK)
 	ctx.File(path)
+}
+
+// Archive godoc
+// @summary Archive an analysis (report) by ID.
+// @description Archive an analysis (report) by ID.
+// @tags analyses
+// @produce octet-stream
+// @success 204 {object}
+// @router /analyses/{id}/archive [post]
+// @param id path int true "Analysis ID"
+func (h AnalysisHandler) Archive(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Analysis{}
+	db := h.DB(ctx).Select(ID)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.archiveById(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // AppLatestReport godoc
@@ -185,6 +279,8 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Analysis{})
 	db = db.Where("ApplicationID = ?", id)
+	db = db.Preload("Application")
+	db = db.Omit("Summary")
 	db = sort.Sorted(db)
 	var list []model.Analysis
 	var m model.Analysis
@@ -202,15 +298,11 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 		}
 		list = append(list, m)
 	}
-	err = h.WithCount(ctx, cursor.Count())
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	// Render
 	for i := range list {
+		m := &list[i]
 		r := Analysis{}
-		r.With(&list[i])
+		r.With(m)
 		resources = append(resources, r)
 	}
 
@@ -236,20 +328,12 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	err := h.archive(ctx)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	analysis := &model.Analysis{}
-	analysis.ApplicationID = id
-	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB(ctx)
-	db.Logger = db.Logger.LogMode(logger.Error)
-	err = db.Create(analysis).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if Settings.Analysis.ArchiverEnabled {
+		err := h.archiveByApp(ctx)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	//
 	// Analysis
@@ -279,6 +363,16 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	err = d.Decode(&r)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
+		return
+	}
+	analysis := r.Model()
+	analysis.ApplicationID = id
+	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	db := h.DB(ctx)
+	db.Logger = db.Logger.LogMode(logger.Error)
+	err = db.Create(analysis).Error
+	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -388,7 +482,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 
 	db = h.DB(ctx)
-	db = db.Preload(clause.Associations)
+	db = db.Preload("Application")
 	err = db.First(analysis).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -521,7 +615,6 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @router /application/{id}/analysis/issues [get]
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
-	resources := []Issue{}
 	// Latest
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -545,49 +638,23 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// Sort
-	sort := Sort{}
-	err = sort.With(ctx, &model.Issue{})
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	// Find
-	db = h.DB(ctx)
-	db = db.Model(&model.Issue{})
-	db = db.Where("AnalysisID = ?", analysis.ID)
-	db = db.Where("ID IN (?)", h.issueIDs(ctx, filter))
-	db = sort.Sorted(db)
-	var list []model.Issue
-	var m model.Issue
-	page := Page{}
-	page.With(ctx)
-	cursor := Cursor{}
-	cursor.With(db, page)
-	defer func() {
-		cursor.Close()
-	}()
-	for cursor.Next(&m) {
-		if cursor.Error != nil {
-			_ = ctx.Error(cursor.Error)
-			return
-		}
-		list = append(list, m)
-	}
-	err = h.WithCount(ctx, cursor.Count())
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	// Render
-	for i := range list {
-		m := &list[i]
-		r := Issue{}
-		r.With(m)
-		resources = append(resources, r)
+	writer := IssueWriter{ctx: ctx}
+	path, count, err := writer.Create(analysis.ID, filter)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-
-	h.Respond(ctx, http.StatusOK, resources)
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
 }
 
 // Issues godoc
@@ -608,7 +675,6 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @success 200 {object} []api.Issue
 // @router /analyses/issues [get]
 func (h AnalysisHandler) Issues(ctx *gin.Context) {
-	resources := []Issue{}
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -626,52 +692,73 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// Sort
-	sort := Sort{}
-	err = sort.With(ctx, &model.Issue{})
+	// Render
+	writer := IssueWriter{ctx: ctx}
+	path, count, err := writer.Create(0, filter)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	// Find
-	db := h.DB(ctx)
-	db = db.Table("Issue i")
-	db = db.Joins(",Analysis a")
-	db = db.Where("a.ID = i.AnalysisID")
-	db = db.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
-	db = db.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
-	db = db.Group("i.ID")
-	db = sort.Sorted(db)
-	var list []model.Issue
-	var m model.Issue
-	page := Page{}
-	page.With(ctx)
-	cursor := Cursor{}
-	cursor.With(db, page)
 	defer func() {
-		cursor.Close()
+		_ = os.Remove(path)
 	}()
-	for cursor.Next(&m) {
-		if cursor.Error != nil {
-			_ = ctx.Error(cursor.Error)
-			return
-		}
-		list = append(list, m)
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-	err = h.WithCount(ctx, cursor.Count())
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
+}
+
+// AnalysisIssues godoc
+// @summary List issues for an analysis.
+// @description List issues for an analysis.
+// @description filters:
+// @description - ruleset
+// @description - rule
+// @description - name
+// @description - category
+// @description - effort
+// @description - labels
+// @tags issues
+// @produce json
+// @success 200 {object} []api.Issue
+// @router /analyses/{id}/issues [get]
+// @param id path int true "Analysis ID"
+func (h AnalysisHandler) AnalysisIssues(ctx *gin.Context) {
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "ruleset", Kind: qf.STRING},
+			{Field: "rule", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "category", Kind: qf.STRING},
+			{Field: "effort", Kind: qf.LITERAL},
+			{Field: "labels", Kind: qf.STRING, And: true},
+		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Render
-	for i := range list {
-		m := &list[i]
-		r := Issue{}
-		r.With(m)
-		resources = append(resources, r)
+	id := h.pk(ctx)
+	writer := IssueWriter{ctx: ctx}
+	path, count, err := writer.Create(id, filter)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-
-	h.Respond(ctx, http.StatusOK, resources)
+	defer func() {
+		_ = os.Remove(path)
+	}()
+	err = h.WithCount(ctx, count)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	h.Status(ctx, http.StatusOK)
+	ctx.File(path)
 }
 
 // Issue godoc
@@ -699,6 +786,71 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 }
 
 // Incidents godoc
+// @summary List all incidents.
+// @description List all incidents.
+// @description filters:
+// @description - file
+// @tags incidents
+// @produce json
+// @success 200 {object} []api.Incident
+// @router /analyses/incidents [get]
+func (h AnalysisHandler) Incidents(ctx *gin.Context) {
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "file", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &model.Incident{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Find
+	db := h.DB(ctx)
+	db = db.Model(&model.Incident{})
+	db = filter.Where(db)
+	db = sort.Sorted(db)
+	var list []model.Incident
+	var m model.Incident
+	cursor := Cursor{}
+	defer func() {
+		cursor.Close()
+	}()
+	page := Page{}
+	page.With(ctx)
+	cursor.With(db, page)
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Render
+	resources := []Incident{}
+	for _, m := range list {
+		r := Incident{}
+		r.With(&m)
+		resources = append(
+			resources,
+			r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// IssueIncidents godoc
 // @summary List incidents for an issue.
 // @description List incidents for an issue.
 // @description filters:
@@ -708,7 +860,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @success 200 {object} []api.Incident
 // @router /analyses/issues/{id}/incidents [get]
 // @param id path int true "Issue ID"
-func (h AnalysisHandler) Incidents(ctx *gin.Context) {
+func (h AnalysisHandler) IssueIncidents(ctx *gin.Context) {
 	issueId := ctx.Param(ID)
 	// Filter
 	filter, err := qf.New(ctx,
@@ -764,6 +916,29 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// Incident godoc
+// @summary Get an incident.
+// @description Get an incident.
+// @tags issue
+// @produce json
+// @success 200 {object} api.Incident
+// @router /analyses/incidents/{id} [get]
+// @param id path int true "Issue ID"
+func (h AnalysisHandler) Incident(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Incident{}
+	db := h.DB(ctx)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := Incident{}
+	r.With(m)
+
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // RuleReports godoc
@@ -867,6 +1042,7 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
 	// Render
 	for i := range list {
 		m := list[i]
@@ -1331,7 +1507,81 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	// Find
 	db := h.DB(ctx)
 	db = db.Model(&model.TechDependency{})
-	db = db.Where("AnalysisID IN (?)", h.analysisIDs(ctx, filter))
+	db = db.Where("AnalysisID IN (?)", h.analysesIDs(ctx, filter))
+	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
+	db = sort.Sorted(db)
+	var list []model.TechDependency
+	var m model.TechDependency
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	defer func() {
+		cursor.Close()
+	}()
+	for cursor.Next(&m) {
+		if cursor.Error != nil {
+			_ = ctx.Error(cursor.Error)
+			return
+		}
+		list = append(list, m)
+	}
+	err = h.WithCount(ctx, cursor.Count())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	// Render
+	for i := range list {
+		r := TechDependency{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// AnalysisDeps godoc
+// @summary List analysis dependencies.
+// @description List analysis dependencies.
+// @description filters:
+// @description - name
+// @description - version
+// @description - sha
+// @description - indirect
+// @description - labels
+// @tags dependencies
+// @produce json
+// @success 200 {object} []api.TechDependency
+// @router /analyses/{id}/dependencies [get]
+// @param id path int true "Analysis ID"
+func (h AnalysisHandler) AnalysisDeps(ctx *gin.Context) {
+	resources := []TechDependency{}
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
+			{Field: "version", Kind: qf.STRING},
+			{Field: "sha", Kind: qf.STRING},
+			{Field: "indirect", Kind: qf.STRING},
+			{Field: "labels", Kind: qf.STRING, And: true},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Sort
+	sort := Sort{}
+	err = sort.With(ctx, &model.TechDependency{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Find
+	db := h.DB(ctx)
+	db = db.Model(&model.TechDependency{})
+	db = db.Where("AnalysisID = ?", h.pk(ctx))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
 	var list []model.TechDependency
@@ -1683,6 +1933,16 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 }
 
 // analysisIDs provides analysis IDs.
+func (h *AnalysisHandler) analysesIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.Analysis{})
+	q = q.Select("ID")
+	q = q.Where("ApplicationID IN (?)", h.appIDs(ctx, f))
+	q = q.Group("ApplicationID")
+	return
+}
+
+// analysisIDs provides LATEST analysis IDs.
 func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Analysis{})
@@ -1764,18 +2024,41 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	return
 }
 
+// archiveById
+// - Set the 'archived' flag.
+// - Set the 'summary' field with archived issues.
+// - Delete issues.
+// - Delete dependencies.
+func (h *AnalysisHandler) archiveById(ctx *gin.Context) (err error) {
+	id := h.pk(ctx)
+	db := h.DB(ctx)
+	db = db.Where("id", id)
+	err = h.archive(ctx, db)
+	return
+}
+
+// archiveByApp
+// - Set the 'archived' flag.
+// - Set the 'summary' field with archived issues.
+// - Delete issues.
+// - Delete dependencies.
+func (h *AnalysisHandler) archiveByApp(ctx *gin.Context) (err error) {
+	id := h.pk(ctx)
+	db := h.DB(ctx)
+	db = db.Where("ApplicationID", id)
+	err = h.archive(ctx, db)
+	return
+}
+
 // archive
 // - Set the 'archived' flag.
 // - Set the 'summary' field with archived issues.
 // - Delete issues.
 // - Delete dependencies.
-func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
-	appId := h.pk(ctx)
+func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 	var unarchived []model.Analysis
-	db := h.DB(ctx)
-	db = db.Where("ApplicationID", appId)
-	db = db.Where("Archived", false)
-	err = db.Find(&unarchived).Error
+	q = q.Where("Archived", false)
+	err = q.Find(&unarchived).Error
 	if err != nil {
 		return
 	}
@@ -1829,6 +2112,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context) (err error) {
 type Analysis struct {
 	Resource     `yaml:",inline"`
 	Effort       int              `json:"effort"`
+	Commit       string           `json:"commit,omitempty" yaml:",omitempty"`
 	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
 	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
 	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
@@ -1865,6 +2149,7 @@ func (r *Analysis) With(m *model.Analysis) {
 func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
 	m.Effort = r.Effort
+	m.Commit = r.Commit
 	m.Issues = []model.Issue{}
 	for i := range r.Issues {
 		n := r.Issues[i].Model()
@@ -1885,6 +2170,7 @@ func (r *Analysis) Model() (m *model.Analysis) {
 // Issue REST resource.
 type Issue struct {
 	Resource    `yaml:",inline"`
+	Analysis    uint       `json:"analysis"`
 	RuleSet     string     `json:"ruleset" binding:"required"`
 	Rule        string     `json:"rule" binding:"required"`
 	Name        string     `json:"name" binding:"required"`
@@ -1900,6 +2186,7 @@ type Issue struct {
 // With updates the resource with the model.
 func (r *Issue) With(m *model.Issue) {
 	r.Resource.With(&m.Model)
+	r.Analysis = m.AnalysisID
 	r.RuleSet = m.RuleSet
 	r.Rule = m.Rule
 	r.Name = m.Name
@@ -1950,6 +2237,7 @@ func (r *Issue) Model() (m *model.Issue) {
 // TechDependency REST resource.
 type TechDependency struct {
 	Resource `yaml:",inline"`
+	Analysis uint     `json:"analysis"`
 	Provider string   `json:"provider" yaml:",omitempty"`
 	Name     string   `json:"name" binding:"required"`
 	Version  string   `json:"version,omitempty" yaml:",omitempty"`
@@ -1961,6 +2249,7 @@ type TechDependency struct {
 // With updates the resource with the model.
 func (r *TechDependency) With(m *model.TechDependency) {
 	r.Resource.With(&m.Model)
+	r.Analysis = m.AnalysisID
 	r.Provider = m.Provider
 	r.Name = m.Name
 	r.Version = m.Version
@@ -1987,6 +2276,7 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 // Incident REST resource.
 type Incident struct {
 	Resource `yaml:",inline"`
+	Issue    uint    `json:"issue"`
 	File     string  `json:"file"`
 	Line     int     `json:"line"`
 	Message  string  `json:"message"`
@@ -1997,6 +2287,7 @@ type Incident struct {
 // With updates the resource with the model.
 func (r *Incident) With(m *model.Incident) {
 	r.Resource.With(&m.Model)
+	r.Issue = m.IssueID
 	r.File = m.File
 	r.Line = m.Line
 	r.Message = m.Message
@@ -2106,6 +2397,105 @@ type DepAppReport struct {
 
 // FactMap map.
 type FactMap map[string]interface{}
+
+// IssueWriter used to create a file containing issues.
+type IssueWriter struct {
+	encoder
+	ctx *gin.Context
+}
+
+// Create an issues file and returns the path.
+func (r *IssueWriter) Create(id uint, filter qf.Filter) (path string, count int64, err error) {
+	ext := ".json"
+	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
+	switch accepted {
+	case "",
+		binding.MIMEPOSTForm,
+		binding.MIMEJSON:
+	case binding.MIMEYAML:
+		ext = ".yaml"
+	default:
+		err = &BadRequestError{"MIME not supported."}
+	}
+	file, err := os.CreateTemp("", "issue-*"+ext)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	path = file.Name()
+	count, err = r.Write(id, filter, file)
+	return
+}
+
+// db returns a db client.
+func (r *IssueWriter) db() (db *gorm.DB) {
+	rtx := WithContext(r.ctx)
+	db = rtx.DB.Debug()
+	return
+}
+
+// Write the analysis file.
+func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count int64, err error) {
+	r.encoder, err = r.newEncoder(output)
+	if err != nil {
+		return
+	}
+	page := Page{}
+	page.With(r.ctx)
+	sort := Sort{}
+	err = sort.With(r.ctx, &model.Issue{})
+	if err != nil {
+		return
+	}
+	r.beginList()
+	batch := 10
+	for b := page.Offset; ; b += batch {
+		db := r.db()
+		if id > 0 {
+			db = db.Where("AnalysisID", id)
+		}
+		db = filter.Where(db)
+		db = db.Preload("Incidents")
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		db = sort.Sorted(db)
+		var issues []model.Issue
+		err = db.Find(&issues).Error
+		if err != nil {
+			return
+		}
+		if len(issues) == 0 {
+			break
+		}
+		for i := range issues {
+			issue := Issue{}
+			issue.With(&issues[i])
+			r.writeItem(b, i, issue)
+			count++
+		}
+	}
+	r.endList()
+	return
+}
+
+// newEncoder returns an encoder.
+func (r *IssueWriter) newEncoder(output io.Writer) (encoder encoder, err error) {
+	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
+	switch accepted {
+	case "",
+		binding.MIMEPOSTForm,
+		binding.MIMEJSON:
+		encoder = &jsonEncoder{output: output}
+	case binding.MIMEYAML:
+		encoder = &yamlEncoder{output: output}
+	default:
+		err = &BadRequestError{"MIME not supported."}
+	}
+
+	return
+}
 
 // AnalysisWriter used to create a file containing an analysis.
 type AnalysisWriter struct {

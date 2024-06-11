@@ -7,32 +7,33 @@ import (
 )
 
 const (
-	EnvNamespace            = "NAMESPACE"
-	EnvDbPath               = "DB_PATH"
-	EnvDbSeedPath           = "DB_SEED_PATH"
-	EnvBucketPath           = "BUCKET_PATH"
-	EnvRwxSupported         = "RWX_SUPPORTED"
-	EnvCachePath            = "CACHE_PATH"
-	EnvCachePvc             = "CACHE_PVC"
-	EnvSharedPath           = "SHARED_PATH"
-	EnvPassphrase           = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated      = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded    = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed       = "TASK_REAP_FAILED"
-	EnvTaskSA               = "TASK_SA"
-	EnvTaskRetries          = "TASK_RETRIES"
-	EnvTaskPreemptEnabled   = "TASK_PREEMPT_ENABLED"
-	EnvTaskPreemptDelayed   = "TASK_PREEMPT_DELAYED"
-	EnvTaskPreemptPostponed = "TASK_PREEMPT_POSTPONED"
-	EnvTaskPreemptRate      = "TASK_PREEMPT_RATE"
-	EnvFrequencyTask        = "FREQUENCY_TASK"
-	EnvFrequencyReaper      = "FREQUENCY_REAPER"
-	EnvDevelopment          = "DEVELOPMENT"
-	EnvBucketTTL            = "BUCKET_TTL"
-	EnvFileTTL              = "FILE_TTL"
-	EnvAppName              = "APP_NAME"
-	EnvDisconnected         = "DISCONNECTED"
-	EnvAnalysisReportPath   = "ANALYSIS_REPORT_PATH"
+	EnvNamespace               = "NAMESPACE"
+	EnvDbPath                  = "DB_PATH"
+	EnvDbSeedPath              = "DB_SEED_PATH"
+	EnvBucketPath              = "BUCKET_PATH"
+	EnvRwxSupported            = "RWX_SUPPORTED"
+	EnvCachePath               = "CACHE_PATH"
+	EnvCachePvc                = "CACHE_PVC"
+	EnvSharedPath              = "SHARED_PATH"
+	EnvPassphrase              = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated         = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded       = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed          = "TASK_REAP_FAILED"
+	EnvTaskSA                  = "TASK_SA"
+	EnvTaskRetries             = "TASK_RETRIES"
+	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
+	EnvTaskPreemptDelayed      = "TASK_PREEMPT_DELAYED"
+	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
+	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
+	EnvFrequencyTask           = "FREQUENCY_TASK"
+	EnvFrequencyReaper         = "FREQUENCY_REAPER"
+	EnvDevelopment             = "DEVELOPMENT"
+	EnvBucketTTL               = "BUCKET_TTL"
+	EnvFileTTL                 = "FILE_TTL"
+	EnvAppName                 = "APP_NAME"
+	EnvDisconnected            = "DISCONNECTED"
+	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
+	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
 )
 
 type Hub struct {
@@ -96,7 +97,8 @@ type Hub struct {
 	Disconnected bool
 	// Analysis settings.
 	Analysis struct {
-		ReportPath string
+		ReportPath      string
+		ArchiverEnabled bool
 	}
 }
 
@@ -249,7 +251,13 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.Analysis.ReportPath = "/tmp/analysis/report"
 	}
-
+	s, found = os.LookupEnv(EnvAnalysisArchiverEnabled)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Analysis.ArchiverEnabled = b
+	} else {
+		r.Analysis.ArchiverEnabled = true
+	}
 	return
 }
 
