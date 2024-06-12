@@ -13,6 +13,7 @@ var Settings = &settings.Settings
 
 // AddonRole defines the addon scopes.
 var AddonRole = []string{
+	"addons:get",
 	"applications:get",
 	"applications:put",
 	"applications.tags:*",
