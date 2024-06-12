@@ -228,67 +228,6 @@ type TaskGroup struct {
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-// Propagate group data into the task.
-func (m *TaskGroup) Propagate() (err error) {
-	for i := range m.Tasks {
-		task := &m.Tasks[i]
-		task.Kind = m.Kind
-		task.Addon = m.Addon
-		task.Extensions = m.Extensions
-		task.Priority = m.Priority
-		task.Policy = m.Policy
-		task.State = m.State
-		task.SetBucket(m.BucketID)
-		if m.Data.Any != nil {
-			mA, castA := m.Data.Any.(map[string]any)
-			mB, castB := task.Data.Any.(map[string]any)
-			if castA && castB {
-				task.Data.Any = m.merge(mA, mB)
-			} else {
-				task.Data.Any = m.Data
-			}
-		}
-	}
-
-	return
-}
-
-// merge maps B into A.
-// The B map is the authority.
-func (m *TaskGroup) merge(a, b Map) (out Map) {
-	if a == nil {
-		a = Map{}
-	}
-	if b == nil {
-		b = Map{}
-	}
-	out = Map{}
-	//
-	// Merge-in elements found in B and in A.
-	for k, v := range a {
-		out[k] = v
-		if bv, found := b[k]; found {
-			out[k] = bv
-			if av, cast := v.(Map); cast {
-				if bv, cast := bv.(Map); cast {
-					out[k] = m.merge(av, bv)
-				} else {
-					out[k] = bv
-				}
-			}
-		}
-	}
-	//
-	// Add elements found only in B.
-	for k, v := range b {
-		if _, found := a[k]; !found {
-			out[k] = v
-		}
-	}
-
-	return
-}
-
 // Proxy configuration.
 // kind = (http|https)
 type Proxy struct {

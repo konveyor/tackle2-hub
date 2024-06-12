@@ -132,7 +132,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		err := m.Propagate()
+		err := h.Propagate(m)
 		if err != nil {
 			return
 		}
@@ -217,7 +217,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 				return
 			}
 		}
-		err := m.Propagate()
+		err := h.Propagate(m)
 		if err != nil {
 			return
 		}
@@ -463,7 +463,39 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 		if r.Priority == 0 {
 			r.Priority = kind.Spec.Priority
 		}
+		mA, castA := h.AsMap(kind.Spec.Data)
+		mB, castB := r.Data.(map[string]any)
+		if castA && castB {
+			r.Data = h.Merge(mA, mB)
+		} else {
+			r.Data = mA
+		}
 	}
+	return
+}
+
+// Propagate group data into the task.
+func (h *TaskGroupHandler) Propagate(m *model.TaskGroup) (err error) {
+	for i := range m.Tasks {
+		task := &m.Tasks[i]
+		task.Kind = m.Kind
+		task.Addon = m.Addon
+		task.Extensions = m.Extensions
+		task.Priority = m.Priority
+		task.Policy = m.Policy
+		task.State = m.State
+		task.SetBucket(m.BucketID)
+		if m.Data.Any != nil {
+			mA, castA := m.Data.Any.(map[string]any)
+			mB, castB := task.Data.Any.(map[string]any)
+			if castA && castB {
+				task.Data.Any = h.Merge(mA, mB)
+			} else {
+				task.Data.Any = m.Data
+			}
+		}
+	}
+
 	return
 }
 
