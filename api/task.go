@@ -226,13 +226,13 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 		State string
 		Count int
 	}
-	db = db.Select("State", "COUNT(*)")
+	db = db.Select("State", "COUNT(*) Count")
 	db = db.Where(
 		"State", []string{
 			tasking.Ready,
 			tasking.Postponed,
 			tasking.Pending,
-			tasking.Ready,
+			tasking.Running,
 		})
 	db = db.Group("State")
 	var list []M
