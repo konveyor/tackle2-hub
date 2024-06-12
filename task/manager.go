@@ -431,41 +431,41 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 
 // selectAddon select an addon when not specified.
 func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
+	if task.Kind != "" {
+		kind, found := m.cluster.tasks[task.Kind]
+		if !found {
+			err = &KindNotFound{task.Kind}
+			return
+		}
+		matched := false
+		var selected *crd.Addon
+		selector := NewSelector(m.DB, task)
+		for _, addon = range m.cluster.addons {
+			if addon.Spec.Task != kind.Name {
+				continue
+			}
+			matched, err = selector.Match(addon.Spec.Selector)
+			if err != nil {
+				return
+			}
+			if matched {
+				selected = addon
+				break
+			}
+		}
+		if selected != nil {
+			task.Addon = selected.Name
+			task.Event(AddonSelected, selected)
+		}
+	}
 	if task.Addon != "" {
-		found := false
-		addon, found = m.cluster.addons[task.Addon]
+		_, found := m.cluster.addons[task.Addon]
 		if !found {
 			err = &AddonNotFound{task.Addon}
 		}
 		return
 	}
-	kind, found := m.cluster.tasks[task.Kind]
-	if !found {
-		err = &KindNotFound{task.Kind}
-		return
-	}
-	matched := false
-	var selected *crd.Addon
-	selector := NewSelector(m.DB, task)
-	for _, addon = range m.cluster.addons {
-		if addon.Spec.Task != kind.Name {
-			continue
-		}
-		matched, err = selector.Match(addon.Spec.Selector)
-		if err != nil {
-			return
-		}
-		if matched {
-			selected = addon
-			break
-		}
-	}
-	if selected == nil {
-		err = &AddonNotSelected{}
-		return
-	}
-	task.Addon = selected.Name
-	task.Event(AddonSelected, selected)
+	err = &AddonNotSelected{}
 	return
 }
 
