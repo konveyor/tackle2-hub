@@ -86,34 +86,35 @@ func (r jsonSerializer) jMap(in any) (out any) {
 	}
 	switch t.Kind() {
 	case reflect.Struct:
-		mp := make(map[string]any)
+		out = reflect.New(t).Interface()
+		nt := reflect.TypeOf(out)
+		nt = nt.Elem()
+		nv := reflect.ValueOf(out)
+		nv = nv.Elem()
 		for i := 0; i < t.NumField(); i++ {
-			t := t.Field(i)
-			v := v.Field(i)
-			if !t.IsExported() {
+			ft := t.Field(i)
+			fv := v.Field(i)
+			if !ft.IsExported() {
 				continue
 			}
 			var object any
-			switch v.Kind() {
+			switch fv.Kind() {
 			case reflect.Ptr:
 				if !v.IsNil() {
-					object = v.Elem().Interface()
+					object = fv.Elem().Interface()
 				}
 			default:
-				object = v.Interface()
+				object = fv.Interface()
 			}
 			object = r.jMap(object)
-			if t.Anonymous {
-				if m, cast := object.(map[string]any); cast {
-					for k, v := range m {
-						mp[k] = v
-					}
-				}
-			} else {
-				mp[t.Name] = object
-			}
+			ft = nt.Field(i)
+			fv = nv.Field(i)
+			x := reflect.ValueOf(object)
+			fv.Set(x)
 		}
-		out = mp
+		v = reflect.ValueOf(out)
+		v = v.Elem()
+		out = v.Interface()
 	case reflect.Slice:
 		list := make([]any, 0)
 		for i := 0; i < v.Len(); i++ {
