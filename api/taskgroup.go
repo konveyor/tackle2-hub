@@ -462,13 +462,13 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 		}
 		if r.Priority == 0 {
 			r.Priority = kind.Spec.Priority
-			mA, castA := h.AsMap(kind.Spec.Data)
-			mB, castB := r.Data.(map[string]any)
-			if castA && castB {
-				r.Data = h.Merge(mA, mB)
-			} else {
-				r.Data = mA
-			}
+		}
+		mA, castA := h.AsMap(kind.Spec.Data)
+		mB, castB := r.Data.(map[string]any)
+		if castA && castB {
+			r.Data = h.Merge(mA, mB)
+		} else {
+			r.Data = mA
 		}
 	}
 	return
