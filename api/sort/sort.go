@@ -16,17 +16,29 @@ type Clause struct {
 
 // Sort provides sorting.
 type Sort struct {
-	fields  map[string]interface{}
+	fields  map[string]any
+	alias   map[string]string
 	clauses []Clause
 }
 
+// Add adds virtual field and aliases.
+func (r *Sort) Add(name string, aliases ...string) {
+	r.init()
+	for _, alias := range aliases {
+		alias = strings.ToLower(alias)
+		r.fields[alias] = 0
+		r.alias[alias] = name
+	}
+}
+
 // With context.
-func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
+func (r *Sort) With(ctx *gin.Context, m any) (err error) {
 	param := ctx.Query("sort")
 	if param == "" {
 		return
 	}
-	r.fields = r.inspect(m)
+	r.init()
+	r.inspect(m)
 	for _, s := range strings.Split(param, ",") {
 		clause := Clause{}
 		s = strings.TrimSpace(s)
@@ -38,7 +50,7 @@ func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 				err = &SortError{s}
 				return
 			}
-			clause.name = s
+			clause.name = r.resolved(s)
 			r.clauses = append(
 				r.clauses,
 				clause)
@@ -55,7 +67,7 @@ func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 				err = &SortError{s}
 				return
 			}
-			clause.name = s
+			clause.name = r.resolved(s)
 			r.clauses = append(
 				r.clauses,
 				clause)
@@ -66,6 +78,7 @@ func (r *Sort) With(ctx *gin.Context, m interface{}) (err error) {
 
 // Sorted returns sorted DB.
 func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
+	r.init()
 	out = in
 	if len(r.clauses) == 0 {
 		return
@@ -78,11 +91,33 @@ func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 	return
 }
 
+// init allocate maps.
+func (r *Sort) init() {
+	if r.fields == nil {
+		r.fields = make(map[string]any)
+	}
+	if r.alias == nil {
+		r.alias = make(map[string]string)
+	}
+}
+
 // inspect object and return fields.
-func (r *Sort) inspect(m interface{}) (fields map[string]interface{}) {
-	fields = reflect.Fields(m)
-	for key, v := range fields {
-		fields[strings.ToLower(key)] = v
+func (r *Sort) inspect(m any) {
+	r.init()
+	for key, v := range reflect.Fields(m) {
+		key = strings.ToLower(key)
+		r.fields[key] = v
+	}
+	return
+}
+
+// resolved returns field names with alias resolved.
+func (r *Sort) resolved(in string) (out string) {
+	r.init()
+	out = in
+	alias, found := r.alias[in]
+	if found {
+		out = alias
 	}
 	return
 }
