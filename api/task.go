@@ -114,11 +114,13 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @description List all tasks.
 // @description Filters:
 // @description - kind
+// @description - createUser
 // @description - addon
 // @description - name
 // @description - locator
 // @description - state
 // @description - application.id
+// @description - application.name
 // @description The state=queued is an alias for queued states.
 // @tags tasks
 // @produce json
@@ -126,14 +128,18 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @router /tasks [get]
 func (h TaskHandler) List(ctx *gin.Context) {
 	resources := []Task{}
+	// filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "id", Kind: qf.LITERAL},
+			{Field: "createUser", Kind: qf.STRING},
 			{Field: "kind", Kind: qf.STRING},
 			{Field: "addon", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "locator", Kind: qf.STRING},
 			{Field: "state", Kind: qf.STRING},
 			{Field: "application.id", Kind: qf.STRING},
+			{Field: "application.name", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -157,17 +163,28 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		values = values.Join(qf.OR)
 		filter = filter.Revalued("state", values)
 	}
+	filter = filter.Renamed("application.id", "application__id")
+	filter = filter.Renamed("application.name", "application__name")
+	filter = filter.Renamed("createUser", "task\\.createUser")
+	filter = filter.Renamed("id", "task\\.id")
+	filter = filter.Renamed("name", "task\\.name")
+	// sort
 	sort := Sort{}
-	err = sort.With(ctx, &model.Issue{})
+	sort.Add("task.id", "id")
+	sort.Add("task.createUser", "createUser")
+	sort.Add("task.name", "name")
+	sort.Add("application__id", "application.id")
+	sort.Add("application__name", "application.name")
+	err = sort.With(ctx, &model.Task{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	// Fetch
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
-	db = db.Preload(clause.Associations)
+	db = db.Joins("Application")
 	db = sort.Sorted(db)
-	filter = filter.Renamed("application.id", "applicationId")
 	db = filter.Where(db)
 	var m model.Task
 	var list []model.Task
