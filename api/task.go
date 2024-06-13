@@ -114,11 +114,13 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @description List all tasks.
 // @description Filters:
 // @description - kind
+// @description - createUser
 // @description - addon
 // @description - name
 // @description - locator
 // @description - state
 // @description - application.id
+// @description - application.name
 // @description The state=queued is an alias for queued states.
 // @tags tasks
 // @produce json
@@ -130,12 +132,14 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "id", Kind: qf.LITERAL},
+			{Field: "createUser", Kind: qf.STRING},
 			{Field: "kind", Kind: qf.STRING},
 			{Field: "addon", Kind: qf.STRING},
 			{Field: "name", Kind: qf.STRING},
 			{Field: "locator", Kind: qf.STRING},
 			{Field: "state", Kind: qf.STRING},
 			{Field: "application.id", Kind: qf.STRING},
+			{Field: "application.name", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -161,8 +165,10 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	}
 	filter = filter.Renamed("application.id", "application__id")
 	filter = filter.Renamed("application.name", "application__name")
+	filter = filter.Renamed("createUser", "task\\.createUser")
 	// sort
 	sort := Sort{}
+	sort.Add("task.createUser", "createUser")
 	sort.Add("application__name", "application.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {

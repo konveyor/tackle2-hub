@@ -332,11 +332,16 @@ func (f *Field) Expand() (expanded []Field) {
 // split field name.
 // format: resource.name
 // The resource may be "" (anonymous).
+// The (.) separator is escaped when preceded by (\).
 func (f *Field) split() (relation string, name string) {
 	s := f.Field.Value
 	mark := strings.Index(s, ".")
 	if mark == -1 {
 		name = s
+		return
+	}
+	if mark > 0 && s[mark-1] == '\\' {
+		name = s[:mark-1] + s[mark:]
 		return
 	}
 	relation = s[:mark]
