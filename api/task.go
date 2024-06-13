@@ -166,9 +166,13 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	filter = filter.Renamed("application.id", "application__id")
 	filter = filter.Renamed("application.name", "application__name")
 	filter = filter.Renamed("createUser", "task\\.createUser")
+	filter = filter.Renamed("id", "task\\.id")
+	filter = filter.Renamed("name", "task\\.name")
 	// sort
 	sort := Sort{}
+	sort.Add("task.id", "id")
 	sort.Add("task.createUser", "createUser")
+	sort.Add("task.name", "name")
 	sort.Add("application__name", "application.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
