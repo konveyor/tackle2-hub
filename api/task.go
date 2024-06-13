@@ -173,6 +173,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	sort.Add("task.id", "id")
 	sort.Add("task.createUser", "createUser")
 	sort.Add("task.name", "name")
+	sort.Add("application__id", "application.id")
 	sort.Add("application__name", "application.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
