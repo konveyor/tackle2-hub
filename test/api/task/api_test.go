@@ -39,6 +39,34 @@ func TestTaskCRUD(t *testing.T) {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
 			}
 
+			// patch.
+			type TaskPatch struct {
+				Name   string `json:"name"`
+				Policy struct {
+					PreemptEnabled bool `json:"preemptEnabled"`
+				}
+			}
+			p := &TaskPatch{}
+			p.Name = "patched " + r.Name
+			p.Policy.PreemptEnabled = true
+			err = Task.Patch(r.ID, p)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			got, err = Task.Get(r.ID)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			if got.Name != p.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, p.Name)
+			}
+			if got.Policy.PreemptEnabled != p.Policy.PreemptEnabled {
+				t.Errorf(
+					"Different response error. Got %v, expected %v",
+					got.Policy.PreemptEnabled,
+					p.Policy.PreemptEnabled)
+			}
+
 			// Delete.
 			err = Task.Delete(r.ID)
 			if err != nil {

@@ -37,6 +37,13 @@ func (h *Task) Update(r *api.Task) (err error) {
 	return
 }
 
+// Patch a Task.
+func (h *Task) Patch(id uint, r any) (err error) {
+	path := Path(api.TaskRoot).Inject(Params{api.ID: id})
+	err = h.client.Patch(path, r)
+	return
+}
+
 // Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))

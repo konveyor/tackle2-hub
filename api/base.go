@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -96,33 +95,6 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 	s := ctx.Param(ID)
 	n, _ := strconv.Atoi(s)
 	id = uint(n)
-	return
-}
-
-// modBody updates the body using the `mod` function.
-//  1. read the body.
-//  2. mod()
-//  3. write body.
-func (h *BaseHandler) modBody(
-	ctx *gin.Context,
-	r interface{},
-	mod func(bool) error) (err error) {
-	//
-	withBody := false
-	if ctx.Request.ContentLength > 0 {
-		withBody = true
-		err = h.Bind(ctx, r)
-		if err != nil {
-			return
-		}
-	}
-	err = mod(withBody)
-	if err != nil {
-		return
-	}
-	b, _ := json.Marshal(r)
-	bfr := bytes.NewBuffer(b)
-	ctx.Request.Body = io.NopCloser(bfr)
 	return
 }
 
