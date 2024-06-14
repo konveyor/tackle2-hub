@@ -37,7 +37,7 @@ type BatchError struct {
 
 type BatchErrorItem struct {
 	Error    error
-	Resource interface{}
+	Resource any
 }
 
 func (r BatchError) Error() string {

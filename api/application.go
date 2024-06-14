@@ -683,7 +683,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	facts := FactMap{}
 	for i := range list {
 		fact := &list[i]
-		var v interface{}
+		var v any
 		_ = json.Unmarshal(fact.Value, &v)
 		facts[fact.Key] = v
 	}
@@ -730,7 +730,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		return
 	}
 
-	var v interface{}
+	var v any
 	_ = json.Unmarshal(list[0].Value, &v)
 	h.Respond(ctx, http.StatusOK, v)
 }
@@ -929,7 +929,7 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 	}
 
 	db = h.DB(ctx).Model(m).Omit(clause.Associations, "BucketID")
-	result = db.Updates(map[string]interface{}{"OwnerID": r.ownerID()})
+	result = db.Updates(map[string]any{"OwnerID": r.ownerID()})
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -1246,9 +1246,9 @@ type Repository struct {
 
 // Fact REST nested resource.
 type Fact struct {
-	Key    string      `json:"key"`
-	Value  interface{} `json:"value"`
-	Source string      `json:"source"`
+	Key    string `json:"key"`
+	Value  any    `json:"value"`
+	Source string `json:"source"`
 }
 
 func (r *Fact) With(m *model.Fact) {

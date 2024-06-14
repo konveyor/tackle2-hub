@@ -16,7 +16,7 @@ type RefCounter struct {
 }
 
 // Count find & count references.
-func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err error) {
+func (r *RefCounter) Count(m any, kind string, pk uint) (nRef int64, err error) {
 	db := r.DB.Model(m)
 	fields := 0
 	j := 0
@@ -44,8 +44,8 @@ func (r *RefCounter) Count(m interface{}, kind string, pk uint) (nRef int64, err
 			return
 		}
 	}
-	var find func(interface{})
-	find = func(object interface{}) {
+	var find func(any)
+	find = func(object any) {
 		mt := reflect.TypeOf(object)
 		mv := reflect.ValueOf(object)
 		if mt.Kind() == reflect.Ptr {

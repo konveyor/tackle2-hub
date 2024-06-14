@@ -88,7 +88,7 @@ func (h *Task) Data() (d any) {
 }
 
 // DataWith populates the addon data object.
-func (h *Task) DataWith(object interface{}) (err error) {
+func (h *Task) DataWith(object any) (err error) {
 	b, _ := json.Marshal(h.task.Data)
 	err = json.Unmarshal(b, object)
 	return
@@ -114,7 +114,7 @@ func (h *Task) Succeeded() {
 
 // Failed report addon failed.
 // The reason can be a printf style format.
-func (h *Task) Failed(reason string, v ...interface{}) {
+func (h *Task) Failed(reason string, v ...any) {
 	reason = fmt.Sprintf(reason, v...)
 	h.Error(api.TaskError{
 		Severity:    "Error",
@@ -128,7 +128,7 @@ func (h *Task) Failed(reason string, v ...interface{}) {
 }
 
 // Errorf report addon error.
-func (h *Task) Errorf(severity, description string, v ...interface{}) {
+func (h *Task) Errorf(severity, description string, v ...any) {
 	h.Error(api.TaskError{
 		Severity:    severity,
 		Description: fmt.Sprintf(description, v...),
@@ -153,7 +153,7 @@ func (h *Task) Error(error ...api.TaskError) {
 
 // Activity report addon activity.
 // The description can be a printf style format.
-func (h *Task) Activity(entry string, v ...interface{}) {
+func (h *Task) Activity(entry string, v ...any) {
 	entry = fmt.Sprintf(entry, v...)
 	lines := strings.Split(entry, "\n")
 	for i := range lines {

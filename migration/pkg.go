@@ -37,7 +37,7 @@ type Version struct {
 // Migration encapsulates the functionality necessary to perform a migration.
 type Migration interface {
 	Apply(*gorm.DB) error
-	Models() []interface{}
+	Models() []any
 }
 
 // All migrations in order.

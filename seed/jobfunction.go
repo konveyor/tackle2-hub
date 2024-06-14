@@ -81,7 +81,7 @@ func (r *JobFunction) Apply(db *gorm.DB) (err error) {
 }
 
 // Convenience method to find a JobFunction.
-func (r *JobFunction) find(db *gorm.DB, conditions ...interface{}) (jf *model.JobFunction, found bool, err error) {
+func (r *JobFunction) find(db *gorm.DB, conditions ...any) (jf *model.JobFunction, found bool, err error) {
 	jf = &model.JobFunction{}
 	result := db.First(jf, conditions...)
 	if result.Error != nil {

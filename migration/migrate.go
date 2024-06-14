@@ -124,7 +124,7 @@ func setVersion(db *gorm.DB, version int) (err error) {
 }
 
 // AutoMigrate the database.
-func autoMigrate(db *gorm.DB, models []interface{}) (err error) {
+func autoMigrate(db *gorm.DB, models []any) (err error) {
 	db, err = database.Open(false)
 	if err != nil {
 		err = liberr.Wrap(err)

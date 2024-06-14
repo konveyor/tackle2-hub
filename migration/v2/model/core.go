@@ -85,7 +85,7 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 }
 
 // Map alias.
-type Map = map[string]interface{}
+type Map = map[string]any
 
 // TTL time-to-live.
 type TTL struct {

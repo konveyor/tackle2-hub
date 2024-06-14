@@ -239,7 +239,7 @@ func (h *AppFacts) List() (facts api.FactMap, err error) {
 }
 
 // Get a fact.
-func (h *AppFacts) Get(name string, value interface{}) (err error) {
+func (h *AppFacts) Get(name string, value any) (err error) {
 	key := api.FactKey(name)
 	key.Qualify(h.source)
 	path := Path(api.ApplicationFactRoot).Inject(
@@ -252,7 +252,7 @@ func (h *AppFacts) Get(name string, value interface{}) (err error) {
 }
 
 // Set a fact (created as needed).
-func (h *AppFacts) Set(name string, value interface{}) (err error) {
+func (h *AppFacts) Set(name string, value any) (err error) {
 	key := api.FactKey(name)
 	key.Qualify(h.source)
 	path := Path(api.ApplicationFactRoot).Inject(

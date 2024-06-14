@@ -194,4 +194,4 @@ func (r *Ticket) Model() (m *model.Ticket) {
 	return
 }
 
-type Fields map[string]interface{}
+type Fields map[string]any

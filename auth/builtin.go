@@ -86,7 +86,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	}
 	jwToken, err = jwt.Parse(
 		token,
-		func(jwToken *jwt.Token) (secret interface{}, err error) {
+		func(jwToken *jwt.Token) (secret any, err error) {
 			_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
 			if !cast {
 				err = liberr.Wrap(&NotAuthenticated{Token: token})

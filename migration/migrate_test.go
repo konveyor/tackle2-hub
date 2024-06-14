@@ -110,7 +110,7 @@ func (r *TestMigration) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-func (r *TestMigration) Models() (models []interface{}) {
+func (r *TestMigration) Models() (models []any) {
 	return
 }
 

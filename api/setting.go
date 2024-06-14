@@ -229,8 +229,8 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 
 // Setting REST Resource
 type Setting struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
+	Key   string `json:"key"`
+	Value any    `json:"value"`
 }
 
 func (r *Setting) With(m *model.Setting) {

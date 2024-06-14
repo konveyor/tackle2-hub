@@ -176,7 +176,7 @@ func merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) 
 }
 
 // Convenience method to find a Target.
-func (r *Target) find(db *gorm.DB, conditions ...interface{}) (t *model.Target, found bool, err error) {
+func (r *Target) find(db *gorm.DB, conditions ...any) (t *model.Target, found bool, err error) {
 	t = &model.Target{}
 	result := db.First(t, conditions...)
 	if result.Error != nil {

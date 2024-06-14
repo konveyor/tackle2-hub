@@ -30,10 +30,10 @@ const (
 )
 
 // Any match any.
-type Any []interface{}
+type Any []any
 
 // All match all.
-type All []interface{}
+type All []any
 
 // Filter builder.
 type Filter struct {
@@ -75,55 +75,55 @@ func (p *Predicate) String() (s string) {
 }
 
 // Eq returns a (=) predicate.
-func (p *Predicate) Eq(object interface{}) *Predicate {
+func (p *Predicate) Eq(object any) *Predicate {
 	p.operator = EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
 // NotEq returns a (!=) predicate.
-func (p *Predicate) NotEq(object interface{}) *Predicate {
+func (p *Predicate) NotEq(object any) *Predicate {
 	p.operator = NOT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
 // Like returns a (~) predicate.
-func (p *Predicate) Like(object interface{}) *Predicate {
+func (p *Predicate) Like(object any) *Predicate {
 	p.operator = LIKE
 	p.value = p.valueOf(object)
 	return p
 }
 
 // Gt returns a (>) predicate.
-func (p *Predicate) Gt(object interface{}) *Predicate {
+func (p *Predicate) Gt(object any) *Predicate {
 	p.operator = GT
 	p.value = p.valueOf(object)
 	return p
 }
 
 // GtEq returns a (>=) predicate.
-func (p *Predicate) GtEq(object interface{}) *Predicate {
+func (p *Predicate) GtEq(object any) *Predicate {
 	p.operator = GT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
 // Lt returns a (<) predicate.
-func (p *Predicate) Lt(object interface{}) *Predicate {
+func (p *Predicate) Lt(object any) *Predicate {
 	p.operator = LT
 	p.value = p.valueOf(object)
 	return p
 }
 
 // LtEq returns a (<) predicate.
-func (p *Predicate) LtEq(object interface{}) *Predicate {
+func (p *Predicate) LtEq(object any) *Predicate {
 	p.operator = LT + EQ
 	p.value = p.valueOf(object)
 	return p
 }
 
-func (p *Predicate) valueOf(object interface{}) (result string) {
+func (p *Predicate) valueOf(object any) (result string) {
 	kind := reflect.TypeOf(object).Kind()
 	value := reflect.ValueOf(object)
 	switch kind {

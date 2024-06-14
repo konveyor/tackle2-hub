@@ -252,7 +252,7 @@ func (f *Field) Where(in *gorm.DB) (out *gorm.DB) {
 
 // SQL builds SQL.
 // Returns statement and values (for ?).
-func (f *Field) SQL() (s string, vList []interface{}) {
+func (f *Field) SQL() (s string, vList []any) {
 	name := f.Name()
 	switch len(f.Value) {
 	case 0:
@@ -296,7 +296,7 @@ func (f *Field) SQL() (s string, vList []interface{}) {
 			s += ")"
 		default:
 			values := f.Value.ByKind(LITERAL, STRING)
-			var collection []interface{}
+			var collection []any
 			for i := range values {
 				v := AsValue(values[i])
 				collection = append(collection, v)
@@ -395,7 +395,7 @@ func (r *Assert) assert(p *Predicate) (err error) {
 }
 
 // AsValue returns the real value.
-func AsValue(t Token) (object interface{}) {
+func AsValue(t Token) (object any) {
 	v := t.Value
 	object = v
 	switch t.Kind {

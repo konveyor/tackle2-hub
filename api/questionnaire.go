@@ -167,9 +167,9 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 	updated := r.Model()
 	updated.ID = id
 	updated.UpdateUser = h.CurrentUser(ctx)
-	var fields map[string]interface{}
+	var fields map[string]any
 	if m.Builtin() {
-		fields = map[string]interface{}{
+		fields = map[string]any{
 			"updateUser": updated.UpdateUser,
 			"required":   updated.Required,
 		}

@@ -179,7 +179,7 @@ func file(db *gorm.DB, filePath string) (file *model.File, err error) {
 }
 
 // Convenience method to find a RuleSet.
-func (r *RuleSet) find(db *gorm.DB, conditions ...interface{}) (rs *model.RuleSet, found bool, err error) {
+func (r *RuleSet) find(db *gorm.DB, conditions ...any) (rs *model.RuleSet, found bool, err error) {
 	rs = &model.RuleSet{}
 	result := db.First(rs, conditions...)
 	if result.Error != nil {
