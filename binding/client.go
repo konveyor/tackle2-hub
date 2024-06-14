@@ -172,6 +172,8 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 	}
 	status := response.StatusCode
 	switch status {
+	case http.StatusAccepted:
+	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
 		var body []byte
@@ -185,7 +187,6 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
-	case http.StatusNoContent:
 	default:
 		err = r.restError(response)
 	}
@@ -223,6 +224,60 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 	}
 	status := response.StatusCode
 	switch status {
+	case http.StatusAccepted:
+	case http.StatusNoContent:
+	case http.StatusOK,
+		http.StatusCreated:
+		var body []byte
+		body, err = io.ReadAll(response.Body)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = json.Unmarshal(body, object)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	default:
+		err = r.restError(response)
+	}
+
+	return
+}
+
+// Patch a resource.
+func (r *Client) Patch(path string, object interface{}, params ...Param) (err error) {
+	request := func() (request *http.Request, err error) {
+		bfr, err := json.Marshal(object)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		reader := bytes.NewReader(bfr)
+		request = &http.Request{
+			Header: http.Header{},
+			Method: http.MethodPatch,
+			Body:   io.NopCloser(reader),
+			URL:    r.join(path),
+		}
+		request.Header.Set(api.Accept, binding.MIMEJSON)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
+		return
+	}
+	response, err := r.send(request)
+	if err != nil {
+		return
+	}
+	status := response.StatusCode
+	switch status {
+	case http.StatusAccepted:
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
