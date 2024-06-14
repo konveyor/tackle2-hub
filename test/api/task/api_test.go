@@ -49,7 +49,7 @@ func TestTaskCRUD(t *testing.T) {
 			p := &TaskPatch{}
 			p.Name = "patched " + r.Name
 			p.Policy.PreemptEnabled = true
-			err = Task.Patch(&r)
+			err = Task.Patch(r.ID, p)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -57,14 +57,14 @@ func TestTaskCRUD(t *testing.T) {
 			if err != nil {
 				t.Errorf(err.Error())
 			}
-			if got.Name != r.Name {
-				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
+			if got.Name != p.Name {
+				t.Errorf("Different response error. Got %s, expected %s", got.Name, p.Name)
 			}
 			if got.Policy.PreemptEnabled != p.Policy.PreemptEnabled {
 				t.Errorf(
 					"Different response error. Got %v, expected %v",
 					got.Policy.PreemptEnabled,
-					r.Policy.PreemptEnabled)
+					p.Policy.PreemptEnabled)
 			}
 
 			// Delete.
