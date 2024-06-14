@@ -49,10 +49,10 @@ type RichClient struct {
 }
 
 // New builds a new RichClient object.
-func New(baseUrl string) (r *RichClient) {
+func New(baseURL string) (r *RichClient) {
 	//
 	// Build REST client.
-	client := NewClient(baseUrl, api.Login{})
+	client := NewClient(baseURL)
 
 	//
 	// Build RichClient.
@@ -139,11 +139,14 @@ func New(baseUrl string) (r *RichClient) {
 
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
-	login := api.Login{User: user, Password: password}
+	login := api.Login{
+		User:     user,
+		Password: password,
+	}
 	err = r.Client.Post(api.AuthLoginRoot, &login)
 	if err != nil {
 		return
 	}
-	r.Client.SetToken(login)
+	r.Client.Login = login
 	return
 }

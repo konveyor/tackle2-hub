@@ -69,10 +69,9 @@ func (s Path) Inject(p Params) (out string) {
 }
 
 // NewClient Constructs a new client
-func NewClient(url string, token api.Login) (client *Client) {
+func NewClient(baseURL string) (client *Client) {
 	client = &Client{
-		baseURL: url,
-		token:   token,
+		BaseURL: baseURL,
 	}
 	client.Retry = RetryLimit
 	return
@@ -80,21 +79,16 @@ func NewClient(url string, token api.Login) (client *Client) {
 
 // Client provides a REST client.
 type Client struct {
-	// baseURL for the nub.
-	baseURL string
-	// addon API token
-	token api.Login
 	// transport
 	transport http.RoundTripper
+	// baseURL for the nub.
+	BaseURL string
+	// login API resource.
+	Login api.Login
 	// Retry limit.
 	Retry int
 	// Error
 	Error error
-}
-
-// SetToken sets hub token on client
-func (r *Client) SetToken(token api.Login) {
-	r.token = token
 }
 
 // Reset the client.
@@ -691,7 +685,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, "Bearer "+r.token.Token)
+		request.Header.Set(api.Authorization, "Bearer "+r.Login.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -755,7 +749,7 @@ func (r *Client) buildTransport() (err error) {
 
 // Join the URL.
 func (r *Client) join(path string) (parsedURL *url.URL) {
-	parsedURL, _ = url.Parse(r.baseURL)
+	parsedURL, _ = url.Parse(r.BaseURL)
 	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
 	return
 }
@@ -834,14 +828,14 @@ func (f *Field) disposition() (d string) {
 
 // refreshToken refreshes the token.
 func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
-	if r.token.Token == "" ||
+	if r.Login.Token == "" ||
 		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoot) {
 		return
 	}
-	login := &api.Login{Refresh: r.token.Refresh}
+	login := &api.Login{Refresh: r.Login.Refresh}
 	err = r.Post(api.AuthRefreshRoot, login)
 	if err == nil {
-		r.token.Token = login.Token
+		r.Login.Token = login.Token
 		refreshed = true
 		return
 	}
