@@ -62,7 +62,7 @@ func TestTaskCRUD(t *testing.T) {
 			}
 			if got.Policy.PreemptEnabled != p.Policy.PreemptEnabled {
 				t.Errorf(
-					"Different response error. Got %s, expected %s",
+					"Different response error. Got %v, expected %v",
 					got.Policy.PreemptEnabled,
 					r.Policy.PreemptEnabled)
 			}
