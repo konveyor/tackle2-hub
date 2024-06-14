@@ -35,6 +35,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TaskGroupsRoot+"/", h.List)
 	routeGroup.POST(TaskGroupsRoot, h.Create)
 	routeGroup.PUT(TaskGroupRoot, h.Update)
+	routeGroup.PATCH(TaskGroupRoot, Transaction, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
 	routeGroup.PUT(TaskGroupSubmitRoot, Transaction, h.Submit)
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
