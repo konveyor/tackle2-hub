@@ -55,7 +55,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.GET(TasksReportQueueRoot, h.Queued)
 	// Actions
-	routeGroup.PUT(TaskSubmitRoot, h.Submit, h.Update)
+	routeGroup.PUT(TaskSubmitRoot, Transaction, h.Submit)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
 	// Bucket
 	routeGroup = e.Group("/")
@@ -397,7 +397,7 @@ func (h TaskHandler) Patch(ctx *gin.Context) {
 
 // Submit godoc
 // @summary Submit a task.
-// @description Submit a task.
+// @description Patch and submit a task.
 // @tags tasks
 // @accept json
 // @success 202
@@ -406,30 +406,31 @@ func (h TaskHandler) Patch(ctx *gin.Context) {
 // @param task body Task false "Task data (optional)"
 func (h TaskHandler) Submit(ctx *gin.Context) {
 	id := h.pk(ctx)
+	var m model.Task
+	err := h.DB(ctx).First(&m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &Task{}
-	err := h.findRefs(ctx, r)
+	r.With(&m)
+	err = h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	mod := func(withBody bool) (err error) {
-		if !withBody {
-			m := r.Model()
-			err = h.DB(ctx).First(m, id).Error
-			if err != nil {
-				return
-			}
-			r.With(m)
-		}
-		r.State = tasking.Ready
-		return
-	}
-	err = h.modBody(ctx, r, mod)
+	rtx := WithContext(ctx)
+	task := &tasking.Task{}
+	task.With(r.Model())
+	task.State = tasking.Ready
+	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
+	err = rtx.TaskManager.Update(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.Next()
+
+	h.Status(ctx, http.StatusAccepted)
 }
 
 // Cancel godoc
