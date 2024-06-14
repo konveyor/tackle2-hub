@@ -414,10 +414,12 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 	}
 	r := &Task{}
 	r.With(&m)
-	err = h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if ctx.Request.ContentLength > 0 {
+		err = h.Bind(ctx, r)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	rtx := WithContext(ctx)
 	task := &tasking.Task{}
