@@ -37,10 +37,6 @@ const (
 	TaskCancelRoot        = TaskRoot + "/cancel"
 )
 
-const (
-	LocatorParam = "locator"
-)
-
 // TaskHandler handles task routes.
 type TaskHandler struct {
 	BucketOwner
@@ -55,6 +51,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TasksRoot, h.Create)
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
+	routeGroup.PATCH(TaskRoot, Transaction, h.Patch)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.GET(TasksReportQueueRoot, h.Queued)
 	// Actions
@@ -335,7 +332,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @description Update a task.
 // @tags tasks
 // @accept json
-// @success 204
+// @success 202
 // @router /tasks/{id} [put]
 // @param id path int true "Task ID"
 // @param task body Task true "Task data"
@@ -344,6 +341,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	r := &Task{}
 	err := h.Bind(ctx, r)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r.ID = id
@@ -357,7 +355,44 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	h.Status(ctx, http.StatusNoContent)
+	h.Status(ctx, http.StatusAccepted)
+}
+
+// Patch godoc
+// @summary Patch a task.
+// @description Patch a task.
+// @tags tasks
+// @accept json
+// @success 202
+// @router /tasks/{id} [put]
+// @param id path int true "Task ID"
+// @param task body Task true "Task data"
+func (h TaskHandler) Patch(ctx *gin.Context) {
+	id := h.pk(ctx)
+	var m model.Task
+	err := h.DB(ctx).First(&m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := &Task{}
+	r.With(&m)
+	err = h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	rtx := WithContext(ctx)
+	task := &tasking.Task{}
+	task.With(r.Model())
+	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
+	err = rtx.TaskManager.Update(h.DB(ctx), task)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusAccepted)
 }
 
 // Submit godoc
@@ -365,7 +400,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @description Submit a task.
 // @tags tasks
 // @accept json
-// @success 204
+// @success 202
 // @router /tasks/{id}/submit [put]
 // @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"
@@ -401,7 +436,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // @summary Cancel a task.
 // @description Cancel a task.
 // @tags tasks
-// @success 204
+// @success 202
 // @router /tasks/{id}/cancel [put]
 // @param id path int true "Task ID"
 func (h TaskHandler) Cancel(ctx *gin.Context) {
@@ -413,7 +448,7 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 		return
 	}
 
-	h.Status(ctx, http.StatusNoContent)
+	h.Status(ctx, http.StatusAccepted)
 }
 
 // BucketGet godoc
@@ -735,7 +770,6 @@ type Task struct {
 	TTL         TTL          `json:"ttl,omitempty" yaml:",omitempty"`
 	Data        any          `json:"data,omitempty" yaml:",omitempty"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
-	Actions     []string     `json:"actions,omitempty" yaml:",omitempty"`
 	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
 	Pod         string       `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int          `json:"retries,omitempty" yaml:",omitempty"`

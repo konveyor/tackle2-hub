@@ -197,14 +197,8 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			task.Priority = requested.Priority
 			task.Policy = requested.Policy
 			task.TTL = requested.TTL
-		case Running,
-			Succeeded,
-			Failed,
-			Canceled:
-			err = &BadRequest{
-				Reason: "state must not be (Running|Succeeded|Failed|Canceled)",
-			}
-			return
+		default:
+			// discarded.
 		}
 		err = db.Save(task).Error
 		if err != nil {
@@ -247,9 +241,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 			case Succeeded,
 				Failed,
 				Canceled:
-				err = &BadRequest{
-					Reason: "state must not be (Succeeded|Failed|Canceled)",
-				}
+				// discarded.
 				return
 			default:
 			}
