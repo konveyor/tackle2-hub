@@ -36,7 +36,7 @@ func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TaskGroupsRoot, h.Create)
 	routeGroup.PUT(TaskGroupRoot, h.Update)
 	routeGroup.GET(TaskGroupRoot, h.Get)
-	routeGroup.PUT(TaskGroupSubmitRoot, h.Submit, h.Update)
+	routeGroup.PUT(TaskGroupSubmitRoot, Transaction, h.Submit)
 	routeGroup.DELETE(TaskGroupRoot, h.Delete)
 	// Bucket
 	routeGroup = e.Group("/")
@@ -175,18 +175,25 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	updated := &TaskGroup{}
-	err := h.Bind(ctx, updated)
-	if err != nil {
-		return
-	}
-	current := &model.TaskGroup{}
-	err = h.DB(ctx).First(current, id).Error
+	m := &model.TaskGroup{}
+	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.findRefs(ctx, updated)
+	r := &TaskGroup{}
+	if ctx.Request.Method == http.MethodPatch &&
+		ctx.Request.ContentLength > 0 {
+		r.With(m)
+	}
+	err = h.Bind(ctx, r)
+	if err != nil {
+		return
+	}
+	if _, found := ctx.Get(Submit); found {
+		r.State = tasking.Ready
+	}
+	err = h.findRefs(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -196,10 +203,9 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		clause.Associations,
 		"BucketID",
 		"Bucket")
-	m := updated.Model()
+	m = r.Model()
 	m.ID = id
-	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	switch updated.State {
+	switch m.State {
 	case "", tasking.Created:
 		err = db.Save(m).Error
 		if err != nil {
@@ -284,7 +290,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 
 // Submit godoc
 // @summary Submit a task group.
-// @description Submit a task group.
+// @description Patch and submit a task group.
 // @tags taskgroups
 // @accept json
 // @success 204
@@ -292,31 +298,9 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 // @param id path int true "TaskGroup ID"
 // @param taskgroup body TaskGroup false "TaskGroup data (optional)"
 func (h TaskGroupHandler) Submit(ctx *gin.Context) {
-	id := h.pk(ctx)
-	r := &TaskGroup{}
-	err := h.findRefs(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	mod := func(withBody bool) (err error) {
-		if !withBody {
-			m := r.Model()
-			err = h.DB(ctx).First(m, id).Error
-			if err != nil {
-				return
-			}
-			r.With(m)
-		}
-		r.State = tasking.Ready
-		return
-	}
-	err = h.modBody(ctx, r, mod)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	ctx.Next()
+	ctx.Set(Submit, true)
+	ctx.Request.Method = http.MethodPatch
+	h.Update(ctx)
 }
 
 // BucketGet godoc

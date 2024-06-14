@@ -37,6 +37,10 @@ const (
 	TaskCancelRoot        = TaskRoot + "/cancel"
 )
 
+const (
+	Submit = "submit"
+)
+
 // TaskHandler handles task routes.
 type TaskHandler struct {
 	BucketOwner
@@ -51,7 +55,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(TasksRoot, h.Create)
 	routeGroup.GET(TaskRoot, h.Get)
 	routeGroup.PUT(TaskRoot, h.Update)
-	routeGroup.PATCH(TaskRoot, Transaction, h.Patch)
+	routeGroup.PATCH(TaskRoot, Transaction, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.GET(TasksReportQueueRoot, h.Queued)
 	// Actions
@@ -338,37 +342,6 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @param task body Task true "Task data"
 func (h TaskHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &Task{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r.ID = id
-	rtx := WithContext(ctx)
-	task := &tasking.Task{}
-	task.With(r.Model())
-	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	err = rtx.TaskManager.Update(h.DB(ctx), task)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	h.Status(ctx, http.StatusAccepted)
-}
-
-// Patch godoc
-// @summary Patch a task.
-// @description Patch a task.
-// @tags tasks
-// @accept json
-// @success 202
-// @router /tasks/{id} [put]
-// @param id path int true "Task ID"
-// @param task body Task true "Task data"
-func (h TaskHandler) Patch(ctx *gin.Context) {
-	id := h.pk(ctx)
 	var m model.Task
 	err := h.DB(ctx).First(&m, id).Error
 	if err != nil {
@@ -376,12 +349,19 @@ func (h TaskHandler) Patch(ctx *gin.Context) {
 		return
 	}
 	r := &Task{}
-	r.With(&m)
+	if ctx.Request.Method == http.MethodPatch &&
+		ctx.Request.ContentLength > 0 {
+		r.With(&m)
+	}
 	err = h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	if _, found := ctx.Get(Submit); found {
+		r.State = tasking.Ready
+	}
+	r.ID = id
 	rtx := WithContext(ctx)
 	task := &tasking.Task{}
 	task.With(r.Model())
@@ -405,34 +385,9 @@ func (h TaskHandler) Patch(ctx *gin.Context) {
 // @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"
 func (h TaskHandler) Submit(ctx *gin.Context) {
-	id := h.pk(ctx)
-	var m model.Task
-	err := h.DB(ctx).First(&m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r := &Task{}
-	r.With(&m)
-	if ctx.Request.ContentLength > 0 {
-		err = h.Bind(ctx, r)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-	}
-	rtx := WithContext(ctx)
-	task := &tasking.Task{}
-	task.With(r.Model())
-	task.State = tasking.Ready
-	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	err = rtx.TaskManager.Update(h.DB(ctx), task)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	h.Status(ctx, http.StatusAccepted)
+	ctx.Set(Submit, true)
+	ctx.Request.Method = http.MethodPatch
+	h.Update(ctx)
 }
 
 // Cancel godoc
