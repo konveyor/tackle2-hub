@@ -150,6 +150,7 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 		task.TTL = requested.TTL
 		task.Data = requested.Data
 		task.ApplicationID = requested.ApplicationID
+		task.BucketID = requested.BucketID
 	default:
 		err = &BadRequest{
 			Reason: "state must be (Created|Ready)",
@@ -193,6 +194,7 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			Postponed:
 			task.UpdateUser = requested.UpdateUser
 			task.Name = requested.Name
+			task.Locator = requested.Locator
 			task.Data = requested.Data
 			task.Priority = requested.Priority
 			task.Policy = requested.Policy

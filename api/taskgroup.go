@@ -206,6 +206,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		"Bucket")
 	m = r.Model()
 	m.ID = id
+	m.UpdateUser = h.CurrentUser(ctx)
 	switch m.State {
 	case "", tasking.Created:
 		err = db.Save(m).Error
@@ -237,6 +238,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		for i := range m.Tasks {
 			task := &tasking.Task{}
 			task.With(&m.Tasks[i])
+			task.CreateUser = h.CurrentUser(ctx)
 			err = rtx.TaskManager.Create(h.DB(ctx), task)
 			if err != nil {
 				_ = ctx.Error(err)

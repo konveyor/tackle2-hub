@@ -342,8 +342,8 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @param task body Task true "Task data"
 func (h TaskHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
-	var m model.Task
-	err := h.DB(ctx).First(&m, id).Error
+	m := &model.Task{}
+	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -351,7 +351,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	r := &Task{}
 	if ctx.Request.Method == http.MethodPatch &&
 		ctx.Request.ContentLength > 0 {
-		r.With(&m)
+		r.With(m)
 	}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -361,11 +361,12 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if _, found := ctx.Get(Submit); found {
 		r.State = tasking.Ready
 	}
-	r.ID = id
+	m = r.Model()
+	m.ID = id
+	m.UpdateUser = h.CurrentUser(ctx)
 	rtx := WithContext(ctx)
 	task := &tasking.Task{}
-	task.With(r.Model())
-	task.UpdateUser = h.BaseHandler.CurrentUser(ctx)
+	task.With(m)
 	err = rtx.TaskManager.Update(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
