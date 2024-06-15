@@ -12,7 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tar"
 	tasking "github.com/konveyor/tackle2-hub/task"

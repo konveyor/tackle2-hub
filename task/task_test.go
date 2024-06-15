@@ -3,7 +3,7 @@ package task
 import (
 	"testing"
 
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/onsi/gomega"
 )

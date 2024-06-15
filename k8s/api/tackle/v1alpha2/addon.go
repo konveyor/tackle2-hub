@@ -14,23 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
-	// Addon fqin.
-	Image string `json:"image"`
-	// ImagePullPolicy an optional image pull policy.
-	// +kubebuilder:default=IfNotPresent
-	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
-	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Resource requirements.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	// Deprecated: Addon is deprecated.
+	Image *string `json:"image,omitempty"`
+	// Deprecated: ImagePullPolicy is deprecated.
+	ImagePullPolicy *core.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// Deprecated: Resources is deprecated.
+	Resources *core.ResourceRequirements `json:"resources,omitempty"`
+	//
+	// Task (kind) compatibility.
+	Task string `json:"task,omitempty"`
+	// Selector
+	Selector string `json:"selector,omitempty"`
+	// Container details.
+	Container core.Container `json:"container"`
+	// Metadata details.
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
 // AddonStatus defines the observed state of Addon
@@ -43,7 +51,7 @@ type AddonStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"

@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+// Package v1alpha1 contains API Schema definitions for the migration v1alpha1 API group.
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen=package,register
+// +k8s:conversion-gen=github.com/konveyor/tackle2-controller/pkg/apis/migration
+// +k8s:defaulter-gen=TypeMeta
+// +groupName=tackle.konveyor.io
+package v1alpha2
 
 import (
-	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
-var AddToSchemes runtime.SchemeBuilder
-
-func init() {
-	AddToSchemes = append(
-		AddToSchemes,
-		v1alpha1.SchemeBuilder.AddToScheme,
-		v1alpha2.SchemeBuilder.AddToScheme)
+var SchemeGroupVersion = schema.GroupVersion{
+	Group:   "tackle.konveyor.io",
+	Version: "v1alpha2",
 }
 
-func AddToScheme(s *runtime.Scheme) error {
-	return AddToSchemes.AddToScheme(s)
-}
+var SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

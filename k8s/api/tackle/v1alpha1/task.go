@@ -41,6 +41,7 @@ type TaskStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
+// +kubebuilder:unservedversion
 // +kubebuilder:subresource:status
 type Task struct {
 	meta.TypeMeta   `json:",inline"`

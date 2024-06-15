@@ -16,7 +16,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/auth"
 	k8s2 "github.com/konveyor/tackle2-hub/k8s"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
