@@ -17,8 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 )
 
 // +genclient
@@ -26,19 +25,10 @@ import (
 // +k8s:openapi-gen=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-type Tackle struct {
-	meta.TypeMeta   `json:",inline"`
-	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            runtime.RawExtension `json:"spec"`
-	Status          runtime.RawExtension `json:"status"`
-}
+type Tackle v1alpha1.Tackle
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type TackleList struct {
-	meta.TypeMeta `json:",inline"`
-	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Tackle `json:"items"`
-}
+type TackleList v1alpha1.TackleList
 
 func init() {
 	SchemeBuilder.Register(&TackleList{}, &Tackle{})
