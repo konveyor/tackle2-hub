@@ -122,6 +122,8 @@ func (r *Reconciler) alpha2Migration(addon *api.Addon) (migrated bool, err error
 		addon.Spec.Container.Image = *addon.Spec.Image
 		addon.Spec.Image = nil
 		migrated = true
+	} else {
+		return
 	}
 	if len(addon.Spec.Container.Resources.Limits) == 0 &&
 		len(addon.Spec.Container.Resources.Requests) == 0 &&
