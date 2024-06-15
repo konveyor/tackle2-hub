@@ -14,27 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of Addon
-type AddonSpec struct {
-	// Addon fqin.
-	Image string `json:"image"`
-	// ImagePullPolicy an optional image pull policy.
-	// +kubebuilder:default=IfNotPresent
-	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
-	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Resource requirements.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+// ExtensionSpec defines the desired state of Extension
+type ExtensionSpec struct {
+	// Addon compatibility.
+	Addon string `json:"addon"`
+	// Container details.
+	Container core.Container `json:"container"`
+	// Selector
+	Selector string `json:"selector,omitempty"`
+	// Metadata details.
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// AddonStatus defines the observed state of Addon
-type AddonStatus struct {
+// ExtensionStatus defines the observed state of Extension
+type ExtensionStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -43,22 +44,22 @@ type AddonStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-type Addon struct {
+type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
+	Spec            ExtensionSpec   `json:"spec,omitempty"`
+	Status          ExtensionStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AddonList struct {
+type ExtensionList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Addon `json:"items"`
+	Items         []Extension `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Addon{}, &AddonList{})
+	SchemeBuilder.Register(&Extension{}, &ExtensionList{})
 }

@@ -14,27 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
-	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of Addon
-type AddonSpec struct {
-	// Addon fqin.
-	Image string `json:"image"`
-	// ImagePullPolicy an optional image pull policy.
-	// +kubebuilder:default=IfNotPresent
-	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
-	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Resource requirements.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+// TaskSpec defines the desired state of Task
+type TaskSpec struct {
+	// Priority
+	Priority int `json:"priority,omitempty"`
+	// Dependencies
+	Dependencies []string `json:"dependencies,omitempty"`
+	// Data object passed to the addon..
+	Data runtime.RawExtension `json:"data,omitempty"`
 }
 
-// AddonStatus defines the observed state of Addon
-type AddonStatus struct {
+// TaskStatus defines the observed state of Task
+type TaskStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -43,22 +41,34 @@ type AddonStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-type Addon struct {
+type Task struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
+	Spec            TaskSpec   `json:"spec,omitempty"`
+	Status          TaskStatus `json:"status,omitempty"`
+}
+
+// HasDep return true if the task has the dependency.
+func (r *Task) HasDep(name string) (found bool) {
+	for i := range r.Spec.Dependencies {
+		n := r.Spec.Dependencies[i]
+		if n == name {
+			found = true
+			break
+		}
+	}
+	return
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AddonList struct {
+type TaskList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Addon `json:"items"`
+	Items         []Task `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Addon{}, &AddonList{})
+	SchemeBuilder.Register(&Task{}, &TaskList{})
 }

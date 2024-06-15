@@ -17,41 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
-	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
-
-// ExtensionSpec defines the desired state of Extension
-type ExtensionSpec struct {
-	// Addon compatibility.
-	Addon string `json:"addon"`
-	// Container details.
-	Container core.Container `json:"container"`
-	// Selector
-	Selector string `json:"selector,omitempty"`
-	// Metadata details.
-	Metadata runtime.RawExtension `json:"metadata,omitempty"`
-}
-
-// ExtensionStatus defines the observed state of Extension
-type ExtensionStatus struct {
-	// The most recent generation observed by the controller.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-}
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
+// +kubebuilder:unservedversion
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            ExtensionSpec   `json:"spec,omitempty"`
-	Status          ExtensionStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

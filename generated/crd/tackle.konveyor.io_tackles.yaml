@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: tasks.tackle.konveyor.io
+  name: tackles.tackle.konveyor.io
 spec:
   group: tackle.konveyor.io
   names:
-    kind: Task
-    listKind: TaskList
-    plural: tasks
-    singular: task
+    kind: Tackle
+    listKind: TackleList
+    plural: tackles
+    singular: tackle
   scope: Namespaced
   versions:
   - name: v1alpha1
@@ -31,8 +31,17 @@ spec:
             type: string
           metadata:
             type: object
+          spec:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        required:
+        - spec
+        - status
         type: object
-    served: false
+    served: true
     storage: false
     subresources:
       status: {}
@@ -53,29 +62,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: TaskSpec defines the desired state of Task
-            properties:
-              data:
-                description: Data object passed to the addon..
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
-              dependencies:
-                description: Dependencies
-                items:
-                  type: string
-                type: array
-              priority:
-                description: Priority
-                type: integer
             type: object
+            x-kubernetes-preserve-unknown-fields: true
           status:
-            description: TaskStatus defines the observed state of Task
-            properties:
-              observedGeneration:
-                description: The most recent generation observed by the controller.
-                format: int64
-                type: integer
             type: object
+            x-kubernetes-preserve-unknown-fields: true
+        required:
+        - spec
+        - status
         type: object
     served: true
     storage: true

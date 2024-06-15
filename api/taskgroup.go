@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
