@@ -33,9 +33,11 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
           status:
+            description: Status defines the observed state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
         required:
@@ -64,9 +66,11 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
           status:
+            description: Status defines the observed state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
         required:

@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of an Addon.
+// AddonSpec defines the desired state of the resource.
 type AddonSpec struct {
 	// Deprecated: Addon is deprecated.
 	// +kubebuilder:validation:Optional
@@ -44,7 +44,7 @@ type AddonSpec struct {
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// AddonStatus defines the observed state of an Addon.
+// AddonStatus defines the observed state of the resource.
 type AddonStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
@@ -59,9 +59,9 @@ type AddonStatus struct {
 type Addon struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	// Spec defines the desired state of an Addon.
+	// Spec defines the desired state of the resource.
 	Spec AddonSpec `json:"spec,omitempty"`
-	// Status defines the observed state of an Addon.
+	// Status defines the observed state of the resource.
 	Status AddonStatus `json:"status,omitempty"`
 }
 

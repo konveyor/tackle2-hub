@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ExtensionSpec defines the desired state of an Extension.
+// ExtensionSpec defines the desired state of the resource.
 type ExtensionSpec struct {
 	// Addon (name) declares addon compatibility.
 	Addon string `json:"addon"`
@@ -34,7 +34,7 @@ type ExtensionSpec struct {
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// ExtensionStatus defines the observed state of an Extension.
+// ExtensionStatus defines the observed state of the resource.
 type ExtensionStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
@@ -50,9 +50,9 @@ type ExtensionStatus struct {
 type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	// pec defines the desired state of an Extension.
+	// pec defines the desired state of the resource.
 	Spec ExtensionSpec `json:"spec,omitempty"`
-	// Status defines the observed state of an Extension
+	// Status defines the observed state of the resource.
 	Status ExtensionStatus `json:"status,omitempty"`
 }
 

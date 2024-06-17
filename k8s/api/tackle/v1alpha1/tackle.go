@@ -29,8 +29,10 @@ import (
 type Tackle struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            runtime.RawExtension `json:"spec"`
-	Status          runtime.RawExtension `json:"status"`
+	// Spec defines the desired state of the resource.
+	Spec runtime.RawExtension `json:"spec"`
+	// Status defines the observed state of the resource.
+	Status runtime.RawExtension `json:"status"`
 }
 
 // TackleList is a list of Tackle.

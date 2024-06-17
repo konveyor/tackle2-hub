@@ -55,7 +55,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: pec defines the desired state of an Extension.
+            description: pec defines the desired state of the resource.
             properties:
               addon:
                 description: Addon (name) declares addon compatibility.
@@ -1271,7 +1271,7 @@ spec:
             - container
             type: object
           status:
-            description: Status defines the observed state of an Extension
+            description: Status defines the observed state of the resource.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.

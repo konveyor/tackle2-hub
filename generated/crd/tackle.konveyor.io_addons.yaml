@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of an addon.
+            description: Spec defines the desired state of the resource.
             properties:
               image:
                 description: Addon fqin.
@@ -76,7 +76,7 @@ spec:
             - image
             type: object
           status:
-            description: Status defines the observed state of an addon.
+            description: Status defines the observed state of the resource.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.
@@ -105,7 +105,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of an Addon.
+            description: Spec defines the desired state of the resource.
             properties:
               container:
                 description: Container defines the addon container.
@@ -1351,7 +1351,7 @@ spec:
             - container
             type: object
           status:
-            description: Status defines the observed state of an Addon.
+            description: Status defines the observed state of the resource.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.

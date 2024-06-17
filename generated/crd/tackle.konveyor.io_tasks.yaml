@@ -55,7 +55,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of Task.
+            description: Spec defines the desired state the resource.
             properties:
               data:
                 description: Data object passed to the addon.
@@ -72,7 +72,7 @@ spec:
                 type: integer
             type: object
           status:
-            description: Status defines the observed state of Task
+            description: Status defines the observed state the resource.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.

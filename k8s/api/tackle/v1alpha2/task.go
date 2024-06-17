@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// TaskSpec defines the desired state of aTask.
+// TaskSpec defines the desired state the resource.
 type TaskSpec struct {
 	// Priority defines the task priority (0-n).
 	Priority int `json:"priority,omitempty"`
@@ -31,7 +31,7 @@ type TaskSpec struct {
 	Data runtime.RawExtension `json:"data,omitempty"`
 }
 
-// TaskStatus defines the observed state of a Task.
+// TaskStatus defines the observed state the resource.
 type TaskStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
@@ -47,9 +47,9 @@ type TaskStatus struct {
 type Task struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	// Spec defines the desired state of Task.
+	// Spec defines the desired state the resource.
 	Spec TaskSpec `json:"spec,omitempty"`
-	// Status defines the observed state of Task
+	// Status defines the observed state the resource.
 	Status TaskStatus `json:"status,omitempty"`
 }
 
