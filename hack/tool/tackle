@@ -162,7 +162,7 @@ class TackleTool:
         self.dataDir      = dataDir
         self.Url   = tackle2Url
         # Gather Keycloak access token for Tackle
-        self.Token =  getHubToken(tackle2Url, c['username'], c['password'], tackle2Token)
+        self.Token =  getHubToken(tackle2Url, c.get('username', ''), c.get('password', ''), tackle2Token)
         self.TokenRenewAfter = int(time.time()) + TOKEN_REFRESH_SECONDS
 
         self.encKeyVerified = False
@@ -191,7 +191,7 @@ class TackleTool:
 
     def checkTokenLifetime(self):
         if self.TokenRenewAfter < int(time.time()):
-             self.Token =  getHubToken(self.Url, c['username'], c['password'], False)
+             self.Token =  getHubToken(self.Url, c.get('username', ''), c.get('password', ''), False)
              self.TokenRenewAfter = int(time.time()) + TOKEN_REFRESH_SECONDS
 
     def apiJSON(self, url, data=None, method='GET', ignoreErrors=False):
