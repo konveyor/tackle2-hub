@@ -40,9 +40,6 @@ spec:
             description: Status defines the observed state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
-        required:
-        - spec
-        - status
         type: object
     served: true
     storage: false
@@ -73,9 +70,6 @@ spec:
             description: Status defines the observed state of the resource.
             type: object
             x-kubernetes-preserve-unknown-fields: true
-        required:
-        - spec
-        - status
         type: object
     served: true
     storage: true

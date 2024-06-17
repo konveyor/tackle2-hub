@@ -60,7 +60,7 @@ type Addon struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the desired state of the resource.
-	Spec AddonSpec `json:"spec,omitempty"`
+	Spec AddonSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status AddonStatus `json:"status,omitempty"`
 }

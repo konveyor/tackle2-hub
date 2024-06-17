@@ -30,9 +30,9 @@ type Tackle struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the desired state of the resource.
-	Spec runtime.RawExtension `json:"spec"`
+	Spec runtime.RawExtension `json:"spec,omitempty"`
 	// Status defines the observed state of the resource.
-	Status runtime.RawExtension `json:"status"`
+	Status runtime.RawExtension `json:"status,omitempty"`
 }
 
 // TackleList is a list of Tackle.

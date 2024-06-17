@@ -51,7 +51,7 @@ type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// pec defines the desired state of the resource.
-	Spec ExtensionSpec `json:"spec,omitempty"`
+	Spec ExtensionSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status ExtensionStatus `json:"status,omitempty"`
 }
