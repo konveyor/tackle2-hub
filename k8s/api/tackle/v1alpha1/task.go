@@ -20,6 +20,7 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Task defines a hub task.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -30,6 +31,7 @@ type Task struct {
 	meta.ObjectMeta `json:"metadata,omitempty"`
 }
 
+// TaskList is a list of Task.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TaskList struct {
 	meta.TypeMeta `json:",inline"`

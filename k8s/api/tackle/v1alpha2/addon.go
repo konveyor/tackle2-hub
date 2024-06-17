@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of Addon
+// AddonSpec defines the desired state of an Addon.
 type AddonSpec struct {
 	// Deprecated: Addon is deprecated.
 	// +kubebuilder:validation:Optional
@@ -34,17 +34,17 @@ type AddonSpec struct {
 	// +kubebuilder:validation:Optional
 	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	//
-	// Task (kind) compatibility.
+	// Task declares task (kind) compatibility.
 	Task string `json:"task,omitempty"`
-	// Selector
+	// Selector defines criteria to be selected for a task.
 	Selector string `json:"selector,omitempty"`
-	// Container details.
+	// Container defines the addon container.
 	Container core.Container `json:"container"`
 	// Metadata details.
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// AddonStatus defines the observed state of Addon
+// AddonStatus defines the observed state of an Addon.
 type AddonStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
@@ -59,10 +59,13 @@ type AddonStatus struct {
 type Addon struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
+	// Spec defines the desired state of an Addon.
+	Spec AddonSpec `json:"spec,omitempty"`
+	// Status defines the observed state of an Addon.
+	Status AddonStatus `json:"status,omitempty"`
 }
 
+// AddonList is a list of Addon.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonList struct {
 	meta.TypeMeta `json:",inline"`

@@ -21,6 +21,7 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Tackle defines a tackle application.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -28,6 +29,7 @@ import (
 // +kubebuilder:subresource:status
 type Tackle v1alpha1.Tackle
 
+// TackleList is a list of Tackle.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TackleList struct {
 	meta.TypeMeta `json:",inline"`

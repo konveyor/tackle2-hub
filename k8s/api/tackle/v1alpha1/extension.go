@@ -20,6 +20,7 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Extension defines an addon extension.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -30,6 +31,7 @@ type Extension struct {
 	meta.ObjectMeta `json:"metadata,omitempty"`
 }
 
+// ExtensionList is a list of Extension.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ExtensionList struct {
 	meta.TypeMeta `json:",inline"`

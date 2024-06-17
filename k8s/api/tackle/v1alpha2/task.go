@@ -21,23 +21,24 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// TaskSpec defines the desired state of Task
+// TaskSpec defines the desired state of aTask.
 type TaskSpec struct {
-	// Priority
+	// Priority defines the task priority (0-n).
 	Priority int `json:"priority,omitempty"`
-	// Dependencies
+	// Dependencies defines a list of task names on which this task depends.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// Data object passed to the addon..
+	// Data object passed to the addon.
 	Data runtime.RawExtension `json:"data,omitempty"`
 }
 
-// TaskStatus defines the observed state of Task
+// TaskStatus defines the observed state of a Task.
 type TaskStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
+// Task defines a hub task.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -46,8 +47,10 @@ type TaskStatus struct {
 type Task struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            TaskSpec   `json:"spec,omitempty"`
-	Status          TaskStatus `json:"status,omitempty"`
+	// Spec defines the desired state of Task.
+	Spec TaskSpec `json:"spec,omitempty"`
+	// Status defines the observed state of Task
+	Status TaskStatus `json:"status,omitempty"`
 }
 
 // HasDep return true if the task has the dependency.
@@ -62,6 +65,7 @@ func (r *Task) HasDep(name string) (found bool) {
 	return
 }
 
+// TaskList is a list of Task.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TaskList struct {
 	meta.TypeMeta `json:",inline"`

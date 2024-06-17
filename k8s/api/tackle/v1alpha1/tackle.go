@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Tackle defines a tackle application.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -32,6 +33,7 @@ type Tackle struct {
 	Status          runtime.RawExtension `json:"status"`
 }
 
+// TackleList is a list of Tackle.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TackleList struct {
 	meta.TypeMeta `json:",inline"`

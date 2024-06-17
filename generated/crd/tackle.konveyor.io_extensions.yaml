@@ -18,6 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: Extension defines an addon extension.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -39,6 +40,7 @@ spec:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
+        description: Extension defines an addon extension.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -53,13 +55,13 @@ spec:
           metadata:
             type: object
           spec:
-            description: ExtensionSpec defines the desired state of Extension
+            description: pec defines the desired state of an Extension.
             properties:
               addon:
-                description: Addon compatibility.
+                description: Addon (name) declares addon compatibility.
                 type: string
               container:
-                description: Container details.
+                description: Container defines the extension container.
                 properties:
                   args:
                     description: 'Arguments to the entrypoint. The container image''s
@@ -1261,14 +1263,15 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               selector:
-                description: Selector
+                description: Selector defines criteria to be included in the addon
+                  pod.
                 type: string
             required:
             - addon
             - container
             type: object
           status:
-            description: ExtensionStatus defines the observed state of Extension
+            description: Status defines the observed state of an Extension
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.

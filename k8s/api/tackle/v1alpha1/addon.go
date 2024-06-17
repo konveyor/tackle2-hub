@@ -21,7 +21,7 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AddonSpec defines the desired state of Addon
+// AddonSpec defines the desired state of an Addon.
 type AddonSpec struct {
 	// Addon fqin.
 	Image string `json:"image"`
@@ -33,13 +33,14 @@ type AddonSpec struct {
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
-// AddonStatus defines the observed state of Addon
+// AddonStatus defines the observed state of an Addon.
 type AddonStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
+// Addon defines an addon.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -48,10 +49,13 @@ type AddonStatus struct {
 type Addon struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            AddonSpec   `json:"spec,omitempty"`
-	Status          AddonStatus `json:"status,omitempty"`
+	// Spec defines the desired state of an addon.
+	Spec AddonSpec `json:"spec,omitempty"`
+	// Status defines the observed state of an addon.
+	Status AddonStatus `json:"status,omitempty"`
 }
 
+// AddonList is a list of Addon.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonList struct {
 	meta.TypeMeta `json:",inline"`

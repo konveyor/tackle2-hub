@@ -18,6 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: Addon defines an addon.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AddonSpec defines the desired state of Addon
+            description: Spec defines the desired state of an addon.
             properties:
               image:
                 description: Addon fqin.
@@ -75,7 +76,7 @@ spec:
             - image
             type: object
           status:
-            description: AddonStatus defines the observed state of Addon
+            description: Status defines the observed state of an addon.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.
@@ -104,10 +105,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: AddonSpec defines the desired state of Addon
+            description: Spec defines the desired state of an Addon.
             properties:
               container:
-                description: Container details.
+                description: Container defines the addon container.
                 properties:
                   args:
                     description: 'Arguments to the entrypoint. The container image''s
@@ -1341,16 +1342,16 @@ spec:
                     type: object
                 type: object
               selector:
-                description: Selector
+                description: Selector defines criteria to be selected for a task.
                 type: string
               task:
-                description: Task (kind) compatibility.
+                description: Task declares task (kind) compatibility.
                 type: string
             required:
             - container
             type: object
           status:
-            description: AddonStatus defines the observed state of Addon
+            description: Status defines the observed state of an Addon.
             properties:
               observedGeneration:
                 description: The most recent generation observed by the controller.

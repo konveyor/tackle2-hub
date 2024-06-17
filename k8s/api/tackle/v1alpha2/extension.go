@@ -22,25 +22,26 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ExtensionSpec defines the desired state of Extension
+// ExtensionSpec defines the desired state of an Extension.
 type ExtensionSpec struct {
-	// Addon compatibility.
+	// Addon (name) declares addon compatibility.
 	Addon string `json:"addon"`
-	// Container details.
+	// Container defines the extension container.
 	Container core.Container `json:"container"`
-	// Selector
+	// Selector defines criteria to be included in the addon pod.
 	Selector string `json:"selector,omitempty"`
 	// Metadata details.
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// ExtensionStatus defines the observed state of Extension
+// ExtensionStatus defines the observed state of an Extension.
 type ExtensionStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
+// Extension defines an addon extension.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -49,10 +50,13 @@ type ExtensionStatus struct {
 type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
-	Spec            ExtensionSpec   `json:"spec,omitempty"`
-	Status          ExtensionStatus `json:"status,omitempty"`
+	// pec defines the desired state of an Extension.
+	Spec ExtensionSpec `json:"spec,omitempty"`
+	// Status defines the observed state of an Extension
+	Status ExtensionStatus `json:"status,omitempty"`
 }
 
+// ExtensionList is a list of Extension.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ExtensionList struct {
 	meta.TypeMeta `json:",inline"`
