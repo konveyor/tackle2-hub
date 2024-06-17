@@ -25,10 +25,13 @@ import (
 // AddonSpec defines the desired state of Addon
 type AddonSpec struct {
 	// Deprecated: Addon is deprecated.
+	// +kubebuilder:validation:Optional
 	Image *string `json:"image,omitempty"`
 	// Deprecated: ImagePullPolicy is deprecated.
+	// +kubebuilder:validation:Optional
 	ImagePullPolicy *core.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Deprecated: Resources is deprecated.
+	// +kubebuilder:validation:Optional
 	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	//
 	// Task (kind) compatibility.

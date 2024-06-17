@@ -118,22 +118,27 @@ func (r *Reconciler) addonDeleted(name string) (err error) {
 
 // alpha2Migration migrates to alpha2.
 func (r *Reconciler) alpha2Migration(addon *api.Addon) (migrated bool, err error) {
-	if addon.Spec.Container.Image == "" && addon.Spec.Image != nil {
-		addon.Spec.Container.Image = *addon.Spec.Image
+	if addon.Spec.Image != nil {
+		if addon.Spec.Container.Image == "" {
+			addon.Spec.Container.Image = *addon.Spec.Image
+		}
 		addon.Spec.Image = nil
 		migrated = true
-	} else {
-		return
 	}
-	if len(addon.Spec.Container.Resources.Limits) == 0 &&
-		len(addon.Spec.Container.Resources.Requests) == 0 &&
-		addon.Spec.Resources != nil {
-		addon.Spec.Container.Resources = *addon.Spec.Resources
+	if addon.Spec.Resources != nil {
+		if len(addon.Spec.Container.Resources.Limits) == 0 {
+			addon.Spec.Container.Resources.Limits = (*addon.Spec.Resources).Limits
+		}
+		if len(addon.Spec.Container.Resources.Requests) == 0 {
+			addon.Spec.Container.Resources.Requests = (*addon.Spec.Resources).Requests
+		}
 		addon.Spec.Resources = nil
 		migrated = true
 	}
-	if addon.Spec.Container.ImagePullPolicy == "" && addon.Spec.ImagePullPolicy != nil {
-		addon.Spec.Container.ImagePullPolicy = *addon.Spec.ImagePullPolicy
+	if addon.Spec.ImagePullPolicy != nil {
+		if addon.Spec.Container.ImagePullPolicy == "" {
+			addon.Spec.Container.ImagePullPolicy = *addon.Spec.ImagePullPolicy
+		}
 		addon.Spec.ImagePullPolicy = nil
 		migrated = true
 	}

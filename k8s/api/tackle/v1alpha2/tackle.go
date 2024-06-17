@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
@@ -28,7 +29,11 @@ import (
 type Tackle v1alpha1.Tackle
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type TackleList v1alpha1.TackleList
+type TackleList struct {
+	meta.TypeMeta `json:",inline"`
+	meta.ListMeta `json:"metadata,omitempty"`
+	Items         []Tackle `json:"items"`
+}
 
 func init() {
 	SchemeBuilder.Register(&TackleList{}, &Tackle{})

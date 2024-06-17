@@ -22,7 +22,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -258,7 +257,7 @@ func (in *TackleList) DeepCopyInto(out *TackleList) {
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]v1alpha1.Tackle, len(*in))
+		*out = make([]Tackle, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
