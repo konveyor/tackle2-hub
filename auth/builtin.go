@@ -62,17 +62,6 @@ func (r *NoAuth) Refresh(refresh string) (token Token, err error) {
 type Builtin struct {
 }
 
-// Parse Token out of a string
-func parseToken(requestToken string) (token string, err error) {
-	splitToken := strings.Fields(requestToken)
-	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
-		err = liberr.Wrap(&NotValid{Token: requestToken})
-		return
-	}
-	token = splitToken[1]
-	return
-}
-
 // Authenticate the token
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
@@ -80,7 +69,7 @@ func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 			Log.Info(err.Error())
 		}
 	}()
-	token, err := parseToken(request.Token)
+	token, err := r.parseToken(request)
 	if err != nil {
 		return
 	}
@@ -197,5 +186,16 @@ func (r *Builtin) NewToken(user string, scopes []string, claims jwt.MapClaims) (
 	jwtClaims["user"] = user
 	jwtClaims["scope"] = strings.Join(scopes, " ")
 	signed, err = token.SignedString([]byte(Settings.Auth.Token.Key))
+	return
+}
+
+// parseToken returns the token
+func (r *Builtin) parseToken(request *Request) (token string, err error) {
+	splitToken := strings.Fields(request.Token)
+	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
+		err = liberr.Wrap(&NotValid{Token: request.Token})
+		return
+	}
+	token = splitToken[1]
 	return
 }

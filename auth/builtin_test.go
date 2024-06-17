@@ -1,66 +1,62 @@
 package auth
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/onsi/gomega"
+)
 
 func TestParseToken(t *testing.T) {
-	type args struct {
-		requestToken string
-	}
+	g := gomega.NewGomegaWithT(t)
 	tests := []struct {
 		name    string
-		args    args
+		request *Request
 		want    string
 		wantErr bool
 	}{
 		{
 			name:    "Valid Bearer token",
-			args:    args{requestToken: "Bearer AAAAAAAAAAAAAAAAAAAAMLheAAAAAAA0%2BuSeid%2BULvsea4JtiGRiSDSJSI%3DEUifiRBkKG5E2XzMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F"},
-			want:    "AAAAAAAAAAAAAAAAAAAAMLheAAAAAAA0%2BuSeid%2BULvsea4JtiGRiSDSJSI%3DEUifiRBkKG5E2XzMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F",
+			request: &Request{Token: "Bearer BChTYbJcE3F"},
+			want:    "BChTYbJcE3F",
 			wantErr: false,
 		},
 		{
 			name: "Empty Bearer token",
-			args: args{
-				requestToken: "Bearer ",
+			request: &Request{
+				Token: "Bearer ",
 			},
 			want:    "",
 			wantErr: true,
 		},
 		{
 			name: "Empty Bearer token no whitespace",
-			args: args{
-				requestToken: "Bearer",
+			request: &Request{
+				Token: "Bearer",
 			},
 			want:    "",
 			wantErr: true,
 		},
 		{
 			name: "Empty request Token",
-			args: args{
-				requestToken: "",
+			request: &Request{
+				Token: "",
 			},
 			want:    "",
 			wantErr: true,
 		},
 		{
 			name: "Misspelled Bearer",
-			args: args{
-				requestToken: "Bearr AAAAAAAAAAAAAAAAAAAAMLheAAAAAAA0%2BuSeid%2BULvsea4JtiGRiSDSJSI%3DEUifiRBkKG5E2XzMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F",
+			request: &Request{
+				Token: "Bearr BChTYbJcE3F",
 			},
 			want:    "",
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseToken(tt.args.requestToken)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("parseToken() = %v, want %v", got, tt.want)
-			}
-		})
+	builtin := Builtin{}
+	for _, test := range tests {
+		token, err := builtin.parseToken(test.request)
+		g.Expect(test.wantErr).To(gomega.Equal(err != nil))
+		g.Expect(test.want).To(gomega.Equal(token))
 	}
 }
