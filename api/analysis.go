@@ -2368,7 +2368,7 @@ type DepAppReport struct {
 }
 
 // FactMap map.
-type FactMap map[string]interface{}
+type FactMap map[string]any
 
 // IssueWriter used to create a file containing issues.
 type IssueWriter struct {

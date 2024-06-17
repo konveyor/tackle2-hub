@@ -118,7 +118,7 @@ func (r *TagCategory) applyTags(db *gorm.DB, category *model.TagCategory, tc lib
 }
 
 // Convenience method to find a TagCategory.
-func (r *TagCategory) find(db *gorm.DB, conditions ...interface{}) (category *model.TagCategory, found bool, err error) {
+func (r *TagCategory) find(db *gorm.DB, conditions ...any) (category *model.TagCategory, found bool, err error) {
 	category = &model.TagCategory{}
 	result := db.First(category, conditions...)
 	if result.Error != nil {

@@ -17,7 +17,7 @@ func (r *Error) Is(err error) (matched bool) {
 }
 
 // Errorf build error.
-func Errorf(s string, v ...interface{}) (err error) {
+func Errorf(s string, v ...any) (err error) {
 	err = &Error{fmt.Sprintf(s, v...)}
 	return
 }

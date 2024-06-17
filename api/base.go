@@ -85,7 +85,7 @@ func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 }
 
 // fields builds a map of fields.
-func (h *BaseHandler) fields(m interface{}) (mp map[string]interface{}) {
+func (h *BaseHandler) fields(m any) (mp map[string]any) {
 	mp = reflect.Fields(m)
 	return
 }
@@ -125,7 +125,7 @@ func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
 
 // Bind based on Content-Type header.
 // Opinionated towards json.
-func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
+func (h *BaseHandler) Bind(ctx *gin.Context, r any) (err error) {
 	switch ctx.ContentType() {
 	case "",
 		binding.MIMEPOSTForm,
@@ -144,7 +144,7 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r interface{}) (err error) {
 
 // BindJSON attempts to bind a request body to a struct, assuming that the body is JSON.
 // Binding is strict: unknown fields in the input will cause binding to fail.
-func (h *BaseHandler) BindJSON(ctx *gin.Context, r interface{}) (err error) {
+func (h *BaseHandler) BindJSON(ctx *gin.Context, r any) (err error) {
 	if ctx.Request == nil || ctx.Request.Body == nil {
 		err = errors.New("invalid request")
 		return
@@ -162,7 +162,7 @@ func (h *BaseHandler) BindJSON(ctx *gin.Context, r interface{}) (err error) {
 
 // BindYAML attempts to bind a request body to a struct, assuming that the body is YAML.
 // Binding is strict: unknown fields in the input will cause binding to fail.
-func (h *BaseHandler) BindYAML(ctx *gin.Context, r interface{}) (err error) {
+func (h *BaseHandler) BindYAML(ctx *gin.Context, r any) (err error) {
 	if ctx.Request == nil || ctx.Request.Body == nil {
 		err = errors.New("invalid request")
 		return
@@ -179,7 +179,7 @@ func (h *BaseHandler) BindYAML(ctx *gin.Context, r interface{}) (err error) {
 }
 
 // Validate that the struct field values obey the binding field tags.
-func (h *BaseHandler) Validate(r interface{}) (err error) {
+func (h *BaseHandler) Validate(r any) (err error) {
 	if binding.Validator == nil {
 		return
 	}
@@ -220,7 +220,7 @@ func (h *BaseHandler) Status(ctx *gin.Context, code int) {
 }
 
 // Respond sets the response.
-func (h *BaseHandler) Respond(ctx *gin.Context, code int, r interface{}) {
+func (h *BaseHandler) Respond(ctx *gin.Context, code int, r any) {
 	rtx := WithContext(ctx)
 	rtx.Respond(code, r)
 }
@@ -308,14 +308,14 @@ func (r *Resource) With(m *model.Model) {
 }
 
 // ref with id and named model.
-func (r *Resource) ref(id uint, m interface{}) (ref Ref) {
+func (r *Resource) ref(id uint, m any) (ref Ref) {
 	ref.ID = id
 	ref.Name = r.nameOf(m)
 	return
 }
 
 // refPtr with id and named model.
-func (r *Resource) refPtr(id *uint, m interface{}) (ref *Ref) {
+func (r *Resource) refPtr(id *uint, m any) (ref *Ref) {
 	if id == nil {
 		return
 	}
@@ -334,7 +334,7 @@ func (r *Resource) idPtr(ref *Ref) (id *uint) {
 }
 
 // nameOf model.
-func (r *Resource) nameOf(m interface{}) (name string) {
+func (r *Resource) nameOf(m any) (name string) {
 	name = reflect.NameOf(m)
 	return
 }
@@ -406,7 +406,7 @@ type Sort = sort.Sort
 
 // Decoder binding decoder.
 type Decoder interface {
-	Decode(r interface{}) (err error)
+	Decode(r any) (err error)
 }
 
 // Cursor Paginated rows iterator.
@@ -419,7 +419,7 @@ type Cursor struct {
 }
 
 // Next returns true when has next row.
-func (r *Cursor) Next(m interface{}) (next bool) {
+func (r *Cursor) Next(m any) (next bool) {
 	if r.Error != nil {
 		next = true
 		return

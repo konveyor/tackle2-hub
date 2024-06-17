@@ -257,8 +257,8 @@ type Import struct {
 	Contributors        string
 }
 
-func (r *Import) AsMap() (m map[string]interface{}) {
-	m = make(map[string]interface{})
+func (r *Import) AsMap() (m map[string]any) {
+	m = make(map[string]any)
 	m["filename"] = r.Filename
 	m["applicationName"] = r.ApplicationName
 	// "Application Name" is necessary in order for

@@ -47,7 +47,7 @@ func (r *Filter) Param() (p Param) {
 }
 
 // Params mapping.
-type Params map[string]interface{}
+type Params map[string]any
 
 // Path API path.
 type Path string
@@ -97,7 +97,7 @@ func (r *Client) Reset() {
 }
 
 // Get a resource.
-func (r *Client) Get(path string, object interface{}, params ...Param) (err error) {
+func (r *Client) Get(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		request = &http.Request{
 			Header: http.Header{},
@@ -143,7 +143,7 @@ func (r *Client) Get(path string, object interface{}, params ...Param) (err erro
 }
 
 // Post a resource.
-func (r *Client) Post(path string, object interface{}) (err error) {
+func (r *Client) Post(path string, object any) (err error) {
 	request := func() (request *http.Request, err error) {
 		bfr, err := json.Marshal(object)
 		if err != nil {
@@ -188,7 +188,7 @@ func (r *Client) Post(path string, object interface{}) (err error) {
 }
 
 // Put a resource.
-func (r *Client) Put(path string, object interface{}, params ...Param) (err error) {
+func (r *Client) Put(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		bfr, err := json.Marshal(object)
 		if err != nil {
@@ -241,7 +241,7 @@ func (r *Client) Put(path string, object interface{}, params ...Param) (err erro
 }
 
 // Patch a resource.
-func (r *Client) Patch(path string, object interface{}, params ...Param) (err error) {
+func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
 		bfr, err := json.Marshal(object)
 		if err != nil {
@@ -456,7 +456,7 @@ func (r *Client) FileGet(path, destination string) (err error) {
 
 // FilePost uploads a file.
 // Returns the created File resource.
-func (r *Client) FilePost(path, source string, object interface{}) (err error) {
+func (r *Client) FilePost(path, source string, object any) (err error) {
 	if source == "" {
 		fields := []Field{
 			{
@@ -488,7 +488,7 @@ func (r *Client) FilePost(path, source string, object interface{}) (err error) {
 
 // FilePut uploads a file.
 // Returns the created File resource.
-func (r *Client) FilePut(path, source string, object interface{}) (err error) {
+func (r *Client) FilePut(path, source string, object any) (err error) {
 	if source == "" {
 		fields := []Field{
 			{
@@ -532,7 +532,7 @@ func (r *Client) FilePatch(path string, buffer []byte) (err error) {
 }
 
 // FileSend sends file upload from.
-func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error) {
+func (r *Client) FileSend(path, method string, fields []Field, object any) (err error) {
 	request := func() (request *http.Request, err error) {
 		pr, pw := io.Pipe()
 		request = &http.Request{

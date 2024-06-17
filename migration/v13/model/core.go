@@ -28,7 +28,7 @@ type Setting struct {
 
 // With updates the value of the Setting with the json representation
 // of the `value` parameter.
-func (r *Setting) With(value interface{}) (err error) {
+func (r *Setting) With(value any) (err error) {
 	r.Value, err = json.Marshal(value)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -37,7 +37,7 @@ func (r *Setting) With(value interface{}) (err error) {
 }
 
 // As unmarshalls the value of the Setting into the `ptr` parameter.
-func (r *Setting) As(ptr interface{}) (err error) {
+func (r *Setting) As(ptr any) (err error) {
 	err = json.Unmarshal(r.Value, ptr)
 	if err != nil {
 		err = liberr.Wrap(err)

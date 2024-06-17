@@ -10,7 +10,7 @@ type Setting struct {
 }
 
 // Get a setting by key.
-func (h *Setting) Get(key string, v interface{}) (err error) {
+func (h *Setting) Get(key string, v any) (err error) {
 	path := Path(api.SettingRoot).Inject(Params{api.Key: key})
 	err = h.client.Get(path, v)
 	return

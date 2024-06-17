@@ -15,6 +15,6 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-func (r Migration) Models() []interface{} {
+func (r Migration) Models() []any {
 	return model.All()
 }

@@ -6,9 +6,9 @@ import (
 )
 
 // Fields returns a map of fields.
-func Fields(m interface{}) (mp map[string]interface{}) {
-	var inspect func(r interface{})
-	inspect = func(r interface{}) {
+func Fields(m any) (mp map[string]any) {
+	var inspect func(r any)
+	inspect = func(r any) {
 		mt := reflect.TypeOf(r)
 		mv := reflect.ValueOf(r)
 		if mt.Kind() == reflect.Ptr {
@@ -55,13 +55,13 @@ func Fields(m interface{}) (mp map[string]interface{}) {
 			}
 		}
 	}
-	mp = map[string]interface{}{}
+	mp = map[string]any{}
 	inspect(m)
 	return
 }
 
 // NameOf returns the name of a model.
-func NameOf(m interface{}) (name string) {
+func NameOf(m any) (name string) {
 	mt := reflect.TypeOf(m)
 	mv := reflect.ValueOf(m)
 	if mv.IsNil() {

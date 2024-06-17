@@ -55,7 +55,7 @@ func (h BatchHandler) TagsCreate(ctx *gin.Context) {
 }
 
 func (h BatchHandler) create(ctx *gin.Context, create gin.HandlerFunc) {
-	var resources []interface{}
+	var resources []any
 	err := h.Bind(ctx, &resources)
 	if err != nil {
 		_ = ctx.Error(err)

@@ -14,8 +14,8 @@ type JSON = []byte
 // All builds all models.
 // Models are enumerated such that each are listed after
 // all the other models on which they may depend.
-func All() []interface{} {
-	return []interface{}{
+func All() []any {
+	return []any{
 		ImportSummary{},
 		Import{},
 		ImportTag{},

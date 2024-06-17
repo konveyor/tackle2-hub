@@ -82,7 +82,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-func (r Migration) Models() []interface{} {
+func (r Migration) Models() []any {
 	return model.All()
 }
 
@@ -103,7 +103,7 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
-		d := map[string]interface{}{}
+		d := map[string]any{}
 		_ = json.Unmarshal(m.Facts, &d)
 		for k, v := range d {
 			jv, _ := json.Marshal(v)

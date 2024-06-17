@@ -43,7 +43,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 			}
 
 			// Get.
-			var v interface{}
+			var v any
 			err = Client.Get(factPath, &v)
 			if err != nil {
 				t.Errorf(err.Error())

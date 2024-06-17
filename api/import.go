@@ -409,7 +409,7 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 }
 
 // Import REST resource.
-type Import map[string]interface{}
+type Import map[string]any
 
 // ImportSummary REST resource.
 type ImportSummary struct {

@@ -30,7 +30,7 @@ type Context struct {
 // Response values.
 type Response struct {
 	Status int
-	Body   interface{}
+	Body   any
 }
 
 // Status sets the values to respond to the request with.
@@ -42,7 +42,7 @@ func (r *Context) Status(status int) {
 }
 
 // Respond sets the values to respond to the request with.
-func (r *Context) Respond(status int, body interface{}) {
+func (r *Context) Respond(status int, body any) {
 	r.Response = Response{
 		Status: status,
 		Body:   body,

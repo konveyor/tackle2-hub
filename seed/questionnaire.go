@@ -90,7 +90,7 @@ func (r *Questionnaire) Apply(db *gorm.DB) (err error) {
 }
 
 // Convenience method to find a Questionnaire.
-func (r *Questionnaire) find(db *gorm.DB, conditions ...interface{}) (q *model.Questionnaire, found bool, err error) {
+func (r *Questionnaire) find(db *gorm.DB, conditions ...any) (q *model.Questionnaire, found bool, err error) {
 	q = &model.Questionnaire{}
 	result := db.First(q, conditions...)
 	if result.Error != nil {

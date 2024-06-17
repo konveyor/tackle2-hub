@@ -136,7 +136,7 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 }
 
 // Error appends an error.
-func (m *Task) Error(severity, description string, x ...interface{}) {
+func (m *Task) Error(severity, description string, x ...any) {
 	var list []TaskError
 	description = fmt.Sprintf(description, x...)
 	te := TaskError{Severity: severity, Description: description}
@@ -146,7 +146,7 @@ func (m *Task) Error(severity, description string, x ...interface{}) {
 }
 
 // Map alias.
-type Map = map[string]interface{}
+type Map = map[string]any
 
 // TTL time-to-live.
 type TTL struct {
