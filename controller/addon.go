@@ -48,7 +48,7 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 	}
 	// Primary CR.
 	err = cnt.Watch(
-		&source.Kind{Type: &api.Addon{}},
+		source.Kind(mgr.GetCache(), &api.Addon{}),
 		&handler.EnqueueRequestForObject{})
 	if err != nil {
 		log.Error(err, "")
