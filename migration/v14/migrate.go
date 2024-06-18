@@ -12,6 +12,25 @@ type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	err = db.AutoMigrate(r.Models()...)
+	if err != nil {
+		return
+	}
+	// add mvn:// prefix.
+	list := []*model.Application{}
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, m := range list {
+		if m.Binary == "" {
+			continue
+		}
+		m.Binary = "mvn://" + m.Binary
+		err = db.Save(m).Error
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
