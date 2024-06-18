@@ -244,14 +244,15 @@ type Proxy struct {
 // Identity represents and identity with a set of credentials.
 type Identity struct {
 	Model
-	Kind        string `gorm:"not null"`
-	Name        string `gorm:"index;unique;not null"`
-	Description string
-	User        string
-	Password    string
-	Key         string
-	Settings    string
-	Proxies     []Proxy `gorm:"constraint:OnDelete:SET NULL"`
+	Kind         string `gorm:"not null"`
+	Name         string `gorm:"index;unique;not null"`
+	Description  string
+	User         string
+	Password     string
+	Key          string
+	Settings     string
+	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
+	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
 }
 
 // Encrypt sensitive fields.

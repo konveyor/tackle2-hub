@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 )
 
 // Routes
@@ -186,7 +187,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	ref := &model.Identity{}
-	err = h.DB(ctx).First(ref, id).Error
+	err = h.DB(ctx).Preload(clause.Associations).First(ref, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -204,6 +205,14 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+
+	for i := range m.Applications {
+		err = discover(ctx, &m.Applications[i])
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Status(ctx, http.StatusNoContent)

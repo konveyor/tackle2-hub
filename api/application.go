@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 )
 
@@ -247,6 +249,12 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
+	err = discover(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -372,6 +380,11 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
+	err = discover(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -1330,6 +1343,25 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 					ID: ref.ID,
 				},
 			})
+	}
+	return
+}
+
+func discover(ctx *gin.Context, application *model.Application) (err error) {
+	rtx := WithContext(ctx)
+	db := rtx.DB.Debug()
+	kinds := []string{Settings.Hub.Task.Kinds.Discovery.Language, Settings.Hub.Task.Kinds.Discovery.Technology}
+	for _, kind := range kinds {
+		t := model.Task{}
+		task := tasking.Task{Task: &t}
+		task.Kind = kind
+		task.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		task.ApplicationID = &application.ID
+		task.State = tasking.Ready
+		err = rtx.TaskManager.Create(db, &task)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
