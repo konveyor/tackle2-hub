@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
-	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -86,14 +86,16 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-
-	//
+	// migrate
+	migrated, err := r.alpha2Migration(addon)
+	if migrated || err != nil {
+		return
+	}
 	// changed.
 	err = r.addonChanged(addon)
 	if err != nil {
 		return
 	}
-
 	// Apply changes.
 	addon.Status.ObservedGeneration = addon.Generation
 	err = r.Status().Update(context.TODO(), addon)
@@ -111,5 +113,40 @@ func (r *Reconciler) addonChanged(addon *api.Addon) (err error) {
 
 // addonDeleted an addon has been deleted.
 func (r *Reconciler) addonDeleted(name string) (err error) {
+	return
+}
+
+// alpha2Migration migrates to alpha2.
+func (r *Reconciler) alpha2Migration(addon *api.Addon) (migrated bool, err error) {
+	if addon.Spec.Image != nil {
+		if addon.Spec.Container.Image == "" {
+			addon.Spec.Container.Image = *addon.Spec.Image
+		}
+		addon.Spec.Image = nil
+		migrated = true
+	}
+	if addon.Spec.Resources != nil {
+		if len(addon.Spec.Container.Resources.Limits) == 0 {
+			addon.Spec.Container.Resources.Limits = (*addon.Spec.Resources).Limits
+		}
+		if len(addon.Spec.Container.Resources.Requests) == 0 {
+			addon.Spec.Container.Resources.Requests = (*addon.Spec.Resources).Requests
+		}
+		addon.Spec.Resources = nil
+		migrated = true
+	}
+	if addon.Spec.ImagePullPolicy != nil {
+		if addon.Spec.Container.ImagePullPolicy == "" {
+			addon.Spec.Container.ImagePullPolicy = *addon.Spec.ImagePullPolicy
+		}
+		addon.Spec.ImagePullPolicy = nil
+		migrated = true
+	}
+	if migrated {
+		err = r.Update(context.TODO(), addon)
+		if err != nil {
+			return
+		}
+	}
 	return
 }

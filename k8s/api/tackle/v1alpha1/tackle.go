@@ -18,20 +18,24 @@ package v1alpha1
 
 import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Tackle defines a tackle application.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
-// +kubebuilder:printcolumn:name="CONNECTED",type=string,JSONPath=".status.conditions[?(@.type=='ConnectionTestSucceeded')].status"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 type Tackle struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
+	// Spec defines the desired state of the resource.
+	Spec runtime.RawExtension `json:"spec,omitempty"`
+	// Status defines the observed state of the resource.
+	Status runtime.RawExtension `json:"status,omitempty"`
 }
 
+// TackleList is a list of Tackle.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TackleList struct {
 	meta.TypeMeta `json:",inline"`

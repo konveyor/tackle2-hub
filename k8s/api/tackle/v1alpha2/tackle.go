@@ -14,31 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
+	"github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Extension defines an addon extension.
+// Tackle defines a tackle application.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-type Extension struct {
-	meta.TypeMeta   `json:",inline"`
-	meta.ObjectMeta `json:"metadata,omitempty"`
-}
+type Tackle v1alpha1.Tackle
 
-// ExtensionList is a list of Extension.
+// TackleList is a list of Tackle.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type ExtensionList struct {
+type TackleList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []Extension `json:"items"`
+	Items         []Tackle `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Extension{}, &ExtensionList{})
+	SchemeBuilder.Register(&TackleList{}, &Tackle{})
 }
