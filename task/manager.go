@@ -31,20 +31,19 @@ import (
 )
 
 // States
-// Some also used as events:
+// also used as events:
 // - Postponed
 // - QuotaBlocked
-// - Preempted
 const (
-	Created   = "Created"
-	Ready     = "Ready"
-	Postponed = "Postponed"
-	Preempted = "Preempted"
-	Pending   = "Pending"
-	Running   = "Running"
-	Succeeded = "Succeeded"
-	Failed    = "Failed"
-	Canceled  = "Canceled"
+	Created      = "Created"
+	Ready        = "Ready"
+	Postponed    = "Postponed"
+	QuotaBlocked = "QuotaBlocked"
+	Pending      = "Pending"
+	Running      = "Running"
+	Succeeded    = "Succeeded"
+	Failed       = "Failed"
+	Canceled     = "Canceled"
 )
 
 // Events
@@ -54,10 +53,10 @@ const (
 	PodNotFound   = "PodNotFound"
 	PodCreated    = "PodCreated"
 	PodRunning    = "PodRunning"
+	Preempted     = "Preempted"
 	PodSucceeded  = "PodSucceeded"
 	PodFailed     = "PodFailed"
 	PodDeleted    = "PodDeleted"
-	QuotaBlocked  = "QuotaBlocked"
 	Escalated     = "Escalated"
 	Released      = "Released"
 )
