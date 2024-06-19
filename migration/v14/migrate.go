@@ -1,6 +1,8 @@
 package v14
 
 import (
+	"strings"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v14/model"
 	"gorm.io/gorm"
@@ -16,16 +18,17 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		return
 	}
 	// add mvn:// prefix.
-	list := []*model.Application{}
+	prefix := "mvn://"
+	var list []*model.Application
 	err = db.Find(&list).Error
 	if err != nil {
 		return
 	}
 	for _, m := range list {
-		if m.Binary == "" {
+		if m.Binary == "" || strings.HasPrefix(m.Binary, prefix) {
 			continue
 		}
-		m.Binary = "mvn://" + m.Binary
+		m.Binary = prefix + m.Binary
 		err = db.Save(m).Error
 		if err != nil {
 			return
