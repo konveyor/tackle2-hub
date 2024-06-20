@@ -7,7 +7,6 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,18 +40,6 @@ func NewClientSet() (newClient *k8s.Clientset, err error) {
 }
 
 type FakeClient struct {
-}
-
-func (r *FakeClient) SubResource(_ string) (c client.SubResourceClient) {
-	return
-}
-
-func (r *FakeClient) GroupVersionKindFor(_ runtime.Object) (gvk schema.GroupVersionKind, err error) {
-	return
-}
-
-func (r *FakeClient) IsObjectNamespaced(_ runtime.Object) (b bool, err error) {
-	return
 }
 
 func (r *FakeClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) (err error) {
