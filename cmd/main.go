@@ -24,10 +24,8 @@ import (
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var Settings = &settings.Settings
@@ -71,14 +69,8 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	mgr, err = manager.New(
 		cfg,
 		manager.Options{
-			Metrics: server.Options{
-				BindAddress: "0",
-			},
-			Cache: cache.Options{
-				DefaultNamespaces: map[string]cache.Config{
-					Settings.Hub.Namespace: {},
-				},
-			},
+			MetricsBindAddress: "0",
+			Namespace:          Settings.Hub.Namespace,
 		})
 	if err != nil {
 		err = liberr.Wrap(err)
