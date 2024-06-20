@@ -7,11 +7,12 @@ import (
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes/scheme"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -283,6 +284,8 @@ func (r *Hub) Load() (err error) {
 			r.Discovery.Enabled = b
 		} else {
 			r.Discovery.Enabled = true
+		}
+		if r.Discovery.Enabled {
 			r.Discovery.Tasks, err = r.discoveryTasks()
 			if err != nil {
 				return err
@@ -295,7 +298,12 @@ func (r *Hub) Load() (err error) {
 
 // discoveryTasks finds discovery tasks by their label
 func (r *Hub) discoveryTasks() (tasks []string, err error) {
-	client, err := k8s.NewClient()
+	cfg, _ := config.GetConfig()
+	client, err := k8sclient.New(
+		cfg,
+		k8sclient.Options{
+			Scheme: scheme.Scheme,
+		})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

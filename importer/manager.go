@@ -342,7 +342,11 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 	// best effort
-	_ = m.discover(app)
+	err := m.discover(app)
+	if err != nil {
+		imp.ErrorMessage = fmt.Sprintf("Failed to launch discovery tasks for Application '%s'", app.Name)
+		return
+	}
 
 	ok = true
 	return
