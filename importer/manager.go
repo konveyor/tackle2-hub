@@ -12,13 +12,20 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/settings"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
+)
+
+var (
+	Settings = &settings.Settings
 )
 
 // Manager for processing application imports.
 type Manager struct {
 	// DB
-	DB *gorm.DB
+	DB      *gorm.DB
+	Tasking *tasking.Manager
 }
 
 // Run the manager.
@@ -334,8 +341,27 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		imp.ErrorMessage = result.Error.Error()
 		return
 	}
+	// best effort
+	_ = m.discover(app)
 
 	ok = true
+	return
+}
+
+func (m *Manager) discover(application *model.Application) (err error) {
+	kinds := []string{Settings.Hub.Task.Kinds.Discovery.Language, Settings.Hub.Task.Kinds.Discovery.Technology}
+	for _, kind := range kinds {
+		t := model.Task{}
+		task := tasking.Task{Task: &t}
+		task.Kind = kind
+		task.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		task.ApplicationID = &application.ID
+		task.State = tasking.Ready
+		err = m.Tasking.Create(m.DB, &task)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

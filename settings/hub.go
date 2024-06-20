@@ -7,35 +7,35 @@ import (
 )
 
 const (
-	EnvNamespace               = "NAMESPACE"
-	EnvDbPath                  = "DB_PATH"
-	EnvDbSeedPath              = "DB_SEED_PATH"
-	EnvBucketPath              = "BUCKET_PATH"
-	EnvRwxSupported            = "RWX_SUPPORTED"
-	EnvCachePath               = "CACHE_PATH"
-	EnvCachePvc                = "CACHE_PVC"
-	EnvSharedPath              = "SHARED_PATH"
-	EnvPassphrase              = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated         = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded       = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed          = "TASK_REAP_FAILED"
-	EnvTaskSA                  = "TASK_SA"
-	EnvTaskRetries             = "TASK_RETRIES"
-	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
-	EnvTaskPreemptDelayed      = "TASK_PREEMPT_DELAYED"
-	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
-	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
-	EnvFrequencyTask           = "FREQUENCY_TASK"
-	EnvFrequencyReaper         = "FREQUENCY_REAPER"
-	EnvDevelopment             = "DEVELOPMENT"
-	EnvBucketTTL               = "BUCKET_TTL"
-	EnvFileTTL                 = "FILE_TTL"
-	EnvAppName                 = "APP_NAME"
-	EnvDisconnected            = "DISCONNECTED"
-	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
-	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
-	EnvLanguageDiscoveryTask   = "LANGUAGE_DISCOVERY_TASK"
-	EnvTechnologyDiscoveryTask = "TECHNOLOGY_DISCOVERY_TASK"
+	EnvNamespace                   = "NAMESPACE"
+	EnvDbPath                      = "DB_PATH"
+	EnvDbSeedPath                  = "DB_SEED_PATH"
+	EnvBucketPath                  = "BUCKET_PATH"
+	EnvRwxSupported                = "RWX_SUPPORTED"
+	EnvCachePath                   = "CACHE_PATH"
+	EnvCachePvc                    = "CACHE_PVC"
+	EnvSharedPath                  = "SHARED_PATH"
+	EnvPassphrase                  = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated             = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded           = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed              = "TASK_REAP_FAILED"
+	EnvTaskSA                      = "TASK_SA"
+	EnvTaskRetries                 = "TASK_RETRIES"
+	EnvTaskPreemptEnabled          = "TASK_PREEMPT_ENABLED"
+	EnvTaskPreemptDelayed          = "TASK_PREEMPT_DELAYED"
+	EnvTaskPreemptPostponed        = "TASK_PREEMPT_POSTPONED"
+	EnvTaskPreemptRate             = "TASK_PREEMPT_RATE"
+	EnvFrequencyTask               = "FREQUENCY_TASK"
+	EnvFrequencyReaper             = "FREQUENCY_REAPER"
+	EnvDevelopment                 = "DEVELOPMENT"
+	EnvBucketTTL                   = "BUCKET_TTL"
+	EnvFileTTL                     = "FILE_TTL"
+	EnvAppName                     = "APP_NAME"
+	EnvDisconnected                = "DISCONNECTED"
+	EnvAnalysisReportPath          = "ANALYSIS_REPORT_PATH"
+	EnvAnalysisArchiverEnabled     = "ANALYSIS_ARCHIVER_ENABLED"
+	EnvTaskKindDiscoveryLanguage   = "TASK_KIND_DISCOVERY_LANGUAGE"
+	EnvTaskKindDiscoveryTechnology = "TASK_KIND_DISCOVERY_TECHNOLOGY"
 )
 
 type Hub struct {
@@ -267,11 +267,11 @@ func (r *Hub) Load() (err error) {
 		r.Analysis.ArchiverEnabled = true
 	}
 
-	r.Task.Kinds.Discovery.Language, found = os.LookupEnv(EnvLanguageDiscoveryTask)
+	r.Task.Kinds.Discovery.Language, found = os.LookupEnv(EnvTaskKindDiscoveryLanguage)
 	if !found {
 		r.Task.Kinds.Discovery.Language = "language-discovery"
 	}
-	r.Task.Kinds.Discovery.Technology, found = os.LookupEnv(EnvTechnologyDiscoveryTask)
+	r.Task.Kinds.Discovery.Technology, found = os.LookupEnv(EnvTaskKindDiscoveryTechnology)
 	if !found {
 		r.Task.Kinds.Discovery.Technology = "tech-discovery"
 	}

@@ -168,7 +168,8 @@ func main() {
 	//
 	// Application import.
 	importManager := importer.Manager{
-		DB: db,
+		DB:      db,
+		Tasking: &taskManager,
 	}
 	importManager.Run(context.Background())
 	//
