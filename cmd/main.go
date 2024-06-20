@@ -37,10 +37,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = Settings.FindDiscoveryTasks()
-	if err != nil {
-		panic(err)
-	}
 }
 
 // Setup the DB and models.
@@ -128,6 +124,10 @@ func main() {
 				return
 			}
 		}()
+		err = Settings.FindDiscoveryTasks()
+		if err != nil {
+			return
+		}
 	}
 	//
 	// k8s client.
