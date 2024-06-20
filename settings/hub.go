@@ -285,19 +285,16 @@ func (r *Hub) Load() (err error) {
 		} else {
 			r.Discovery.Enabled = true
 		}
-		if r.Discovery.Enabled {
-			r.Discovery.Tasks, err = r.discoveryTasks()
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return
 }
 
-// discoveryTasks finds discovery tasks by their label
-func (r *Hub) discoveryTasks() (tasks []string, err error) {
+// FindDiscoveryTasks by their label.
+func (r *Hub) FindDiscoveryTasks() (err error) {
+	if !r.Discovery.Enabled {
+		return
+	}
 	cfg, _ := config.GetConfig()
 	client, err := k8sclient.New(
 		cfg,
@@ -326,7 +323,7 @@ func (r *Hub) discoveryTasks() (tasks []string, err error) {
 	}
 	for i := range list.Items {
 		t := &list.Items[i]
-		tasks = append(tasks, t.Name)
+		r.Discovery.Tasks = append(r.Discovery.Tasks, t.Name)
 	}
 	return
 }

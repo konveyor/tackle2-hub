@@ -33,7 +33,14 @@ var Settings = &settings.Settings
 var log = logr.WithName("hub")
 
 func init() {
-	_ = Settings.Load()
+	err := Settings.Load()
+	if err != nil {
+		panic(err)
+	}
+	err = Settings.FindDiscoveryTasks()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Setup the DB and models.
@@ -129,6 +136,7 @@ func main() {
 		err = liberr.Wrap(err)
 		return
 	}
+
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
