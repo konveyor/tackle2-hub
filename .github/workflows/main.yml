@@ -59,8 +59,8 @@ jobs:
           make vet
           DISCONNECTED=1 make run &
           sleep 15  # probably a dirty solution
-          HUB_BASE_URL=http://localhost:8080 make test-api
-          HUB_BASE_URL=http://localhost:8080 make test-api  # Intentionaly run 2x to catch data left in Hub DB.
+          DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api
+          DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api  # Intentionaly run 2x to catch data left in Hub DB.
 
   test-e2e:
     runs-on: ubuntu-latest
