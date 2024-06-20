@@ -207,8 +207,9 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 
+	appHandler := ApplicationHandler{}
 	for i := range m.Applications {
-		err = discover(ctx, &m.Applications[i])
+		err = appHandler.discover(ctx, &m.Applications[i])
 		if err != nil {
 			_ = ctx.Error(err)
 			return

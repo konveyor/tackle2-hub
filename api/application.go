@@ -250,7 +250,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	err = discover(ctx, m)
+	err = h.discover(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -380,7 +380,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	err = discover(ctx, m)
+	err = h.discover(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1074,6 +1074,25 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
+// discover an application's language and frameworks by launching discovery tasks.
+func (h ApplicationHandler) discover(ctx *gin.Context, application *model.Application) (err error) {
+	rtx := WithContext(ctx)
+	db := h.DB(ctx)
+	for _, kind := range Settings.Hub.Discovery.Tasks {
+		t := model.Task{}
+		task := tasking.Task{Task: &t}
+		task.Kind = kind
+		task.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		task.ApplicationID = &application.ID
+		task.State = tasking.Ready
+		err = rtx.TaskManager.Create(db, &task)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
@@ -1343,25 +1362,6 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 					ID: ref.ID,
 				},
 			})
-	}
-	return
-}
-
-func discover(ctx *gin.Context, application *model.Application) (err error) {
-	rtx := WithContext(ctx)
-	db := rtx.DB.Debug()
-	kinds := []string{Settings.Hub.Task.Kinds.Discovery.Language, Settings.Hub.Task.Kinds.Discovery.Technology}
-	for _, kind := range kinds {
-		t := model.Task{}
-		task := tasking.Task{Task: &t}
-		task.Kind = kind
-		task.Name = fmt.Sprintf("%s-%s", application.Name, kind)
-		task.ApplicationID = &application.ID
-		task.State = tasking.Ready
-		err = rtx.TaskManager.Create(db, &task)
-		if err != nil {
-			return
-		}
 	}
 	return
 }

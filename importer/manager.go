@@ -349,8 +349,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 }
 
 func (m *Manager) discover(application *model.Application) (err error) {
-	kinds := []string{Settings.Hub.Task.Kinds.Discovery.Language, Settings.Hub.Task.Kinds.Discovery.Technology}
-	for _, kind := range kinds {
+	for _, kind := range Settings.Hub.Discovery.Tasks {
 		t := model.Task{}
 		task := tasking.Task{Task: &t}
 		task.Kind = kind

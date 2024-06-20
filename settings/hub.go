@@ -1,41 +1,52 @@
 package settings
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"time"
+
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/k8s"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	EnvNamespace                   = "NAMESPACE"
-	EnvDbPath                      = "DB_PATH"
-	EnvDbSeedPath                  = "DB_SEED_PATH"
-	EnvBucketPath                  = "BUCKET_PATH"
-	EnvRwxSupported                = "RWX_SUPPORTED"
-	EnvCachePath                   = "CACHE_PATH"
-	EnvCachePvc                    = "CACHE_PVC"
-	EnvSharedPath                  = "SHARED_PATH"
-	EnvPassphrase                  = "ENCRYPTION_PASSPHRASE"
-	EnvTaskReapCreated             = "TASK_REAP_CREATED"
-	EnvTaskReapSucceeded           = "TASK_REAP_SUCCEEDED"
-	EnvTaskReapFailed              = "TASK_REAP_FAILED"
-	EnvTaskSA                      = "TASK_SA"
-	EnvTaskRetries                 = "TASK_RETRIES"
-	EnvTaskPreemptEnabled          = "TASK_PREEMPT_ENABLED"
-	EnvTaskPreemptDelayed          = "TASK_PREEMPT_DELAYED"
-	EnvTaskPreemptPostponed        = "TASK_PREEMPT_POSTPONED"
-	EnvTaskPreemptRate             = "TASK_PREEMPT_RATE"
-	EnvFrequencyTask               = "FREQUENCY_TASK"
-	EnvFrequencyReaper             = "FREQUENCY_REAPER"
-	EnvDevelopment                 = "DEVELOPMENT"
-	EnvBucketTTL                   = "BUCKET_TTL"
-	EnvFileTTL                     = "FILE_TTL"
-	EnvAppName                     = "APP_NAME"
-	EnvDisconnected                = "DISCONNECTED"
-	EnvAnalysisReportPath          = "ANALYSIS_REPORT_PATH"
-	EnvAnalysisArchiverEnabled     = "ANALYSIS_ARCHIVER_ENABLED"
-	EnvTaskKindDiscoveryLanguage   = "TASK_KIND_DISCOVERY_LANGUAGE"
-	EnvTaskKindDiscoveryTechnology = "TASK_KIND_DISCOVERY_TECHNOLOGY"
+	DiscoveryLabel = "konveyor.io/discovery"
+)
+
+const (
+	EnvNamespace               = "NAMESPACE"
+	EnvDbPath                  = "DB_PATH"
+	EnvDbSeedPath              = "DB_SEED_PATH"
+	EnvBucketPath              = "BUCKET_PATH"
+	EnvRwxSupported            = "RWX_SUPPORTED"
+	EnvCachePath               = "CACHE_PATH"
+	EnvCachePvc                = "CACHE_PVC"
+	EnvSharedPath              = "SHARED_PATH"
+	EnvPassphrase              = "ENCRYPTION_PASSPHRASE"
+	EnvTaskReapCreated         = "TASK_REAP_CREATED"
+	EnvTaskReapSucceeded       = "TASK_REAP_SUCCEEDED"
+	EnvTaskReapFailed          = "TASK_REAP_FAILED"
+	EnvTaskSA                  = "TASK_SA"
+	EnvTaskRetries             = "TASK_RETRIES"
+	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
+	EnvTaskPreemptDelayed      = "TASK_PREEMPT_DELAYED"
+	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
+	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
+	EnvFrequencyTask           = "FREQUENCY_TASK"
+	EnvFrequencyReaper         = "FREQUENCY_REAPER"
+	EnvDevelopment             = "DEVELOPMENT"
+	EnvBucketTTL               = "BUCKET_TTL"
+	EnvFileTTL                 = "FILE_TTL"
+	EnvAppName                 = "APP_NAME"
+	EnvDisconnected            = "DISCONNECTED"
+	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
+	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
+	EnvDiscoveryEnabled        = "DISCOVERY_ENABLED"
 )
 
 type Hub struct {
@@ -84,12 +95,6 @@ type Hub struct {
 			Postponed time.Duration
 			Rate      int
 		}
-		Kinds struct {
-			Discovery struct {
-				Language   string
-				Technology string
-			}
-		}
 	}
 	// Frequency
 	Frequency struct {
@@ -107,6 +112,10 @@ type Hub struct {
 	Analysis struct {
 		ReportPath      string
 		ArchiverEnabled bool
+	}
+	Discovery struct {
+		Enabled bool
+		Tasks   []string
 	}
 }
 
@@ -267,13 +276,49 @@ func (r *Hub) Load() (err error) {
 		r.Analysis.ArchiverEnabled = true
 	}
 
-	r.Task.Kinds.Discovery.Language, found = os.LookupEnv(EnvTaskKindDiscoveryLanguage)
-	if !found {
-		r.Task.Kinds.Discovery.Language = "language-discovery"
+	if !r.Disconnected {
+		s, found = os.LookupEnv(EnvDiscoveryEnabled)
+		if found {
+			b, _ := strconv.ParseBool(s)
+			r.Discovery.Enabled = b
+		} else {
+			r.Discovery.Enabled = true
+			r.Discovery.Tasks, err = r.discoveryTasks()
+			if err != nil {
+				return err
+			}
+		}
 	}
-	r.Task.Kinds.Discovery.Technology, found = os.LookupEnv(EnvTaskKindDiscoveryTechnology)
-	if !found {
-		r.Task.Kinds.Discovery.Technology = "tech-discovery"
+
+	return
+}
+
+// discoveryTasks finds discovery tasks by their label
+func (r *Hub) discoveryTasks() (tasks []string, err error) {
+	client, err := k8s.NewClient()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	selector := labels.NewSelector()
+	req, _ := labels.NewRequirement(DiscoveryLabel, selection.Exists, []string{})
+	selector = selector.Add(*req)
+	options := &k8sclient.ListOptions{
+		Namespace:     Settings.Namespace,
+		LabelSelector: selector,
+	}
+	list := crd.TaskList{}
+	err = client.List(
+		context.TODO(),
+		&list,
+		options)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range list.Items {
+		t := &list.Items[i]
+		tasks = append(tasks, t.Name)
 	}
 	return
 }
