@@ -1,9 +1,22 @@
 package settings
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"time"
+
+	liberr "github.com/jortel/go-utils/error"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes/scheme"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+const (
+	DiscoveryLabel = "konveyor.io/discovery"
 )
 
 const (
@@ -34,6 +47,7 @@ const (
 	EnvDisconnected            = "DISCONNECTED"
 	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
 	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
+	EnvDiscoveryEnabled        = "DISCOVERY_ENABLED"
 )
 
 type Hub struct {
@@ -99,6 +113,10 @@ type Hub struct {
 	Analysis struct {
 		ReportPath      string
 		ArchiverEnabled bool
+	}
+	Discovery struct {
+		Enabled bool
+		Tasks   []string
 	}
 }
 
@@ -257,6 +275,55 @@ func (r *Hub) Load() (err error) {
 		r.Analysis.ArchiverEnabled = b
 	} else {
 		r.Analysis.ArchiverEnabled = true
+	}
+
+	if !r.Disconnected {
+		s, found = os.LookupEnv(EnvDiscoveryEnabled)
+		if found {
+			b, _ := strconv.ParseBool(s)
+			r.Discovery.Enabled = b
+		} else {
+			r.Discovery.Enabled = true
+		}
+	}
+
+	return
+}
+
+// FindDiscoveryTasks by their label.
+func (r *Hub) FindDiscoveryTasks() (err error) {
+	if !r.Discovery.Enabled {
+		return
+	}
+	cfg, _ := config.GetConfig()
+	client, err := k8sclient.New(
+		cfg,
+		k8sclient.Options{
+			Scheme: scheme.Scheme,
+		})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	selector := labels.NewSelector()
+	req, _ := labels.NewRequirement(DiscoveryLabel, selection.Exists, []string{})
+	selector = selector.Add(*req)
+	options := &k8sclient.ListOptions{
+		Namespace:     Settings.Namespace,
+		LabelSelector: selector,
+	}
+	list := crd.TaskList{}
+	err = client.List(
+		context.TODO(),
+		&list,
+		options)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range list.Items {
+		t := &list.Items[i]
+		r.Discovery.Tasks = append(r.Discovery.Tasks, t.Name)
 	}
 	return
 }

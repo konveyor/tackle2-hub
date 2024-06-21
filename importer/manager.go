@@ -12,13 +12,22 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/settings"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	Settings = &settings.Settings
 )
 
 // Manager for processing application imports.
 type Manager struct {
 	// DB
-	DB *gorm.DB
+	DB          *gorm.DB
+	TaskManager *tasking.Manager
+	Client      k8sclient.Client
 }
 
 // Run the manager.
@@ -334,8 +343,36 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		imp.ErrorMessage = result.Error.Error()
 		return
 	}
+	// best effort
+	err := m.discover(app)
+	if err != nil {
+		imp.ErrorMessage = fmt.Sprintf("Failed to launch discovery tasks for Application '%s'", app.Name)
+		return
+	}
 
 	ok = true
+	return
+}
+
+func (m *Manager) discover(application *model.Application) (err error) {
+	for _, kind := range Settings.Hub.Discovery.Tasks {
+		t := api.Task{}
+		t.Kind = kind
+		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		ref := api.Ref{ID: application.ID}
+		t.Application = &ref
+		t.State = tasking.Ready
+		taskHandler := api.TaskHandler{}
+		err = taskHandler.FindRefs(m.Client, &t)
+		if err != nil {
+			return
+		}
+		task := tasking.Task{Task: t.Model()}
+		err = m.TaskManager.Create(m.DB, &task)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

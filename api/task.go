@@ -292,7 +292,8 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.findRefs(ctx, r)
+	rtx := WithContext(ctx)
+	err = h.FindRefs(rtx.Client, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -300,7 +301,6 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	task := &tasking.Task{}
 	task.With(r.Model())
 	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	rtx := WithContext(ctx)
 	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -617,14 +617,13 @@ func (h TaskHandler) GetAttached(ctx *gin.Context) {
 	}
 }
 
-// findRefs find referenced resources.
+// FindRefs find referenced resources.
 // - addon
 // - extensions
 // - kind
 // - priority
 // The priority is defaulted to the kind as needed.
-func (h *TaskHandler) findRefs(ctx *gin.Context, r *Task) (err error) {
-	client := h.Client(ctx)
+func (h *TaskHandler) FindRefs(client k8sclient.Client, r *Task) (err error) {
 	if r.Addon != "" {
 		addon := &crd.Addon{}
 		name := r.Addon

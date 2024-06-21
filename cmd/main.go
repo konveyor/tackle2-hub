@@ -33,7 +33,10 @@ var Settings = &settings.Settings
 var log = logr.WithName("hub")
 
 func init() {
-	_ = Settings.Load()
+	err := Settings.Load()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Setup the DB and models.
@@ -121,6 +124,10 @@ func main() {
 				return
 			}
 		}()
+		err = Settings.FindDiscoveryTasks()
+		if err != nil {
+			return
+		}
 	}
 	//
 	// k8s client.
@@ -129,6 +136,7 @@ func main() {
 		err = liberr.Wrap(err)
 		return
 	}
+
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
@@ -168,7 +176,9 @@ func main() {
 	//
 	// Application import.
 	importManager := importer.Manager{
-		DB: db,
+		DB:          db,
+		TaskManager: &taskManager,
+		Client:      client,
 	}
 	importManager.Run(context.Background())
 	//
