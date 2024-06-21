@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/migration/v14/model"
 )
 
@@ -47,9 +48,9 @@ type Ticket = model.Ticket
 type Tracker = model.Tracker
 
 type TTL = model.TTL
-type Ref = model.Ref
-type Map = model.Map
-type Data = model.Data
+type Ref = json.Ref
+type Map = json.Map
+type Data = json.Data
 
 type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent

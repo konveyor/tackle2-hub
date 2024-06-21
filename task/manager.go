@@ -419,20 +419,21 @@ func (m *Manager) findRefs(task *Task) (err error) {
 			return
 		}
 	}
-	if task.Kind != "" {
-		kind, found := m.cluster.tasks[task.Kind]
-		if !found {
-			err = &ExtensionNotFound{Name: task.Kind}
-			return
-		}
-		if task.Priority == 0 {
-			task.Priority = kind.Spec.Priority
-		}
-		other := model.Data{Any: kind.Spec.Data}
-		merged := task.Data.Merge(other)
-		if !merged {
-			task.Data = other
-		}
+	if task.Kind == "" {
+		return
+	}
+	kind, found := m.cluster.tasks[task.Kind]
+	if !found {
+		err = &ExtensionNotFound{Name: task.Kind}
+		return
+	}
+	if task.Priority == 0 {
+		task.Priority = kind.Spec.Priority
+	}
+	other := model.Data{Any: kind.Data()}
+	merged := task.Data.Merge(other)
+	if !merged {
+		task.Data = other
 	}
 	return
 }

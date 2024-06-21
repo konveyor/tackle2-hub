@@ -451,7 +451,7 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 			r.Priority = kind.Spec.Priority
 		}
 		data := model.Data{Any: r.Data}
-		other := model.Data{Any: kind.Spec.Data}
+		other := model.Data{Any: kind.Data()}
 		merged := data.Merge(other)
 		if !merged {
 			r.Data = other.Any

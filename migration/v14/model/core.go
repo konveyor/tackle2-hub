@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"os"
 	"path"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/encryption"
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"gorm.io/gorm"
 )
 
@@ -126,7 +126,7 @@ type Task struct {
 	Priority      int
 	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
 	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          Data       `gorm:"type:json;serializer:json"`
+	Data          json.Data  `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
 	Errors        []TaskError `gorm:"type:json;serializer:json"`
@@ -174,7 +174,7 @@ type TaskReport struct {
 	Activity  []string     `gorm:"type:json;serializer:json"`
 	Errors    []TaskError  `gorm:"type:json;serializer:json"`
 	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    Data         `gorm:"type:json;serializer:json"`
+	Result    json.Data    `gorm:"type:json;serializer:json"`
 	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -189,7 +189,7 @@ type TaskGroup struct {
 	State      string
 	Priority   int
 	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       Data       `gorm:"type:json;serializer:json"`
+	Data       json.Data  `gorm:"type:json;serializer:json"`
 	List       []Task     `gorm:"type:json;serializer:json"`
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
@@ -304,81 +304,4 @@ type TTL struct {
 	Running   int `json:"running,omitempty" yaml:",omitempty"`
 	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
 	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
-}
-
-// Ref represents a FK.
-type Ref struct {
-	ID   uint   `json:"id" binding:"required"`
-	Name string `json:"name,omitempty" yaml:",omitempty"`
-}
-
-// Map alias.
-type Map = map[string]any
-
-// Any alias.
-type Any any
-
-// Data json any field.
-type Data struct {
-	Any
-}
-
-// Merge merges the other into self.
-// Both must be a map.
-func (d *Data) Merge(other Data) (merged bool) {
-	b, isMap := d.AsMap()
-	if !isMap {
-		return
-	}
-	a, isMap := other.AsMap()
-	if !isMap {
-		return
-	}
-	d.Any = d.merge(a, b)
-	merged = true
-	return
-}
-
-// Merge maps B into A.
-// The B map takes precedence.
-func (d *Data) merge(a, b map[string]any) (out map[string]any) {
-	if a == nil {
-		a = make(map[string]any)
-	}
-	if b == nil {
-		b = make(map[string]any)
-	}
-	out = make(map[string]any)
-	for k, v := range a {
-		out[k] = v
-		if bv, found := b[k]; found {
-			out[k] = bv
-			if av, cast := v.(map[string]any); cast {
-				if bv, cast := bv.(map[string]any); cast {
-					out[k] = d.merge(av, bv)
-				} else {
-					out[k] = bv
-				}
-			}
-		}
-	}
-	for k, v := range b {
-		if _, found := a[k]; !found {
-			out[k] = v
-		}
-	}
-
-	return
-}
-
-// AsMap returns self as a map.
-func (d *Data) AsMap() (mp map[string]any, isMap bool) {
-	if d.Any == nil {
-		return
-	}
-	b, _ := json.Marshal(d.Any)
-	mp = make(map[string]any)
-	err := json.Unmarshal(b, &mp)
-	isMap = err == nil
-	return
 }

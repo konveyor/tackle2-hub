@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"encoding/json"
+
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -62,6 +64,16 @@ func (r *Task) HasDep(name string) (found bool) {
 			break
 		}
 	}
+	return
+}
+
+// Data returns the task Data as map[string]any.
+func (r *Task) Data() (mp map[string]any) {
+	b := r.Spec.Data.Raw
+	if b == nil {
+		return
+	}
+	_ = json.Unmarshal(b, &mp)
 	return
 }
 
