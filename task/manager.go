@@ -130,6 +130,10 @@ func (m *Manager) Run(ctx context.Context) {
 
 // Create a task.
 func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
+	err = m.findRefs(requested)
+	if err != nil {
+		return
+	}
 	task := &Task{&model.Task{}}
 	switch requested.State {
 	case "":
@@ -200,6 +204,11 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			task.TTL = requested.TTL
 		default:
 			// discarded.
+			return
+		}
+		err = m.findRefs(task)
+		if err != nil {
+			return
 		}
 		err = db.Save(task).Error
 		if err != nil {
@@ -384,6 +393,45 @@ func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
+		}
+	}
+	return
+}
+
+// FindRefs find referenced resources.
+// - addon
+// - extensions
+// - kind
+// - priority
+// The priority is defaulted to the kind as needed.
+func (m *Manager) findRefs(task *Task) (err error) {
+	if task.Addon != "" {
+		_, found := m.cluster.addons[task.Addon]
+		if !found {
+			err = &AddonNotFound{Name: task.Addon}
+			return
+		}
+	}
+	for _, name := range task.Extensions {
+		_, found := m.cluster.extensions[name]
+		if !found {
+			err = &ExtensionNotFound{Name: name}
+			return
+		}
+	}
+	if task.Kind != "" {
+		kind, found := m.cluster.tasks[task.Kind]
+		if !found {
+			err = &ExtensionNotFound{Name: task.Kind}
+			return
+		}
+		if task.Priority == 0 {
+			task.Priority = kind.Spec.Priority
+		}
+		other := model.Data{Any: kind.Spec.Data}
+		merged := task.Data.Merge(other)
+		if !merged {
+			task.Data = other
 		}
 	}
 	return

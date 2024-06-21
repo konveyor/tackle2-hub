@@ -146,40 +146,6 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-// TaskEvent task event.
-type TaskEvent struct {
-	Kind   string    `json:"kind"`
-	Count  int       `json:"count"`
-	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
-	Last   time.Time `json:"last"`
-}
-
-// Map alias.
-type Map = map[string]any
-
-// Any alias.
-type Any any
-
-// Data json any field.
-type Data struct {
-	Any
-}
-
-// TTL time-to-live.
-type TTL struct {
-	Created   int `json:"created,omitempty" yaml:",omitempty"`
-	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
-	Running   int `json:"running,omitempty" yaml:",omitempty"`
-	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
-	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
-}
-
-// Ref represents a FK.
-type Ref struct {
-	ID   uint   `json:"id" binding:"required"`
-	Name string `json:"name,omitempty" yaml:",omitempty"`
-}
-
 // TaskError used in Task.Errors.
 type TaskError struct {
 	Severity    string `json:"severity"`
@@ -316,5 +282,103 @@ func (r *Identity) Decrypt() (err error) {
 			return
 		}
 	}
+	return
+}
+
+//
+// JSON Fields.
+//
+
+// TaskEvent task event.
+type TaskEvent struct {
+	Kind   string    `json:"kind"`
+	Count  int       `json:"count"`
+	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
+	Last   time.Time `json:"last"`
+}
+
+// TTL time-to-live.
+type TTL struct {
+	Created   int `json:"created,omitempty" yaml:",omitempty"`
+	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
+	Running   int `json:"running,omitempty" yaml:",omitempty"`
+	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
+	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
+}
+
+// Ref represents a FK.
+type Ref struct {
+	ID   uint   `json:"id" binding:"required"`
+	Name string `json:"name,omitempty" yaml:",omitempty"`
+}
+
+// Map alias.
+type Map = map[string]any
+
+// Any alias.
+type Any any
+
+// Data json any field.
+type Data struct {
+	Any
+}
+
+// Merge merges the other into self.
+// Both must be a map.
+func (d *Data) Merge(other Data) (merged bool) {
+	b, isMap := d.AsMap()
+	if !isMap {
+		return
+	}
+	a, isMap := other.AsMap()
+	if !isMap {
+		return
+	}
+	d.Any = d.merge(a, b)
+	merged = true
+	return
+}
+
+// Merge maps B into A.
+// The B map takes precedence.
+func (d *Data) merge(a, b map[string]any) (out map[string]any) {
+	if a == nil {
+		a = make(map[string]any)
+	}
+	if b == nil {
+		b = make(map[string]any)
+	}
+	out = make(map[string]any)
+	for k, v := range a {
+		out[k] = v
+		if bv, found := b[k]; found {
+			out[k] = bv
+			if av, cast := v.(map[string]any); cast {
+				if bv, cast := bv.(map[string]any); cast {
+					out[k] = d.merge(av, bv)
+				} else {
+					out[k] = bv
+				}
+			}
+		}
+	}
+	for k, v := range b {
+		if _, found := a[k]; !found {
+			out[k] = v
+		}
+	}
+
+	return
+}
+
+// AsMap returns self as a map.
+func (d *Data) AsMap() (mp map[string]any, isMap bool) {
+	if d.Any == nil {
+		return
+	}
+	b, _ := json.Marshal(d.Any)
+	mp = make(map[string]any)
+	err := json.Unmarshal(b, &mp)
+	isMap = err == nil
 	return
 }

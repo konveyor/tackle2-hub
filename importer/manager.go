@@ -356,19 +356,12 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 func (m *Manager) discover(application *model.Application) (err error) {
 	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := api.Task{}
+		t := &tasking.Task{}
 		t.Kind = kind
 		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
-		ref := api.Ref{ID: application.ID}
-		t.Application = &ref
+		t.ApplicationID = &application.ID
 		t.State = tasking.Ready
-		taskHandler := api.TaskHandler{}
-		err = taskHandler.FindRefs(m.Client, &t)
-		if err != nil {
-			return
-		}
-		task := tasking.Task{Task: t.Model()}
-		err = m.TaskManager.Create(m.DB, &task)
+		err = m.TaskManager.Create(m.DB, t)
 		if err != nil {
 			return
 		}

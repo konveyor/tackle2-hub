@@ -1079,19 +1079,12 @@ func (h ApplicationHandler) discover(ctx *gin.Context, application *model.Applic
 	rtx := WithContext(ctx)
 	db := h.DB(ctx)
 	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := Task{}
+		t := &tasking.Task{}
 		t.Kind = kind
 		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
-		ref := Ref{ID: application.ID}
-		t.Application = &ref
+		t.ApplicationID = &application.ID
 		t.State = tasking.Ready
-		taskHandler := TaskHandler{}
-		err = taskHandler.FindRefs(rtx.Client, &t)
-		if err != nil {
-			return
-		}
-		task := tasking.Task{Task: t.Model()}
-		err = rtx.TaskManager.Create(db, &task)
+		err = rtx.TaskManager.Create(db, t)
 		if err != nil {
 			return
 		}
