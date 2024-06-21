@@ -356,7 +356,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 func (m *Manager) discover(application *model.Application) (err error) {
 	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := &tasking.Task{}
+		t := &tasking.Task{Task: &model.Task{}}
 		t.Kind = kind
 		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
 		t.ApplicationID = &application.ID

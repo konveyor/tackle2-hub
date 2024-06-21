@@ -1079,7 +1079,7 @@ func (h ApplicationHandler) discover(ctx *gin.Context, application *model.Applic
 	rtx := WithContext(ctx)
 	db := h.DB(ctx)
 	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := &tasking.Task{}
+		t := &tasking.Task{Task: &model.Task{}}
 		t.Kind = kind
 		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
 		t.ApplicationID = &application.ID

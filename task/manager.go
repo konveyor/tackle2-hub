@@ -424,7 +424,7 @@ func (m *Manager) findRefs(task *Task) (err error) {
 	}
 	kind, found := m.cluster.tasks[task.Kind]
 	if !found {
-		err = &ExtensionNotFound{Name: task.Kind}
+		err = &KindNotFound{Name: task.Kind}
 		return
 	}
 	if task.Priority == 0 {
