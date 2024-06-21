@@ -15,6 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -24,8 +25,9 @@ var (
 // Manager for processing application imports.
 type Manager struct {
 	// DB
-	DB      *gorm.DB
-	Tasking *tasking.Manager
+	DB          *gorm.DB
+	TaskManager *tasking.Manager
+	Client      k8sclient.Client
 }
 
 // Run the manager.
@@ -354,13 +356,19 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 func (m *Manager) discover(application *model.Application) (err error) {
 	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := model.Task{}
-		task := tasking.Task{Task: &t}
-		task.Kind = kind
-		task.Name = fmt.Sprintf("%s-%s", application.Name, kind)
-		task.ApplicationID = &application.ID
-		task.State = tasking.Ready
-		err = m.Tasking.Create(m.DB, &task)
+		t := api.Task{}
+		t.Kind = kind
+		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		ref := api.Ref{ID: application.ID}
+		t.Application = &ref
+		t.State = tasking.Ready
+		taskHandler := api.TaskHandler{}
+		err = taskHandler.FindRefs(m.Client, &t)
+		if err != nil {
+			return
+		}
+		task := tasking.Task{Task: t.Model()}
+		err = m.TaskManager.Create(m.DB, &task)
 		if err != nil {
 			return
 		}

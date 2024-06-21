@@ -176,8 +176,9 @@ func main() {
 	//
 	// Application import.
 	importManager := importer.Manager{
-		DB:      db,
-		Tasking: &taskManager,
+		DB:          db,
+		TaskManager: &taskManager,
+		Client:      client,
 	}
 	importManager.Run(context.Background())
 	//
