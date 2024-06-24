@@ -54,14 +54,15 @@ func (r Migration) mavenPrefix(db *gorm.DB) (err error) {
 // In 0.5 task (kinds) added. A task named `analyzer` is
 // installed by the operator.
 func (r Migration) taskKind(db *gorm.DB) (err error) {
+	kind := "analyzer"
 	var list []*model.Task
 	err = db.Find(&list).Error
 	if err != nil {
 		return
 	}
 	for _, m := range list {
-		if m.Kind == "" {
-			m.Kind = m.Addon
+		if m.Addon == kind && m.Kind == "" {
+			m.Kind = kind
 		}
 		err = db.Save(m).Error
 		if err != nil {
