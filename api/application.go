@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -11,7 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/task"
+	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm/clause"
 )
 
@@ -250,11 +249,16 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	err = h.discover(ctx, m)
+	tr := trigger.Application{
+		TaskManager: WithContext(ctx).TaskManager,
+		DB:          h.DB(ctx),
+	}
+	err = tr.Created(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -380,11 +384,16 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	err = h.discover(ctx, m)
+	tr := trigger.Application{
+		TaskManager: WithContext(ctx).TaskManager,
+		DB:          h.DB(ctx),
+	}
+	err = tr.Updated(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -1072,24 +1081,6 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 
 	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
-}
-
-// discover an application's language and frameworks by launching discovery tasks.
-func (h ApplicationHandler) discover(ctx *gin.Context, application *model.Application) (err error) {
-	rtx := WithContext(ctx)
-	db := h.DB(ctx)
-	for _, kind := range Settings.Hub.Discovery.Tasks {
-		t := &tasking.Task{Task: &model.Task{}}
-		t.Kind = kind
-		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
-		t.ApplicationID = &application.ID
-		t.State = tasking.Ready
-		err = rtx.TaskManager.Create(db, t)
-		if err != nil {
-			return
-		}
-	}
-	return
 }
 
 // Application REST resource.
