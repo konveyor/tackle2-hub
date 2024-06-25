@@ -327,7 +327,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @description Update a task.
 // @tags tasks
 // @accept json
-// @success 202
+// @success 200
 // @router /tasks/{id} [put]
 // @param id path int true "Task ID"
 // @param task body Task true "Task data"
@@ -364,7 +364,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	h.Status(ctx, http.StatusAccepted)
+	h.Status(ctx, http.StatusOK)
 }
 
 // Submit godoc
@@ -372,7 +372,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @description Patch and submit a task.
 // @tags tasks
 // @accept json
-// @success 202
+// @success 200
 // @router /tasks/{id}/submit [put]
 // @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"

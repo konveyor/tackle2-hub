@@ -17,6 +17,7 @@ var (
 	Settings = &settings.Settings
 )
 
+// Trigger supports actions triggered by model changes.
 type Trigger struct {
 }
 

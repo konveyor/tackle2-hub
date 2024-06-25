@@ -130,126 +130,121 @@ func (m *Manager) Run(ctx context.Context) {
 
 // Create a task.
 func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
-	err = m.action(func() (err error) {
-		err = m.findRefs(requested)
-		if err != nil {
-			return
-		}
-		task := &Task{&model.Task{}}
-		switch requested.State {
-		case "":
-			requested.State = Created
-			fallthrough
-		case Created,
-			Ready:
-			task.CreateUser = requested.CreateUser
-			task.Name = requested.Name
-			task.Kind = requested.Kind
-			task.Addon = requested.Addon
-			task.Extensions = requested.Extensions
-			task.State = requested.State
-			task.Locator = requested.Locator
-			task.Priority = requested.Priority
-			task.Policy = requested.Policy
-			task.TTL = requested.TTL
-			task.Data = requested.Data
-			task.ApplicationID = requested.ApplicationID
-			task.BucketID = requested.BucketID
-		default:
-			err = &BadRequest{
-				Reason: "state must be (Created|Ready)",
-			}
-			return
-		}
-		err = db.Create(task).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		requested.Task = task.Task
+	err = m.findRefs(requested)
+	if err != nil {
 		return
-	})
+	}
+	task := &Task{&model.Task{}}
+	switch requested.State {
+	case "":
+		requested.State = Created
+		fallthrough
+	case Created,
+		Ready:
+		task.CreateUser = requested.CreateUser
+		task.Name = requested.Name
+		task.Kind = requested.Kind
+		task.Addon = requested.Addon
+		task.Extensions = requested.Extensions
+		task.State = requested.State
+		task.Locator = requested.Locator
+		task.Priority = requested.Priority
+		task.Policy = requested.Policy
+		task.TTL = requested.TTL
+		task.Data = requested.Data
+		task.ApplicationID = requested.ApplicationID
+		task.BucketID = requested.BucketID
+	default:
+		err = &BadRequest{
+			Reason: "state must be (Created|Ready)",
+		}
+		return
+	}
+	err = db.Create(task).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	requested.Task = task.Task
 	return
 }
 
 // Update update task.
 func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
-	err = m.action(func() (err error) {
-		task := &Task{}
-		err = db.First(task, requested.ID).Error
-		if err != nil {
-			return
-		}
-		switch task.State {
-		case Created,
-			Ready:
-			task.UpdateUser = requested.UpdateUser
-			task.Name = requested.Name
-			task.Kind = requested.Kind
-			task.Addon = requested.Addon
-			task.Extensions = requested.Extensions
-			task.State = requested.State
-			task.Locator = requested.Locator
-			task.Priority = requested.Priority
-			task.Policy = requested.Policy
-			task.TTL = requested.TTL
-			task.Data = requested.Data
-			task.ApplicationID = requested.ApplicationID
-		case Pending,
-			QuotaBlocked,
-			Postponed:
-			task.UpdateUser = requested.UpdateUser
-			task.Name = requested.Name
-			task.Locator = requested.Locator
-			task.Data = requested.Data
-			task.Priority = requested.Priority
-			task.Policy = requested.Policy
-			task.TTL = requested.TTL
-		default:
-			// discarded.
-			return
-		}
-		err = m.findRefs(task)
-		if err != nil {
-			return
-		}
-		err = db.Save(task).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	task := &Task{}
+	err = db.First(task, requested.ID).Error
+	if err != nil {
 		return
-	})
+	}
+	switch task.State {
+	case Created,
+		Ready:
+		task.UpdateUser = requested.UpdateUser
+		task.Name = requested.Name
+		task.Kind = requested.Kind
+		task.Addon = requested.Addon
+		task.Extensions = requested.Extensions
+		task.State = requested.State
+		task.Locator = requested.Locator
+		task.Priority = requested.Priority
+		task.Policy = requested.Policy
+		task.TTL = requested.TTL
+		task.Data = requested.Data
+		task.ApplicationID = requested.ApplicationID
+	case Pending,
+		QuotaBlocked,
+		Postponed:
+		task.UpdateUser = requested.UpdateUser
+		task.Name = requested.Name
+		task.Locator = requested.Locator
+		task.Data = requested.Data
+		task.Priority = requested.Priority
+		task.Policy = requested.Policy
+		task.TTL = requested.TTL
+	default:
+		// discarded.
+		return
+	}
+	err = m.findRefs(task)
+	if err != nil {
+		return
+	}
+	err = db.Save(task).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
 // Delete a task.
 func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
-	err = m.action(func() (err error) {
-		task := &Task{}
-		err = db.First(task, id).Error
-		if err != nil {
-			return
-		}
-		err = task.Delete(m.Client)
-		if err != nil {
-			return
-		}
-		err = db.Delete(task).Error
+	task := &Task{}
+	err = db.First(task, id).Error
+	if err != nil {
 		return
-	})
+	}
+	m.action(
+		func() (err error) {
+			err = task.Delete(m.Client)
+			if err != nil {
+				return
+			}
+			err = db.Delete(task).Error
+			return
+		})
 	return
 }
 
 // Cancel a task.
 func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
-	err = m.action(
+	task := &Task{}
+	err = db.First(task, id).Error
+	if err != nil {
+		return
+	}
+	m.action(
 		func() (err error) {
-			task := &Task{}
-			err = db.First(task, id).Error
-			if err != nil {
-				return
-			}
 			switch task.State {
 			case Succeeded,
 				Failed,
@@ -285,29 +280,22 @@ func (m *Manager) pause() {
 	time.Sleep(d)
 }
 
-// action executes an asynchronous action.
-func (m *Manager) action(action func() error) (err error) {
-	d := time.Minute
-	ch := make(chan error)
+// action enqueues an asynchronous action.
+func (m *Manager) action(action func() error) {
 	m.queue <- func() {
+		var err error
 		defer func() {
 			p := recover()
 			if p != nil {
-				if err, cast := p.(error); cast {
-					ch <- err
+				if pErr, cast := p.(error); cast {
+					err = pErr
 				}
 			}
-			close(ch)
+			if err != nil {
+				Log.Error(err, "Action failed.")
+			}
 		}()
-		select {
-		case ch <- action():
-		default:
-		}
-	}
-	select {
-	case err = <-ch:
-	case <-time.After(d):
-		err = &ActionTimeout{}
+		err = action()
 	}
 	return
 }
