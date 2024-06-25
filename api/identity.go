@@ -207,7 +207,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	
+
 	tr := trigger.Identity{
 		TaskManager: WithContext(ctx).TaskManager,
 		DB:          h.DB(ctx),

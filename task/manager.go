@@ -408,6 +408,9 @@ func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
 // - priority
 // The priority is defaulted to the kind as needed.
 func (m *Manager) findRefs(task *Task) (err error) {
+	if Settings.Disconnected {
+		return
+	}
 	if task.Addon != "" {
 		_, found := m.cluster.addons[task.Addon]
 		if !found {
