@@ -346,8 +346,11 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	}
 	// best effort
 	tr := trigger.Application{
-		TaskManager: m.TaskManager,
-		DB:          m.DB,
+		Trigger: trigger.Trigger{
+			TaskManager: m.TaskManager,
+			Client:      m.Client,
+			DB:          m.DB,
+		},
 	}
 	err := tr.Created(app)
 	if err != nil {

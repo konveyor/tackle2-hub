@@ -208,9 +208,13 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 
+	rtx := WithContext(ctx)
 	tr := trigger.Identity{
-		TaskManager: WithContext(ctx).TaskManager,
-		DB:          h.DB(ctx),
+		Trigger: trigger.Trigger{
+			TaskManager: rtx.TaskManager,
+			Client:      rtx.Client,
+			DB:          h.DB(ctx),
+		},
 	}
 	err = tr.Updated(m)
 	if err != nil {

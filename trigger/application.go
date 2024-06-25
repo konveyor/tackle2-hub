@@ -5,14 +5,11 @@ import (
 
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
-	"gorm.io/gorm"
 )
 
 // Application trigger.
 type Application struct {
 	Trigger
-	TaskManager *tasking.Manager
-	DB          *gorm.DB
 }
 
 // Created trigger.
