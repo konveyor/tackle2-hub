@@ -8,40 +8,32 @@ import (
 	"gorm.io/gorm"
 )
 
-// RefCounter provides model inspection for files
-// tagged with: ref:<kind>.
-type RefCounter struct {
+// RefFinder provides model inspection for files
+// tagged with:
+//
+//	ref:<kind>
+//	[]ref:<kind>
+type RefFinder struct {
 	// DB
 	DB *gorm.DB
 }
 
-// Count find & count references.
-func (r *RefCounter) Count(m any, kind string, pk uint) (nRef int64, err error) {
-	db := r.DB.Model(m)
-	fields := 0
-	j := 0
+// Find returns a map of all references for the model and kind.
+func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
+	var nfields []string
+	var jfields []string
 	add := func(ft reflect.StructField) {
 		tag, found := ft.Tag.Lookup("ref")
 		if found && tag == kind {
-			db = db.Or(ft.Name, pk)
-			fields++
+			nfields = append(
+				nfields,
+				ft.Name)
 			return
 		}
 		if found && tag == "[]"+kind {
-			db = db.Joins(
-				fmt.Sprintf(
-					",json_each(%s) j%d",
-					ft.Name,
-					j))
-			db = db.Or(
-				fmt.Sprintf(
-					"json_extract(j%d.value,?)=?",
-					j),
-				"$.id",
-				pk)
-			fields++
-			j++
-			return
+			jfields = append(
+				jfields,
+				ft.Name)
 		}
 	}
 	var find func(any)
@@ -76,20 +68,57 @@ func (r *RefCounter) Count(m any, kind string, pk uint) (nRef int64, err error) 
 				add(ft)
 			case reflect.Slice:
 				add(ft)
+			default:
 			}
 		}
 	}
 	find(m)
-	if fields == 0 {
+	if len(nfields)+len(jfields) == 0 {
 		return
 	}
-	err = db.Count(&nRef).Error
+	db := r.DB.Model(m)
+	if Log.V(1).Enabled() {
+		db = db.Debug()
+	}
+	var fields []string
+	var list []map[string]any
+	for i := range nfields {
+		fields = append(fields, nfields[i])
+	}
+	for i := range jfields {
+		fields = append(
+			fields,
+			fmt.Sprintf(
+				"json_extract(j%d.value,'$.id')",
+				i))
+		db = db.Joins(
+			fmt.Sprintf(
+				",json_each(%s) j%d",
+				jfields[i],
+				i))
+	}
+	db = db.Select(fields)
+	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(
 			err,
 			"object",
 			reflect.TypeOf(m).Name(),
 		)
+	}
+	for _, ref := range list {
+		for _, v := range ref {
+			switch n := v.(type) {
+			case uint:
+				ids[n] = 0
+			case *uint:
+				if n != nil {
+					ids[*n] = 0
+				}
+			case int64:
+				ids[uint(n)] = 0
+			}
+		}
 	}
 
 	return
