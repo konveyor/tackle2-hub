@@ -10,15 +10,16 @@ import (
 
 // RefFinder provides model inspection for files
 // tagged with:
-//   ref:<kind>
-//   []ref:<kind>
+//
+//	ref:<kind>
+//	[]ref:<kind>
 type RefFinder struct {
 	// DB
 	DB *gorm.DB
 }
 
 // Find returns a map of all references for the model and kind.
-func (r *RefFinder) Find(m any, kind string, ids map[uint]any) (err error) {
+func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 	var nfields []string
 	var jfields []string
 	add := func(ft reflect.StructField) {
@@ -109,13 +110,13 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]any) (err error) {
 		for _, v := range ref {
 			switch n := v.(type) {
 			case uint:
-				ids[n] = n
+				ids[n] = 0
 			case *uint:
 				if n != nil {
-					ids[*n] = *n
+					ids[*n] = 0
 				}
 			case int64:
-				ids[uint(n)] = n
+				ids[uint(n)] = 0
 			}
 		}
 	}

@@ -28,7 +28,7 @@ func (r *FileReaper) Run() {
 	if len(list) == 0 {
 		return
 	}
-	ids := make(map[uint]any)
+	ids := make(map[uint]byte)
 	finder := RefFinder{DB: r.DB}
 	for _, m := range []any{
 		&model.Task{},
