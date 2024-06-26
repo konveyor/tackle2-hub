@@ -364,7 +364,9 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	h.Status(ctx, http.StatusOK)
+	r.With(m)
+
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // Submit godoc
