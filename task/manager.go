@@ -1244,7 +1244,7 @@ func (r *Task) podPending(pod *core.Pod) {
 		if state.Waiting != nil {
 			waiting := state.Waiting
 			reason := strings.ToLower(waiting.Reason)
-			if strings.Contains(reason, "invalid") || strings.Contains(reason, "backoff") {
+			if r.containsAny(reason, "invalid", "error", "backoff") {
 				r.Error(
 					"Error",
 					"Container (%s) failed: %s",
@@ -1570,6 +1570,17 @@ func (r *Task) attach(file *model.File) {
 			ID:   file.ID,
 			Name: file.Name,
 		})
+}
+
+// containsAny returns true when the str contains any of substr.
+func (r *Task) containsAny(str string, substr ...string) (matched bool) {
+	for i := range substr {
+		if strings.Contains(str, substr[i]) {
+			matched = true
+			break
+		}
+	}
+	return
 }
 
 // Event represents a pod event.
