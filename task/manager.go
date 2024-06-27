@@ -947,10 +947,13 @@ func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
 
 // podLogs - get and store pod logs as a Files.
 func (m *Manager) podLogs(pod *core.Pod) (files []*model.File, err error) {
-	if pod.Status.Phase == core.PodPending {
-		return
-	}
-	for _, container := range pod.Spec.Containers {
+	for _, container := range pod.Status.ContainerStatuses {
+		if container.Started == nil {
+			continue
+		}
+		if !*container.Started {
+			continue
+		}
 		f, nErr := m.containerLog(pod, container.Name)
 		if nErr == nil {
 			files = append(files, f)
