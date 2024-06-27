@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"gorm.io/gorm"
 )
 
@@ -13,8 +14,8 @@ type Application struct {
 	BucketOwner
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
-	Review            *Review `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        JSON    `gorm:"type:json"`
+	Review            *Review    `gorm:"constraint:OnDelete:CASCADE"`
+	Repository        Repository `gorm:"type:json;serializer:json"`
 	Binary            string
 	Facts             []Fact `gorm:"constraint:OnDelete:CASCADE"`
 	Comments          string
@@ -37,7 +38,7 @@ type Fact struct {
 	ApplicationID uint   `gorm:"<-:create;primaryKey"`
 	Key           string `gorm:"<-:create;primaryKey"`
 	Source        string `gorm:"<-:create;primaryKey;not null"`
-	Value         JSON   `gorm:"type:json;not null"`
+	Value         any    `gorm:"type:json;not null;serializer:json"`
 	Application   *Application
 }
 
@@ -195,7 +196,7 @@ type Ticket struct {
 	// Parent resource that this ticket should belong to in the tracker. (e.g. Jira project)
 	Parent string `gorm:"not null"`
 	// Custom fields to send to the tracker when creating the ticket
-	Fields JSON `gorm:"type:json"`
+	Fields json.Map `gorm:"type:json;serializer:json"`
 	// Whether the last attempt to do something with the ticket reported an error
 	Error bool
 	// Error message, if any
@@ -297,6 +298,11 @@ type ImportTag struct {
 	Import   *Import
 }
 
+//
+// JSON Fields.
+//
+
+// Repository represents an SCM repository.
 type Repository struct {
 	Kind   string `json:"kind"`
 	URL    string `json:"url"`

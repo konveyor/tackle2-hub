@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -249,7 +248,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	err = db.Updates(h.fields(m)).Error
+	err = db.Save(m).Error
 	if err != nil {
 		return
 	}
@@ -268,7 +267,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	for i := range m.Rules {
 		m := &m.Rules[i]
 		db = h.DB(ctx).Model(m)
-		err = db.Updates(h.fields(m)).Error
+		err = db.Updates(m).Error
 		if err != nil {
 			return
 		}
@@ -313,7 +312,10 @@ func (r *RuleSet) With(m *model.RuleSet) {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	_ = json.Unmarshal(m.Repository, &r.Repository)
+	if m.Repository != (model.Repository{}) {
+		repo := Repository(m.Repository)
+		r.Repository = &repo
+	}
 	r.Rules = []Rule{}
 	for i := range m.Rules {
 		rule := Rule{}
@@ -344,7 +346,7 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 		m.Rules = append(m.Rules, *rule.Model())
 	}
 	if r.Repository != nil {
-		m.Repository, _ = json.Marshal(r.Repository)
+		m.Repository = model.Repository(*r.Repository)
 	}
 	for _, ref := range r.DependsOn {
 		m.DependsOn = append(
@@ -382,7 +384,7 @@ type Rule struct {
 func (r *Rule) With(m *model.Rule) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
-	_ = json.Unmarshal(m.Labels, &r.Labels)
+	r.Labels = m.Labels
 	r.File = r.refPtr(m.FileID, m.File)
 }
 
@@ -391,9 +393,7 @@ func (r *Rule) Model() (m *model.Rule) {
 	m = &model.Rule{}
 	m.ID = r.ID
 	m.Name = r.Name
-	if r.Labels != nil {
-		m.Labels, _ = json.Marshal(r.Labels)
-	}
+	m.Labels = r.Labels
 	m.FileID = r.idPtr(r.File)
 	return
 }

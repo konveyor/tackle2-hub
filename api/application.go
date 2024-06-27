@@ -362,7 +362,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations, "BucketID")
-	result = db.Updates(h.fields(m))
+	result = db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -722,12 +722,10 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 		return
 	}
 
-	facts := FactMap{}
+	facts := Map{}
 	for i := range list {
 		fact := &list[i]
-		var v any
-		_ = json.Unmarshal(fact.Value, &v)
-		facts[fact.Key] = v
+		facts[fact.Key] = fact.Value
 	}
 	h.Respond(ctx, http.StatusOK, facts)
 }
@@ -772,9 +770,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 		return
 	}
 
-	var v any
-	_ = json.Unmarshal(list[0].Value, &v)
-	h.Respond(ctx, http.StatusOK, v)
+	h.Respond(ctx, http.StatusOK, list[0].Value)
 }
 
 // FactCreate godoc
@@ -846,12 +842,11 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 
-	value, _ := json.Marshal(f.Value)
 	m := &model.Fact{
 		Key:           key.Name(),
 		Source:        key.Source(),
 		ApplicationID: id,
-		Value:         value,
+		Value:         f.Value,
 	}
 	db := h.DB(ctx)
 	result = db.Save(m)
@@ -906,7 +901,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @param factmap body api.FactMap true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
-	facts := FactMap{}
+	facts := Map{}
 	err := h.Bind(ctx, &facts)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1145,7 +1140,10 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
 	r.Binary = m.Binary
-	_ = json.Unmarshal(m.Repository, &r.Repository)
+	if m.Repository != (model.Repository{}) {
+		repo := Repository(m.Repository)
+		r.Repository = &repo
+	}
 	if m.Review != nil {
 		ref := &Ref{}
 		ref.With(m.Review.ID, "")
@@ -1246,7 +1244,7 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	m.ID = r.ID
 	if r.Repository != nil {
-		m.Repository, _ = json.Marshal(r.Repository)
+		m.Repository = model.Repository(*r.Repository)
 	}
 	if r.BusinessService != nil {
 		m.BusinessServiceID = &r.BusinessService.ID
@@ -1307,14 +1305,14 @@ type Fact struct {
 func (r *Fact) With(m *model.Fact) {
 	r.Key = m.Key
 	r.Source = m.Source
-	_ = json.Unmarshal(m.Value, &r.Value)
+	r.Value = m.Value
 }
 
 func (r *Fact) Model() (m *model.Fact) {
 	m = &model.Fact{}
 	m.Key = r.Key
 	m.Source = r.Source
-	m.Value, _ = json.Marshal(r.Value)
+	m.Value = r.Value
 	return
 }
 

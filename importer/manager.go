@@ -2,7 +2,6 @@ package importer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -136,7 +135,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 
-	repository := api.Repository{
+	repository := model.Repository{
 		Kind:   imp.RepositoryKind,
 		URL:    imp.RepositoryURL,
 		Branch: imp.RepositoryBranch,
@@ -148,8 +147,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		repository.Kind = "git"
 	}
 
-	app.Repository, _ = json.Marshal(repository)
-
+	app.Repository = repository
 	// Validate Binary-related fields (allow all 3 empty or present)
 	if imp.BinaryGroup != "" || imp.BinaryArtifact != "" || imp.BinaryVersion != "" {
 		if imp.BinaryGroup == "" || imp.BinaryArtifact == "" || imp.BinaryVersion == "" {

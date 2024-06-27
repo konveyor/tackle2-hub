@@ -229,8 +229,8 @@ func (h *AppFacts) Source(source string) {
 }
 
 // List facts.
-func (h *AppFacts) List() (facts api.FactMap, err error) {
-	facts = api.FactMap{}
+func (h *AppFacts) List() (facts api.Map, err error) {
+	facts = api.Map{}
 	key := api.FactKey("")
 	key.Qualify(h.source)
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: key})
@@ -278,7 +278,7 @@ func (h *AppFacts) Delete(name string) (err error) {
 }
 
 // Replace facts.
-func (h *AppFacts) Replace(facts api.FactMap) (err error) {
+func (h *AppFacts) Replace(facts api.Map) (err error) {
 	key := api.FactKey("")
 	key.Qualify(h.source)
 	path := Path(api.ApplicationFactsRoot).Inject(Params{api.ID: h.appId, api.Key: key})
