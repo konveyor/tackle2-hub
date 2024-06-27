@@ -2,7 +2,6 @@ package seed
 
 import (
 	"container/list"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -80,7 +79,6 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 			err = liberr.Wrap(fErr)
 			return
 		}
-		labels, _ := json.Marshal(t.Labels)
 
 		target.UUID = &t.UUID
 		target.Name = t.Name
@@ -88,7 +86,9 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 		target.Provider = t.Provider
 		target.Choice = t.Choice
 		target.ImageID = f.ID
-		target.Labels = labels
+		for _, l := range t.Labels {
+			target.Labels = append(target.Labels, model.TargetLabel(l))
+		}
 		result := db.Save(&target)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)
@@ -126,7 +126,7 @@ func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
 	}
 	userOrder := []uint{}
 	_ = s.As(&userOrder)
-	_ = s.With(merge(userOrder, seedIds, targetIds))
+	s.Value = merge(userOrder, seedIds, targetIds)
 
 	result = db.Where("key", UITargetOrder).Updates(s)
 	if result.Error != nil {

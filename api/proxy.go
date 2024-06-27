@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -189,7 +188,7 @@ func (r *Proxy) With(m *model.Proxy) {
 	r.Host = m.Host
 	r.Port = m.Port
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	_ = json.Unmarshal(m.Excluded, &r.Excluded)
+	r.Excluded = m.Excluded
 	if r.Excluded == nil {
 		r.Excluded = []string{}
 	}
@@ -205,9 +204,7 @@ func (r *Proxy) Model() (m *model.Proxy) {
 	}
 	m.ID = r.ID
 	m.IdentityID = r.idPtr(r.Identity)
-	if r.Excluded != nil {
-		m.Excluded, _ = json.Marshal(r.Excluded)
-	}
+	m.Excluded = r.Excluded
 
 	return
 }

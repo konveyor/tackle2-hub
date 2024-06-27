@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -235,12 +234,11 @@ type Setting struct {
 
 func (r *Setting) With(m *model.Setting) {
 	r.Key = m.Key
-	_ = json.Unmarshal(m.Value, &r.Value)
-
+	r.Value = m.Value
 }
 
 func (r *Setting) Model() (m *model.Setting) {
 	m = &model.Setting{Key: r.Key}
-	m.Value, _ = json.Marshal(r.Value)
+	m.Value = r.Value
 	return
 }

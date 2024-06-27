@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
 
@@ -132,7 +131,7 @@ func expectVersion(g *gomega.GomegaWithT, version int) {
 	result := db.Find(setting, "key", VersionKey)
 	g.Expect(result.Error).To(gomega.BeNil())
 	var v Version
-	_ = json.Unmarshal(setting.Value, &v)
+	_ = setting.As(&v)
 	g.Expect(v.Version).To(gomega.Equal(version))
 	_ = database.Close(db)
 }

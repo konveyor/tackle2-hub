@@ -23,22 +23,16 @@ type Model struct {
 type Setting struct {
 	Model
 	Key   string `gorm:"<-:create;uniqueIndex"`
-	Value JSON   `gorm:"type:json"`
-}
-
-// With updates the value of the Setting with the json representation
-// of the `value` parameter.
-func (r *Setting) With(value any) (err error) {
-	r.Value, err = json.Marshal(value)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
+	Value any    `gorm:"type:json;serializer:json"`
 }
 
 // As unmarshalls the value of the Setting into the `ptr` parameter.
 func (r *Setting) As(ptr any) (err error) {
-	err = json.Unmarshal(r.Value, ptr)
+	bytes, err := json.Marshal(r.Value)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	err = json.Unmarshal(bytes, ptr)
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -124,17 +118,17 @@ type Task struct {
 	State         string   `gorm:"index"`
 	Locator       string   `gorm:"index"`
 	Priority      int
-	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
-	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          json.Data  `gorm:"type:json;serializer:json"`
+	Policy        json.TaskPolicy `gorm:"type:json;serializer:json"`
+	TTL           json.TTL        `gorm:"type:json;serializer:json"`
+	Data          json.Data       `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
-	Errors        []TaskError `gorm:"type:json;serializer:json"`
-	Events        []TaskEvent `gorm:"type:json;serializer:json"`
-	Pod           string      `gorm:"index"`
+	Errors        []json.TaskError `gorm:"type:json;serializer:json"`
+	Events        []json.TaskEvent `gorm:"type:json;serializer:json"`
+	Pod           string           `gorm:"index"`
 	Retries       int
-	Attached      []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
+	Attached      []json.Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
+	Report        *TaskReport       `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
 	Application   *Application
 	TaskGroupID   *uint `gorm:"<-:create"`
@@ -146,36 +140,16 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-// TaskError used in Task.Errors.
-type TaskError struct {
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-}
-
-// TaskPolicy scheduling policy.
-type TaskPolicy struct {
-	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
-	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
-	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
-}
-
-// Attachment file attachment.
-type Attachment struct {
-	ID       uint   `json:"id" binding:"required"`
-	Name     string `json:"name,omitempty" yaml:",omitempty"`
-	Activity int    `json:"activity,omitempty" yaml:",omitempty"`
-}
-
 type TaskReport struct {
 	Model
 	Status    string
 	Total     int
 	Completed int
-	Activity  []string     `gorm:"type:json;serializer:json"`
-	Errors    []TaskError  `gorm:"type:json;serializer:json"`
-	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    json.Data    `gorm:"type:json;serializer:json"`
-	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
+	Activity  []string          `gorm:"type:json;serializer:json"`
+	Errors    []json.TaskError  `gorm:"type:json;serializer:json"`
+	Attached  []json.Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
+	Result    json.Data         `gorm:"type:json;serializer:json"`
+	TaskID    uint              `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
 
@@ -188,10 +162,10 @@ type TaskGroup struct {
 	Extensions []string `gorm:"type:json;serializer:json"`
 	State      string
 	Priority   int
-	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       json.Data  `gorm:"type:json;serializer:json"`
-	List       []Task     `gorm:"type:json;serializer:json"`
-	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
+	Policy     json.TaskPolicy `gorm:"type:json;serializer:json"`
+	Data       json.Data       `gorm:"type:json;serializer:json"`
+	List       []Task          `gorm:"type:json;serializer:json"`
+	Tasks      []Task          `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // Proxy configuration.
@@ -202,8 +176,8 @@ type Proxy struct {
 	Kind       string `gorm:"uniqueIndex"`
 	Host       string `gorm:"not null"`
 	Port       int
-	Excluded   JSON  `gorm:"type:json"`
-	IdentityID *uint `gorm:"index"`
+	Excluded   []string `gorm:"type:json;serializer:json"`
+	IdentityID *uint    `gorm:"index"`
 	Identity   *Identity
 }
 
@@ -283,25 +257,4 @@ func (r *Identity) Decrypt() (err error) {
 		}
 	}
 	return
-}
-
-//
-// JSON Fields.
-//
-
-// TaskEvent task event.
-type TaskEvent struct {
-	Kind   string    `json:"kind"`
-	Count  int       `json:"count"`
-	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
-	Last   time.Time `json:"last"`
-}
-
-// TTL time-to-live.
-type TTL struct {
-	Created   int `json:"created,omitempty" yaml:",omitempty"`
-	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
-	Running   int `json:"running,omitempty" yaml:",omitempty"`
-	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
-	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
 }

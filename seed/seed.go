@@ -75,12 +75,10 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 		return
 	}
 	var seededChecksum string
-	if setting.Value != nil {
-		err = json.Unmarshal(setting.Value, &seededChecksum)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	err = setting.As(&seededChecksum)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 
 	match = seededChecksum == fmt.Sprintf("%x", checksum)
@@ -110,12 +108,10 @@ func migrationVersion(db *gorm.DB) (version uint, err error) {
 	}
 
 	var v migration.Version
-	if setting.Value != nil {
-		err = json.Unmarshal(setting.Value, &v)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	err = setting.As(&v)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 
 	version = uint(v.Version)

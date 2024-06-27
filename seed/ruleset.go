@@ -128,14 +128,13 @@ func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.Rul
 		return
 	}
 	for _, rl := range rs.Rules {
-		labels, _ := json.Marshal(rl.Labels())
 		f, fErr := file(db, rl.Path)
 		if fErr != nil {
 			err = liberr.Wrap(fErr)
 			return
 		}
 		rule := model.Rule{
-			Labels:    labels,
+			Labels:    rl.Labels(),
 			RuleSetID: ruleSet.ID,
 			FileID:    &f.ID,
 		}

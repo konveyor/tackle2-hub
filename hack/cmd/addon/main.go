@@ -9,16 +9,17 @@ package main
 import (
 	"bytes"
 	"errors"
-	hub "github.com/konveyor/tackle2-hub/addon"
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/nas"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"os"
 	"os/exec"
 	pathlib "path"
 	"strconv"
 	"strings"
 	"time"
+
+	hub "github.com/konveyor/tackle2-hub/addon"
+	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/nas"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 var (
@@ -32,7 +33,6 @@ const (
 	TmpDir    = "/tmp/list"
 )
 
-//
 // main
 func main() {
 	addon.Run(func() (err error) {
@@ -76,7 +76,7 @@ func main() {
 		//
 		// Replace facts.
 		err = facts.Replace(
-			api.FactMap{
+			api.Map{
 				"Listed": true,
 				"Color":  "blue",
 				"Length": 100,
@@ -100,7 +100,6 @@ func main() {
 	})
 }
 
-//
 // listDir builds and populates the bucket.
 func listDir(d *Data, application *api.Application, paths []string) (err error) {
 	//
@@ -178,7 +177,6 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 	return
 }
 
-//
 // playWithBucket
 func playWithBucket(bucket *hub.BucketContent) (err error) {
 	tmpDir := tmpDir()
@@ -215,7 +213,6 @@ func playWithBucket(bucket *hub.BucketContent) (err error) {
 	return
 }
 
-//
 // Build index.html
 func buildIndex(output string) (err error) {
 	addon.Activity("Building index.")
@@ -247,7 +244,6 @@ func buildIndex(output string) (err error) {
 	return
 }
 
-//
 // find files.
 func find(path string, max int) (paths []string, err error) {
 	Log.Info("Listing.", "path", path)
@@ -279,7 +275,6 @@ func find(path string, max int) (paths []string, err error) {
 	return
 }
 
-//
 // Play with files.
 func playWithFiles() (err error) {
 	f, err := addon.File.Put("/etc/hosts")
@@ -301,7 +296,6 @@ func playWithFiles() (err error) {
 	return
 }
 
-//
 // addTags ensure tags created and associated with application.
 // Ensure tag exists and associated with the application.
 func addTags(application *api.Application, source string, names ...string) (err error) {
@@ -337,7 +331,6 @@ func addTags(application *api.Application, source string, names ...string) (err 
 	return
 }
 
-//
 // replaceTags replaces current set of tags for the source with a new set.
 // Ensures desired tags exist before replacing.
 func replaceTags(application *api.Application, source string, names ...string) (err error) {
@@ -395,7 +388,6 @@ func tmpDir() (p string) {
 	return
 }
 
-//
 // Data Addon input.
 type Data struct {
 	// Path to be listed.
