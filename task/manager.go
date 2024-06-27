@@ -50,6 +50,7 @@ const (
 const (
 	AddonSelected = "AddonSelected"
 	ExtSelected   = "ExtensionSelected"
+	ImageError    = "ImageError"
 	PodNotFound   = "PodNotFound"
 	PodCreated    = "PodCreated"
 	PodRunning    = "PodRunning"
@@ -945,6 +946,9 @@ func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
 
 // podLogs - get and store pod logs as a Files.
 func (m *Manager) podLogs(pod *core.Pod) (files []*model.File, err error) {
+	if pod.Status.Phase == core.PodPending {
+		return
+	}
 	for _, container := range pod.Spec.Containers {
 		f, nErr := m.containerLog(pod, container.Name)
 		if nErr == nil {
@@ -1233,6 +1237,23 @@ func (r *Task) podPending(pod *core.Pod) {
 		status,
 		pod.Status.ContainerStatuses...)
 	for _, status := range status {
+		state := status.State
+		if state.Waiting != nil {
+			waiting := state.Waiting
+			reason := strings.ToLower(waiting.Reason)
+			if strings.Contains(reason, "invalid") || strings.Contains(reason, "backoff") {
+				r.Error(
+					"Error",
+					"Container (%s) failed: %s",
+					status.Name,
+					waiting.Reason)
+				mark := time.Now()
+				r.Terminated = &mark
+				r.Event(ImageError, waiting.Reason)
+				r.State = Failed
+				return
+			}
+		}
 		if status.Started == nil {
 			continue
 		}
