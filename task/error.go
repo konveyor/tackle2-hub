@@ -24,20 +24,6 @@ func (e *BadRequest) Is(err error) (matched bool) {
 	return
 }
 
-// ActionTimeout report an action timeout.
-type ActionTimeout struct {
-}
-
-func (e *ActionTimeout) Error() string {
-	return "Requested (asynchronous) action timed out."
-}
-
-func (e *ActionTimeout) Is(err error) (matched bool) {
-	var inst *ActionTimeout
-	matched = errors.As(err, &inst)
-	return
-}
-
 // SoftErr returns true when the error isA SoftError.
 func SoftErr(err error) (matched, retry bool) {
 	if err == nil {
