@@ -14,8 +14,8 @@ type Application struct {
 	BucketOwner
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
-	Review            *Review         `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        json.Repository `gorm:"type:json;serializer:json"`
+	Review            *Review    `gorm:"constraint:OnDelete:CASCADE"`
+	Repository        Repository `gorm:"type:json;serializer:json"`
 	Binary            string
 	Facts             []Fact `gorm:"constraint:OnDelete:CASCADE"`
 	Comments          string
@@ -296,4 +296,17 @@ type ImportTag struct {
 	Category string
 	ImportID uint `gorm:"index"`
 	Import   *Import
+}
+
+//
+// JSON Fields.
+//
+
+// Repository represents an SCM repository.
+type Repository struct {
+	Kind   string `json:"kind"`
+	URL    string `json:"url"`
+	Branch string `json:"branch"`
+	Tag    string `json:"tag"`
+	Path   string `json:"path"`
 }

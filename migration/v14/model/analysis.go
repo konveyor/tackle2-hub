@@ -11,10 +11,10 @@ type Analysis struct {
 	Effort        int
 	Commit        string
 	Archived      bool
-	Summary       []json.ArchivedIssue `gorm:"type:json;serializer:json"`
-	Issues        []Issue              `gorm:"constraint:OnDelete:CASCADE"`
-	Dependencies  []TechDependency     `gorm:"constraint:OnDelete:CASCADE"`
-	ApplicationID uint                 `gorm:"index;not null"`
+	Summary       []ArchivedIssue  `gorm:"type:json;serializer:json"`
+	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
+	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
+	ApplicationID uint             `gorm:"index;not null"`
 	Application   *Application
 }
 
@@ -38,13 +38,13 @@ type Issue struct {
 	Rule        string `gorm:"uniqueIndex:issueA;not null"`
 	Name        string `gorm:"index"`
 	Description string
-	Category    string      `gorm:"index;not null"`
-	Incidents   []Incident  `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
-	Links       []json.Link `gorm:"type:json;serializer:json"`
-	Facts       json.Map    `gorm:"type:json;serializer:json"`
-	Labels      []string    `gorm:"type:json;serializer:json"`
-	Effort      int         `gorm:"index;not null"`
-	AnalysisID  uint        `gorm:"index;uniqueIndex:issueA;not null"`
+	Category    string     `gorm:"index;not null"`
+	Incidents   []Incident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
+	Links       []Link     `gorm:"type:json;serializer:json"`
+	Facts       json.Map   `gorm:"type:json;serializer:json"`
+	Labels      []string   `gorm:"type:json;serializer:json"`
+	Effort      int        `gorm:"index;not null"`
+	AnalysisID  uint       `gorm:"index;uniqueIndex:issueA;not null"`
 	Analysis    *Analysis
 }
 
@@ -67,8 +67,8 @@ type RuleSet struct {
 	Kind        string
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description string
-	Repository  json.Repository `gorm:"type:json;serializer:json"`
-	IdentityID  *uint           `gorm:"index"`
+	Repository  Repository `gorm:"type:json;serializer:json"`
+	IdentityID  *uint      `gorm:"index"`
 	Identity    *Identity
 	Rules       []Rule    `gorm:"constraint:OnDelete:CASCADE"`
 	DependsOn   []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
@@ -131,8 +131,8 @@ type Target struct {
 	Description string
 	Provider    string
 	Choice      bool
-	Labels      []json.TargetLabel `gorm:"type:json;serializer:json"`
-	ImageID     uint               `gorm:"index" ref:"file"`
+	Labels      []TargetLabel `gorm:"type:json;serializer:json"`
+	ImageID     uint          `gorm:"index" ref:"file"`
 	Image       *File
 	RuleSetID   *uint `gorm:"index"`
 	RuleSet     *RuleSet
@@ -140,4 +140,31 @@ type Target struct {
 
 func (r *Target) Builtin() bool {
 	return r.UUID != nil
+}
+
+//
+// JSON Fields.
+//
+
+// ArchivedIssue resource created when issues are archived.
+type ArchivedIssue struct {
+	RuleSet     string `json:"ruleSet"`
+	Rule        string `json:"rule"`
+	Name        string `json:"name,omitempty" yaml:",omitempty"`
+	Description string `json:"description,omitempty" yaml:",omitempty"`
+	Category    string `json:"category"`
+	Effort      int    `json:"effort"`
+	Incidents   int    `json:"incidents"`
+}
+
+// Link URL link.
+type Link struct {
+	URL   string `json:"url"`
+	Title string `json:"title,omitempty"`
+}
+
+// TargetLabel - label format specific to Targets
+type TargetLabel struct {
+	Name  string `json:"name"`
+	Label string `json:"label"`
 }

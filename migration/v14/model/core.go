@@ -118,17 +118,17 @@ type Task struct {
 	State         string   `gorm:"index"`
 	Locator       string   `gorm:"index"`
 	Priority      int
-	Policy        json.TaskPolicy `gorm:"type:json;serializer:json"`
-	TTL           json.TTL        `gorm:"type:json;serializer:json"`
-	Data          json.Data       `gorm:"type:json;serializer:json"`
+	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
+	TTL           TTL        `gorm:"type:json;serializer:json"`
+	Data          json.Data  `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
-	Errors        []json.TaskError `gorm:"type:json;serializer:json"`
-	Events        []json.TaskEvent `gorm:"type:json;serializer:json"`
-	Pod           string           `gorm:"index"`
+	Errors        []TaskError `gorm:"type:json;serializer:json"`
+	Events        []TaskEvent `gorm:"type:json;serializer:json"`
+	Pod           string      `gorm:"index"`
 	Retries       int
-	Attached      []json.Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Report        *TaskReport       `gorm:"constraint:OnDelete:CASCADE"`
+	Attached      []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
+	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint
 	Application   *Application
 	TaskGroupID   *uint `gorm:"<-:create"`
@@ -145,11 +145,11 @@ type TaskReport struct {
 	Status    string
 	Total     int
 	Completed int
-	Activity  []string          `gorm:"type:json;serializer:json"`
-	Errors    []json.TaskError  `gorm:"type:json;serializer:json"`
-	Attached  []json.Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    json.Data         `gorm:"type:json;serializer:json"`
-	TaskID    uint              `gorm:"<-:create;uniqueIndex"`
+	Activity  []string     `gorm:"type:json;serializer:json"`
+	Errors    []TaskError  `gorm:"type:json;serializer:json"`
+	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
+	Result    json.Data    `gorm:"type:json;serializer:json"`
+	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
 
@@ -162,10 +162,10 @@ type TaskGroup struct {
 	Extensions []string `gorm:"type:json;serializer:json"`
 	State      string
 	Priority   int
-	Policy     json.TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       json.Data       `gorm:"type:json;serializer:json"`
-	List       []Task          `gorm:"type:json;serializer:json"`
-	Tasks      []Task          `gorm:"constraint:OnDelete:CASCADE"`
+	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
+	Data       json.Data  `gorm:"type:json;serializer:json"`
+	List       []Task     `gorm:"type:json;serializer:json"`
+	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // Proxy configuration.
@@ -257,4 +257,45 @@ func (r *Identity) Decrypt() (err error) {
 		}
 	}
 	return
+}
+
+//
+// JSON Fields.
+//
+
+// Attachment file attachment.
+type Attachment struct {
+	ID       uint   `json:"id" binding:"required"`
+	Name     string `json:"name,omitempty" yaml:",omitempty"`
+	Activity int    `json:"activity,omitempty" yaml:",omitempty"`
+}
+
+// TaskError used in Task.Errors.
+type TaskError struct {
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+}
+
+// TaskEvent task event.
+type TaskEvent struct {
+	Kind   string    `json:"kind"`
+	Count  int       `json:"count"`
+	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
+	Last   time.Time `json:"last"`
+}
+
+// TaskPolicy scheduling policy.
+type TaskPolicy struct {
+	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
+	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
+	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
+}
+
+// TTL time-to-live.
+type TTL struct {
+	Created   int `json:"created,omitempty" yaml:",omitempty"`
+	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
+	Running   int `json:"running,omitempty" yaml:",omitempty"`
+	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
+	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
 }

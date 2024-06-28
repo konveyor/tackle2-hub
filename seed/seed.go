@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -88,8 +87,7 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 // saveChecksum saves the seed checksum to the setting specified by SeedKey.
 func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 	setting := &model.Setting{Key: SeedKey}
-	value, _ := json.Marshal(fmt.Sprintf("%x", checksum))
-	setting.Value = value
+	setting.Value = fmt.Sprintf("%x", checksum)
 	result := db.Where("key", SeedKey).Updates(setting)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
