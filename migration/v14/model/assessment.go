@@ -45,9 +45,13 @@ type Review struct {
 	Archetype           *Archetype
 }
 
+//
+// JSON Fields.
+//
+
 // Section represents a group of questions in a questionnaire.
 type Section struct {
-	Order     uint       `json:"order" yaml:"order" binding:"required"`
+	Order     uint       `json:"order" yaml:"order"`
 	Name      string     `json:"name" yaml:"name"`
 	Questions []Question `json:"questions" yaml:"questions" binding:"min=1,dive"`
 	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
@@ -55,7 +59,7 @@ type Section struct {
 
 // Question represents a question in a questionnaire.
 type Question struct {
-	Order       uint             `json:"order" yaml:"order" binding:"required"`
+	Order       uint             `json:"order" yaml:"order"`
 	Text        string           `json:"text" yaml:"text"`
 	Explanation string           `json:"explanation" yaml:"explanation"`
 	IncludeFor  []CategorizedTag `json:"includeFor,omitempty" yaml:"includeFor,omitempty"`
@@ -65,7 +69,7 @@ type Question struct {
 
 // Answer represents an answer to a question in a questionnaire.
 type Answer struct {
-	Order         uint             `json:"order" yaml:"order" binding:"required"`
+	Order         uint             `json:"order" yaml:"order"`
 	Text          string           `json:"text" yaml:"text"`
 	Risk          string           `json:"risk" yaml:"risk" binding:"oneof=red yellow green unknown"`
 	Rationale     string           `json:"rationale" yaml:"rationale"`
