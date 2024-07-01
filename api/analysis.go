@@ -2082,7 +2082,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		db = db.Omit(clause.Associations)
 		m.Archived = true
 		m.Summary = summary
-		err = db.Updates(h.fields(&m)).Error
+		err = db.Save(&m).Error
 		if err != nil {
 			return
 		}

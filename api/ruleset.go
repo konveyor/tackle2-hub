@@ -248,7 +248,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	err = db.Updates(h.fields(m)).Error
+	err = db.Save(m).Error
 	if err != nil {
 		return
 	}
@@ -267,7 +267,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 	for i := range m.Rules {
 		m := &m.Rules[i]
 		db = h.DB(ctx).Model(m)
-		err = db.Updates(h.fields(m)).Error
+		err = db.Updates(m).Error
 		if err != nil {
 			return
 		}

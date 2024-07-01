@@ -84,12 +84,6 @@ func (h *BaseHandler) preLoad(db *gorm.DB, fields ...string) (tx *gorm.DB) {
 	return
 }
 
-// fields builds a map of fields.
-func (h *BaseHandler) fields(m any) (mp map[string]any) {
-	mp = reflect.Fields(m)
-	return
-}
-
 // pk returns the PK (ID) parameter.
 func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 	s := ctx.Param(ID)

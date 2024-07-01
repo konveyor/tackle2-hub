@@ -165,19 +165,16 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 	updated := r.Model()
 	updated.ID = id
 	updated.UpdateUser = h.CurrentUser(ctx)
-	var fields map[string]any
 	if m.Builtin() {
-		fields = map[string]any{
-			"updateUser": updated.UpdateUser,
-			"required":   updated.Required,
-		}
+		m.UpdateUser = updated.UpdateUser
+		m.Required = updated.Required
 	} else {
-		fields = h.fields(updated)
+		m = updated
 	}
 
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result = db.Updates(fields)
+	result = db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return

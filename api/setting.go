@@ -178,19 +178,19 @@ func (h SettingHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	updates := Setting{}
-	updates.Key = key
-	err := h.Bind(ctx, &updates.Value)
+	m := &model.Setting{}
+	result := h.DB(ctx).First(m, "key = ?", key)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	err := h.Bind(ctx, &m.Value)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	m := updates.Model()
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
-	db = db.Where("key", key)
-	result := db.Updates(h.fields(m))
+	result = h.DB(ctx).Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 	}
