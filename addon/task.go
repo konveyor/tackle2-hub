@@ -137,7 +137,6 @@ func (h *Task) Errorf(severity, description string, v ...any) {
 
 // Error report addon error.
 func (h *Task) Error(error ...api.TaskError) {
-	h.report.Status = task.Failed
 	for i := range error {
 		h.report.Errors = append(
 			h.report.Errors,
