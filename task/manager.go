@@ -1734,7 +1734,7 @@ func (k *Cluster) getTackle() (err error) {
 
 // getAddons
 func (k *Cluster) getAddons() (err error) {
-	k.addons = make(map[string]*crd.Addon)
+	mp := make(map[string]*crd.Addon)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
 	list := crd.AddonList{}
 	err = k.List(
@@ -1749,12 +1749,13 @@ func (k *Cluster) getAddons() (err error) {
 		r := &list.Items[i]
 		k.addons[r.Name] = r
 	}
+	k.addons = mp
 	return
 }
 
 // getExtensions
 func (k *Cluster) getExtensions() (err error) {
-	k.extensions = make(map[string]*crd.Extension)
+	mp := make(map[string]*crd.Extension)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
 	list := crd.ExtensionList{}
 	err = k.List(
@@ -1769,12 +1770,13 @@ func (k *Cluster) getExtensions() (err error) {
 		r := &list.Items[i]
 		k.extensions[r.Name] = r
 	}
+	k.extensions = mp
 	return
 }
 
 // getTasks kinds.
 func (k *Cluster) getTasks() (err error) {
-	k.tasks = make(map[string]*crd.Task)
+	mp := make(map[string]*crd.Task)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
 	list := crd.TaskList{}
 	err = k.List(
@@ -1789,12 +1791,13 @@ func (k *Cluster) getTasks() (err error) {
 		r := &list.Items[i]
 		k.tasks[r.Name] = r
 	}
+	k.tasks = mp
 	return
 }
 
 // getPods
 func (k *Cluster) getPods() (err error) {
-	k.pods = make(map[string]*core.Pod)
+	mp := make(map[string]*core.Pod)
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(TaskLabel, selection.Exists, []string{})
 	selector = selector.Add(*req)
@@ -1815,6 +1818,7 @@ func (k *Cluster) getPods() (err error) {
 		r := &list.Items[i]
 		k.pods[r.Name] = r
 	}
+	k.pods = mp
 	return
 }
 
