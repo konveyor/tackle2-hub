@@ -115,6 +115,7 @@ func (h *Task) Succeeded() {
 // Failed report addon failed.
 // The reason can be a printf style format.
 func (h *Task) Failed(reason string, v ...any) {
+	h.report.Status = task.Failed
 	reason = fmt.Sprintf(reason, v...)
 	h.Error(api.TaskError{
 		Severity:    "Error",
