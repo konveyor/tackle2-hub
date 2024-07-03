@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"os"
 	"path"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/encryption"
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"gorm.io/gorm"
 )
 
@@ -126,7 +126,7 @@ type Task struct {
 	Priority      int
 	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
 	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          Data       `gorm:"type:json;serializer:json"`
+	Data          json.Data  `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
 	Errors        []TaskError `gorm:"type:json;serializer:json"`
@@ -144,40 +144,6 @@ type Task struct {
 func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	err = m.BucketOwner.BeforeCreate(db)
 	return
-}
-
-// TaskEvent task event.
-type TaskEvent struct {
-	Kind   string    `json:"kind"`
-	Count  int       `json:"count"`
-	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
-	Last   time.Time `json:"last"`
-}
-
-// Map alias.
-type Map = map[string]any
-
-// Any alias.
-type Any any
-
-// Data json any field.
-type Data struct {
-	Any
-}
-
-// TTL time-to-live.
-type TTL struct {
-	Created   int `json:"created,omitempty" yaml:",omitempty"`
-	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
-	Running   int `json:"running,omitempty" yaml:",omitempty"`
-	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
-	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
-}
-
-// Ref represents a FK.
-type Ref struct {
-	ID   uint   `json:"id" binding:"required"`
-	Name string `json:"name,omitempty" yaml:",omitempty"`
 }
 
 // TaskError used in Task.Errors.
@@ -208,7 +174,7 @@ type TaskReport struct {
 	Activity  []string     `gorm:"type:json;serializer:json"`
 	Errors    []TaskError  `gorm:"type:json;serializer:json"`
 	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    Data         `gorm:"type:json;serializer:json"`
+	Result    json.Data    `gorm:"type:json;serializer:json"`
 	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -223,7 +189,7 @@ type TaskGroup struct {
 	State      string
 	Priority   int
 	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       Data       `gorm:"type:json;serializer:json"`
+	Data       json.Data  `gorm:"type:json;serializer:json"`
 	List       []Task     `gorm:"type:json;serializer:json"`
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
@@ -317,4 +283,25 @@ func (r *Identity) Decrypt() (err error) {
 		}
 	}
 	return
+}
+
+//
+// JSON Fields.
+//
+
+// TaskEvent task event.
+type TaskEvent struct {
+	Kind   string    `json:"kind"`
+	Count  int       `json:"count"`
+	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
+	Last   time.Time `json:"last"`
+}
+
+// TTL time-to-live.
+type TTL struct {
+	Created   int `json:"created,omitempty" yaml:",omitempty"`
+	Pending   int `json:"pending,omitempty" yaml:",omitempty"`
+	Running   int `json:"running,omitempty" yaml:",omitempty"`
+	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
+	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
 }

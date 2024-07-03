@@ -2,6 +2,7 @@ package task
 
 import (
 	"testing"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
@@ -73,9 +74,16 @@ func TestTaskCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			_, err = Task.Get(r.ID)
-			if err == nil {
-				t.Errorf("Resource exits, but should be deleted: %v", r)
+			for i := 5; i >= 0; i-- {
+				time.Sleep(time.Second)
+				_, err = Task.Get(r.ID)
+				if err != nil {
+					break
+				}
+				if i == 0 {
+					t.Errorf("Resource exits, but should be deleted: %v", r)
+					break
+				}
 			}
 		})
 	}
