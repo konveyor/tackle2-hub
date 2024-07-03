@@ -25,25 +25,13 @@ func (r *FileReaper) Run() {
 		Log.Error(err, "")
 		return
 	}
-	if len(list) == 0 {
-		return
-	}
-	ids := make(map[uint]byte)
-	finder := RefFinder{DB: r.DB}
-	for _, m := range []any{
-		&model.Task{},
-		&model.TaskReport{},
-		&model.Rule{},
-		&model.Target{},
-	} {
-		err := finder.Find(m, "file", ids)
+	for _, file := range list {
+		busy, err := r.busy(&file)
 		if err != nil {
 			Log.Error(err, "")
 			continue
 		}
-	}
-	for _, file := range list {
-		if _, found := ids[file.ID]; found {
+		if busy {
 			if file.Expiration != nil {
 				file.Expiration = nil
 				err = r.DB.Save(&file).Error
@@ -68,6 +56,29 @@ func (r *FileReaper) Run() {
 			}
 		}
 	}
+}
+
+// busy determines if anything references the file.
+func (r *FileReaper) busy(file *model.File) (busy bool, err error) {
+	nRef := int64(0)
+	var n int64
+	ref := RefCounter{DB: r.DB}
+	for _, m := range []any{
+		&model.Task{},
+		&model.TaskReport{},
+		&model.RuleSet{},
+		&model.Rule{},
+		&model.Target{},
+	} {
+		n, err = ref.Count(m, "file", file.ID)
+		if err != nil {
+			Log.Error(err, "")
+			continue
+		}
+		nRef += n
+	}
+	busy = nRef > 0
+	return
 }
 
 // Delete file.
