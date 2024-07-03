@@ -58,7 +58,7 @@ podman-build:
 debug: generate fmt vet
 	go build -gcflags=all="-N -l" $(BUILD)
 
-docker: vet
+docker:
 	go build $(BUILD)
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
