@@ -97,6 +97,13 @@ type Manager struct {
 	queue chan func()
 }
 
+// Prime the CR cache.
+func (m *Manager) Prime() (err error) {
+	m.cluster.Client = m.Client
+	err = m.cluster.Refresh()
+	return
+}
+
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	m.queue = make(chan func(), 100)

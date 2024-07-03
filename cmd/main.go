@@ -161,6 +161,10 @@ func main() {
 		Client: client,
 		DB:     db,
 	}
+	err = taskManager.Prime()
+	if err != nil {
+		return
+	}
 	taskManager.Run(context.Background())
 	//
 	// Reaper
