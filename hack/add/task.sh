@@ -6,7 +6,7 @@ curl -X POST ${host}/tasks -d \
 '{
     "name":"Test",
     "locator": "app.1.test",
-    "addon": "test",
+    "addon": "analyzer",
     "application": {"id": 1},
     "data": {
       "path": "/etc"
