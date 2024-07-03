@@ -450,12 +450,11 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 		if r.Priority == 0 {
 			r.Priority = kind.Spec.Priority
 		}
-		mA, castA := h.AsMap(kind.Spec.Data)
-		mB, castB := r.Data.(map[string]any)
-		if castA && castB {
-			r.Data = h.Merge(mA, mB)
-		} else {
-			r.Data = mA
+		data := model.Data{Any: r.Data}
+		other := model.Data{Any: kind.Data()}
+		merged := data.Merge(other)
+		if !merged {
+			r.Data = other.Any
 		}
 	}
 	return
@@ -472,14 +471,9 @@ func (h *TaskGroupHandler) Propagate(m *model.TaskGroup) (err error) {
 		task.Policy = m.Policy
 		task.State = m.State
 		task.SetBucket(m.BucketID)
-		if m.Data.Any != nil {
-			mA, castA := m.Data.Any.(map[string]any)
-			mB, castB := task.Data.Any.(map[string]any)
-			if castA && castB {
-				task.Data.Any = h.Merge(mA, mB)
-			} else {
-				task.Data.Any = m.Data
-			}
+		merged := task.Data.Merge(m.Data)
+		if !merged {
+			task.Data = m.Data
 		}
 	}
 
