@@ -124,6 +124,10 @@ func main() {
 				return
 			}
 		}()
+		err = Settings.FindDiscoveryTasks()
+		if err != nil {
+			return
+		}
 	}
 	//
 	// k8s client.
