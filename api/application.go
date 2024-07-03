@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/trigger"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 )
 
@@ -249,20 +250,11 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	rtx := WithContext(ctx)
-	tr := trigger.Application{
-		Trigger: trigger.Trigger{
-			TaskManager: rtx.TaskManager,
-			Client:      rtx.Client,
-			DB:          h.DB(ctx),
-		},
-	}
-	err = tr.Created(m)
+	err = h.discover(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -388,20 +380,11 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	rtx := WithContext(ctx)
-	tr := trigger.Application{
-		Trigger: trigger.Trigger{
-			TaskManager: rtx.TaskManager,
-			Client:      rtx.Client,
-			DB:          h.DB(ctx),
-		},
-	}
-	err = tr.Updated(m)
+	err = h.discover(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -1089,6 +1072,31 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 
 	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// discover an application's language and frameworks by launching discovery tasks.
+func (h ApplicationHandler) discover(ctx *gin.Context, application *model.Application) (err error) {
+	rtx := WithContext(ctx)
+	db := h.DB(ctx)
+	for _, kind := range Settings.Hub.Discovery.Tasks {
+		t := Task{}
+		t.Kind = kind
+		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		ref := Ref{ID: application.ID}
+		t.Application = &ref
+		t.State = tasking.Ready
+		taskHandler := TaskHandler{}
+		err = taskHandler.FindRefs(rtx.Client, &t)
+		if err != nil {
+			return
+		}
+		task := tasking.Task{Task: t.Model()}
+		err = rtx.TaskManager.Create(db, &task)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // Application REST resource.
