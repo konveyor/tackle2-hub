@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm/clause"
 )
 
@@ -208,18 +207,13 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	rtx := WithContext(ctx)
-	tr := trigger.Identity{
-		Trigger: trigger.Trigger{
-			TaskManager: rtx.TaskManager,
-			Client:      rtx.Client,
-			DB:          h.DB(ctx),
-		},
-	}
-	err = tr.Updated(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	appHandler := ApplicationHandler{}
+	for i := range m.Applications {
+		err = appHandler.discover(ctx, &m.Applications[i])
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Status(ctx, http.StatusNoContent)

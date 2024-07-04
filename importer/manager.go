@@ -14,7 +14,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	tasking "github.com/konveyor/tackle2-hub/task"
-	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -345,21 +344,35 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 	// best effort
-	tr := trigger.Application{
-		Trigger: trigger.Trigger{
-			TaskManager: m.TaskManager,
-			Client:      m.Client,
-			DB:          m.DB,
-		},
-	}
-	err := tr.Created(app)
+	err := m.discover(app)
 	if err != nil {
-		imp.ErrorMessage = fmt.Sprintf(
-			"Failed to launch discovery tasks for Application '%s'.",
-			app.Name)
+		imp.ErrorMessage = fmt.Sprintf("Failed to launch discovery tasks for Application '%s'", app.Name)
+		return
 	}
 
 	ok = true
+	return
+}
+
+func (m *Manager) discover(application *model.Application) (err error) {
+	for _, kind := range Settings.Hub.Discovery.Tasks {
+		t := api.Task{}
+		t.Kind = kind
+		t.Name = fmt.Sprintf("%s-%s", application.Name, kind)
+		ref := api.Ref{ID: application.ID}
+		t.Application = &ref
+		t.State = tasking.Ready
+		taskHandler := api.TaskHandler{}
+		err = taskHandler.FindRefs(m.Client, &t)
+		if err != nil {
+			return
+		}
+		task := tasking.Task{Task: t.Model()}
+		err = m.TaskManager.Create(m.DB, &task)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

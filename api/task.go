@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,12 +12,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tar"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/strings/slices"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routes
@@ -289,6 +293,11 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	rtx := WithContext(ctx)
+	err = h.FindRefs(rtx.Client, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	task := &tasking.Task{}
 	task.With(r.Model())
 	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
@@ -327,7 +336,7 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // @description Update a task.
 // @tags tasks
 // @accept json
-// @success 200
+// @success 202
 // @router /tasks/{id} [put]
 // @param id path int true "Task ID"
 // @param task body Task true "Task data"
@@ -364,9 +373,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	r.With(m)
-
-	h.Respond(ctx, http.StatusOK, r)
+	h.Status(ctx, http.StatusAccepted)
 }
 
 // Submit godoc
@@ -374,7 +381,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @description Patch and submit a task.
 // @tags tasks
 // @accept json
-// @success 200
+// @success 202
 // @router /tasks/{id}/submit [put]
 // @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"
@@ -608,6 +615,82 @@ func (h TaskHandler) GetAttached(ctx *gin.Context) {
 			file.Path,
 			fmt.Sprintf("%.3d-%s", file.ID, file.Name))
 	}
+}
+
+// FindRefs find referenced resources.
+// - addon
+// - extensions
+// - kind
+// - priority
+// The priority is defaulted to the kind as needed.
+func (h *TaskHandler) FindRefs(client k8sclient.Client, r *Task) (err error) {
+	if r.Addon != "" {
+		addon := &crd.Addon{}
+		name := r.Addon
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			addon)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Addon: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	for _, name := range r.Extensions {
+		ext := &crd.Extension{}
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			ext)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Extension: " + name + " not found",
+				}
+			}
+			return
+		}
+	}
+	if r.Kind != "" {
+		kind := &crd.Task{}
+		name := r.Kind
+		err = client.Get(
+			context.TODO(),
+			k8sclient.ObjectKey{
+				Name:      name,
+				Namespace: Settings.Hub.Namespace,
+			},
+			kind)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				err = &BadRequestError{
+					Reason: "Task: " + name + " not found",
+				}
+			}
+			return
+		}
+		if r.Priority == 0 {
+			r.Priority = kind.Spec.Priority
+		}
+		mA, castA := h.AsMap(kind.Spec.Data)
+		mB, castB := r.Data.(map[string]any)
+		if castA && castB {
+			r.Data = h.Merge(mA, mB)
+		} else {
+			r.Data = mA
+		}
+	}
+	return
 }
 
 // TTL time-to-live.
