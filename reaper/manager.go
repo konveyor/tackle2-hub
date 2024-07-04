@@ -2,12 +2,13 @@ package reaper
 
 import (
 	"context"
+	"time"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -21,7 +22,6 @@ var (
 
 type Task = task.Task
 
-//
 // Manager provides task management.
 type Manager struct {
 	// DB
@@ -30,7 +30,6 @@ type Manager struct {
 	Client k8s.Client
 }
 
-//
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	registered := []Reaper{
@@ -65,14 +64,12 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
-//
 // Pause.
 func (m *Manager) pause() {
 	d := Unit * time.Duration(Settings.Frequency.Reaper)
 	time.Sleep(d)
 }
 
-//
 // Reaper interface.
 type Reaper interface {
 	Run()
