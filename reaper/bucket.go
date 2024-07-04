@@ -1,22 +1,21 @@
 package reaper
 
 import (
+	"os"
+	"time"
+
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
-	"os"
-	"time"
 )
 
-//
 // BucketReaper bucket reaper.
 type BucketReaper struct {
 	// DB
 	DB *gorm.DB
 }
 
-//
 // Run Executes the reaper.
 // A bucket is deleted when it is no longer referenced and the TTL has expired.
 func (r *BucketReaper) Run() {
@@ -27,13 +26,24 @@ func (r *BucketReaper) Run() {
 		Log.Error(err, "")
 		return
 	}
-	for _, bucket := range list {
-		busy, err := r.busy(&bucket)
+	if len(list) == 0 {
+		return
+	}
+	ids := make(map[uint]byte)
+	finder := RefFinder{DB: r.DB}
+	for _, m := range []any{
+		&model.Application{},
+		&model.TaskGroup{},
+		&model.Task{},
+	} {
+		err := finder.Find(m, "bucket", ids)
 		if err != nil {
 			Log.Error(err, "")
 			continue
 		}
-		if busy {
+	}
+	for _, bucket := range list {
+		if _, found := ids[bucket.ID]; found {
 			if bucket.Expiration != nil {
 				bucket.Expiration = nil
 				err = r.DB.Save(&bucket).Error
@@ -60,29 +70,6 @@ func (r *BucketReaper) Run() {
 	}
 }
 
-//
-// busy determines if anything references the bucket.
-func (r *BucketReaper) busy(bucket *model.Bucket) (busy bool, err error) {
-	nRef := int64(0)
-	var n int64
-	ref := RefCounter{DB: r.DB}
-	for _, m := range []interface{}{
-		&model.Application{},
-		&model.TaskGroup{},
-		&model.Task{},
-	} {
-		n, err = ref.Count(m, "bucket", bucket.ID)
-		if err != nil {
-			Log.Error(err, "")
-			continue
-		}
-		nRef += n
-	}
-	busy = nRef > 0
-	return
-}
-
-//
 // Delete bucket.
 func (r *BucketReaper) delete(bucket *model.Bucket) (err error) {
 	err = nas.RmDir(bucket.Path)

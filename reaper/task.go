@@ -2,16 +2,16 @@ package reaper
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
-//
 // TaskReaper reaps tasks.
 type TaskReaper struct {
 	// DB
@@ -20,30 +20,30 @@ type TaskReaper struct {
 	Client k8s.Client
 }
 
-//
 // Run Executes the reaper.
 // Rules by state:
-//   Created
-//   - Deleted after TTL.Created > created timestamp or
-//     settings.Task.Reaper.Created.
-//   Pending
-//   - Deleted after TTL.Pending > created timestamp or
-//     settings.Task.Reaper.Created.
-//   Postponed
-//   - Deleted after TTL.Postponed > created timestamp or
-//     settings.Task.Reaper.Created.
-//   Running
-//   - Deleted after TTL.Running > started timestamp.
-//   Succeeded
-//   - Deleted after TTL > terminated timestamp or
-//     settings.Task.Reaper.Succeeded.
-//   - Bucket is released after the defined period.
-//   - Pod is deleted after the defined period.
-//   Failed
-//   - Deleted after TTL > terminated timestamp or
-//     settings.Task.Reaper.Failed.
-//   - Bucket is released after the defined period.
-//   - Pod is deleted after the defined period.
+//
+//	Created
+//	- Deleted after TTL.Created > created timestamp or
+//	  settings.Task.Reaper.Created.
+//	Pending
+//	- Deleted after TTL.Pending > created timestamp or
+//	  settings.Task.Reaper.Created.
+//	Postponed
+//	- Deleted after TTL.Postponed > created timestamp or
+//	  settings.Task.Reaper.Created.
+//	Running
+//	- Deleted after TTL.Running > started timestamp.
+//	Succeeded
+//	- Deleted after TTL > terminated timestamp or
+//	  settings.Task.Reaper.Succeeded.
+//	- Bucket is released after the defined period.
+//	- Pod is deleted after the defined period.
+//	Failed
+//	- Deleted after TTL > terminated timestamp or
+//	  settings.Task.Reaper.Failed.
+//	- Bucket is released after the defined period.
+//	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
 	Log.V(1).Info("Reaping tasks.")
 	list := []model.Task{}
@@ -84,16 +84,11 @@ func (r *TaskReaper) Run() {
 					r.delete(m)
 				}
 			}
-		case task.Postponed:
-			mark := m.CreateTime
-			if ttl.Postponed > 0 {
-				d := time.Duration(ttl.Postponed) * Unit
-				if time.Since(mark) > d {
-					r.delete(m)
-				}
-			}
 		case task.Running:
-			mark := *m.Started
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Started
+			}
 			if ttl.Running > 0 {
 				d := time.Duration(ttl.Running) * Unit
 				if time.Since(mark) > d {
@@ -101,7 +96,10 @@ func (r *TaskReaper) Run() {
 				}
 			}
 		case task.Succeeded:
-			mark := *m.Terminated
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Terminated
+			}
 			if ttl.Succeeded > 0 {
 				d := time.Duration(ttl.Succeeded) * Unit
 				if time.Since(mark) > d {
@@ -114,7 +112,10 @@ func (r *TaskReaper) Run() {
 				}
 			}
 		case task.Failed:
-			mark := *m.Terminated
+			mark := m.CreateTime
+			if m.Terminated != nil {
+				mark = *m.Terminated
+			}
 			if ttl.Succeeded > 0 {
 				d := time.Duration(ttl.Failed) * Unit
 				if time.Since(mark) > d {
@@ -130,7 +131,6 @@ func (r *TaskReaper) Run() {
 	}
 }
 
-//
 // release resources.
 func (r *TaskReaper) release(m *model.Task) {
 	nChanged := 0
@@ -158,10 +158,9 @@ func (r *TaskReaper) release(m *model.Task) {
 	return
 }
 
-//
 // delete task.
 func (r *TaskReaper) delete(m *model.Task) {
-	rt := Task{m}
+	rt := Task{Task: m}
 	err := rt.Delete(r.Client)
 	if err != nil {
 		Log.Error(err, "")
@@ -187,21 +186,20 @@ func (r *TaskReaper) TTL(m *model.Task) (ttl api.TTL) {
 //
 //
 
-//
 // GroupReaper reaps task groups.
 type GroupReaper struct {
 	// DB
 	DB *gorm.DB
 }
 
-//
 // Run Executes the reaper.
 // Rules by state:
-//   Created
-//   - Deleted after the defined period.
-//   Ready (submitted)
-//   - Deleted when all of its task have been deleted.
-//   - Bucket is released immediately.
+//
+//	Created
+//	- Deleted after the defined period.
+//	Ready (submitted)
+//	- Deleted when all of its task have been deleted.
+//	- Bucket is released immediately.
 func (r *GroupReaper) Run() {
 	Log.V(1).Info("Reaping groups.")
 	list := []model.TaskGroup{}
@@ -232,7 +230,6 @@ func (r *GroupReaper) Run() {
 	}
 }
 
-//
 // release resources.
 func (r *GroupReaper) release(m *model.TaskGroup) {
 	m.SetBucket(nil)
@@ -244,7 +241,6 @@ func (r *GroupReaper) release(m *model.TaskGroup) {
 	}
 }
 
-//
 // delete task.
 func (r *GroupReaper) delete(m *model.TaskGroup) {
 	err := r.DB.Delete(m).Error
