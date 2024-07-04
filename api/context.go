@@ -1,12 +1,20 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"gorm.io/gorm"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+//
+// Response values.
+type Response struct {
+	Status int
+	Body   interface{}
+}
 
 //
 // Context custom settings.
@@ -24,11 +32,15 @@ type Context struct {
 	Response Response
 }
 
-//
-// Response values.
-type Response struct {
-	Status int
-	Body   interface{}
+// Attach to gin context.
+func (r *Context) Attach(ctx *gin.Context) {
+	r.Context = ctx
+	ctx.Set("RichContext", r)
+}
+
+// Detach from gin context
+func (r *Context) Detach() {
+	delete(r.Context.Keys, "RichContext")
 }
 
 //
@@ -56,7 +68,7 @@ func WithContext(ctx *gin.Context) (n *Context) {
 	object, found := ctx.Get(key)
 	if !found {
 		n = &Context{}
-		ctx.Set(key, n)
+		n.Attach(ctx)
 	} else {
 		n = object.(*Context)
 	}

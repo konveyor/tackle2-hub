@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"syscall"
+
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -21,10 +24,8 @@ import (
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"syscall"
 )
 
 var Settings = &settings.Settings
@@ -195,14 +196,16 @@ func main() {
 	}
 	// Web
 	router := gin.Default()
-	router.Use(api.Render())
-	router.Use(api.ErrorHandler())
 	router.Use(
 		func(ctx *gin.Context) {
 			rtx := api.WithContext(ctx)
 			rtx.DB = db
 			rtx.Client = client
+			ctx.Next()
+			rtx.Detach()
 		})
+	router.Use(api.Render())
+	router.Use(api.ErrorHandler())
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
