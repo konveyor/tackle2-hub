@@ -105,6 +105,10 @@ func (m *Manager) Run(ctx context.Context) {
 		&Validator{
 			Client: m.Client,
 		})
+	err := m.cluster.Refresh()
+	if err != nil {
+		Log.Error(err, "unable to refresh cluster")
+	}
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Done.")
@@ -113,16 +117,14 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
-				err := m.cluster.Refresh()
-				if err == nil {
-					m.runActions()
-					m.updateRunning()
-					m.startReady()
-					m.pause()
-				} else {
-					Log.Error(err, "")
-					m.pause()
-				}
+				m.runActions()
+				m.updateRunning()
+				m.startReady()
+				m.pause()
+				// } else {
+				// 	Log.Error(err, "")
+				// 	m.pause()
+				// }
 			}
 		}
 	}()
