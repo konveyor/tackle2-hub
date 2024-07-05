@@ -59,11 +59,13 @@ func (r *RuleDeps) Match(ready, other *Task) (matched bool, reason string) {
 		return
 	}
 	matched = def.HasDep(other.Kind)
-	reason = fmt.Sprintf(
-		"Rule:Dependency matched:%d, other:%d",
-		ready.ID,
-		other.ID)
-	Log.Info(reason)
+	if matched {
+		reason = fmt.Sprintf(
+			"Rule:Dependency matched:%d, other:%d",
+			ready.ID,
+			other.ID)
+		Log.Info(reason)
+	}
 	return
 }
 
@@ -99,10 +101,12 @@ type RuleIsolated struct {
 // Match determines the match.
 func (r *RuleIsolated) Match(ready, other *Task) (matched bool, reason string) {
 	matched = ready.Policy.Isolated || other.Policy.Isolated
-	reason = fmt.Sprintf(
-		"Rule:Isolated matched:%d, other:%d",
-		ready.ID,
-		other.ID)
-	Log.Info(reason)
+	if matched {
+		reason = fmt.Sprintf(
+			"Rule:Isolated matched:%d, other:%d",
+			ready.ID,
+			other.ID)
+		Log.Info(reason)
+	}
 	return
 }
