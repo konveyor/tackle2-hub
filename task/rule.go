@@ -54,7 +54,7 @@ func (r *RuleDeps) Match(ready, other *Task) (matched bool, reason string) {
 	if *ready.ApplicationID != *other.ApplicationID {
 		return
 	}
-	def, found := r.cluster.tasks[ready.Kind]
+	def, found := r.cluster.Task(ready.Kind)
 	if !found {
 		return
 	}
