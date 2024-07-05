@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
-	"net/http"
 )
 
 //
@@ -102,7 +103,7 @@ type Login struct {
 // been granted the necessary scope to access a resource.
 func Required(scope string) func(*gin.Context) {
 	return func(ctx *gin.Context) {
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		token := ctx.GetHeader(Authorization)
 		request := &auth.Request{
 			Token:  token,

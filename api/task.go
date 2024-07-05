@@ -2,19 +2,20 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/model"
-	tasking "github.com/konveyor/tackle2-hub/task"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"io/ioutil"
-	k8serr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/model"
+	tasking "github.com/konveyor/tackle2-hub/task"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/strings/slices"
 )
 
 //
@@ -114,7 +115,6 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	if locator != "" {
 		db = db.Where("locator", locator)
 	}
-	db = db.Preload(clause.Associations)
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)

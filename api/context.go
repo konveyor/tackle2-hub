@@ -1,12 +1,20 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
 	"gorm.io/gorm"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+//
+// Response values.
+type Response struct {
+	Status int
+	Body   interface{}
+}
 
 //
 // Context custom settings.
@@ -24,11 +32,15 @@ type Context struct {
 	Response Response
 }
 
-//
-// Response values.
-type Response struct {
-	Status int
-	Body   interface{}
+// Attach to gin context.
+func (r *Context) Attach(ctx *gin.Context) {
+	r.Context = ctx
+	ctx.Set("RichContext", r)
+}
+
+// Detach from gin context
+func (r *Context) Detach() {
+	delete(r.Context.Keys, "RichContext")
 }
 
 //
@@ -50,17 +62,17 @@ func (r *Context) Respond(status int, body interface{}) {
 }
 
 //
-// WithContext is a rich context.
-func WithContext(ctx *gin.Context) (n *Context) {
+// RichContext returns a rich context attached to the gin context.
+func RichContext(ctx *gin.Context) (rtx *Context) {
 	key := "RichContext"
 	object, found := ctx.Get(key)
 	if !found {
-		n = &Context{}
-		ctx.Set(key, n)
+		rtx = &Context{}
+		rtx.Attach(ctx)
 	} else {
-		n = object.(*Context)
+		rtx = object.(*Context)
 	}
-	n.Context = ctx
+	rtx.Context = ctx
 	return
 }
 
@@ -72,7 +84,7 @@ func Transaction(ctx *gin.Context) {
 		http.MethodPut,
 		http.MethodPatch,
 		http.MethodDelete:
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		err := rtx.DB.Transaction(func(tx *gorm.DB) (err error) {
 			db := rtx.DB
 			rtx.DB = tx
@@ -96,7 +108,7 @@ func Transaction(ctx *gin.Context) {
 func Render() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		if rtx.Response.Body != nil {
 			ctx.Negotiate(
 				rtx.Response.Status,
