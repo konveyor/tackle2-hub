@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
@@ -16,11 +21,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
-	"io"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var Log = logr.WithName("api")
@@ -37,7 +38,7 @@ type BaseHandler struct{}
 //
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	db = rtx.DB.Debug()
 	return
 }
@@ -45,7 +46,7 @@ func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 //
 // Client returns k8s client from the context.
 func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	client = rtx.Client
 	return
 }
@@ -136,7 +137,7 @@ func (h *BaseHandler) modBody(
 //
 // CurrentUser gets username from Keycloak auth token.
 func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	user = rtx.User
 	if user == "" {
 		Log.Info("Failed to get current user.")
@@ -150,7 +151,7 @@ func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
 	in := auth.BaseScope{}
 	in.With(scope)
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	for _, s := range rtx.Scopes {
 		b = s.Match(in.Resource, in.Method)
 		if b {
@@ -258,14 +259,14 @@ func (h *BaseHandler) Decoder(ctx *gin.Context, encoding string, r io.Reader) (d
 //
 // Status sets the status code.
 func (h *BaseHandler) Status(ctx *gin.Context, code int) {
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	rtx.Status(code)
 }
 
 //
 // Respond sets the response.
 func (h *BaseHandler) Respond(ctx *gin.Context, code int, r interface{}) {
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	rtx.Respond(code, r)
 }
 

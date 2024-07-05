@@ -2,6 +2,9 @@ package api
 
 import (
 	"errors"
+	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/konveyor/tackle2-hub/api/filter"
@@ -9,8 +12,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
 )
 
 //
@@ -92,7 +93,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		err := ctx.Errors[0]
 
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		if errors.Is(err, &BadRequestError{}) ||
 			errors.Is(err, &filter.Error{}) ||
 			errors.Is(err, &sort.SortError{}) ||

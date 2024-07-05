@@ -62,17 +62,17 @@ func (r *Context) Respond(status int, body interface{}) {
 }
 
 //
-// WithContext is a rich context.
-func WithContext(ctx *gin.Context) (n *Context) {
+// RichContext returns a rich context attached to the gin context.
+func RichContext(ctx *gin.Context) (rtx *Context) {
 	key := "RichContext"
 	object, found := ctx.Get(key)
 	if !found {
-		n = &Context{}
-		n.Attach(ctx)
+		rtx = &Context{}
+		rtx.Attach(ctx)
 	} else {
-		n = object.(*Context)
+		rtx = object.(*Context)
 	}
-	n.Context = ctx
+	rtx.Context = ctx
 	return
 }
 
@@ -84,7 +84,7 @@ func Transaction(ctx *gin.Context) {
 		http.MethodPut,
 		http.MethodPatch,
 		http.MethodDelete:
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		err := rtx.DB.Transaction(func(tx *gorm.DB) (err error) {
 			db := rtx.DB
 			rtx.DB = tx
@@ -108,7 +108,7 @@ func Transaction(ctx *gin.Context) {
 func Render() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		if rtx.Response.Body != nil {
 			ctx.Negotiate(
 				rtx.Response.Status,

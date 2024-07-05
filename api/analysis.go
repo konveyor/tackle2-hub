@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
@@ -13,12 +20,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"io"
-	"net/http"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 //
@@ -2143,7 +2144,7 @@ type AnalysisWriter struct {
 //
 // db returns a db client.
 func (r *AnalysisWriter) db() (db *gorm.DB) {
-	rtx := WithContext(r.ctx)
+	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }
@@ -2288,7 +2289,7 @@ type ReportWriter struct {
 //
 // db returns a db client.
 func (r *ReportWriter) db() (db *gorm.DB) {
-	rtx := WithContext(r.ctx)
+	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }

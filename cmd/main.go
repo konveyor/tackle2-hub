@@ -198,7 +198,7 @@ func main() {
 	router := gin.Default()
 	router.Use(
 		func(ctx *gin.Context) {
-			rtx := api.WithContext(ctx)
+			rtx := api.RichContext(ctx)
 			rtx.DB = db
 			rtx.Client = client
 			ctx.Next()
