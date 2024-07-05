@@ -1232,15 +1232,18 @@ func (r *Task) podPending(pod *core.Pod) {
 	status = append(
 		status,
 		pod.Status.ContainerStatuses...)
+	started := 0
 	for _, status := range status {
 		if status.Started == nil {
 			continue
 		}
 		if *status.Started {
-			r.Event(PodRunning)
-			r.State = Running
-			return
+			started++
 		}
+	}
+	if started > 0 {
+		r.Event(PodRunning)
+		r.State = Running
 	}
 }
 
