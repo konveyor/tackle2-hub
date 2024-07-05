@@ -249,7 +249,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	tr := trigger.Application{
 		Trigger: trigger.Trigger{
 			TaskManager: rtx.TaskManager,
@@ -388,7 +388,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	tr := trigger.Application{
 		Trigger: trigger.Trigger{
 			TaskManager: rtx.TaskManager,

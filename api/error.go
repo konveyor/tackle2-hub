@@ -89,7 +89,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		err := ctx.Errors[0]
 
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		if errors.Is(err, &BadRequestError{}) ||
 			errors.Is(err, &filter.Error{}) ||
 			errors.Is(err, &sort.SortError{}) ||

@@ -198,15 +198,17 @@ func main() {
 	}
 	// Web
 	router := gin.Default()
-	router.Use(api.Render())
-	router.Use(api.ErrorHandler())
 	router.Use(
 		func(ctx *gin.Context) {
-			rtx := api.WithContext(ctx)
+			rtx := api.RichContext(ctx)
+			rtx.TaskManager = &taskManager
 			rtx.DB = db
 			rtx.Client = client
-			rtx.TaskManager = &taskManager
+			ctx.Next()
+			rtx.Detach()
 		})
+	router.Use(api.Render())
+	router.Use(api.ErrorHandler())
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}

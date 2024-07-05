@@ -2403,7 +2403,7 @@ func (r *IssueWriter) Create(id uint, filter qf.Filter) (path string, count int6
 
 // db returns a db client.
 func (r *IssueWriter) db() (db *gorm.DB) {
-	rtx := WithContext(r.ctx)
+	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }
@@ -2477,7 +2477,7 @@ type AnalysisWriter struct {
 
 // db returns a db client.
 func (r *AnalysisWriter) db() (db *gorm.DB) {
-	rtx := WithContext(r.ctx)
+	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }
@@ -2615,7 +2615,7 @@ type ReportWriter struct {
 
 // db returns a db client.
 func (r *ReportWriter) db() (db *gorm.DB) {
-	rtx := WithContext(r.ctx)
+	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }

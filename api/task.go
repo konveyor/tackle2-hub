@@ -288,7 +288,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	task := &tasking.Task{}
 	task.With(r.Model())
 	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
@@ -312,7 +312,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 // @param id path int true "Task ID"
 func (h TaskHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	err := rtx.TaskManager.Delete(h.DB(ctx), id)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -355,7 +355,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	task := &tasking.Task{}
 	task.With(m)
 	err = rtx.TaskManager.Update(h.DB(ctx), task)
@@ -393,7 +393,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 // @param id path int true "Task ID"
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	err := rtx.TaskManager.Cancel(h.DB(ctx), id)
 	if err != nil {
 		_ = ctx.Error(err)

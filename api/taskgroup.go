@@ -142,7 +142,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			_ = ctx.Error(result.Error)
 			return
 		}
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		for i := range m.Tasks {
 			task := &tasking.Task{}
 			task.With(&m.Tasks[i])
@@ -234,7 +234,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
-		rtx := WithContext(ctx)
+		rtx := RichContext(ctx)
 		for i := range m.Tasks {
 			task := &tasking.Task{}
 			task.With(&m.Tasks[i])
@@ -273,7 +273,7 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
 		err = rtx.TaskManager.Delete(h.DB(ctx), task.ID)
