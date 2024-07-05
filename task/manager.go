@@ -1121,7 +1121,7 @@ func (r *Task) Run(cluster *Cluster) (started bool, err error) {
 	pod := r.pod(
 		addon,
 		extensions,
-		cluster.tackle,
+		cluster.Tackle(),
 		&secret)
 	err = client.Create(context.TODO(), &pod)
 	if err != nil {
