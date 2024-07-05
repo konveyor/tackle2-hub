@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -100,6 +101,7 @@ type Manager struct {
 func (m *Manager) Run(ctx context.Context) {
 	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
+	m.cluster.mutex = &sync.RWMutex{}
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
@@ -396,6 +398,8 @@ func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
 // - priority
 // The priority is defaulted to the kind as needed.
 func (m *Manager) findRefs(task *Task) (err error) {
+	m.cluster.mutex.RLock()
+	defer m.cluster.mutex.RUnlock()
 	if Settings.Disconnected {
 		return
 	}
@@ -467,6 +471,8 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 
 // selectAddon select an addon when not specified.
 func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
+	m.cluster.mutex.RLock()
+	defer m.cluster.mutex.Unlock()
 	if task.Addon != "" {
 		found := false
 		addon, found = m.cluster.addons[task.Addon]
@@ -501,6 +507,8 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 		return
 	}
 	task.Addon = selected.Name
+	//TODO we are using a pointer to an addon here, that is inside a concurrent map
+	// We use a copy of the data to make sure that we don't mutate in map memory
 	task.Event(AddonSelected, selected)
 	return
 }
@@ -1088,7 +1096,9 @@ func (r *Task) Run(cluster Cluster) (started bool, err error) {
 			err = nil
 		}
 	}()
+	cluster.mutex.RLock()
 	addon, found := cluster.addons[r.Addon]
+	cluster.mutex.RUnlock()
 	if !found {
 		err = &AddonNotFound{Name: r.Addon}
 		return
@@ -1169,7 +1179,9 @@ func (r *Task) Run(cluster Cluster) (started bool, err error) {
 
 // Reflect finds the associated pod and updates the task state.
 func (r *Task) Reflect(cluster Cluster) (pod *core.Pod, found bool) {
+	cluster.mutex.RLock()
 	pod, found = cluster.pods[path.Base(r.Pod)]
+	cluster.mutex.RUnlock()
 	if !found {
 		r.State = Ready
 		r.Event(PodNotFound, r.Pod)
@@ -1601,7 +1613,9 @@ func (p *Priority) Escalate(ready []*Task) (escalated []*Task) {
 
 // graph builds a dependency graph.
 func (p *Priority) graph(task *Task, ready []*Task) (deps []*Task) {
+	p.cluster.mutex.RLock()
 	kind, found := p.cluster.tasks[task.Kind]
+	p.cluster.mutex.RUnlock()
 	if !found {
 		return
 	}
@@ -1644,10 +1658,13 @@ type Cluster struct {
 	addons     map[string]*crd.Addon
 	extensions map[string]*crd.Extension
 	tasks      map[string]*crd.Task
+	mutex      *sync.RWMutex
 	pods       map[string]*core.Pod
 }
 
 func (k *Cluster) Refresh() (err error) {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	if Settings.Hub.Disconnected {
 		k.tackle = &crd.Tackle{}
 		k.addons = make(map[string]*crd.Addon)

@@ -54,7 +54,9 @@ func (r *RuleDeps) Match(ready, other *Task) (matched bool, reason string) {
 	if *ready.ApplicationID != *other.ApplicationID {
 		return
 	}
+	r.cluster.mutex.RLock()
 	def, found := r.cluster.tasks[ready.Kind]
+	r.cluster.mutex.RUnlock()
 	if !found {
 		return
 	}
