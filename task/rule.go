@@ -43,7 +43,7 @@ func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
 
 // RuleDeps - Task kind dependencies.
 type RuleDeps struct {
-	cluster Cluster
+	cluster *Cluster
 }
 
 // Match determines the match.

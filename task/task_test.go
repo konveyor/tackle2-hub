@@ -67,7 +67,7 @@ func TestPriorityEscalate(t *testing.T) {
 	ready = append(ready, task)
 
 	pE := Priority{
-		cluster: Cluster{
+		cluster: &Cluster{
 			tasks: kinds,
 		}}
 
@@ -129,7 +129,7 @@ func TestPriorityGraph(t *testing.T) {
 	ready = append(ready, task)
 
 	pE := Priority{
-		cluster: Cluster{
+		cluster: &Cluster{
 			tasks: kinds,
 		}}
 	deps := pE.graph(ready[0], ready)
