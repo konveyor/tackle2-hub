@@ -135,7 +135,7 @@ type Task struct {
 	Retries       int
 	Attached      []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
 	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
-	ApplicationID *uint
+	ApplicationID *uint        `gorm:"index"`
 	Application   *Application
 	TaskGroupID   *uint `gorm:"<-:create"`
 	TaskGroup     *TaskGroup
