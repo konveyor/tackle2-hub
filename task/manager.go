@@ -117,6 +117,7 @@ func (m *Manager) Run(ctx context.Context) {
 			default:
 				err := m.cluster.Refresh()
 				if err == nil {
+					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
 					m.startReady()
@@ -232,7 +233,7 @@ func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
 			if err != nil {
 				return
 			}
-			err = db.Delete(task).Error
+			err = m.DB.Delete(task).Error
 			return
 		})
 	return
@@ -266,7 +267,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 			if err != nil {
 				return
 			}
-			err = db.Save(task).Error
+			err = m.DB.Save(task).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -852,6 +853,38 @@ func (m *Manager) updateRunning() {
 			return
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
+	}
+}
+
+// deleteOrphanPods finds and deletes task pods not referenced by a task.
+func (m *Manager) deleteOrphanPods() {
+	var err error
+	defer func() {
+		Log.Error(err, "")
+	}()
+	owned := make(map[string]byte)
+	list := []*Task{}
+	db := m.DB.Select("pod")
+	db = db.Where("pod != ''")
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, task := range list {
+		owned[task.Pod] = 0
+	}
+	for _, pod := range m.cluster.Pods() {
+		ref := path.Join(pod.Namespace, pod.Name)
+		if _, found := owned[ref]; !found {
+			Log.Info("Orphan pod found.", "ref", ref)
+			task := Task{&model.Task{}}
+			task.Pod = ref
+			err = task.Delete(m.Client)
+			if err != nil {
+				Log.Error(err, "")
+			}
+		}
 	}
 }
 
@@ -1778,6 +1811,16 @@ func (k *Cluster) Pod(name string) (r *core.Pod, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	r, found = k.pods[name]
+	return
+}
+
+// Pods returns a list of pods.
+func (k *Cluster) Pods() (list []*core.Pod) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
+	for _, r := range k.pods {
+		list = append(list, r)
+	}
 	return
 }
 
