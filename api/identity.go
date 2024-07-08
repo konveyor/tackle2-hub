@@ -208,7 +208,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	rtx := WithContext(ctx)
+	rtx := RichContext(ctx)
 	tr := trigger.Identity{
 		Trigger: trigger.Trigger{
 			TaskManager: rtx.TaskManager,
