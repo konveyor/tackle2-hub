@@ -882,6 +882,7 @@ func (m *Manager) deleteOrphanPods() {
 			task.Pod = ref
 			err = task.Delete(m.Client)
 			if err != nil {
+				err = liberr.Wrap(err)
 				Log.Error(err, "")
 			}
 		}
