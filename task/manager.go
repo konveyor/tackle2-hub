@@ -865,8 +865,7 @@ func (m *Manager) deleteOrphanPods() {
 	owned := make(map[string]byte)
 	list := []*Task{}
 	db := m.DB.Select("pod")
-	db = db.Where("pod != ''")
-	err = db.Find(&list).Error
+	err = db.Find(&list, "pod != ''").Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
