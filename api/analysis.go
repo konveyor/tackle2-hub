@@ -2126,15 +2126,10 @@ type Analysis struct {
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
 	r.Resource.With(&m.Model)
+	r.Application = r.ref(m.ApplicationID, m.Application)
 	r.Effort = m.Effort
 	r.Commit = m.Commit
 	r.Archived = m.Archived
-	r.Application = Ref{
-		ID: m.ApplicationID,
-	}
-	if m.Application != nil {
-		r.Application.Name = m.Application.Name
-	}
 }
 
 // Model builds a model.
