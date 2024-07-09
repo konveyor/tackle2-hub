@@ -147,7 +147,7 @@ func (h AnalysisHandler) List(ctx *gin.Context) {
 	// Find
 	db := h.DB(ctx)
 	db = db.Model(&model.Analysis{})
-	db = db.Preload("Application")
+	db = db.Joins("Application")
 	db = db.Omit("Summary")
 	db = filter.Where(db)
 	db = sort.Sorted(db)
@@ -279,7 +279,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Analysis{})
 	db = db.Where("ApplicationID = ?", id)
-	db = db.Preload("Application")
+	db = db.Joins("Application")
 	db = db.Omit("Summary")
 	db = sort.Sorted(db)
 	var list []model.Analysis
@@ -2114,6 +2114,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
+	Application  Ref              `json:"application"`
 	Effort       int              `json:"effort"`
 	Commit       string           `json:"commit,omitempty" yaml:",omitempty"`
 	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
@@ -2128,6 +2129,12 @@ func (r *Analysis) With(m *model.Analysis) {
 	r.Effort = m.Effort
 	r.Commit = m.Commit
 	r.Archived = m.Archived
+	r.Application = Ref{
+		ID: m.ApplicationID,
+	}
+	if m.Application != nil {
+		r.Application.Name = m.Application.Name
+	}
 }
 
 // Model builds a model.
