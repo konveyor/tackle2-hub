@@ -139,7 +139,7 @@ func (r *Section) Complete() bool {
 // Started returns whether any questions in the section have been answered.
 func (r *Section) Started() bool {
 	for _, q := range r.Questions {
-		if q.Answered() {
+		if q.Answered() && !q.AutoAnswered() {
 			return true
 		}
 	}
@@ -188,6 +188,17 @@ func (r *Question) Risk() string {
 func (r *Question) Answered() bool {
 	for _, a := range r.Answers {
 		if a.Selected {
+			return true
+		}
+	}
+	return false
+}
+
+// AutoAnswered returns whether the question has had an
+// answer pre-selected by the system.
+func (r *Question) AutoAnswered() bool {
+	for _, a := range r.Answers {
+		if a.AutoAnswered {
 			return true
 		}
 	}
