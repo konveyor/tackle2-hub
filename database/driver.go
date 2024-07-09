@@ -221,8 +221,8 @@ func (s *Stmt) Exec(args []driver.Value) (r driver.Result, err error) {
 }
 
 func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (r driver.Result, err error) {
-	if s, cast := s.wrapped.(driver.StmtExecContext); cast {
-		r, err = s.ExecContext(ctx, args)
+	if p, cast := s.wrapped.(driver.StmtExecContext); cast {
+		r, err = p.ExecContext(ctx, args)
 	}
 	return
 }
