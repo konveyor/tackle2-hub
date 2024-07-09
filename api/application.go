@@ -249,18 +249,20 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	rtx := RichContext(ctx)
-	tr := trigger.Application{
-		Trigger: trigger.Trigger{
-			TaskManager: rtx.TaskManager,
-			Client:      rtx.Client,
-			DB:          h.DB(ctx),
-		},
-	}
-	err = tr.Created(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if r.Repository != nil {
+		rtx := RichContext(ctx)
+		tr := trigger.Application{
+			Trigger: trigger.Trigger{
+				TaskManager: rtx.TaskManager,
+				Client:      rtx.Client,
+				DB:          h.DB(ctx),
+			},
+		}
+		err = tr.Created(m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Respond(ctx, http.StatusCreated, r)
@@ -388,18 +390,20 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		}
 	}
 
-	rtx := RichContext(ctx)
-	tr := trigger.Application{
-		Trigger: trigger.Trigger{
-			TaskManager: rtx.TaskManager,
-			Client:      rtx.Client,
-			DB:          h.DB(ctx),
-		},
-	}
-	err = tr.Updated(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if r.Repository != nil {
+		rtx := RichContext(ctx)
+		tr := trigger.Application{
+			Trigger: trigger.Trigger{
+				TaskManager: rtx.TaskManager,
+				Client:      rtx.Client,
+				DB:          h.DB(ctx),
+			},
+		}
+		err = tr.Updated(m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Status(ctx, http.StatusNoContent)
