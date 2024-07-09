@@ -34,7 +34,8 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 		q = q.Select("MAX(ID) id")
 		cursor, err := q.Rows()
 		if err != nil || !cursor.Next() {
-			r.add(db, kind, uint(0))
+			// not a table with id.
+			// discarded.
 			continue
 		}
 		id := int64(0)
