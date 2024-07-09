@@ -54,6 +54,7 @@ const (
 	ImageError    = "ImageError"
 	PodNotFound   = "PodNotFound"
 	PodCreated    = "PodCreated"
+	PodPending    = "PodPending"
 	PodRunning    = "PodRunning"
 	Preempted     = "Preempted"
 	PodSucceeded  = "PodSucceeded"
@@ -1271,6 +1272,13 @@ func (r *Task) podPending(pod *core.Pod) {
 		status,
 		pod.Status.ContainerStatuses...)
 	started := 0
+	for _, cnd := range pod.Status.Conditions {
+		if cnd.Type == core.PodScheduled &&
+			cnd.Reason == core.PodReasonUnschedulable {
+			r.Event(PodPending, cnd.Message)
+			return
+		}
+	}
 	for _, status := range status {
 		state := status.State
 		if state.Waiting != nil {
@@ -1287,6 +1295,8 @@ func (r *Task) podPending(pod *core.Pod) {
 				r.Event(ImageError, waiting.Reason)
 				r.State = Failed
 				return
+			} else {
+				r.Event(PodPending, waiting.Reason)
 			}
 		}
 		if status.Started == nil {
