@@ -62,8 +62,11 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 		return
 	}
 	m.LastID++
-	db.Save(m)
 	id = m.LastID
+	err = db.Save(m).Error
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
