@@ -25,6 +25,9 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 	defer r.mutex.Unlock()
 	for _, m := range models {
 		mt := reflect.TypeOf(m)
+		if mt.Kind() == reflect.Ptr {
+			mt = mt.Elem()
+		}
 		kind := strings.ToUpper(mt.Name())
 		db = r.session(db)
 		q := db.Table(kind)
@@ -88,10 +91,11 @@ func (r *PkSequence) add(db *gorm.DB, kind string, id uint) {
 			panic(err)
 		}
 	}
-	if m.LastID >= id {
+	if m.LastID > id {
 		return
 	}
 	m.LastID = id
+	db = r.session(db)
 	err = db.Save(m).Error
 	if err != nil {
 		panic(err)
@@ -141,7 +145,6 @@ func assignPk(db *gorm.DB) {
 					statement.Context,
 					statement.ReflectValue,
 					id)
-
 			}
 			break
 		}

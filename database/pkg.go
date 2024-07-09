@@ -51,7 +51,7 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		return
 	}
 	sqlDB.SetMaxOpenConns(1)
-	err = db.AutoMigrate(model.Setting{}, model.PK{})
+	err = db.AutoMigrate(model.PK{}, model.Setting{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
