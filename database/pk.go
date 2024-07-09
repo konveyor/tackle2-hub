@@ -63,6 +63,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	return
 }
 
+// session returns a new DB with a new session.
 func (r *PkSequence) session(in *gorm.DB) (out *gorm.DB) {
 	out = &gorm.DB{
 		Config: in.Config,
@@ -77,6 +78,7 @@ func (r *PkSequence) session(in *gorm.DB) (out *gorm.DB) {
 	return
 }
 
+// add the last (higher) id for the kind.
 func (r *PkSequence) add(db *gorm.DB, kind string, id uint) {
 	m := &model.PK{Kind: kind}
 	db = r.session(db)
