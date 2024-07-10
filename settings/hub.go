@@ -167,7 +167,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Reaper.Failed = n
 	} else {
-		r.Task.Reaper.Failed = 10080 // 168 hours (7 days).
+		r.Task.Reaper.Failed = 43200 // 720 hours (30 days).
 	}
 	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
 	if !found {
