@@ -9,6 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 // PK singleton pk sequence.
@@ -75,6 +76,7 @@ func (r *PkSequence) session(in *gorm.DB) (out *gorm.DB) {
 	out = &gorm.DB{
 		Config: in.Config,
 	}
+	out.Config.Logger.LogMode(logger.Warn)
 	out.Statement = &gorm.Statement{
 		DB:       out,
 		ConnPool: in.Statement.ConnPool,
