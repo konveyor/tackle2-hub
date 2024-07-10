@@ -2,6 +2,7 @@ package reaper
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jortel/go-utils/logr"
@@ -31,7 +32,7 @@ type Manager struct {
 }
 
 // Run the manager.
-func (m *Manager) Run(ctx context.Context) {
+func (m *Manager) Run(ctx context.Context, wg *sync.WaitGroup) {
 	registered := []Reaper{
 		&TaskReaper{
 			Client: m.Client,
@@ -50,24 +51,24 @@ func (m *Manager) Run(ctx context.Context) {
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Died.")
+		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-time.After(m.pause()):
 				for _, r := range registered {
 					r.Run()
 				}
-				m.pause()
 			}
 		}
 	}()
 }
 
 // Pause.
-func (m *Manager) pause() {
-	d := Unit * time.Duration(Settings.Frequency.Reaper)
-	time.Sleep(d)
+func (m *Manager) pause() (d time.Duration) {
+	d = Unit * time.Duration(Settings.Frequency.Reaper)
+	return
 }
 
 // Reaper interface.

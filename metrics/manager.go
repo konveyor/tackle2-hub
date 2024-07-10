@@ -2,15 +2,22 @@ package metrics
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
 
 var (
-	Log = logr.WithName("metrics")
+	Settings = &settings.Settings
+	Log      = logr.WithName("metrics")
+)
+
+const (
+	Unit = time.Second
 )
 
 // Manager provides metrics management.
@@ -20,20 +27,26 @@ type Manager struct {
 }
 
 // Run the manager.
-func (m *Manager) Run(ctx context.Context) {
+func (m *Manager) Run(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Died.")
+		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-time.After(m.pause()):
 				time.Sleep(time.Second * 30)
 				m.gaugeApplications()
 			}
 		}
 	}()
+}
+
+func (m *Manager) pause() (d time.Duration) {
+	d = Unit * time.Duration(Settings.Frequency.Metrics)
+	return
 }
 
 // gaugeApplications reports the number of applications in inventory

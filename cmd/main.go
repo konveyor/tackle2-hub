@@ -15,6 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
+	"github.com/konveyor/tackle2-hub/lifecycle"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/reaper"
@@ -155,20 +156,22 @@ func main() {
 			settings.Settings.Auth.Keycloak.Realm,
 		)
 	}
+
+	lf := lifecycle.NewManager(db)
 	//
 	// Task
 	taskManager := task.Manager{
 		Client: client,
 		DB:     db,
 	}
-	taskManager.Run(context.Background())
+	lf.Register(&taskManager)
 	//
 	// Reaper
 	reaperManager := reaper.Manager{
 		Client: client,
 		DB:     db,
 	}
-	reaperManager.Run(context.Background())
+	lf.Register(&reaperManager)
 	//
 	// Application import.
 	importManager := importer.Manager{
@@ -176,28 +179,36 @@ func main() {
 		TaskManager: &taskManager,
 		Client:      client,
 	}
-	importManager.Run(context.Background())
+	lf.Register(&importManager)
 	//
 	// Ticket trackers.
 	trackerManager := tracker.Manager{
 		DB: db,
 	}
-	trackerManager.Run(context.Background())
+	lf.Register(&trackerManager)
+
 	//
 	// Metrics
 	if Settings.Metrics.Enabled {
 		log.Info("Serving Prometheus metrics", "port", Settings.Metrics.Port)
-		http.Handle("/metrics", api.MetricsHandler())
-		go func() {
-			_ = http.ListenAndServe(Settings.Metrics.Address(), nil)
-		}()
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", api.MetricsHandler())
 		metricsManager := metrics.Manager{
 			DB: db,
 		}
-		metricsManager.Run(context.Background())
+		metricsServer := api.Server{
+			Handler: mux,
+			Address: Settings.Metrics.Address(),
+			Name:    "metrics",
+		}
+		lf.Register(&metricsServer)
+		lf.Register(&metricsManager)
 	}
+
 	// Web
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 	router.Use(
 		func(ctx *gin.Context) {
 			rtx := api.RichContext(ctx)
@@ -212,5 +223,21 @@ func main() {
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
-	err = router.Run()
+	server := api.Server{
+		Handler: router.Handler(),
+		Address: ":8080",
+		Name:    "api",
+	}
+	lf.Register(&server)
+	lf.Run()
+
+	// Recovery
+	recovery := gin.New()
+	recovery.Use(gin.Logger())
+	recovery.Use(gin.Recovery())
+	handler := api.RecoveryHandler{
+		Manager: lf,
+	}
+	handler.AddRoutes(recovery)
+	err = recovery.Run(Settings.Recovery.Address)
 }

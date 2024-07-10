@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sync"
 
 	"strings"
 	"time"
@@ -32,8 +33,9 @@ type Manager struct {
 }
 
 // Run the manager.
-func (m *Manager) Run(ctx context.Context) {
+func (m *Manager) Run(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
+		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():

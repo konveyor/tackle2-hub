@@ -12,6 +12,7 @@ type TackleSettings struct {
 	Metrics
 	Addon
 	Auth
+	Lifecycle
 }
 
 func (r *TackleSettings) Load() (err error) {
@@ -28,6 +29,10 @@ func (r *TackleSettings) Load() (err error) {
 		return
 	}
 	err = r.Metrics.Load()
+	if err != nil {
+		return
+	}
+	err = r.Lifecycle.Load()
 	if err != nil {
 		return
 	}

@@ -27,6 +27,8 @@ const (
 	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
+	EnvFrequencyTracker        = "FREQUENCY_TRACKER"
+	EnvFrequencyMetrics        = "FREQUENCY_METRICS"
 	EnvDevelopment             = "DEVELOPMENT"
 	EnvBucketTTL               = "BUCKET_TTL"
 	EnvFileTTL                 = "FILE_TTL"
@@ -87,9 +89,11 @@ type Hub struct {
 	}
 	// Frequency
 	Frequency struct {
-		Task   int
-		Reaper int
-		Volume int
+		Task    int
+		Reaper  int
+		Volume  int
+		Tracker int
+		Metrics int
 	}
 	// Development environment
 	Development bool
@@ -193,6 +197,20 @@ func (r *Hub) Load() (err error) {
 		r.Frequency.Reaper = n
 	} else {
 		r.Frequency.Reaper = 1 // 1 minute.
+	}
+	s, found = os.LookupEnv(EnvFrequencyTracker)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Tracker = n
+	} else {
+		r.Frequency.Tracker = 1 // 1 second.
+	}
+	s, found = os.LookupEnv(EnvFrequencyMetrics)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Metrics = n
+	} else {
+		r.Frequency.Metrics = 30 // 30 seconds.
 	}
 	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
 	if found {

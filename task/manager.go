@@ -97,35 +97,44 @@ type Manager struct {
 	cluster Cluster
 	// queue of actions.
 	queue chan func()
+	// validator registered
+	registered bool
 }
 
-// Run the manager.
-func (m *Manager) Run(ctx context.Context) {
-	m.queue = make(chan func(), 100)
-	m.cluster.Client = m.Client
+func (m *Manager) registerValidator() {
+	if m.registered {
+		return
+	}
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
 			Client: m.Client,
 		})
+	m.registered = true
+}
+
+// Run the manager.
+func (m *Manager) Run(ctx context.Context, wg *sync.WaitGroup) {
+	m.queue = make(chan func(), 100)
+	m.cluster.Client = m.Client
+	m.registerValidator()
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Done.")
+		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-time.After(m.pause()):
 				err := m.cluster.Refresh()
 				if err == nil {
 					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
 					m.startReady()
-					m.pause()
 				} else {
 					Log.Error(err, "")
-					m.pause()
 				}
 			}
 		}
@@ -279,9 +288,9 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 }
 
 // Pause.
-func (m *Manager) pause() {
-	d := Unit * time.Duration(Settings.Frequency.Task)
-	time.Sleep(d)
+func (m *Manager) pause() (d time.Duration) {
+	d = Unit * time.Duration(Settings.Frequency.Task)
+	return
 }
 
 // action enqueues an asynchronous action.
