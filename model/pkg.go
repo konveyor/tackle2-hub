@@ -56,6 +56,7 @@ type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent
 type TaskPolicy = model.TaskPolicy
 type Attachment = model.Attachment
+type Repository = model.Repository
 
 // Join tables
 type ApplicationTag = model.ApplicationTag

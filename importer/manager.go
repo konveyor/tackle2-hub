@@ -344,22 +344,19 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		imp.ErrorMessage = result.Error.Error()
 		return
 	}
-
-	if repository.URL != "" {
-		// best effort
-		tr := trigger.Application{
-			Trigger: trigger.Trigger{
-				TaskManager: m.TaskManager,
-				Client:      m.Client,
-				DB:          m.DB,
-			},
-		}
-		err := tr.Created(app)
-		if err != nil {
-			imp.ErrorMessage = fmt.Sprintf(
-				"Failed to launch discovery tasks for Application '%s'.",
-				app.Name)
-		}
+	// best effort
+	tr := trigger.Application{
+		Trigger: trigger.Trigger{
+			TaskManager: m.TaskManager,
+			Client:      m.Client,
+			DB:          m.DB,
+		},
+	}
+	err := tr.Created(app)
+	if err != nil {
+		imp.ErrorMessage = fmt.Sprintf(
+			"Failed to launch discovery tasks for Application '%s'.",
+			app.Name)
 	}
 
 	ok = true
