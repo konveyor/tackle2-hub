@@ -91,3 +91,117 @@ func TestPrepareSections(t *testing.T) {
 	g.Expect(questions[2].Answers[0].AutoAnswered).To(gomega.BeTrue())
 	g.Expect(questions[2].Answers[0].Selected).To(gomega.BeTrue())
 }
+
+func TestAssessmentStarted(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	assessment := Assessment{
+		Sections: []Section{
+			{
+				Questions: []Question{
+					{
+						Text: "S1Q1",
+						Answers: []Answer{
+							{
+								Text:     "A1",
+								Selected: true,
+							},
+							{
+								Text: "A2",
+							},
+						},
+					},
+					{
+						Text: "S1Q2",
+						Answers: []Answer{
+							{
+								Text: "A1",
+							},
+							{
+								Text: "A2",
+							},
+						},
+					},
+				},
+			},
+			{
+				Questions: []Question{
+					{
+						Text: "S2Q1",
+						Answers: []Answer{
+							{
+								Text: "A1",
+							},
+							{
+								Text: "A2",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	g.Expect(assessment.Started()).To(gomega.BeTrue())
+	g.Expect(assessment.Status()).To(gomega.Equal(StatusStarted))
+	assessment.Sections[0].Questions[0].Answers[0].AutoAnswered = true
+	g.Expect(assessment.Started()).To(gomega.BeFalse())
+	g.Expect(assessment.Status()).To(gomega.Equal(StatusEmpty))
+}
+
+func TestAssessmentComplete(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	assessment := Assessment{
+		Sections: []Section{
+			{
+				Questions: []Question{
+					{
+						Text: "S1Q1",
+						Answers: []Answer{
+							{
+								Text: "A1",
+							},
+							{
+								Text: "A2",
+							},
+						},
+					},
+					{
+						Text: "S1Q2",
+						Answers: []Answer{
+							{
+								Text:     "A1",
+								Selected: true,
+							},
+							{
+								Text: "A2",
+							},
+						},
+					},
+				},
+			},
+			{
+				Questions: []Question{
+					{
+						Text: "S2Q1",
+						Answers: []Answer{
+							{
+								Text: "A1",
+							},
+							{
+								Text:         "A2",
+								Selected:     true,
+								AutoAnswered: true,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	g.Expect(assessment.Complete()).To(gomega.BeFalse())
+	g.Expect(assessment.Status()).To(gomega.Equal(StatusStarted))
+	assessment.Sections[0].Questions[0].Answers[0].Selected = true
+	g.Expect(assessment.Complete()).To(gomega.BeTrue())
+	g.Expect(assessment.Status()).To(gomega.Equal(StatusComplete))
+}
