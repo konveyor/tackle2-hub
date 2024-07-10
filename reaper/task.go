@@ -146,6 +146,10 @@ func (r *TaskReaper) release(m *model.Task) {
 		m.SetBucket(nil)
 		nChanged++
 	}
+	if len(m.Attached) > 0 {
+		m.Attached = nil
+		nChanged++
+	}
 	if nChanged > 0 {
 		rt := task.Task{Task: m}
 		rt.Event(task.Released)
