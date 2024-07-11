@@ -138,6 +138,8 @@ func (h AnalysisHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	filter = filter.Renamed("id", "analysis\\.id")
+	// sort.
 	sort := Sort{}
 	err = sort.With(ctx, &model.Analysis{})
 	if err != nil {
