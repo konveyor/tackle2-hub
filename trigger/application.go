@@ -23,6 +23,9 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	if !Settings.Discovery.Enabled {
 		return
 	}
+	if len(m.Repository) == 0 || string(m.Repository) == "null" {
+		return
+	}
 	kinds, err := r.FindTasks(Settings.Discovery.Label)
 	if err != nil {
 		return
@@ -30,7 +33,7 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	for _, kind := range kinds {
 		t := &tasking.Task{Task: &model.Task{}}
 		t.Kind = kind.Name
-		t.Name = fmt.Sprintf("%s-%s", m.Name, t.Name)
+		t.Name = fmt.Sprintf("%s-%s", m.Name, t.Kind)
 		t.ApplicationID = &m.ID
 		t.State = tasking.Ready
 		err = r.TaskManager.Create(r.DB, t)
