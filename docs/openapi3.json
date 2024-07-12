@@ -158,6 +158,62 @@
         }
       }
     },
+    "/analyses/incidents": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List all incidents.",
+        "description": "List all incidents.\nfilters:\n- file\n- issue.id",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Incident"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/incidents/{id}": {
+      "get": {
+        "tags": [
+          "issue"
+        ],
+        "summary": "Get an incident.",
+        "description": "Get an incident.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Issue ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Incident"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/analyses/issues": {
       "get": {
         "tags": [
@@ -419,6 +475,102 @@
           "204": {
             "description": "No Content",
             "content": {}
+          }
+        }
+      }
+    },
+    "/analyses/{id}/archive": {
+      "post": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Archive an analysis (report) by ID.",
+        "description": "Archive an analysis (report) by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Analysis ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/analyses/{id}/dependencies": {
+      "get": {
+        "tags": [
+          "dependencies"
+        ],
+        "summary": "List analysis dependencies.",
+        "description": "List analysis dependencies.\nfilters:\n- name\n- version\n- sha\n- indirect\n- labels",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Analysis ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.TechDependency"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyses/{id}/issues": {
+      "get": {
+        "tags": [
+          "issues"
+        ],
+        "summary": "List issues for an analysis.",
+        "description": "List issues for an analysis.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Analysis ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Issue"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2449,6 +2601,30 @@
                 }
               }
             }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "file"
+        ],
+        "summary": "Append a file.",
+        "description": "Append a file.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "File ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
           }
         }
       },
@@ -5004,7 +5180,7 @@
           "taskgroups"
         ],
         "summary": "Submit a task group.",
-        "description": "Submit a task group.",
+        "description": "Patch and submit a task group.",
         "parameters": [
           {
             "name": "id",
@@ -5041,8 +5217,8 @@
         "tags": [
           "tasks"
         ],
-        "summary": "List all tasks.",
-        "description": "List all tasks.",
+        "summary": "Queued queued task report.",
+        "description": "Queued queued task report.\nFilters:\n- addon",
         "responses": {
           "200": {
             "description": "OK",
@@ -5051,7 +5227,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Task"
+                    "$ref": "#/components/schemas/api.TaskQueue"
                   }
                 }
               }
@@ -5151,8 +5327,8 @@
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "No Content",
+          "200": {
+            "description": "OK",
             "content": {}
           }
         },
@@ -5178,6 +5354,32 @@
         "responses": {
           "204": {
             "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/tasks/{id}/attached": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get attached files.",
+        "description": "Get attached files.\nReturns a tarball with attached files.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Task ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
             "content": {}
           }
         }
@@ -5311,8 +5513,8 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content",
+          "202": {
+            "description": "Accepted",
             "content": {}
           }
         }
@@ -5348,15 +5550,9 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/api.TaskReport"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content",
+            "content": {}
           }
         },
         "x-codegen-request-body-name": "task"
@@ -5434,7 +5630,7 @@
           "tasks"
         ],
         "summary": "Submit a task.",
-        "description": "Submit a task.",
+        "description": "Patch and submit a task.",
         "parameters": [
           {
             "name": "id",
@@ -5458,8 +5654,8 @@
           "required": false
         },
         "responses": {
-          "204": {
-            "description": "No Content",
+          "200": {
+            "description": "OK",
             "content": {}
           }
         },
@@ -5850,8 +6046,17 @@
       "api.Addon": {
         "type": "object",
         "properties": {
-          "image": {
-            "type": "string"
+          "container": {
+            "$ref": "#/components/schemas/v1.Container"
+          },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Extension"
+            }
+          },
+          "metadata": {
+            "type": "object"
           },
           "name": {
             "type": "string"
@@ -5861,8 +6066,14 @@
       "api.Analysis": {
         "type": "object",
         "properties": {
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
           "archived": {
             "type": "boolean"
+          },
+          "commit": {
+            "type": "string"
           },
           "createTime": {
             "type": "string"
@@ -6090,6 +6301,9 @@
           "questionnaire": {
             "$ref": "#/components/schemas/api.Ref"
           },
+          "required": {
+            "type": "boolean"
+          },
           "risk": {
             "type": "string",
             "description": "read only"
@@ -6122,6 +6336,23 @@
             "$ref": "#/components/schemas/assessment.Thresholds"
           },
           "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Attachment": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "activity": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
             "type": "string"
           }
         }
@@ -6282,6 +6513,29 @@
           }
         }
       },
+      "api.Extension": {
+        "type": "object",
+        "properties": {
+          "addon": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "container": {
+            "$ref": "#/components/schemas/v1.Container"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "api.Fact": {
         "type": "object",
         "properties": {
@@ -6298,11 +6552,15 @@
       },
       "api.FactMap": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": {
+          "type": "object"
+        }
       },
       "api.Fields": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": {
+          "type": "object"
+        }
       },
       "api.File": {
         "type": "object",
@@ -6391,7 +6649,9 @@
       },
       "api.Import": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": {
+          "type": "object"
+        }
       },
       "api.ImportSummary": {
         "type": "object",
@@ -6449,6 +6709,9 @@
           "id": {
             "type": "integer"
           },
+          "issue": {
+            "type": "integer"
+          },
           "line": {
             "type": "integer"
           },
@@ -6469,6 +6732,9 @@
         ],
         "type": "object",
         "properties": {
+          "analysis": {
+            "type": "integer"
+          },
           "category": {
             "type": "string"
           },
@@ -6692,6 +6958,10 @@
         }
       },
       "api.MigrationWave": {
+        "required": [
+          "endDate",
+          "startDate"
+        ],
         "type": "object",
         "properties": {
           "applications": {
@@ -6822,6 +7092,7 @@
             "$ref": "#/components/schemas/assessment.RiskMessages"
           },
           "sections": {
+            "minItems": 1,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/assessment.Section"
@@ -7170,9 +7441,6 @@
           "pending": {
             "type": "integer"
           },
-          "postponed": {
-            "type": "integer"
-          },
           "running": {
             "type": "integer"
           },
@@ -7311,10 +7579,6 @@
         }
       },
       "api.Task": {
-        "required": [
-          "addon",
-          "data"
-        ],
         "type": "object",
         "properties": {
           "activity": {
@@ -7329,11 +7593,14 @@
           "application": {
             "$ref": "#/components/schemas/api.Ref"
           },
+          "attached": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Attachment"
+            }
+          },
           "bucket": {
             "$ref": "#/components/schemas/api.Ref"
-          },
-          "canceled": {
-            "type": "boolean"
           },
           "createTime": {
             "type": "string"
@@ -7342,8 +7609,7 @@
             "type": "string"
           },
           "data": {
-            "type": "object",
-            "properties": {}
+            "type": "object"
           },
           "errors": {
             "type": "array",
@@ -7351,10 +7617,22 @@
               "$ref": "#/components/schemas/api.TaskError"
             }
           },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TaskEvent"
+            }
+          },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "integer"
           },
-          "image": {
+          "kind": {
             "type": "string"
           },
           "locator": {
@@ -7367,13 +7645,10 @@
             "type": "string"
           },
           "policy": {
-            "type": "string"
+            "$ref": "#/components/schemas/api.TaskPolicy"
           },
           "priority": {
             "type": "integer"
-          },
-          "purged": {
-            "type": "boolean"
           },
           "retries": {
             "type": "integer"
@@ -7392,9 +7667,6 @@
           },
           "updateUser": {
             "type": "string"
-          },
-          "variant": {
-            "type": "string"
           }
         }
       },
@@ -7405,6 +7677,23 @@
             "type": "string"
           },
           "severity": {
+            "type": "string"
+          }
+        }
+      },
+      "api.TaskEvent": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "last": {
+            "type": "string"
+          },
+          "reason": {
             "type": "string"
           }
         }
@@ -7431,11 +7720,26 @@
             "type": "object",
             "properties": {}
           },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "integer"
           },
+          "kind": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/api.TaskPolicy"
+          },
+          "priority": {
+            "type": "integer"
           },
           "state": {
             "type": "string"
@@ -7451,6 +7755,40 @@
           }
         }
       },
+      "api.TaskPolicy": {
+        "type": "object",
+        "properties": {
+          "isolated": {
+            "type": "boolean"
+          },
+          "preemptEnabled": {
+            "type": "boolean"
+          },
+          "preemptExempt": {
+            "type": "boolean"
+          }
+        }
+      },
+      "api.TaskQueue": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "type": "integer"
+          },
+          "postponed": {
+            "type": "integer"
+          },
+          "ready": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
       "api.TaskReport": {
         "type": "object",
         "properties": {
@@ -7458,6 +7796,12 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "attached": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Attachment"
             }
           },
           "completed": {
@@ -7479,8 +7823,7 @@
             "type": "integer"
           },
           "result": {
-            "type": "object",
-            "properties": {}
+            "type": "object"
           },
           "status": {
             "type": "string"
@@ -7502,6 +7845,9 @@
         ],
         "type": "object",
         "properties": {
+          "analysis": {
+            "type": "integer"
+          },
           "createTime": {
             "type": "string"
           },
@@ -7703,7 +8049,10 @@
           "risk": {
             "type": "string",
             "enum": [
-              "red"
+              "red",
+              "yellow",
+              "green",
+              "unknown"
             ]
           },
           "selected": {
@@ -7732,6 +8081,7 @@
         "type": "object",
         "properties": {
           "answers": {
+            "minItems": 1,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/assessment.Answer"
@@ -7793,6 +8143,7 @@
             "type": "integer"
           },
           "questions": {
+            "minItems": 1,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/assessment.Question"
@@ -7811,6 +8162,955 @@
           },
           "yellow": {
             "type": "integer"
+          }
+        }
+      },
+      "intstr.IntOrString": {
+        "type": "object",
+        "properties": {
+          "intVal": {
+            "type": "integer"
+          },
+          "strVal": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/intstr.Type"
+          }
+        }
+      },
+      "intstr.Type": {
+        "type": "integer",
+        "enum": [
+          0,
+          1
+        ],
+        "x-enum-comments": {
+          "Int": "The IntOrString holds an int.",
+          "String": "The IntOrString holds a string."
+        },
+        "x-enum-varnames": [
+          "Int",
+          "String"
+        ]
+      },
+      "resource.Quantity": {
+        "type": "object",
+        "properties": {
+          "Format": {
+            "type": "string",
+            "enum": [
+              "DecimalExponent",
+              "BinarySI",
+              "DecimalSI"
+            ],
+            "x-enum-varnames": [
+              "DecimalExponent",
+              "BinarySI",
+              "DecimalSI"
+            ],
+            "x-enum-comments": {
+              "BinarySI": "e.g., 12Mi (12 * 2^20)",
+              "DecimalExponent": "e.g., 12e6",
+              "DecimalSI": "e.g., 12M  (12 * 10^6)"
+            }
+          }
+        }
+      },
+      "v1.Capabilities": {
+        "type": "object",
+        "properties": {
+          "add": {
+            "type": "array",
+            "description": "Added capabilities\n+optional",
+            "items": {
+              "type": "string"
+            }
+          },
+          "drop": {
+            "type": "array",
+            "description": "Removed capabilities\n+optional",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "v1.ConfigMapEnvSource": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Specify whether the ConfigMap must be defined\n+optional"
+          }
+        }
+      },
+      "v1.ConfigMapKeySelector": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The key to select."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Specify whether the ConfigMap or its key must be defined\n+optional"
+          }
+        }
+      },
+      "v1.Container": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "array",
+            "description": "Arguments to the entrypoint.\nThe container image's CMD is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
+            "items": {
+              "type": "string"
+            }
+          },
+          "command": {
+            "type": "array",
+            "description": "Entrypoint array. Not executed within a shell.\nThe container image's ENTRYPOINT is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
+            "items": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "type": "array",
+            "description": "List of environment variables to set in the container.\nCannot be updated.\n+optional\n+patchMergeKey=name\n+patchStrategy=merge",
+            "items": {
+              "$ref": "#/components/schemas/v1.EnvVar"
+            }
+          },
+          "envFrom": {
+            "type": "array",
+            "description": "List of sources to populate environment variables in the container.\nThe keys defined within a source must be a C_IDENTIFIER. All invalid keys\nwill be reported as an event when the container is starting. When a key exists in multiple\nsources, the value associated with the last source will take precedence.\nValues defined by an Env with a duplicate key will take precedence.\nCannot be updated.\n+optional",
+            "items": {
+              "$ref": "#/components/schemas/v1.EnvFromSource"
+            }
+          },
+          "image": {
+            "type": "string",
+            "description": "Container image name.\nMore info: https://kubernetes.io/docs/concepts/containers/images\nThis field is optional to allow higher level config management to default or override\ncontainer images in workload controllers like Deployments and StatefulSets.\n+optional"
+          },
+          "imagePullPolicy": {
+            "type": "object",
+            "description": "Image pull policy.\nOne of Always, Never, IfNotPresent.\nDefaults to Always if :latest tag is specified, or IfNotPresent otherwise.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/containers/images#updating-images\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.PullPolicy"
+              }
+            ]
+          },
+          "lifecycle": {
+            "type": "object",
+            "description": "Actions that the management system should take in response to container lifecycle events.\nCannot be updated.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Lifecycle"
+              }
+            ]
+          },
+          "livenessProbe": {
+            "type": "object",
+            "description": "Periodic probe of container liveness.\nContainer will be restarted if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Probe"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the container specified as a DNS_LABEL.\nEach container in a pod must have a unique name (DNS_LABEL).\nCannot be updated."
+          },
+          "ports": {
+            "type": "array",
+            "description": "List of ports to expose from the container. Not specifying a port here\nDOES NOT prevent that port from being exposed. Any port which is\nlistening on the default \"0.0.0.0\" address inside a container will be\naccessible from the network.\nModifying this array with strategic merge patch may corrupt the data.\nFor more information See https://github.com/kubernetes/kubernetes/issues/108255.\nCannot be updated.\n+optional\n+patchMergeKey=containerPort\n+patchStrategy=merge\n+listType=map\n+listMapKey=containerPort\n+listMapKey=protocol",
+            "items": {
+              "$ref": "#/components/schemas/v1.ContainerPort"
+            }
+          },
+          "readinessProbe": {
+            "type": "object",
+            "description": "Periodic probe of container service readiness.\nContainer will be removed from service endpoints if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Probe"
+              }
+            ]
+          },
+          "resources": {
+            "type": "object",
+            "description": "Compute Resources required by this container.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ResourceRequirements"
+              }
+            ]
+          },
+          "securityContext": {
+            "type": "object",
+            "description": "SecurityContext defines the security options the container should be run with.\nIf set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.\nMore info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SecurityContext"
+              }
+            ]
+          },
+          "startupProbe": {
+            "type": "object",
+            "description": "StartupProbe indicates that the Pod has successfully initialized.\nIf specified, no other probes are executed until this completes successfully.\nIf this probe fails, the Pod will be restarted, just as if the livenessProbe failed.\nThis can be used to provide different probe parameters at the beginning of a Pod's lifecycle,\nwhen it might take a long time to load data or warm a cache, than during steady-state operation.\nThis cannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Probe"
+              }
+            ]
+          },
+          "stdin": {
+            "type": "boolean",
+            "description": "Whether this container should allocate a buffer for stdin in the container runtime. If this\nis not set, reads from stdin in the container will always result in EOF.\nDefault is false.\n+optional"
+          },
+          "stdinOnce": {
+            "type": "boolean",
+            "description": "Whether the container runtime should close the stdin channel after it has been opened by\na single attach. When stdin is true the stdin stream will remain open across multiple attach\nsessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the\nfirst client attaches to stdin, and then remains open and accepts data until the client disconnects,\nat which time stdin is closed and remains closed until the container is restarted. If this\nflag is false, a container processes that reads from stdin will never receive an EOF.\nDefault is false\n+optional"
+          },
+          "terminationMessagePath": {
+            "type": "string",
+            "description": "Optional: Path at which the file to which the container's termination message\nwill be written is mounted into the container's filesystem.\nMessage written is intended to be brief final status, such as an assertion failure message.\nWill be truncated by the node if greater than 4096 bytes. The total message length across\nall containers will be limited to 12kb.\nDefaults to /dev/termination-log.\nCannot be updated.\n+optional"
+          },
+          "terminationMessagePolicy": {
+            "type": "object",
+            "description": "Indicate how the termination message should be populated. File will use the contents of\nterminationMessagePath to populate the container status message on both success and failure.\nFallbackToLogsOnError will use the last chunk of container log output if the termination\nmessage file is empty and the container exited with an error.\nThe log output is limited to 2048 bytes or 80 lines, whichever is smaller.\nDefaults to File.\nCannot be updated.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.TerminationMessagePolicy"
+              }
+            ]
+          },
+          "tty": {
+            "type": "boolean",
+            "description": "Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.\nDefault is false.\n+optional"
+          },
+          "volumeDevices": {
+            "type": "array",
+            "description": "volumeDevices is the list of block devices to be used by the container.\n+patchMergeKey=devicePath\n+patchStrategy=merge\n+optional",
+            "items": {
+              "$ref": "#/components/schemas/v1.VolumeDevice"
+            }
+          },
+          "volumeMounts": {
+            "type": "array",
+            "description": "Pod volumes to mount into the container's filesystem.\nCannot be updated.\n+optional\n+patchMergeKey=mountPath\n+patchStrategy=merge",
+            "items": {
+              "$ref": "#/components/schemas/v1.VolumeMount"
+            }
+          },
+          "workingDir": {
+            "type": "string",
+            "description": "Container's working directory.\nIf not specified, the container runtime's default will be used, which\nmight be configured in the container image.\nCannot be updated.\n+optional"
+          }
+        }
+      },
+      "v1.ContainerPort": {
+        "type": "object",
+        "properties": {
+          "containerPort": {
+            "type": "integer",
+            "description": "Number of port to expose on the pod's IP address.\nThis must be a valid port number, 0 < x < 65536."
+          },
+          "hostIP": {
+            "type": "string",
+            "description": "What host IP to bind the external port to.\n+optional"
+          },
+          "hostPort": {
+            "type": "integer",
+            "description": "Number of port to expose on the host.\nIf specified, this must be a valid port number, 0 < x < 65536.\nIf HostNetwork is specified, this must match ContainerPort.\nMost containers do not need this.\n+optional"
+          },
+          "name": {
+            "type": "string",
+            "description": "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each\nnamed port in a pod must have a unique name. Name for the port that can be\nreferred to by services.\n+optional"
+          },
+          "protocol": {
+            "type": "object",
+            "description": "Protocol for port. Must be UDP, TCP, or SCTP.\nDefaults to \"TCP\".\n+optional\n+default=\"TCP\"",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Protocol"
+              }
+            ]
+          }
+        }
+      },
+      "v1.EnvFromSource": {
+        "type": "object",
+        "properties": {
+          "configMapRef": {
+            "type": "object",
+            "description": "The ConfigMap to select from\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ConfigMapEnvSource"
+              }
+            ]
+          },
+          "prefix": {
+            "type": "string",
+            "description": "An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.\n+optional"
+          },
+          "secretRef": {
+            "type": "object",
+            "description": "The Secret to select from\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SecretEnvSource"
+              }
+            ]
+          }
+        }
+      },
+      "v1.EnvVar": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the environment variable. Must be a C_IDENTIFIER."
+          },
+          "value": {
+            "type": "string",
+            "description": "Variable references $(VAR_NAME) are expanded\nusing the previously defined environment variables in the container and\nany service environment variables. If a variable cannot be resolved,\nthe reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.\n\"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\".\nEscaped references will never be expanded, regardless of whether the variable\nexists or not.\nDefaults to \"\".\n+optional"
+          },
+          "valueFrom": {
+            "type": "object",
+            "description": "Source for the environment variable's value. Cannot be used if value is not empty.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.EnvVarSource"
+              }
+            ]
+          }
+        }
+      },
+      "v1.EnvVarSource": {
+        "type": "object",
+        "properties": {
+          "configMapKeyRef": {
+            "type": "object",
+            "description": "Selects a key of a ConfigMap.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ConfigMapKeySelector"
+              }
+            ]
+          },
+          "fieldRef": {
+            "type": "object",
+            "description": "Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,\nspec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ObjectFieldSelector"
+              }
+            ]
+          },
+          "resourceFieldRef": {
+            "type": "object",
+            "description": "Selects a resource of the container: only resources limits and requests\n(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ResourceFieldSelector"
+              }
+            ]
+          },
+          "secretKeyRef": {
+            "type": "object",
+            "description": "Selects a key of a secret in the pod's namespace\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SecretKeySelector"
+              }
+            ]
+          }
+        }
+      },
+      "v1.ExecAction": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "array",
+            "description": "Command is the command line to execute inside the container, the working directory for the\ncommand  is root ('/') in the container's filesystem. The command is simply exec'd, it is\nnot run inside a shell, so traditional shell instructions ('|', etc) won't work. To use\na shell, you need to explicitly call out to that shell.\nExit status of 0 is treated as live/healthy and non-zero is unhealthy.\n+optional",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "v1.GRPCAction": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "integer",
+            "description": "Port number of the gRPC service. Number must be in the range 1 to 65535."
+          },
+          "service": {
+            "type": "string",
+            "description": "Service is the name of the service to place in the gRPC HealthCheckRequest\n(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).\n\nIf this is not specified, the default behavior is defined by gRPC.\n+optional\n+default=\"\""
+          }
+        }
+      },
+      "v1.HTTPGetAction": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Host name to connect to, defaults to the pod IP. You probably want to set\n\"Host\" in httpHeaders instead.\n+optional"
+          },
+          "httpHeaders": {
+            "type": "array",
+            "description": "Custom headers to set in the request. HTTP allows repeated headers.\n+optional",
+            "items": {
+              "$ref": "#/components/schemas/v1.HTTPHeader"
+            }
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to access on the HTTP server.\n+optional"
+          },
+          "port": {
+            "type": "object",
+            "description": "Name or number of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/intstr.IntOrString"
+              }
+            ]
+          },
+          "scheme": {
+            "type": "object",
+            "description": "Scheme to use for connecting to the host.\nDefaults to HTTP.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.URIScheme"
+              }
+            ]
+          }
+        }
+      },
+      "v1.HTTPHeader": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The header field name"
+          },
+          "value": {
+            "type": "string",
+            "description": "The header field value"
+          }
+        }
+      },
+      "v1.Lifecycle": {
+        "type": "object",
+        "properties": {
+          "postStart": {
+            "type": "object",
+            "description": "PostStart is called immediately after a container is created. If the handler fails,\nthe container is terminated and restarted according to its restart policy.\nOther management of the container blocks until the hook completes.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.LifecycleHandler"
+              }
+            ]
+          },
+          "preStop": {
+            "type": "object",
+            "description": "PreStop is called immediately before a container is terminated due to an\nAPI request or management event such as liveness/startup probe failure,\npreemption, resource contention, etc. The handler is not called if the\ncontainer crashes or exits. The Pod's termination grace period countdown begins before the\nPreStop hook is executed. Regardless of the outcome of the handler, the\ncontainer will eventually terminate within the Pod's termination grace\nperiod (unless delayed by finalizers). Other management of the container blocks until the hook completes\nor until the termination grace period is reached.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.LifecycleHandler"
+              }
+            ]
+          }
+        }
+      },
+      "v1.LifecycleHandler": {
+        "type": "object",
+        "properties": {
+          "exec": {
+            "type": "object",
+            "description": "Exec specifies the action to take.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ExecAction"
+              }
+            ]
+          },
+          "httpGet": {
+            "type": "object",
+            "description": "HTTPGet specifies the http request to perform.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.HTTPGetAction"
+              }
+            ]
+          },
+          "tcpSocket": {
+            "type": "object",
+            "description": "Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept\nfor the backward compatibility. There are no validation of this field and\nlifecycle hooks will fail in runtime when tcp handler is specified.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.TCPSocketAction"
+              }
+            ]
+          }
+        }
+      },
+      "v1.MountPropagationMode": {
+        "type": "string",
+        "enum": [
+          "None",
+          "HostToContainer",
+          "Bidirectional"
+        ],
+        "x-enum-varnames": [
+          "MountPropagationNone",
+          "MountPropagationHostToContainer",
+          "MountPropagationBidirectional"
+        ]
+      },
+      "v1.ObjectFieldSelector": {
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "string",
+            "description": "Version of the schema the FieldPath is written in terms of, defaults to \"v1\".\n+optional"
+          },
+          "fieldPath": {
+            "type": "string",
+            "description": "Path of the field to select in the specified API version."
+          }
+        }
+      },
+      "v1.Probe": {
+        "type": "object",
+        "properties": {
+          "exec": {
+            "type": "object",
+            "description": "Exec specifies the action to take.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ExecAction"
+              }
+            ]
+          },
+          "failureThreshold": {
+            "type": "integer",
+            "description": "Minimum consecutive failures for the probe to be considered failed after having succeeded.\nDefaults to 3. Minimum value is 1.\n+optional"
+          },
+          "grpc": {
+            "type": "object",
+            "description": "GRPC specifies an action involving a GRPC port.\nThis is a beta field and requires enabling GRPCContainerProbe feature gate.\n+featureGate=GRPCContainerProbe\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.GRPCAction"
+              }
+            ]
+          },
+          "httpGet": {
+            "type": "object",
+            "description": "HTTPGet specifies the http request to perform.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.HTTPGetAction"
+              }
+            ]
+          },
+          "initialDelaySeconds": {
+            "type": "integer",
+            "description": "Number of seconds after the container has started before liveness probes are initiated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional"
+          },
+          "periodSeconds": {
+            "type": "integer",
+            "description": "How often (in seconds) to perform the probe.\nDefault to 10 seconds. Minimum value is 1.\n+optional"
+          },
+          "successThreshold": {
+            "type": "integer",
+            "description": "Minimum consecutive successes for the probe to be considered successful after having failed.\nDefaults to 1. Must be 1 for liveness and startup. Minimum value is 1.\n+optional"
+          },
+          "tcpSocket": {
+            "type": "object",
+            "description": "TCPSocket specifies an action involving a TCP port.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.TCPSocketAction"
+              }
+            ]
+          },
+          "terminationGracePeriodSeconds": {
+            "type": "integer",
+            "description": "Optional duration in seconds the pod needs to terminate gracefully upon probe failure.\nThe grace period is the duration in seconds after the processes running in the pod are sent\na termination signal and the time when the processes are forcibly halted with a kill signal.\nSet this value longer than the expected cleanup time for your process.\nIf this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this\nvalue overrides the value provided by the pod spec.\nValue must be non-negative integer. The value zero indicates stop immediately via\nthe kill signal (no opportunity to shut down).\nThis is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.\nMinimum value is 1. spec.terminationGracePeriodSeconds is used if unset.\n+optional"
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "description": "Number of seconds after which the probe times out.\nDefaults to 1 second. Minimum value is 1.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional"
+          }
+        }
+      },
+      "v1.ProcMountType": {
+        "type": "string",
+        "enum": [
+          "Default",
+          "Unmasked"
+        ],
+        "x-enum-varnames": [
+          "DefaultProcMount",
+          "UnmaskedProcMount"
+        ]
+      },
+      "v1.Protocol": {
+        "type": "string",
+        "enum": [
+          "TCP",
+          "UDP",
+          "SCTP"
+        ],
+        "x-enum-varnames": [
+          "ProtocolTCP",
+          "ProtocolUDP",
+          "ProtocolSCTP"
+        ]
+      },
+      "v1.PullPolicy": {
+        "type": "string",
+        "enum": [
+          "Always",
+          "Never",
+          "IfNotPresent"
+        ],
+        "x-enum-varnames": [
+          "PullAlways",
+          "PullNever",
+          "PullIfNotPresent"
+        ]
+      },
+      "v1.ResourceFieldSelector": {
+        "type": "object",
+        "properties": {
+          "containerName": {
+            "type": "string",
+            "description": "Container name: required for volumes, optional for env vars\n+optional"
+          },
+          "divisor": {
+            "type": "object",
+            "description": "Specifies the output format of the exposed resources, defaults to \"1\"\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/resource.Quantity"
+              }
+            ]
+          },
+          "resource": {
+            "type": "string",
+            "description": "Required: resource to select"
+          }
+        }
+      },
+      "v1.ResourceList": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/resource.Quantity"
+        }
+      },
+      "v1.ResourceRequirements": {
+        "type": "object",
+        "properties": {
+          "limits": {
+            "type": "object",
+            "description": "Limits describes the maximum amount of compute resources allowed.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ResourceList"
+              }
+            ]
+          },
+          "requests": {
+            "type": "object",
+            "description": "Requests describes the minimum amount of compute resources required.\nIf Requests is omitted for a container, it defaults to Limits if that is explicitly specified,\notherwise to an implementation-defined value.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ResourceList"
+              }
+            ]
+          }
+        }
+      },
+      "v1.SELinuxOptions": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "description": "Level is SELinux level label that applies to the container.\n+optional"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role is a SELinux role label that applies to the container.\n+optional"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type is a SELinux type label that applies to the container.\n+optional"
+          },
+          "user": {
+            "type": "string",
+            "description": "User is a SELinux user label that applies to the container.\n+optional"
+          }
+        }
+      },
+      "v1.SeccompProfile": {
+        "type": "object",
+        "properties": {
+          "localhostProfile": {
+            "type": "string",
+            "description": "localhostProfile indicates a profile defined in a file on the node should be used.\nThe profile must be preconfigured on the node to work.\nMust be a descending path, relative to the kubelet's configured seccomp profile location.\nMust only be set if type is \"Localhost\".\n+optional"
+          },
+          "type": {
+            "type": "object",
+            "description": "type indicates which kind of seccomp profile will be applied.\nValid options are:\n\nLocalhost - a profile defined in a file on the node should be used.\nRuntimeDefault - the container runtime default profile should be used.\nUnconfined - no profile should be applied.\n+unionDiscriminator",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SeccompProfileType"
+              }
+            ]
+          }
+        }
+      },
+      "v1.SeccompProfileType": {
+        "type": "string",
+        "enum": [
+          "Unconfined",
+          "RuntimeDefault",
+          "Localhost"
+        ],
+        "x-enum-varnames": [
+          "SeccompProfileTypeUnconfined",
+          "SeccompProfileTypeRuntimeDefault",
+          "SeccompProfileTypeLocalhost"
+        ]
+      },
+      "v1.SecretEnvSource": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Specify whether the Secret must be defined\n+optional"
+          }
+        }
+      },
+      "v1.SecretKeySelector": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The key of the secret to select from.  Must be a valid secret key."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Specify whether the Secret or its key must be defined\n+optional"
+          }
+        }
+      },
+      "v1.SecurityContext": {
+        "type": "object",
+        "properties": {
+          "allowPrivilegeEscalation": {
+            "type": "boolean",
+            "description": "AllowPrivilegeEscalation controls whether a process can gain more\nprivileges than its parent process. This bool directly controls if\nthe no_new_privs flag will be set on the container process.\nAllowPrivilegeEscalation is true always when the container is:\n1) run as Privileged\n2) has CAP_SYS_ADMIN\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          },
+          "capabilities": {
+            "type": "object",
+            "description": "The capabilities to add/drop when running containers.\nDefaults to the default set of capabilities granted by the container runtime.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.Capabilities"
+              }
+            ]
+          },
+          "privileged": {
+            "type": "boolean",
+            "description": "Run container in privileged mode.\nProcesses in privileged containers are essentially equivalent to root on the host.\nDefaults to false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          },
+          "procMount": {
+            "type": "object",
+            "description": "procMount denotes the type of proc mount to use for the containers.\nThe default is DefaultProcMount which uses the container runtime defaults for\nreadonly paths and masked paths.\nThis requires the ProcMountType feature flag to be enabled.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.ProcMountType"
+              }
+            ]
+          },
+          "readOnlyRootFilesystem": {
+            "type": "boolean",
+            "description": "Whether this container has a read-only root filesystem.\nDefault is false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          },
+          "runAsGroup": {
+            "type": "integer",
+            "description": "The GID to run the entrypoint of the container process.\nUses runtime default if unset.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          },
+          "runAsNonRoot": {
+            "type": "boolean",
+            "description": "Indicates that the container must run as a non-root user.\nIf true, the Kubelet will validate the image at runtime to ensure that it\ndoes not run as UID 0 (root) and fail to start the container if it does.\nIf unset or false, no such validation will be performed.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional"
+          },
+          "runAsUser": {
+            "type": "integer",
+            "description": "The UID to run the entrypoint of the container process.\nDefaults to user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          },
+          "seLinuxOptions": {
+            "type": "object",
+            "description": "The SELinux context to be applied to the container.\nIf unspecified, the container runtime will allocate a random SELinux context for each\ncontainer.  May also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SELinuxOptions"
+              }
+            ]
+          },
+          "seccompProfile": {
+            "type": "object",
+            "description": "The seccomp options to use by this container. If seccomp options are\nprovided at both the pod & container level, the container options\noverride the pod options.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.SeccompProfile"
+              }
+            ]
+          },
+          "windowsOptions": {
+            "type": "object",
+            "description": "The Windows specific settings applied to all containers.\nIf unspecified, the options from the PodSecurityContext will be used.\nIf set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is linux.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.WindowsSecurityContextOptions"
+              }
+            ]
+          }
+        }
+      },
+      "v1.TCPSocketAction": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Optional: Host name to connect to, defaults to the pod IP.\n+optional"
+          },
+          "port": {
+            "type": "object",
+            "description": "Number or name of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/intstr.IntOrString"
+              }
+            ]
+          }
+        }
+      },
+      "v1.TerminationMessagePolicy": {
+        "type": "string",
+        "enum": [
+          "File",
+          "FallbackToLogsOnError"
+        ],
+        "x-enum-varnames": [
+          "TerminationMessageReadFile",
+          "TerminationMessageFallbackToLogsOnError"
+        ]
+      },
+      "v1.URIScheme": {
+        "type": "string",
+        "enum": [
+          "HTTP",
+          "HTTPS"
+        ],
+        "x-enum-varnames": [
+          "URISchemeHTTP",
+          "URISchemeHTTPS"
+        ]
+      },
+      "v1.VolumeDevice": {
+        "type": "object",
+        "properties": {
+          "devicePath": {
+            "type": "string",
+            "description": "devicePath is the path inside of the container that the device will be mapped to."
+          },
+          "name": {
+            "type": "string",
+            "description": "name must match the name of a persistentVolumeClaim in the pod"
+          }
+        }
+      },
+      "v1.VolumeMount": {
+        "type": "object",
+        "properties": {
+          "mountPath": {
+            "type": "string",
+            "description": "Path within the container at which the volume should be mounted.  Must\nnot contain ':'."
+          },
+          "mountPropagation": {
+            "type": "object",
+            "description": "mountPropagation determines how mounts are propagated from the host\nto container and the other way around.\nWhen not set, MountPropagationNone is used.\nThis field is beta in 1.10.\n+optional",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/v1.MountPropagationMode"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "This must match the Name of a Volume."
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "Mounted read-only if true, read-write otherwise (false or unspecified).\nDefaults to false.\n+optional"
+          },
+          "subPath": {
+            "type": "string",
+            "description": "Path within the volume from which the container's volume should be mounted.\nDefaults to \"\" (volume's root).\n+optional"
+          },
+          "subPathExpr": {
+            "type": "string",
+            "description": "Expanded path within the volume from which the container's volume should be mounted.\nBehaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.\nDefaults to \"\" (volume's root).\nSubPathExpr and SubPath are mutually exclusive.\n+optional"
+          }
+        }
+      },
+      "v1.WindowsSecurityContextOptions": {
+        "type": "object",
+        "properties": {
+          "gmsaCredentialSpec": {
+            "type": "string",
+            "description": "GMSACredentialSpec is where the GMSA admission webhook\n(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the\nGMSA credential spec named by the GMSACredentialSpecName field.\n+optional"
+          },
+          "gmsaCredentialSpecName": {
+            "type": "string",
+            "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use.\n+optional"
+          },
+          "hostProcess": {
+            "type": "boolean",
+            "description": "HostProcess determines if a container should be run as a 'Host Process' container.\nThis field is alpha-level and will only be honored by components that enable the\nWindowsHostProcessContainers feature flag. Setting this field without the feature\nflag will result in errors when validating the Pod. All of a Pod's containers must\nhave the same effective HostProcess value (it is not allowed to have a mix of HostProcess\ncontainers and non-HostProcess containers).  In addition, if HostProcess is true\nthen HostNetwork must also be set to true.\n+optional"
+          },
+          "runAsUserName": {
+            "type": "string",
+            "description": "The UserName in Windows to run the entrypoint of the container process.\nDefaults to the user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext. If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional"
           }
         }
       }
