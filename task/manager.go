@@ -174,13 +174,13 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 }
 
 // Update update task.
-func (m *Manager) Update(db *gorm.DB, task *Task) (err error) {
+func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 	found := &Task{}
-	err = db.First(found, task.ID).Error
+	err = db.First(found, requested.ID).Error
 	if err != nil {
 		return
 	}
-	switch task.State {
+	switch found.State {
 	case Created:
 		db = db.Select(
 			"UpdateUser",
@@ -195,12 +195,12 @@ func (m *Manager) Update(db *gorm.DB, task *Task) (err error) {
 			"TTL",
 			"Data",
 			"ApplicationID")
-		err = m.findRefs(task)
+		err = m.findRefs(requested)
 		if err != nil {
 			return
 		}
 		db = db.Where("State", Created)
-		err = db.Save(task).Error
+		err = db.Save(requested).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -223,7 +223,7 @@ func (m *Manager) Update(db *gorm.DB, task *Task) (err error) {
 				QuotaBlocked,
 				Postponed,
 			})
-		err = db.Save(task).Error
+		err = db.Save(requested).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
