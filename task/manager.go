@@ -174,31 +174,32 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 }
 
 // Update update task.
-func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
-	task := &Task{}
-	err = db.First(task, requested.ID).Error
+func (m *Manager) Update(db *gorm.DB, task *Task) (err error) {
+	found := &Task{}
+	err = db.First(found, task.ID).Error
 	if err != nil {
 		return
 	}
 	switch task.State {
 	case Created:
-		task.UpdateUser = requested.UpdateUser
-		task.Name = requested.Name
-		task.Kind = requested.Kind
-		task.Addon = requested.Addon
-		task.Extensions = requested.Extensions
-		task.State = requested.State
-		task.Locator = requested.Locator
-		task.Priority = requested.Priority
-		task.Policy = requested.Policy
-		task.TTL = requested.TTL
-		task.Data = requested.Data
-		task.ApplicationID = requested.ApplicationID
+		db = db.Select(
+			"UpdateUser",
+			"Name",
+			"Kind",
+			"Addon",
+			"Extensions",
+			"State",
+			"Locator",
+			"Priority",
+			"Policy",
+			"TTL",
+			"Data",
+			"ApplicationID")
 		err = m.findRefs(task)
 		if err != nil {
 			return
 		}
-		db = db.Where("state", Created)
+		db = db.Where("State", Created)
 		err = db.Save(task).Error
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -208,11 +209,12 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 		Pending,
 		QuotaBlocked,
 		Postponed:
-		task.UpdateUser = requested.UpdateUser
-		task.Name = requested.Name
-		task.Locator = requested.Locator
-		task.Policy = requested.Policy
-		task.TTL = requested.TTL
+		db = db.Select(
+			"UpdateUser",
+			"Name",
+			"Locator",
+			"Policy",
+			"TTL")
 		db = db.Where(
 			"state IN (?)",
 			[]string{
@@ -1641,7 +1643,6 @@ func (r *Task) containsAny(str string, substr ...string) (matched bool) {
 
 // update manager controlled fields.
 func (r *Task) update(db *gorm.DB) (err error) {
-	db = db.Debug() // REMOVE THIS
 	db = db.Select(
 		"Addon",
 		"Extensions",
