@@ -129,7 +129,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 // @produce json
 // @success 204
 // @router /files/{id} [put]
-// @param name id uint true "File ID"
+// @param id path uint true "File ID"
 func (h FileHandler) Append(ctx *gin.Context) {
 	var err error
 	input, err := ctx.FormFile(FileField)

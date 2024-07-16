@@ -216,7 +216,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @description Archive an analysis (report) by ID.
 // @tags analyses
 // @produce octet-stream
-// @success 204 {object}
+// @success 204
 // @router /analyses/{id}/archive [post]
 // @param id path int true "Analysis ID"
 func (h AnalysisHandler) Archive(ctx *gin.Context) {
