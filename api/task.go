@@ -934,4 +934,7 @@ func (r *TaskDashboard) With(m *model.Task) {
 	r.Started = m.Started
 	r.Terminated = m.Terminated
 	r.Errors = len(m.Errors)
+	if m.Report != nil {
+		r.Errors += len(m.Report.Errors)
+	}
 }
