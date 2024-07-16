@@ -21,16 +21,17 @@ import (
 
 // Routes
 const (
-	TasksRoot             = "/tasks"
-	TasksReportRoot       = TasksRoot + "/report"
-	TasksReportQueueRoot  = TasksReportRoot + "/queue"
-	TaskRoot              = TasksRoot + "/:" + ID
-	TaskReportRoot        = TaskRoot + "/report"
-	TaskAttachedRoot      = TaskRoot + "/attached"
-	TaskBucketRoot        = TaskRoot + "/bucket"
-	TaskBucketContentRoot = TaskBucketRoot + "/*" + Wildcard
-	TaskSubmitRoot        = TaskRoot + "/submit"
-	TaskCancelRoot        = TaskRoot + "/cancel"
+	TasksRoot                = "/tasks"
+	TasksReportRoot          = TasksRoot + "/report"
+	TasksReportQueueRoot     = TasksReportRoot + "/queue"
+	TasksReportDashboardRoot = TasksReportRoot + "/dashboard"
+	TaskRoot                 = TasksRoot + "/:" + ID
+	TaskReportRoot           = TaskRoot + "/report"
+	TaskAttachedRoot         = TaskRoot + "/attached"
+	TaskBucketRoot           = TaskRoot + "/bucket"
+	TaskBucketContentRoot    = TaskBucketRoot + "/*" + Wildcard
+	TaskSubmitRoot           = TaskRoot + "/submit"
+	TaskCancelRoot           = TaskRoot + "/cancel"
 )
 
 const (
@@ -54,6 +55,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PATCH(TaskRoot, Transaction, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
 	routeGroup.GET(TasksReportQueueRoot, h.Queued)
+	routeGroup.GET(TasksReportDashboardRoot, h.Dashboard)
 	// Actions
 	routeGroup.PUT(TaskSubmitRoot, Transaction, h.Submit)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
@@ -181,6 +183,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
 	db = db.Joins("Application")
+	db = db.Joins("Report")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
 	var m model.Task
@@ -270,6 +273,83 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, r)
+}
+
+// Dashboard godoc
+// @summary List all task dashboard resources.
+// @description List all task dashboard resources.
+// @description Filters:
+// @description - kind
+// @description - createUser
+// @description - addon
+// @description - name
+// @description - locator
+// @description - state
+// @description - application.id
+// @description - application.name
+// @tags tasks
+// @produce json
+// @success 200 {object} []api.TaskDashboard
+// @router /tasks [get]
+func (h TaskHandler) Dashboard(ctx *gin.Context) {
+	resources := []TaskDashboard{}
+	// filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "id", Kind: qf.LITERAL},
+			{Field: "createUser", Kind: qf.STRING},
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "addon", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "locator", Kind: qf.STRING},
+			{Field: "state", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.STRING},
+			{Field: "application.name", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	filter = filter.Renamed("application.id", "application__id")
+	filter = filter.Renamed("application.name", "application__name")
+	filter = filter.Renamed("createUser", "task\\.createUser")
+	filter = filter.Renamed("id", "task\\.id")
+	filter = filter.Renamed("name", "task\\.name")
+	// sort
+	sort := Sort{}
+	sort.Add("task.id", "id")
+	sort.Add("task.createUser", "createUser")
+	sort.Add("task.name", "name")
+	sort.Add("application__id", "application.id")
+	sort.Add("application__name", "application.name")
+	err = sort.With(ctx, &model.Task{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	// Fetch
+	db := h.DB(ctx)
+	db = db.Model(&model.Task{})
+	db = db.Joins("Application")
+	db = db.Joins("Report")
+	db = sort.Sorted(db)
+	db = filter.Where(db)
+	var list []model.Task
+	page := Page{}
+	page.With(ctx)
+	err = db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range list {
+		m := &list[i]
+		r := TaskDashboard{}
+		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Create godoc
@@ -496,6 +576,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	report := &TaskReport{}
 	err := h.Bind(ctx, report)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	report.TaskID = id
@@ -826,4 +907,31 @@ type TaskQueue struct {
 	Postponed int `json:"postponed"`
 	Pending   int `json:"pending"`
 	Running   int `json:"running"`
+}
+
+// TaskDashboard report.
+type TaskDashboard struct {
+	Resource    `yaml:",inline"`
+	Name        string     `json:"name,omitempty" yaml:",omitempty"`
+	Kind        string     `json:"kind,omitempty" yaml:",omitempty"`
+	Addon       string     `json:"addon,omitempty" yaml:",omitempty"`
+	State       string     `json:"state,omitempty" yaml:",omitempty"`
+	Locator     string     `json:"locator,omitempty" yaml:",omitempty"`
+	Application *Ref       `json:"application,omitempty" yaml:",omitempty"`
+	Started     *time.Time `json:"started,omitempty" yaml:",omitempty"`
+	Terminated  *time.Time `json:"terminated,omitempty" yaml:",omitempty"`
+	Errors      int        `json:"errors,omitempty" yaml:",omitempty"`
+}
+
+func (r *TaskDashboard) With(m *model.Task) {
+	r.Resource.With(&m.Model)
+	r.Name = m.Name
+	r.Kind = m.Kind
+	r.Addon = m.Addon
+	r.State = m.State
+	r.Locator = m.Locator
+	r.Application = r.refPtr(m.ApplicationID, m.Application)
+	r.Started = m.Started
+	r.Terminated = m.Terminated
+	r.Errors = len(m.Errors)
 }
