@@ -296,3 +296,11 @@ type ImportTag struct {
 	ImportID uint `gorm:"index"`
 	Import   *Import
 }
+
+type Repository struct {
+	Kind   string `json:"kind"`
+	URL    string `json:"url"`
+	Branch string `json:"branch"`
+	Tag    string `json:"tag"`
+	Path   string `json:"path"`
+}
