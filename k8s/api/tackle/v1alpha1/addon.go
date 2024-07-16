@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // AddonSpec defines the desired state of an Addon.
@@ -31,6 +32,15 @@ type AddonSpec struct {
 	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Resource requirements.
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	//
+	// Task declares task (kind) compatibility.
+	Task string `json:"task,omitempty"`
+	// Selector defines criteria to be selected for a task.
+	Selector string `json:"selector,omitempty"`
+	// Container defines the addon container.
+	Container core.Container `json:"container,omitempty"`
+	// Metadata details.
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
 // AddonStatus defines the observed state of an Addon.
