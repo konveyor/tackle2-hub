@@ -121,7 +121,7 @@ func TestTicketList(t *testing.T) {
 		// Delete tickets and related resources.
 		for _, ticket := range createdTickets {
 			assert.Must(t, Ticket.Delete(ticket.ID))
-			assert.Must(t, Application.Delete(ticket.ID))
+			assert.Must(t, Application.Delete(ticket.Application.ID))
 		}
 		for _, tracker := range createdTrackers {
 			assert.Must(t, Tracker.Delete(tracker.ID))
