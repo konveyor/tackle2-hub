@@ -4,7 +4,7 @@ host="${HOST:-localhost:8080}"
 
 curl -X POST ${host}/identities -d \
 '{
-    "kind": "git",
+    "kind": "source",
     "name":"test-git",
     "description": "Forklift",
     "user": "userA",
@@ -15,7 +15,7 @@ curl -X POST ${host}/identities -d \
 
 curl -X POST ${host}/identities -d \
 '{
-    "kind": "mvn",
+    "kind": "maven",
     "name":"test-mvn",
     "description": "Forklift",
     "user": "userA",
