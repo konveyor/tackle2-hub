@@ -89,7 +89,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	// Application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.analyses"))
-	routeGroup.POST(AppAnalysesRoot, h.AppCreate)
+	routeGroup.POST(AppAnalysesRoot, Transaction, h.AppCreate)
 	routeGroup.GET(AppAnalysesRoot, h.AppList)
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
 	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
