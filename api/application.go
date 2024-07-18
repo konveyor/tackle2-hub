@@ -58,22 +58,22 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(ApplicationRoot, h.Delete)
 	// Tags
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("applications"))
+	routeGroup.Use(Required("applications"), Transaction)
 	routeGroup.GET(ApplicationTagsRoot, h.TagList)
 	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
 	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
 	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
-	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace, Transaction)
+	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace)
 	// Facts
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("applications.facts"))
+	routeGroup.Use(Required("applications.facts"), Transaction)
 	routeGroup.GET(ApplicationFactsRoot, h.FactGet)
 	routeGroup.GET(ApplicationFactsRoot+"/", h.FactGet)
 	routeGroup.POST(ApplicationFactsRoot, h.FactCreate)
 	routeGroup.GET(ApplicationFactRoot, h.FactGet)
 	routeGroup.PUT(ApplicationFactRoot, h.FactPut)
 	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
-	routeGroup.PUT(ApplicationFactsRoot, h.FactPut, Transaction)
+	routeGroup.PUT(ApplicationFactsRoot, h.FactPut)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.bucket"))
@@ -84,11 +84,11 @@ func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(AppBucketContentRoot, h.BucketDelete)
 	// Stakeholders
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("applications.stakeholders"))
+	routeGroup.Use(Required("applications.stakeholders"), Transaction)
 	routeGroup.PUT(AppStakeholdersRoot, h.StakeholdersUpdate)
 	// Assessments
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("applications.assessments"))
+	routeGroup.Use(Required("applications.assessments"), Transaction)
 	routeGroup.GET(AppAssessmentsRoot, h.AssessmentList)
 	routeGroup.POST(AppAssessmentsRoot, h.AssessmentCreate)
 }
@@ -210,9 +210,21 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Omit("Tags").Create(m)
+	result := h.DB(ctx).Omit(clause.Associations).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
+		return
+	}
+	db := h.DB(ctx).Model(m)
+	err = db.Association("Identities").Replace(m.Identities)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("Contributors").Replace(m.Contributors)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -1078,9 +1090,19 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 		assessment.PrepareForApplication(resolver, application, m)
 		newAssessment = true
 	}
-	result = h.DB(ctx).Create(m)
+	result = h.DB(ctx).Omit(clause.Associations).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("Stakeholders").Replace("Stakeholders", m.Stakeholders)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("StakeholderGroups").Replace("StakeholderGroups", m.StakeholderGroups)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if newAssessment {
