@@ -15,11 +15,11 @@ func TestProxyGetUpdate(t *testing.T) {
 			}
 
 			// Update.
-			update := orig
+			update := *orig
 			update.Host = "127.0.0.1"
 			update.Port = 8081
 			update.Enabled = true
-			err = Proxy.Update(update)
+			err = Proxy.Update(&update)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
