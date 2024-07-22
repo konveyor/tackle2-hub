@@ -1160,6 +1160,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 			r.Identities,
 			ref)
 	}
+	r.Tags = []TagRef{}
 	for i := range tags {
 		ref := TagRef{}
 		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source, false)
