@@ -62,6 +62,8 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 }
 
 // Reconciler reconciles addon CRs.
+// The history is used to ensure resources are reconciled
+// at least once at startup.
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
@@ -71,7 +73,7 @@ type Reconciler struct {
 }
 
 // Reconcile a Addon CR.
-// Note: Must not a pointer receiver to ensure that the
+// Note: Must not be a pointer receiver to ensure that the
 // logger and other state is not shared.
 func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	r.Log = logr2.WithName(
