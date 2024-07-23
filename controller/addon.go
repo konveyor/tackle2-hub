@@ -88,9 +88,13 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
+	// Reset.
+	if addon.Generation == addon.Status.ObservedGeneration {
+		return
+	}
 	addon.Status.Conditions = nil
 	addon.Status.ObservedGeneration = addon.Generation
-	// changed
+	// Changed
 	migrated, err := r.addonChanged(addon)
 	if migrated || err != nil {
 		return
@@ -122,11 +126,11 @@ func (r *Reconciler) ready(addon *api.Addon) (ready v1.Condition) {
 	}
 	if len(err) == 0 {
 		ready.Status = v1.ConditionTrue
-		ready.Reason = api.ValidationError
+		ready.Reason = api.Validated
 		ready.Message = strings.Join(err, ";")
 	} else {
 		ready.Status = v1.ConditionFalse
-		ready.Reason = api.Validated
+		ready.Reason = api.ValidationError
 	}
 	return
 }
