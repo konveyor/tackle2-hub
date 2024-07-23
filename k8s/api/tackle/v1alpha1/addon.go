@@ -83,6 +83,35 @@ func (r *Addon) Ready() (ready bool) {
 	return
 }
 
+// Migrate specification as needed.
+func (r *Addon) Migrate() (updated bool) {
+	if r.Spec.Image != nil {
+		if r.Spec.Container.Image == "" {
+			r.Spec.Container.Image = *r.Spec.Image
+		}
+		r.Spec.Image = nil
+		updated = true
+	}
+	if r.Spec.Resources != nil {
+		if len(r.Spec.Container.Resources.Limits) == 0 {
+			r.Spec.Container.Resources.Limits = (*r.Spec.Resources).Limits
+		}
+		if len(r.Spec.Container.Resources.Requests) == 0 {
+			r.Spec.Container.Resources.Requests = (*r.Spec.Resources).Requests
+		}
+		r.Spec.Resources = nil
+		updated = true
+	}
+	if r.Spec.ImagePullPolicy != nil {
+		if r.Spec.Container.ImagePullPolicy == "" {
+			r.Spec.Container.ImagePullPolicy = *r.Spec.ImagePullPolicy
+		}
+		r.Spec.ImagePullPolicy = nil
+		updated = true
+	}
+	return
+}
+
 // AddonList is a list of Addon.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonList struct {

@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -124,7 +125,11 @@ func (m *Manager) Run(ctx context.Context) {
 					m.startReady()
 					m.pause()
 				} else {
-					Log.Error(err, "")
+					if errors.Is(err, &NotReconciled{}) {
+						Log.Info(err.Error())
+					} else {
+						Log.Error(err, "")
+					}
 					m.pause()
 				}
 			}
@@ -519,8 +524,10 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 		return
 	}
 	if !selected.Ready() {
-		err = &AddonNotReady{
-			Name: selected.Name}
+		err = &NotReady{
+			Kind: "Addon",
+			Name: selected.Name,
+		}
 		return
 	}
 	task.Addon = selected.Name
@@ -1894,33 +1901,27 @@ func (k *Cluster) getTackle() (err error) {
 
 // getAddons
 func (k *Cluster) getAddons() (err error) {
-	for {
-		k.addons = make(map[string]*crd.Addon)
-		options := &k8s.ListOptions{Namespace: Settings.Namespace}
-		list := crd.AddonList{}
-		err = k.List(
-			context.TODO(),
-			&list,
-			options)
-		if err != nil {
-			err = liberr.Wrap(err)
+	k.addons = make(map[string]*crd.Addon)
+	options := &k8s.ListOptions{Namespace: Settings.Namespace}
+	list := crd.AddonList{}
+	err = k.List(
+		context.TODO(),
+		&list,
+		options)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range list.Items {
+		r := &list.Items[i]
+		k.addons[r.Name] = r
+		if !r.Reconciled() {
+			err = &NotReconciled{
+				Kind: r.Kind,
+				Name: r.Name,
+			}
 			return
 		}
-		notReconciled := 0
-		for i := range list.Items {
-			r := &list.Items[i]
-			k.addons[r.Name] = r
-			if !r.Reconciled() {
-				notReconciled++
-				break
-			}
-		}
-		if notReconciled > 0 {
-			Log.Info("addons not reconciled.")
-			time.Sleep(time.Second)
-			continue
-		}
-		break
 	}
 	return
 }

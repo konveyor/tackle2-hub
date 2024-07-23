@@ -110,23 +110,48 @@ func (e *AddonNotSelected) Retry() (r bool) {
 	return
 }
 
-// AddonNotReady report that an addon does not have the ready condition.
-type AddonNotReady struct {
+// NotReady report that a resource does not have the ready condition.
+type NotReady struct {
+	Kind   string
 	Name   string
 	Reason string
 }
 
-func (e *AddonNotReady) Error() string {
-	return fmt.Sprintf("Addon '%s' not ready: %s", e.Name, e.Reason)
+func (e *NotReady) Error() string {
+	return fmt.Sprintf(
+		"(%s) '%s' not ready: %s.",
+		e.Kind,
+		e.Name,
+		e.Reason)
 }
 
-func (e *AddonNotReady) Is(err error) (matched bool) {
-	var inst *AddonNotSelected
+func (e *NotReady) Is(err error) (matched bool) {
+	var inst *NotReady
 	matched = errors.As(err, &inst)
 	return
 }
 
-func (e *AddonNotReady) Retry() (r bool) {
+func (e *NotReady) Retry() (r bool) {
+	return
+}
+
+// NotReconciled report as resource has not been reconciled.
+type NotReconciled struct {
+	Kind string
+	Name string
+}
+
+func (e *NotReconciled) Error() string {
+	return fmt.Sprintf("(%s) '%s' not reconciled.", e.Kind, e.Name)
+}
+
+func (e *NotReconciled) Is(err error) (matched bool) {
+	var inst *NotReconciled
+	matched = errors.As(err, &inst)
+	return
+}
+
+func (e *NotReconciled) Retry() (r bool) {
 	return
 }
 

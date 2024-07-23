@@ -89,7 +89,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return
 	}
 	// Reset.
-	if addon.Generation == addon.Status.ObservedGeneration {
+	if addon.Reconciled() {
 		return
 	}
 	addon.Status.Conditions = nil
@@ -137,30 +137,7 @@ func (r *Reconciler) ready(addon *api.Addon) (ready v1.Condition) {
 
 // addonChanged an addon has been created/updated.
 func (r *Reconciler) addonChanged(addon *api.Addon) (migrated bool, err error) {
-	if addon.Spec.Image != nil {
-		if addon.Spec.Container.Image == "" {
-			addon.Spec.Container.Image = *addon.Spec.Image
-		}
-		addon.Spec.Image = nil
-		migrated = true
-	}
-	if addon.Spec.Resources != nil {
-		if len(addon.Spec.Container.Resources.Limits) == 0 {
-			addon.Spec.Container.Resources.Limits = (*addon.Spec.Resources).Limits
-		}
-		if len(addon.Spec.Container.Resources.Requests) == 0 {
-			addon.Spec.Container.Resources.Requests = (*addon.Spec.Resources).Requests
-		}
-		addon.Spec.Resources = nil
-		migrated = true
-	}
-	if addon.Spec.ImagePullPolicy != nil {
-		if addon.Spec.Container.ImagePullPolicy == "" {
-			addon.Spec.Container.ImagePullPolicy = *addon.Spec.ImagePullPolicy
-		}
-		addon.Spec.ImagePullPolicy = nil
-		migrated = true
-	}
+	migrated = addon.Migrate()
 	if migrated {
 		err = r.Update(context.TODO(), addon)
 		if err != nil {
