@@ -49,6 +49,8 @@ type AddonStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Resource conditions.
+	Conditions []meta.Condition `json:"conditions,omitempty"`
 }
 
 // +genclient
@@ -63,6 +65,22 @@ type Addon struct {
 	Spec AddonSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status AddonStatus `json:"status,omitempty"`
+}
+
+// Reconciled returns true when the resource has been reconciled.
+func (r *Addon) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *Addon) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
 }
 
 // AddonList is a list of Addon.

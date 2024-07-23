@@ -9,6 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/client-go/tools/record"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -86,18 +87,22 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	// migrate
-	migrated, err := r.alpha2Migration(addon)
+	// changed
+	migrated, err := r.addonChanged(addon)
 	if migrated || err != nil {
 		return
 	}
-	// changed.
-	err = r.addonChanged(addon)
-	if err != nil {
-		return
-	}
 	// Apply changes.
+	addon.Status.Conditions = nil
 	addon.Status.ObservedGeneration = addon.Generation
+	if len(addon.Status.Conditions) == 0 {
+		ready := api.Ready
+		ready.LastTransitionTime = v1.Now()
+		ready.ObservedGeneration = addon.Status.ObservedGeneration
+		addon.Status.Conditions = []v1.Condition{
+			ready,
+		}
+	}
 	err = r.Status().Update(context.TODO(), addon)
 	if err != nil {
 		return
@@ -107,17 +112,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 }
 
 // addonChanged an addon has been created/updated.
-func (r *Reconciler) addonChanged(addon *api.Addon) (err error) {
-	return
-}
-
-// addonDeleted an addon has been deleted.
-func (r *Reconciler) addonDeleted(name string) (err error) {
-	return
-}
-
-// alpha2Migration migrates to alpha2.
-func (r *Reconciler) alpha2Migration(addon *api.Addon) (migrated bool, err error) {
+func (r *Reconciler) addonChanged(addon *api.Addon) (migrated bool, err error) {
 	if addon.Spec.Image != nil {
 		if addon.Spec.Container.Image == "" {
 			addon.Spec.Container.Image = *addon.Spec.Image
@@ -148,5 +143,18 @@ func (r *Reconciler) alpha2Migration(addon *api.Addon) (migrated bool, err error
 			return
 		}
 	}
+	if addon.Spec.Container.Image == "" {
+		cnd := api.ImageNotDefined
+		cnd.LastTransitionTime = v1.Now()
+		cnd.ObservedGeneration = addon.Status.ObservedGeneration
+		addon.Status.Conditions = append(
+			addon.Status.Conditions,
+			cnd)
+	}
+	return
+}
+
+// addonDeleted an addon has been deleted.
+func (r *Reconciler) addonDeleted(name string) (err error) {
 	return
 }

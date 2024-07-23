@@ -110,6 +110,24 @@ func (e *AddonNotSelected) Retry() (r bool) {
 	return
 }
 
+// AddonNotReady report that an addon does not have the ready condition.
+type AddonNotReady struct {
+}
+
+func (e *AddonNotReady) Error() string {
+	return fmt.Sprintf("Addon not ready.")
+}
+
+func (e *AddonNotReady) Is(err error) (matched bool) {
+	var inst *AddonNotSelected
+	matched = errors.As(err, &inst)
+	return
+}
+
+func (e *AddonNotReady) Retry() (r bool) {
+	return
+}
+
 // ExtensionNotFound used to report an extension referenced
 // by a task but cannot be found.
 type ExtensionNotFound struct {

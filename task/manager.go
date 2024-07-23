@@ -518,6 +518,10 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 		err = &AddonNotSelected{}
 		return
 	}
+	if !selected.Ready() {
+		err = &AddonNotReady{}
+		return
+	}
 	task.Addon = selected.Name
 	task.Event(AddonSelected, selected)
 	return
@@ -1889,20 +1893,33 @@ func (k *Cluster) getTackle() (err error) {
 
 // getAddons
 func (k *Cluster) getAddons() (err error) {
-	k.addons = make(map[string]*crd.Addon)
-	options := &k8s.ListOptions{Namespace: Settings.Namespace}
-	list := crd.AddonList{}
-	err = k.List(
-		context.TODO(),
-		&list,
-		options)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	for i := range list.Items {
-		r := &list.Items[i]
-		k.addons[r.Name] = r
+	for {
+		k.addons = make(map[string]*crd.Addon)
+		options := &k8s.ListOptions{Namespace: Settings.Namespace}
+		list := crd.AddonList{}
+		err = k.List(
+			context.TODO(),
+			&list,
+			options)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		notReconciled := 0
+		for i := range list.Items {
+			r := &list.Items[i]
+			k.addons[r.Name] = r
+			if !r.Reconciled() {
+				notReconciled++
+				break
+			}
+		}
+		if notReconciled > 0 {
+			Log.Info("addons not reconciled.")
+			time.Sleep(time.Second)
+			continue
+		}
+		break
 	}
 	return
 }
