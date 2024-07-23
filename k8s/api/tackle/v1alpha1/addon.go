@@ -109,6 +109,10 @@ func (r *Addon) Migrate() (updated bool) {
 		r.Spec.ImagePullPolicy = nil
 		updated = true
 	}
+	if r.Spec.Container.Name == "" {
+		r.Spec.Container.Name = "addon"
+		updated = true
+	}
 	return
 }
 
