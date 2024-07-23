@@ -1663,7 +1663,7 @@ func (r *Task) update(db *gorm.DB) (err error) {
 		"Started",
 		"Terminated",
 		"Events",
-		"Error",
+		"Errors",
 		"Retries",
 		"Attached",
 		"Pod")
