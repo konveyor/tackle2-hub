@@ -15,9 +15,9 @@ var (
 		Status: meta.ConditionTrue,
 	}
 	ImageNotDefined = meta.Condition{
-		Type:    "Ready",
+		Type:    ValidationError,
 		Status:  meta.ConditionTrue,
-		Reason:  ValidationError,
+		Reason:  "Image not defined.",
 		Message: "Either image or container.image must be specified.",
 	}
 )
