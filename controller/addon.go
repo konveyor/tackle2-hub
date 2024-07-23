@@ -34,9 +34,10 @@ var Settings = &settings.Settings
 // Add the controller.
 func Add(mgr manager.Manager, db *gorm.DB) error {
 	reconciler := &Reconciler{
-		Client: mgr.GetClient(),
-		Log:    log,
-		DB:     db,
+		history: make(map[string]byte),
+		Client:  mgr.GetClient(),
+		Log:     log,
+		DB:      db,
 	}
 	cnt, err := controller.New(
 		Name,
@@ -64,8 +65,9 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
-	DB  *gorm.DB
-	Log logr.Logger
+	DB      *gorm.DB
+	Log     logr.Logger
+	history map[string]byte
 }
 
 // Reconcile a Addon CR.
@@ -88,10 +90,11 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	// Reset.
-	if addon.Reconciled() {
+	_, found := r.history[addon.Name]
+	if found && addon.Reconciled() {
 		return
 	}
+	r.history[addon.Name] = 1
 	addon.Status.Conditions = nil
 	addon.Status.ObservedGeneration = addon.Generation
 	// Changed
