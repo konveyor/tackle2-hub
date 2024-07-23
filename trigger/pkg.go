@@ -4,7 +4,7 @@ import (
 	"context"
 
 	liberr "github.com/jortel/go-utils/error"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/settings"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"

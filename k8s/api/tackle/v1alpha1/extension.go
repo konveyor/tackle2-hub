@@ -17,18 +17,43 @@ limitations under the License.
 package v1alpha1
 
 import (
+	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+// ExtensionSpec defines the desired state of the resource.
+type ExtensionSpec struct {
+	// Addon (name) declares addon compatibility.
+	Addon string `json:"addon"`
+	// Container defines the extension container.
+	Container core.Container `json:"container"`
+	// Selector defines criteria to be included in the addon pod.
+	Selector string `json:"selector,omitempty"`
+	// Metadata details.
+	Metadata runtime.RawExtension `json:"metadata,omitempty"`
+}
+
+// ExtensionStatus defines the observed state of the resource.
+type ExtensionStatus struct {
+	// The most recent generation observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+}
 
 // Extension defines an addon extension.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 type Extension struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
+	// pec defines the desired state of the resource.
+	Spec ExtensionSpec `json:"spec"`
+	// Status defines the observed state of the resource.
+	Status ExtensionStatus `json:"status,omitempty"`
 }
 
 // ExtensionList is a list of Extension.

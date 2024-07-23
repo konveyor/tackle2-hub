@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
-	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
+	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"

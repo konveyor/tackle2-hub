@@ -22,16 +22,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddonSpec defines the desired state of an Addon.
+// AddonSpec defines the desired state of the resource.
 type AddonSpec struct {
-	// Addon fqin.
-	Image string `json:"image"`
-	// ImagePullPolicy an optional image pull policy.
-	// +kubebuilder:default=IfNotPresent
-	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
-	ImagePullPolicy core.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Resource requirements.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	// Deprecated: Addon is deprecated.
+	// +kubebuilder:validation:Optional
+	Image *string `json:"image,omitempty"`
+	// Deprecated: ImagePullPolicy is deprecated.
+	// +kubebuilder:validation:Optional
+	ImagePullPolicy *core.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// Deprecated: Resources is deprecated.
+	// +kubebuilder:validation:Optional
+	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	//
 	// Task declares task (kind) compatibility.
 	Task string `json:"task,omitempty"`
@@ -43,24 +44,23 @@ type AddonSpec struct {
 	Metadata runtime.RawExtension `json:"metadata,omitempty"`
 }
 
-// AddonStatus defines the observed state of an Addon.
+// AddonStatus defines the observed state of the resource.
 type AddonStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-// Addon defines an addon.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 type Addon struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the desired state of the resource.
-	Spec AddonSpec `json:"spec,omitempty"`
+	Spec AddonSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status AddonStatus `json:"status,omitempty"`
 }
