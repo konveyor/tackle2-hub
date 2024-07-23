@@ -4,6 +4,11 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ValidationError = "ValidationError"
+	Validated       = "Validated"
+)
+
 var (
 	Ready = meta.Condition{
 		Type:   "Ready",
@@ -12,7 +17,7 @@ var (
 	ImageNotDefined = meta.Condition{
 		Type:    "Ready",
 		Status:  meta.ConditionTrue,
-		Reason:  "Validation failed.",
+		Reason:  ValidationError,
 		Message: "Either image or container.image must be specified.",
 	}
 )

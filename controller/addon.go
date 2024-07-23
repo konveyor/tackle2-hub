@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
@@ -87,27 +88,46 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
+	addon.Status.Conditions = nil
+	addon.Status.ObservedGeneration = addon.Generation
 	// changed
 	migrated, err := r.addonChanged(addon)
 	if migrated || err != nil {
 		return
 	}
+	// Ready condition.
+	addon.Status.Conditions = append(
+		addon.Status.Conditions,
+		r.ready(addon))
 	// Apply changes.
-	addon.Status.Conditions = nil
-	addon.Status.ObservedGeneration = addon.Generation
-	if len(addon.Status.Conditions) == 0 {
-		ready := api.Ready
-		ready.LastTransitionTime = v1.Now()
-		ready.ObservedGeneration = addon.Status.ObservedGeneration
-		addon.Status.Conditions = []v1.Condition{
-			ready,
-		}
-	}
 	err = r.Status().Update(context.TODO(), addon)
 	if err != nil {
 		return
 	}
 
+	return
+}
+
+// ready returns the ready condition.
+func (r *Reconciler) ready(addon *api.Addon) (ready v1.Condition) {
+	ready = api.Ready
+	ready.LastTransitionTime = v1.Now()
+	ready.ObservedGeneration = addon.Status.ObservedGeneration
+	err := make([]string, 0)
+	for i := range addon.Status.Conditions {
+		cnd := &addon.Status.Conditions[i]
+		if cnd.Type == api.ValidationError {
+			err = append(err, cnd.Message)
+		}
+	}
+	if len(err) == 0 {
+		ready.Status = v1.ConditionTrue
+		ready.Reason = api.ValidationError
+		ready.Message = strings.Join(err, ";")
+	} else {
+		ready.Status = v1.ConditionFalse
+		ready.Reason = api.Validated
+	}
 	return
 }
 
