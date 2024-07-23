@@ -519,7 +519,7 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 		return
 	}
 	if !selected.Ready() {
-		err = &AddonNotReady{}
+		err = &AddonNotReady{Name: selected.Name}
 		return
 	}
 	task.Addon = selected.Name

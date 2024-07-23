@@ -112,10 +112,11 @@ func (e *AddonNotSelected) Retry() (r bool) {
 
 // AddonNotReady report that an addon does not have the ready condition.
 type AddonNotReady struct {
+	Name string
 }
 
 func (e *AddonNotReady) Error() string {
-	return fmt.Sprintf("Addon not ready.")
+	return fmt.Sprintf("Addon '%s' not ready.", e.Name)
 }
 
 func (e *AddonNotReady) Is(err error) (matched bool) {
