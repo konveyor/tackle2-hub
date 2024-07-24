@@ -21,6 +21,7 @@ import (
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
@@ -187,7 +188,9 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 	}
 	switch found.State {
 	case Created:
-		db = db.Select(
+		db = reflect.Select(
+			db,
+			requested,
 			"UpdateUser",
 			"Name",
 			"Kind",
@@ -214,7 +217,9 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 		Pending,
 		QuotaBlocked,
 		Postponed:
-		db = db.Select(
+		db = reflect.Select(
+			db,
+			requested,
 			"UpdateUser",
 			"Name",
 			"Locator",
@@ -1655,7 +1660,9 @@ func (r *Task) containsAny(str string, substr ...string) (matched bool) {
 
 // update manager controlled fields.
 func (r *Task) update(db *gorm.DB) (err error) {
-	db = db.Select(
+	db = reflect.Select(
+		db,
+		r.Task,
 		"Addon",
 		"Extensions",
 		"State",
