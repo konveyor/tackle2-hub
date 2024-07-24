@@ -3,9 +3,13 @@ package reflect
 import (
 	"reflect"
 	"time"
+
+	liberr "github.com/jortel/go-utils/error"
 )
 
 // Fields returns a map of fields.
+// Used for:
+// - db.Updates()
 func Fields(m any) (mp map[string]any) {
 	var inspect func(r any)
 	inspect = func(r any) {
@@ -80,5 +84,57 @@ func NameOf(m any) (name string) {
 			return
 		}
 	}
+	return
+}
+
+// HasFields returns the validated field names.
+// Used for:
+// - db.Omit()
+// - db.Select()
+func HasFields(m any, in ...string) (out []string, err error) {
+	mp := make(map[string]any)
+	var inspect func(r any)
+	inspect = func(r any) {
+		mt := reflect.TypeOf(r)
+		mv := reflect.ValueOf(r)
+		if mt.Kind() == reflect.Ptr {
+			mt = mt.Elem()
+			mv = mv.Elem()
+		}
+		for i := 0; i < mt.NumField(); i++ {
+			ft := mt.Field(i)
+			fv := mv.Field(i)
+			if !ft.IsExported() {
+				continue
+			}
+			switch fv.Kind() {
+			case reflect.Ptr:
+				inst := fv.Interface()
+				mp[ft.Name] = inst
+			case reflect.Struct:
+				if ft.Anonymous {
+					inspect(fv.Addr().Interface())
+					continue
+				}
+				inst := fv.Interface()
+				mp[ft.Name] = inst
+			default:
+				mp[ft.Name] = fv.Interface()
+			}
+		}
+	}
+	inspect(m)
+	for _, name := range in {
+		_, found := mp[name]
+		if !found {
+			err = &FieldNotValid{
+				Kind: NameOf(m),
+				Name: name,
+			}
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	out = in
 	return
 }

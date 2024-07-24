@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,9 +18,10 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/auth"
 	k8s2 "github.com/konveyor/tackle2-hub/k8s"
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha2"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
@@ -124,7 +126,11 @@ func (m *Manager) Run(ctx context.Context) {
 					m.startReady()
 					m.pause()
 				} else {
-					Log.Error(err, "")
+					if errors.Is(err, &NotReconciled{}) {
+						Log.Info(err.Error())
+					} else {
+						Log.Error(err, "")
+					}
 					m.pause()
 				}
 			}
@@ -182,7 +188,9 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 	}
 	switch found.State {
 	case Created:
-		db = db.Select(
+		db = reflect.Select(
+			db,
+			requested,
 			"UpdateUser",
 			"Name",
 			"Kind",
@@ -209,7 +217,9 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 		Pending,
 		QuotaBlocked,
 		Postponed:
-		db = db.Select(
+		db = reflect.Select(
+			db,
+			requested,
 			"UpdateUser",
 			"Name",
 			"Locator",
@@ -516,6 +526,13 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 	}
 	if selected == nil {
 		err = &AddonNotSelected{}
+		return
+	}
+	if !selected.Ready() {
+		err = &NotReady{
+			Kind: "Addon",
+			Name: selected.Name,
+		}
 		return
 	}
 	task.Addon = selected.Name
@@ -1643,7 +1660,9 @@ func (r *Task) containsAny(str string, substr ...string) (matched bool) {
 
 // update manager controlled fields.
 func (r *Task) update(db *gorm.DB) (err error) {
-	db = db.Select(
+	db = reflect.Select(
+		db,
+		r.Task,
 		"Addon",
 		"Extensions",
 		"State",
@@ -1651,7 +1670,7 @@ func (r *Task) update(db *gorm.DB) (err error) {
 		"Started",
 		"Terminated",
 		"Events",
-		"Error",
+		"Errors",
 		"Retries",
 		"Attached",
 		"Pod")
@@ -1903,6 +1922,13 @@ func (k *Cluster) getAddons() (err error) {
 	for i := range list.Items {
 		r := &list.Items[i]
 		k.addons[r.Name] = r
+		if !r.Reconciled() {
+			err = &NotReconciled{
+				Kind: r.Kind,
+				Name: r.Name,
+			}
+			return
+		}
 	}
 	return
 }

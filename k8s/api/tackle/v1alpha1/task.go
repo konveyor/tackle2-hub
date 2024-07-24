@@ -17,18 +17,64 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+// TaskSpec defines the desired state the resource.
+type TaskSpec struct {
+	// Priority defines the task priority (0-n).
+	Priority int `json:"priority,omitempty"`
+	// Dependencies defines a list of task names on which this task depends.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// Data object passed to the addon.
+	Data runtime.RawExtension `json:"data,omitempty"`
+}
+
+// TaskStatus defines the observed state the resource.
+type TaskStatus struct {
+	// The most recent generation observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+}
 
 // Task defines a hub task.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// +kubebuilder:unservedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 type Task struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
+	// Spec defines the desired state the resource.
+	Spec TaskSpec `json:"spec,omitempty"`
+	// Status defines the observed state the resource.
+	Status TaskStatus `json:"status,omitempty"`
+}
+
+// HasDep return true if the task has the dependency.
+func (r *Task) HasDep(name string) (found bool) {
+	for i := range r.Spec.Dependencies {
+		n := r.Spec.Dependencies[i]
+		if n == name {
+			found = true
+			break
+		}
+	}
+	return
+}
+
+// Data returns the task Data as map[string]any.
+func (r *Task) Data() (mp map[string]any) {
+	b := r.Spec.Data.Raw
+	if b == nil {
+		return
+	}
+	_ = json.Unmarshal(b, &mp)
+	return
 }
 
 // TaskList is a list of Task.
