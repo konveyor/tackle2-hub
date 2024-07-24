@@ -127,7 +127,7 @@ func HasFields(m any, in ...string) (out []string, err error) {
 	for _, name := range in {
 		_, found := mp[name]
 		if !found {
-			err = &FieldNotKnown{
+			err = &FieldNotValid{
 				Kind: NameOf(m),
 				Name: name,
 			}

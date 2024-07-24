@@ -5,21 +5,21 @@ import (
 	"fmt"
 )
 
-// FieldNotKnown report field not found.
-type FieldNotKnown struct {
+// FieldNotValid report field not valid.
+type FieldNotValid struct {
 	Kind string
 	Name string
 }
 
-func (e *FieldNotKnown) Error() string {
+func (e *FieldNotValid) Error() string {
 	return fmt.Sprintf(
-		"(%s) '%s' not known.",
+		"(%s) '%s' not valid.",
 		e.Kind,
 		e.Name)
 }
 
-func (e *FieldNotKnown) Is(err error) (matched bool) {
-	var inst *FieldNotKnown
+func (e *FieldNotValid) Is(err error) (matched bool) {
+	var inst *FieldNotValid
 	matched = errors.As(err, &inst)
 	return
 }
