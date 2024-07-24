@@ -1,6 +1,7 @@
 package reflect
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -92,6 +93,18 @@ func NameOf(m any) (name string) {
 // - db.Omit()
 // - db.Select()
 func HasFields(m any, in ...string) (out []string, err error) {
+	defer func() {
+		p := recover()
+		if p != nil {
+			if pe, cast := p.(error); cast {
+				err = pe
+			} else {
+				err = fmt.Errorf(
+					"(paniced) failed: %#v",
+					p)
+			}
+		}
+	}()
 	mp := make(map[string]any)
 	var inspect func(r any)
 	inspect = func(r any) {
@@ -109,6 +122,10 @@ func HasFields(m any, in ...string) (out []string, err error) {
 			}
 			switch fv.Kind() {
 			case reflect.Ptr:
+				if ft.Anonymous {
+					inspect(fv.Interface())
+					continue
+				}
 				inst := fv.Interface()
 				mp[ft.Name] = inst
 			case reflect.Struct:
