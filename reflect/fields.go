@@ -87,7 +87,7 @@ func NameOf(m any) (name string) {
 	return
 }
 
-// HasFields returns a valid list of field names.
+// HasFields returns the validated field names.
 // Used for:
 // - db.Omit()
 // - db.Select()
