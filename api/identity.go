@@ -34,7 +34,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(IdentitiesRoot+"/", h.setDecrypted, h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)
 	routeGroup.GET(IdentityRoot, h.setDecrypted, h.Get)
-	routeGroup.PUT(IdentityRoot, h.Update, Transaction)
+	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 }
 
