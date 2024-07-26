@@ -17,6 +17,7 @@ func TestTicketCRUD(t *testing.T) {
 				Name: r.Application.Name,
 			}
 			assert.Must(t, Application.Create(&app))
+			r.Application.ID = app.ID
 
 			createdIdentities := []api.Identity{}
 			createdTrackers := []api.Tracker{}
@@ -27,8 +28,11 @@ func TestTicketCRUD(t *testing.T) {
 					Kind: tracker.Kind,
 				}
 				assert.Must(t, Identity.Create(&identity))
+				tracker.Identity.ID = identity.ID
 				createdIdentities = append(createdIdentities, identity)
 				assert.Must(t, Tracker.Create(&tracker))
+				r.Tracker.ID = tracker.ID
+				r.Tracker.Name = tracker.Name
 				createdTrackers = append(createdTrackers, tracker)
 			}
 
@@ -72,6 +76,7 @@ func TestTicketList(t *testing.T) {
 			Name: r.Application.Name,
 		}
 		assert.Must(t, Application.Create(&app))
+		r.Application.ID = app.ID
 
 		createdIdentities := []api.Identity{}
 		createdTrackers := []api.Tracker{}
@@ -82,8 +87,11 @@ func TestTicketList(t *testing.T) {
 				Kind: tracker.Kind,
 			}
 			assert.Must(t, Identity.Create(&identity))
+			tracker.Identity.ID = identity.ID
 			createdIdentities = append(createdIdentities, identity)
 			assert.Must(t, Tracker.Create(&tracker))
+			r.Tracker.ID = tracker.ID
+			r.Tracker.Name = tracker.Name
 			createdTrackers = append(createdTrackers, tracker)
 		}
 
@@ -113,7 +121,7 @@ func TestTicketList(t *testing.T) {
 		// Delete tickets and related resources.
 		for _, ticket := range createdTickets {
 			assert.Must(t, Ticket.Delete(ticket.ID))
-			assert.Must(t, Application.Delete(ticket.ID))
+			assert.Must(t, Application.Delete(ticket.Application.ID))
 		}
 		for _, tracker := range createdTrackers {
 			assert.Must(t, Tracker.Delete(tracker.ID))

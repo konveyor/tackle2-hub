@@ -2,11 +2,13 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/migration/json"
-	"github.com/konveyor/tackle2-hub/migration/v14/model"
+	"github.com/konveyor/tackle2-hub/migration/v15/model"
 )
 
 // Field (data) types.
 type JSON = model.JSON
+
+var ALL = model.All()
 
 // Models
 type Model = model.Model
@@ -30,6 +32,7 @@ type ImportSummary = model.ImportSummary
 type ImportTag = model.ImportTag
 type JobFunction = model.JobFunction
 type MigrationWave = model.MigrationWave
+type PK = model.PK
 type Proxy = model.Proxy
 type Questionnaire = model.Questionnaire
 type Review = model.Review

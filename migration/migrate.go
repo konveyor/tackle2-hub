@@ -75,6 +75,10 @@ func Migrate(migrations []Migration) (err error) {
 			if err != nil {
 				return
 			}
+			err = database.PK.Load(db, m.Models())
+			if err != nil {
+				return
+			}
 			err = setVersion(db, ver)
 			if err != nil {
 				return

@@ -18,6 +18,7 @@ func TestMigrationWaveCRUD(t *testing.T) {
 			}
 			assert.Must(t, Application.Create(&expectedApp))
 			createdApps = append(createdApps, expectedApp)
+			r.Applications[0].ID = expectedApp.ID
 		}
 
 		createdStakeholders := []api.Stakeholder{}
@@ -28,6 +29,7 @@ func TestMigrationWaveCRUD(t *testing.T) {
 			}
 			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
 			createdStakeholders = append(createdStakeholders, expectedStakeholder)
+			r.Stakeholders[0].ID = expectedStakeholder.ID
 		}
 
 		createdStakeholderGroups := []api.StakeholderGroup{}
@@ -38,6 +40,7 @@ func TestMigrationWaveCRUD(t *testing.T) {
 			}
 			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
 			createdStakeholderGroups = append(createdStakeholderGroups, expectedStakeholderGroup)
+			r.StakeholderGroups[0].ID = expectedStakeholderGroup.ID
 		}
 
 		assert.Must(t, MigrationWave.Create(&r))
@@ -102,6 +105,7 @@ func TestMigrationWaveList(t *testing.T) {
 			}
 			assert.Must(t, Application.Create(&expectedApp))
 			createdApps = append(createdApps, expectedApp)
+			r.Applications[0].ID = expectedApp.ID
 		}
 
 		for _, stakeholder := range r.Stakeholders {
@@ -111,6 +115,7 @@ func TestMigrationWaveList(t *testing.T) {
 			}
 			assert.Must(t, Stakeholder.Create(&expectedStakeholder))
 			createdStakeholders = append(createdStakeholders, expectedStakeholder)
+			r.Stakeholders[0].ID = expectedStakeholder.ID
 		}
 
 		for _, stakeholderGroup := range r.StakeholderGroups {
@@ -120,6 +125,7 @@ func TestMigrationWaveList(t *testing.T) {
 			}
 			assert.Must(t, StakeholderGroup.Create(&expectedStakeholderGroup))
 			createdStakeholderGroups = append(createdStakeholderGroups, expectedStakeholderGroup)
+			r.StakeholderGroups[0].ID = expectedStakeholderGroup.ID
 		}
 		assert.Must(t, MigrationWave.Create(&r))
 		createdMigrationWaves = append(createdMigrationWaves, r)
