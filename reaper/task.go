@@ -113,7 +113,7 @@ func (r *TaskReaper) Run() {
 			if m.Terminated != nil {
 				mark = *m.Terminated
 			}
-			if m.TTL.Succeeded > 0 {
+			if m.TTL.Failed > 0 {
 				d := time.Duration(m.TTL.Failed) * Unit
 				if time.Since(mark) > d {
 					r.delete(m)
