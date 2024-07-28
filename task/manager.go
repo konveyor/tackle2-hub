@@ -1,6 +1,7 @@
 package task
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -30,7 +31,10 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/remotecommand"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // States
@@ -860,9 +864,6 @@ func (m *Manager) updateRunning() {
 		list = append(list, &Task{task})
 	}
 	for _, task := range list {
-		if !task.StateIn(Running, Pending) {
-			continue
-		}
 		running := task
 		pod, found := running.Reflect(&m.cluster)
 		if found {
@@ -872,10 +873,13 @@ func (m *Manager) updateRunning() {
 					Log.Error(err, "")
 					continue
 				}
-				err = running.Delete(m.Client)
+				err = m.ensureTerminated(pod)
 				if err != nil {
-					Log.Error(err, "")
-					continue
+					err = running.Delete(m.Client)
+					if err != nil {
+						Log.Error(err, "")
+						continue
+					}
 				}
 			}
 		}
@@ -1065,6 +1069,64 @@ func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.Fil
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+// ensureTerminated - Terminate running containers.
+func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.State.Terminated != nil {
+			continue
+		}
+		if status.Started == nil || !*status.Started {
+			continue
+		}
+		err = m.terminateContainer(pod, status.Name)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// terminateContainer -
+func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error) {
+	clientSet, err := k8s2.NewClientSet()
+	if err != nil {
+		return
+	}
+	cmd := []string{
+		"sh",
+		"-c",
+		"kill 1",
+	}
+	req := clientSet.CoreV1().RESTClient().Post()
+	req = req.Resource("pods")
+	req = req.Name(pod.Name)
+	req = req.Namespace(pod.Namespace)
+	req = req.SubResource("exec")
+	option := &core.PodExecOptions{
+		Command:   cmd,
+		Container: container,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+	}
+	req.VersionedParams(
+		option,
+		scheme.ParameterCodec,
+	)
+	cfg, _ := config.GetConfig()
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return
+	}
+	stdout := bytes.NewBuffer([]byte{})
+	stderr := bytes.NewBuffer([]byte{})
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: stdout,
+		Stderr: stderr,
+	})
 	return
 }
 
