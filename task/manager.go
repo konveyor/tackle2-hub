@@ -1091,6 +1091,7 @@ func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
 
 // terminateContainer - Terminate container as needed.
 func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error) {
+	Log.V(1).Info("KILL container", "container", container)
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
 		return
@@ -1127,6 +1128,21 @@ func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error
 		Stdout: stdout,
 		Stderr: stderr,
 	})
+	if err != nil {
+		Log.Info(
+			"Container KILL failed.",
+			"name",
+			container,
+			"err",
+			err.Error(),
+			"stderr",
+			stderr.String())
+	} else {
+		Log.Info(
+			"Container KILLED.",
+			"name",
+			container)
+	}
 	return
 }
 
