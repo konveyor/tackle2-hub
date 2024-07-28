@@ -1089,7 +1089,7 @@ func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
 	return
 }
 
-// terminateContainer -
+// terminateContainer - Terminate container as needed.
 func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error) {
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
