@@ -55,19 +55,20 @@ const (
 
 // Events
 const (
-	AddonSelected = "AddonSelected"
-	ExtSelected   = "ExtensionSelected"
-	ImageError    = "ImageError"
-	PodNotFound   = "PodNotFound"
-	PodCreated    = "PodCreated"
-	PodPending    = "PodPending"
-	PodRunning    = "PodRunning"
-	Preempted     = "Preempted"
-	PodSucceeded  = "PodSucceeded"
-	PodFailed     = "PodFailed"
-	PodDeleted    = "PodDeleted"
-	Escalated     = "Escalated"
-	Released      = "Released"
+	AddonSelected   = "AddonSelected"
+	ExtSelected     = "ExtensionSelected"
+	ImageError      = "ImageError"
+	PodNotFound     = "PodNotFound"
+	PodCreated      = "PodCreated"
+	PodPending      = "PodPending"
+	PodRunning      = "PodRunning"
+	Preempted       = "Preempted"
+	PodSucceeded    = "PodSucceeded"
+	PodFailed       = "PodFailed"
+	PodDeleted      = "PodDeleted"
+	Escalated       = "Escalated"
+	Released        = "Released"
+	ContainerKilled = "ContainerKilled"
 )
 
 // k8s labels.
@@ -880,7 +881,7 @@ func (m *Manager) updateRunning() {
 					podRetention = Settings.Hub.Task.Pod.Retention.Failed
 				}
 				if podRetention > 0 {
-					err = m.ensureTerminated(pod)
+					err = m.ensureTerminated(running, pod)
 					if err != nil {
 						podRetention = 0
 					}
@@ -1084,7 +1085,7 @@ func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.Fil
 }
 
 // ensureTerminated - Terminate running containers.
-func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
+func (m *Manager) ensureTerminated(task *Task, pod *core.Pod) (err error) {
 	for _, status := range pod.Status.ContainerStatuses {
 		if status.State.Terminated != nil {
 			continue
@@ -1092,7 +1093,7 @@ func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
 		if status.Started == nil || !*status.Started {
 			continue
 		}
-		err = m.terminateContainer(pod, status.Name)
+		err = m.terminateContainer(task, pod, status.Name)
 		if err != nil {
 			return
 		}
@@ -1101,7 +1102,23 @@ func (m *Manager) ensureTerminated(pod *core.Pod) (err error) {
 }
 
 // terminateContainer - Terminate container as needed.
-func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error) {
+// The container is killed.
+// Should the container continue to run after (1) minute,
+// it is reported as an error.
+func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string) (err error) {
+	matched := task.FindEvent(ContainerKilled)
+	if len(matched) > 0 {
+		for _, event := range matched {
+			if time.Since(event.Last) > time.Minute {
+				err = &NotTerminated{
+					Kind: "Container",
+					Name: container,
+				}
+				break
+			}
+		}
+		return
+	}
 	Log.V(1).Info("KILL container", "container", container)
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
@@ -1149,6 +1166,10 @@ func (m *Manager) terminateContainer(pod *core.Pod, container string) (err error
 			"stderr",
 			stderr.String())
 	} else {
+		task.Event(
+			ContainerKilled,
+			"container: '%s' has not terminated.",
+			container)
 		Log.Info(
 			"Container KILLED.",
 			"name",
@@ -1224,6 +1245,17 @@ func (r *Task) LastEvent(kind string) (event *model.TaskEvent, found bool) {
 		if kind == event.Kind {
 			found = true
 			break
+		}
+	}
+	return
+}
+
+// FindEvent returns the matched events by kind.
+func (r *Task) FindEvent(kind string) (matched []*model.TaskEvent) {
+	for i := 0; i < len(r.Events); i++ {
+		event := &r.Events[i]
+		if kind == event.Kind {
+			matched = append(matched, event)
 		}
 	}
 	return
