@@ -1106,19 +1106,6 @@ func (m *Manager) ensureTerminated(task *Task, pod *core.Pod) (err error) {
 // Should the container continue to run after (1) minute,
 // it is reported as an error.
 func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string) (err error) {
-	matched := task.FindEvent(ContainerKilled)
-	if len(matched) > 0 {
-		for _, event := range matched {
-			if time.Since(event.Last) > time.Minute {
-				err = &NotTerminated{
-					Kind: "Container",
-					Name: container,
-				}
-				break
-			}
-		}
-		return
-	}
 	Log.V(1).Info("KILL container", "container", container)
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
