@@ -873,8 +873,19 @@ func (m *Manager) updateRunning() {
 					Log.Error(err, "")
 					continue
 				}
-				err = m.ensureTerminated(pod)
-				if err != nil {
+				podRetention := 0
+				if running.State == Succeeded {
+					podRetention = Settings.Hub.Task.Pod.Retention.Succeeded
+				} else {
+					podRetention = Settings.Hub.Task.Pod.Retention.Failed
+				}
+				if podRetention > 0 {
+					err = m.ensureTerminated(pod)
+					if err != nil {
+						podRetention = 0
+					}
+				}
+				if podRetention == 0 {
 					err = running.Delete(m.Client)
 					if err != nil {
 						Log.Error(err, "")

@@ -44,7 +44,7 @@ type TaskReaper struct {
 //	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
 	Log.V(1).Info("Reaping tasks.")
-	list := []model.Task{}
+	list := []task.Task{}
 	result := r.DB.Find(
 		&list,
 		"state IN ?",
@@ -52,6 +52,7 @@ func (r *TaskReaper) Run() {
 			task.Created,
 			task.Succeeded,
 			task.Failed,
+			task.Canceled,
 		})
 	Log.Error(result.Error, "")
 	if result.Error != nil {
@@ -108,6 +109,10 @@ func (r *TaskReaper) Run() {
 					r.release(m)
 				}
 			}
+			d := time.Duration(Settings.Hub.Task.Pod.Retention.Succeeded) * Unit
+			if time.Since(mark) > d {
+				r.podDelete(m)
+			}
 		case task.Failed:
 			mark := m.CreateTime
 			if m.Terminated != nil {
@@ -124,23 +129,17 @@ func (r *TaskReaper) Run() {
 					r.release(m)
 				}
 			}
+			d := time.Duration(Settings.Hub.Task.Pod.Retention.Failed) * Unit
+			if time.Since(mark) > d {
+				r.podDelete(m)
+			}
 		}
 	}
 }
 
-// release resources.
-func (r *TaskReaper) release(m *model.Task) {
+// release bucket and file resources.
+func (r *TaskReaper) release(m *task.Task) {
 	nChanged := 0
-	if m.Pod != "" {
-		rt := Task{Task: m}
-		err := rt.Delete(r.Client)
-		if err == nil {
-			m.Pod = ""
-			nChanged++
-		} else {
-			Log.Error(err, "")
-		}
-	}
 	if m.HasBucket() {
 		Log.Info("Task bucket released.", "id", m.ID)
 		m.SetBucket(nil)
@@ -151,8 +150,7 @@ func (r *TaskReaper) release(m *model.Task) {
 		nChanged++
 	}
 	if nChanged > 0 {
-		rt := task.Task{Task: m}
-		rt.Event(task.Released)
+		m.Event(task.Released)
 		err := r.DB.Save(m).Error
 		if err != nil {
 			Log.Error(err, "")
@@ -161,10 +159,25 @@ func (r *TaskReaper) release(m *model.Task) {
 	return
 }
 
+// podDelete deletes the task pod.
+func (r *TaskReaper) podDelete(m *task.Task) {
+	if m.Pod == "" {
+		return
+	}
+	err := m.Delete(r.Client)
+	if err != nil {
+		Log.Error(err, "")
+		return
+	}
+	err = r.DB.Save(m).Error
+	if err != nil {
+		Log.Error(err, "")
+	}
+}
+
 // delete task.
-func (r *TaskReaper) delete(m *model.Task) {
-	rt := Task{Task: m}
-	err := rt.Delete(r.Client)
+func (r *TaskReaper) delete(m *task.Task) {
+	err := m.Delete(r.Client)
 	if err != nil {
 		Log.Error(err, "")
 	}
