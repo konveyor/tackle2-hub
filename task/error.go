@@ -327,3 +327,23 @@ func (e *QuotaExceeded) Retry() (r bool) {
 	r = true
 	return
 }
+
+// NotTerminated report pod/container not terminated.
+type NotTerminated struct {
+	Kind string
+	Name string
+}
+
+func (e *NotTerminated) Error() string {
+	return fmt.Sprintf("%s: '%s' not terminated as expected.", e.Kind, e.Name)
+}
+
+func (e *NotTerminated) Is(err error) (matched bool) {
+	var inst *NotTerminated
+	matched = errors.As(err, &inst)
+	return
+}
+
+func (e *NotTerminated) Retry() (r bool) {
+	return
+}
