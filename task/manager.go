@@ -128,6 +128,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
+					m.deleteZombies()
 					m.startReady()
 					m.pause()
 				} else {
@@ -901,6 +902,56 @@ func (m *Manager) updateRunning() {
 			return
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
+	}
+}
+
+// deleteZombies - detect and delete zombie pods.
+// A zombie is a (succeed|failed) task with a running pod that
+// the manager has previously tried to kill.
+func (m *Manager) deleteZombies() {
+	var err error
+	defer func() {
+		Log.Error(err, "")
+	}()
+	var pods []string
+	for _, pod := range m.cluster.Pods() {
+		if pod.Status.Phase == core.PodRunning {
+			ref := path.Join(pod.Namespace, pod.Name)
+			pods = append(
+				pods,
+				ref)
+		}
+	}
+	fetched := []*Task{}
+	db := m.DB.Select("Events")
+	db = db.Where("Pod", pods)
+	db = db.Where("state IN ?",
+		[]string{
+			Succeeded,
+			Failed,
+		})
+	err = db.Find(&fetched).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, task := range fetched {
+		event, found := task.LastEvent(ContainerKilled)
+		if !found {
+			continue
+		}
+		if time.Since(event.Last) > time.Minute {
+			Log.Info(
+				"Zombie detected.",
+				"task",
+				task.ID,
+				"pod",
+				task.Pod)
+			err = task.Delete(m.Client)
+			if err != nil {
+				Log.Error(err, "")
+			}
+		}
 	}
 }
 
