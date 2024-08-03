@@ -77,9 +77,6 @@ type RulePreempted struct {
 // Postpone based on a duration after the last preempted event.
 func (r *RulePreempted) Match(ready, _ *Task) (matched bool, reason string) {
 	preemption := Settings.Hub.Task.Preemption
-	if !preemption.Enabled {
-		return
-	}
 	mark := time.Now()
 	event, found := ready.LastEvent(Preempted)
 	if found {
