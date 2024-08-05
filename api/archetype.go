@@ -136,30 +136,9 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
-	result := h.DB(ctx).Omit(clause.Associations).Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
-		return
-	}
-
-	err = h.DB(ctx).Model(m).Association("Stakeholders").Replace("Stakeholders", m.Stakeholders)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("StakeholderGroups").Replace("StakeholderGroups", m.StakeholderGroups)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("CriteriaTags").Replace("CriteriaTags", m.CriteriaTags)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("Tags").Replace("Tags", m.Tags)
-	if err != nil {
-		_ = ctx.Error(err)
 		return
 	}
 
@@ -340,19 +319,9 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 		assessment.PrepareForArchetype(resolver, archetype, m)
 		newAssessment = true
 	}
-	result = h.DB(ctx).Omit(clause.Associations).Create(m)
+	result = h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("Stakeholders").Replace("Stakeholders", m.Stakeholders)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("StakeholderGroups").Replace("StakeholderGroups", m.StakeholderGroups)
-	if err != nil {
-		_ = ctx.Error(err)
 		return
 	}
 	if newAssessment {

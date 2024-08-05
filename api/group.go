@@ -97,19 +97,9 @@ func (h StakeholderGroupHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Omit(clause.Associations).Create(m)
+	result := h.DB(ctx).Create(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("Stakeholders").Replace(m.Stakeholders)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("MigrationWaves").Replace(m.MigrationWaves)
-	if err != nil {
-		_ = ctx.Error(err)
 		return
 	}
 	r.With(m)
