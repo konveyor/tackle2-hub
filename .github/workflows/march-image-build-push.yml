@@ -19,15 +19,9 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-    steps:
-    - name: Checkout Push to Registry action
-      uses: konveyor/release-tools/build-push-quay@main
-      with:
-        architectures: "amd64, arm64"
-        containerfile: "./Dockerfile"
-        image_name: "tackle2-hub"
-        image_namespace: "konveyor"
-        image_registry: "quay.io"
-        quay_publish_robot: ${{ secrets.QUAY_PUBLISH_ROBOT }}
-        quay_publish_token: ${{ secrets.QUAY_PUBLISH_TOKEN }}
-        ref: ${{ github.ref }}
+    uses: konveyor/release-tools/build-push-images.yaml@main
+    with:
+      registry: "quay.io/konveyor"
+      image_name: "tackle2-hub"
+      containerfile: "./Dockerfile"
+      architectures: '[ "amd64", "arm64" ]'
