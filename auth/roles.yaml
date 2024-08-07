@@ -130,6 +130,7 @@
         - get
         - post
         - put
+        - patch
     - name: tasks.bucket
       verbs:
         - delete
@@ -327,6 +328,7 @@
         - get
         - post
         - put
+        - patch
     - name: tasks.bucket
       verbs:
         - delete
@@ -468,6 +470,7 @@
         - get
         - post
         - put
+        - patch
     - name: tasks.bucket
       verbs:
         - delete
