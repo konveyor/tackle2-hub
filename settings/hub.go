@@ -19,6 +19,8 @@ const (
 	EnvTaskReapCreated         = "TASK_REAP_CREATED"
 	EnvTaskReapSucceeded       = "TASK_REAP_SUCCEEDED"
 	EnvTaskReapFailed          = "TASK_REAP_FAILED"
+	EnvTaskPodRetainSucceeded  = "TASK_POD_RETAIN_SUCCEEDED"
+	EnvTaskPodRetainFailed     = "TASK_POD_RETAIN_FAILED"
 	EnvTaskSA                  = "TASK_SA"
 	EnvTaskRetries             = "TASK_RETRIES"
 	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
@@ -83,6 +85,12 @@ type Hub struct {
 			Delayed   time.Duration
 			Postponed time.Duration
 			Rate      int
+		}
+		Pod struct {
+			Retention struct {
+				Succeeded int
+				Failed    int
+			}
 		}
 	}
 	// Frequency
@@ -168,6 +176,20 @@ func (r *Hub) Load() (err error) {
 		r.Task.Reaper.Failed = n
 	} else {
 		r.Task.Reaper.Failed = 43200 // 720 hours (30 days).
+	}
+	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Pod.Retention.Succeeded = n
+	} else {
+		r.Task.Pod.Retention.Succeeded = 1
+	}
+	s, found = os.LookupEnv(EnvTaskPodRetainFailed)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Pod.Retention.Failed = n
+	} else {
+		r.Task.Pod.Retention.Failed = 4320 // 72 hours.
 	}
 	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
 	if !found {
