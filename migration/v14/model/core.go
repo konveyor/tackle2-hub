@@ -23,22 +23,16 @@ type Model struct {
 type Setting struct {
 	Model
 	Key   string `gorm:"<-:create;uniqueIndex"`
-	Value JSON   `gorm:"type:json"`
-}
-
-// With updates the value of the Setting with the json representation
-// of the `value` parameter.
-func (r *Setting) With(value any) (err error) {
-	r.Value, err = json.Marshal(value)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
+	Value any    `gorm:"type:json;serializer:json"`
 }
 
 // As unmarshalls the value of the Setting into the `ptr` parameter.
 func (r *Setting) As(ptr any) (err error) {
-	err = json.Unmarshal(r.Value, ptr)
+	bytes, err := json.Marshal(r.Value)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	err = json.Unmarshal(bytes, ptr)
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -146,26 +140,6 @@ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
 	return
 }
 
-// TaskError used in Task.Errors.
-type TaskError struct {
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-}
-
-// TaskPolicy scheduling policy.
-type TaskPolicy struct {
-	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
-	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
-	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
-}
-
-// Attachment file attachment.
-type Attachment struct {
-	ID       uint   `json:"id" binding:"required"`
-	Name     string `json:"name,omitempty" yaml:",omitempty"`
-	Activity int    `json:"activity,omitempty" yaml:",omitempty"`
-}
-
 type TaskReport struct {
 	Model
 	Status    string
@@ -202,8 +176,8 @@ type Proxy struct {
 	Kind       string `gorm:"uniqueIndex"`
 	Host       string `gorm:"not null"`
 	Port       int
-	Excluded   JSON  `gorm:"type:json"`
-	IdentityID *uint `gorm:"index"`
+	Excluded   []string `gorm:"type:json;serializer:json"`
+	IdentityID *uint    `gorm:"index"`
 	Identity   *Identity
 }
 
@@ -289,12 +263,32 @@ func (r *Identity) Decrypt() (err error) {
 // JSON Fields.
 //
 
+// Attachment file attachment.
+type Attachment struct {
+	ID       uint   `json:"id" binding:"required"`
+	Name     string `json:"name,omitempty" yaml:",omitempty"`
+	Activity int    `json:"activity,omitempty" yaml:",omitempty"`
+}
+
+// TaskError used in Task.Errors.
+type TaskError struct {
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+}
+
 // TaskEvent task event.
 type TaskEvent struct {
 	Kind   string    `json:"kind"`
 	Count  int       `json:"count"`
 	Reason string    `json:"reason,omitempty" yaml:",omitempty"`
 	Last   time.Time `json:"last"`
+}
+
+// TaskPolicy scheduling policy.
+type TaskPolicy struct {
+	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
+	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
+	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
 }
 
 // TTL time-to-live.

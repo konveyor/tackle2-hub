@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -126,7 +125,7 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations, "Thresholds", "RiskMessages")
-	result := db.Updates(h.fields(m))
+	result := db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -148,20 +147,24 @@ func (h AssessmentHandler) Update(ctx *gin.Context) {
 // Assessment REST resource.
 type Assessment struct {
 	Resource          `yaml:",inline"`
-	Application       *Ref                 `json:"application,omitempty" yaml:",omitempty" binding:"excluded_with=Archetype"`
-	Archetype         *Ref                 `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
-	Questionnaire     Ref                  `json:"questionnaire" binding:"required"`
-	Sections          []assessment.Section `json:"sections" binding:"dive"`
-	Stakeholders      []Ref                `json:"stakeholders"`
-	StakeholderGroups []Ref                `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	Application       *Ref      `json:"application,omitempty" yaml:",omitempty" binding:"excluded_with=Archetype"`
+	Archetype         *Ref      `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
+	Questionnaire     Ref       `json:"questionnaire" binding:"required"`
+	Sections          []Section `json:"sections" binding:"dive"`
+	Stakeholders      []Ref     `json:"stakeholders"`
+	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups"`
 	// read only
-	Risk         string                  `json:"risk"`
-	Confidence   int                     `json:"confidence"`
-	Status       string                  `json:"status"`
-	Thresholds   assessment.Thresholds   `json:"thresholds"`
-	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages"`
-	Required     bool                    `json:"required"`
+	Risk         string       `json:"risk"`
+	Confidence   int          `json:"confidence"`
+	Status       string       `json:"status"`
+	Thresholds   Thresholds   `json:"thresholds"`
+	RiskMessages RiskMessages `json:"riskMessages" yaml:"riskMessages"`
+	Required     bool         `json:"required"`
 }
+
+type Section model.Section
+type Thresholds model.Thresholds
+type RiskMessages model.RiskMessages
 
 // With updates the resource with the model.
 func (r *Assessment) With(m *model.Assessment) {
@@ -186,9 +189,12 @@ func (r *Assessment) With(m *model.Assessment) {
 	r.Required = a.Questionnaire.Required
 	r.Risk = a.Risk()
 	r.Confidence = a.Confidence()
-	r.RiskMessages = a.RiskMessages
-	r.Thresholds = a.Thresholds
-	r.Sections = a.Sections
+	r.RiskMessages = RiskMessages(a.RiskMessages)
+	r.Thresholds = Thresholds(a.Thresholds)
+	r.Sections = []Section{}
+	for _, s := range a.Sections {
+		r.Sections = append(r.Sections, Section(s))
+	}
 	r.Status = a.Status()
 }
 
@@ -196,8 +202,8 @@ func (r *Assessment) With(m *model.Assessment) {
 func (r *Assessment) Model() (m *model.Assessment) {
 	m = &model.Assessment{}
 	m.ID = r.ID
-	if r.Sections != nil {
-		m.Sections, _ = json.Marshal(r.Sections)
+	for _, s := range r.Sections {
+		m.Sections = append(m.Sections, model.Section(s))
 	}
 	m.QuestionnaireID = r.Questionnaire.ID
 	if r.Archetype != nil {

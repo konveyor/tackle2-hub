@@ -23,7 +23,7 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	if !Settings.Discovery.Enabled {
 		return
 	}
-	if len(m.Repository) == 0 || string(m.Repository) == "null" {
+	if m.Repository == (model.Repository{}) {
 		return
 	}
 	kinds, err := r.FindTasks(Settings.Discovery.Label)

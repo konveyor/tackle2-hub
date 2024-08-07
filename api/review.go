@@ -30,7 +30,7 @@ func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(ReviewRoot, h.Get)
 	routeGroup.PUT(ReviewRoot, h.Update)
 	routeGroup.DELETE(ReviewRoot, h.Delete)
-	routeGroup.POST(CopyRoot, h.CopyReview)
+	routeGroup.POST(CopyRoot, h.CopyReview, Transaction)
 }
 
 // Get godoc
@@ -155,7 +155,7 @@ func (h ReviewHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db.Omit(clause.Associations)
-	result := db.Updates(h.fields(m))
+	result := db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -194,26 +194,15 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 			Comments:            m.Comments,
 			ApplicationID:       &id,
 		}
-		existing := []model.Review{}
-		result = h.DB(ctx).Find(&existing, "applicationid = ?", id)
+		result = h.DB(ctx).Delete(&model.Review{}, "applicationid = ?", id)
 		if result.Error != nil {
 			_ = ctx.Error(result.Error)
 			return
 		}
-		// if the application doesn't already have a review, create one.
-		if len(existing) == 0 {
-			result = h.DB(ctx).Create(copied)
-			if result.Error != nil {
-				_ = ctx.Error(result.Error)
-				return
-			}
-			// if the application already has a review, replace it with the copied review.
-		} else {
-			result = h.DB(ctx).Model(&existing[0]).Updates(h.fields(copied))
-			if result.Error != nil {
-				_ = ctx.Error(result.Error)
-				return
-			}
+		result = h.DB(ctx).Create(copied)
+		if result.Error != nil {
+			_ = ctx.Error(result.Error)
+			return
 		}
 	}
 	h.Status(ctx, http.StatusNoContent)

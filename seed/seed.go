@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -75,12 +74,10 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 		return
 	}
 	var seededChecksum string
-	if setting.Value != nil {
-		err = json.Unmarshal(setting.Value, &seededChecksum)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	err = setting.As(&seededChecksum)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 
 	match = seededChecksum == fmt.Sprintf("%x", checksum)
@@ -90,8 +87,7 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 // saveChecksum saves the seed checksum to the setting specified by SeedKey.
 func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 	setting := &model.Setting{Key: SeedKey}
-	value, _ := json.Marshal(fmt.Sprintf("%x", checksum))
-	setting.Value = value
+	setting.Value = fmt.Sprintf("%x", checksum)
 	result := db.Where("key", SeedKey).Updates(setting)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
@@ -110,12 +106,10 @@ func migrationVersion(db *gorm.DB) (version uint, err error) {
 	}
 
 	var v migration.Version
-	if setting.Value != nil {
-		err = json.Unmarshal(setting.Value, &v)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	err = setting.As(&v)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 
 	version = uint(v.Version)

@@ -202,7 +202,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
-	err = db.Updates(h.fields(m)).Error
+	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return

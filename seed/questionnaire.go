@@ -77,9 +77,14 @@ func (r *Questionnaire) Apply(db *gorm.DB) (err error) {
 		questionnaire.Name = q.Name
 		questionnaire.UUID = &q.UUID
 		questionnaire.Description = q.Description
-		questionnaire.Sections, _ = json.Marshal(q.Sections)
-		questionnaire.RiskMessages, _ = json.Marshal(q.RiskMessages)
-		questionnaire.Thresholds, _ = json.Marshal(q.Thresholds)
+		questionnaire.RiskMessages = model.RiskMessages(q.RiskMessages)
+		questionnaire.Thresholds = model.Thresholds(q.Thresholds)
+		bytes, jErr := json.Marshal(q.Sections)
+		if jErr != nil {
+			err = liberr.Wrap(jErr)
+			return
+		}
+		err = json.Unmarshal(bytes, &questionnaire.Sections)
 		result := db.Save(&questionnaire)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)

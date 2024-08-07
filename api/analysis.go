@@ -1060,11 +1060,9 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 			Name:         m.Name,
 		}
 		resources = append(resources, r)
-		if m.Labels != nil {
-			_ = json.Unmarshal(m.Labels, &r.Labels)
-		}
-		if m.Links != nil {
-			_ = json.Unmarshal(m.Links, &r.Links)
+		r.Labels = m.Labels
+		for _, l := range m.Links {
+			r.Links = append(r.Links, Link(l))
 		}
 		r.Effort += m.Effort
 	}
@@ -1197,11 +1195,9 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 			ID:          m.ID,
 		}
 		resources = append(resources, r)
-		if m.Labels != nil {
-			_ = json.Unmarshal(m.Labels, &r.Labels)
-		}
-		if m.Links != nil {
-			_ = json.Unmarshal(m.Links, &r.Links)
+		r.Labels = m.Labels
+		for _, l := range m.Links {
+			r.Links = append(r.Links, Link(l))
 		}
 		r.Effort += m.Effort
 	}
@@ -1722,13 +1718,9 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 			Name:         m.Name,
 			Applications: m.Applications,
 		}
-		if m.Labels != nil {
-			var aggregated []string
-			_ = json.Unmarshal(m.Labels, &aggregated)
-			for _, s := range aggregated {
-				if s != "" {
-					r.Labels = append(r.Labels, s)
-				}
+		for _, s := range m.Labels {
+			if s != "" {
+				r.Labels = append(r.Labels, s)
 			}
 		}
 		resources = append(resources, r)
@@ -2082,7 +2074,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		db = db.Where("n.IssueID = i.ID")
 		db = db.Where("i.AnalysisID", m.ID)
 		db = db.Group("i.ID")
-		summary := []ArchivedIssue{}
+		summary := []model.ArchivedIssue{}
 		err = db.Scan(&summary).Error
 		if err != nil {
 			return
@@ -2091,8 +2083,8 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		db = db.Model(m)
 		db = db.Omit(clause.Associations)
 		m.Archived = true
-		m.Summary, _ = json.Marshal(summary)
-		err = db.Updates(h.fields(&m)).Error
+		m.Summary = summary
+		err = db.Save(&m).Error
 		if err != nil {
 			return
 		}
@@ -2155,7 +2147,7 @@ type Issue struct {
 	Effort      int        `json:"effort,omitempty" yaml:",omitempty"`
 	Incidents   []Incident `json:"incidents,omitempty" yaml:",omitempty"`
 	Links       []Link     `json:"links,omitempty" yaml:",omitempty"`
-	Facts       FactMap    `json:"facts,omitempty" yaml:",omitempty"`
+	Facts       Map        `json:"facts,omitempty" yaml:",omitempty"`
 	Labels      []string   `json:"labels"`
 }
 
@@ -2176,15 +2168,11 @@ func (r *Issue) With(m *model.Issue) {
 			r.Incidents,
 			n)
 	}
-	if m.Links != nil {
-		_ = json.Unmarshal(m.Links, &r.Links)
+	for _, l := range m.Links {
+		r.Links = append(r.Links, Link(l))
 	}
-	if m.Facts != nil {
-		_ = json.Unmarshal(m.Facts, &r.Facts)
-	}
-	if m.Labels != nil {
-		_ = json.Unmarshal(m.Labels, &r.Labels)
-	}
+	r.Facts = m.Facts
+	r.Labels = m.Labels
 	r.Effort = m.Effort
 }
 
@@ -2203,9 +2191,11 @@ func (r *Issue) Model() (m *model.Issue) {
 			m.Incidents,
 			*n)
 	}
-	m.Links, _ = json.Marshal(r.Links)
-	m.Facts, _ = json.Marshal(r.Facts)
-	m.Labels, _ = json.Marshal(r.Labels)
+	for _, l := range r.Links {
+		m.Links = append(m.Links, model.Link(l))
+	}
+	m.Facts = r.Facts
+	m.Labels = r.Labels
 	m.Effort = r.Effort
 	return
 }
@@ -2231,9 +2221,7 @@ func (r *TechDependency) With(m *model.TechDependency) {
 	r.Version = m.Version
 	r.Indirect = m.Indirect
 	r.SHA = m.SHA
-	if m.Labels != nil {
-		_ = json.Unmarshal(m.Labels, &r.Labels)
-	}
+	r.Labels = m.Labels
 }
 
 // Model builds a model.
@@ -2244,7 +2232,7 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 	m.Version = r.Version
 	m.Provider = r.Provider
 	m.Indirect = r.Indirect
-	m.Labels, _ = json.Marshal(r.Labels)
+	m.Labels = r.Labels
 	m.SHA = r.SHA
 	return
 }
@@ -2252,12 +2240,12 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 // Incident REST resource.
 type Incident struct {
 	Resource `yaml:",inline"`
-	Issue    uint    `json:"issue"`
-	File     string  `json:"file"`
-	Line     int     `json:"line"`
-	Message  string  `json:"message"`
-	CodeSnip string  `json:"codeSnip" yaml:"codeSnip"`
-	Facts    FactMap `json:"facts"`
+	Issue    uint   `json:"issue"`
+	File     string `json:"file"`
+	Line     int    `json:"line"`
+	Message  string `json:"message"`
+	CodeSnip string `json:"codeSnip" yaml:"codeSnip"`
+	Facts    Map    `json:"facts"`
 }
 
 // With updates the resource with the model.
@@ -2268,9 +2256,7 @@ func (r *Incident) With(m *model.Incident) {
 	r.Line = m.Line
 	r.Message = m.Message
 	r.CodeSnip = m.CodeSnip
-	if m.Facts != nil {
-		_ = json.Unmarshal(m.Facts, &r.Facts)
-	}
+	r.Facts = m.Facts
 }
 
 // Model builds a model.
@@ -2280,7 +2266,7 @@ func (r *Incident) Model() (m *model.Incident) {
 	m.Line = r.Line
 	m.Message = r.Message
 	m.CodeSnip = r.CodeSnip
-	m.Facts, _ = json.Marshal(r.Facts)
+	m.Facts = r.Facts
 	return
 }
 
@@ -2370,9 +2356,6 @@ type DepAppReport struct {
 		Labels   []string `json:"labels"`
 	} `json:"dependency"`
 }
-
-// FactMap map.
-type FactMap map[string]any
 
 // IssueWriter used to create a file containing issues.
 type IssueWriter struct {
