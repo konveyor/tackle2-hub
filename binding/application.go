@@ -333,16 +333,19 @@ func (h *Analysis) Create(commit, encoding, issues, deps string) (err error) {
 	}
 	r := api.AnalysisManifest{Commit: commit}
 	file := File{client: h.client}
+	// post issues.
 	f, err := file.Post(issues)
 	if err != nil {
 		return
 	}
 	r.Issues = api.Ref{ID: f.ID}
+	// post deps.
 	f, err = file.Post(deps)
 	if err != nil {
 		return
 	}
 	r.Dependencies = api.Ref{ID: f.ID}
+	// post manifest.
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.Encoding(encoding).Post(path, r)
 	return
