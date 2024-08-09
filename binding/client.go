@@ -21,6 +21,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/binding/filter"
 	"github.com/konveyor/tackle2-hub/tar"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -71,7 +72,8 @@ func (s Path) Inject(p Params) (out string) {
 // NewClient Constructs a new client
 func NewClient(baseURL string) (client *Client) {
 	client = &Client{
-		BaseURL: baseURL,
+		encoding: binding.MIMEJSON,
+		BaseURL:  baseURL,
 	}
 	client.Retry = RetryLimit
 	return
@@ -79,6 +81,8 @@ func NewClient(baseURL string) (client *Client) {
 
 // Client provides a REST client.
 type Client struct {
+	// encoding
+	encoding string
 	// transport
 	transport http.RoundTripper
 	// baseURL for the nub.
@@ -96,6 +100,17 @@ func (r *Client) Reset() {
 	r.Error = nil
 }
 
+// Encoding returns a client with the specified encoding.
+func (r *Client) Encoding(encoding string) (r2 *Client) {
+	r2 = &Client{
+		encoding:  encoding,
+		transport: r.transport,
+		Login:     r.Login,
+		Retry:     r.Retry,
+	}
+	return
+}
+
 // Get a resource.
 func (r *Client) Get(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
@@ -104,7 +119,6 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -124,17 +138,7 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 	status := response.StatusCode
 	switch status {
 	case http.StatusOK:
-		var body []byte
-		body, err = io.ReadAll(response.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		err = r.decode(object, response)
 	default:
 		err = r.restError(response)
 	}
@@ -145,19 +149,16 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 // Post a resource.
 func (r *Client) Post(path string, object any) (err error) {
 	request := func() (request *http.Request, err error) {
-		bfr, err := json.Marshal(object)
+		body, err := r.encode(object)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
-		reader := bytes.NewReader(bfr)
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPost,
-			Body:   io.NopCloser(reader),
+			Body:   io.NopCloser(body),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		return
 	}
 	response, err := r.send(request)
@@ -170,17 +171,7 @@ func (r *Client) Post(path string, object any) (err error) {
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
-		var body []byte
-		body, err = io.ReadAll(response.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		err = r.decode(object, response)
 	default:
 		err = r.restError(response)
 	}
@@ -190,19 +181,16 @@ func (r *Client) Post(path string, object any) (err error) {
 // Put a resource.
 func (r *Client) Put(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
-		bfr, err := json.Marshal(object)
+		body, err := r.encode(object)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
-		reader := bytes.NewReader(bfr)
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPut,
-			Body:   io.NopCloser(reader),
+			Body:   io.NopCloser(body),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -222,17 +210,7 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
-		var body []byte
-		body, err = io.ReadAll(response.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		err = r.decode(object, response)
 	default:
 		err = r.restError(response)
 	}
@@ -243,19 +221,16 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 // Patch a resource.
 func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
-		bfr, err := json.Marshal(object)
+		body, err := r.encode(object)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
-		reader := bytes.NewReader(bfr)
 		request = &http.Request{
 			Header: http.Header{},
 			Method: http.MethodPatch,
-			Body:   io.NopCloser(reader),
+			Body:   io.NopCloser(body),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -275,17 +250,7 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 	case http.StatusNoContent:
 	case http.StatusOK,
 		http.StatusCreated:
-		var body []byte
-		body, err = io.ReadAll(response.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		err = r.decode(object, response)
 	default:
 		err = r.restError(response)
 	}
@@ -301,7 +266,6 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -542,7 +506,6 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 			URL:    r.join(path),
 		}
 		mp := multipart.NewWriter(pw)
-		request.Header.Set(api.Accept, binding.MIMEJSON)
 		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		go func() {
 			var err error
@@ -685,6 +648,24 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
+		switch r.encoding {
+		case "":
+			fallthrough
+		case binding.MIMEJSON,
+			binding.MIMEYAML:
+			h := request.Header
+			if h.Get(api.ContentType) == "" {
+				h.Set(api.ContentType, r.encoding)
+			}
+			if h.Get(api.Accept) == "" {
+				h.Set(api.Accept, r.encoding)
+			}
+		default:
+			err = liberr.New(
+				"Encoding: %s not supported.",
+				r.Encoding)
+			return
+		}
 		request.Header.Set(api.Authorization, "Bearer "+r.Login.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
@@ -773,6 +754,41 @@ func (r *Client) restError(response *http.Response) (err error) {
 		restError := &RestError{}
 		restError.With(response)
 		err = restError
+	}
+	return
+}
+
+// decode body into object.
+func (r *Client) decode(object any, response *http.Response) (err error) {
+	encoding := response.Header.Get(api.ContentType)
+	switch encoding {
+	case "", binding.MIMEJSON:
+		d := json.NewDecoder(response.Body)
+		err = d.Decode(object)
+		err = liberr.Wrap(err)
+	case binding.MIMEYAML:
+		d := yaml.NewDecoder(response.Body)
+		err = d.Decode(object)
+		err = liberr.Wrap(err)
+	default:
+		err = liberr.New("Encoding: %s not supported.", encoding)
+	}
+	return
+}
+
+// bind response.
+func (r *Client) encode(object any) (reader io.Reader, err error) {
+	var b []byte
+	switch r.encoding {
+	case "", binding.MIMEJSON:
+		b, err = json.Marshal(object)
+	case binding.MIMEYAML:
+		b, err = yaml.Marshal(object)
+	default:
+		err = liberr.New("Encoding: %s not supported.", r.Encoding)
+	}
+	if err == nil {
+		reader = bytes.NewReader(b)
 	}
 	return
 }

@@ -320,7 +320,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @description   - dependencies: file that multiple api.TechDependency resources.
 // @tags analyses
 // @produce json
-// @success 201 {object} api.Analysis
+// @success 201 {object} api.AnalysisManifest
 // @router /application/{id}/analyses [post]
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
@@ -339,35 +339,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Analysis
-	input, err := ctx.FormFile(FileField)
+	manifest := &AnalysisManifest{}
+	err := h.Bind(ctx, manifest)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	reader, err := input.Open()
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	defer func() {
-		_ = reader.Close()
-	}()
-	encoding := input.Header.Get(ContentType)
-	d, err := h.Decoder(ctx, encoding, reader)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	r := Analysis{}
-	err = d.Decode(&r)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
+	r.Commit = manifest.Commit
 	analysis := r.Model()
 	analysis.ApplicationID = id
 	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
@@ -380,13 +359,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Issues
-	input, err = ctx.FormFile(IssueField)
+	file := &model.File{}
+	err = db.First(file, manifest.Issues.ID).Error
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
-	reader, err = input.Open()
+	reader, err := os.Open(file.Path)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -395,8 +375,8 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	encoding = input.Header.Get(ContentType)
-	d, err = h.Decoder(ctx, encoding, reader)
+	encoding := ctx.Request.Header.Get(ContentType)
+	d, err := h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -425,13 +405,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Dependencies
-	input, err = ctx.FormFile(DepField)
+	file = &model.File{}
+	err = db.First(file, manifest.Dependencies.ID).Error
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
-	reader, err = input.Open()
+	reader, err = os.Open(file.Path)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -440,7 +421,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = reader.Close()
 	}()
-	encoding = input.Header.Get(ContentType)
+	encoding = ctx.Request.Header.Get(ContentType)
 	d, err = h.Decoder(ctx, encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -2369,6 +2350,13 @@ type DepAppReport struct {
 		Indirect bool     `json:"indirect"`
 		Labels   []string `json:"labels"`
 	} `json:"dependency"`
+}
+
+// AnalysisManifest resource.
+type AnalysisManifest struct {
+	Commit       string `json:"commit,omitempty" yaml:",omitempty"`
+	Issues       Ref    `json:"issues"`
+	Dependencies Ref    `json:"dependencies"`
 }
 
 // FactMap map.

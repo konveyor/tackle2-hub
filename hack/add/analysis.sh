@@ -3,15 +3,15 @@
 set -e
 
 host="${HOST:-localhost:8080}"
-app="${1:-1}"
+appId="${1:-1}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"
-aPath="/tmp/analysis.yaml"
+tmp=/tmp/${self}-${pid}
 iPath="/tmp/issues.yaml"
 dPath="/tmp/deps.yaml"
 
-echo " Application: ${app}"
+echo " Application: ${appId}"
 echo " RuleSets: ${nRuleSet}"
 echo " Issues: ${nIssue}"
 echo " Incidents: ${nIncident}"
@@ -192,23 +192,66 @@ echo -n "---
 name: github.com/java
 version: 8
 " >> ${file}
+
+echo "Report (files) GENERATED"
+
 #
-# Analysis
+# Post issues.
+code=$(curl -kSs -o ${tmp} -w "%{http_code}" -F "file=@${iPath}" http://${host}/files/issues)
+if [ ! $? -eq 0 ]
+then
+  exit $?
+fi
+case ${code} in
+  201)
+    issueId=$(cat ${tmp}|jq .id)
+    echo "issues file: ${name} created. id=${issueId}"
+    ;;
+  *)
+    echo "create issues file  - FAILED: ${code}."
+    cat ${tmp}
+    exit 1
+esac
 #
-file=${aPath}
-echo -n "---
+# Post deps.
+code=$(curl -kSs -o ${tmp} -w "%{http_code}" -F "file=@${dPath}" http://${host}/files/deps)
+if [ ! $? -eq 0 ]
+then
+  exit $?
+fi
+case ${code} in
+  201)
+    depId=$(cat ${tmp}|jq .id)
+    echo "deps file: ${name} created. id=${depId}"
+    ;;
+  *)
+    echo "create deps file  - FAILED: ${code}."
+    cat ${tmp}
+    exit 1
+esac
+#
+# Post analysis.
+d="
 commit: "42b22a90"
 issues:
+  id: ${issueId}
 dependencies:
-" > ${file}
+  id: ${depId}
+"
+code=$(curl -kSs -o ${tmp} -w "%{http_code}" ${host}/applications/${appId}/analyses -H "Content-Type:application/x-yaml" -d "${d}")
+if [ ! $? -eq 0 ]
+then
+  exit $?
+fi
+case ${code} in
+  201)
+    id=$(cat ${tmp}|jq .id)
+    echo "analysis: ${name} created. id=${id}"
+    ;;
+  *)
+    echo "create analysis  - FAILED: ${code}."
+    cat ${tmp}
+    exit 1
+esac
 
-echo "Report CREATED"
-
-mime="application/x-yaml"
-
-curl \
-  -F "file=@${aPath};type=${mime}" \
-  -F "issues=@${iPath};type=${mime}" \
-  -F "dependencies=@${dPath};type=${mime}" \
-  ${host}/applications/${app}/analyses \
-  -H "Accept:${mime}"
+echo "Report POSTED"
