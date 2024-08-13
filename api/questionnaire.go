@@ -1,11 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 )
@@ -167,19 +165,16 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 	updated := r.Model()
 	updated.ID = id
 	updated.UpdateUser = h.CurrentUser(ctx)
-	var fields map[string]any
 	if m.Builtin() {
-		fields = map[string]any{
-			"updateUser": updated.UpdateUser,
-			"required":   updated.Required,
-		}
+		m.UpdateUser = updated.UpdateUser
+		m.Required = updated.Required
 	} else {
-		fields = h.fields(updated)
+		m = updated
 	}
 
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result = db.Updates(fields)
+	result = db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -190,13 +185,13 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 
 type Questionnaire struct {
 	Resource     `yaml:",inline"`
-	Name         string                  `json:"name" yaml:"name" binding:"required"`
-	Description  string                  `json:"description" yaml:"description"`
-	Required     bool                    `json:"required" yaml:"required"`
-	Sections     []assessment.Section    `json:"sections" yaml:"sections" binding:"required,min=1,dive"`
-	Thresholds   assessment.Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
-	RiskMessages assessment.RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
-	Builtin      bool                    `json:"builtin,omitempty" yaml:"builtin,omitempty"`
+	Name         string       `json:"name" yaml:"name" binding:"required"`
+	Description  string       `json:"description" yaml:"description"`
+	Required     bool         `json:"required" yaml:"required"`
+	Sections     []Section    `json:"sections" yaml:"sections" binding:"required,min=1,dive"`
+	Thresholds   Thresholds   `json:"thresholds" yaml:"thresholds" binding:"required"`
+	RiskMessages RiskMessages `json:"riskMessages" yaml:"riskMessages" binding:"required"`
+	Builtin      bool         `json:"builtin,omitempty" yaml:"builtin,omitempty"`
 }
 
 // With updates the resource with the model.
@@ -206,9 +201,12 @@ func (r *Questionnaire) With(m *model.Questionnaire) {
 	r.Description = m.Description
 	r.Required = m.Required
 	r.Builtin = m.Builtin()
-	_ = json.Unmarshal(m.Sections, &r.Sections)
-	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
-	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
+	r.Sections = []Section{}
+	for _, s := range m.Sections {
+		r.Sections = append(r.Sections, Section(s))
+	}
+	r.Thresholds = Thresholds(m.Thresholds)
+	r.RiskMessages = RiskMessages(m.RiskMessages)
 }
 
 // Model builds a model.
@@ -219,9 +217,11 @@ func (r *Questionnaire) Model() (m *model.Questionnaire) {
 		Required:    r.Required,
 	}
 	m.ID = r.ID
-	m.Sections, _ = json.Marshal(r.Sections)
-	m.Thresholds, _ = json.Marshal(r.Thresholds)
-	m.RiskMessages, _ = json.Marshal(r.RiskMessages)
+	for _, s := range r.Sections {
+		m.Sections = append(m.Sections, model.Section(s))
+	}
+	m.Thresholds = model.Thresholds(r.Thresholds)
+	m.RiskMessages = model.RiskMessages(r.RiskMessages)
 
 	return
 }

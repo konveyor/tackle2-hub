@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -156,7 +155,7 @@ type Ticket struct {
 	Message     string    `json:"message"`
 	Status      string    `json:"status"`
 	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
-	Fields      Fields    `json:"fields"`
+	Fields      Map       `json:"fields"`
 	Application Ref       `json:"application" binding:"required"`
 	Tracker     Ref       `json:"tracker" binding:"required"`
 }
@@ -174,7 +173,7 @@ func (r *Ticket) With(m *model.Ticket) {
 	r.LastUpdated = m.LastUpdated
 	r.Application = r.ref(m.ApplicationID, m.Application)
 	r.Tracker = r.ref(m.TrackerID, m.Tracker)
-	_ = json.Unmarshal(m.Fields, &r.Fields)
+	r.Fields = m.Fields
 }
 
 // Model builds a model.
@@ -185,13 +184,8 @@ func (r *Ticket) Model() (m *model.Ticket) {
 		ApplicationID: r.Application.ID,
 		TrackerID:     r.Tracker.ID,
 	}
-	if r.Fields == nil {
-		r.Fields = Fields{}
-	}
-	m.Fields, _ = json.Marshal(r.Fields)
+	m.Fields = r.Fields
 	m.ID = r.ID
 
 	return
 }
-
-type Fields map[string]any

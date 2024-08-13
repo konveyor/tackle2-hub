@@ -1,6 +1,8 @@
 package json
 
-import "gopkg.in/yaml.v2"
+import (
+	"gopkg.in/yaml.v2"
+)
 
 // Ref represents a FK.
 type Ref struct {

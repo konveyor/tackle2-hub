@@ -30,12 +30,10 @@ func (r *TagResolver) Resolve(category string, tag string) (t *model.Tag, found 
 
 // Assessment returns all the Tag models that should be applied from the assessment.
 func (r *TagResolver) Assessment(assessment Assessment) (tags []model.Tag) {
-	for _, s := range assessment.Sections {
-		for _, t := range s.Tags() {
-			tag, found := r.Resolve(t.Category, t.Tag)
-			if found {
-				tags = append(tags, *tag)
-			}
+	for _, t := range assessment.Tags() {
+		tag, found := r.Resolve(t.Category, t.Tag)
+		if found {
+			tags = append(tags, *tag)
 		}
 	}
 	return
