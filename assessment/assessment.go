@@ -1,7 +1,6 @@
 package assessment
 
 import (
-	"encoding/json"
 	"math"
 
 	"github.com/konveyor/tackle2-hub/model"
@@ -10,17 +9,11 @@ import (
 // Assessment represents a deserialized Assessment.
 type Assessment struct {
 	*model.Assessment
-	Sections     []Section    `json:"sections"`
-	Thresholds   Thresholds   `json:"thresholds"`
-	RiskMessages RiskMessages `json:"riskMessages"`
 }
 
 // With updates the Assessment with the db model and deserializes its fields.
 func (r *Assessment) With(m *model.Assessment) {
 	r.Assessment = m
-	_ = json.Unmarshal(m.Sections, &r.Sections)
-	_ = json.Unmarshal(m.Thresholds, &r.Thresholds)
-	_ = json.Unmarshal(m.RiskMessages, &r.RiskMessages)
 }
 
 // Status returns the started status of the assessment.
@@ -37,7 +30,7 @@ func (r *Assessment) Status() string {
 // Complete returns whether all sections have been completed.
 func (r *Assessment) Complete() bool {
 	for _, s := range r.Sections {
-		if !s.Complete() {
+		if !r.sectionComplete(&s) {
 			return false
 		}
 	}
@@ -47,7 +40,7 @@ func (r *Assessment) Complete() bool {
 // Started returns whether any sections have been started.
 func (r *Assessment) Started() bool {
 	for _, s := range r.Sections {
-		if s.Started() {
+		if r.sectionStarted(&s) {
 			return true
 		}
 	}
@@ -59,7 +52,7 @@ func (r *Assessment) Risk() string {
 	var total uint
 	colors := make(map[string]uint)
 	for _, s := range r.Sections {
-		for _, risk := range s.Risks() {
+		for _, risk := range r.sectionRisks(&s) {
 			colors[risk]++
 			total++
 		}
@@ -85,8 +78,8 @@ func (r *Assessment) Confidence() (score int) {
 	totalQuestions := 0
 	riskCounts := make(map[string]int)
 	for _, s := range r.Sections {
-		for _, r := range s.Risks() {
-			riskCounts[r]++
+		for _, risk := range r.sectionRisks(&s) {
+			riskCounts[risk]++
 			totalQuestions++
 		}
 	}
@@ -118,18 +111,73 @@ func (r *Assessment) Confidence() (score int) {
 	return
 }
 
-// Section represents a group of questions in a questionnaire.
-type Section struct {
-	Order     *uint      `json:"order" yaml:"order" binding:"required"`
-	Name      string     `json:"name" yaml:"name"`
-	Questions []Question `json:"questions" yaml:"questions" binding:"min=1,dive"`
-	Comment   string     `json:"comment,omitempty" yaml:"comment,omitempty"`
+func (r *Assessment) Prepare(tagResolver *TagResolver, tags Set) {
+	for i := range r.Sections {
+		s := &r.Sections[i]
+		includedQuestions := []model.Question{}
+		for _, q := range s.Questions {
+			for j := range q.Answers {
+				a := &q.Answers[j]
+				autoAnswerTags := NewSet()
+				for _, t := range a.AutoAnswerFor {
+					tag, found := tagResolver.Resolve(t.Category, t.Tag)
+					if found {
+						autoAnswerTags.Add(tag.ID)
+					}
+				}
+				if tags.Intersects(autoAnswerTags) {
+					a.AutoAnswered = true
+					a.Selected = true
+					break
+				}
+			}
+
+			if len(q.IncludeFor) > 0 {
+				includeForTags := NewSet()
+				for _, t := range q.IncludeFor {
+					tag, found := tagResolver.Resolve(t.Category, t.Tag)
+					if found {
+						includeForTags.Add(tag.ID)
+					}
+				}
+				if tags.Intersects(includeForTags) {
+					includedQuestions = append(includedQuestions, q)
+				}
+				continue
+			}
+
+			if len(q.ExcludeFor) > 0 {
+				excludeForTags := NewSet()
+				for _, t := range q.ExcludeFor {
+					tag, found := tagResolver.Resolve(t.Category, t.Tag)
+					if found {
+						excludeForTags.Add(tag.ID)
+					}
+				}
+				if tags.Intersects(excludeForTags) {
+					continue
+				}
+			}
+			includedQuestions = append(includedQuestions, q)
+		}
+		s.Questions = includedQuestions
+	}
+	return
+}
+
+func (r *Assessment) Tags() (tags []model.CategorizedTag) {
+	for _, s := range r.Sections {
+		for _, t := range r.sectionTags(&s) {
+			tags = append(tags, t)
+		}
+	}
+	return
 }
 
 // Complete returns whether all questions in the section have been answered.
-func (r *Section) Complete() bool {
-	for _, q := range r.Questions {
-		if !q.Answered() {
+func (r *Assessment) sectionComplete(s *model.Section) bool {
+	for _, q := range s.Questions {
+		if !r.questionAnswered(&q) {
 			return false
 		}
 	}
@@ -137,9 +185,10 @@ func (r *Section) Complete() bool {
 }
 
 // Started returns whether any questions in the section have been answered.
-func (r *Section) Started() bool {
-	for _, q := range r.Questions {
-		if q.Answered() && !q.AutoAnswered() {
+
+func (r *Assessment) sectionStarted(s *model.Section) bool {
+	for _, q := range s.Questions {
+		if r.questionAnswered(&q) && !r.questionAutoAnswered(&q) {
 			return true
 		}
 	}
@@ -147,36 +196,26 @@ func (r *Section) Started() bool {
 }
 
 // Risks returns a slice of the risks of each of its questions.
-func (r *Section) Risks() []string {
+func (r *Assessment) sectionRisks(s *model.Section) []string {
 	risks := []string{}
-	for _, q := range r.Questions {
-		risks = append(risks, q.Risk())
+	for _, q := range s.Questions {
+		risks = append(risks, r.questionRisk(&q))
 	}
 	return risks
 }
 
 // Tags returns all the tags that should be applied based on how
 // the questions in the section have been answered.
-func (r *Section) Tags() (tags []CategorizedTag) {
-	for _, q := range r.Questions {
-		tags = append(tags, q.Tags()...)
+func (r *Assessment) sectionTags(s *model.Section) (tags []model.CategorizedTag) {
+	for _, q := range s.Questions {
+		tags = append(tags, r.questionTags(&q)...)
 	}
 	return
 }
 
-// Question represents a question in a questionnaire.
-type Question struct {
-	Order       *uint            `json:"order" yaml:"order" binding:"required"`
-	Text        string           `json:"text" yaml:"text"`
-	Explanation string           `json:"explanation" yaml:"explanation"`
-	IncludeFor  []CategorizedTag `json:"includeFor,omitempty" yaml:"includeFor,omitempty"`
-	ExcludeFor  []CategorizedTag `json:"excludeFor,omitempty" yaml:"excludeFor,omitempty"`
-	Answers     []Answer         `json:"answers" yaml:"answers" binding:"min=1,dive"`
-}
-
 // Risk returns the risk level for the question based on how it has been answered.
-func (r *Question) Risk() string {
-	for _, a := range r.Answers {
+func (r *Assessment) questionRisk(q *model.Question) string {
+	for _, a := range q.Answers {
 		if a.Selected {
 			return a.Risk
 		}
@@ -185,8 +224,8 @@ func (r *Question) Risk() string {
 }
 
 // Answered returns whether the question has had an answer selected.
-func (r *Question) Answered() bool {
-	for _, a := range r.Answers {
+func (r *Assessment) questionAnswered(q *model.Question) bool {
+	for _, a := range q.Answers {
 		if a.Selected {
 			return true
 		}
@@ -196,8 +235,8 @@ func (r *Question) Answered() bool {
 
 // AutoAnswered returns whether the question has had an
 // answer pre-selected by the system.
-func (r *Question) AutoAnswered() bool {
-	for _, a := range r.Answers {
+func (r *Assessment) questionAutoAnswered(q *model.Question) bool {
+	for _, a := range q.Answers {
 		if a.AutoAnswered {
 			return true
 		}
@@ -206,46 +245,12 @@ func (r *Question) AutoAnswered() bool {
 }
 
 // Tags returns any tags to be applied based on how the question is answered.
-func (r *Question) Tags() (tags []CategorizedTag) {
-	for _, answer := range r.Answers {
+func (r *Assessment) questionTags(q *model.Question) (tags []model.CategorizedTag) {
+	for _, answer := range q.Answers {
 		if answer.Selected {
 			tags = answer.ApplyTags
 			return
 		}
 	}
 	return
-}
-
-// Answer represents an answer to a question in a questionnaire.
-type Answer struct {
-	Order         *uint            `json:"order" yaml:"order" binding:"required"`
-	Text          string           `json:"text" yaml:"text"`
-	Risk          string           `json:"risk" yaml:"risk" binding:"oneof=red yellow green unknown"`
-	Rationale     string           `json:"rationale" yaml:"rationale"`
-	Mitigation    string           `json:"mitigation" yaml:"mitigation"`
-	ApplyTags     []CategorizedTag `json:"applyTags,omitempty" yaml:"applyTags,omitempty"`
-	AutoAnswerFor []CategorizedTag `json:"autoAnswerFor,omitempty" yaml:"autoAnswerFor,omitempty"`
-	Selected      bool             `json:"selected,omitempty" yaml:"selected,omitempty"`
-	AutoAnswered  bool             `json:"autoAnswered,omitempty" yaml:"autoAnswered,omitempty"`
-}
-
-// CategorizedTag represents a human-readable pair of category and tag.
-type CategorizedTag struct {
-	Category string `json:"category" yaml:"category"`
-	Tag      string `json:"tag" yaml:"tag"`
-}
-
-// RiskMessages contains messages to display for each risk level.
-type RiskMessages struct {
-	Red     string `json:"red" yaml:"red"`
-	Yellow  string `json:"yellow" yaml:"yellow"`
-	Green   string `json:"green" yaml:"green"`
-	Unknown string `json:"unknown" yaml:"unknown"`
-}
-
-// Thresholds contains the threshold values for determining risk for the questionnaire.
-type Thresholds struct {
-	Red     uint `json:"red" yaml:"red"`
-	Yellow  uint `json:"yellow" yaml:"yellow"`
-	Unknown uint `json:"unknown" yaml:"unknown"`
 }

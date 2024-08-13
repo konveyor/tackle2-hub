@@ -2,7 +2,7 @@ package assessment
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/test/api/application"
 	"github.com/konveyor/tackle2-hub/test/api/questionnaire"
 )
@@ -17,28 +17,28 @@ var (
 		Questionnaire: api.Ref{
 			Name: questionnaire.Questionnaire1.Name,
 		},
-		Sections: []assessment.Section{
+		Sections: []api.Section{
 			{
-				Order: uint2ptr(1),
+				Order: 1,
 				Name:  "Section 1",
-				Questions: []assessment.Question{
+				Questions: []model.Question{
 					{
-						Order:       uint2ptr(1),
+						Order:       1,
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
-						Answers: []assessment.Answer{
+						Answers: []model.Answer{
 							{
-								Order: uint2ptr(1),
+								Order: 1,
 								Text:  "Red",
 								Risk:  "red",
 							},
 							{
-								Order: uint2ptr(2),
+								Order: 2,
 								Text:  "Green",
 								Risk:  "green",
 							},
 							{
-								Order:    uint2ptr(3),
+								Order:    3,
 								Text:     "Blue",
 								Risk:     "yellow",
 								Selected: true,

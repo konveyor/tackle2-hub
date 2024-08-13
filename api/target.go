@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -225,7 +224,7 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 	}
 	db = h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result = db.Updates(h.fields(m))
+	result = db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -237,20 +236,17 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 // Target REST resource.
 type Target struct {
 	Resource    `yaml:",inline"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Provider    string   `json:"provider,omitempty" yaml:",omitempty"`
-	Choice      bool     `json:"choice,omitempty" yaml:",omitempty"`
-	Custom      bool     `json:"custom,omitempty" yaml:",omitempty"`
-	Labels      []Label  `json:"labels"`
-	Image       Ref      `json:"image"`
-	RuleSet     *RuleSet `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Provider    string        `json:"provider,omitempty" yaml:",omitempty"`
+	Choice      bool          `json:"choice,omitempty" yaml:",omitempty"`
+	Custom      bool          `json:"custom,omitempty" yaml:",omitempty"`
+	Labels      []TargetLabel `json:"labels"`
+	Image       Ref           `json:"image"`
+	RuleSet     *RuleSet      `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
 }
 
-type Label struct {
-	Name  string `json:"name"`
-	Label string `json:"label"`
-}
+type TargetLabel model.TargetLabel
 
 // With updates the resource with the model.
 func (r *Target) With(m *model.Target) {
@@ -269,7 +265,10 @@ func (r *Target) With(m *model.Target) {
 		imgRef.Name = m.Image.Name
 	}
 	r.Image = imgRef
-	_ = json.Unmarshal(m.Labels, &r.Labels)
+	r.Labels = []TargetLabel{}
+	for _, l := range m.Labels {
+		r.Labels = append(r.Labels, TargetLabel(l))
+	}
 }
 
 // Model builds a model.
@@ -282,6 +281,8 @@ func (r *Target) Model() (m *model.Target) {
 	}
 	m.ID = r.ID
 	m.ImageID = r.Image.ID
-	m.Labels, _ = json.Marshal(r.Labels)
+	for _, l := range r.Labels {
+		m.Labels = append(m.Labels, model.TargetLabel(l))
+	}
 	return
 }

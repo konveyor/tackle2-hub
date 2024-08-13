@@ -108,7 +108,7 @@ func TestApplicationFactsList(t *testing.T) {
 	factsPathSuffix := []string{"facts/test:", "facts/test:/"}
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
-			got := api.FactMap{}
+			got := api.Map{}
 			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api.ApplicationRoot).Inject(binding.Params{api.ID: application.ID}), pathSuffix), &got)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())

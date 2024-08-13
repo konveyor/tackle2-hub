@@ -16,7 +16,6 @@ type Assessment = model.Assessment
 type TechDependency = model.TechDependency
 type Incident = model.Incident
 type Analysis = model.Analysis
-type ArchivedIssue = model.ArchivedIssue
 type Issue = model.Issue
 type Bucket = model.Bucket
 type BucketOwner = model.BucketOwner
@@ -47,16 +46,27 @@ type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
 
-type TTL = model.TTL
+// JSON fields
 type Ref = json.Ref
 type Map = json.Map
 type Data = json.Data
-
+type ArchivedIssue = model.ArchivedIssue
+type Attachment = model.Attachment
+type Link = model.Link
+type Repository = model.Repository
+type TargetLabel = model.TargetLabel
 type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent
 type TaskPolicy = model.TaskPolicy
-type Attachment = model.Attachment
-type Repository = model.Repository
+type TTL = model.TTL
+
+// Assessment JSON fields
+type Section = model.Section
+type Question = model.Question
+type Answer = model.Answer
+type Thresholds = model.Thresholds
+type RiskMessages = model.RiskMessages
+type CategorizedTag = model.CategorizedTag
 
 // Join tables
 type ApplicationTag = model.ApplicationTag

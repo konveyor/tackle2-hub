@@ -232,7 +232,7 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result := db.Updates(h.fields(m))
+	result := db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return

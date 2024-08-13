@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path"
@@ -44,12 +43,9 @@ func Migrate(migrations []Migration) (err error) {
 	}
 
 	var v Version
-	if setting.Value != nil {
-		err = json.Unmarshal(setting.Value, &v)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	err = setting.As(&v)
+	if err != nil {
+		return
 	}
 	var start = v.Version
 	if start != 0 && start < MinimumVersion {
@@ -112,9 +108,7 @@ func Migrate(migrations []Migration) (err error) {
 // Set the version record.
 func setVersion(db *gorm.DB, version int) (err error) {
 	setting := &model.Setting{Key: VersionKey}
-	v := Version{Version: version}
-	value, _ := json.Marshal(v)
-	setting.Value = value
+	setting.Value = Version{Version: version}
 	result := db.Where("key", VersionKey).Updates(setting)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)

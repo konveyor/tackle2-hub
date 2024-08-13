@@ -1,8 +1,6 @@
 package assessment
 
 import (
-	"encoding/json"
-
 	"github.com/konveyor/tackle2-hub/model"
 )
 
@@ -93,25 +91,19 @@ func Confidence(assessments []Assessment) (confidence int) {
 // PrepareForApplication prepares the sections of an assessment by including, excluding,
 // or auto-answering questions based on a set of tags.
 func PrepareForApplication(tagResolver *TagResolver, application *model.Application, assessment *model.Assessment) {
-	sections := []Section{}
-	_ = json.Unmarshal(assessment.Sections, &sections)
-
 	tagSet := NewSet()
 	for _, t := range application.Tags {
 		tagSet.Add(t.ID)
 	}
-
-	assessment.Sections, _ = json.Marshal(prepareSections(tagResolver, tagSet, sections))
-
+	a := Assessment{}
+	a.With(assessment)
+	a.Prepare(tagResolver, tagSet)
 	return
 }
 
 // PrepareForArchetype prepares the sections of an assessment by including, excluding,
 // or auto-answering questions based on a set of tags.
 func PrepareForArchetype(tagResolver *TagResolver, archetype *model.Archetype, assessment *model.Assessment) {
-	sections := []Section{}
-	_ = json.Unmarshal(assessment.Sections, &sections)
-
 	tagSet := NewSet()
 	for _, t := range archetype.CriteriaTags {
 		tagSet.Add(t.ID)
@@ -119,63 +111,8 @@ func PrepareForArchetype(tagResolver *TagResolver, archetype *model.Archetype, a
 	for _, t := range archetype.Tags {
 		tagSet.Add(t.ID)
 	}
-
-	assessment.Sections, _ = json.Marshal(prepareSections(tagResolver, tagSet, sections))
-
-	return
-}
-
-func prepareSections(tagResolver *TagResolver, tags Set, sections []Section) (preparedSections []Section) {
-	for i := range sections {
-		s := &sections[i]
-		includedQuestions := []Question{}
-		for _, q := range s.Questions {
-			for j := range q.Answers {
-				a := &q.Answers[j]
-				autoAnswerTags := NewSet()
-				for _, t := range a.AutoAnswerFor {
-					tag, found := tagResolver.Resolve(t.Category, t.Tag)
-					if found {
-						autoAnswerTags.Add(tag.ID)
-					}
-				}
-				if tags.Intersects(autoAnswerTags) {
-					a.AutoAnswered = true
-					a.Selected = true
-					break
-				}
-			}
-
-			if len(q.IncludeFor) > 0 {
-				includeForTags := NewSet()
-				for _, t := range q.IncludeFor {
-					tag, found := tagResolver.Resolve(t.Category, t.Tag)
-					if found {
-						includeForTags.Add(tag.ID)
-					}
-				}
-				if tags.Intersects(includeForTags) {
-					includedQuestions = append(includedQuestions, q)
-				}
-				continue
-			}
-
-			if len(q.ExcludeFor) > 0 {
-				excludeForTags := NewSet()
-				for _, t := range q.ExcludeFor {
-					tag, found := tagResolver.Resolve(t.Category, t.Tag)
-					if found {
-						excludeForTags.Add(tag.ID)
-					}
-				}
-				if tags.Intersects(excludeForTags) {
-					continue
-				}
-			}
-			includedQuestions = append(includedQuestions, q)
-		}
-		s.Questions = includedQuestions
-	}
-	preparedSections = sections
+	a := Assessment{}
+	a.With(assessment)
+	a.Prepare(tagResolver, tagSet)
 	return
 }

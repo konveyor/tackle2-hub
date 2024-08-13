@@ -22,6 +22,7 @@ type MembershipResolver struct {
 	tagSets          map[uint]Set
 	archetypeMembers map[uint][]Application
 	membersCached    bool
+	archetypesCached bool
 }
 
 // Applications returns the list of applications that are members of the given archetype.
@@ -77,7 +78,7 @@ loop:
 }
 
 func (r *MembershipResolver) cacheArchetypes() (err error) {
-	if len(r.archetypes) > 0 {
+	if r.archetypesCached {
 		return
 	}
 
@@ -101,6 +102,7 @@ func (r *MembershipResolver) cacheArchetypes() (err error) {
 		}
 		r.tagSets[a.ID] = set
 	}
+	r.archetypesCached = true
 
 	return
 }
