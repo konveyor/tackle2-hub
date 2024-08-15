@@ -154,6 +154,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 					qf.Token{Kind: qf.STRING, Value: tasking.Ready},
 					qf.Token{Kind: qf.STRING, Value: tasking.Postponed},
 					qf.Token{Kind: qf.STRING, Value: tasking.Pending},
+					qf.Token{Kind: qf.STRING, Value: tasking.QuotaBlocked},
 					qf.Token{Kind: qf.STRING, Value: tasking.Running})
 			default:
 				values = append(values, v)
@@ -249,6 +250,7 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 			tasking.Ready,
 			tasking.Postponed,
 			tasking.Pending,
+			tasking.QuotaBlocked,
 			tasking.Running,
 		})
 	db = db.Group("State")
