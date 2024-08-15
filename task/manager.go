@@ -1206,7 +1206,7 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 	} else {
 		task.Event(
 			ContainerKilled,
-			"container: '%s' has not terminated.",
+			"container: '%s' had not terminated.",
 			container)
 		Log.Info(
 			"Container KILLED.",
