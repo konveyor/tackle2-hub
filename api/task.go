@@ -269,6 +269,8 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 			r.Postponed = q.Count
 		case tasking.Pending:
 			r.Pending = q.Count
+		case tasking.QuotaBlocked:
+			r.QuotaBlocked = q.Count
 		case tasking.Running:
 			r.Running = q.Count
 		}
@@ -904,11 +906,12 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 
 // TaskQueue report.
 type TaskQueue struct {
-	Total     int `json:"total"`
-	Ready     int `json:"ready"`
-	Postponed int `json:"postponed"`
-	Pending   int `json:"pending"`
-	Running   int `json:"running"`
+	Total        int `json:"total"`
+	Ready        int `json:"ready"`
+	Postponed    int `json:"postponed"`
+	QuotaBlocked int `json:"quotaBlocked"`
+	Pending      int `json:"pending"`
+	Running      int `json:"running"`
 }
 
 // TaskDashboard report.
