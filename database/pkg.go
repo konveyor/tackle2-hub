@@ -23,6 +23,10 @@ const (
 	FKsOff           = "&_foreign_keys=no"
 )
 
+func init() {
+	sql.Register("sqlite3x", &Driver{})
+}
+
 // Open and automigrate the DB.
 func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	connStr := fmt.Sprintf(ConnectionString, Settings.DB.Path)
@@ -31,8 +35,10 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	} else {
 		connStr += FKsOff
 	}
+	dialector := sqlite.Open(connStr).(*sqlite.Dialector)
+	dialector.DriverName = "sqlite3x"
 	db, err = gorm.Open(
-		sqlite.Open(connStr),
+		dialector,
 		&gorm.Config{
 			PrepareStmt:     true,
 			CreateBatchSize: 500,
@@ -45,12 +51,6 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	sqlDB, err := db.DB()
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	sqlDB.SetMaxOpenConns(1)
 	err = db.AutoMigrate(model.Setting{})
 	if err != nil {
 		err = liberr.Wrap(err)
