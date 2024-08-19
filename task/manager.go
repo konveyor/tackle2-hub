@@ -1,6 +1,7 @@
 package task
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -30,7 +31,10 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/remotecommand"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // States
@@ -51,19 +55,20 @@ const (
 
 // Events
 const (
-	AddonSelected = "AddonSelected"
-	ExtSelected   = "ExtensionSelected"
-	ImageError    = "ImageError"
-	PodNotFound   = "PodNotFound"
-	PodCreated    = "PodCreated"
-	PodPending    = "PodPending"
-	PodRunning    = "PodRunning"
-	Preempted     = "Preempted"
-	PodSucceeded  = "PodSucceeded"
-	PodFailed     = "PodFailed"
-	PodDeleted    = "PodDeleted"
-	Escalated     = "Escalated"
-	Released      = "Released"
+	AddonSelected   = "AddonSelected"
+	ExtSelected     = "ExtensionSelected"
+	ImageError      = "ImageError"
+	PodNotFound     = "PodNotFound"
+	PodCreated      = "PodCreated"
+	PodPending      = "PodPending"
+	PodRunning      = "PodRunning"
+	Preempted       = "Preempted"
+	PodSucceeded    = "PodSucceeded"
+	PodFailed       = "PodFailed"
+	PodDeleted      = "PodDeleted"
+	Escalated       = "Escalated"
+	Released        = "Released"
+	ContainerKilled = "ContainerKilled"
 )
 
 // k8s labels.
@@ -123,6 +128,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
+					m.deleteZombies()
 					m.startReady()
 					m.pause()
 				} else {
@@ -860,9 +866,6 @@ func (m *Manager) updateRunning() {
 		list = append(list, &Task{task})
 	}
 	for _, task := range list {
-		if !task.StateIn(Running, Pending) {
-			continue
-		}
 		running := task
 		pod, found := running.Reflect(&m.cluster)
 		if found {
@@ -872,10 +875,24 @@ func (m *Manager) updateRunning() {
 					Log.Error(err, "")
 					continue
 				}
-				err = running.Delete(m.Client)
-				if err != nil {
-					Log.Error(err, "")
-					continue
+				podRetention := 0
+				if running.State == Succeeded {
+					podRetention = Settings.Hub.Task.Pod.Retention.Succeeded
+				} else {
+					podRetention = Settings.Hub.Task.Pod.Retention.Failed
+				}
+				if podRetention > 0 {
+					err = m.ensureTerminated(running, pod)
+					if err != nil {
+						podRetention = 0
+					}
+				}
+				if podRetention == 0 {
+					err = running.Delete(m.Client)
+					if err != nil {
+						Log.Error(err, "")
+						continue
+					}
 				}
 			}
 		}
@@ -885,6 +902,56 @@ func (m *Manager) updateRunning() {
 			return
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
+	}
+}
+
+// deleteZombies - detect and delete zombie pods.
+// A zombie is a (succeed|failed) task with a running pod that
+// the manager has previously tried to kill.
+func (m *Manager) deleteZombies() {
+	var err error
+	defer func() {
+		Log.Error(err, "")
+	}()
+	var pods []string
+	for _, pod := range m.cluster.Pods() {
+		if pod.Status.Phase == core.PodRunning {
+			ref := path.Join(pod.Namespace, pod.Name)
+			pods = append(
+				pods,
+				ref)
+		}
+	}
+	fetched := []*Task{}
+	db := m.DB.Select("Events")
+	db = db.Where("Pod", pods)
+	db = db.Where("state IN ?",
+		[]string{
+			Succeeded,
+			Failed,
+		})
+	err = db.Find(&fetched).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, task := range fetched {
+		event, found := task.LastEvent(ContainerKilled)
+		if !found {
+			continue
+		}
+		if time.Since(event.Last) > time.Minute {
+			Log.Info(
+				"Zombie detected.",
+				"task",
+				task.ID,
+				"pod",
+				task.Pod)
+			err = task.Delete(m.Client)
+			if err != nil {
+				Log.Error(err, "")
+			}
+		}
 	}
 }
 
@@ -1068,6 +1135,87 @@ func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.Fil
 	return
 }
 
+// ensureTerminated - Terminate running containers.
+func (m *Manager) ensureTerminated(task *Task, pod *core.Pod) (err error) {
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.State.Terminated != nil {
+			continue
+		}
+		if status.Started == nil || !*status.Started {
+			continue
+		}
+		err = m.terminateContainer(task, pod, status.Name)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// terminateContainer - Terminate container as needed.
+// The container is killed.
+// Should the container continue to run after (1) minute,
+// it is reported as an error.
+func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string) (err error) {
+	Log.V(1).Info("KILL container", "container", container)
+	clientSet, err := k8s2.NewClientSet()
+	if err != nil {
+		return
+	}
+	cmd := []string{
+		"sh",
+		"-c",
+		"kill 1",
+	}
+	req := clientSet.CoreV1().RESTClient().Post()
+	req = req.Resource("pods")
+	req = req.Name(pod.Name)
+	req = req.Namespace(pod.Namespace)
+	req = req.SubResource("exec")
+	option := &core.PodExecOptions{
+		Command:   cmd,
+		Container: container,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+	}
+	req.VersionedParams(
+		option,
+		scheme.ParameterCodec,
+	)
+	cfg, _ := config.GetConfig()
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return
+	}
+	stdout := bytes.NewBuffer([]byte{})
+	stderr := bytes.NewBuffer([]byte{})
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: stdout,
+		Stderr: stderr,
+	})
+	if err != nil {
+		Log.Info(
+			"Container KILL failed.",
+			"name",
+			container,
+			"err",
+			err.Error(),
+			"stderr",
+			stderr.String())
+	} else {
+		task.Event(
+			ContainerKilled,
+			"container: '%s' had not terminated.",
+			container)
+		Log.Info(
+			"Container KILLED.",
+			"name",
+			container)
+	}
+	return
+}
+
 // Task is an runtime task.
 type Task struct {
 	// model.
@@ -1135,6 +1283,17 @@ func (r *Task) LastEvent(kind string) (event *model.TaskEvent, found bool) {
 		if kind == event.Kind {
 			found = true
 			break
+		}
+	}
+	return
+}
+
+// FindEvent returns the matched events by kind.
+func (r *Task) FindEvent(kind string) (matched []*model.TaskEvent) {
+	for i := 0; i < len(r.Events); i++ {
+		event := &r.Events[i]
+		if kind == event.Kind {
+			matched = append(matched, event)
 		}
 	}
 	return
