@@ -154,6 +154,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 					qf.Token{Kind: qf.STRING, Value: tasking.Ready},
 					qf.Token{Kind: qf.STRING, Value: tasking.Postponed},
 					qf.Token{Kind: qf.STRING, Value: tasking.Pending},
+					qf.Token{Kind: qf.STRING, Value: tasking.QuotaBlocked},
 					qf.Token{Kind: qf.STRING, Value: tasking.Running})
 			default:
 				values = append(values, v)
@@ -249,6 +250,7 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 			tasking.Ready,
 			tasking.Postponed,
 			tasking.Pending,
+			tasking.QuotaBlocked,
 			tasking.Running,
 		})
 	db = db.Group("State")
@@ -267,6 +269,8 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 			r.Postponed = q.Count
 		case tasking.Pending:
 			r.Pending = q.Count
+		case tasking.QuotaBlocked:
+			r.QuotaBlocked = q.Count
 		case tasking.Running:
 			r.Running = q.Count
 		}
@@ -902,11 +906,12 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 
 // TaskQueue report.
 type TaskQueue struct {
-	Total     int `json:"total"`
-	Ready     int `json:"ready"`
-	Postponed int `json:"postponed"`
-	Pending   int `json:"pending"`
-	Running   int `json:"running"`
+	Total        int `json:"total"`
+	Ready        int `json:"ready"`
+	Postponed    int `json:"postponed"`
+	QuotaBlocked int `json:"quotaBlocked"`
+	Pending      int `json:"pending"`
+	Running      int `json:"running"`
 }
 
 // TaskDashboard report.
