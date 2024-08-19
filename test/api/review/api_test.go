@@ -143,7 +143,7 @@ func TestReviewList(t *testing.T) {
 
 	// Delete related reviews and applications.
 	for _, review := range createdReviews {
-		assert.Must(t, Application.Delete(review.ID))
+		assert.Must(t, Application.Delete(review.Application.ID))
 		assert.Must(t, Review.Delete(review.ID))
 	}
 }
