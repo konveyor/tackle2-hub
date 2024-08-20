@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/model"
 	"k8s.io/utils/env"
@@ -13,8 +14,11 @@ import (
 var N, _ = env.GetInt("TEST_CONCURRENT", 10)
 
 func TestConcurrent(t *testing.T) {
-	Settings.DB.Path = "/tmp/concurrent.db"
-	_ = os.Remove(Settings.DB.Path)
+	pid := os.Getpid()
+	Settings.DB.Path = fmt.Sprintf("/tmp/concurrent-%d.db", pid)
+	defer func() {
+		_ = os.Remove(Settings.DB.Path)
+	}()
 	db, err := Open(true)
 	if err != nil {
 		panic(err)
@@ -32,14 +36,12 @@ func TestConcurrent(t *testing.T) {
 					panic(uErr)
 				}
 				for i := 0; i < 10; i++ {
-					fmt.Printf("(%.4d) BEGIN: %.4d/%.4d\n", id, n, i)
 					tx := db.Begin()
-					fmt.Printf("(%.4d) FIRST: %.4d/%.4d\n", id, n, i)
+					time.Sleep(time.Millisecond * time.Duration(n))
 					uErr = tx.First(m).Error
 					if uErr != nil {
 						panic(uErr)
 					}
-					fmt.Printf("(%.4d) SAVE: %.4d/%.4d\n", id, n, i)
 					uErr = tx.Save(m).Error
 					if uErr != nil {
 						panic(uErr)
