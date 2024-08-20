@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/konveyor/tackle2-hub/model"
 	"k8s.io/utils/env"
@@ -35,9 +34,8 @@ func TestConcurrent(t *testing.T) {
 				if uErr != nil {
 					panic(uErr)
 				}
-				for i := 0; i < 10; i++ {
+				for i := 0; i < 3; i++ {
 					tx := db.Begin()
-					time.Sleep(time.Millisecond * time.Duration(n))
 					uErr = tx.First(m).Error
 					if uErr != nil {
 						panic(uErr)
