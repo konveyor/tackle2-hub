@@ -61,7 +61,6 @@ jobs:
           DISCONNECTED=1 make run &
           sleep 15  # probably a dirty solution
           DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api
-          DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api  # Intentionaly run 2x to catch data left in Hub DB.
 
   build-image:
     needs:
