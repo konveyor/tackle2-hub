@@ -143,7 +143,7 @@ test:
 
 # Run Hub REST API tests.
 test-api:
-	HUB_BASE_URL=$(HUB_BASE_URL) go test -count=1 -p=1 -v ./test/api/...
+	HUB_BASE_URL=$(HUB_BASE_URL) go test -count=1 -p=1 -v -failfast ./test/api/...
 
 # Run Hub test suite.
 test-all: test-unit test-api
