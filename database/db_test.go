@@ -116,7 +116,7 @@ func TestKeyGen(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("CREATED: %d/%d\n", m.ID, next)
+	fmt.Printf("CREATED: %d/%d (next)\n", m.ID, next)
 	if uint(N) != m.ID {
 		t.Errorf("id:%d but expected: %d", m.ID, next)
 		return
