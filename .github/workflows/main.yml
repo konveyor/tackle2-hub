@@ -52,16 +52,20 @@ jobs:
     - build
     - test-unit
     runs-on: ubuntu-latest
+    env:
+      DISCONNECTED: 1
+      HUB_BASE_URL: http://localhost:8080
+      DB_PATH: /tmp/hub.db
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v3
         with:
           go-version: '1.19'
       - run: |
-          DISCONNECTED=1 make run &
+          rm -f $DB_PATH
+          make run &
           sleep 15  # probably a dirty solution
-          DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api
-          DISCONNECTED=1 HUB_BASE_URL=http://localhost:8080 make test-api  # Intentionaly run 2x to catch data left in Hub DB.
+          make test-api
 
   build-image:
     needs:
