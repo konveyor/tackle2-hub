@@ -24,11 +24,11 @@ type ServiceHandler struct {
 
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
-	e.Any(ServiceRoot, h.ReverseProxy)
+	e.Any(ServiceRoot, h.Forward)
 }
 
-// ReverseProxy provides RBAC and forwards request to the service.
-func (h ServiceHandler) ReverseProxy(ctx *gin.Context) {
+// Forward provides RBAC and forwards request to the service.
+func (h ServiceHandler) Forward(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	path := ctx.Param(Wildcard)
 	Required(name)(ctx)
