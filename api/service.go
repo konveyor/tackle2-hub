@@ -31,7 +31,7 @@ func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 func (h ServiceHandler) Forward(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	path := ctx.Param(Wildcard)
-	Required(name)(ctx)
+	Required("service." + name)(ctx)
 	if len(ctx.Errors) > 0 {
 		return
 	}
