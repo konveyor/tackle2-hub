@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/net"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -52,12 +53,9 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 			return
 		}
 	}
-	host := service.Spec.ClusterIP
-	port := int(service.Spec.Ports[0].Port)
-	host = host + ":" + strconv.Itoa(port)
 	proxy := httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			req.URL.Scheme = h.scheme(service)
+			req.URL.Scheme = ctx.Request.URL.Scheme
 			req.URL.Host = h.host(service)
 			req.URL.Path = path
 		},
@@ -66,22 +64,15 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
 }
 
-func (h *ServiceHandler) scheme(service *core.Service) (scheme string) {
-	scheme = "http"
-	s, found := service.Annotations["konveyor.io/scheme"]
-	if found {
-		scheme = s
-	}
-	return
-}
-
 func (h *ServiceHandler) host(service *core.Service) (host string) {
 	host = service.Spec.ClusterIP
 	for _, p := range service.Spec.Ports {
-		port := int(p.Port)
-		host += ":"
-		host += strconv.Itoa(port)
-		break
+		if net.Protocol(p.Protocol) == net.TCP {
+			port := int(p.Port)
+			host += ":"
+			host += strconv.Itoa(port)
+			break
+		}
 	}
 	return
 }
