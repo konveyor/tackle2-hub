@@ -14,7 +14,6 @@ var Samples = []api.Tracker{
 		Message:     "Description of tracker",
 		LastUpdated: time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local),
 		Identity: api.Ref{
-			ID:   1,
 			Name: "Sample Tracker Identity",
 		},
 		Insecure: false,
@@ -26,7 +25,6 @@ var Samples = []api.Tracker{
 		Message:     "Description of tracker1",
 		LastUpdated: time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local),
 		Identity: api.Ref{
-			ID:   2,
 			Name: "Sample Tracker Identity1",
 		},
 		Insecure: false,
