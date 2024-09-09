@@ -12,7 +12,6 @@ var Samples = []api.Review{
 		WorkPriority:        1,
 		Comments:            "nil",
 		Application: &api.Ref{
-			ID:   1,
 			Name: "Sample Review 1",
 		},
 	},
@@ -23,7 +22,6 @@ var Samples = []api.Review{
 		WorkPriority:        2,
 		Comments:            "nil",
 		Application: &api.Ref{
-			ID:   2,
 			Name: "Sample Review 2",
 		},
 	},

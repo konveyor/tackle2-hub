@@ -69,3 +69,56 @@ func TestConcurrent(t *testing.T) {
 		fmt.Printf("Done %d\n", id)
 	}
 }
+
+func TestKeyGen(t *testing.T) {
+	pid := os.Getpid()
+	Settings.DB.Path = fmt.Sprintf("/tmp/keygen-%d.db", pid)
+	defer func() {
+		_ = os.Remove(Settings.DB.Path)
+	}()
+	db, err := Open(true)
+	if err != nil {
+		panic(err)
+	}
+	// ids 1-7 created.
+	N = 8
+	for n := 1; n < N; n++ {
+		m := &model.Setting{Key: fmt.Sprintf("key-%d", n), Value: n}
+		err := db.Create(m).Error
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("CREATED: %d/%d\n", m.ID, n)
+		if uint(n) != m.ID {
+			t.Errorf("id:%d but expected: %d", m.ID, n)
+			return
+		}
+	}
+	// delete ids=2,4,7.
+	err = db.Delete(&model.Setting{}, []uint{2, 4, 7}).Error
+	if err != nil {
+		panic(err)
+	}
+
+	var count int64
+	err = db.Model(&model.Setting{}).Where([]uint{2, 4, 7}).Count(&count).Error
+	if err != nil {
+		panic(err)
+	}
+	if count > 0 {
+		t.Errorf("DELETED ids: 2,4,7 found.")
+		return
+	}
+	// id=8 (next) created.
+	next := N
+	m := &model.Setting{Key: fmt.Sprintf("key-%d", next), Value: next}
+	err = db.Create(m).Error
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("CREATED: %d/%d (next)\n", m.ID, next)
+	if uint(N) != m.ID {
+		t.Errorf("id:%d but expected: %d", m.ID, next)
+		return
+	}
+}

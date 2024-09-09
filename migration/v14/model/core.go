@@ -20,6 +20,13 @@ type Model struct {
 	UpdateUser string
 }
 
+// PK sequence.
+type PK struct {
+	Kind   string `gorm:"<-:create;primaryKey"`
+	LastID uint
+}
+
+// Setting hub settings.
 type Setting struct {
 	Model
 	Key   string `gorm:"<-:create;uniqueIndex"`

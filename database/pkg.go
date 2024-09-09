@@ -51,7 +51,16 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.AutoMigrate(model.Setting{})
+	err = db.AutoMigrate(model.PK{}, model.Setting{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = PK.Load(db, []any{model.Setting{}})
+	if err != nil {
+		return
+	}
+	err = db.Callback().Create().Before("gorm:before_create").Register("assign-pk", assignPk)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

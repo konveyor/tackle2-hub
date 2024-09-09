@@ -8,6 +8,8 @@ import (
 // Field (data) types.
 type JSON = model.JSON
 
+var ALL = model.All()
+
 // Models
 type Model = model.Model
 type Application = model.Application
@@ -29,6 +31,7 @@ type ImportSummary = model.ImportSummary
 type ImportTag = model.ImportTag
 type JobFunction = model.JobFunction
 type MigrationWave = model.MigrationWave
+type PK = model.PK
 type Proxy = model.Proxy
 type Questionnaire = model.Questionnaire
 type Review = model.Review

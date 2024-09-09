@@ -118,6 +118,7 @@ func (h MigrationWaveHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
 	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
