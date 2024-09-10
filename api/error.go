@@ -79,7 +79,7 @@ func (r *Forbidden) Is(err error) (matched bool) {
 	return
 }
 
-// NotFound reports auth errors.
+// NotFound reports resource not-found errors.
 type NotFound struct {
 	Resource string
 	Reason   string
