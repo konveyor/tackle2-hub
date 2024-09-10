@@ -29,7 +29,7 @@ type ServiceHandler struct {
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 	e.GET(ServicesRoot, h.List)
-	e.Any(ServiceRoot, h.Forward)
+	e.Any(ServiceRoot, h.Required, h.Forward)
 }
 
 // List godoc
@@ -49,14 +49,15 @@ func (h ServiceHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, r)
 }
 
+// Required enforces RBAC.
+func (h ServiceHandler) Required(ctx *gin.Context) {
+	Required(ctx.Param(Name))
+}
+
 // Forward provides RBAC and forwards request to the service.
 func (h ServiceHandler) Forward(ctx *gin.Context) {
 	path := ctx.Param(Wildcard)
 	name := ctx.Param(Name)
-	Required(name)
-	if len(ctx.Errors) > 0 {
-		return
-	}
 	route, found := serviceRoutes[name]
 	if !found {
 		err := &NotFound{Resource: name}
