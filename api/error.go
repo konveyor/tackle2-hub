@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -78,6 +79,22 @@ func (r *Forbidden) Is(err error) (matched bool) {
 	return
 }
 
+// NotFound reports auth errors.
+type NotFound struct {
+	Resource string
+	Reason   string
+}
+
+func (r *NotFound) Error() string {
+	return fmt.Sprintf("Resource '%s' not found. %s", r.Resource, r.Reason)
+}
+
+func (r *NotFound) Is(err error) (matched bool) {
+	var forbidden *Forbidden
+	matched = errors.As(err, &forbidden)
+	return
+}
+
 // ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -102,7 +119,8 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) ||
+			errors.Is(err, &NotFound{}) {
 			if ctx.Request.Method == http.MethodDelete {
 				rtx.Status(http.StatusNoContent)
 				return

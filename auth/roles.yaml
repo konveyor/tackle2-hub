@@ -82,6 +82,9 @@
         - get
         - post
         - put
+    - name: kai
+      verbs:
+        - get
     - name: proxies
       verbs:
         - delete
@@ -286,6 +289,9 @@
         - get
         - post
         - put
+    - name: kai
+      verbs:
+        - get
     - name: proxies
       verbs:
         - get
@@ -443,6 +449,9 @@
     - name: jobfunctions
       verbs:
         - get
+    - name: kai
+      verbs:
+        - get
     - name: proxies
       verbs:
         - get
@@ -558,6 +567,9 @@
       verbs:
         - get
     - name: jobfunctions
+      verbs:
+        - get
+    - name: kai
       verbs:
         - get
     - name: proxies

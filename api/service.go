@@ -1,22 +1,25 @@
 package api
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
-	"strconv"
+	"net/url"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/net"
-	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Routes
 const (
-	ServiceRoot = "/service/:name/*" + Wildcard
+	ServicesRoot = "/services"
+	ServiceRoot  = ServicesRoot + "/:name/*" + Wildcard
 )
+
+// serviceRoutes name to route map.
+var serviceRoutes = map[string]string{
+	"kai": os.Getenv("KAI_URL"),
+}
 
 // ServiceHandler handles service routes.
 type ServiceHandler struct {
@@ -25,54 +28,71 @@ type ServiceHandler struct {
 
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
+	e.GET(ServicesRoot, h.List)
 	e.Any(ServiceRoot, h.Forward)
+}
+
+// List godoc
+// @summary List named service routes.
+// @description List named service routes.
+// @tags services
+// @produce json
+// @success 200 {object} api.Service
+// @router /services [get]
+func (h ServiceHandler) List(ctx *gin.Context) {
+	var r []Service
+	for name, route := range serviceRoutes {
+		service := Service{Name: name, Route: route}
+		r = append(r, service)
+	}
+
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // Forward provides RBAC and forwards request to the service.
 func (h ServiceHandler) Forward(ctx *gin.Context) {
-	name := ctx.Param(Name)
 	path := ctx.Param(Wildcard)
-	Required("service." + name)(ctx)
+	name := ctx.Param(Name)
+	Required(name)
 	if len(ctx.Errors) > 0 {
 		return
 	}
-	service := &core.Service{}
-	err := h.Client(ctx).Get(
-		context.TODO(),
-		k8s.ObjectKey{
-			Namespace: Settings.Hub.Namespace,
-			Name:      name,
-		},
-		service)
+	route, found := serviceRoutes[name]
+	if !found {
+		err := &NotFound{Resource: name}
+		_ = ctx.Error(err)
+		return
+	}
+	if route == "" {
+		err := fmt.Errorf("route for: '%s' not defined", name)
+		_ = ctx.Error(err)
+		return
+	}
+	u, err := url.Parse(route)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			h.Status(ctx, http.StatusNotFound)
-			return
-		} else {
-			_ = ctx.Error(err)
-			return
-		}
+		err = &BadRequestError{Reason: err.Error()}
+		_ = ctx.Error(err)
+		return
 	}
 	proxy := httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			req.URL.Scheme = ctx.Request.URL.Scheme
-			req.URL.Host = h.host(service)
+			req.URL.Scheme = u.Scheme
+			req.URL.Host = u.Host
 			req.URL.Path = path
+			Log.Info(
+				"Routing (service)",
+				"path",
+				ctx.Request.URL.Path,
+				"route",
+				req.URL.String())
 		},
 	}
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
 }
 
-func (h *ServiceHandler) host(service *core.Service) (host string) {
-	host = service.Spec.ClusterIP
-	for _, p := range service.Spec.Ports {
-		if net.Protocol(p.Protocol) == net.TCP {
-			port := int(p.Port)
-			host += ":"
-			host += strconv.Itoa(port)
-			break
-		}
-	}
-	return
+// Service REST resource.
+type Service struct {
+	Name  string `json:"name"`
+	Route string `json:"route"`
 }
