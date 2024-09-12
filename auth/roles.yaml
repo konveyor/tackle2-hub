@@ -85,6 +85,7 @@
     - name: kai
       verbs:
         - get
+        - post
     - name: proxies
       verbs:
         - delete
@@ -292,6 +293,7 @@
     - name: kai
       verbs:
         - get
+        - post
     - name: proxies
       verbs:
         - get
@@ -452,6 +454,7 @@
     - name: kai
       verbs:
         - get
+        - post
     - name: proxies
       verbs:
         - get
@@ -572,6 +575,7 @@
     - name: kai
       verbs:
         - get
+        - post
     - name: proxies
       verbs:
         - get
