@@ -51,7 +51,7 @@ func (h ServiceHandler) List(ctx *gin.Context) {
 
 // Required enforces RBAC.
 func (h ServiceHandler) Required(ctx *gin.Context) {
-	Required(ctx.Param(Name))
+	Required(ctx.Param(Name))(ctx)
 }
 
 // Forward provides RBAC and forwards request to the service.
