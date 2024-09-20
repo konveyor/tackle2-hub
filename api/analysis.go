@@ -2858,12 +2858,13 @@ func (r *yamlEncoder) embed(object any) encoder {
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
 // Section markers:
-//   ^]BEGIN-MAIN^]
-//   ^]END-MAIN^]
-//   ^]BEGIN-ISSUES^]
-//   ^]END-ISSUES^]
-//   ^]BEGIN-DEPS^]
-//   ^]END-DEPS^]
+//
+//	^]BEGIN-MAIN^]
+//	^]END-MAIN^]
+//	^]BEGIN-ISSUES^]
+//	^]END-ISSUES^]
+//	^]BEGIN-DEPS^]
+//	^]END-DEPS^]
 type ManifestReader struct {
 	file   *os.File
 	marker map[string]int64

@@ -1,0 +1,26 @@
+diff -ruN migration/v14/model/core.go migration/v15/model/core.go
+--- migration/v14/model/core.go	2024-09-20 04:44:49.750736163 -0700
++++ migration/v15/model/core.go	2024-09-20 04:47:13.750375198 -0700
+@@ -95,6 +95,7 @@
+ type File struct {
+ 	Model
+ 	Name       string
++	Encoding   string
+ 	Path       string `gorm:"<-:create;uniqueIndex"`
+ 	Expiration *time.Time
+ }
+diff -ruN migration/v14/model/mod.patch migration/v15/model/mod.patch
+--- migration/v14/model/mod.patch	1969-12-31 16:00:00.000000000 -0800
++++ migration/v15/model/mod.patch	2024-09-20 04:53:34.137063231 -0700
+@@ -0,0 +1,11 @@
++diff -ruN migration/v14/model/core.go migration/v15/model/core.go
++--- migration/v14/model/core.go	2024-09-20 04:44:49.750736163 -0700
+++++ migration/v15/model/core.go	2024-09-20 04:47:13.750375198 -0700
++@@ -95,6 +95,7 @@
++ type File struct {
++ 	Model
++ 	Name       string
+++	Encoding   string
++ 	Path       string `gorm:"<-:create;uniqueIndex"`
++ 	Expiration *time.Time
++ }

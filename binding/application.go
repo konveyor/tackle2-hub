@@ -317,12 +317,14 @@ type Analysis struct {
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
 // Section markers:
-//   ^]BEGIN-MAIN^]
-//   ^]END-MAIN^]
-//   ^]BEGIN-ISSUES^]
-//   ^]END-ISSUES^]
-//   ^]BEGIN-DEPS^]
-//   ^]END-DEPS^]
+//
+//	^]BEGIN-MAIN^]
+//	^]END-MAIN^]
+//	^]BEGIN-ISSUES^]
+//	^]END-ISSUES^]
+//	^]BEGIN-DEPS^]
+//	^]END-DEPS^]
+//
 // The encoding must be:
 // - application/json
 // - application/x-yaml
