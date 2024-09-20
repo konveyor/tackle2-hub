@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var log = logr.WithName("migration|v14")
+var log = logr.WithName("migration|v15")
 
 type Migration struct{}
 
