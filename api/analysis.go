@@ -406,6 +406,12 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = f.Close()
 	}()
+	d, err = h.Decoder(ctx, file.Encoding, reader)
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
+		return
+	}
 	for {
 		r := &Issue{}
 		err = d.Decode(r)
@@ -439,6 +445,12 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	defer func() {
 		_ = f.Close()
 	}()
+	d, err = h.Decoder(ctx, file.Encoding, reader)
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		_ = ctx.Error(err)
+		return
+	}
 	var deps []*TechDependency
 	for {
 		r := &TechDependency{}
