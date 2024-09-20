@@ -79,6 +79,7 @@ func (h FileHandler) Create(ctx *gin.Context) {
 	}
 	m := &model.File{}
 	m.Name = ctx.Param(ID)
+	m.Encoding = input.Header.Get(ContentType)
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Create(&m)
 	if result.Error != nil {
@@ -245,6 +246,7 @@ type File struct {
 	Resource   `yaml:",inline"`
 	Name       string     `json:"name"`
 	Path       string     `json:"path"`
+	Encoding   string     `yaml:"encoding,omitempty"`
 	Expiration *time.Time `json:"expiration,omitempty"`
 }
 
@@ -253,5 +255,6 @@ func (r *File) With(m *model.File) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Path = m.Path
+	r.Encoding = m.Encoding
 	r.Expiration = m.Expiration
 }

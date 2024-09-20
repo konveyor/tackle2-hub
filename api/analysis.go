@@ -1,12 +1,15 @@
 package api
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,9 +56,15 @@ const (
 	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
 )
 
+// Manifest markers.
+// The GS=\x1D (group separator).
 const (
-	IssueField = "issues"
-	DepField   = "dependencies"
+	BeginMainMarker   = "\x1DBEGIN-MAIN\x1D"
+	EndMainMarker     = "\x1DEND-MAIN\x1D"
+	BeginIssuesMarker = "\x1DBEGIN-ISSUES\x1D"
+	EndIssuesMarker   = "\x1DEND-ISSUES\x1D"
+	BeginDepsMarker   = "\x1DBEGIN-DEPS\x1D"
+	EndDepsMarker     = "\x1DEND-DEPS\x1D"
 )
 
 // AnalysisHandler handles analysis resource routes.
@@ -320,7 +329,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @description   - dependencies: file that multiple api.TechDependency resources.
 // @tags analyses
 // @produce json
-// @success 201 {object} api.Analysis
+// @success 201 {object} api.Ref
 // @router /application/{id}/analyses [post]
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
@@ -337,32 +346,40 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			return
 		}
 	}
+	db := h.DB(ctx)
 	//
-	// Analysis
-	input, err := ctx.FormFile(FileField)
+	// Manifest
+	ref := &Ref{}
+	err := h.Bind(ctx, ref)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	file := &model.File{}
+	err = db.First(file, ref.ID).Error
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
-	reader, err := input.Open()
+	reader := &ManifestReader{}
+	f, err := reader.open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = reader.Close()
+		_ = f.Close()
 	}()
-	encoding := input.Header.Get(ContentType)
-	d, err := h.Decoder(ctx, encoding, reader)
+	d, err := h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
-	r := Analysis{}
-	err = d.Decode(&r)
+	r := &Analysis{}
+	err = d.Decode(r)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -371,7 +388,6 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	analysis := r.Model()
 	analysis.ApplicationID = id
 	analysis.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	db := h.DB(ctx)
 	db.Logger = db.Logger.LogMode(logger.Error)
 	err = db.Create(analysis).Error
 	if err != nil {
@@ -380,28 +396,16 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Issues
-	input, err = ctx.FormFile(IssueField)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	reader, err = input.Open()
+	reader = &ManifestReader{}
+	f, err = reader.open(file.Path, BeginIssuesMarker, EndIssuesMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = reader.Close()
+		_ = f.Close()
 	}()
-	encoding = input.Header.Get(ContentType)
-	d, err = h.Decoder(ctx, encoding, reader)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
 	for {
 		r := &Issue{}
 		err = d.Decode(r)
@@ -425,28 +429,16 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Dependencies
-	input, err = ctx.FormFile(DepField)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	reader, err = input.Open()
+	reader = &ManifestReader{}
+	f, err = reader.open(file.Path, BeginDepsMarker, EndDepsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = reader.Close()
+		_ = f.Close()
 	}()
-	encoding = input.Header.Get(ContentType)
-	d, err = h.Decoder(ctx, encoding, reader)
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
 	var deps []*TechDependency
 	for {
 		r := &TechDependency{}
@@ -2859,4 +2851,116 @@ func (r *yamlEncoder) embed(object any) encoder {
 	}
 	r.write(s)
 	return r
+}
+
+// ManifestReader analysis manifest reader.
+// The manifest contains 3 sections containing documents delimited by markers.
+// The manifest must contain ALL markers even when sections are empty.
+// Note: `^]` = `\x1D` = GS (group separator).
+// Section markers:
+//   ^]BEGIN-MAIN^]
+//   ^]END-MAIN^]
+//   ^]BEGIN-ISSUES^]
+//   ^]END-ISSUES^]
+//   ^]BEGIN-DEPS^]
+//   ^]END-DEPS^]
+type ManifestReader struct {
+	file   *os.File
+	marker map[string]int64
+	begin  int64
+	end    int64
+	read   int64
+}
+
+// scan manifest and catalog position of markers.
+func (r *ManifestReader) scan(path string) (err error) {
+	if r.marker != nil {
+		return
+	}
+	r.file, err = os.Open(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = r.file.Close()
+	}()
+	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
+	if err != nil {
+		return
+	}
+	p := int64(0)
+	r.marker = make(map[string]int64)
+	scanner := bufio.NewScanner(r.file)
+	for scanner.Scan() {
+		content := scanner.Text()
+		matched := strings.TrimSpace(content)
+		if pattern.Match([]byte(matched)) {
+			r.marker[matched] = p
+		}
+		p += int64(len(content))
+		p++
+	}
+
+	return
+}
+
+// open returns a read delimited by the specified markers.
+func (r *ManifestReader) open(path, begin, end string) (reader io.ReadCloser, err error) {
+	found := false
+	err = r.scan(path)
+	if err != nil {
+		return
+	}
+	r.begin, found = r.marker[begin]
+	if !found {
+		err = &BadRequestError{
+			Reason: fmt.Sprintf("marker: %s not found.", begin),
+		}
+		return
+	}
+	r.end, found = r.marker[end]
+	if !found {
+		err = &BadRequestError{
+			Reason: fmt.Sprintf("marker: %s not found.", end),
+		}
+		return
+	}
+	if r.begin >= r.end {
+		err = &BadRequestError{
+			Reason: fmt.Sprintf("marker: %s must preceed %s.", begin, end),
+		}
+		return
+	}
+	r.begin += int64(len(begin))
+	r.begin++
+	r.read = r.end - r.begin
+	r.file, err = os.Open(path)
+	if err != nil {
+		return
+	}
+	_, err = r.file.Seek(r.begin, io.SeekStart)
+	reader = r
+	return
+}
+
+// Read bytes.
+func (r *ManifestReader) Read(b []byte) (n int, err error) {
+	n, err = r.file.Read(b)
+	if n == 0 || err != nil {
+		return
+	}
+	if int64(n) > r.read {
+		n = int(r.read)
+	}
+	r.read -= int64(n)
+	if n < 1 {
+		err = io.EOF
+	}
+	return
+}
+
+// Close the reader.
+func (r *ManifestReader) Close() (err error) {
+	err = r.file.Close()
+	return
 }
