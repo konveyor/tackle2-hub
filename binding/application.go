@@ -326,7 +326,7 @@ type Analysis struct {
 // The encoding must be:
 // - application/json
 // - application/x-yaml
-func (h *Analysis) Create(manifest, encoding string) (err error) {
+func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
 	switch encoding {
 	case "":
 		encoding = binding.MIMEJSON
@@ -337,7 +337,7 @@ func (h *Analysis) Create(manifest, encoding string) (err error) {
 			"Encoding: %s not supported",
 			encoding)
 	}
-	r := &api.Analysis{}
+	r = &api.Analysis{}
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.FilePostEncoded(path, manifest, r, encoding)
 	if err != nil {
