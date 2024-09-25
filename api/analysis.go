@@ -324,12 +324,23 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @summary Create an analysis.
 // @description Create an analysis.
 // @description Form fields:
-// @description   - file: file that contains the api.Analysis resource.
-// @description   - issues: file that multiple api.Issue resources.
-// @description   - dependencies: file that multiple api.TechDependency resources.
+// @description   - file: A manifest file that contains 3 sections
+// @description containing documents delimited by markers.
+// @description The manifest must contain ALL markers even when sections are empty.
+// @description Note: `^]` = `\x1D` = GS (group separator).
+// @description Section markers:
+// @description	 ^]BEGIN-MAIN^]
+// @description	^]END-MAIN^]
+// @description	^]BEGIN-ISSUES^]
+// @description	^]END-ISSUES^]
+// @description	^]BEGIN-DEPS^]
+// @description	^]END-DEPS^]
+// @description The encoding must be:
+// @description - application/json
+// @description - application/x-yaml
 // @tags analyses
 // @produce json
-// @success 201 {object} api.Ref
+// @success 201 {object} api.Analysis
 // @router /application/{id}/analyses [post]
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
@@ -349,19 +360,19 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	db := h.DB(ctx)
 	//
 	// Manifest
-	ref := &Ref{}
-	err := h.Bind(ctx, ref)
+	fh := FileHandler{}
+	name := fmt.Sprintf("app.%d.manifest", id)
+	file, err := fh.create(ctx, name)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	file := &model.File{}
-	err = db.First(file, ref.ID).Error
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
+	defer func() {
+		err = fh.delete(ctx, file)
+		if err != nil {
+			_ = ctx.Error(err)
+		}
+	}()
 	reader := &ManifestReader{}
 	f, err := reader.open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
@@ -2870,7 +2881,6 @@ func (r *yamlEncoder) embed(object any) encoder {
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
 // Section markers:
-//
 //	^]BEGIN-MAIN^]
 //	^]END-MAIN^]
 //	^]BEGIN-ISSUES^]

@@ -70,51 +70,9 @@ func (h FileHandler) List(ctx *gin.Context) {
 // @router /files [post]
 // @param name path string true "File name"
 func (h FileHandler) Create(ctx *gin.Context) {
-	var err error
-	input, err := ctx.FormFile(FileField)
+	m, err := h.create(ctx, ctx.Param(ID))
 	if err != nil {
-		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
-		return
-	}
-	m := &model.File{}
-	m.Name = ctx.Param(ID)
-	m.Encoding = input.Header.Get(ContentType)
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Create(&m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	defer func() {
-		if err != nil {
-			h.Status(ctx, http.StatusInternalServerError)
-			_ = h.DB(ctx).Delete(&m)
-			return
-		}
-	}()
-	reader, err := input.Open()
-	if err != nil {
-		err = &BadRequestError{err.Error()}
-		_ = ctx.Error(err)
-		return
-	}
-	defer func() {
-		_ = reader.Close()
-	}()
-	writer, err := os.Create(m.Path)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = writer.Close()
-	}()
-	_, err = io.Copy(writer, reader)
-	if err != nil {
-		return
-	}
-	err = os.Chmod(m.Path, 0666)
-	if err != nil {
 		return
 	}
 	r := File{}
@@ -225,20 +183,75 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = os.Remove(m.Path)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			_ = ctx.Error(err)
-			return
-		}
-	}
-	err = h.DB(ctx).Delete(m).Error
+	err = h.delete(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
 	h.Status(ctx, http.StatusNoContent)
+}
+
+// create a file.
+func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err error) {
+	input, err := ctx.FormFile(FileField)
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		return
+	}
+	m = &model.File{}
+	m.Name = name
+	m.Encoding = input.Header.Get(ContentType)
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	db := h.DB(ctx)
+	err = db.Create(&m).Error
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			h.Status(ctx, http.StatusInternalServerError)
+			_ = h.DB(ctx).Delete(&m)
+			return
+		}
+	}()
+	reader, err := input.Open()
+	if err != nil {
+		err = &BadRequestError{err.Error()}
+		return
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+	writer, err := os.Create(m.Path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = writer.Close()
+	}()
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(m.Path, 0666)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// delete the specified file.
+func (h FileHandler) delete(ctx *gin.Context, m *model.File) (err error) {
+	err = os.Remove(m.Path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return
+		}
+	}
+	db := h.DB(ctx)
+	err = db.Delete(m).Error
+	return
 }
 
 // File REST resource.

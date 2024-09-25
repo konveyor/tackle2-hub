@@ -204,38 +204,21 @@ echo "Manifest (file) GENERATED: ${file}"
 
 #
 # Post manifest.
-code=$(curl -kSs -o ${tmp} -w "%{http_code}" -F "file=@${file};type=application/x-yaml" http://${host}/files/manifest)
+code=$(curl -kSs -o ${tmp} -w "%{http_code}" \
+  -F "file=@${file};type=application/x-yaml" \
+  -H 'Accept:application/x-yaml' \
+  http://${host}/applications/${appId}/analyses)
 if [ ! $? -eq 0 ]
 then
   exit $?
 fi
 case ${code} in
   201)
-    manifestId=$(cat ${tmp}|jq .id)
-    echo "manifest (file): ${name} posted. id=${manifestId}"
-    ;;
-  *)
-    echo "manifest (file) post - FAILED: ${code}."
+    echo "Analysis: created."
     cat ${tmp}
-    exit 1
-esac
-#
-# Post analysis.
-d="
-id: ${manifestId}
-"
-code=$(curl -kSs -o ${tmp} -w "%{http_code}" ${host}/applications/${appId}/analyses -H "Content-Type:application/x-yaml" -d "${d}")
-if [ ! $? -eq 0 ]
-then
-  exit $?
-fi
-case ${code} in
-  201)
-    id=$(cat ${tmp}|jq .id)
-    echo "analysis: ${name} posted. id=${id}"
     ;;
   *)
-    echo "analysis post  - FAILED: ${code}."
+    echo "Analysis create - FAILED: ${code}."
     cat ${tmp}
     exit 1
 esac

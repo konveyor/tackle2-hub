@@ -317,14 +317,12 @@ type Analysis struct {
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
 // Section markers:
-//
 //	^]BEGIN-MAIN^]
 //	^]END-MAIN^]
 //	^]BEGIN-ISSUES^]
 //	^]END-ISSUES^]
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
-//
 // The encoding must be:
 // - application/json
 // - application/x-yaml
@@ -339,17 +337,11 @@ func (h *Analysis) Create(manifest, encoding string) (err error) {
 			"Encoding: %s not supported",
 			encoding)
 	}
-	file := File{client: h.client}
-	f, err := file.PostEncoded(manifest, encoding)
-	if err != nil {
-		return
-	}
-	ref := &api.Ref{ID: f.ID}
+	r := &api.Analysis{}
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Post(path, ref)
+	err = h.client.FilePostEncoded(path, manifest, r, encoding)
 	if err != nil {
 		return
 	}
-	_ = file.Delete(f.ID)
 	return
 }
