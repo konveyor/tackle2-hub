@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/model"
 )
 
@@ -194,6 +195,18 @@ func (h FileHandler) Delete(ctx *gin.Context) {
 
 // create a file.
 func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err error) {
+	mode := ctx.ContentType()
+	switch mode {
+	case binding.MIMEMultipartPOSTForm:
+		m, err = h.createMultipart(ctx, name)
+	default:
+		m, err = h.createBody(ctx, name)
+	}
+	return
+}
+
+// create a file with multipart form.
+func (h FileHandler) createMultipart(ctx *gin.Context, name string) (m *model.File, err error) {
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -211,7 +224,7 @@ func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err e
 	defer func() {
 		if err != nil {
 			h.Status(ctx, http.StatusInternalServerError)
-			_ = h.DB(ctx).Delete(&m)
+			_ = db.Delete(&m)
 			return
 		}
 	}()
@@ -223,6 +236,43 @@ func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err e
 	defer func() {
 		_ = reader.Close()
 	}()
+	writer, err := os.Create(m.Path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = writer.Close()
+	}()
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(m.Path, 0666)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// create a file with request body.
+func (h FileHandler) createBody(ctx *gin.Context, name string) (m *model.File, err error) {
+	m = &model.File{}
+	m.Name = name
+	m.Encoding = binding.MIMEYAML
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	db := h.DB(ctx)
+	err = db.Create(&m).Error
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			h.Status(ctx, http.StatusInternalServerError)
+			_ = db.Delete(&m)
+			return
+		}
+	}()
+	reader := ctx.Request.Body
 	writer, err := os.Create(m.Path)
 	if err != nil {
 		return
