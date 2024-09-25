@@ -324,17 +324,17 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @summary Create an analysis.
 // @description Create an analysis.
 // @description Form fields:
-// @description   - file: A manifest file that contains 3 sections
+// @description file: A manifest file that contains 3 sections
 // @description containing documents delimited by markers.
 // @description The manifest must contain ALL markers even when sections are empty.
 // @description Note: `^]` = `\x1D` = GS (group separator).
 // @description Section markers:
-// @description	 ^]BEGIN-MAIN^]
-// @description	^]END-MAIN^]
-// @description	^]BEGIN-ISSUES^]
-// @description	^]END-ISSUES^]
-// @description	^]BEGIN-DEPS^]
-// @description	^]END-DEPS^]
+// @description	  ^]BEGIN-MAIN^]
+// @description	  ^]END-MAIN^]
+// @description	  ^]BEGIN-ISSUES^]
+// @description	  ^]END-ISSUES^]
+// @description	  ^]BEGIN-DEPS^]
+// @description	  ^]END-DEPS^]
 // @description The encoding must be:
 // @description - application/json
 // @description - application/x-yaml
