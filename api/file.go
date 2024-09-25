@@ -199,8 +199,10 @@ func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err e
 	switch mode {
 	case binding.MIMEMultipartPOSTForm:
 		m, err = h.createMultipart(ctx, name)
+	case binding.MIMEYAML:
+		m, err = h.createBody(ctx, name, binding.MIMEYAML)
 	default:
-		m, err = h.createBody(ctx, name)
+		m, err = h.createBody(ctx, name, binding.MIMEJSON)
 	}
 	return
 }
@@ -255,10 +257,10 @@ func (h FileHandler) createMultipart(ctx *gin.Context, name string) (m *model.Fi
 }
 
 // create a file with request body.
-func (h FileHandler) createBody(ctx *gin.Context, name string) (m *model.File, err error) {
+func (h FileHandler) createBody(ctx *gin.Context, name, encoding string) (m *model.File, err error) {
 	m = &model.File{}
 	m.Name = name
-	m.Encoding = binding.MIMEYAML
+	m.Encoding = encoding
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	err = db.Create(&m).Error
