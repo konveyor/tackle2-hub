@@ -42,17 +42,29 @@ func (h *File) Touch(name string) (r *api.File, err error) {
 
 // Post uploads a file.
 func (h *File) Post(source string) (r *api.File, err error) {
+	r, err = h.PostEncoded(source, "")
+	return
+}
+
+// PostEncoded uploads a file.
+func (h *File) PostEncoded(source string, encoding string) (r *api.File, err error) {
 	r = &api.File{}
 	path := Path(api.FileRoot).Inject(Params{api.ID: pathlib.Base(source)})
-	err = h.client.FilePost(path, source, r)
+	err = h.client.FilePostEncoded(path, source, r, encoding)
 	return
 }
 
 // Put uploads a file.
 func (h *File) Put(source string) (r *api.File, err error) {
+	r, err = h.PutEncoded(source, "")
+	return
+}
+
+// PutEncoded uploads a file.
+func (h *File) PutEncoded(source string, encoding string) (r *api.File, err error) {
 	r = &api.File{}
 	path := Path(api.FileRoot).Inject(Params{api.ID: pathlib.Base(source)})
-	err = h.client.FilePut(path, source, r)
+	err = h.client.FilePutEncoded(path, source, r, encoding)
 	return
 }
 
