@@ -1,16 +1,12 @@
 package binding
 
 import (
-	"bytes"
 	"errors"
-	"io"
-	"net/http"
 	"strconv"
 
-	mime "github.com/gin-gonic/gin/binding"
+	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
-	"gopkg.in/yaml.v2"
 )
 
 // Application API.
@@ -316,30 +312,38 @@ type Analysis struct {
 	appId  uint
 }
 
-// Create an analysis report.
-func (h *Analysis) Create(r *api.Analysis, encoding string, issues, deps io.Reader) (err error) {
+// Create an analysis report using the manifest at the specified path.
+// The manifest contains 3 sections containing documents delimited by markers.
+// The manifest must contain ALL markers even when sections are empty.
+// Note: `^]` = `\x1D` = GS (group separator).
+// Section markers:
+//
+//	^]BEGIN-MAIN^]
+//	^]END-MAIN^]
+//	^]BEGIN-ISSUES^]
+//	^]END-ISSUES^]
+//	^]BEGIN-DEPS^]
+//	^]END-DEPS^]
+//
+// The encoding must be:
+// - application/json
+// - application/x-yaml
+func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
+	switch encoding {
+	case "":
+		encoding = binding.MIMEJSON
+	case binding.MIMEJSON,
+		binding.MIMEYAML:
+	default:
+		err = liberr.New(
+			"Encoding: %s not supported",
+			encoding)
+	}
+	r = &api.Analysis{}
 	path := Path(api.AppAnalysesRoot).Inject(Params{api.ID: h.appId})
-	b, _ := yaml.Marshal(r)
-	err = h.client.FileSend(
-		path,
-		http.MethodPost,
-		[]Field{
-			{
-				Name:     api.FileField,
-				Reader:   bytes.NewReader(b),
-				Encoding: mime.MIMEYAML,
-			},
-			{
-				Name:     api.IssueField,
-				Encoding: encoding,
-				Reader:   issues,
-			},
-			{
-				Name:     api.DepField,
-				Encoding: encoding,
-				Reader:   deps,
-			},
-		},
-		r)
+	err = h.client.FilePostEncoded(path, manifest, r, encoding)
+	if err != nil {
+		return
+	}
 	return
 }

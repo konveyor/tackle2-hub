@@ -457,11 +457,19 @@ func (r *Client) FileGet(path, destination string) (err error) {
 // FilePost uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePost(path, source string, object any) (err error) {
+	err = r.FilePostEncoded(path, source, object, "")
+	return
+}
+
+// FilePostEncoded uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePostEncoded(path, source string, object any, encoding string) (err error) {
 	if source == "" {
 		fields := []Field{
 			{
-				Name:   api.FileField,
-				Reader: bytes.NewReader([]byte{}),
+				Name:     api.FileField,
+				Reader:   bytes.NewReader([]byte{}),
+				Encoding: encoding,
 			},
 		}
 		err = r.FileSend(path, http.MethodPost, fields, object)
@@ -478,8 +486,9 @@ func (r *Client) FilePost(path, source string, object any) (err error) {
 	}
 	fields := []Field{
 		{
-			Name: api.FileField,
-			Path: source,
+			Name:     api.FileField,
+			Path:     source,
+			Encoding: encoding,
 		},
 	}
 	err = r.FileSend(path, http.MethodPost, fields, object)
@@ -489,11 +498,19 @@ func (r *Client) FilePost(path, source string, object any) (err error) {
 // FilePut uploads a file.
 // Returns the created File resource.
 func (r *Client) FilePut(path, source string, object any) (err error) {
+	err = r.FilePutEncoded(path, source, object, "")
+	return
+}
+
+// FilePutEncoded uploads a file.
+// Returns the created File resource.
+func (r *Client) FilePutEncoded(path, source string, object any, encoding string) (err error) {
 	if source == "" {
 		fields := []Field{
 			{
-				Name:   api.FileField,
-				Reader: bytes.NewReader([]byte{}),
+				Name:     api.FileField,
+				Reader:   bytes.NewReader([]byte{}),
+				Encoding: encoding,
 			},
 		}
 		err = r.FileSend(path, http.MethodPut, fields, object)
@@ -510,8 +527,9 @@ func (r *Client) FilePut(path, source string, object any) (err error) {
 	}
 	fields := []Field{
 		{
-			Name: api.FileField,
-			Path: source,
+			Name:     api.FileField,
+			Path:     source,
+			Encoding: encoding,
 		},
 	}
 	err = r.FileSend(path, http.MethodPut, fields, object)

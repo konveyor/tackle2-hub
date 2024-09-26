@@ -3,20 +3,18 @@
 set -e
 
 host="${HOST:-localhost:8080}"
-app="${1:-1}"
+appId="${1:-1}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"
-aPath="/tmp/analysis.yaml"
-iPath="/tmp/issues.yaml"
-dPath="/tmp/deps.yaml"
+tmp=/tmp/${self}-${pid}
+file="/tmp/manifest.yaml"
 
-echo " Application: ${app}"
+echo " Application: ${appId}"
 echo " RuleSets: ${nRuleSet}"
 echo " Issues: ${nIssue}"
 echo " Incidents: ${nIncident}"
-echo " Issues path: ${iPath}"
-echo " Deps path: ${dPath}"
+echo " Manifest path: ${file}"
 
 sources=(
 konveyor.io/source=oraclejdk
@@ -63,10 +61,17 @@ konveyor.io/target=jbpm
 )
 
 #
+# Analysis
+#
+printf "\x1DBEGIN-MAIN\x1D\n" > ${file}
+echo -n "---
+commit: "1234"
+" >> ${file}
+printf "\x1DEND-MAIN\x1D\n" >> ${file}
+#
 # Issues
 #
-file=${iPath}
-echo "" > ${file}
+printf "\x1DBEGIN-ISSUES\x1D\n" >> ${file}
 for r in $(seq 1 ${nRuleSet})
 do
 for i in $(seq 1 ${nIssue})
@@ -150,17 +155,18 @@ fi
 done
 done
 done
+printf "\x1DEND-ISSUES\x1D
+\x1DBEGIN-DEPS\x1D\n" >> ${file}
 #
 # Deps
 #
-file=${dPath}
 echo -n "---
 name: github.com/jboss
 version: 4.0
 labels:
 - konveyor.io/language=java
 - konveyor.io/otherA=dog
-" > ${file}
+" >> ${file}
 echo -n "---
 name: github.com/jboss
 version: 5.0
@@ -192,23 +198,28 @@ echo -n "---
 name: github.com/java
 version: 8
 " >> ${file}
+printf "\x1DEND-DEPS\x1D\n" >> ${file}
+
+echo "Manifest (file) GENERATED: ${file}"
+
 #
-# Analysis
-#
-file=${aPath}
-echo -n "---
-commit: "42b22a90"
-issues:
-dependencies:
-" > ${file}
+# Post manifest.
+code=$(curl -kSs -o ${tmp} -w "%{http_code}" \
+  -F "file=@${file};type=application/x-yaml" \
+  -H 'Accept:application/x-yaml' \
+  http://${host}/applications/${appId}/analyses)
+if [ ! $? -eq 0 ]
+then
+  exit $?
+fi
+case ${code} in
+  201)
+    echo "Analysis: created."
+    cat ${tmp}
+    ;;
+  *)
+    echo "Analysis create - FAILED: ${code}."
+    cat ${tmp}
+    exit 1
+esac
 
-echo "Report CREATED"
-
-mime="application/x-yaml"
-
-curl \
-  -F "file=@${aPath};type=${mime}" \
-  -F "issues=@${iPath};type=${mime}" \
-  -F "dependencies=@${dPath};type=${mime}" \
-  ${host}/applications/${app}/analyses \
-  -H "Accept:${mime}"
