@@ -19,9 +19,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-    uses: konveyor/release-tools/build-push-images.yaml@main
+    uses: konveyor/release-tools/.github/workflows/build-push-images.yaml@main
     with:
       registry: "quay.io/konveyor"
       image_name: "tackle2-hub"
       containerfile: "./Dockerfile"
       architectures: '[ "amd64", "arm64" ]'
+    secrets:
+      registry_username: ${{ secrets.QUAY_PUBLISH_ROBOT }}
+      registry_password: ${{ secrets.QUAY_PUBLISH_TOKEN }}
