@@ -2881,6 +2881,7 @@ func (r *yamlEncoder) embed(object any) encoder {
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
 // Section markers:
+//
 //	^]BEGIN-MAIN^]
 //	^]END-MAIN^]
 //	^]BEGIN-ISSUES^]

@@ -527,8 +527,9 @@ func (r *Client) FilePutEncoded(path, source string, object any, encoding string
 	}
 	fields := []Field{
 		{
-			Name: api.FileField,
-			Path: source,
+			Name:     api.FileField,
+			Path:     source,
+			Encoding: encoding,
 		},
 	}
 	err = r.FileSend(path, http.MethodPut, fields, object)
