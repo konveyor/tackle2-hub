@@ -57,12 +57,14 @@ func (c *Conn) Ping(ctx context.Context) (err error) {
 }
 
 func (c *Conn) ResetSession(ctx context.Context) (err error) {
+	c.release()
 	if p, cast := c.wrapped.(driver.SessionResetter); cast {
 		err = p.ResetSession(ctx)
 	}
 	return
 }
 func (c *Conn) IsValid() (b bool) {
+	b = true
 	if p, cast := c.wrapped.(driver.Validator); cast {
 		b = p.IsValid()
 	}
