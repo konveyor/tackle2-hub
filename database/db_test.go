@@ -13,6 +13,40 @@ import (
 
 var N, _ = env.GetInt("TEST_CONCURRENT", 10)
 
+func TestDriver(t *testing.T) {
+	pid := os.Getpid()
+	Settings.DB.Path = fmt.Sprintf("/tmp/driver-%d.db", pid)
+	defer func() {
+		_ = os.Remove(Settings.DB.Path)
+	}()
+	db, err := Open(true)
+	if err != nil {
+		panic(err)
+	}
+	key := "driver"
+	m := &model.Setting{Key: key, Value: "Test"}
+	// insert.
+	err = db.Create(m).Error
+	if err != nil {
+		panic(err)
+	}
+	// update
+	err = db.Save(m).Error
+	if err != nil {
+		panic(err)
+	}
+	// select
+	err = db.First(m, m.ID).Error
+	if err != nil {
+		panic(err)
+	}
+	// delete
+	err = db.Delete(m).Error
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestConcurrent(t *testing.T) {
 	pid := os.Getpid()
 	Settings.DB.Path = fmt.Sprintf("/tmp/concurrent-%d.db", pid)
