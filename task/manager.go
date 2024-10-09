@@ -1683,7 +1683,6 @@ func (r *Task) containers(
 	addon *crd.Addon,
 	extensions []crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
-	userid := int64(0)
 	token := &core.EnvVarSource{
 		SecretKeyRef: &core.SecretKeySelector{
 			Key: settings.EnvHubToken,
@@ -1707,9 +1706,6 @@ func (r *Task) containers(
 		container := &plain[i]
 		injector.Inject(container)
 		r.propagateEnv(&plain[0], container)
-		container.SecurityContext = &core.SecurityContext{
-			RunAsUser: &userid,
-		}
 		container.VolumeMounts = append(
 			container.VolumeMounts,
 			core.VolumeMount{
