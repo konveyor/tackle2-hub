@@ -83,6 +83,7 @@ const (
 )
 
 const (
+	Addon  = "addon"
 	Shared = "shared"
 	Cache  = "cache"
 )
@@ -1643,6 +1644,12 @@ func (r *Task) specification(
 	addon *crd.Addon,
 	extensions []crd.Extension,
 	secret *core.Secret) (specification core.PodSpec) {
+	addonDir := core.Volume{
+		Name: Addon,
+		VolumeSource: core.VolumeSource{
+			EmptyDir: &core.EmptyDirVolumeSource{},
+		},
+	}
 	shared := core.Volume{
 		Name: Shared,
 		VolumeSource: core.VolumeSource{
@@ -1670,6 +1677,7 @@ func (r *Task) specification(
 		InitContainers:     init,
 		Containers:         plain,
 		Volumes: []core.Volume{
+			addonDir,
 			shared,
 			cache,
 		},
@@ -1683,7 +1691,6 @@ func (r *Task) containers(
 	addon *crd.Addon,
 	extensions []crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
-	userid := int64(0)
 	token := &core.EnvVarSource{
 		SecretKeyRef: &core.SecretKeySelector{
 			Key: settings.EnvHubToken,
@@ -1707,11 +1714,12 @@ func (r *Task) containers(
 		container := &plain[i]
 		injector.Inject(container)
 		r.propagateEnv(&plain[0], container)
-		container.SecurityContext = &core.SecurityContext{
-			RunAsUser: &userid,
-		}
 		container.VolumeMounts = append(
 			container.VolumeMounts,
+			core.VolumeMount{
+				Name:      Addon,
+				MountPath: Settings.Addon.HomeDir,
+			},
 			core.VolumeMount{
 				Name:      Shared,
 				MountPath: Settings.Shared.Path,
@@ -1722,6 +1730,10 @@ func (r *Task) containers(
 			})
 		container.Env = append(
 			container.Env,
+			core.EnvVar{
+				Name:  settings.EnvAddonHomeDir,
+				Value: Settings.Addon.HomeDir,
+			},
 			core.EnvVar{
 				Name:  settings.EnvSharedPath,
 				Value: Settings.Shared.Path,
