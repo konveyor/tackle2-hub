@@ -92,9 +92,9 @@ func (c *Conn) IsValid() (b bool) {
 
 // QueryContext execute a query with context.
 func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (r driver.Rows, err error) {
-	defer c.release()
 	if c.needsMutex(query) {
 		c.acquire()
+		defer c.release()
 	}
 	if p, cast := c.wrapped.(driver.QueryerContext); cast {
 		r, err = p.QueryContext(ctx, query, args)
@@ -104,9 +104,9 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 
 // ExecContext executes an SQL/DDL statement with context.
 func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (r driver.Result, err error) {
-	defer c.release()
 	if c.needsMutex(query) {
 		c.acquire()
+		defer c.release()
 	}
 	if p, cast := c.wrapped.(driver.ExecerContext); cast {
 		r, err = p.ExecContext(ctx, query, args)
