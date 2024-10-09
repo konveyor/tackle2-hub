@@ -215,6 +215,11 @@ func (c *Conn) release() {
 	}
 }
 
+// endTx report transaction has ended.
+func (c *Conn) endTx() {
+	c.hasTx = false
+}
+
 // Stmt is a SQL/DDL statement.
 type Stmt struct {
 	wrapped driver.Stmt
@@ -306,7 +311,7 @@ type Tx struct {
 // Releases the mutex.
 func (t *Tx) Commit() (err error) {
 	defer func() {
-		t.conn.hasTx = false
+		t.conn.endTx()
 		t.conn.release()
 	}()
 	err = t.wrapped.Commit()
@@ -318,7 +323,7 @@ func (t *Tx) Commit() (err error) {
 // Releases the mutex.
 func (t *Tx) Rollback() (err error) {
 	defer func() {
-		t.conn.hasTx = false
+		t.conn.endTx()
 		t.conn.release()
 	}()
 	err = t.wrapped.Rollback()
