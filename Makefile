@@ -141,6 +141,9 @@ endif
 test:
 	go test -count=1 -v $(shell go list ./... | grep -v "hub/test")
 
+test-db:
+	go test -count=1 -timeout=6h -v ./database...
+
 # Run Hub REST API tests.
 test-api:
 	HUB_BASE_URL=$(HUB_BASE_URL) go test -count=1 -p=1 -v -failfast ./test/api/...
