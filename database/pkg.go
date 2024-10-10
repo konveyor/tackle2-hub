@@ -18,7 +18,7 @@ var log = logr.WithName("db")
 var Settings = &settings.Settings
 
 const (
-	ConnectionString = "file:%s?_journal=WAL&_timeout=100"
+	ConnectionString = "file:%s?_journal=WAL&_timeout=5000"
 	FKsOn            = "&_foreign_keys=yes"
 	FKsOff           = "&_foreign_keys=no"
 )

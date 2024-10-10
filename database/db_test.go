@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"k8s.io/utils/env"
@@ -57,12 +58,35 @@ func TestConcurrent(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
+	type A struct {
+		model.Model
+	}
+
+	type B struct {
+		N int
+		model.Model
+		A   A
+		AID uint
+	}
+	err = db.Migrator().AutoMigrate(&A{}, &B{})
+	if err != nil {
+		panic(err)
+	}
+
+	a := A{}
+	err = db.Create(&a).Error
+	if err != nil {
+		panic(err)
+	}
+
 	dq := make(chan int, N)
 	for w := 0; w < N; w++ {
 		go func(id int) {
 			fmt.Printf("Started %d\n", id)
-			for n := 0; n < N*10; n++ {
-				m := &model.Setting{Key: fmt.Sprintf("key-%d-%d", id, n), Value: n}
+			for n := 0; n < N*100; n++ {
+				m := &B{N: n, A: a}
+				m.CreateUser = "Test"
 				fmt.Printf("(%.4d) CREATE: %.4d\n", id, n)
 				uErr := db.Create(m).Error
 				if uErr != nil {
@@ -77,6 +101,20 @@ func TestConcurrent(t *testing.T) {
 					uErr = db.First(m).Error
 					if uErr != nil {
 						panic(uErr)
+					}
+				}
+				for i := 0; i < 10; i++ {
+					fmt.Printf("(%.4d) LIST: %.4d/%.4d\n", id, n, i)
+					page := api.Page{}
+					cursor := api.Cursor{}
+					mx := B{}
+					dbx := db.Model(mx)
+					dbx = dbx.Joins("A")
+					dbx = dbx.Limit(10)
+					cursor.With(dbx, page)
+					for cursor.Next(&mx) {
+						time.Sleep(time.Millisecond + 10)
+						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
 				for i := 0; i < 4; i++ {
