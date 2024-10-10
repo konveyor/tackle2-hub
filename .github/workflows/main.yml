@@ -76,7 +76,7 @@ jobs:
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
-          operator-bundle-image: quay.io/konveyor/tackle2-operator-bundle:release-0.5
+          operator-bundle-image: quay.io/konveyor/tackle2-operator-bundle:v0.5.3
           tackle-hub-image: tackle2-hub:latest
           tackle-image-pull-policy: IfNotPresent
 
