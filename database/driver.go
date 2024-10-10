@@ -318,7 +318,6 @@ func (t *Tx) Commit() (err error) {
 	return
 }
 
-//
 // Rollback the transaction.
 // Releases the mutex.
 func (t *Tx) Rollback() (err error) {
