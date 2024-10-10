@@ -7,13 +7,16 @@ import (
 )
 
 const (
-	EnvHubBaseURL = "HUB_BASE_URL"
-	EnvHubToken   = "TOKEN"
-	EnvTask       = "TASK"
+	EnvHubBaseURL   = "HUB_BASE_URL"
+	EnvHubToken     = "TOKEN"
+	EnvTask         = "TASK"
+	EnvAddonHomeDir = "ADDON_HOME"
 )
 
 // Addon settings.
 type Addon struct {
+	// HomeDir working directory.
+	HomeDir string
 	// Hub settings.
 	Hub struct {
 		// URL for the hub API.
@@ -27,6 +30,10 @@ type Addon struct {
 
 func (r *Addon) Load() (err error) {
 	var found bool
+	r.HomeDir, found = os.LookupEnv(EnvAddonHomeDir)
+	if !found {
+		r.HomeDir = "/addon"
+	}
 	r.Hub.URL, found = os.LookupEnv(EnvHubBaseURL)
 	if !found {
 		r.Hub.URL = "http://localhost:8080"
