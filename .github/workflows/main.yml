@@ -76,6 +76,7 @@ jobs:
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
+          operator-bundle-image: quay.io/konveyor/tackle2-operator-bundle:v0.5.3
           tackle-hub-image: tackle2-hub:latest
           tackle-image-pull-policy: IfNotPresent
 
@@ -95,5 +96,9 @@ jobs:
     needs: test-e2e
     uses: konveyor/ci/.github/workflows/global-ci.yml@main
     with:
+      tag: release-0.5
+      operator_tag: v0.5.3
+      api_tests_ref: release-0.5
+      run_ui_tests: false
       component_name: tackle2-hub
       api_hub_tests_ref: ${{ github.ref }}
