@@ -99,5 +99,6 @@ jobs:
       tag: release-0.5
       operator_tag: v0.5.3
       api_tests_ref: release-0.5
+      run_ui_tests: false
       component_name: tackle2-hub
       api_hub_tests_ref: ${{ github.ref }}
