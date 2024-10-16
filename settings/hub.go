@@ -9,6 +9,7 @@ import (
 const (
 	EnvNamespace               = "NAMESPACE"
 	EnvDbPath                  = "DB_PATH"
+	EnvDbMaxCon                = "DB_MAX_CONNECTION"
 	EnvDbSeedPath              = "DB_SEED_PATH"
 	EnvBucketPath              = "BUCKET_PATH"
 	EnvRwxSupported            = "RWX_SUPPORTED"
@@ -45,8 +46,9 @@ type Hub struct {
 	Namespace string
 	// DB settings.
 	DB struct {
-		Path     string
-		SeedPath string
+		Path          string
+		MaxConnection int
+		SeedPath      string
 	}
 	// Bucket settings.
 	Bucket struct {
@@ -127,6 +129,13 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.DB.Path = "/tmp/tackle.db"
 	}
+	s, found := os.LookupEnv(EnvDbMaxCon)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.DB.MaxConnection = n
+	} else {
+		r.DB.MaxConnection = 1
+	}
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {
 		r.DB.SeedPath = "/tmp/seed"
@@ -135,7 +144,7 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.Bucket.Path = "/tmp/bucket"
 	}
-	s, found := os.LookupEnv(EnvRwxSupported)
+	s, found = os.LookupEnv(EnvRwxSupported)
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Cache.RWX = b
