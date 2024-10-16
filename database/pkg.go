@@ -51,6 +51,14 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	if Settings.DB.MaxConnection > 0 {
+		dbx, nErr := db.DB()
+		if nErr != nil {
+			err = liberr.Wrap(nErr)
+			return
+		}
+		dbx.SetMaxOpenConns(Settings.DB.MaxConnection)
+	}
 	err = db.AutoMigrate(model.PK{}, model.Setting{})
 	if err != nil {
 		err = liberr.Wrap(err)
