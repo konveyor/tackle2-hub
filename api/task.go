@@ -24,6 +24,7 @@ const (
 	TasksRoot                = "/tasks"
 	TasksReportRoot          = TasksRoot + "/report"
 	TasksReportQueueRoot     = TasksReportRoot + "/queue"
+	TasksReportQueueRootByIds=TasksRoot+"/multiple"
 	TasksReportDashboardRoot = TasksReportRoot + "/dashboard"
 	TaskRoot                 = TasksRoot + "/:" + ID
 	TaskReportRoot           = TaskRoot + "/report"
@@ -51,6 +52,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(TasksRoot+"/", h.List)
 	routeGroup.POST(TasksRoot, h.Create)
 	routeGroup.GET(TaskRoot, h.Get)
+	routeGroup.POST(TasksReportQueueRootByIds, h.GetMultiple)
 	routeGroup.PUT(TaskRoot, h.Update)
 	routeGroup.PATCH(TaskRoot, Transaction, h.Update)
 	routeGroup.DELETE(TaskRoot, h.Delete)
@@ -107,6 +109,36 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 
 	h.Respond(ctx, http.StatusOK, r)
 }
+
+// GetMultiple godoc
+// @summary Get tasks by a list of IDs.
+// @description Get multiple tasks by their IDs.
+// @tags tasks
+// @produce json
+// @success 200 {array} api.Task
+// @router /tasks/multiple [post]
+// @param ids body []int true "List of Task IDs"
+func (h TaskHandler) GetMultiple(ctx *gin.Context) {
+	var ids []int
+	var tasks []model.Task
+
+	// Parse the body to get the list of IDs
+	if err := ctx.ShouldBindJSON(&ids); err != nil {
+		h.Respond(ctx, http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	// Query the database to find all tasks with the given IDs
+	db := h.DB(ctx).Preload(clause.Associations)
+	result := db.Find(&tasks, ids)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	
+}
+
 
 // List godoc
 // @summary List all tasks.
