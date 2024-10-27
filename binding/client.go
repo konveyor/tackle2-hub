@@ -143,48 +143,95 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 }
 
 // Post a resource.
-func (r *Client) Post(path string, object any) (err error) {
-	request := func() (request *http.Request, err error) {
-		bfr, err := json.Marshal(object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		reader := bytes.NewReader(bfr)
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPost,
-			Body:   io.NopCloser(reader),
-			URL:    r.join(path),
-		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
-		return
-	}
-	response, err := r.send(request)
-	if err != nil {
-		return
-	}
-	status := response.StatusCode
-	switch status {
-	case http.StatusAccepted:
-	case http.StatusNoContent:
-	case http.StatusOK,
-		http.StatusCreated:
-		var body []byte
-		body, err = io.ReadAll(response.Body)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = json.Unmarshal(body, object)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	default:
-		err = r.restError(response)
-	}
-	return
+// func (r *Client) Post(path string, object any) (err error) {
+// 	request := func() (request *http.Request, err error) {
+// 		bfr, err := json.Marshal(object)
+// 		if err != nil {
+// 			err = liberr.Wrap(err)
+// 			return
+// 		}
+// 		reader := bytes.NewReader(bfr)
+// 		request = &http.Request{
+// 			Header: http.Header{},
+// 			Method: http.MethodPost,
+// 			Body:   io.NopCloser(reader),
+// 			URL:    r.join(path),
+// 		}
+// 		request.Header.Set(api.Accept, binding.MIMEJSON)
+// 		return
+// 	}
+// 	response, err := r.send(request)
+// 	if err != nil {
+// 		return
+// 	}
+// 	status := response.StatusCode
+// 	switch status {
+// 	case http.StatusAccepted:
+// 	case http.StatusNoContent:
+// 	case http.StatusOK,
+// 		http.StatusCreated:
+// 		var body []byte
+// 		body, err = io.ReadAll(response.Body)
+// 		if err != nil {
+// 			err = liberr.Wrap(err)
+// 			return
+// 		}
+// 		err = json.Unmarshal(body, object)
+// 		if err != nil {
+// 			err = liberr.Wrap(err)
+// 			return
+// 		}
+// 	default:
+// 		err = r.restError(response)
+// 	}
+// 	return
+// }
+
+// Post a resource.
+func (r *Client) Post(path string, object any, returnValue ...any) (err error) {
+    request := func() (request *http.Request, err error) {
+        bfr, err := json.Marshal(object)
+        if err != nil {
+            err = liberr.Wrap(err)
+            return
+        }
+        reader := bytes.NewReader(bfr)
+        request = &http.Request{
+            Header: http.Header{},
+            Method: http.MethodPost,
+            Body:   io.NopCloser(reader),
+            URL:    r.join(path),
+        }
+        request.Header.Set(api.Accept, binding.MIMEJSON)
+        return
+    }
+    response, err := r.send(request)
+    if err != nil {
+        return
+    }
+    status := response.StatusCode
+    switch status {
+    case http.StatusAccepted:
+    case http.StatusNoContent:
+    case http.StatusOK,
+        http.StatusCreated:
+        var body []byte
+        body, err = io.ReadAll(response.Body)
+        if err != nil {
+            err = liberr.Wrap(err)
+            return
+        }
+        if returnValue != nil {
+            err = json.Unmarshal(body, returnValue)
+            if err != nil {
+                err = liberr.Wrap(err)
+                return
+            }
+        }
+    default:
+        err = r.restError(response)
+    }
+    return
 }
 
 // Put a resource.
