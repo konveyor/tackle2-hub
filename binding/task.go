@@ -15,6 +15,12 @@ func (h *Task) Create(r *api.Task) (err error) {
 	return
 }
 
+// Get multiple tasks by their IDs.
+func (h *Task) GetTasksByIds(ids []uint) (tasks []api.Task, err error) {
+    err = h.client.Post(api.TasksReportQueueRootByIds, ids, &tasks)
+    return
+}
+
 // Get a Task by ID.
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
