@@ -136,6 +136,14 @@ func (h TaskHandler) GetMultiple(ctx *gin.Context) {
 		return
 	}
 
+   // Convert the retrieved tasks to the response format
+   var response []Task
+   for _, task := range tasks {
+	r := Task{}
+ 	r.With(&task)
+	response = append(response, r)
+   }    // Respond with the list of tasks
+   h.Respond(ctx, http.StatusOK, response)
 	
 }
 
