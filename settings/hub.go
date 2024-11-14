@@ -2,6 +2,7 @@ package settings
 
 import (
 	"os"
+	"os/user"
 	"strconv"
 	"time"
 )
@@ -28,6 +29,7 @@ const (
 	EnvTaskPreemptDelayed      = "TASK_PREEMPT_DELAYED"
 	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
 	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
+	EnvTaskUid                 = "TASK_UID"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
 	EnvDevelopment             = "DEVELOPMENT"
@@ -94,6 +96,7 @@ type Hub struct {
 				Failed    int
 			}
 		}
+		UID int64
 	}
 	// Frequency
 	Frequency struct {
@@ -256,6 +259,27 @@ func (r *Hub) Load() (err error) {
 		r.Task.Preemption.Rate = n
 	} else {
 		r.Task.Preemption.Rate = 10
+	}
+	s, found = os.LookupEnv(EnvTaskUid)
+	if found {
+		var uid int64
+		uid, err = strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return
+		}
+		r.Task.UID = uid
+	} else {
+		var uid int64
+		var hubUser *user.User
+		hubUser, err = user.Current()
+		if err != nil {
+			return
+		}
+		uid, err = strconv.ParseInt(hubUser.Uid, 10, 64)
+		if err != nil {
+			return
+		}
+		r.Task.UID = uid
 	}
 	s, found = os.LookupEnv(EnvDevelopment)
 	if found {
