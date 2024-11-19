@@ -1692,10 +1692,9 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	q = q.Select(
 		"d.Provider",
 		"d.Name",
-		"json_group_array(distinct j.value) Labels",
+		"d.Labels",
 		"COUNT(distinct d.AnalysisID) Applications")
 	q = q.Table("TechDependency d")
-	q = q.Joins(",json_each(Labels) j")
 	q = q.Where("d.AnalysisID IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("d.ID IN (?)", h.depIDs(ctx, filter))
 	q = q.Group("d.Provider, d.Name")
