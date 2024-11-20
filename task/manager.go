@@ -1699,6 +1699,7 @@ func (r *Task) containers(
 			},
 		},
 	}
+	uid := Settings.Hub.Task.UID
 	plain = append(plain, addon.Spec.Container)
 	plain[0].Name = "addon"
 	for i := range extensions {
@@ -1714,6 +1715,9 @@ func (r *Task) containers(
 		container := &plain[i]
 		injector.Inject(container)
 		r.propagateEnv(&plain[0], container)
+		container.SecurityContext = &core.SecurityContext{
+			RunAsUser: &uid,
+		}
 		container.VolumeMounts = append(
 			container.VolumeMounts,
 			core.VolumeMount{
