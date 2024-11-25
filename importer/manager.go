@@ -166,14 +166,14 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	}
 
 	// Assign Business Service
-	businessService := &model.BusinessService{}
+	businessService := model.BusinessService{}
 	businessServices := []model.BusinessService{}
 	m.DB.Find(&businessServices)
 	normBusinessServiceName := normalizedName(imp.BusinessService)
 	// Find existing BusinessService
 	for _, bs := range businessServices {
 		if normalizedName(bs.Name) == normBusinessServiceName {
-			businessService = &bs
+			businessService = bs
 		}
 	}
 	// If not found business service in database and import specifies some non-empty business service, proceeed with create it
@@ -181,7 +181,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		if imp.ImportSummary.CreateEntities {
 			// Create a new BusinessService if not existed
 			businessService.Name = imp.BusinessService
-			result := m.DB.Create(businessService)
+			result := m.DB.Create(&businessService)
 			if result.Error != nil {
 				imp.ErrorMessage = fmt.Sprintf("BusinessService '%s' cannot be created.", imp.BusinessService)
 				return
@@ -193,7 +193,7 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 	}
 	// Assign business service to the application if was specified
 	if businessService.ID != 0 {
-		app.BusinessService = businessService
+		app.BusinessService = &businessService
 	}
 
 	// Process import Tags & TagCategories
