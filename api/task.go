@@ -32,6 +32,7 @@ const (
 	TaskBucketContentRoot    = TaskBucketRoot + "/*" + Wildcard
 	TaskSubmitRoot           = TaskRoot + "/submit"
 	TaskCancelRoot           = TaskRoot + "/cancel"
+	TaskCancelListRoot       = TasksRoot + "/cancel/list"
 )
 
 const (
@@ -59,6 +60,7 @@ func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	// Actions
 	routeGroup.PUT(TaskSubmitRoot, Transaction, h.Submit)
 	routeGroup.PUT(TaskCancelRoot, h.Cancel)
+	routeGroup.PUT(TaskCancelListRoot, h.CancelList)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tasks.bucket"))
@@ -468,13 +470,13 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 	h.Update(ctx)
 }
 
-// Cancel godoc
-// @summary Cancel a task.
-// @description Cancel a task.
-// @tags tasks
-// @success 202
-// @router /tasks/{id}/cancel [put]
-// @param id path int true "Task ID"
+// // Cancel godoc
+// // @summary Cancel a task.
+// // @description Cancel a task.
+// // @tags tasks
+// // @success 202
+// // @router /tasks/{id}/cancel [put]
+// // @param id path int true "Task ID"
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
 	rtx := RichContext(ctx)
@@ -486,6 +488,35 @@ func (h TaskHandler) Cancel(ctx *gin.Context) {
 
 	h.Status(ctx, http.StatusAccepted)
 }
+
+// CancelList godoc
+// @summary Cancel multiple tasks.
+// @description Cancel multiple tasks by IDs.
+// @tags tasks
+// @success 202
+// @router /tasks/cancel/list [put]
+// @param tasks body []uint true "List of Task IDs"
+func (h TaskHandler) CancelList(ctx *gin.Context) {
+    ids := []uint{}
+
+    if err := h.Bind(ctx, &ids); err != nil {
+        _ = ctx.Error(err)
+        return
+    }
+
+    rtx := RichContext(ctx)
+
+    for _, id := range ids {
+        err := rtx.TaskManager.Cancel(h.DB(ctx), id)
+        if err != nil {
+            _ = ctx.Error(err)
+            return
+        }
+    }
+
+    h.Status(ctx, http.StatusAccepted)
+}
+
 
 // BucketGet godoc
 // @summary Get bucket content by ID and path.
