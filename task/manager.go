@@ -131,7 +131,7 @@ func (m *Manager) Run(ctx context.Context) {
 			default:
 				err := m.cluster.Refresh()
 				if err == nil {
-					m.deleteOrphanCollectors()
+					m.deleteOrphanCollector()
 					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
@@ -1079,22 +1079,17 @@ func (m *Manager) ensureCollector(task *Task, pod *core.Pod) (err error) {
 		if container.State.Waiting != nil {
 			continue
 		}
-		key := fmt.Sprintf(
-			"%d.%s.%s",
-			task.ID,
-			pod.Name,
-			container.Name)
+		key := pod.Name + "." + container.Name
 		if _, found := m.collector[key]; found {
 			continue
 		}
-		Log.Info("Collector attached.", "key", key)
 		collector := &LogCollector{
 			Registry:  m.collector,
 			DB:        m.DB,
 			Pod:       pod,
 			Container: &container,
 		}
-		err = collector.Attach(task)
+		err = collector.Begin(task)
 		if err != nil {
 			return
 		}
@@ -1103,8 +1098,8 @@ func (m *Manager) ensureCollector(task *Task, pod *core.Pod) (err error) {
 	return
 }
 
-// deleteOrphanCollectors delete orphaned collectors.
-func (m *Manager) deleteOrphanCollectors() {
+// deleteOrphanCollector delete orphaned collectors.
+func (m *Manager) deleteOrphanCollector() {
 	for key, collector := range m.collector {
 		_, found := m.cluster.Pod(collector.Pod.Name)
 		if !found {
@@ -1533,13 +1528,13 @@ type LogCollector struct {
 	Container *core.ContainerStatus
 }
 
-// Attach - get container log and store in file.
+// Begin - get container log and store in file.
 // - Request logs.
 // - Create file resource and attach to the task.
 // - Register collector.
 // - Write (copy) log.
 // - Unregister collector.
-func (r *LogCollector) Attach(task *Task) (err error) {
+func (r *LogCollector) Begin(task *Task) (err error) {
 	options := &core.PodLogOptions{
 		Container: r.Container.Name,
 		Follow:    true,
@@ -1597,7 +1592,7 @@ func (r *LogCollector) copy(reader io.Reader, f *os.File) (err error) {
 			}
 		}
 		if rErr != nil {
-			if rErr == io.EOF {
+			if rErr != io.EOF {
 				err = rErr
 			}
 			break
