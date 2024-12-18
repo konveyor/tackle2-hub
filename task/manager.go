@@ -23,11 +23,13 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
-	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	k8r "k8s.io/apimachinery/pkg/runtime"
+	k8j "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8y "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
@@ -1026,16 +1028,48 @@ func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	type Pod struct {
-		core.Pod `yaml:",inline"`
-		Events   []Event `yaml:",omitempty"`
-	}
-	d := Pod{
-		Pod:    *pod,
-		Events: events,
-	}
-	b, _ := yaml.Marshal(d)
+	serializer := k8j.NewSerializerWithOptions(
+		k8y.DefaultMetaFactory,
+		nil,
+		nil,
+		k8j.SerializerOptions{
+			Yaml:   true,
+			Pretty: true,
+			Strict: false,
+		})
+	pod.ManagedFields = nil
+	format := "  %-8s%-11s%-6s%-19s%s\n"
+	_, _ = f.WriteString("---\n")
+	b, _ := k8r.Encode(serializer, pod)
 	_, _ = f.Write(b)
+	_, _ = f.WriteString("\n---\n")
+	_, _ = f.WriteString("Events: |\n")
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"Type",
+			"Reason",
+			"Age",
+			"Reporter",
+			"Message"))
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"-------",
+			"----------",
+			"-----",
+			"------------------",
+			"------------------"))
+	for _, event := range events {
+		_, _ = f.WriteString(
+			fmt.Sprintf(
+				format,
+				event.Type,
+				event.Reason,
+				event.Age,
+				event.Reporter,
+				event.Message))
+	}
 	task.attach(file)
 	return
 }
