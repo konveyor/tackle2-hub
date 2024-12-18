@@ -1522,10 +1522,13 @@ type Preempt struct {
 
 // LogCollector collect and report container logs.
 type LogCollector struct {
+	nBuf      int
 	Registry  map[string]*LogCollector
 	DB        *gorm.DB
 	Pod       *core.Pod
 	Container *core.ContainerStatus
+	//
+	nSkip int64
 }
 
 // Begin - get container log and store in file.
@@ -1535,36 +1538,14 @@ type LogCollector struct {
 // - Write (copy) log.
 // - Unregister collector.
 func (r *LogCollector) Begin(task *Task) (err error) {
-	options := &core.PodLogOptions{
-		Container: r.Container.Name,
-		Follow:    true,
-	}
-	clientSet, err := k8s2.NewClientSet()
+	reader, err := r.request()
 	if err != nil {
 		return
 	}
-	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
-	req := podClient.GetLogs(r.Pod.Name, options)
-	reader, err := req.Stream(context.TODO())
+	f, err := r.file(task)
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
-	file := &model.File{Name: r.Container.Name + ".log"}
-	err = r.DB.Create(file).Error
-	if err != nil {
-		_ = reader.Close()
-		err = liberr.Wrap(err)
-		return
-	}
-	f, err := os.Create(file.Path)
-	if err != nil {
-		_ = reader.Close()
-		_ = r.DB.Delete(file)
-		err = liberr.Wrap(err)
-		return
-	}
-	task.attach(file)
 	go func() {
 		defer func() {
 			_ = reader.Close()
@@ -1576,26 +1557,132 @@ func (r *LogCollector) Begin(task *Task) (err error) {
 	return
 }
 
-// copy data.
-func (r *LogCollector) copy(reader io.Reader, f *os.File) (err error) {
-	buf := make([]byte, 0x8000)
-	for {
-		n, rErr := reader.Read(buf)
-		if n > 0 {
-			_, err = f.Write(buf[0:n])
+// request
+func (r *LogCollector) request() (reader io.ReadCloser, err error) {
+	options := &core.PodLogOptions{
+		Container: r.Container.Name,
+		Follow:    true,
+	}
+	clientSet, err := k8s2.NewClientSet()
+	if err != nil {
+		return
+	}
+	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
+	req := podClient.GetLogs(r.Pod.Name, options)
+	reader, err = req.Stream(context.TODO())
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+// name returns the canonical name for the container log.
+func (r *LogCollector) name() (s string) {
+	s = r.Container.Name + ".log"
+	return
+}
+
+// file returns an attached log file for writing.
+func (r *LogCollector) file(task *Task) (f *os.File, err error) {
+	f, found, err := r.find(task)
+	if found || err != nil {
+		return
+	}
+	f, err = r.create(task)
+	return
+}
+
+// find finds and opens an attached log file by name.
+func (r *LogCollector) find(task *Task) (f *os.File, found bool, err error) {
+	var file model.File
+	name := r.name()
+	for _, attached := range task.Attached {
+		if attached.Name == name {
+			found = true
+			err = r.DB.First(&file, attached.ID).Error
 			if err != nil {
-				return
-			}
-			err = f.Sync()
-			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 		}
+	}
+	if !found {
+		return
+	}
+	f, err = os.OpenFile(file.Path, os.O_RDONLY|os.O_APPEND, 0666)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	st, err := f.Stat()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	r.nSkip = st.Size()
+	return
+}
+
+// create creates and attaches the log file.
+func (r *LogCollector) create(task *Task) (f *os.File, err error) {
+	file := &model.File{Name: r.name()}
+	err = r.DB.Create(file).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	f, err = os.Create(file.Path)
+	if err != nil {
+		_ = r.DB.Delete(file)
+		err = liberr.Wrap(err)
+		return
+	}
+	task.attach(file)
+	return
+}
+
+// copy data.
+// The read bytes are discarded when smaller than nSkip.
+// The offset is adjusted when to account for the buffer
+// containing bytes to be skipped and written.
+func (r *LogCollector) copy(reader io.Reader, writer io.Writer) (err error) {
+	if r.nBuf < 1 {
+		r.nBuf = 0x8000
+	}
+	buf := make([]byte, r.nBuf)
+	for {
+		n, rErr := reader.Read(buf)
 		if rErr != nil {
 			if rErr != io.EOF {
 				err = rErr
 			}
 			break
+		}
+		nRead := int64(n)
+		if nRead == 0 {
+			continue
+		}
+		offset := int64(0)
+		if r.nSkip > 0 {
+			if nRead > r.nSkip {
+				offset = r.nSkip
+				r.nSkip = 0
+			} else {
+				r.nSkip -= nRead
+				continue
+			}
+		}
+		b := buf[offset:nRead]
+		_, err = writer.Write(b)
+		if err != nil {
+			return
+		}
+		if f, cast := writer.(*os.File); cast {
+			err = f.Sync()
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
