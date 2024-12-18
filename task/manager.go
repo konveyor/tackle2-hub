@@ -24,12 +24,14 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
-	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	k8r "k8s.io/apimachinery/pkg/runtime"
+	k8j "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8y "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
@@ -105,11 +107,14 @@ type Manager struct {
 	cluster Cluster
 	// queue of actions.
 	queue chan func()
+	// collector registry.
+	collector map[string]*LogCollector
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	m.queue = make(chan func(), 100)
+	m.collector = make(map[string]*LogCollector)
 	m.cluster.Client = m.Client
 	auth.Validators = append(
 		auth.Validators,
@@ -126,6 +131,7 @@ func (m *Manager) Run(ctx context.Context) {
 			default:
 				err := m.cluster.Refresh()
 				if err == nil {
+					m.deleteOrphanCollector()
 					m.deleteOrphanPods()
 					m.runActions()
 					m.updateRunning()
@@ -870,6 +876,11 @@ func (m *Manager) updateRunning() {
 		running := task
 		pod, found := running.Reflect(&m.cluster)
 		if found {
+			err = m.ensureCollector(task, pod)
+			if err != nil {
+				Log.Error(err, "")
+				continue
+			}
 			if task.StateIn(Succeeded, Failed) {
 				err = m.podSnapshot(running, pod)
 				if err != nil {
@@ -992,33 +1003,12 @@ func (m *Manager) deleteOrphanPods() {
 // Includes:
 //   - pod YAML
 //   - pod Events
-//   - container Logs
 func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
-	var files []*model.File
-	d, err := m.podYAML(pod)
-	if err != nil {
-		return
-	}
-	files = append(files, d)
-	logs, err := m.podLogs(pod)
-	if err != nil {
-		return
-	}
-	files = append(files, logs...)
-	for _, f := range files {
-		task.attach(f)
-	}
-	Log.V(1).Info("Task pod snapshot attached.", "id", task.ID)
-	return
-}
-
-// podYAML builds pod resource description.
-func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	events, err := m.podEvent(pod)
 	if err != nil {
 		return
 	}
-	file = &model.File{Name: "pod.yaml"}
+	file := &model.File{Name: "pod.yaml"}
 	err = m.DB.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1032,16 +1022,49 @@ func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	type Pod struct {
-		core.Pod `yaml:",inline"`
-		Events   []Event `yaml:",omitempty"`
-	}
-	d := Pod{
-		Pod:    *pod,
-		Events: events,
-	}
-	b, _ := yaml.Marshal(d)
+	serializer := k8j.NewSerializerWithOptions(
+		k8y.DefaultMetaFactory,
+		nil,
+		nil,
+		k8j.SerializerOptions{
+			Yaml:   true,
+			Pretty: true,
+			Strict: false,
+		})
+	pod.ManagedFields = nil
+	format := "  %-8s%-11s%-6s%-19s%s\n"
+	_, _ = f.WriteString("---\n")
+	b, _ := k8r.Encode(serializer, pod)
 	_, _ = f.Write(b)
+	_, _ = f.WriteString("\n---\n")
+	_, _ = f.WriteString("Events: |\n")
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"Type",
+			"Reason",
+			"Age",
+			"Reporter",
+			"Message"))
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"-------",
+			"----------",
+			"-----",
+			"------------------",
+			"------------------"))
+	for _, event := range events {
+		_, _ = f.WriteString(
+			fmt.Sprintf(
+				format,
+				event.Type,
+				event.Reason,
+				event.Age,
+				event.Reporter,
+				event.Message))
+	}
+	task.attach(file)
 	return
 }
 
@@ -1078,62 +1101,39 @@ func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
 	return
 }
 
-// podLogs - get and store pod logs as a Files.
-func (m *Manager) podLogs(pod *core.Pod) (files []*model.File, err error) {
+// ensureCollector - ensure each container has a log collector attached.
+func (m *Manager) ensureCollector(task *Task, pod *core.Pod) (err error) {
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.State.Waiting != nil {
 			continue
 		}
-		f, nErr := m.containerLog(pod, container.Name)
-		if nErr == nil {
-			files = append(files, f)
-		} else {
-			err = nErr
+		key := pod.Name + "." + container.Name
+		if _, found := m.collector[key]; found {
+			continue
+		}
+		collector := &LogCollector{
+			Registry:  m.collector,
+			DB:        m.DB,
+			Pod:       pod,
+			Container: &container,
+		}
+		err = collector.Begin(task)
+		if err != nil {
 			return
 		}
+		m.collector[key] = collector
 	}
 	return
 }
 
-// containerLog - get container log and store in file.
-func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.File, err error) {
-	options := &core.PodLogOptions{
-		Container: container,
+// deleteOrphanCollector delete orphaned collectors.
+func (m *Manager) deleteOrphanCollector() {
+	for key, collector := range m.collector {
+		_, found := m.cluster.Pod(collector.Pod.Name)
+		if !found {
+			delete(m.collector, key)
+		}
 	}
-	clientSet, err := k8s2.NewClientSet()
-	if err != nil {
-		return
-	}
-	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
-	req := podClient.GetLogs(pod.Name, options)
-	reader, err := req.Stream(context.TODO())
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = reader.Close()
-	}()
-	file = &model.File{Name: container + ".log"}
-	err = m.DB.Create(file).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	f, err := os.Create(file.Path)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	_, err = io.Copy(f, reader)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	return
 }
 
 // ensureTerminated - Terminate running containers.
@@ -2191,4 +2191,172 @@ func ExtEnv(extension string, envar string) (s string) {
 type Preempt struct {
 	task *Task
 	by   *Task
+}
+
+// LogCollector collect and report container logs.
+type LogCollector struct {
+	nBuf      int
+	Registry  map[string]*LogCollector
+	DB        *gorm.DB
+	Pod       *core.Pod
+	Container *core.ContainerStatus
+	//
+	nSkip int64
+}
+
+// Begin - get container log and store in file.
+// - Request logs.
+// - Create file resource and attach to the task.
+// - Register collector.
+// - Write (copy) log.
+// - Unregister collector.
+func (r *LogCollector) Begin(task *Task) (err error) {
+	reader, err := r.request()
+	if err != nil {
+		return
+	}
+	f, err := r.file(task)
+	if err != nil {
+		return
+	}
+	go func() {
+		defer func() {
+			_ = reader.Close()
+			_ = f.Close()
+		}()
+		err := r.copy(reader, f)
+		Log.Error(err, "")
+	}()
+	return
+}
+
+// request
+func (r *LogCollector) request() (reader io.ReadCloser, err error) {
+	options := &core.PodLogOptions{
+		Container: r.Container.Name,
+		Follow:    true,
+	}
+	clientSet, err := k8s2.NewClientSet()
+	if err != nil {
+		return
+	}
+	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
+	req := podClient.GetLogs(r.Pod.Name, options)
+	reader, err = req.Stream(context.TODO())
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+// name returns the canonical name for the container log.
+func (r *LogCollector) name() (s string) {
+	s = r.Container.Name + ".log"
+	return
+}
+
+// file returns an attached log file for writing.
+func (r *LogCollector) file(task *Task) (f *os.File, err error) {
+	f, found, err := r.find(task)
+	if found || err != nil {
+		return
+	}
+	f, err = r.create(task)
+	return
+}
+
+// find finds and opens an attached log file by name.
+func (r *LogCollector) find(task *Task) (f *os.File, found bool, err error) {
+	var file model.File
+	name := r.name()
+	for _, attached := range task.Attached {
+		if attached.Name == name {
+			found = true
+			err = r.DB.First(&file, attached.ID).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+	}
+	if !found {
+		return
+	}
+	f, err = os.OpenFile(file.Path, os.O_RDONLY|os.O_APPEND, 0666)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	st, err := f.Stat()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	r.nSkip = st.Size()
+	return
+}
+
+// create creates and attaches the log file.
+func (r *LogCollector) create(task *Task) (f *os.File, err error) {
+	file := &model.File{Name: r.name()}
+	err = r.DB.Create(file).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	f, err = os.Create(file.Path)
+	if err != nil {
+		_ = r.DB.Delete(file)
+		err = liberr.Wrap(err)
+		return
+	}
+	task.attach(file)
+	return
+}
+
+// copy data.
+// The read bytes are discarded when smaller than nSkip.
+// The offset is adjusted when to account for the buffer
+// containing bytes to be skipped and written.
+func (r *LogCollector) copy(reader io.Reader, writer io.Writer) (err error) {
+	if r.nBuf < 1 {
+		r.nBuf = 0x8000
+	}
+	buf := make([]byte, r.nBuf)
+	for {
+		n, rErr := reader.Read(buf)
+		if rErr != nil {
+			if rErr != io.EOF {
+				err = rErr
+			}
+			break
+		}
+		nRead := int64(n)
+		if nRead == 0 {
+			continue
+		}
+		offset := int64(0)
+		if r.nSkip > 0 {
+			if nRead > r.nSkip {
+				offset = r.nSkip
+				r.nSkip = 0
+			} else {
+				r.nSkip -= nRead
+				continue
+			}
+		}
+		b := buf[offset:nRead]
+		_, err = writer.Write(b)
+		if err != nil {
+			return
+		}
+		if f, cast := writer.(*os.File); cast {
+			err = f.Sync()
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
 }
