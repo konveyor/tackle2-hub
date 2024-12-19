@@ -1660,7 +1660,7 @@ func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer, ctx context.
 	canceled := false
 	readCh := make(chan []byte)
 	if r.nBuf < 1 {
-		r.nBuf = 0x8000
+		r.nBuf = 4096
 	}
 	go func() {
 		defer func() {
