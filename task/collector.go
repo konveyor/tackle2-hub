@@ -14,6 +14,57 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
+// LogManager manages log collectors.
+type LogManager struct {
+	// collector registry.
+	collector map[string]*LogCollector
+	// mutex
+	mutex sync.Mutex
+	// DB
+	DB *gorm.DB
+}
+
+// EnsureCollection - ensure each container has a log collector.
+func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Context) (err error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	for _, container := range pod.Status.ContainerStatuses {
+		if container.State.Waiting != nil {
+			continue
+		}
+		collector := &LogCollector{
+			Owner:     m,
+			Registry:  m.collector,
+			DB:        m.DB,
+			Pod:       pod,
+			Container: &container,
+		}
+		key := collector.key()
+		if _, found := m.collector[key]; found {
+			continue
+		}
+		err = collector.Begin(task, ctx)
+		if err != nil {
+			return
+		}
+		m.collector[key] = collector
+	}
+	return
+}
+
+// terminated provides notification that a collector has terminated.
+func (m *LogManager) terminated(collector *LogCollector) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	for i := range m.collector {
+		if collector == m.collector[i] {
+			key := collector.key()
+			delete(m.collector, key)
+			break
+		}
+	}
+}
+
 // LogCollector collect and report container logs.
 type LogCollector struct {
 	Owner     *LogManager
@@ -219,55 +270,4 @@ func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer, ctx context.
 		}
 	}
 	return
-}
-
-// LogManager manages log collectors.
-type LogManager struct { // LogCenter
-	// collector registry.
-	collector map[string]*LogCollector
-	// mutex
-	mutex sync.Mutex
-	// DB
-	DB *gorm.DB
-}
-
-// EnsureCollection - ensure each container has a log collector.
-func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Context) (err error) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	for _, container := range pod.Status.ContainerStatuses {
-		if container.State.Waiting != nil {
-			continue
-		}
-		collector := &LogCollector{
-			Owner:     m,
-			Registry:  m.collector,
-			DB:        m.DB,
-			Pod:       pod,
-			Container: &container,
-		}
-		key := collector.key()
-		if _, found := m.collector[key]; found {
-			continue
-		}
-		err = collector.Begin(task, ctx)
-		if err != nil {
-			return
-		}
-		m.collector[key] = collector
-	}
-	return
-}
-
-// terminated provides notification that a collector has terminated.
-func (m *LogManager) terminated(collector *LogCollector) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	for i := range m.collector {
-		if collector == m.collector[i] {
-			key := collector.key()
-			delete(m.collector, key)
-			break
-		}
-	}
 }
