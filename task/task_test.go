@@ -2,7 +2,6 @@ package task
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"testing"
 
@@ -173,14 +172,12 @@ func TestAddonRegex(t *testing.T) {
 func TestLogCollectorCopy(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	ctx := context.Background()
-
 	// no skipped bytes.
 	collector := LogCollector{}
 	content := "ABCDEFGHIJ"
 	reader := io.NopCloser(bytes.NewBufferString(content))
 	writer := bytes.NewBufferString("")
-	err := collector.copy(reader, writer, ctx)
+	err := collector.copy(reader, writer)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(content).To(gomega.Equal(writer.String()))
 
@@ -192,7 +189,7 @@ func TestLogCollectorCopy(t *testing.T) {
 	content = "ABCDEFGHIJ"
 	reader = io.NopCloser(bytes.NewBufferString(content))
 	writer = bytes.NewBufferString(existing)
-	err = collector.copy(reader, writer, ctx)
+	err = collector.copy(reader, writer)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(content).To(gomega.Equal(writer.String()))
 
@@ -205,7 +202,7 @@ func TestLogCollectorCopy(t *testing.T) {
 	content = "ABCDEFGHIJ"
 	reader = io.NopCloser(bytes.NewBufferString(content))
 	writer = bytes.NewBufferString(existing)
-	err = collector.copy(reader, writer, ctx)
+	err = collector.copy(reader, writer)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(content).To(gomega.Equal(writer.String()))
 
@@ -218,7 +215,7 @@ func TestLogCollectorCopy(t *testing.T) {
 	content = "ABCDEFGHIJ"
 	reader = io.NopCloser(bytes.NewBufferString(content))
 	writer = bytes.NewBufferString(existing)
-	err = collector.copy(reader, writer, ctx)
+	err = collector.copy(reader, writer)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(content).To(gomega.Equal(writer.String()))
 }
