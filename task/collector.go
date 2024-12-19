@@ -110,7 +110,7 @@ func (r *LogCollector) key() (key string) {
 	return
 }
 
-// request
+// request logs from k8s.
 func (r *LogCollector) request() (reader io.ReadCloser, err error) {
 	options := &core.PodLogOptions{
 		Container: r.Container.Name,
