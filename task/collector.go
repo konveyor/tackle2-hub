@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"sync"
-	"time"
 
 	liberr "github.com/jortel/go-utils/error"
 	k8s2 "github.com/konveyor/tackle2-hub/k8s"
@@ -84,7 +83,7 @@ type LogCollector struct {
 // - Write (copy) log.
 // - Unregister collector.
 func (r *LogCollector) Begin(task *Task, ctx context.Context) (err error) {
-	reader, err := r.request()
+	reader, err := r.request(ctx)
 	if err != nil {
 		return
 	}
@@ -98,7 +97,7 @@ func (r *LogCollector) Begin(task *Task, ctx context.Context) (err error) {
 			_ = f.Close()
 			r.Owner.terminated(r)
 		}()
-		err := r.copy(reader, f, ctx)
+		err := r.copy(reader, f)
 		Log.Error(err, "")
 	}()
 	return
@@ -111,7 +110,7 @@ func (r *LogCollector) key() (key string) {
 }
 
 // request logs from k8s.
-func (r *LogCollector) request() (reader io.ReadCloser, err error) {
+func (r *LogCollector) request(ctx context.Context) (reader io.ReadCloser, err error) {
 	options := &core.PodLogOptions{
 		Container: r.Container.Name,
 		Follow:    true,
@@ -122,7 +121,7 @@ func (r *LogCollector) request() (reader io.ReadCloser, err error) {
 	}
 	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
 	req := podClient.GetLogs(r.Pod.Name, options)
-	reader, err = req.Stream(context.TODO())
+	reader, err = req.Stream(ctx)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -199,52 +198,22 @@ func (r *LogCollector) create(task *Task) (f *os.File, err error) {
 // The read bytes are discarded when smaller than nSkip.
 // The offset is adjusted when to account for the buffer
 // containing bytes to be skipped and written.
-func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer, ctx context.Context) (err error) {
-	timer := time.NewTimer(time.Second)
-	canceled := false
-	readCh := make(chan []byte)
+func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer) (err error) {
 	if r.nBuf < 1 {
 		r.nBuf = 4096
 	}
-	go func() {
-		defer func() {
-			close(readCh)
-		}()
-		for {
-			buf := make([]byte, r.nBuf)
-			n, err := reader.Read(buf)
-			if err != nil {
-				if canceled {
-					return
-				}
-				if err != io.EOF {
-					Log.Error(err, "")
-				}
-				break
-			}
-			readCh <- buf[:n]
-		}
-	}()
+	buf := make([]byte, r.nBuf)
 	for {
-		var buf []byte
-		nRead := int64(-1)
-		select {
-		case <-ctx.Done():
-			canceled = true
-			_ = reader.Close()
-			return
-		case b, read := <-readCh:
-			if read {
-				nRead = int64(len(b))
-				buf = b
+		n := 0
+		n, err = reader.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				err = nil
 			}
-		case <-timer.C:
-			nRead = 0
-		}
-		if nRead == -1 { // EOF.
 			break
 		}
-		if nRead == 0 { // Timeout.
+		nRead := int64(n)
+		if nRead == 0 {
 			continue
 		}
 		offset := int64(0)
@@ -257,7 +226,7 @@ func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer, ctx context.
 				continue
 			}
 		}
-		b := buf[offset:]
+		b := buf[offset:nRead]
 		_, err = writer.Write(b)
 		if err != nil {
 			return
