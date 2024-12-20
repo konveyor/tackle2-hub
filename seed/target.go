@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+	"slices"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
@@ -97,9 +98,43 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 		seedIds = append(seedIds, target.ID)
 	}
 
+	err = r.deleteUnwanted(db)
+	if err != nil {
+		return
+	}
+
 	err = r.reorder(db, seedIds)
 	if err != nil {
 		return
+	}
+	return
+}
+
+// deleteUnwanted deletes targets with a UUID not found
+// in the set of seeded targets.
+func (r *Target) deleteUnwanted(db *gorm.DB) (err error) {
+	var found []*model.Target
+	err = db.Find(&found).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	wanted := make(map[string]byte)
+	for _, t := range r.targets {
+		wanted[t.UUID] = 0
+	}
+	for _, target := range found {
+		if target.UUID == nil {
+			continue
+		}
+		if _, found := wanted[*target.UUID]; found {
+			continue
+		}
+		err = db.Delete(target).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }
@@ -126,7 +161,7 @@ func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
 	}
 	userOrder := []uint{}
 	_ = s.As(&userOrder)
-	s.Value = merge(userOrder, seedIds, targetIds)
+	s.Value = r.merge(userOrder, seedIds, targetIds)
 
 	result = db.Where("key", UITargetOrder).Updates(s)
 	if result.Error != nil {
@@ -142,11 +177,13 @@ func (r *Target) reorder(db *gorm.DB, seedIds []uint) (err error) {
 //	  userOrder: slice of target IDs in the user's desired order
 //	  seedOrder: slice of target IDs in seedfile order
 //	  ids: slice of ids of all the targets in the DB
-func merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) {
+func (r *Target) merge(userOrder []uint, seedOrder []uint, ids []uint) (mergedOrder []uint) {
 	ll := list.New()
 	known := make(map[uint]*list.Element)
 	for _, id := range userOrder {
-		known[id] = ll.PushBack(id)
+		if slices.Contains(ids, id) {
+			known[id] = ll.PushBack(id)
+		}
 	}
 	for i, id := range seedOrder {
 		if _, found := known[id]; found {
