@@ -25,6 +25,7 @@ const (
 	TasksReportRoot          = TasksRoot + "/report"
 	TasksReportQueueRoot     = TasksReportRoot + "/queue"
 	TasksReportDashboardRoot = TasksReportRoot + "/dashboard"
+	TasksCancelRoot          = TasksRoot + "/cancel"
 	TaskRoot                 = TasksRoot + "/:" + ID
 	TaskReportRoot           = TaskRoot + "/report"
 	TaskAttachedRoot         = TaskRoot + "/attached"
@@ -32,7 +33,6 @@ const (
 	TaskBucketContentRoot    = TaskBucketRoot + "/*" + Wildcard
 	TaskSubmitRoot           = TaskRoot + "/submit"
 	TaskCancelRoot           = TaskRoot + "/cancel"
-	TasksCancelRoot          = TasksRoot + "/cancel"
 )
 const (
 	Submit = "submit"
