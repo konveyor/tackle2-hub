@@ -30,6 +30,12 @@ func (h *Task) List() (list []api.Task, err error) {
 	return
 }
 
+// CancelMultipleTasks - Cancel multiple tasks by their IDs.
+func (h *Task) CancelMultipleTasks(ids []uint) (err error) {
+    err = h.client.Put(api.TaskCancelListRoot, ids)
+    return
+}
+
 // Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
 	path := Path(api.TaskRoot).Inject(Params{api.ID: r.ID})
