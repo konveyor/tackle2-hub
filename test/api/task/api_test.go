@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding/filter"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -108,5 +110,14 @@ func TestTaskList(t *testing.T) {
 
 	for _, r := range samples {
 		assert.Must(t, Task.Delete(r.ID))
+	}
+}
+
+func TestBulkCancel(t *testing.T) {
+	f := binding.Filter{}
+	f.And("id").Eq(filter.Any{1, 2, 3})
+	err := Task.BulkCancel(f)
+	if err != nil {
+		t.Errorf(err.Error())
 	}
 }

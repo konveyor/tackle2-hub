@@ -30,10 +30,10 @@ func (h *Task) List() (list []api.Task, err error) {
 	return
 }
 
-// CancelMultipleTasks - Cancel multiple tasks by their IDs.
-func (h *Task) CancelMultipleTasks(ids []uint) (err error) {
-    err = h.client.Put(api.TaskCancelListRoot, ids)
-    return
+// BulkCancel - Cancel tasks matched by filter.
+func (h *Task) BulkCancel(filter Filter) (err error) {
+	err = h.client.Put(api.TasksCancelRoot, 0, filter.Param())
+	return
 }
 
 // Update a Task.
