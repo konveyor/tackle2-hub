@@ -78,7 +78,7 @@ func (h *AppFacts) List() (list []api.Fact, err error)
 func (h *AppFacts) Replace(facts []api.Fact) (err error)
     Replace facts.
 
-func (h *AppFacts) Set(key string, value interface{}) (err error)
+func (h *AppFacts) Set(key string, value any) (err error)
     Set a fact (created as needed).
 
 func (h *AppFacts) Source(source string)
@@ -178,19 +178,19 @@ func (r *Client) Delete(path string, params ...Param) (err error)
 func (r *Client) FileGet(path, destination string) (err error)
     FileGet downloads a file.
 
-func (r *Client) FilePut(path, source string, object interface{}) (err error)
+func (r *Client) FilePut(path, source string, object any) (err error)
     FilePut uploads a file. Returns the created File resource.
 
-func (r *Client) FileSend(path, method string, fields []Field, object interface{}) (err error)
+func (r *Client) FileSend(path, method string, fields []Field, object any) (err error)
     FileSend sends file upload from.
 
-func (r *Client) Get(path string, object interface{}, params ...Param) (err error)
+func (r *Client) Get(path string, object any, params ...Param) (err error)
     Get a resource.
 
-func (r *Client) Post(path string, object interface{}) (err error)
+func (r *Client) Post(path string, object any) (err error)
     Post a resource.
 
-func (r *Client) Put(path string, object interface{}, params ...Param) (err error)
+func (r *Client) Put(path string, object any, params ...Param) (err error)
     Put a resource.
 
 func (r *Client) Reset()
@@ -262,7 +262,7 @@ type Param struct {
 }
     Param.
 
-type Params map[string]interface{}
+type Params map[string]any
     Params mapping.
 
 type Path string
@@ -313,7 +313,7 @@ type Setting struct {
 func (h *Setting) Bool(key string) (b bool, err error)
     Bool setting value.
 
-func (h *Setting) Get(key string, v interface{}) (err error)
+func (h *Setting) Get(key string, v any) (err error)
     Get a setting by key.
 
 func (h *Setting) Int(key string) (n int, err error)
@@ -384,7 +384,7 @@ type Task struct {
 }
     Task API.
 
-func (h *Task) Activity(entry string, x ...interface{})
+func (h *Task) Activity(entry string, x ...any)
     Activity report addon activity. The description can be a printf style
     format.
 
@@ -397,13 +397,13 @@ func (h *Task) Bucket() (b *Bucket)
 func (h *Task) Completed(n int)
     Completed report addon completed (N) items.
 
-func (h *Task) Data() (d map[string]interface{})
+func (h *Task) Data() (d map[string]any)
     Data returns the addon data.
 
-func (h *Task) DataWith(object interface{}) (err error)
+func (h *Task) DataWith(object any) (err error)
     DataWith populates the addon data object.
 
-func (h *Task) Failed(reason string, x ...interface{})
+func (h *Task) Failed(reason string, x ...any)
     Failed report addon failed. The reason can be a printf style format.
 
 func (h *Task) Increment()
@@ -412,7 +412,7 @@ func (h *Task) Increment()
 func (h *Task) Load()
     Load a task by ID.
 
-func (h *Task) Result(object interface{})
+func (h *Task) Result(object any)
     Result report addon result.
 
 func (h *Task) Started()

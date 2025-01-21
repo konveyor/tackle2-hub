@@ -82,7 +82,7 @@ func (r *PkSequence) session(in *gorm.DB) (out *gorm.DB) {
 		ConnPool: in.Statement.ConnPool,
 		Context:  in.Statement.Context,
 		Clauses:  map[string]clause.Clause{},
-		Vars:     make([]interface{}, 0, 8),
+		Vars:     make([]any, 0, 8),
 	}
 	return
 }
