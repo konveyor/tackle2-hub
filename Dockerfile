@@ -22,7 +22,7 @@ COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
 
-RUN microdnf -y install \ 
+RUN microdnf -y install \
   sqlite \
  && microdnf -y clean all
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd
