@@ -87,6 +87,7 @@ func (r *Target) Apply(db *gorm.DB) (err error) {
 		target.Provider = t.Provider
 		target.Choice = t.Choice
 		target.ImageID = f.ID
+		target.Labels = []model.TargetLabel{}
 		for _, l := range t.Labels {
 			target.Labels = append(target.Labels, model.TargetLabel(l))
 		}

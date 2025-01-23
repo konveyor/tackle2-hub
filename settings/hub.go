@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"bufio"
 	"os"
 	"os/user"
 	"strconv"
@@ -44,6 +45,8 @@ const (
 )
 
 type Hub struct {
+	// build version.
+	Build string
 	// k8s namespace.
 	Namespace string
 	// DB settings.
@@ -124,6 +127,10 @@ type Hub struct {
 
 func (r *Hub) Load() (err error) {
 	var found bool
+	r.Build, err = r.build()
+	if err != nil {
+		return
+	}
 	r.Namespace, err = r.namespace()
 	if err != nil {
 		return
@@ -354,5 +361,29 @@ func (r *Hub) namespace() (ns string, err error) {
 		err = nil
 	}
 
+	return
+}
+
+// build returns the hub build version.
+// This is expected to be the output of `git describe`.
+// Examples:
+//
+//	v0.6.0
+//	v0.6.0-ea89gcd
+func (r *Hub) build() (version string, err error) {
+	f, err := os.Open("/etc/hub-build")
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+			return
+		}
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	scanner := bufio.NewScanner(f)
+	if scanner.Scan() {
+		version = scanner.Text()
+	}
 	return
 }

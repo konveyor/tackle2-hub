@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -81,6 +82,7 @@ func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 	}
 
 	match = seededChecksum == fmt.Sprintf("%x", checksum)
+	log.Info("Seed checksum", "matched", match)
 	return
 }
 
@@ -113,5 +115,48 @@ func migrationVersion(db *gorm.DB) (version uint, err error) {
 	}
 
 	version = uint(v.Version)
+	return
+}
+
+// matchBuild
+func matchBuild(db *gorm.DB) (matched bool, err error) {
+	build, err := getBuild(db)
+	if err != nil {
+		return
+	}
+	matched = build == Settings.Hub.Build
+	log.Info("Seed build (version)", "matched", matched)
+	return
+}
+
+// getBuild returns the hub build version that seeded.
+func getBuild(db *gorm.DB) (version string, err error) {
+	setting := &model.Setting{}
+	err = db.First(setting, model.Setting{Key: BuildKey}).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			err = liberr.Wrap(err)
+		} else {
+			err = nil
+		}
+		return
+	}
+	if n, cast := setting.Value.(string); cast {
+		version = n
+	}
+	return
+}
+
+// saveBuild update settings with current build that seeded.
+func saveBuild(db *gorm.DB) (err error) {
+	setting := &model.Setting{
+		Key:   BuildKey,
+		Value: Settings.Hub.Build,
+	}
+	err = db.Save(setting).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
