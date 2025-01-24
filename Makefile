@@ -60,6 +60,7 @@ debug: generate fmt vet
 
 docker: vet
 	go build $(BUILD)
+	git describe --always --match "v[0-9]*" --tags HEAD > bin/.build
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: fmt vet

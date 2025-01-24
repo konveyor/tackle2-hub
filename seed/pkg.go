@@ -12,10 +12,17 @@ import (
 	"gorm.io/gorm"
 )
 
-var log = logr.WithName("seeding")
+var (
+	Settings = &settings.Settings
+	log      = logr.WithName("seeding")
+)
 
-// SeedKey identifies the setting containing the applied seed digest.
-const SeedKey = ".hub.db.seed"
+const (
+	// SeedKey identifies the setting containing the applied seed digest.
+	SeedKey = ".hub.db.seed"
+	// BuildKey identifies setting for the hub build that seeded.
+	BuildKey = SeedKey + ".build"
+)
 
 // Seeder specifies an interface for seeding DB models.
 type Seeder interface {
@@ -53,12 +60,12 @@ func Seed() (err error) {
 		return
 	}
 
-	match, err := compareChecksum(db, checksum)
+	skipped, err := skip(db, checksum)
 	if err != nil {
 		return
 	}
-	if match {
-		log.Info("Seed checksum match.")
+	if skipped {
+		log.Info("Seeding skipped.")
 		return
 	}
 
@@ -80,7 +87,31 @@ func Seed() (err error) {
 		if err != nil {
 			return
 		}
+		err = saveBuild(tx)
+		if err != nil {
+			return
+		}
 		return
 	})
+	return
+}
+
+// skip returns true when seeding can be skipped.
+func skip(db *gorm.DB, checksum []byte) (skip bool, err error) {
+	match, err := compareChecksum(db, checksum)
+	if err != nil {
+		return
+	}
+	if !match {
+		return
+	}
+	match, err = matchBuild(db)
+	if err != nil {
+		return
+	}
+	if !match {
+		return
+	}
+	skip = true
 	return
 }
