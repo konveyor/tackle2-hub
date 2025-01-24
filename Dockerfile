@@ -1,4 +1,5 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
+
 FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
@@ -15,6 +16,7 @@ FROM quay.io/konveyor/static-report as report
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 ARG SEED_ROOT
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
+COPY --from=builder /opt/app-root/src/bin/.build /etc/hub-build
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
