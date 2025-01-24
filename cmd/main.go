@@ -94,12 +94,7 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 
 // main.
 func main() {
-	log.Info(
-		"Starting",
-		"build",
-		Settings.Hub.Build,
-		"settings",
-		Settings)
+	log.Info("Started", "settings", Settings)
 	var err error
 	defer func() {
 		if err != nil {
