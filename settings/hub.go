@@ -10,6 +10,7 @@ import (
 
 const (
 	EnvNamespace               = "NAMESPACE"
+	EnvBuild                   = "BUILD"
 	EnvDbPath                  = "DB_PATH"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
 	EnvDbSeedPath              = "DB_SEED_PATH"
@@ -367,10 +368,13 @@ func (r *Hub) namespace() (ns string, err error) {
 // build returns the hub build version.
 // This is expected to be the output of `git describe`.
 // Examples:
-//
-//	v0.6.0
 //	v0.6.0-ea89gcd
+//	v0.6.0
 func (r *Hub) build() (version string, err error) {
+	version, found := os.LookupEnv(EnvBuild)
+	if found {
+		return
+	}
 	f, err := os.Open("/etc/hub-build")
 	if err != nil {
 		if os.IsNotExist(err) {

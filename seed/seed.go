@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -124,6 +123,9 @@ func matchBuild(db *gorm.DB) (matched bool, err error) {
 	if err != nil {
 		return
 	}
+	if build == "" {
+		return
+	}
 	matched = build == Settings.Hub.Build
 	log.Info("Seed build (version)", "matched", matched)
 	return
@@ -131,14 +133,13 @@ func matchBuild(db *gorm.DB) (matched bool, err error) {
 
 // getBuild returns the hub build version that seeded.
 func getBuild(db *gorm.DB) (version string, err error) {
-	setting := &model.Setting{}
-	err = db.First(setting, model.Setting{Key: BuildKey}).Error
+	setting := &model.Setting{
+		Key: BuildKey,
+	}
+	db = db.Where("key", BuildKey)
+	err = db.FirstOrCreate(setting).Error
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			err = liberr.Wrap(err)
-		} else {
-			err = nil
-		}
+		err = liberr.Wrap(err)
 		return
 	}
 	if n, cast := setting.Value.(string); cast {
@@ -153,7 +154,8 @@ func saveBuild(db *gorm.DB) (err error) {
 		Key:   BuildKey,
 		Value: Settings.Hub.Build,
 	}
-	err = db.Save(setting).Error
+	db = db.Where("key", BuildKey)
+	err = db.Updates(setting).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
