@@ -22,7 +22,7 @@ COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
 
-RUN echo "${HUB_VERSION}" >> /etc/hub-build
+RUN echo "${HUB_VERSION}" > /etc/hub-build
 
 RUN microdnf -y install \
   sqlite \
