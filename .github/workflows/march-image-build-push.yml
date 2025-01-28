@@ -23,7 +23,7 @@ jobs:
       architectures: '[ "amd64", "arm64" ]'
       extra-args: |
         --build-arg
-        HUB_VERSION=${{ github.tag}}-${{ github.ref }}
+        VERSION=${{ github.tag}}-${{ github.ref }}
     secrets:
       registry_username: ${{ secrets.QUAY_PUBLISH_ROBOT }}
       registry_password: ${{ secrets.QUAY_PUBLISH_TOKEN }}
