@@ -17,7 +17,6 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal
 ARG SEED_ROOT
 ARG HUB_VERSION=latest
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
-COPY --from=builder /opt/app-root/src/bin/.build /etc/hub-build
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
