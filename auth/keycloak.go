@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Nerzal/gocloak/v10"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/Nerzal/gocloak/v13"
+	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
 )
 
 // NewKeycloak builds a new Keycloak auth provider.
 func NewKeycloak(host, realm string) (p Provider) {
-	client := gocloak.NewClient(host)
+	client := gocloak.NewClient(host, gocloak.SetAuthRealms("auth/realms"), gocloak.SetAuthAdminRealms("auth/admin/realms"))
 	client.RestyClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	p = &Keycloak{
 		host:   host,
@@ -25,7 +25,7 @@ func NewKeycloak(host, realm string) (p Provider) {
 
 // Keycloak auth provider
 type Keycloak struct {
-	client gocloak.GoCloak
+	client *gocloak.GoCloak
 	host   string
 	realm  string
 }
@@ -80,12 +80,12 @@ func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error
 		err = liberr.Wrap(&NotAuthenticated{Token: token})
 		return
 	}
-	claims, cast := jwToken.Claims.(*jwt.MapClaims)
+	claims, cast := jwToken.Claims.(jwt.MapClaims)
 	if !cast {
 		err = liberr.Wrap(&NotAuthenticated{Token: token})
 		return
 	}
-	v, found := (*claims)["preferred_username"]
+	v, found := claims["preferred_username"]
 	if !found {
 		err = liberr.Wrap(&NotAuthenticated{Token: token})
 		return
@@ -95,7 +95,7 @@ func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error
 		err = liberr.Wrap(&NotAuthenticated{Token: token})
 		return
 	}
-	v, found = (*claims)["scope"]
+	v, found = claims["scope"]
 	if !found {
 		err = liberr.Wrap(&NotAuthenticated{Token: token})
 		return
@@ -110,8 +110,8 @@ func (r *Keycloak) Authenticate(request *Request) (jwToken *jwt.Token, err error
 
 // Scopes decodes a list of scopes from the token.
 func (r *Keycloak) Scopes(jwToken *jwt.Token) (scopes []Scope) {
-	claims := jwToken.Claims.(*jwt.MapClaims)
-	for _, s := range strings.Fields((*claims)["scope"].(string)) {
+	claims := jwToken.Claims.(jwt.MapClaims)
+	for _, s := range strings.Fields(claims["scope"].(string)) {
 		scope := BaseScope{}
 		scope.With(s)
 		scopes = append(scopes, &scope)
@@ -121,7 +121,7 @@ func (r *Keycloak) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 
 // User resolves token to Keycloak username.
 func (r *Keycloak) User(jwToken *jwt.Token) (user string) {
-	claims, _ := jwToken.Claims.(*jwt.MapClaims)
-	user, _ = (*claims)["preferred_username"].(string)
+	claims, _ := jwToken.Claims.(jwt.MapClaims)
+	user, _ = claims["preferred_username"].(string)
 	return
 }

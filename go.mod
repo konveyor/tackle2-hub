@@ -3,13 +3,13 @@ module github.com/konveyor/tackle2-hub
 go 1.20
 
 require (
-	github.com/Nerzal/gocloak/v10 v10.0.1
+	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.4.1
 	github.com/go-playground/validator/v10 v10.14.0
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jortel/go-utils v0.1.4
 	github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744
@@ -51,6 +51,7 @@ require (
 	github.com/go-resty/resty/v2 v2.12.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
