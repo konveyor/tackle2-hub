@@ -66,7 +66,7 @@ type Builtin struct {
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if err != nil {
-			Log.Info(err.Error())
+			Log.V(2).Info(err.Error())
 		}
 	}()
 	token, err := r.parseToken(request)

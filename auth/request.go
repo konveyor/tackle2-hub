@@ -51,6 +51,11 @@ func (r *Request) Permit() (result Result, err error) {
 				break
 			}
 		}
+	} else {
+		Log.Info(
+			"Token not authenticated.",
+			"token",
+			r.Token)
 	}
 	return
 }
