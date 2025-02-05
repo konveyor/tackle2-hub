@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -65,8 +66,13 @@ type Builtin struct {
 // Authenticate the token
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
-		if err != nil {
-			Log.V(2).Info(err.Error())
+		if errors.Is(err, &NotValid{}) {
+			Log.V(1).Info(
+				"Token not valid",
+				"token",
+				request.Token,
+				"reason",
+				err.Error())
 		}
 	}()
 	token, err := r.parseToken(request)
