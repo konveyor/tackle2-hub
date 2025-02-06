@@ -67,8 +67,8 @@ type Builtin struct {
 func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
-			Log.V(1).Info(
-				"Token not valid",
+			Log.V(2).Info(
+				"[builtin] Token not valid",
 				"token",
 				request.Token,
 				"reason",
