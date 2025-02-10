@@ -583,7 +583,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 // (ref) matches the addon name.
 // The `ref` is matched as a REGEX when it contains
 // characters other than: [0-9A-Za-z_].
-func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (match bool, err error) {
+func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
 	ref := strings.TrimSpace(extension.Spec.Addon)
 	p := AddonIsRegex
 	if p.MatchString(ref) {
@@ -595,10 +595,10 @@ func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (match 
 			}
 			return
 		}
-		match = p.MatchString(addon.Name)
+		matched = p.MatchString(addon.Name)
 	} else {
 
-		match = addon.Name == ref
+		matched = addon.Name == ref
 	}
 	return
 }
