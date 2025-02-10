@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -86,6 +87,10 @@ const (
 	Addon  = "addon"
 	Shared = "shared"
 	Cache  = "cache"
+)
+
+var (
+	AddonIsRegex = regexp.MustCompile("[^0-9A-Za-z_-]")
 )
 
 var (
@@ -555,7 +560,11 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 	matched := false
 	selector := NewSelector(m.DB, task)
 	for _, extension := range m.cluster.Extensions() {
-		if extension.Spec.Addon != addon.Name {
+		matched, err = m.matchAddon(extension, addon)
+		if err != nil {
+			return
+		}
+		if !matched {
 			continue
 		}
 		matched, err = selector.Match(extension.Spec.Selector)
@@ -566,6 +575,30 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 			task.Extensions = append(task.Extensions, extension.Name)
 			task.Event(ExtSelected, extension.Name)
 		}
+	}
+	return
+}
+
+// matchAddon - returns true when the extension's `addon`
+// (ref) matches the addon name.
+// The `ref` is matched as a REGEX when it contains
+// characters other than: [0-9A-Za-z_].
+func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (match bool, err error) {
+	ref := strings.TrimSpace(extension.Spec.Addon)
+	p := AddonIsRegex
+	if p.MatchString(ref) {
+		p, err = regexp.Compile(ref)
+		if err != nil {
+			err = &SelectorNotValid{
+				Selector: ref,
+				Reason:   err.Error(),
+			}
+			return
+		}
+		match = p.MatchString(addon.Name)
+	} else {
+
+		match = addon.Name == ref
 	}
 	return
 }
