@@ -231,23 +231,21 @@ func (e *SelectorNotValid) Retry() (r bool) {
 	return
 }
 
-// AddonRegexNotValid reports extension.Addon REGEX errors.
-type AddonRegexNotValid struct {
+// ExtAddonNotValid reports extension addon ref error.
+type ExtAddonNotValid struct {
 	Extension string
-	Pattern   string
 	Reason    string
 }
 
-func (e *AddonRegexNotValid) Error() string {
+func (e *ExtAddonNotValid) Error() string {
 	return fmt.Sprintf(
-		"Extension (%s) addon REGEX '%s' not valid: %s",
+		"Extension '%s' addon ref not valid. reason: %s",
 		e.Extension,
-		e.Pattern,
 		e.Reason)
 }
 
-func (e *AddonRegexNotValid) Is(err error) (matched bool) {
-	var inst *AddonRegexNotValid
+func (e *ExtAddonNotValid) Is(err error) (matched bool) {
+	var inst *ExtAddonNotValid
 	matched = errors.As(err, &inst)
 	return
 }

@@ -589,9 +589,8 @@ func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (matche
 	if p.MatchString(ref) {
 		p, err = regexp.Compile(ref)
 		if err != nil {
-			err = &AddonRegexNotValid{
+			err = &ExtAddonNotValid{
 				Extension: extension.Name,
-				Pattern:   ref,
 				Reason:    err.Error(),
 			}
 			return
