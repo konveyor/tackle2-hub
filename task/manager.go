@@ -90,7 +90,7 @@ const (
 )
 
 var (
-	AddonIsRegex = regexp.MustCompile("[^0-9A-Za-z_-]")
+	IsRegex = regexp.MustCompile("[^0-9A-Za-z_-]")
 )
 
 var (
@@ -585,7 +585,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 // characters other than: [0-9A-Za-z_].
 func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
 	ref := strings.TrimSpace(extension.Spec.Addon)
-	p := AddonIsRegex
+	p := IsRegex
 	if p.MatchString(ref) {
 		p, err = regexp.Compile(ref)
 		if err != nil {
