@@ -231,6 +231,27 @@ func (e *SelectorNotValid) Retry() (r bool) {
 	return
 }
 
+// AddonRegexNotValid reports extension.Addon REGEX errors.
+type AddonRegexNotValid struct {
+	Extension string
+	Pattern   string
+	Reason    string
+}
+
+func (e *AddonRegexNotValid) Error() string {
+	return fmt.Sprintf(
+		"Extension (%s) addon REGEX '%s' not valid: %s",
+		e.Extension,
+		e.Pattern,
+		e.Reason)
+}
+
+func (e *AddonRegexNotValid) Is(err error) (matched bool) {
+	var inst *AddonRegexNotValid
+	matched = errors.As(err, &inst)
+	return
+}
+
 // PriorityNotFound report priority class not found.
 type PriorityNotFound struct {
 	Name  string

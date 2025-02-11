@@ -145,6 +145,7 @@ func TestAddonRegex(t *testing.T) {
 	addonB.Name = "B"
 	// direct.
 	ext := &crd.Extension{}
+	ext.Name = "Test"
 	ext.Spec.Addon = "A"
 	matched, err := m.matchAddon(ext, addonA)
 	g.Expect(err).To(gomega.BeNil())
@@ -160,4 +161,8 @@ func TestAddonRegex(t *testing.T) {
 	matched, err = m.matchAddon(ext, addonB)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(matched).To(gomega.BeTrue())
+	// regex not valid.
+	ext.Spec.Addon = "(]$"
+	matched, err = m.matchAddon(ext, addonA)
+	g.Expect(err).ToNot(gomega.BeNil())
 }
