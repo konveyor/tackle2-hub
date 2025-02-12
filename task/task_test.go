@@ -138,7 +138,7 @@ func TestPriorityGraph(t *testing.T) {
 
 func TestAddonRegex(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	m := Manager{}
+	m := Task{}
 	addonA := &crd.Addon{}
 	addonA.Name = "A"
 	addonB := &crd.Addon{}
