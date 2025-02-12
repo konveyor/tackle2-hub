@@ -560,7 +560,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 	matched := false
 	selector := NewSelector(m.DB, task)
 	for _, extension := range m.cluster.Extensions() {
-		matched, err = m.matchAddon(extension, addon)
+		matched, err = task.matchAddon(extension, addon)
 		if err != nil {
 			return
 		}
@@ -575,30 +575,6 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 			task.Extensions = append(task.Extensions, extension.Name)
 			task.Event(ExtSelected, extension.Name)
 		}
-	}
-	return
-}
-
-// matchAddon - returns true when the extension's `addon`
-// (ref) matches the addon name.
-// The `ref` is matched as a REGEX when it contains
-// characters other than: [0-9A-Za-z_].
-func (m *Manager) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
-	ref := strings.TrimSpace(extension.Spec.Addon)
-	p := IsRegex
-	if p.MatchString(ref) {
-		p, err = regexp.Compile(ref)
-		if err != nil {
-			err = &ExtAddonNotValid{
-				Extension: extension.Name,
-				Reason:    err.Error(),
-			}
-			return
-		}
-		matched = p.MatchString(addon.Name)
-	} else {
-
-		matched = addon.Name == ref
 	}
 	return
 }
@@ -1361,7 +1337,12 @@ func (r *Task) Run(cluster *Cluster) (started bool, err error) {
 		return
 	}
 	for _, extension := range extensions {
-		if r.Addon != extension.Spec.Addon {
+		matched := false
+		matched, err = r.matchAddon(&extension, addon)
+		if err != nil {
+			return
+		}
+		if !matched {
 			err = &ExtensionNotValid{
 				Name:  extension.Name,
 				Addon: addon.Name,
@@ -1620,7 +1601,7 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 	}
 }
 
-// getExtensions by name.
+// getExtensions returns defined extensions.
 func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
 	for _, name := range r.Extensions {
 		extension := crd.Extension{}
@@ -1642,6 +1623,29 @@ func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err
 		extensions = append(
 			extensions,
 			extension)
+	}
+	return
+}
+
+// matchAddon - returns true when the extension's `addon`
+// (ref) matches the addon name.
+// The `ref` is matched as a REGEX when it contains
+// characters other than: [0-9A-Za-z_].
+func (r *Task) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
+	ref := strings.TrimSpace(extension.Spec.Addon)
+	p := IsRegex
+	if p.MatchString(ref) {
+		p, err = regexp.Compile(ref)
+		if err != nil {
+			err = &ExtAddonNotValid{
+				Extension: extension.Name,
+				Reason:    err.Error(),
+			}
+			return
+		}
+		matched = p.MatchString(addon.Name)
+	} else {
+		matched = addon.Name == ref
 	}
 	return
 }
