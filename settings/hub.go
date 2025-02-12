@@ -368,6 +368,7 @@ func (r *Hub) namespace() (ns string, err error) {
 // build returns the hub build version.
 // This is expected to be the output of `git describe`.
 // Examples:
+//
 //	v0.6.0-ea89gcd
 //	v0.6.0
 func (r *Hub) build() (version string, err error) {

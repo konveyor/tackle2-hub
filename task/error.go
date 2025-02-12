@@ -231,6 +231,25 @@ func (e *SelectorNotValid) Retry() (r bool) {
 	return
 }
 
+// ExtAddonNotValid reports extension addon ref error.
+type ExtAddonNotValid struct {
+	Extension string
+	Reason    string
+}
+
+func (e *ExtAddonNotValid) Error() string {
+	return fmt.Sprintf(
+		"Extension '%s' addon ref not valid. reason: %s",
+		e.Extension,
+		e.Reason)
+}
+
+func (e *ExtAddonNotValid) Is(err error) (matched bool) {
+	var inst *ExtAddonNotValid
+	matched = errors.As(err, &inst)
+	return
+}
+
 // PriorityNotFound report priority class not found.
 type PriorityNotFound struct {
 	Name  string

@@ -135,3 +135,34 @@ func TestPriorityGraph(t *testing.T) {
 	deps := pE.graph(ready[0], ready)
 	g.Expect(len(deps)).To(gomega.Equal(2))
 }
+
+func TestAddonRegex(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	m := Manager{}
+	addonA := &crd.Addon{}
+	addonA.Name = "A"
+	addonB := &crd.Addon{}
+	addonB.Name = "B"
+	// direct.
+	ext := &crd.Extension{}
+	ext.Name = "Test"
+	ext.Spec.Addon = "A"
+	matched, err := m.matchAddon(ext, addonA)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, err = m.matchAddon(ext, addonB)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeFalse())
+	// regex.
+	ext.Spec.Addon = "^(A|B)$"
+	matched, err = m.matchAddon(ext, addonA)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, err = m.matchAddon(ext, addonB)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	// regex not valid.
+	ext.Spec.Addon = "(]$"
+	matched, err = m.matchAddon(ext, addonA)
+	g.Expect(err).ToNot(gomega.BeNil())
+}
