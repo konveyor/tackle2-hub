@@ -55,7 +55,7 @@ Each macro has the syntax of: ${_name_}.
 Supported:
 
 - ${**seq**:_pool_} - Number sequence generator. The _pool_ is the identifier and the beginning number.
-  Example usage is network port assignment:
+  Example usage for network port assignment:
   ```yaml
    PORT_A: ${seq:8000}
    PORT_B: ${seq:8000}
