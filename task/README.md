@@ -202,7 +202,7 @@ or associated resources are reaped.
 
 ## (Task) Kinds ###
 
-The Task CR defines a name kind of task. Each kind may define:
+The `Task` CR defines a name kind of task. Each kind may define:
 - **Priority** - The default priority.
 - **Dependencies** - List of dependencies (other task kinds). When created/ready concurrent,
   A task's dependencies must complete before the task is scheduled.
@@ -210,10 +210,9 @@ The Task CR defines a name kind of task. Each kind may define:
 
 ## Addons ##
 
-A task (kind) is implemented by an addon.
-An addon (aka plugin) defines a function in the form of an image to be executed. The
-definition includes a container specification and selection criteria. An addon have extensions.
-See: _Extensions_.
+An `Addon` CR defines a named addon (aka plugin). It defines functionality provide by an image to 
+be executed. The definition includes a container specification and selection criteria. An addon 
+have extensions. See: _Extensions_.
 
 ### Selection ###
 
