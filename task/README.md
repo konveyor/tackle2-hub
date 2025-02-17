@@ -155,7 +155,7 @@ Fields:
 | PodDeleted        | The pod has been deleted.                             |
 | Escalated         | The manager has escalated the task priority.          |
 | Released          | The task's resources have been released.              |
-| ContainerKilled   | The specified container needed to be killed.          |
+| ContainerKilled   | The specified (zombie) container needed to be killed. |
 
 ### Errors ###
 
