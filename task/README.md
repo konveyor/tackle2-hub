@@ -228,7 +228,14 @@ An extension defines an additional _sidecar_ container to be included in the tas
 
 When a task is created, it may define a list of extensions. When specified, addons are
 selected by name. When not specified, addons are selected by matching the `Extension.Addon`
-and evaluating the `Extension.Selector`.
+and evaluating the `Extension.Selector`. The selector includes logical `||` and `&&` operators
+and `()` parens for grouping expressions.
+
+Supported selector:
+- tag:_category_=_tag_.
+  ```yaml
+  selector: tag:Language=Java
+  ```
 
 ## Authorization ##
 
@@ -239,7 +246,7 @@ valid while the task is running.
 ## Reaping ###
 
 A task may be reaped after existing in a state for defined duration. This is to prevent
-orphaned or stuck tasks from leaking resources.
+orphaned or stuck tasks from leaking resources such as buckets and files.
 
 | State     | Duration (default) | Action   |
 |-----------|--------------------|----------|
