@@ -30,6 +30,21 @@ Kubernetes Resource Quotas are handled gracefully by the manager. When a pod can
 to quota restriction, the state=_QuotaBlocked_ and an event reported on the task. The manager will retry to create the pod in the
 next processing cycle.
 
+### Escalation ###
+
+A task's priority may be escalated (increased) when an inversion created by Task (kind)
+dependencies is detected.
+
+Example:
+
+- Task id=10 (kind=A) (priority=0)
+- Task id=12 (kind=B) (priority=1) depends on: `A`
+
+When scheduling both tasks, task(12) cannot run until task(10) has completed. This
+condition effectively makes task(12) priority=0. To prevent this, the manager
+will _escalate_ task(10) priority=1 to match task(12). The goal is to prevent dependencies
+from impeding higher priority tasks.
+
 ### Preemption ###
 
 To prevent priority inversions, the manager supports preempting a _Running_ task so that a
