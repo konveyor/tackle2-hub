@@ -1,13 +1,61 @@
 
 ## Manager ##
 
-### Flow ###
+### Processing ###
+
+The manager processes tasks (each second) in a _main_ loop. 
+1. Fetch cluster resources using a cached k8s client.
+2. Process queued task delete and cancel requests.
+3. Delete orphaned pods. An orphaned pod is a pod within the namespace with task labels that does not
+   correspond to a task in the running state.
+4. Fetch running tasks; update their status based on associated pod status.
+5. Kill zombies. Zombies are _sidecar_ containers that have not termineated on their own after the
+   _main_ (addon) container has terminated.
+6. Fetch and run new tasks ready to run:
+   1. select addon.
+   2. select extensions.
+   3. create pod.
 
 ### Priority ###
 
+Tasks with state=Ready are started based on their `Priority` property.
+Priority=0 (default) is the lowest. Their is no maximum. This controls the order in which task
+pods are created. Pod scheduling is still at the discretion of the node-scheduler. It is highly
+recommended for administrators to create a k8s _Resource Quota_ to restrict the number of pods
+to be scheduled at one time. Fewer pods maximizes the task priority influence over the execution order.
+
+### Resource Quota ###
+
+Kubernetes Resource Quotas are handled gracefully by the manager. When a pod cannot be created due
+to quota restriction, the state=_QuotaBlocked_ and an event reported on the task. The manager will retry to create the pod in the
+next processing cycle.
+
 ### Preemption ###
 
+To prevent priority inversions, the manager supports preempting a _Running_ task so that a
+higher priority _Ready_ task pod may be scheduled. Preemption is the act of killing (deleting)
+the pod of a _running_ task, so that the higher _blocked_ task may be created/scheduled
+by the node-scheduler. A task is considered _blocked_ when it cannot be created due to
+a resource quota (state=QuotaBlocked) or cannot be scheduled by the node-scheduler
+(state=Pending) for a defined duration (default: 1 minute).
+To trigger preemption, the _blocked_ task must have Policy.PreemptEnabled=TRUE. When
+the need for preemption is detected, the manger will preempt a percentage (default: 10%) of the 
+newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
+be postponed for a defined duration (default: 1 minute).
+When a task is preempted:
+1. The pod is deleted.
+2. The task state is reset to Ready.
+3. A `Preempted` event is recorded.
+
 ### Macros ###
+
+### Pods ###
+
+#### Retention ####
+
+#### Containers ####
+
+#### Log Collection ####
 
 ## Task ##
 
@@ -48,6 +96,8 @@
 
 ### States ###
 
+`*` indicates _terminal_ states.
+
 | State        | Definition                                                                                    |
 |:-------------|:----------------------------------------------------------------------------------------------|
 | Created      | The task has been created but not submitted.                                                  |
@@ -56,12 +106,12 @@
 | QuotaBlocked | The task pod has been (temporarily) prevented from being created by k8s resource quota.       |
 | Pending      | The task pod has been created and awaiting k8s scheduling.                                    |
 | Running      | The task pod is running.                                                                      |
-| Succeeded    | The task pod successfully completed.                                                          |
-| Failed       | The task pod either failed to be started by k8s or completed with errors.                     |
-| Canceled     | The task has been canceled.                                                                   |
+| \*Succeeded  | The task pod successfully completed.                                                          |
+| \*Failed     | The task pod either failed to be started by k8s or completed with errors.                     |
+| \*Canceled   | The task has been canceled.                                                                   |
 
 
-### Policy ###
+### Policies ###
 
 ### TTL (Time-To-Live) ###
 
