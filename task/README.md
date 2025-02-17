@@ -212,7 +212,7 @@ The `Task` CR defines a name kind of task. Each kind may define:
 
 An `Addon` CR defines a named addon (aka plugin). It defines functionality provide by an image to 
 be executed. The definition includes a container specification and selection criteria. An addon 
-have extensions. See: _Extensions_.
+may have extensions. See: _Extensions_.
 
 ### Selection ###
 
