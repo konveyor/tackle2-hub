@@ -68,15 +68,36 @@ Supported:
 
 ### Pods ###
 
-
+Tasks are executed using Kubernetes Pods. When a task is _Ready_ to run, the
+manager creates a Pod resource which is associated to the task.
 
 #### Retention ####
 
+The pod associated with completed task is retained for a defined duration. After
+which, the pod is deleted to prevent leaking pod resources indefinitely.
+
+| State     | Retention (default) |
+|-----------|---------------------|
+| Succeeded | 1 (second)          |
+| Failed    | 72 (hour)           |
+
 #### Containers ####
+
+The pod is created with a _main_ container (0) for the selected addon using the image 
+defined by the Addon CR. Additional _sidecar_ containers are created for each extension
+selected as defined by the Extension CR. After the _main_ (addon) container has terminated,
+the manager will kill extension contains should they not terminate on their own. This is to
+ensure complete termination of the pod.
 
 #### Log Collection ####
 
+The manager _tails_ the log for each contain in the task pod. Each is stored as `File` in the
+inventory and associated with the task as an attachment. The file is named using the
+convention of the container _name_.yaml.
+
 ## Task ##
+
+Tasks are used to execute Addons.
 
 ### Properties ###
 
@@ -110,6 +131,32 @@ Supported:
 | \*Completed | Progress: The number of items completed by the addon.                                                              | |
 
 ### Events ###
+
+Task events are used to record and report events related to task lifecycle and scheduling.
+
+Fields:
+- Kind - kind of event.
+- Count: number of times the event is reported.
+- Reason - The reason or cause of the event.
+- Lats - Timestamp when last reported.
+
+| Event             | Meaning                                               |
+|-------------------|-------------------------------------------------------|
+| AddonSelected     | An addon has been selected.                           |
+| ExtensionSelected | An extension has been selected.                       |
+| ImageError        | The pod (k8s) reported an image error.                |
+| PodNotFound       | The pod associated with a running pod does not exist. |
+| PodCreated        | A pod has been created.                               |
+| PodPending        | Pod (k8s) reported phase=Pending.                     |
+| PodRunning        | The pod (k8s) reported phase=Running.                 |
+| Preempted         | The task has been preempted by the manager.           |
+| PodSucceeded      | The pod (k8s) has reported phase=Succeeded.           |
+| PodFailed         | The pod (k8s) has reported phase=Error                |
+| PodDeleted        | The pod has been deleted.                             |
+| Escalated         | The manager has escalated the task priority.          |
+| Released          | The task's resources have been released.              |
+| ContainerKilled   |                                                       |
+
 
 ### Errors ###
 
