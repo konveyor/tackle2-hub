@@ -135,10 +135,10 @@ Tasks are used to execute Addons.
 Task events are used to record and report events related to task lifecycle and scheduling.
 
 Fields:
-- Kind - kind of event.
-- Count: number of times the event is reported.
-- Reason - The reason or cause of the event.
-- Lats - Timestamp when last reported.
+- **Kind** - kind of event.
+- **Count**: number of times the event is reported.
+- **Reason** - The reason or cause of the event.
+- **Last** - Timestamp when last reported.
 
 | Event             | Meaning                                               |
 |-------------------|-------------------------------------------------------|
@@ -157,8 +157,15 @@ Fields:
 | Released          | The task's resources have been released.              |
 | ContainerKilled   |                                                       |
 
-
 ### Errors ###
+
+Task errors are used to report problems with scheduling for execution.
+
+Fields:
+- **Severity** - Error severity. The values are at the discretion of the reporter.
+- **Description** - Error description. Format: (_reporter_) _description_.
+
+Note: A task may complete with a state=Succeeded with errors.
 
 ### States ###
 
@@ -179,15 +186,27 @@ Fields:
 
 ### Policies ###
 
+The task supports policies designed to influence scheduling.
+
+| Name           | Defintion                                                |
+|----------------|----------------------------------------------------------|
+| Isolated       | ALL other tasks are postponed while the task is running. |
+| PreemptEnabled | When (true), the task _may_ trigger preemption.          |
+| PreemptExempt  | When (true), the task may NOT be preempted.              |
+
+
 ### TTL (Time-To-Live) ###
 
-#### Isolation ####
-
-#### PreemptEnabled ####
-
-#### PreemptExempt ####
+The TTL determines how long at task may exist in a given state before the task
+or associated resources are reaped.
 
 ## (Task) Kinds ###
+
+The Task CR defines a name kind of task. Each kind may define:
+- **Priority** - The default priority.
+- **Dependencies** - List of dependencies (other task kinds). When created/ready concurrent,
+  A task's dependencies must complete before the task is scheduled.
+- **Metadata** - **TBD**.  
 
 ## Addons ##
 
@@ -199,4 +218,14 @@ Fields:
 
 ## Authorization ##
 
+## Reaping ###
+
+A task may be reaped after existing in a state for defined duration. This is to prevent
+orphaned or stuck tasks from leaking resources.
+
+| State     | Duration (default) | Action   |
+|-----------|--------------------|----------|
+| Created   | 72 (hour)          | Deleted  |
+| Succeeded | 72 (hour)          | Deleted  |
+| Failed    | 30 (day)           | Released |
 
