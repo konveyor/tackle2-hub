@@ -11,10 +11,10 @@ The manager processes tasks (each second) in a _main_ loop.
 4. Fetch running tasks; update their status based on associated pod status.
 5. Kill zombies. Zombies are _sidecar_ containers that have not termineated on their own after the
    _main_ (addon) container has terminated.
-6. Fetch and run new tasks ready to run:
-   1. select addon.
-   2. select extensions.
-   3. create pod.
+6. Fetch and run new (state=Ready) tasks:
+   1. select addon. See: _Addons.Selection_.
+   2. select extensions. See: _Extensions.Selection_.
+   3. create pod. See: _Pods_.
 
 ### Priority ###
 
@@ -48,6 +48,23 @@ When a task is preempted:
 3. A `Preempted` event is recorded.
 
 ### Macros ###
+
+The manager supports injecting values into Addon and Extension specifications. 
+Each macro has the syntax of: ${_name_}.  
+
+Supported:
+
+- ${**seq**:_base_} - Number sequence generator. The _base_ is the beginning number.
+  Example usage is network port assignment:
+  ```yaml
+   PORT_A: ${seq:8000}
+   PORT_B: ${seq:8000}
+  ```
+  Results in:
+  ```yaml
+  PORT_A: 8000
+  PORT_B: 8001
+   ```
 
 ### Pods ###
 
