@@ -210,13 +210,32 @@ The Task CR defines a name kind of task. Each kind may define:
 
 ## Addons ##
 
+A task (kind) is implemented by an addon.
+An addon (aka plugin) defines a function in the form of an image to be executed. The
+definition includes a container specification and selection criteria. An addon have extensions.
+See: _Extensions_.
+
 ### Selection ###
+
+When a task is created, either the `kind` or the `addon` may be specified. When the
+`addon` is specified, the addon is selected by matching the name. When the `kind` is specified,
+the addon is selected by matching the `Addon.Task` and evaluating the `Addon.Selector`.
 
 ## Extensions ##
 
+An extension defines an additional _sidecar_ container to be included in the task pod.
+
 ### Selection ###
 
+When a task is created, it may define a list of extensions. When specified, addons are
+selected by name. When not specified, addons are selected by matching the `Extension.Addon`
+and evaluating the `Extension.Selector`.
+
 ## Authorization ##
+
+When the task pod is created and _Auth_ is enabled, a token is generated with the
+necessary scopes. The token is mounted as a secret in the pod. The token is only 
+valid while the task is running. 
 
 ## Reaping ###
 
