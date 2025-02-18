@@ -3,7 +3,7 @@
 
 ### Processing ###
 
-The manager processes tasks (each second) in a _main_ loop. 
+The manager processes tasks (default: 1 second) in a _main_ loop. 
 1. Fetch cluster resources using a cached k8s client.
 2. Process queued task delete and cancel requests.
 3. Delete orphaned pods. An orphaned pod is a pod within the namespace with task labels that does not
@@ -203,7 +203,7 @@ Note: A task may complete with a state=Succeeded with errors.
 
 The task supports policies designed to influence scheduling.
 
-| Name           | Defintion                                                |
+| Name           | Definition                                               |
 |----------------|----------------------------------------------------------|
 | Isolated       | ALL other tasks are postponed while the task is running. |
 | PreemptEnabled | When (true), the task _may_ trigger preemption.          |
@@ -247,7 +247,7 @@ and evaluating the `Extension.Selector`. The selector includes logical `||` and 
 and `()` parens for grouping expressions.
 
 Supported selector:
-- tag:_category_=_tag_.
+- tag:_category_=_tag_ - match application tags.
   ```yaml
   selector: tag:Language=Java
   ```
