@@ -87,9 +87,9 @@ Supported:
 Tasks are executed using Kubernetes Pods. When a task is _state=Ready_ to run, the
 manager creates a Pod resource which is associated to the task. Task pods have the
 following labels:
-- app:tackle
-- role:task
-- task: <task-id>
+- app:`tackle`
+- role:`task`
+- task: _id_
 
 #### Retention ####
 
