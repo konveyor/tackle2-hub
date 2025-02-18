@@ -4,12 +4,12 @@
 ### Processing ###
 
 The manager processes tasks (default: 1 second) in a _main_ loop. 
-1. Fetch cluster resources using a cached k8s client.
+1. Fetch cluster resources using a k8s cached client.
 2. Process queued task delete and cancel requests.
-3. Delete orphaned pods. An orphaned pod is a pod within the namespace with task labels that does not
-   correspond to a task in the running state.
-4. Fetch running tasks; update their status based on associated pod status.
-5. Kill zombies. Zombies are _sidecar_ containers that have not termineated on their own after the
+3. Delete orphaned pods. Orphans are pod within the namespace with task 
+   labels that does not correspond to a task in the running state.
+4. Fetch running tasks; update their status based on the associated pod/container status.
+5. Kill zombies. Zombies are _sidecar_ containers that have not terminated on their own after the
    _main_ (addon) container has terminated.
 6. Fetch and run new (state=Ready) tasks:
    1. select addon. See: _Addons.Selection_.
@@ -19,21 +19,23 @@ The manager processes tasks (default: 1 second) in a _main_ loop.
 ### Priority ###
 
 Tasks with state=Ready are started based on their `Priority` property.
-Priority=0 (default) is the lowest. Their is no maximum. This controls the order in which task
-pods are created. Pod scheduling is still at the discretion of the node-scheduler. It is highly
-recommended for administrators to create a k8s _Resource Quota_ to restrict the number of pods
-to be scheduled at one time. Fewer pods maximizes the task priority influence over the execution order.
+Priority zero(0) is the lowest and the default. There is no maximum. The manager process tasks ordered by
+priority. As a result, task pods are created in the order of priority. However, after the pod is created,
+the pod scheduling order is at the discretion of the k8s node-scheduler. To maximize the influence of task
+priority ordering, it is highly recommended for administrators to create a k8s _Resource Quota_ in the
+namespace to restrict the number of pods created.
 
 ### Resource Quota ###
 
-Kubernetes Resource Quotas are handled gracefully by the manager. When a pod cannot be created due
-to quota restriction, the state=_QuotaBlocked_ and an event reported on the task. The manager will retry to create the pod in the
-next processing cycle.
+When a pod cannot be created due to quota restriction, the manager sets the state=_QuotaBlocked_ 
+and a _QuotaBlocked_ event is reported on the task. The manager will attempt to create the pod in
+every processing cycle.
 
-### Escalation ###
+### Priority Escalation ###
 
-A task's priority may be escalated (increased) when an inversion created by Task (kind)
-dependencies is detected.
+A task's priority may be escalated (increased) when one of its dependencies is also in the
+set of tasks ready to be started. The goal is to prevent lower priority dependencies
+from impeding higher priority tasks.
 
 Example:
 
@@ -42,13 +44,12 @@ Example:
 
 When scheduling both tasks, task(12) cannot run until task(10) has completed. This
 condition effectively makes task(12) priority=0. To prevent this, the manager
-will _escalate_ task(10) priority=1 to match task(12). The goal is to prevent dependencies
-from impeding higher priority tasks.
+will _escalate_ task(10) priority=1 to match task(12). 
 
 ### Preemption ###
 
-To prevent priority inversions, the manager supports preempting a _Running_ task so that a
-higher priority _Ready_ task pod may be scheduled. Preemption is the act of killing (deleting)
+To prevent priority inversions, the manager supports preempting a _running_ task so that a
+higher priority _ready_ task pod may be scheduled. Preemption is the act of killing (deleting)
 the pod of a _running_ task, so that the higher _blocked_ task may be created/scheduled
 by the node-scheduler. A task is considered _blocked_ when it cannot be created due to
 a resource quota (state=QuotaBlocked) or cannot be scheduled by the node-scheduler
@@ -83,8 +84,12 @@ Supported:
 
 ### Pods ###
 
-Tasks are executed using Kubernetes Pods. When a task is _Ready_ to run, the
-manager creates a Pod resource which is associated to the task.
+Tasks are executed using Kubernetes Pods. When a task is _state=Ready_ to run, the
+manager creates a Pod resource which is associated to the task. Task pods have the
+following labels:
+- app:tackle
+- role:task
+- task: <task-id>
 
 #### Retention ####
 
@@ -93,7 +98,7 @@ which, the pod is deleted to prevent leaking pod resources indefinitely.
 
 | State     | Retention (default) |
 |-----------|---------------------|
-| Succeeded | 1 (second)          |
+| Succeeded | 1 (minute)          |
 | Failed    | 72 (hour)           |
 
 #### Containers ####
@@ -102,13 +107,13 @@ The pod is created with a _main_ container (0) for the selected addon using the 
 defined by the Addon CR. Additional _sidecar_ containers are created for each extension
 selected as defined by the Extension CR. After the _main_ (addon) container has terminated,
 the manager will kill extension contains should they not terminate on their own. This is to
-ensure complete termination of the pod.
+ensure complete termination of the pod after the addon container has terminated.
 
 #### Log Collection ####
 
 The manager _tails_ the log for each contain in the task pod. Each is stored as `File` in the
 inventory and associated with the task as an attachment. The file is named using the
-convention of the container _name_.yaml.
+convention of the _container-name_.yaml.
 
 ## Task ##
 
@@ -260,8 +265,8 @@ valid while the task is running.
 
 ## Reaping ###
 
-A task may be reaped after existing in a state for defined duration. This is to prevent
-orphaned or stuck tasks from leaking resources such as buckets and files.
+A task may be reaped after existing in a state for the defined duration. 
+This is to prevent orphaned or stuck tasks from leaking resources such as buckets and files.
 
 | State     | Duration (default) | Action   |
 |-----------|--------------------|----------|
