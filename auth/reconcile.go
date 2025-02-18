@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Nerzal/gocloak/v10"
+	"github.com/Nerzal/gocloak/v13"
 	liberr "github.com/jortel/go-utils/error"
 )
 
 // NewReconciler builds a new Keycloak realm reconciler.
 func NewReconciler(host, realm, id, secret, admin, pass, adminRealm string) (r Reconciler) {
-	client := gocloak.NewClient(host)
+	client := gocloak.NewClient(host, gocloak.SetAuthRealms("auth/realms"), gocloak.SetAuthAdminRealms("auth/admin/realms"))
 	client.RestyClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	r = Reconciler{
 		client:     client,
@@ -29,7 +29,7 @@ func NewReconciler(host, realm, id, secret, admin, pass, adminRealm string) (r R
 
 // Keycloak realm reconciler
 type Reconciler struct {
-	client     gocloak.GoCloak
+	client     *gocloak.GoCloak
 	realm      string
 	id         string
 	secret     string
