@@ -95,7 +95,7 @@ The manager injects a few environment variables:
 
 | Name         | Definition                                                                                         |
 |--------------|----------------------------------------------------------------------------------------------------|
-| ADDON_HOME   | Path to an EmptyDir mounted as the home directory. (default: /addon)                               |
+| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. (default: /addon)                            |
 | SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. (default: /shared) |
 | CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. (default: /cache)         |
 | HUB_BASE_URL | The hub API base url.                                                                              |
