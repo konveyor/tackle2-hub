@@ -91,6 +91,17 @@ following labels:
 - role:`task`
 - task: _id_
 
+The manager injects a few environment variables:
+
+| Name         | Definition                                                                                         |
+|--------------|----------------------------------------------------------------------------------------------------|
+| ADDON_HOME   | Path to an EmptyDir mounted as the home directory. (default: /addon)                               |
+| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. (default: /shared) |
+| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. (default: /cache)         |
+| HUB_BASE_URL | The hub API base url.                                                                              |
+| TASK         | The task id (to be acted on).                                                                      |
+| TOKEN        | An authentication token for the hub API.                                                           |
+
 #### Retention ####
 
 The pod associated with completed task is retained for a defined duration. After
