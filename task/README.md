@@ -254,7 +254,9 @@ and `()` parens for grouping expressions.
 Supported selector:
 - tag:_category_=_tag_ - match application tags.
   ```yaml
-  selector: tag:Language=Java
+  spec:
+    addon: ^(analyzer|tech-discovery)$
+    selector: tag:Language=Java
   ```
 
 ## Authorization ##
