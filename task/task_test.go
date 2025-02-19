@@ -1,6 +1,8 @@
 package task
 
 import (
+	"bytes"
+	"io"
 	"testing"
 
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -165,4 +167,55 @@ func TestAddonRegex(t *testing.T) {
 	ext.Spec.Addon = "(]$"
 	matched, err = m.matchAddon(ext, addonA)
 	g.Expect(err).ToNot(gomega.BeNil())
+}
+
+func TestLogCollectorCopy(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// no skipped bytes.
+	collector := LogCollector{}
+	content := "ABCDEFGHIJ"
+	reader := io.NopCloser(bytes.NewBufferString(content))
+	writer := bytes.NewBufferString("")
+	err := collector.copy(reader, writer)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(content).To(gomega.Equal(writer.String()))
+
+	// number of skipped bytes smaller than buffer.
+	existing := "ABC"
+	collector = LogCollector{
+		nSkip: int64(len(existing)),
+	}
+	content = "ABCDEFGHIJ"
+	reader = io.NopCloser(bytes.NewBufferString(content))
+	writer = bytes.NewBufferString(existing)
+	err = collector.copy(reader, writer)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(content).To(gomega.Equal(writer.String()))
+
+	// number of skipped bytes larger than buffer.
+	existing = "ABCD"
+	collector = LogCollector{
+		nBuf:  3,
+		nSkip: int64(len(existing)),
+	}
+	content = "ABCDEFGHIJ"
+	reader = io.NopCloser(bytes.NewBufferString(content))
+	writer = bytes.NewBufferString(existing)
+	err = collector.copy(reader, writer)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(content).To(gomega.Equal(writer.String()))
+
+	// number of skipped bytes equals buffer.
+	existing = "ABCD"
+	collector = LogCollector{
+		nBuf:  len(existing),
+		nSkip: int64(len(existing)),
+	}
+	content = "ABCDEFGHIJ"
+	reader = io.NopCloser(bytes.NewBufferString(content))
+	writer = bytes.NewBufferString(existing)
+	err = collector.copy(reader, writer)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(content).To(gomega.Equal(writer.String()))
 }

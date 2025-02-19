@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"regexp"
@@ -23,11 +22,13 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
-	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	k8r "k8s.io/apimachinery/pkg/runtime"
+	k8j "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8y "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
@@ -107,12 +108,18 @@ type Manager struct {
 	cluster Cluster
 	// queue of actions.
 	queue chan func()
+	// logManager provides pod log collection.
+	logManager LogManager
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
 	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
+	m.logManager = LogManager{
+		collector: make(map[string]*LogCollector),
+		DB:        m.DB,
+	}
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
@@ -130,7 +137,7 @@ func (m *Manager) Run(ctx context.Context) {
 				if err == nil {
 					m.deleteOrphanPods()
 					m.runActions()
-					m.updateRunning()
+					m.updateRunning(ctx)
 					m.deleteZombies()
 					m.startReady()
 					m.pause()
@@ -847,7 +854,7 @@ func (m *Manager) preempt(list []*Task) (err error) {
 }
 
 // updateRunning tasks to reflect pod state.
-func (m *Manager) updateRunning() {
+func (m *Manager) updateRunning(ctx context.Context) {
 	var err error
 	defer func() {
 		Log.Error(err, "")
@@ -876,6 +883,11 @@ func (m *Manager) updateRunning() {
 		running := task
 		pod, found := running.Reflect(&m.cluster)
 		if found {
+			err = m.logManager.EnsureCollection(task, pod, ctx)
+			if err != nil {
+				Log.Error(err, "")
+				continue
+			}
 			if task.StateIn(Succeeded, Failed) {
 				err = m.podSnapshot(running, pod)
 				if err != nil {
@@ -998,33 +1010,12 @@ func (m *Manager) deleteOrphanPods() {
 // Includes:
 //   - pod YAML
 //   - pod Events
-//   - container Logs
 func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
-	var files []*model.File
-	d, err := m.podYAML(pod)
-	if err != nil {
-		return
-	}
-	files = append(files, d)
-	logs, err := m.podLogs(pod)
-	if err != nil {
-		return
-	}
-	files = append(files, logs...)
-	for _, f := range files {
-		task.attach(f)
-	}
-	Log.V(1).Info("Task pod snapshot attached.", "id", task.ID)
-	return
-}
-
-// podYAML builds pod resource description.
-func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	events, err := m.podEvent(pod)
 	if err != nil {
 		return
 	}
-	file = &model.File{Name: "pod.yaml"}
+	file := &model.File{Name: "pod.yaml"}
 	err = m.DB.Create(file).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1038,16 +1029,49 @@ func (m *Manager) podYAML(pod *core.Pod) (file *model.File, err error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	type Pod struct {
-		core.Pod `yaml:",inline"`
-		Events   []Event `yaml:",omitempty"`
-	}
-	d := Pod{
-		Pod:    *pod,
-		Events: events,
-	}
-	b, _ := yaml.Marshal(d)
+	serializer := k8j.NewSerializerWithOptions(
+		k8y.DefaultMetaFactory,
+		nil,
+		nil,
+		k8j.SerializerOptions{
+			Yaml:   true,
+			Pretty: true,
+			Strict: false,
+		})
+	pod.ManagedFields = nil
+	format := "  %-8s%-11s%-6s%-19s%s\n"
+	_, _ = f.WriteString("---\n")
+	b, _ := k8r.Encode(serializer, pod)
 	_, _ = f.Write(b)
+	_, _ = f.WriteString("\n---\n")
+	_, _ = f.WriteString("Events: |\n")
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"Type",
+			"Reason",
+			"Age",
+			"Reporter",
+			"Message"))
+	_, _ = f.WriteString(
+		fmt.Sprintf(
+			format,
+			"-------",
+			"----------",
+			"-----",
+			"------------------",
+			"------------------"))
+	for _, event := range events {
+		_, _ = f.WriteString(
+			fmt.Sprintf(
+				format,
+				event.Type,
+				event.Reason,
+				event.Age,
+				event.Reporter,
+				event.Message))
+	}
+	task.attach(file)
 	return
 }
 
@@ -1080,64 +1104,6 @@ func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
 				Reporter: event.ReportingController,
 				Message:  event.Message,
 			})
-	}
-	return
-}
-
-// podLogs - get and store pod logs as a Files.
-func (m *Manager) podLogs(pod *core.Pod) (files []*model.File, err error) {
-	for _, container := range pod.Status.ContainerStatuses {
-		if container.State.Waiting != nil {
-			continue
-		}
-		f, nErr := m.containerLog(pod, container.Name)
-		if nErr == nil {
-			files = append(files, f)
-		} else {
-			err = nErr
-			return
-		}
-	}
-	return
-}
-
-// containerLog - get container log and store in file.
-func (m *Manager) containerLog(pod *core.Pod, container string) (file *model.File, err error) {
-	options := &core.PodLogOptions{
-		Container: container,
-	}
-	clientSet, err := k8s2.NewClientSet()
-	if err != nil {
-		return
-	}
-	podClient := clientSet.CoreV1().Pods(Settings.Hub.Namespace)
-	req := podClient.GetLogs(pod.Name, options)
-	reader, err := req.Stream(context.TODO())
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = reader.Close()
-	}()
-	file = &model.File{Name: container + ".log"}
-	err = m.DB.Create(file).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	f, err := os.Create(file.Path)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	_, err = io.Copy(f, reader)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
 	}
 	return
 }
