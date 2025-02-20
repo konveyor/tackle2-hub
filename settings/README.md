@@ -58,44 +58,44 @@ The `T` specifies the type:
 
 ### Intervals/Frequencies ###
 
-| Name   | T | Envar   | Default | Definition |
-|--------|---|---------|---------|------------|
-| Task   | I |         |         |            |
-| Reaper | I |         |         |            |
+| Name   | T | Envar            | Default    | Definition                           |
+|--------|---|------------------|------------|--------------------------------------|
+| Task   | I | FREQUENCY_TASK   | 1 (second) | (seconds) between each manager pass. |
+| Reaper | I | FREQUENCY_REAPER | 1 (minute) | (minutes) between each reaper pass.  |
 
 ### Analysis ###
 
-| Name            | T | Envar   | Default | Definition |
-|-----------------|---|---------|---------|------------|
-| ReportPath      | S |         |         |            |
-| ArchiverEnabled | B |         |         |            |
+| Name            | T | Envar                     | Default               | Definition                      |
+|-----------------|---|---------------------------|-----------------------|---------------------------------|
+| ReportPath      | S | ANALYSIS_REPORT_PATH      | /tmp/analysis/report  | Path to static analysis report. |
+| ArchiverEnabled | B | ANALYSIS_ARCHIVER_ENABLED | TRUE                  | Analysis report auto-archived.  |
 
 ### Discovery ###
 
-| Name    | T | Envar   | Default | Definition                                    |
-|---------|---|---------|---------|-----------------------------------------------|
-| Enabled | B |         |         | Trigger discover tasks on application update. |
-| Label   | S |         |         | k8s label use to select lang-discover tasks.  |
+| Name    | T | Envar             | Default                    | Definition                                    |
+|---------|---|-------------------|----------------------------|-----------------------------------------------|
+| Enabled | B | DISCOVERY_ENABLED | TRUE when not DISCONNECTED | Trigger discover tasks on application update. |
+| Label   | S | DISCOVERY_LABEL   | konveyor.io/discovery      | k8s label use to select lang-discover tasks.  |
 
 ### Addon ###
 
-| Name      | T | Envar   | Default | Definition |
-|-----------|---|---------|---------|------------|
-| HomeDir   | S |         |         |            |
-| Hub.URL   | S |         |         |            |
-| Hub.Token | S |         |         |            |
-| Task.ID   | I |         |         |            |
+| Name      | T | Envar        | Default               | Definition                      |
+|-----------|---|--------------|-----------------------|---------------------------------|
+| HomeDir   | S | ADDON_HOME   | /addon                | Addon home (working) directory. |
+| Hub.URL   | S | HUB_BASE_URL | http://localhost:8080 | Hub (base) URL.                 |
+| Hub.Token | S | TOKEN        |                       | Auth token for hub API.         |
+| Task.ID   | I | TASK         |                       | Task addon working on.          |
 
 
 ### KEYCLOAK ###
 
-| Name                   | T | Envar   | Default | Definition |
-|------------------------|---|---------|---------|------------|
-| RequirePasswordUpdate  | B |         |         |            |
-| Host                   | S |         |         |            |
-| Realm                  | S |         |         |            |
-| ClientID               | S |         |         |            |
-| ClientSecret           | S |         |         |            |
-| Admin.User             | S |         |         |            |
-| Admin.Password         | S |         |         |            |
-| Admin.Realm            | S |         |         |            |
+| Name                   | T | Envar                    | Default | Definition                 |
+|------------------------|---|--------------------------|---------|----------------------------|
+| RequirePasswordUpdate  | B | KEYCLOAK_REQ_PASS_UPDATE | TRUE    | User must change password. |
+| Host                   | S | KEYCLOAK_HOST            |         | Service hostname.          |
+| Realm                  | S | KEYCLOAK_REALM           |         | Realm name.                |
+| ClientID               | S | KEYCLOAK_CLIENT_ID       |         | Client id.                 |
+| ClientSecret           | S | KEYCLOAK_CLIENT_SECRET   |         | Client secret.             |
+| Admin.User             | S | KEYCLOAK_ADMIN_USER      |         | Admin client user.         |
+| Admin.Password         | S | KEYCLOAK_ADMIN_PASS      |         | Admin client password.     |
+| Admin.Realm            | S | KEYCLOAK_ADMIN_REALM     |         | Admin client realm.        |
