@@ -9,26 +9,26 @@ The `T` specifies the type:
 
 ### General ###
 
-| Name                      | T | Envar   | Default | Definition |
-|---------------------------|---|---------|---------|------------|
-| Build                     | S |         |         |            |
-| Namespace                 | S |         |         |            |
-| **DB**.Path               | S |         |         |            |
-| **DB**.MaxConnections     | I |         |         |            |
-| **DB**.SeedPath           | S |         |         |            |
-| **Bucket**.Path           | S |         |         |            |
-| **Bucket**.TTL            | I |         |         |            |
-| **File**.TTL              | I |         |         |            |
-| **Cache**.RWX             | B |         |         |            |
-| **Cache**.Path            | S |         |         |            |
-| **Cache**.PVC             | S |         |         |            |
-| **Shared**.Path           | S |         |         |            |
-| **Encryption**.Passphrase | S |         |         |            |
-| Development               | B |         |         |            |
-| Disconnected              | B |         |         |            |
-| Product                   | S |         |         |            |
-| **Metrics**.Enabled       | B |         |         |            |
-| **Metrics**.Port          | I |         |         |            |
+| Name                      | T | Envar                 | Default         | Definition                                        |
+|---------------------------|---|-----------------------|-----------------|---------------------------------------------------|
+| Build                     | S | BUILD                 |                 | Hub build version.                                |
+| Namespace                 | S | NAMESPACE             | konveyor-tackle | Home k8s Namespace.                               |
+| **DB**.Path               | S | DB_PATH               | /tmp/tackle.db  | Path to sqlite file.                              |
+| **DB**.MaxConnections     | I | DB_MAX_CONNECTION     | 1               | Number of DB connections.                         |
+| **DB**.SeedPath           | S | DB_SEED_PATH          | /tmp/seed       | Path to seed files.                               |
+| **Bucket**.Path           | S | BUCKET_PATH           | /tmp/bucket     | Path to bucket storage directory.                 |
+| **Bucket**.TTL            | I | BUCKET_TTL            | 1 (minute)      | Orphaned buckets TTL (minutes).                   |
+| **File**.TTL              | I | FILE_TTL              | 1 (minute)      | Orphaned files TTL (minutes).                     |
+| **Cache**.RWX             | B | RWX_SUPPORTED         | FALSE           | Cache volume supports RWX.                        |
+| **Cache**.Path            | S | CACHE_PATH            | /cache          | Cache volume mount path.                          |
+| **Cache**.PVC             | S | CACHE_PVC             | cache           | Cache PVC name. Used when RWX suppored.           |
+| **Shared**.Path           | S | SHARED_PATH           | /shared         | Shared volume mount path.                         |
+| **Encryption**.Passphrase | S | ENCRYPTION_PASSPHRASE | tackle          | RSA encryption passphrase.                        |
+| Development               | B | DEVELOPMENT           | FALSE           | Development mode.                                 |
+| Disconnected              | B | DISCONNECTED          | FALSE           | Not connected to a cluster.                       |
+| Product                   | S | APP_NAME              | tackle          | Product/application name. Affects target seeding. |
+| **Metrics**.Enabled       | B | METRICS_ENABLED       | TRUE            | Metrics reporting enabled.                        |
+| **Metrics**.Port          | I | METRICS_PORT          |                 | Metrics reporting (listen) port number.           |
 
 ### Auth ###
 
