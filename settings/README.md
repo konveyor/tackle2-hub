@@ -1,96 +1,102 @@
 ## Settings ##
 
+Settings provide hub configuration.
+
+The `T` specifies the type:
+- `I` = integer
+- `S` = string
+- `B` = boolean (0|1|true|false)
+
 ### General ###
 
-| Name                  | Envar   | Default | Definition |
-|-----------------------|---------|---------|------------|
-| Build                 |         |         |            |
-| Namespace             |         |         |            |
-| DB.Path               |         |         |            |
-| DB.MaxConnections     |         |         |            |
-| DB.SeedPath           |         |         |            |
-| Bucket.Path           |         |         |            |
-| Bucket.TTL            |         |         |            |
-| File.TTL              |         |         |            |
-| Cache.RWX             |         |         |            |
-| Cache.Path            |         |         |            |
-| Cache.PVC             |         |         |            |
-| Shared.Path           |         |         |            |
-| Encryption.Passphrase |         |         |            |
-| Development           |         |         |            |
-| Disconnected          |         |         |            |
-| Product               |         |         |            |
-| Metrics.Enabled       |         |         |            |
-| Metrics.Port          |         |         |            |
-|                       |         |         |            |
+| Name                      | T | Envar   | Default | Definition |
+|---------------------------|---|---------|---------|------------|
+| Build                     | S |         |         |            |
+| Namespace                 | S |         |         |            |
+| **DB**.Path               | S |         |         |            |
+| **DB**.MaxConnections     | I |         |         |            |
+| **DB**.SeedPath           | S |         |         |            |
+| **Bucket**.Path           | S |         |         |            |
+| **Bucket**.TTL            | I |         |         |            |
+| **File**.TTL              | I |         |         |            |
+| **Cache**.RWX             | B |         |         |            |
+| **Cache**.Path            | S |         |         |            |
+| **Cache**.PVC             | S |         |         |            |
+| **Shared**.Path           | S |         |         |            |
+| **Encryption**.Passphrase | S |         |         |            |
+| Development               | B |         |         |            |
+| Disconnected              | B |         |         |            |
+| Product                   | S |         |         |            |
+| **Metrics**.Enabled       | B |         |         |            |
+| **Metrics**.Port          | I |         |         |            |
 
 ### Auth ###
 
-| Name      | Envar   | Default | Definition |
-|-----------|---------|---------|------------|
-| Required  |         |         |            |
-| RolePath  |         |         |            |
-| UserPath  |         |         |            |
-| Token.Key |         |         |            |
-|           |         |         |            |
+| Name      | T | Envar   | Default | Definition |
+|-----------|---|---------|---------|------------|
+| Required  | B |         |         |            |
+| RolePath  | S |         |         |            |
+| UserPath  | S |         |         |            |
+| Token.Key | S |         |         |            |
+|           |   |         |         |            |
 
 ### Task Manager ###
 
-| Name                    | Envar   | Default | Definition |
-|-------------------------|---------|---------|------------|
-| SA                      |         |         |            |
-| Retries                 |         |         |            |
-| Reaper.Created          |         |         |            |
-| Reaper.Succeeded        |         |         |            |
-| Reaper.Failed           |         |         |            |
-| Preemption.Enabled      |         |         |            |
-| Preemption.Delayed      |         |         |            |
-| Preemption.Postponed    |         |         |            |
-| Preemption.Rate         |         |         |            |
-| Pod.Retention.Succeeded |         |         |            |
-| Pod.Retention.Failed    |         |         |            |
-| Pod.UID                 |         |         |            |
+| Name                    | T | Envar   | Default | Definition |
+|-------------------------|---|---------|---------|------------|
+| SA                      | S |         |         |            |
+| Retries                 | I |         |         |            |
+| Reaper.Created          | I |         |         |            |
+| Reaper.Succeeded        | I |         |         |            |
+| Reaper.Failed           | I |         |         |            |
+| Preemption.Enabled      | B |         |         |            |
+| Preemption.Delayed      | I |         |         |            |
+| Preemption.Postponed    | I |         |         |            |
+| Preemption.Rate         | I |         |         |            |
+| Pod.Retention.Succeeded | I |         |         |            |
+| Pod.Retention.Failed    | I |         |         |            |
+| Pod.UID                 | S |         |         |            |
 
 ### Intervals/Frequencies ###
 
-| Name   | Envar   | Default | Definition |
-|--------|---------|---------|------------|
-| Task   |         |         |            |
-| Reaper |         |         |            |
+| Name   | T | Envar   | Default | Definition |
+|--------|---|---------|---------|------------|
+| Task   | I |         |         |            |
+| Reaper | I |         |         |            |
 
 ### Analysis ###
 
-| Name            | Envar   | Default | Definition |
-|-----------------|---------|---------|------------|
-| ReportPath      |         |         |            |
-| ArchiverEnabled |         |         |            |
+| Name            | T | Envar   | Default | Definition |
+|-----------------|---|---------|---------|------------|
+| ReportPath      | S |         |         |            |
+| ArchiverEnabled | B |         |         |            |
 
 ### Discovery ###
 
-| Name    | Envar   | Default | Definition                                    |
-|---------|---------|---------|-----------------------------------------------|
-| Enabled |         |         | Trigger discover tasks on application update. |
-| Label   |         |         | k8s label use to select lang-discover tasks.  |
+| Name    | T | Envar   | Default | Definition                                    |
+|---------|---|---------|---------|-----------------------------------------------|
+| Enabled | B |         |         | Trigger discover tasks on application update. |
+| Label   | S |         |         | k8s label use to select lang-discover tasks.  |
 
 ### Addon ###
 
-| Name      | Envar   | Default | Definition |
-|-----------|---------|---------|------------|
-| HomeDir   |         |         |            |
-| Hub.URL   |         |         |            |
-| Hub.Token |         |         |            |
-| Task.ID   |         |         |            |
+| Name      | T | Envar   | Default | Definition |
+|-----------|---|---------|---------|------------|
+| HomeDir   | S |         |         |            |
+| Hub.URL   | S |         |         |            |
+| Hub.Token | S |         |         |            |
+| Task.ID   | I |         |         |            |
 
 
 ### KEYCLOAK ###
 
-| Name                   | Envar   | Default | Definition |
-|------------------------|---------|---------|------------|
-| RequirePasswordUpdate  |         |         |            |
-| Host                   |         |         |            |
-| Realm                  |         |         |            |
-| ClientID               |         |         |            |
-| ClientSecret           |         |         |            |
-| Admin.User             |         |         |            |
-| Admin.Password         |         |         |            |
-| Admin.Realm            |         |         |            |
+| Name                   | T | Envar   | Default | Definition |
+|------------------------|---|---------|---------|------------|
+| RequirePasswordUpdate  | B |         |         |            |
+| Host                   | S |         |         |            |
+| Realm                  | S |         |         |            |
+| ClientID               | S |         |         |            |
+| ClientSecret           | S |         |         |            |
+| Admin.User             | S |         |         |            |
+| Admin.Password         | S |         |         |            |
+| Admin.Realm            | S |         |         |            |
