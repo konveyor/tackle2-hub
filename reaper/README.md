@@ -19,7 +19,7 @@ Buckets represent file trees and may be referenced by:
 - Task
 - TaskGroup
 
-TTL (default: 1 minute).
+TTL after orphaned (default: 1 minute).
 
 ### Files ###
 
@@ -29,7 +29,7 @@ Files represent files and may be referenced by:
 - Target
 - Rule
 
-TTL (default: 1 minute).
+TTL after orphaned (default: 1 minute).
 
 ### Tasks ###
 
