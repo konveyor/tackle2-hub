@@ -106,7 +106,6 @@ type Hub struct {
 	Frequency struct {
 		Task   int
 		Reaper int
-		Volume int
 	}
 	// Development environment
 	Development bool
