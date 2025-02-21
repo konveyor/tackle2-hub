@@ -41,9 +41,9 @@ submitted after a defined period (default: 72 hours).
 
 Submitted tasks are never reaped. As a result, there is a need for objects
 referenced by tasks to be reaped. Tasks reference:
-- bucket
-- file
-- pod
+- Bucket
+- File
+- Pod
 
 Reaped objects such as buckets and files are said to be _released_ when the task is
 reaped. Releasing simply means to remove the reference to allow them to be
