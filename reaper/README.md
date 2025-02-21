@@ -6,9 +6,9 @@ rather than deleted through cascading. These entities may be referenced by multi
 types of entities so managing deletion though cascade delete can be complex. Instead,
 the relation between objects is modeled as _references_. When the reference count
 is zero(0), it is considered an _orphan_ and the referenced object is assigned 
-an expiration TTL (time-to-live). Orphans are not deleted immediately to account 
-for transient conditions. If not re-associated when the TTL has expired,
-the orphan is deleted.
+an expiration TTL (time-to-live). This _grace-period_ is designed to account for 
+transient conditions such as a transfer of ownership. If not re-associated when the 
+TTL has expired, the orphan is deleted.
 
 There are also non-referenced entities that need to be reaped.
 
