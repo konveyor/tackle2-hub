@@ -7,7 +7,9 @@ The `T` specifies the type:
 - `S` = string
 - `B` = boolean (0|1|true|false)
 
-### General ###
+### Main ###
+
+These settings pertain to the Hub in general.
 
 | Name                      | T | Envar                 | Default         | Definition                                        |
 |---------------------------|---|-----------------------|-----------------|---------------------------------------------------|
@@ -32,6 +34,8 @@ The `T` specifies the type:
 
 ### Auth ###
 
+These settings pertain to authentication and authorization.
+
 | Name      | T | Envar         | Default         | Definition                                 |
 |-----------|---|---------------|-----------------|--------------------------------------------|
 | Required  | B | AUTH_REQUIRED | FALSE           | API enforces authentication/authorization. |
@@ -40,6 +44,8 @@ The `T` specifies the type:
 | Token.Key | S | ADDON_TOKEN   |                 | Key used to sign tokens.                   |
 
 ### Task Manager ###
+
+These settings pertain to the tasking system.
 
 | Name                    | T | Envar                     | Default    | Definition                                                                       |
 |-------------------------|---|---------------------------|------------|----------------------------------------------------------------------------------|
@@ -58,12 +64,16 @@ The `T` specifies the type:
 
 ### Intervals/Frequencies ###
 
+These settings pertain to the frequency of _manager_ main loops.
+
 | Name   | T | Envar            | Default    | Definition                           |
 |--------|---|------------------|------------|--------------------------------------|
 | Task   | I | FREQUENCY_TASK   | 1 (second) | (seconds) between each manager pass. |
 | Reaper | I | FREQUENCY_REAPER | 1 (minute) | (minutes) between each reaper pass.  |
 
 ### Analysis ###
+
+These settings pertain to analysis.
 
 | Name            | T | Envar                     | Default               | Definition                      |
 |-----------------|---|---------------------------|-----------------------|---------------------------------|
@@ -72,12 +82,16 @@ The `T` specifies the type:
 
 ### Discovery ###
 
+These settings pertain to the auto-create of lang-discovery tasks.
+
 | Name    | T | Envar             | Default                    | Definition                                    |
 |---------|---|-------------------|----------------------------|-----------------------------------------------|
 | Enabled | B | DISCOVERY_ENABLED | TRUE when not DISCONNECTED | Trigger discover tasks on application update. |
 | Label   | S | DISCOVERY_LABEL   | konveyor.io/discovery      | k8s label use to select lang-discover tasks.  |
 
 ### Addon ###
+
+These settings are intended to be shared by the hub and the (Go) addons.
 
 | Name      | T | Envar        | Default               | Definition                      |
 |-----------|---|--------------|-----------------------|---------------------------------|
