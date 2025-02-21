@@ -46,7 +46,7 @@ The `T` specifies the type:
 | SA                      | S | TASK_SA                   |            | Task pod service account name.                                                   |
 | Retries                 | I | TASK_RETRIES              | 1          | Task pod creation retires.                                                       |
 | Reaper.Created          | I | TASK_REAP_CREATED         | 72 (hour)  | (seconds) task may remain in state=CREATED before deleted.                       |
-| Reaper.Succeeded        | I | TASK_REAP_SUCCEEDED       | 27 (hour)  | (seconds) before SUCCEEDED task's bucket released.                               |
+| Reaper.Succeeded        | I | TASK_REAP_SUCCEEDED       | 72 (hour)  | (seconds) before SUCCEEDED task's bucket released.                               |
 | Reaper.Failed           | I | TASK_REAP_FAILED          | 30 (day)   | (seconds) before FAILED task's bucket is bucket released.                        |
 | Preemption.Enabled      | B | TASK_PREEMPT_ENABLED      | FALSE      | Task.Policy.Preempt.Enabled default.                                             |
 | Preemption.Delayed      | I | TASK_PREEMPT_DELAYED      | 1 (minute) | (seconds) before READY task is deemed to be _blocked_ and my trigger preemption. |
