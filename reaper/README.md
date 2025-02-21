@@ -15,19 +15,19 @@ There are also non-referenced entities that need to be reaped.
 ### Buckets ###
 
 Buckets represent file trees and may be referenced by:
-- application
-- task
-- task-group
+- Application
+- Task
+- TaskGroup
 
 TTL (default: 1 minute).
 
 ### Files ###
 
 Files represent files and may be referenced by:
-- task
-- task-report
-- target
-- rule
+- Task
+- TaskReport
+- Target
+- Rule
 
 TTL (default: 1 minute).
 
