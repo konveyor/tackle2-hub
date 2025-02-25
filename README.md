@@ -6,7 +6,7 @@ Tackle (2nd generation) hub component.
 
 <img src="https://github.com/konveyor/tackle2-hub/blob/main/arch.png" width="850" height="600">
 
-See [settings](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#settings)
+See [settings](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#settings)
 for configuration.
 
 The hub provides a REST API, inventory and
