@@ -3,7 +3,8 @@
 
 ### Processing ###
 
-The manager processes tasks (default: 1 second) in a _main_ loop. 
+The manager processes tasks at an interval defined by the
+[Frequency.Task](https://github.com/konveyor/tackle2-hub/tree/main/settings#intervalsfrequencies) setting. 
 1. Fetch cluster resources using a k8s cached client.
 2. Process queued task delete and cancel requests.
 3. Delete orphaned pods. Orphans are pod within the namespace with task 
@@ -53,11 +54,14 @@ higher priority _ready_ task pod may be scheduled. Preemption is the act of kill
 the pod of a _running_ task, so that the higher _blocked_ task may be created/scheduled
 by the node-scheduler. A task is considered _blocked_ when it cannot be created due to
 a resource quota (state=QuotaBlocked) or cannot be scheduled by the node-scheduler
-(state=Pending) for a defined duration (default: 1 minute).
+(state=Pending) for a defined duration defined by the 
+[Preemption.Delayed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
 To trigger preemption, the _blocked_ task must have Policy.PreemptEnabled=TRUE. When
-the need for preemption is detected, the manger will preempt a percentage (default: 10%) of the 
-newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
-be postponed for a defined duration (default: 1 minute).
+the need for preemption is detected, the manger will preempt a percentage
+([Preemption.Rate](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)) 
+of the newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
+be postponed for a defined duration defined by the
+[Preemption.Postponed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
 When a task is preempted:
 1. The pod is deleted.
 2. The task state is reset to Ready.
@@ -93,24 +97,24 @@ following labels:
 
 The manager injects a few environment variables:
 
-| Name         | Definition                                                                                         |
-|--------------|----------------------------------------------------------------------------------------------------|
-| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. (default: /addon)                            |
-| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. (default: /shared) |
-| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. (default: /cache)         |
-| HUB_BASE_URL | The hub API base url.                                                                              |
-| TASK         | The task id (to be acted on).                                                                      |
-| TOKEN        | An authentication token for the hub API.                                                           |
+| Name         | Definition                                                                                                                                                                         |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. Defined by the [Home](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.                             |
+| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. Defined by the [Shared](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting. |
+| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. Defined by the [Cache](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.         |
+| HUB_BASE_URL | The hub API base url.                                                                                                                                                              |
+| TASK         | The task id (to be acted on).                                                                                                                                                      |
+| TOKEN        | An authentication token for the hub API.                                                                                                                                           |
 
 #### Retention ####
 
 The pod associated with completed task is retained for a defined duration. After
 which, the pod is deleted to prevent leaking pod resources indefinitely.
 
-| State     | Retention (default) |
-|-----------|---------------------|
-| Succeeded | 1 (minute)          |
-| Failed    | 72 (hour)           |
+| State     | Retention (default)                                                                                |
+|-----------|----------------------------------------------------------------------------------------------------|
+| Succeeded | [Pod.Retention.Succeeded](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) |
+| Failed    | [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)    |
 
 #### Containers ####
 
@@ -281,9 +285,11 @@ valid while the task is running.
 A task may be reaped after existing in a state for the defined duration. 
 This is to prevent orphaned or stuck tasks from leaking resources such as buckets and files.
 
-| State     | Duration (default) | Action   |
-|-----------|--------------------|----------|
-| Created   | 72 (hour)          | Deleted  |
-| Succeeded | 72 (hour)          | Deleted  |
-| Failed    | 30 (day)           | Released |
+| State     | Duration (default)                                                                          | Action   |
+|-----------|---------------------------------------------------------------------------------------------|----------|
+| Created   | [Reaper.Created](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)   | Deleted  |
+| Succeeded | [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) | Deleted  |
+| Failed    | [Reaper.Failed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)    | Released |
 
+See [Reaper](https://github.com/konveyor/tackle2-hub/blob/main/reaper/README.md#tasks)
+settings for details.
