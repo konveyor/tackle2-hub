@@ -6,5 +6,11 @@ Tackle (2nd generation) hub component.
 
 <img src="https://github.com/konveyor/tackle2-hub/blob/main/arch.png" width="850" height="600">
 
+See [settings](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#settings)
+for configuration.
+
+The hub provides a REST API, inventory and
+[task manager](https://github.com/konveyor/tackle2-hub/blob/main/task/README.md#manager).
+
 ## Code of Conduct
 Refer to Konveyor's Code of Conduct [here](https://github.com/konveyor/community/blob/main/CODE_OF_CONDUCT.md).

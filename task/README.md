@@ -3,7 +3,8 @@
 
 ### Processing ###
 
-The manager processes tasks (default: 1 second) in a _main_ loop. 
+The manager processes tasks at an interval defined by the
+[Frequency.Task](https://github.com/konveyor/tackle2-hub/tree/main/settings#intervalsfrequencies) setting. 
 1. Fetch cluster resources using a k8s cached client.
 2. Process queued task delete and cancel requests.
 3. Delete orphaned pods. Orphans are pod within the namespace with task 
@@ -53,11 +54,14 @@ higher priority _ready_ task pod may be scheduled. Preemption is the act of kill
 the pod of a _running_ task, so that the higher _blocked_ task may be created/scheduled
 by the node-scheduler. A task is considered _blocked_ when it cannot be created due to
 a resource quota (state=QuotaBlocked) or cannot be scheduled by the node-scheduler
-(state=Pending) for a defined duration (default: 1 minute).
+(state=Pending) for a defined duration defined by the 
+[Preemption.Delayed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
 To trigger preemption, the _blocked_ task must have Policy.PreemptEnabled=TRUE. When
-the need for preemption is detected, the manger will preempt a percentage (default: 10%) of the 
-newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
-be postponed for a defined duration (default: 1 minute).
+the need for preemption is detected, the manger will preempt a percentage
+([Preemption.Rate](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)) 
+of the newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
+be postponed for a defined duration defined by the
+[Preemption.Postponed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
 When a task is preempted:
 1. The pod is deleted.
 2. The task state is reset to Ready.
@@ -93,24 +97,24 @@ following labels:
 
 The manager injects a few environment variables:
 
-| Name         | Definition                                                                                         |
-|--------------|----------------------------------------------------------------------------------------------------|
-| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. (default: /addon)                            |
-| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. (default: /shared) |
-| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. (default: /cache)         |
-| HUB_BASE_URL | The hub API base url.                                                                              |
-| TASK         | The task id (to be acted on).                                                                      |
-| TOKEN        | An authentication token for the hub API.                                                           |
+| Name         | Definition                                                                                                                                                                             |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. Defined by the [HomeDir](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.                              |
+| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. Defined by the [Shared.Path](https://github.com/konveyor/tackle2-hub/tree/main/settings#main) setting. |
+| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. Defined by the [Cache.Path](https://github.com/konveyor/tackle2-hub/tree/main/settings#main) setting.         |
+| HUB_BASE_URL | The hub API base url. Defined by the [Hub.URL](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.                                                                                                                                  |
+| TASK         | The task id (to be acted on).                                                                                                                                                          |
+| TOKEN        | An authentication token for the hub API.                                                                                                                                               |
 
 #### Retention ####
 
 The pod associated with completed task is retained for a defined duration. After
 which, the pod is deleted to prevent leaking pod resources indefinitely.
 
-| State     | Retention (default) |
-|-----------|---------------------|
-| Succeeded | 1 (minute)          |
-| Failed    | 72 (hour)           |
+| State     | Retention (default)                                                                                |
+|-----------|----------------------------------------------------------------------------------------------------|
+| Succeeded | [Pod.Retention.Succeeded](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) |
+| Failed    | [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)    |
 
 #### Containers ####
 
@@ -134,32 +138,32 @@ Tasks are used to execute Addons.
 
 `*` indicates reported by addon.
 
-| Name        | Definition                                                                                                         |
-|-------------|--------------------------------------------------------------------------------------------------------------------|
-| ID          | Unique identifier.                                                                                                 |
-| CreateTime  | The timestamp of when the task was created.                                                                        |
-| CreateUser  | The user (name) that created the task.                                                                             |
-| UpdateUser  | The user (name) that last updated the task.                                                                        |
-| Name        | The task mame (non-unique).                                                                                        |
-| Kind        | The kind references a Task (kind) CR by name.                                                                      |
-| Addon       | The addon to be executed. References an Addon CR by name. When not specified, the addon is selected based on kind. |
-| Extension   | The list of extensions to be injected into the addon pod as _sidecar_ containers.                                  |
-| State       | The task state.  See: _States_.                                                                                    |
-| Locator     | The task locator. An arbitrary user-defined value used for lookup.                                                 |
-| Priority    | The task execution priority. See: _Priority_.                                                                      |
-| Policy      | The task execution policy. Determines when task is postponed. See: _Policy_.                                       |
-| TTL         | The task Time-To-Live in each state. See: _TTL_.                                                                   |
-| Data        | The data provided to the addon. The schema is dictated by each addon. This may be _ANY_ document.                  |
-| Started     | The UTC timestamp when the task execution started.                                                                 |
-| Terminated  | The UTC timestamp when execution completed.                                                                        |
-| Errors      | A list of reported errors. See: _Errors_.                                                                          |
-| Events      | A list of reported task processing events. See: _Events_.                                                          |
-| Pod         | The fully qualified name of the pod created.                                                                       |
-| Retries     | The number of times failure to create a pod is retried. This does not include when blocked by resource quota.      |
-| Attached    | Files attached to the task.                                                                                        |
-| \*Activity  | The activity (log) entries are reported by the addon. Intended to reflect what the addon is doing.                 |
-| \*Total     | Progress: The total number of items to be completed by the addon.                                                  |
-| \*Completed | Progress: The number of items completed by the addon.                                                              | |
+| Name        | Definition                                                                                                                                      |
+|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| ID          | Unique identifier.                                                                                                                              |
+| CreateTime  | The timestamp of when the task was created.                                                                                                     |
+| CreateUser  | The user (name) that created the task.                                                                                                          |
+| UpdateUser  | The user (name) that last updated the task.                                                                                                     |
+| Name        | The task mame (non-unique).                                                                                                                     |
+| Kind        | The kind references a Task (kind) CR by name.                                                                                                   |
+| Addon       | The addon to be executed. References an Addon CR by name. When not specified, the addon is selected based on kind.                              |
+| Extension   | The list of extensions to be injected into the addon pod as _sidecar_ containers.                                                               |
+| State       | The task state.  See: [States](https://github.com/konveyor/tackle2-hub/tree/main/task#states).                                                  |
+| Locator     | The task locator. An arbitrary user-defined value used for lookup.                                                                              |
+| Priority    | The task execution priority. See: [Priority](https://github.com/konveyor/tackle2-hub/tree/main/task#priority).                                  |
+| Policy      | The task execution policy. Determines when task is postponed. See: [Policies](https://github.com/konveyor/tackle2-hub/tree/main/task#policies). | 
+| TTL         | The task Time-To-Live in each state. See: [TTL](https://github.com/konveyor/tackle2-hub/tree/main/task#ttl-time-to-live).                       |
+| Data        | The data provided to the addon. The schema is dictated by each addon. This may be _ANY_ document.                                               |
+| Started     | The UTC timestamp when the task execution started.                                                                                              |
+| Terminated  | The UTC timestamp when execution completed.                                                                                                     |
+| Errors      | A list of reported errors. See: [Errors](https://github.com/konveyor/tackle2-hub/tree/main/task#errors).                                        |
+| Events      | A list of reported task processing events. See: [Events](https://github.com/konveyor/tackle2-hub/tree/main/task#events).                        |
+| Pod         | The fully qualified name of the pod created.                                                                                                    |
+| Retries     | The number of times failure to create a pod is retried. This does not include when blocked by resource quota.                                   |
+| Attached    | Files attached to the task.                                                                                                                     |
+| \*Activity  | The activity (log) entries are reported by the addon. Intended to reflect what the addon is doing.                                              |
+| \*Total     | Progress: The total number of items to be completed by the addon.                                                                               |
+| \*Completed | Progress: The number of items completed by the addon.                                                                                           | |
 
 ### Events ###
 
@@ -202,17 +206,17 @@ Note: A task may complete with a state=Succeeded with errors.
 
 `*` indicates _terminal_ states.
 
-| State        | Definition                                                                                    |
-|:-------------|:----------------------------------------------------------------------------------------------|
-| Created      | The task has been created but not submitted.                                                  |
-| Ready        | The task has been submitted to the manager and will be scheduled for execution.               |
+| State        | Definition                                                                                      |
+|:-------------|:------------------------------------------------------------------------------------------------|
+| Created      | The task has been created but not submitted.                                                    |
+| Ready        | The task has been submitted to the manager and will be scheduled for execution.                 |
 | Postponed    | The task has been postponed until another task has completed based on task scheduling _policy_. |
-| QuotaBlocked | The task pod has been (temporarily) prevented from being created by k8s resource quota.       |
-| Pending      | The task pod has been created and awaiting k8s scheduling.                                    |
-| Running      | The task pod is running.                                                                      |
-| \*Succeeded  | The task pod successfully completed.                                                          |
-| \*Failed     | The task pod either failed to be started by k8s or completed with errors.                     |
-| \*Canceled   | The task has been canceled.                                                                   |
+| QuotaBlocked | The task pod has been (temporarily) prevented from being created by k8s resource quota.         |
+| Pending      | The task pod has been created and awaiting k8s scheduling.                                      |
+| Running      | The task pod is running.                                                                        |
+| \*Succeeded  | The task pod successfully completed.                                                            |
+| \*Failed     | The task pod either failed to be started by k8s or completed with errors.                       |
+| \*Canceled   | The task has been canceled.                                                                     |
 
 
 ### Policies ###
@@ -243,7 +247,7 @@ The `Task` CR defines a name kind of task. Each kind may define:
 
 An `Addon` CR defines a named addon (aka plugin). It defines functionality provide by an image to 
 be executed. The definition includes a container specification and selection criteria. An addon 
-may have extensions. See: _Extensions_.
+may have extensions. See: [_Extensions_](https://github.com/konveyor/tackle2-hub/tree/main/task#extensions).
 
 ### Selection ###
 
@@ -281,9 +285,11 @@ valid while the task is running.
 A task may be reaped after existing in a state for the defined duration. 
 This is to prevent orphaned or stuck tasks from leaking resources such as buckets and files.
 
-| State     | Duration (default) | Action   |
-|-----------|--------------------|----------|
-| Created   | 72 (hour)          | Deleted  |
-| Succeeded | 72 (hour)          | Deleted  |
-| Failed    | 30 (day)           | Released |
+| State     | Duration (default)                                                                          | Action   |
+|-----------|---------------------------------------------------------------------------------------------|----------|
+| Created   | [Reaper.Created](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)   | Deleted  |
+| Succeeded | [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) | Deleted  |
+| Failed    | [Reaper.Failed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)    | Released |
 
+See [Reaper](https://github.com/konveyor/tackle2-hub/blob/main/reaper/README.md#reaper)
+settings for details.

@@ -19,7 +19,8 @@ Buckets represent file trees and may be referenced by:
 - Task
 - TaskGroup
 
-TTL after orphaned (default: 1 minute).
+The TTL after orphaned is defined by the
+[Bucket.TTL](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#main) setting.
 
 ### Files ###
 
@@ -29,7 +30,8 @@ Files represent files and may be referenced by:
 - Target
 - Rule
 
-TTL after orphaned (default: 1 minute).
+The TTL after orphaned is defined by the
+[File.TTL](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#main) setting.
 
 ### Tasks ###
 
@@ -37,7 +39,8 @@ Tasks may be created then submitted in a _two-phase_ process. The reason is to s
 a workflow that involves uploading files into the task's bucket. To do this, the user
 must create the task, upload the files, then submit the task. To prevent leaking tasks
 that are created and never submitted, the reaper will delete tasks that have not been
-submitted after a defined period (default: 72 hours).
+submitted after a period defined by the
+[Reaper.Created](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 
 Submitted tasks are never reaped. As a result, there is a need for objects
 referenced by tasks to be reaped. Tasks reference:
@@ -50,9 +53,13 @@ reaped. Releasing simply means to remove the reference to allow them to be
 naturally reaped (garbage-collected).
 
 **Succeeded** tasks:
-- Released after a defined period (default: 72 hours).
-- Pod deleted after a defined period (default: 1 minute)
+- Released after a period defined by the
+  [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
+- Pod deleted after a period defined by the
+  [Pod.Renention.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 
 **Failed** tasks:
-- Released after a defined period (default: 30 days).
-- Pod deleted after a defined period (default 72 hours).
+- Released after a period defined by the
+  [Reaper.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
+- Pod deleted after a period defined by the
+  [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
