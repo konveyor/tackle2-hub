@@ -20,7 +20,7 @@ Buckets represent file trees and may be referenced by:
 - TaskGroup
 
 The TTL after orphaned is defined by the
-[Bucket.TTL](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#main) setting.
+[Bucket.TTL](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#main) setting.
 
 ### Files ###
 
@@ -31,7 +31,7 @@ Files represent files and may be referenced by:
 - Rule
 
 The TTL after orphaned is defined by the
-[File.TTL](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#main) setting.
+[File.TTL](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#main) setting.
 
 ### Tasks ###
 
@@ -40,7 +40,7 @@ a workflow that involves uploading files into the task's bucket. To do this, the
 must create the task, upload the files, then submit the task. To prevent leaking tasks
 that are created and never submitted, the reaper will delete tasks that have not been
 submitted after a period defined by the
-[Reaper.Created](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#task-manager) setting.
+[Reaper.Created](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 
 Submitted tasks are never reaped. As a result, there is a need for objects
 referenced by tasks to be reaped. Tasks reference:
@@ -54,12 +54,12 @@ naturally reaped (garbage-collected).
 
 **Succeeded** tasks:
 - Released after a period defined by the
-  [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#task-manager) setting.
+  [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 - Pod deleted after a period defined by the
-  [Pod.Renention.Succeeded](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#task-manager) setting.
+  [Pod.Renention.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 
 **Failed** tasks:
 - Released after a period defined by the
-  [Reaper.Failed](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#task-manager) setting.
+  [Reaper.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
 - Pod deleted after a period defined by the
-  [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/blob/ab4977d68c9e4a8e1d0189f296ef1bafc447b92d/settings/README.md#task-manager) setting.
+  [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting.
