@@ -97,14 +97,14 @@ following labels:
 
 The manager injects a few environment variables:
 
-| Name         | Definition                                                                                                                                                                         |
-|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. Defined by the [Home](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.                             |
-| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. Defined by the [Shared](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting. |
-| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. Defined by the [Cache](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.         |
-| HUB_BASE_URL | The hub API base url.                                                                                                                                                              |
-| TASK         | The task id (to be acted on).                                                                                                                                                      |
-| TOKEN        | An authentication token for the hub API.                                                                                                                                           |
+| Name         | Definition                                                                                                                                                                             |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ADDON_HOME   | Path to an EmptyDir mounted as the working directory. Defined by the [HomeDir](https://github.com/konveyor/tackle2-hub/tree/main/settings#addon) setting.                              |
+| SHARED_PATH  | Path to an EmptyDir mounted in all containers within the pod for sharing files. Defined by the [Shared.Path](https://github.com/konveyor/tackle2-hub/tree/main/settings#main) setting. |
+| CACHE_PATH   | Path to a volume mounted in all containers in all pods for cached files. Defined by the [Cache.Path](https://github.com/konveyor/tackle2-hub/tree/main/settings#main) setting.         |
+| HUB_BASE_URL | The hub API base url.                                                                                                                                                                  |
+| TASK         | The task id (to be acted on).                                                                                                                                                          |
+| TOKEN        | An authentication token for the hub API.                                                                                                                                               |
 
 #### Retention ####
 
