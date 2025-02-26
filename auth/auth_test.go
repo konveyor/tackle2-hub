@@ -193,6 +193,26 @@ func TestRequestPermitNotAuthenticated(t *testing.T) {
 	g.Expect(len(result.Scopes)).To(gomega.Equal(0))
 }
 
+func TestRequestPermitNotNotValid(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	Settings.Auth.Token.Key = "TestKey"
+	Hub = &Builtin{}
+	Remote = &_TestProvider{err: &NotValid{}}
+	//
+	// Permit
+	request := Request{
+		Token:  "ABCD",
+		Scope:  "things",
+		Method: "PUT",
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(result.Authenticated).To(gomega.BeFalse())
+	g.Expect(result.Authorized).To(gomega.BeFalse())
+	g.Expect(result.User).To(gomega.Equal(""))
+	g.Expect(len(result.Scopes)).To(gomega.Equal(0))
+}
+
 func TestRequestHubPermitNotAuthorized(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	Settings.Auth.Token.Key = "TestKey"
