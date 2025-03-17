@@ -1113,6 +1113,7 @@ func (h *ApplicationHandler) tagMap(
 	mp = make(map[uint][]model.ApplicationTag)
 	list := []model.ApplicationTag{}
 	db := h.DB(ctx)
+	db = h.preLoad(db, "Tag")
 	err = db.Find(&list, "ApplicationID", ids).Error
 	if err != nil {
 		return
