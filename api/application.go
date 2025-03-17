@@ -170,10 +170,10 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	}
 	resources := []Application{}
 	for i := range list {
-		app := &list[i]
+		m := &list[i]
 		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
 		r := Application{}
-		r.With(app, tagMap[app.ID])
+		r.With(m, tagMap[m.ID])
 		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
