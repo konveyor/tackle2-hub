@@ -1107,8 +1107,8 @@ func (h *ApplicationHandler) tagMap(
 	applications []model.Application) (mp map[uint][]model.ApplicationTag, err error) {
 	ids := []uint{}
 	for i := range applications {
-		app := &applications[i]
-		ids = append(ids, app.ID)
+		m := &applications[i]
+		ids = append(ids, m.ID)
 	}
 	mp = make(map[uint][]model.ApplicationTag)
 	list := []model.ApplicationTag{}
@@ -1117,8 +1117,8 @@ func (h *ApplicationHandler) tagMap(
 	if err != nil {
 		return
 	}
-	for _, tag := range list {
-		mp[tag.ApplicationID] = append(mp[tag.ApplicationID], tag)
+	for _, m := range list {
+		mp[m.ApplicationID] = append(mp[m.ApplicationID], m)
 	}
 	return
 }
