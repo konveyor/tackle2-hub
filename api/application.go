@@ -110,15 +110,11 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	tags := []model.ApplicationTag{}
-	db = h.preLoad(h.DB(ctx), clause.Associations)
-	result = db.Find(&tags, "ApplicationID = ?", id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	tagMap, err := h.tagMap(ctx, []model.Application{*m})
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-
 	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
@@ -132,7 +128,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 	}
 	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
 	r := Application{}
-	r.With(m, tags)
+	r.With(m, tagMap[m.ID])
 	err = r.WithResolver(resolver)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -156,7 +152,11 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
+	tagMap, err := h.tagMap(ctx, list)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
@@ -168,19 +168,12 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	resources := []Application{}
 	for i := range list {
-		tags := []model.ApplicationTag{}
-		db = h.preLoad(h.DB(ctx), clause.Associations)
-		result = db.Find(&tags, "ApplicationID = ?", list[i].ID)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
+		m := &list[i]
 		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
 		r := Application{}
-		r.With(&list[i], tags)
+		r.With(m, tagMap[m.ID])
 		err = r.WithResolver(resolver)
 		if err != nil {
 			_ = ctx.Error(err)
@@ -1106,6 +1099,29 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 
 	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// tagMap returns a map of applicationTags indexed by application id.
+func (h *ApplicationHandler) tagMap(
+	ctx *gin.Context,
+	applications []model.Application) (mp map[uint][]model.ApplicationTag, err error) {
+	ids := []uint{}
+	for i := range applications {
+		m := &applications[i]
+		ids = append(ids, m.ID)
+	}
+	mp = make(map[uint][]model.ApplicationTag)
+	list := []model.ApplicationTag{}
+	db := h.DB(ctx)
+	db = db.Joins("Tag")
+	err = db.Find(&list, "ApplicationID", ids).Error
+	if err != nil {
+		return
+	}
+	for _, m := range list {
+		mp[m.ApplicationID] = append(mp[m.ApplicationID], m)
+	}
+	return
 }
 
 // Application REST resource.
