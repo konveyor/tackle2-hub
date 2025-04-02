@@ -17,6 +17,19 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	constraint := "fk_BusinessService_Applications"
+	log.V(4).Info("Dropping constraint.", "constraint", constraint)
+	err = db.Migrator().DropConstraint(&model.Application{}, constraint)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	log.V(4).Info("Creating constraint.", "constraint", constraint)
+	err = db.Migrator().CreateConstraint(&model.Application{}, constraint)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	err = seed(db)
 	return
 }
