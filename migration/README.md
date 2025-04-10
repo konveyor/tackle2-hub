@@ -12,4 +12,17 @@ requires the intermediate migrations to be executed.
 
 #### Building a new migration.
 
-To create a new migration run: `$ make migration`.
+To create a new migration run:
+```
+$ make migration`.
+```
+
+#### Patch file.
+
+Within each migration/_vN_/model there is a `mod.patch` file used to document model changes.
+The file is genertaed using diff.
+Example:
+
+```
+$ diff -ruN --exclude=mod.patch migration/v15/model migration/v16/model > migration/v16/model/mod.patch
+```

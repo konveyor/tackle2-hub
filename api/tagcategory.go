@@ -211,7 +211,6 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 type TagCategory struct {
 	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
-	Username string `json:"username"`
 	Rank     uint   `json:"rank"`
 	Color    string `json:"colour"`
 	Tags     []Ref  `json:"tags"`
@@ -222,7 +221,6 @@ func (r *TagCategory) With(m *model.TagCategory) {
 	r.Resource.With(&m.Model)
 	r.ID = m.ID
 	r.Name = m.Name
-	r.Username = m.Username
 	r.Color = m.Color
 	for _, tag := range m.Tags {
 		ref := Ref{}
@@ -234,9 +232,8 @@ func (r *TagCategory) With(m *model.TagCategory) {
 // Model builds a model.
 func (r *TagCategory) Model() (m *model.TagCategory) {
 	m = &model.TagCategory{
-		Name:     r.Name,
-		Username: r.Username,
-		Color:    r.Color,
+		Name:  r.Name,
+		Color: r.Color,
 	}
 	m.ID = r.ID
 	return

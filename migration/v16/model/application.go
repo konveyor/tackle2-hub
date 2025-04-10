@@ -174,18 +174,16 @@ type Tag struct {
 	Model
 	UUID       *string `gorm:"uniqueIndex"`
 	Name       string  `gorm:"uniqueIndex:tagA;not null"`
-	Username   string
-	CategoryID uint `gorm:"uniqueIndex:tagA;index;not null"`
+	CategoryID uint    `gorm:"uniqueIndex:tagA;index;not null"`
 	Category   TagCategory
 }
 
 type TagCategory struct {
 	Model
-	UUID     *string `gorm:"uniqueIndex"`
-	Name     string  `gorm:"index;unique;not null"`
-	Username string
-	Color    string
-	Tags     []Tag `gorm:"foreignKey:CategoryID;constraint:OnDelete:CASCADE"`
+	UUID  *string `gorm:"uniqueIndex"`
+	Name  string  `gorm:"index;unique;not null"`
+	Color string
+	Tags  []Tag `gorm:"foreignKey:CategoryID;constraint:OnDelete:CASCADE"`
 }
 
 type Ticket struct {
