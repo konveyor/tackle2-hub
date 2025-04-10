@@ -223,7 +223,6 @@ func (r *TagCategory) With(m *model.TagCategory) {
 	r.ID = m.ID
 	r.Name = m.Name
 	r.Username = m.Username
-	r.Rank = m.Rank
 	r.Color = m.Color
 	for _, tag := range m.Tags {
 		ref := Ref{}
@@ -237,7 +236,6 @@ func (r *TagCategory) Model() (m *model.TagCategory) {
 	m = &model.TagCategory{
 		Name:     r.Name,
 		Username: r.Username,
-		Rank:     r.Rank,
 		Color:    r.Color,
 	}
 	m.ID = r.ID
