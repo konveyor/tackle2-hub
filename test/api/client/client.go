@@ -20,7 +20,7 @@ const (
 //	HUB_USERNAME, HUB_PASSWORD (optional, depends on Require Auth option in Konveyor installation)
 func PrepareRichClient() (richClient *binding.RichClient) {
 	// Prepare RichClient and login to Hub API
-	richClient = binding.New(settings.Settings.Addon.Hub.URL)
+	richClient = binding.New(os.Getenv(settings.EnvHubBaseURL))
 	err := richClient.Login(os.Getenv(Username), os.Getenv(Password))
 
 	if err != nil {
