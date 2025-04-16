@@ -6,6 +6,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
+	"k8s.io/utils/env"
 )
 
 const (
@@ -20,9 +21,13 @@ const (
 //	HUB_USERNAME, HUB_PASSWORD (optional, depends on Require Auth option in Konveyor installation)
 func PrepareRichClient() (richClient *binding.RichClient) {
 	// Prepare RichClient and login to Hub API
-	richClient = binding.New(settings.Settings.Addon.Hub.URL)
-	err := richClient.Login(os.Getenv(Username), os.Getenv(Password))
-
+	richClient = binding.New(
+		env.GetString(
+			settings.EnvHubBaseURL,
+			"http://localhost:8080"))
+	err := richClient.Login(
+		os.Getenv(Username),
+		os.Getenv(Password))
 	if err != nil {
 		panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
 	}

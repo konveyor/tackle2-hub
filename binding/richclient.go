@@ -3,20 +3,11 @@ package binding
 import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (
-	Settings = &settings.Settings
-	Log      = logr.WithName("binding")
+	Log = logr.WithName("binding")
 )
-
-func init() {
-	err := Settings.Load()
-	if err != nil {
-		panic(err)
-	}
-}
 
 // The RichClient provides API integration.
 type RichClient struct {
@@ -131,8 +122,6 @@ func New(baseURL string) (r *RichClient) {
 		},
 		Client: client,
 	}
-
-	Log.Info("Hub RichClient created.")
 
 	return
 }

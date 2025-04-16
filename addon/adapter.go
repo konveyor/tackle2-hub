@@ -33,7 +33,7 @@ var Addon *Adapter
 
 func init() {
 	unix.Umask(0)
-	err := Settings.Load()
+	err := Settings.Addon.Load()
 	if err != nil {
 		panic(err)
 	}
