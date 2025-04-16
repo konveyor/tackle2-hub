@@ -61,14 +61,12 @@ jobs:
         with:
           repository: konveyor/tackle2-seed
       - run: |
-          pwd
-          ls -Fal .
+          ln -s tackle2-seed/resources /tmp/seed
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v3
         with:
           go-version: '1.21'
       - run: |
-          ln -s tackle2-seed/resources /tmp/seed
           rm -f $DB_PATH
           make run &
           sleep 15  # probably a dirty solution
