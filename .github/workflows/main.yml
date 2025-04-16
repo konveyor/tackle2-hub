@@ -67,7 +67,7 @@ jobs:
           go-version: '1.21'
       - run: |
           ln -s tackle2-seed/resources /tmp/seed
-          ls -Fal /tmp/seed
+          ls -Fal tackle2-seed
           rm -f $DB_PATH
           make run &
           sleep 15  # probably a dirty solution
