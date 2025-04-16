@@ -58,10 +58,16 @@ jobs:
       DB_PATH: /tmp/hub.db
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: konveyor/tackle2-seed
+          path: tackle2-seed
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v3
         with:
           go-version: '1.21'
       - run: |
+          mkdir -p /tmp/seed
+          cp -r tackle2-seed/resources/* /tmp/seed/
           rm -f $DB_PATH
           make run &
           sleep 15  # probably a dirty solution

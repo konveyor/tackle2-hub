@@ -214,8 +214,8 @@ type TagCategory struct {
 	Color    string `json:"colour"`
 	Tags     []Ref  `json:"tags"`
 	// Deprecated
-	Username string `json:"username"` // Deprecated
-	Rank     uint   `json:"rank"`     // Deprecated
+	Username string `json:"username,omitempty"` // Deprecated
+	Rank     uint   `json:"rank,omitempty"`     // Deprecated
 }
 
 // With updates the resource with the model.
