@@ -306,7 +306,6 @@ func addTags(application *api.Application, source string, names ...string) (err 
 	tp := &api.TagCategory{
 		Name:  "DIRECTORY",
 		Color: "#2b9af3",
-		Rank:  3,
 	}
 	err = addon.TagCategory.Ensure(tp)
 	if err != nil {
@@ -341,7 +340,6 @@ func replaceTags(application *api.Application, source string, names ...string) (
 	tp := &api.TagCategory{
 		Name:  "DIRECTORY",
 		Color: "#2b9af3",
-		Rank:  3,
 	}
 	err = addon.TagCategory.Ensure(tp)
 	if err != nil {

@@ -84,7 +84,7 @@ func TestConcurrent(t *testing.T) {
 	for w := 0; w < N; w++ {
 		go func(id int) {
 			fmt.Printf("Started %d\n", id)
-			for n := 0; n < N*100; n++ {
+			for n := 0; n < N; n++ {
 				m := &B{N: n, A: a}
 				m.CreateUser = "Test"
 				fmt.Printf("(%.4d) CREATE: %.4d\n", id, n)

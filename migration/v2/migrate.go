@@ -30,9 +30,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-
-	model.Seed(db)
-
+	err = seed(db)
 	return
 }
 
