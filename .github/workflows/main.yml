@@ -62,7 +62,7 @@ jobs:
           repository: konveyor/tackle2-seed
       - run: |
           mkdir -p /tmp/seed
-          cp -r tackle2-seed/resources/* /tmp/seed
+          cp -r resources/* /tmp/seed
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v3
         with:
