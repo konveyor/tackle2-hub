@@ -50,6 +50,12 @@ type Resource struct {
 type User struct {
 	// Username
 	Name string `yaml:"name"`
+	// FirstName
+	FirstName string `yaml:"firstName"`
+	// LastName
+	LastName string `yaml:"lastName"`
+	// Email
+	Email string `yaml:"email"`
 	// Default password
 	Password string `yaml:"password"`
 	// List of roles specified by name

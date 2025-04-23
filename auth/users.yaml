@@ -1,4 +1,7 @@
 - name: admin
+  firstName: Admin Firstname
+  lastName: Admin Lastname
+  email: admin@host.local
   password: Passw0rd!
   roles:
     - tackle-admin

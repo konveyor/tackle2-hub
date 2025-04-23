@@ -180,6 +180,9 @@ func (r *Reconciler) ensureUsers(realm *Realm) (err error) {
 			u := gocloak.User{
 				Username: &user.Name,
 				Enabled:  &enabled,
+				FirstName: &user.FirstName,
+				LastName: &user.LastName,
+				Email: &user.Email,
 			}
 			if Settings.Keycloak.RequirePasswordUpdate {
 				u.RequiredActions = &[]string{"UPDATE_PASSWORD"}
