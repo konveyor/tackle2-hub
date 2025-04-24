@@ -1,6 +1,6 @@
 module github.com/konveyor/tackle2-hub
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Nerzal/gocloak/v13 v13.9.0
