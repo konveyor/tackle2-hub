@@ -1315,7 +1315,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 		"app.Name",
 		"app.Description",
 		"b.Name BusinessService",
-		"i.Effort",
+		"i.Effort * COUNT(n.ID) as Effort",
 		"COUNT(n.ID) Incidents",
 		"COUNT(distinct n.File) Files",
 		"i.ID IssueID",
@@ -1365,7 +1365,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 		r.Name = m.Name
 		r.Description = m.Description
 		r.BusinessService = m.BusinessService
-		r.Effort = m.Effort * m.Incidents
+		r.Effort = m.Effort
 		r.Incidents = m.Incidents
 		r.Files = m.Files
 		r.Issue.ID = m.IssueID
