@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/trigger"
-	"gorm.io/gorm/clause"
 )
 
 // Routes
@@ -130,8 +129,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	ref := &model.Identity{}
-	err = m.Encrypt(ref)
+	err = m.Encrypt()
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -187,14 +185,8 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	ref := &model.Identity{}
-	err = h.DB(ctx).Preload(clause.Associations).First(ref, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	m := r.Model()
-	err = m.Encrypt(ref)
+	err = m.Encrypt()
 	if err != nil {
 		_ = ctx.Error(err)
 		return

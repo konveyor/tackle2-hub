@@ -9,6 +9,7 @@ import (
 )
 
 // AES encryption.
+// Deprecated
 type AES struct {
 	// Key Length must be (12|24|32).
 	Key []byte
