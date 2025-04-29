@@ -4,10 +4,16 @@ import (
 	"reflect"
 )
 
+// Secret provides encryption of objects.
 type Secret struct {
 	Cipher Cipher
 }
 
+// Encrypt object.
+// When object is:
+// - *string - the string is encrypted.
+// - struct - (string) fields with `secret:` tag are encrypted.
+// - map[string]any - string fields are encrypted.
 func (r Secret) Encrypt(object any) (err error) {
 	err = r.Update(object, func(in string) (out string) {
 		if r.isEncrypted(r.Cipher, in) {
@@ -23,6 +29,11 @@ func (r Secret) Encrypt(object any) (err error) {
 	return
 }
 
+// Decrypt object.
+// When object is:
+// - *string - the string is decrypted.
+// - struct - (string) fields with `secret:` tag are decrypted.
+// - map[string]any - string fields are decrypted.
 func (r Secret) Decrypt(object any) (err error) {
 	err = r.Update(object, func(in string) (out string) {
 		out, err = r.Cipher.Decrypt(in)
@@ -34,6 +45,7 @@ func (r Secret) Decrypt(object any) (err error) {
 	return
 }
 
+// Update updates the specifeed
 func (r Secret) Update(object any, fn func(string) string) (err error) {
 	defer func() {
 		p := recover()
