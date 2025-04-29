@@ -13,12 +13,11 @@ var log = logr.WithName("migration|v15")
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-	err = db.AutoMigrate(r.Models()...)
+	err = r.dropColumns(db)
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
-	err = r.dropColumns(db)
+	err = db.AutoMigrate(r.Models()...)
 	return
 }
 
