@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// AESGCM encryption.
+// AESGCM Galois/Counter Mode encryption.
 type AESGCM struct {
 	// Key Length must be (16|24|32).
 	Key []byte

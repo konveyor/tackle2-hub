@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-// AESCFB encryption.
+// AESCFB Cipher Feedback (stream-like) encryption.
 // Deprecated
 type AESCFB struct {
 	// Key Length must be (12|24|32).
