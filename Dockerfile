@@ -4,8 +4,8 @@ FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
 RUN make docker
-ARG SEED_PROJECT=jortel/tackle2-seed
-ARG SEED_BRANCH=ruleset-patch-3
+ARG SEED_PROJECT=konveyor/tackle2-seed
+ARG SEED_BRANCH=main
 ARG SEED_ROOT
 RUN if [ ! -d "${SEED_ROOT}" ]; then \
       git clone --branch ${SEED_BRANCH} https://github.com/${SEED_PROJECT} ${SEED_ROOT}; \
