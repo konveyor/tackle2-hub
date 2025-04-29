@@ -11,6 +11,15 @@ func TestSecret(t *testing.T) {
 
 	secret := Secret{Passphrase: "test"}
 
+	//
+	// string
+	password := "broker"
+	err := secret.Encrypt(&password)
+	g.Expect(err).To(gomega.BeNil())
+	err = secret.Decrypt(&password)
+	g.Expect(err).To(gomega.BeNil())
+
+	//
 	// struct
 	object := struct {
 		Name     string
@@ -35,10 +44,11 @@ func TestSecret(t *testing.T) {
 			"k2": 2,
 		},
 	}
-	err := secret.Encrypt(&object)
+	err = secret.Encrypt(&object)
 	g.Expect(err).To(gomega.BeNil())
 	err = secret.Decrypt(&object)
 	g.Expect(err).To(gomega.BeNil())
+
 	//
 	// map
 	mp := map[string]any{
