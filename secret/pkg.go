@@ -1,4 +1,4 @@
-package encryption
+package secret
 
 import "github.com/konveyor/tackle2-hub/settings"
 

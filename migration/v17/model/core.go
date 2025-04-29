@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/encryption"
 	"github.com/konveyor/tackle2-hub/migration/json"
+	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
 
@@ -205,13 +205,13 @@ type Identity struct {
 
 // Encrypt secret fields.
 func (r *Identity) Encrypt() (err error) {
-	err = encryption.Encrypt(r)
+	err = secret.Encrypt(r)
 	return
 }
 
 // Decrypt secret fields.
 func (r *Identity) Decrypt() (err error) {
-	err = encryption.Decrypt(r)
+	err = secret.Decrypt(r)
 	return
 }
 
