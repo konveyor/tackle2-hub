@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/migration/json"
-	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
 
@@ -201,18 +200,6 @@ type Identity struct {
 	Settings     string        `secret:"aes"`
 	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
 	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
-}
-
-// Encrypt secret fields.
-func (r *Identity) Encrypt() (err error) {
-	err = secret.Encrypt(r)
-	return
-}
-
-// Decrypt secret fields.
-func (r *Identity) Decrypt() (err error) {
-	err = secret.Decrypt(r)
-	return
 }
 
 //

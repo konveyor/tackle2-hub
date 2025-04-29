@@ -5,6 +5,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	v16 "github.com/konveyor/tackle2-hub/migration/v16/model"
 	"github.com/konveyor/tackle2-hub/migration/v17/model"
+	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
 
@@ -44,12 +45,12 @@ func (r Migration) updateEncryption(db *gorm.DB) (err error) {
 		if err != nil {
 			return
 		}
-		updated := model.Identity{
+		updated := &model.Identity{
 			Password: m.Password,
 			Key:      m.Key,
 			Settings: m.Settings,
 		}
-		err = updated.Encrypt()
+		err = secret.Encrypt(updated)
 		if err != nil {
 			return
 		}
