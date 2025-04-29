@@ -9,7 +9,8 @@ import (
 func TestAES(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	aes := New("MyPassphrase")
+	aes := AESCFB{}
+	aes.Use("MyPassphrase")
 	plain := "ABCDEFGHIJKLMNOPQUSTUVQXYZ"
 	//
 	// Encrypt.

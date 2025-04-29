@@ -205,17 +205,13 @@ type Identity struct {
 
 // Encrypt secret fields.
 func (r *Identity) Encrypt() (err error) {
-	passphrase := Settings.Encryption.Passphrase
-	secret := encryption.Secret{Passphrase: passphrase}
-	err = secret.Encrypt(r)
+	err = encryption.Encrypt(r)
 	return
 }
 
 // Decrypt secret fields.
 func (r *Identity) Decrypt() (err error) {
-	passphrase := Settings.Encryption.Passphrase
-	secret := encryption.Secret{Passphrase: passphrase}
-	err = secret.Decrypt(r)
+	err = encryption.Decrypt(r)
 	return
 }
 

@@ -5,17 +5,15 @@ import (
 )
 
 type Secret struct {
-	Passphrase string
+	Cipher Cipher
 }
 
 func (r Secret) Encrypt(object any) (err error) {
-	en := &AESGCM{}
-	en.Use(r.Passphrase)
 	err = r.Update(object, func(in string) (out string) {
-		if r.isEncrypted(en, in) {
+		if r.isEncrypted(r.Cipher, in) {
 			out = in
 		} else {
-			out, err = en.Encrypt(in)
+			out, err = r.Cipher.Encrypt(in)
 			if err != nil {
 				panic(err)
 			}
@@ -26,10 +24,8 @@ func (r Secret) Encrypt(object any) (err error) {
 }
 
 func (r Secret) Decrypt(object any) (err error) {
-	en := &AESGCM{}
-	en.Use(r.Passphrase)
 	err = r.Update(object, func(in string) (out string) {
-		out, err = en.Decrypt(in)
+		out, err = r.Cipher.Decrypt(in)
 		if err != nil {
 			panic(err)
 		}
@@ -120,8 +116,8 @@ func (r Secret) hasTag(fv reflect.StructField) (found bool) {
 	return
 }
 
-func (r Secret) isEncrypted(en *AESGCM, v string) (encrypted bool) {
-	_, err := en.Decrypt(v)
+func (r Secret) isEncrypted(cipher Cipher, v string) (encrypted bool) {
+	_, err := cipher.Decrypt(v)
 	encrypted = err == nil
 	return
 }

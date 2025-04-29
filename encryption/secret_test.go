@@ -9,7 +9,9 @@ import (
 func TestSecret(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	secret := Secret{Passphrase: "test"}
+	cipher := AESGCM{}
+	cipher.Use("test")
+	secret := Secret{Cipher: &cipher}
 
 	//
 	// string

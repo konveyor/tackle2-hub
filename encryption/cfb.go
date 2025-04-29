@@ -8,16 +8,31 @@ import (
 	"io"
 )
 
-// AES encryption.
+// AESCFB encryption.
 // Deprecated
-type AES struct {
+type AESCFB struct {
 	// Key Length must be (12|24|32).
 	Key []byte
 }
 
+// Use Sets the key using the passphrase.
+// Only the first 32 bytes of the passphrase are used.
+func (r *AESCFB) Use(passphrase string) {
+	keyLen := 32
+	r.Key = make([]byte, keyLen)
+	input := []byte(passphrase)
+	for n := range input {
+		if n < keyLen {
+			r.Key[n] = input[n]
+		} else {
+			break
+		}
+	}
+}
+
 // Encrypt plain string.
-// Returns an AES encrypted; base64 encoded string.
-func (r *AES) Encrypt(plain string) (encrypted string, err error) {
+// Returns an AESCFB encrypted; base64 encoded string.
+func (r *AESCFB) Encrypt(plain string) (encrypted string, err error) {
 	if plain == "" {
 		encrypted = plain
 		return
@@ -38,10 +53,10 @@ func (r *AES) Encrypt(plain string) (encrypted string, err error) {
 	return
 }
 
-// Decrypt and AES encrypted string.
-// The `encrypted` string is an AES encrypted; base64 encoded string.
+// Decrypt and AESCFB encrypted string.
+// The `encrypted` string is an AESCFB encrypted; base64 encoded string.
 // Returns the decoded string.
-func (r *AES) Decrypt(encrypted string) (plain string, err error) {
+func (r *AESCFB) Decrypt(encrypted string) (plain string, err error) {
 	if encrypted == "" {
 		plain = encrypted
 		return
@@ -65,36 +80,14 @@ func (r *AES) Decrypt(encrypted string) (plain string, err error) {
 	return
 }
 
-// With Sets the key using the passphrase.
-// Only the first 32 bytes of the passphrase are used.
-func (r *AES) With(passphrase string) {
-	keyLen := 32
-	r.Key = make([]byte, keyLen)
-	input := []byte(passphrase)
-	for n := range input {
-		if n < keyLen {
-			r.Key[n] = input[n]
-		} else {
-			break
-		}
-	}
-}
-
 // encode string.
-func (r *AES) encode(in []byte) (out string) {
+func (r *AESCFB) encode(in []byte) (out string) {
 	out = base64.StdEncoding.EncodeToString(in)
 	return
 }
 
 // decode bytes.
-func (r *AES) decode(in string) (out []byte, err error) {
+func (r *AESCFB) decode(in string) (out []byte, err error) {
 	out, err = base64.StdEncoding.DecodeString(in)
-	return
-}
-
-// New AES encryptor for passphrase.
-func New(passphrase string) (n *AES) {
-	n = &AES{}
-	n.With(passphrase)
 	return
 }

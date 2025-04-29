@@ -39,7 +39,7 @@ func (r *AESGCM) Use(passphrase string) {
 }
 
 // Encrypt plain string.
-// Returns an AES-GCM encrypted; base64 encoded string.
+// Returns an AESCFB-GCM encrypted; base64 encoded string.
 func (r *AESGCM) Encrypt(plain string) (encrypted string, err error) {
 	if plain == "" {
 		encrypted = plain
@@ -64,8 +64,8 @@ func (r *AESGCM) Encrypt(plain string) (encrypted string, err error) {
 	return
 }
 
-// Decrypt and AES encrypted string.
-// The `encrypted` string is an AES-GCM encrypted; base64 encoded string.
+// Decrypt and AESCFB encrypted string.
+// The `encrypted` string is an AESCFB-GCM encrypted; base64 encoded string.
 // Returns the decoded string.
 func (r *AESGCM) Decrypt(encrypted string) (plain string, err error) {
 	if encrypted == "" {
