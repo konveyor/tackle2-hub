@@ -4,6 +4,10 @@ import "github.com/konveyor/tackle2-hub/settings"
 
 var Settings = &settings.Settings.Encryption
 
+var (
+	UseCipher Cipher = &AESGCM{}
+)
+
 type Cipher interface {
 	Use(string)
 	Encrypt(string) (string, error)
@@ -11,7 +15,7 @@ type Cipher interface {
 }
 
 func Encrypt(object any) (err error) {
-	cipher := &AESGCM{}
+	cipher := UseCipher
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Encrypt(object)
@@ -19,7 +23,7 @@ func Encrypt(object any) (err error) {
 }
 
 func Decrypt(object any) (err error) {
-	cipher := &AESGCM{}
+	cipher := UseCipher
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Decrypt(object)
