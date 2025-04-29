@@ -26,6 +26,7 @@ func (r *AESGCM) Use(passphrase string) {
 		return
 	}
 	i := 0
+	r.Key = []byte{}
 	for {
 		if i == pLen {
 			i = 0

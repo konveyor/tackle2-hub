@@ -4,10 +4,6 @@ import "github.com/konveyor/tackle2-hub/settings"
 
 var Settings = &settings.Settings.Encryption
 
-var (
-	UseCipher Cipher = &AESGCM{}
-)
-
 // Cipher implements encryption.
 type Cipher interface {
 	Use(string)
@@ -21,7 +17,7 @@ type Cipher interface {
 // - struct - (string) fields with `secret:` tag are encrypted.
 // - map[string]any - string fields are encrypted.
 func Encrypt(object any) (err error) {
-	cipher := UseCipher
+	cipher := &AESGCM{}
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Encrypt(object)
@@ -34,7 +30,7 @@ func Encrypt(object any) (err error) {
 // - struct - (string) fields with `secret:` tag are decrypted.
 // - map[string]any - string fields are decrypted.
 func Decrypt(object any) (err error) {
-	cipher := UseCipher
+	cipher := &AESGCM{}
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Decrypt(object)
