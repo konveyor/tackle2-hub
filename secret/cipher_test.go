@@ -40,4 +40,9 @@ func TestAESGCM(t *testing.T) {
 	decrypted, err := aes.Decrypt(encrypted)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(plain).To(gomega.Equal(decrypted))
+	//
+	// Decrypt incorrect key.
+	aes.Use("another")
+	decrypted, err = aes.Decrypt(encrypted)
+	g.Expect(err).ToNot(gomega.BeNil())
 }

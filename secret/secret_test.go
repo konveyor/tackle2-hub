@@ -12,14 +12,18 @@ func TestSecret(t *testing.T) {
 	cipher := AESGCM{}
 	cipher.Use("test")
 	secret := Secret{Cipher: &cipher}
+	name := "elmer"
+	user := "rfudd@warnerbrothers.com"
+	password := "rabbit-slayer"
 
 	//
 	// string
-	password := "broker"
-	err := secret.Encrypt(&password)
+	s := "hello"
+	err := secret.Encrypt(&s)
 	g.Expect(err).To(gomega.BeNil())
-	err = secret.Decrypt(&password)
+	err = secret.Decrypt(&s)
 	g.Expect(err).To(gomega.BeNil())
+	g.Expect("hello").To(gomega.Equal(s))
 
 	//
 	// struct
@@ -31,9 +35,9 @@ func TestSecret(t *testing.T) {
 		List     []string       `secret:""`
 		Map      map[string]any `secret:""`
 	}{
-		Name:     "elmer",
-		User:     "rfudd@warnerbrothers.com",
-		Password: "rabbit-slaye",
+		Name:     name,
+		User:     user,
+		Password: password,
 		Age:      52,
 		List: []string{
 			"A",
@@ -48,26 +52,41 @@ func TestSecret(t *testing.T) {
 	}
 	err = secret.Encrypt(&object)
 	g.Expect(err).To(gomega.BeNil())
+	g.Expect(name).To(gomega.Equal(object.Name))
+	g.Expect(user).ToNot(gomega.Equal(object.User))
+	g.Expect(password).ToNot(gomega.Equal(object.Password))
 	err = secret.Decrypt(&object)
 	g.Expect(err).To(gomega.BeNil())
+	g.Expect(name).To(gomega.Equal(object.Name))
+	g.Expect(user).To(gomega.Equal(object.User))
+	g.Expect(password).To(gomega.Equal(object.Password))
 
 	//
 	// map
+	a := "A"
 	mp := map[string]any{
 		"name":     "elmer",
-		"user":     "rfudd@warnerbrothers.com",
-		"password": "rabbit-slaye",
+		"user":     user,
+		"password": password,
 		"age":      52,
 		"list": []string{
-			"A",
+			a,
 			"B",
 			"C",
 		},
 	}
 	err = secret.Encrypt(mp)
 	g.Expect(err).To(gomega.BeNil())
+	g.Expect(name).ToNot(gomega.Equal(mp["name"]))
+	g.Expect(user).ToNot(gomega.Equal(mp["user"]))
+	g.Expect(password).ToNot(gomega.Equal(mp["password"]))
+	g.Expect(a).ToNot(gomega.Equal(mp["list"].([]string)[0]))
 	err = secret.Decrypt(mp)
 	g.Expect(err).To(gomega.BeNil())
+	g.Expect(name).To(gomega.Equal(mp["name"]))
+	g.Expect(user).To(gomega.Equal(mp["user"]))
+	g.Expect(password).To(gomega.Equal(mp["password"]))
+	g.Expect(a).To(gomega.Equal(mp["list"].([]string)[0]))
 }
 
 func TestPackage(t *testing.T) {
