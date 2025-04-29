@@ -25,11 +25,11 @@ func TestSecret(t *testing.T) {
 	// struct
 	object := struct {
 		Name     string
-		User     string `secret:"aes"`
-		Password string `secret:"aes"`
+		User     string `secret:""`
+		Password string `secret:""`
 		Age      int
-		List     []string       `secret:"aes"`
-		Map      map[string]any `secret:"aes"`
+		List     []string       `secret:""`
+		Map      map[string]any `secret:""`
 	}{
 		Name:     "elmer",
 		User:     "rfudd@warnerbrothers.com",
@@ -87,11 +87,11 @@ func TestPackage(t *testing.T) {
 	// struct
 	object := struct {
 		Name     string
-		User     string `secret:"aes"`
-		Password string `secret:"aes"`
+		User     string `secret:""`
+		Password string `secret:""`
 		Age      int
-		List     []string       `secret:"aes"`
-		Map      map[string]any `secret:"aes"`
+		List     []string       `secret:""`
+		Map      map[string]any `secret:""`
 	}{
 		Name:     "elmer",
 		User:     "rfudd@warnerbrothers.com",
