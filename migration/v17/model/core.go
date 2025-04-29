@@ -195,9 +195,9 @@ type Identity struct {
 	Name         string `gorm:"index;unique;not null"`
 	Description  string
 	User         string
-	Password     string        `secret:"aes"`
-	Key          string        `secret:"aes"`
-	Settings     string        `secret:"aes"`
+	Password     string        `secret:""`
+	Key          string        `secret:""`
+	Settings     string        `secret:""`
 	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
 	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
 }
