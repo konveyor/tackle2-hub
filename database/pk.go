@@ -52,6 +52,7 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 }
 
 // Next returns the next primary key.
+// Updates the LastID.
 func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -71,7 +72,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	return
 }
 
-// Assigned updates last PK.
+// Assigned updates LastID (as needed) when explicitly assigned.
 func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
