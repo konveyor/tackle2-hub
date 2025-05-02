@@ -71,6 +71,27 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	return
 }
 
+// Assigned updates last PK.
+func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	kind := strings.ToUpper(db.Statement.Table)
+	m := &model.PK{}
+	db = r.session(db)
+	err := db.First(m, "Kind", kind).Error
+	if err != nil {
+		return
+	}
+	if id > m.LastID {
+		m.LastID = id
+		err = db.Save(m).Error
+		if err != nil {
+			panic(err)
+		}
+	}
+	return
+}
+
 // session returns a new DB with a new session.
 func (r *PkSequence) session(in *gorm.DB) (out *gorm.DB) {
 	out = &gorm.DB{
@@ -123,16 +144,18 @@ func assignPk(db *gorm.DB) {
 				if f.Name != "ID" {
 					continue
 				}
-				_, isZero := f.ValueOf(
+				id, isZero := f.ValueOf(
 					statement.Context,
 					statement.ReflectValue.Index(i))
 				if isZero {
-					id := PK.Next(db)
+					id = PK.Next(db)
 					_ = f.Set(
 						statement.Context,
 						statement.ReflectValue.Index(i),
 						id)
 
+				} else {
+					PK.Assigned(db, id.(uint))
 				}
 				break
 			}
@@ -142,15 +165,17 @@ func assignPk(db *gorm.DB) {
 			if f.Name != "ID" {
 				continue
 			}
-			_, isZero := f.ValueOf(
+			id, isZero := f.ValueOf(
 				statement.Context,
 				statement.ReflectValue)
 			if isZero {
-				id := PK.Next(db)
+				id = PK.Next(db)
 				_ = f.Set(
 					statement.Context,
 					statement.ReflectValue,
 					id)
+			} else {
+				PK.Assigned(db, id.(uint))
 			}
 			break
 		}
