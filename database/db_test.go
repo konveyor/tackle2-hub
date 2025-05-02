@@ -181,7 +181,7 @@ func TestKeyGen(t *testing.T) {
 		return
 	}
 	// EXPLICIT id=10 created.
-	m := &model.Setting{Key: fmt.Sprintf("key-%d", 10), Value: 10}
+	m := &model.Setting{Key: "key-10", Value: 10}
 	m.ID = 10
 	err = db.Create(m).Error
 	if err != nil {
@@ -206,8 +206,8 @@ func TestKeyGen(t *testing.T) {
 	}
 	// id =12,13 by list.
 	list := []*model.Setting{
-		{Key: fmt.Sprintf("key-%d", 12), Value: 12},
-		{Key: fmt.Sprintf("key-%d", 13), Value: 13},
+		{Key: "key-12", Value: 12},
+		{Key: "key-13", Value: 13},
 	}
 	err = db.Create(&list).Error
 	if err != nil {
@@ -221,8 +221,8 @@ func TestKeyGen(t *testing.T) {
 	}
 	// EXPLICIT id=20,21 by list.
 	list = []*model.Setting{
-		{Model: model.Model{ID: 20}, Key: fmt.Sprintf("key-%d", 20), Value: 20},
-		{Model: model.Model{ID: 21}, Key: fmt.Sprintf("key-%d", 21), Value: 21},
+		{Model: model.Model{ID: 20}, Key: "key-20", Value: 20},
+		{Model: model.Model{ID: 21}, Key: "key-21", Value: 21},
 	}
 	err = db.Create(&list).Error
 	if err != nil {
@@ -234,8 +234,15 @@ func TestKeyGen(t *testing.T) {
 			return
 		}
 	}
+	// EXPLICIT id=14 should not update the PK catalog.
+	m = &model.Setting{Key: "key-14", Value: 14}
+	m.ID = 14
+	err = db.Save(m).Error
+	if err != nil {
+		panic(err)
+	}
 	// id=22 last one.
-	m = &model.Setting{Key: "Done", Value: 22}
+	m = &model.Setting{Key: "key-22", Value: 22}
 	err = db.Save(m).Error
 	if err != nil {
 		panic(err)
