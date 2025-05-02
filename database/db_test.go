@@ -180,7 +180,7 @@ func TestKeyGen(t *testing.T) {
 		t.Errorf("DELETED ids: 2,4,7 found.")
 		return
 	}
-	// id=10 created
+	// EXPLICIT id=10 created.
 	m := &model.Setting{Key: fmt.Sprintf("key-%d", 10), Value: 10}
 	m.ID = 10
 	err = db.Create(m).Error
@@ -219,7 +219,7 @@ func TestKeyGen(t *testing.T) {
 			return
 		}
 	}
-	// id =20,21 by list hard coded.
+	// EXPLICIT id=20,21 by list.
 	list = []*model.Setting{
 		{Model: model.Model{ID: 20}, Key: fmt.Sprintf("key-%d", 20), Value: 20},
 		{Model: model.Model{ID: 21}, Key: fmt.Sprintf("key-%d", 21), Value: 21},
