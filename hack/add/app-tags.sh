@@ -2,12 +2,6 @@
 
 host="${HOST:-localhost:8080}"
 
-#
-# Update application tags.
-# application id=1 must exist.
-# hint: run application.sh to create.
-#
-
 # Replace analysis tags.
 curl -X PUT "${host}/applications/1/tags?source=analysis" \
   -H 'Content-Type:application/x-yaml' \
