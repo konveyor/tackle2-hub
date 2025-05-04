@@ -3,9 +3,9 @@
 host="${HOST:-localhost:8080}"
 
 # ID to update (default:1)
-id="${1:-1}"
+task="${1:-1}"
 
-curl -X POST ${host}/tasks/${id}/report -d \
+curl -X POST ${host}/tasks/${task}/report -d \
 '{
     "updateUser": "tackle",
     "status": "Running",

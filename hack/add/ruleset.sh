@@ -2,7 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-id="${1:-1}"
+id="${1:-0}"
 file="${2:-1}"
 
 curl -X POST ${host}/rulesets \

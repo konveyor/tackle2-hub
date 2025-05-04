@@ -6,16 +6,16 @@ host="${HOST:-localhost:8080}"
 # pass Zero(0) for system assigned.
 id="${1:-0}"
 name="${2:-Test}"
-category="${3:-1}"
 
 # create category.
-curl -X POST ${host}/tags \
+curl -X POST ${host}/tagcategories \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
 -d \
 "
 id: ${id}
 name: ${name}
-category:
-  id: ${category}
+colour: #807ded
 "
+
+
