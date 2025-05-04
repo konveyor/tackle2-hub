@@ -18,5 +18,10 @@ cd ${dir}
 ./stakeholder.sh
 ./business-service.sh
 ./animals.sh
+./dependency.sh
+./fact.sh
 ./review.sh
-./taskgroup.sh
+./tag-category.sh
+./tag.sh
+./file.sh
+./ruleset.sh
