@@ -2,97 +2,28 @@
 
 host="${HOST:-localhost:8080}"
 
-#
-# Create zoo applications.
-# Identity id=1 must exist.
-# hint: run identity.sh.
-#
+# id (default: 1)
+# pass Zero(0) for system assigned.
+id="${1:-1}"
+name="${2:-Test}"
+repository="${2:-https://github.com/WASdev/sample.daytrader7.git}"
+businessService="${3:-1}"
 
-# create 'dog' application.
+# create application.
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
  -d \
-'
----
-name: Dog
-description: Dog application.
-businessService: 
-  id: 1
+"
+id: ${id}
+name: ${name}
+description: ${name} application.
+businessService:
+  id: ${businessService}
 repository:
     kind: git
-    url: https://github.com/WASdev/sample.daytrader7.git
-identities:
-  - id: 1
-  - id: 2
+    url: ${repository}
 tags:
   - id: 1
   - id: 16
-'
-
-# create 'Cat' application
-curl -X POST ${host}/applications \
-  -H 'Content-Type:application/x-yaml' \
-  -H 'Accept:application/x-yaml' \
- -d \
-'
----
-name: Cat
-description: Cat application.
-identities:
-  - id: 1
-tags:
-  - id: 1
-  - id: 2
-'
-
-# create 'Lion' application.
-curl -X POST ${host}/applications \
-  -H 'Content-Type:application/x-yaml' \
-  -H 'Accept:application/x-yaml' \
- -d \
-'
----
-name: Lion
-description: Lion application.
-identities:
-  - id: 1
-tags:
-  - id: 3
-  - id: 4
-'
-
-# create 'Tiger' application.
-curl -X POST ${host}/applications \
-  -H 'Content-Type:application/x-yaml' \
-  -H 'Accept:application/x-yaml' \
- -d \
-'
----
-name: Tiger
-description: Tiger application.
-identities:
-  - id: 1
-tags:
-  - id: 1
-  - id: 2
-  - id: 3
-  - id: 4
-'
-
-# create 'Bear' application.
-curl -X POST ${host}/applications \
-  -H 'Content-Type:application/x-yaml' \
-  -H 'Accept:application/x-yaml' \
- -d \
-'
----
-name: Bear
-description: Bear application, oh my!.
-identities:
-  - id: 1
-tags:
-  - id: 5
-  - id: 6
-'
-
+"

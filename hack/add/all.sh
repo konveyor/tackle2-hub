@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 host="localhost:8080"
 
 #######################################################
@@ -15,6 +17,6 @@ cd ${dir}
 ./stakeholder-group.sh
 ./stakeholder.sh
 ./business-service.sh
-./application.sh
+./animals.sh
 ./review.sh
 ./taskgroup.sh
