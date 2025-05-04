@@ -2,9 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-# id (default: 0)
-# pass Zero(0) for system assigned.
-id="${1:-0}"
+id="${1:-0}" # 0=assigned
 application="${2:-1}"
 
 curl -X POST ${host}/reviews \
