@@ -9,7 +9,7 @@ cd ${dir}
 ./stakeholder-group.sh
 ./stakeholder.sh
 ./business-service.sh
-./animals.sh
+./application.sh
 ./dependency.sh
 ./fact.sh
 ./review.sh
