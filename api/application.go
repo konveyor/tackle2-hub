@@ -822,7 +822,6 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
 	key := FactKey(ctx.Param(Key))
 	if key.Name() == "" {
 		h.FactReplace(ctx, key)
@@ -834,7 +833,6 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	m := &model.Fact{
 		Key:           key.Name(),
 		Source:        key.Source(),
@@ -842,6 +840,7 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		Value:         f.Value,
 	}
 	db := h.DB(ctx)
+	db = db.Clauses(clause.OnConflict{UpdateAll: true})
 	result = db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
