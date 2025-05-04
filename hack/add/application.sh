@@ -2,6 +2,13 @@
 
 host="${HOST:-localhost:8080}"
 
+#
+# Create zoo applications.
+# Identity id=1 must exist.
+# hint: run identity.sh.
+#
+
+# create 'dog' application.
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
@@ -23,6 +30,7 @@ tags:
   - id: 16
 '
 
+# create 'Cat' application
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
@@ -38,6 +46,7 @@ tags:
   - id: 2
 '
 
+# create 'Lion' application.
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
@@ -53,6 +62,7 @@ tags:
   - id: 4
 '
 
+# create 'Tiger' application.
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
@@ -70,6 +80,7 @@ tags:
   - id: 4
 '
 
+# create 'Bear' application.
 curl -X POST ${host}/applications \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
