@@ -171,7 +171,6 @@ func TestKeyGen(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 	var count int64
 	err = db.Model(&model.Setting{}).Where([]uint{2, 4, 7}).Count(&count).Error
 	if err != nil {
@@ -181,16 +180,74 @@ func TestKeyGen(t *testing.T) {
 		t.Errorf("DELETED ids: 2,4,7 found.")
 		return
 	}
-	// id=8 (next) created.
-	next := N
-	m := &model.Setting{Key: fmt.Sprintf("key-%d", next), Value: next}
+	// EXPLICIT id=10 created.
+	m := &model.Setting{Key: "key-10", Value: 10}
+	m.ID = 10
+	err = db.Create(m).Error
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("CREATED: %d\n", m.ID)
+	if uint(10) != m.ID {
+		t.Errorf("id:%d but expected: %d", m.ID, 10)
+		return
+	}
+	// id=11 (next) created.
+	next := uint(11)
+	m = &model.Setting{Key: fmt.Sprintf("key-%d", next), Value: next}
 	err = db.Create(m).Error
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("CREATED: %d/%d (next)\n", m.ID, next)
-	if uint(N) != m.ID {
+	if next != m.ID {
 		t.Errorf("id:%d but expected: %d", m.ID, next)
 		return
+	}
+	// id =12,13 by list.
+	list := []*model.Setting{
+		{Key: "key-12", Value: 12},
+		{Key: "key-13", Value: 13},
+	}
+	err = db.Create(&list).Error
+	if err != nil {
+		panic(err)
+	}
+	for id := range []uint{12, 13} {
+		if next != m.ID {
+			t.Errorf("id:%d but expected: %d", m.ID, id)
+			return
+		}
+	}
+	// EXPLICIT id=20,21 by list.
+	list = []*model.Setting{
+		{Model: model.Model{ID: 20}, Key: "key-20", Value: 20},
+		{Model: model.Model{ID: 21}, Key: "key-21", Value: 21},
+	}
+	err = db.Create(&list).Error
+	if err != nil {
+		panic(err)
+	}
+	for id := range []uint{20, 21} {
+		if next != m.ID {
+			t.Errorf("id:%d but expected: %d", m.ID, id)
+			return
+		}
+	}
+	// EXPLICIT id=14 should not update the PK catalog.
+	m = &model.Setting{Key: "key-14", Value: 14}
+	m.ID = 14
+	err = db.Save(m).Error
+	if err != nil {
+		panic(err)
+	}
+	// id=22 last one.
+	m = &model.Setting{Key: "key-22", Value: 22}
+	err = db.Save(m).Error
+	if err != nil {
+		panic(err)
+	}
+	if m.ID != 22 {
+		t.Errorf("id:%d but expected: %d", m.ID, 22)
 	}
 }
