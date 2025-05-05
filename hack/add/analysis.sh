@@ -3,7 +3,7 @@
 set -e
 
 host="${HOST:-localhost:8080}"
-appId="${1:-1}"
+appid="${1:-0}"
 nRuleSet="${2:-10}"
 nIssue="${3:-10}"
 nIncident="${4:-25}"

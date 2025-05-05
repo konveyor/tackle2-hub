@@ -2,25 +2,18 @@
 
 host="${HOST:-localhost:8080}"
 
-#
-# Categories
-#
+id="${1:-0}" # 0=system-assigned.
+name="${2:-Test}"
+category="${3:-1}"
 
-curl -X POST ${host}/tagcategories -d \
-'{
-    "name":"Testing",
-    "colour": "#807ded",
-    "rank": 0
-}' | jq -M .
-
-#
-# Tags
-#
-
-curl -X POST ${host}/tags -d \
-'{
-    "username": "tackle",
-    "name":"RHEL",
-    "category": {"id":1}
-}' | jq -M .
-
+# create category.
+curl -X POST ${host}/tags \
+  -H 'Content-Type:application/x-yaml' \
+  -H 'Accept:application/x-yaml' \
+-d \
+"
+id: ${id}
+name: ${name}
+category:
+  id: ${category}
+"

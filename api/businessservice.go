@@ -167,7 +167,7 @@ type BusinessService struct {
 	Resource    `yaml:",inline"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	Stakeholder *Ref   `json:"owner"`
+	Stakeholder *Ref   `json:"owner" yaml:"owner"`
 }
 
 // With updates the resource with the model.

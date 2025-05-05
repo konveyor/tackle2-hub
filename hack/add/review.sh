@@ -2,32 +2,20 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X POST ${host}/reviews -d \
-'{
-    "businessCriticality": 4,
-    "effortEstimate": "large",
-    "proposedAction": "proceed",
-    "workPriority": 1,
-    "comments": "This is good.",
-    "application": {"id":1}
-}' | jq -M .
+id="${1:-0}" # 0=system-assigned.
+application="${2:-1}"
 
-curl -X POST ${host}/reviews -d \
-'{
-    "businessCriticality": 4,
-    "effortEstimate": "small",
-    "proposedAction": "rehost",
-    "workPriority": 1,
-    "comments": "This is different.",
-    "application": {"id":2}
-}' | jq -M .
-
-curl -X POST ${host}/reviews -d \
-'{
-    "businessCriticality": 4,
-    "effortEstimate": "extra_large",
-    "proposedAction": "repurchase",
-    "workPriority": 1,
-    "comments": "This is hard.",
-    "application": {"id":3}
-}' | jq -M .
+curl -X POST ${host}/reviews \
+  -H 'Content-Type:application/x-yaml' \
+  -H 'Accept:application/x-yaml' \
+-d \
+"
+id: ${id}
+businessCriticality: 4
+effortEstimate: large
+proposedAction: proceed
+workPriority: 1
+comments: This is good.
+application:
+  id: ${application}
+"

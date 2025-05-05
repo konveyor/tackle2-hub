@@ -1,11 +1,5 @@
 #!/bin/bash
 
-host="localhost:8080"
-
-#######################################################
-# ALL
-#######################################################
-
 dir=`dirname $0`
 cd ${dir}
 
@@ -16,5 +10,10 @@ cd ${dir}
 ./stakeholder.sh
 ./business-service.sh
 ./application.sh
+./dependency.sh
+./fact.sh
 ./review.sh
-./taskgroup.sh
+./tag-category.sh
+./tag.sh
+./file.sh
+./ruleset.sh
