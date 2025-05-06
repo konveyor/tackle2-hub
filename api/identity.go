@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/secret"
 	"github.com/konveyor/tackle2-hub/trigger"
-	"gorm.io/gorm/clause"
 )
 
 // Routes
@@ -57,7 +57,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 	r := Identity{}
 	decrypted := ctx.GetBool(Decrypted)
 	if decrypted {
-		err := m.Decrypt()
+		err := secret.Decrypt(m)
 		if err != nil {
 			h.Status(ctx, http.StatusInternalServerError)
 			return
@@ -99,7 +99,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		r := Identity{}
 		m := &list[i]
 		if decrypted {
-			err := m.Decrypt()
+			err := secret.Decrypt(m)
 			if err != nil {
 				h.Status(ctx, http.StatusInternalServerError)
 				return
@@ -130,8 +130,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	ref := &model.Identity{}
-	err = m.Encrypt(ref)
+	err = secret.Encrypt(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -187,14 +186,8 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	ref := &model.Identity{}
-	err = h.DB(ctx).Preload(clause.Associations).First(ref, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	m := r.Model()
-	err = m.Encrypt(ref)
+	err = secret.Encrypt(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

@@ -13,7 +13,6 @@ PKG = ./addon/... \
       ./controller/... \
       ./cmd/... \
       ./database/... \
-      ./encryption/... \
       ./importer/... \
       ./k8s/... \
       ./metrics/... \
@@ -21,6 +20,7 @@ PKG = ./addon/... \
       ./model/... \
       ./nas/... \
       ./reaper/... \
+      ./secret/... \
       ./seed/... \
       ./settings/... \
       ./tar/... \

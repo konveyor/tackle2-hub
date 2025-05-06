@@ -14,6 +14,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/secret"
 )
 
 const IssueTypeEpic = "Epic"
@@ -34,7 +35,7 @@ type JiraConnector struct {
 // With updates the connector with the Tracker model.
 func (r *JiraConnector) With(t *model.Tracker) {
 	r.tracker = t
-	_ = r.tracker.Identity.Decrypt()
+	_ = secret.Decrypt(r.tracker.Identity)
 }
 
 // Create the ticket in Jira.

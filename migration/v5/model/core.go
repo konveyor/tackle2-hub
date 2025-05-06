@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/encryption"
+	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
 
@@ -272,7 +272,8 @@ type Identity struct {
 // have changed and need to be (re)encrypted.
 func (r *Identity) Encrypt(ref *Identity) (err error) {
 	passphrase := Settings.Encryption.Passphrase
-	aes := encryption.New(passphrase)
+	aes := secret.AESCFB{}
+	aes.Use(passphrase)
 	if r.Password != ref.Password {
 		if r.Password != "" {
 			r.Password, err = aes.Encrypt(r.Password)
@@ -306,7 +307,8 @@ func (r *Identity) Encrypt(ref *Identity) (err error) {
 // Decrypt sensitive fields.
 func (r *Identity) Decrypt() (err error) {
 	passphrase := Settings.Encryption.Passphrase
-	aes := encryption.New(passphrase)
+	aes := secret.AESCFB{}
+	aes.Use(passphrase)
 	if r.Password != "" {
 		r.Password, err = aes.Decrypt(r.Password)
 		if err != nil {
