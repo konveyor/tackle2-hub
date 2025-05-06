@@ -174,10 +174,10 @@ definitions:
         description: read only
         type: string
       riskMessages:
-        $ref: '#/definitions/assessment.RiskMessages'
+        $ref: '#/definitions/api.RiskMessages'
       sections:
         items:
-          $ref: '#/definitions/assessment.Section'
+          $ref: '#/definitions/api.Section'
         type: array
       stakeholderGroups:
         items:
@@ -190,7 +190,7 @@ definitions:
       status:
         type: string
       thresholds:
-        $ref: '#/definitions/assessment.Thresholds'
+        $ref: '#/definitions/api.Thresholds'
       updateUser:
         type: string
     required:
@@ -331,17 +331,13 @@ definitions:
         type: string
       value: {}
     type: object
-  api.FactMap:
-    additionalProperties: {}
-    type: object
-  api.Fields:
-    additionalProperties: {}
-    type: object
   api.File:
     properties:
       createTime:
         type: string
       createUser:
+        type: string
+      encoding:
         type: string
       expiration:
         type: string
@@ -428,7 +424,7 @@ definitions:
       createUser:
         type: string
       facts:
-        $ref: '#/definitions/api.FactMap'
+        $ref: '#/definitions/api.Map'
       file:
         type: string
       id:
@@ -457,7 +453,7 @@ definitions:
       effort:
         type: integer
       facts:
-        $ref: '#/definitions/api.FactMap'
+        $ref: '#/definitions/api.Map'
       id:
         type: integer
       incidents:
@@ -569,13 +565,6 @@ definitions:
     required:
     - name
     type: object
-  api.Label:
-    properties:
-      label:
-        type: string
-      name:
-        type: string
-    type: object
   api.Link:
     properties:
       title:
@@ -595,6 +584,9 @@ definitions:
         type: string
       user:
         type: string
+    type: object
+  api.Map:
+    additionalProperties: {}
     type: object
   api.MigrationWave:
     properties:
@@ -680,14 +672,14 @@ definitions:
       required:
         type: boolean
       riskMessages:
-        $ref: '#/definitions/assessment.RiskMessages'
+        $ref: '#/definitions/api.RiskMessages'
       sections:
         items:
-          $ref: '#/definitions/assessment.Section'
+          $ref: '#/definitions/api.Section'
         minItems: 1
         type: array
       thresholds:
-        $ref: '#/definitions/assessment.Thresholds'
+        $ref: '#/definitions/api.Thresholds'
       updateUser:
         type: string
     required:
@@ -742,6 +734,17 @@ definitions:
         type: string
       workPriority:
         type: integer
+    type: object
+  api.RiskMessages:
+    properties:
+      green:
+        type: string
+      red:
+        type: string
+      unknown:
+        type: string
+      yellow:
+        type: string
     type: object
   api.Rule:
     properties:
@@ -825,6 +828,27 @@ definitions:
           type: string
         type: array
       version:
+        type: string
+    type: object
+  api.Section:
+    properties:
+      comment:
+        type: string
+      name:
+        type: string
+      order:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Question'
+        minItems: 1
+        type: array
+    type: object
+  api.Service:
+    properties:
+      name:
+        type: string
+      route:
         type: string
     type: object
   api.Setting:
@@ -951,6 +975,7 @@ definitions:
       name:
         type: string
       rank:
+        description: Deprecated
         type: integer
       tags:
         items:
@@ -959,6 +984,7 @@ definitions:
       updateUser:
         type: string
       username:
+        description: Deprecated
         type: string
     required:
     - name
@@ -994,7 +1020,7 @@ definitions:
         $ref: '#/definitions/api.Ref'
       labels:
         items:
-          $ref: '#/definitions/api.Label'
+          $ref: '#/definitions/api.TargetLabel'
         type: array
       name:
         type: string
@@ -1003,6 +1029,13 @@ definitions:
       ruleset:
         $ref: '#/definitions/api.RuleSet'
       updateUser:
+        type: string
+    type: object
+  api.TargetLabel:
+    properties:
+      label:
+        type: string
+      name:
         type: string
     type: object
   api.Task:
@@ -1062,6 +1095,35 @@ definitions:
         type: string
       ttl:
         $ref: '#/definitions/api.TTL'
+      updateUser:
+        type: string
+    type: object
+  api.TaskDashboard:
+    properties:
+      addon:
+        type: string
+      application:
+        $ref: '#/definitions/api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      errors:
+        type: integer
+      id:
+        type: integer
+      kind:
+        type: string
+      locator:
+        type: string
+      name:
+        type: string
+      started:
+        type: string
+      state:
+        type: string
+      terminated:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1135,6 +1197,8 @@ definitions:
         type: integer
       postponed:
         type: integer
+      quotaBlocked:
+        type: integer
       ready:
         type: integer
       running:
@@ -1203,6 +1267,15 @@ definitions:
     required:
     - name
     type: object
+  api.Thresholds:
+    properties:
+      red:
+        type: integer
+      unknown:
+        type: integer
+      yellow:
+        type: integer
+    type: object
   api.Ticket:
     properties:
       application:
@@ -1214,7 +1287,7 @@ definitions:
       error:
         type: boolean
       fields:
-        $ref: '#/definitions/api.Fields'
+        $ref: '#/definitions/api.Map'
       id:
         type: integer
       kind:
@@ -1293,15 +1366,15 @@ definitions:
       positionY:
         type: integer
     type: object
-  assessment.Answer:
+  github_com_konveyor_tackle2-hub_migration_v16_model.Answer:
     properties:
       applyTags:
         items:
-          $ref: '#/definitions/assessment.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
         type: array
       autoAnswerFor:
         items:
-          $ref: '#/definitions/assessment.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
         type: array
       autoAnswered:
         type: boolean
@@ -1322,75 +1395,35 @@ definitions:
         type: boolean
       text:
         type: string
-    required:
-    - order
     type: object
-  assessment.CategorizedTag:
+  github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag:
     properties:
       category:
         type: string
       tag:
         type: string
     type: object
-  assessment.Question:
+  github_com_konveyor_tackle2-hub_migration_v16_model.Question:
     properties:
       answers:
         items:
-          $ref: '#/definitions/assessment.Answer'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Answer'
         minItems: 1
         type: array
       excludeFor:
         items:
-          $ref: '#/definitions/assessment.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
         type: array
       explanation:
         type: string
       includeFor:
         items:
-          $ref: '#/definitions/assessment.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
         type: array
       order:
         type: integer
       text:
         type: string
-    required:
-    - order
-    type: object
-  assessment.RiskMessages:
-    properties:
-      green:
-        type: string
-      red:
-        type: string
-      unknown:
-        type: string
-      yellow:
-        type: string
-    type: object
-  assessment.Section:
-    properties:
-      comment:
-        type: string
-      name:
-        type: string
-      order:
-        type: integer
-      questions:
-        items:
-          $ref: '#/definitions/assessment.Question'
-        minItems: 1
-        type: array
-    required:
-    - order
-    type: object
-  assessment.Thresholds:
-    properties:
-      red:
-        type: integer
-      unknown:
-        type: integer
-      yellow:
-        type: integer
     type: object
   intstr.IntOrString:
     properties:
@@ -2882,9 +2915,20 @@ paths:
       description: |-
         Create an analysis.
         Form fields:
-        - file: file that contains the api.Analysis resource.
-        - issues: file that multiple api.Issue resources.
-        - dependencies: file that multiple api.TechDependency resources.
+        file: A manifest file that contains 3 sections
+        containing documents delimited by markers.
+        The manifest must contain ALL markers even when sections are empty.
+        Note: `^]` = `\x1D` = GS (group separator).
+        Section markers:
+        ^]BEGIN-MAIN^]
+        ^]END-MAIN^]
+        ^]BEGIN-ISSUES^]
+        ^]END-ISSUES^]
+        ^]BEGIN-DEPS^]
+        ^]END-DEPS^]
+        The encoding must be:
+        - application/json
+        - application/x-yaml
       parameters:
       - description: Application ID
         in: path
@@ -3346,7 +3390,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.FactMap'
+            $ref: '#/definitions/api.Map'
       summary: List facts.
       tags:
       - applications
@@ -3370,7 +3414,7 @@ paths:
         name: factmap
         required: true
         schema:
-          $ref: '#/definitions/api.FactMap'
+          $ref: '#/definitions/api.Map'
       responses:
         "204":
           description: No Content
@@ -5015,6 +5059,19 @@ paths:
       summary: Get the API schema.
       tags:
       - schema
+  /services:
+    get:
+      description: List named service routes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Service'
+      summary: List named service routes.
+      tags:
+      - services
   /settings:
     get:
       description: List all settings.
@@ -5797,9 +5854,16 @@ paths:
   /tasks:
     get:
       description: |-
-        Queued queued task report.
+        List all task dashboard resources.
         Filters:
+        - kind
+        - createUser
         - addon
+        - name
+        - locator
+        - state
+        - application.id
+        - application.name
       produces:
       - application/json
       responses:
@@ -5807,9 +5871,9 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TaskQueue'
+              $ref: '#/definitions/api.TaskDashboard'
             type: array
-      summary: Queued queued task report.
+      summary: List all task dashboard resources.
       tags:
       - tasks
     post:
@@ -6083,6 +6147,34 @@ paths:
         "200":
           description: OK
       summary: Submit a task.
+      tags:
+      - tasks
+  /tasks/cancel/list:
+    put:
+      description: |-
+        Cancel tasks matched by the filter.
+        Caution: an empty filter matches all tasks.
+        Filters:
+        - id
+        - name
+        - locator
+        - kind
+        - addon
+        - state
+        - application.id
+      parameters:
+      - description: List of Task IDs
+        in: body
+        name: tasks
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      responses:
+        "202":
+          description: Accepted
+      summary: Cancel tasks matched by the filter.
       tags:
       - tasks
   /tickets:

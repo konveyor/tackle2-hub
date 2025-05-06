@@ -548,7 +548,7 @@ const docTemplate = `{
         },
         "/application/{id}/analyses": {
             "post": {
-                "description": "Create an analysis.\nForm fields:\n- file: file that contains the api.Analysis resource.\n- issues: file that multiple api.Issue resources.\n- dependencies: file that multiple api.TechDependency resources.",
+                "description": "Create an analysis.\nForm fields:\nfile: A manifest file that contains 3 sections\ncontaining documents delimited by markers.\nThe manifest must contain ALL markers even when sections are empty.\nNote: ` + "`" + `^]` + "`" + ` = ` + "`" + `\\x1D` + "`" + ` = GS (group separator).\nSection markers:\n^]BEGIN-MAIN^]\n^]END-MAIN^]\n^]BEGIN-ISSUES^]\n^]END-ISSUES^]\n^]BEGIN-DEPS^]\n^]END-DEPS^]\nThe encoding must be:\n- application/json\n- application/x-yaml",
                 "produces": [
                     "application/json"
                 ],
@@ -1202,7 +1202,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.FactMap"
+                            "$ref": "#/definitions/api.Map"
                         }
                     }
                 }
@@ -1234,7 +1234,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.FactMap"
+                            "$ref": "#/definitions/api.Map"
                         }
                     }
                 ],
@@ -3697,6 +3697,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/services": {
+            "get": {
+                "description": "List named service routes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "List named service routes.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Service"
+                        }
+                    }
+                }
+            }
+        },
         "/settings": {
             "get": {
                 "description": "List all settings.",
@@ -4873,21 +4893,21 @@ const docTemplate = `{
         },
         "/tasks": {
             "get": {
-                "description": "Queued queued task report.\nFilters:\n- addon",
+                "description": "List all task dashboard resources.\nFilters:\n- kind\n- createUser\n- addon\n- name\n- locator\n- state\n- application.id\n- application.name",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Queued queued task report.",
+                "summary": "List all task dashboard resources.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TaskQueue"
+                                "$ref": "#/definitions/api.TaskDashboard"
                             }
                         }
                     }
@@ -4922,6 +4942,34 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Task"
                         }
+                    }
+                }
+            }
+        },
+        "/tasks/cancel/list": {
+            "put": {
+                "description": "Cancel tasks matched by the filter.\nCaution: an empty filter matches all tasks.\nFilters:\n- id\n- name\n- locator\n- kind\n- addon\n- state\n- application.id",
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Cancel tasks matched by the filter.",
+                "parameters": [
+                    {
+                        "description": "List of Task IDs",
+                        "name": "tasks",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted"
                     }
                 }
             }
@@ -5912,12 +5960,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "riskMessages": {
-                    "$ref": "#/definitions/assessment.RiskMessages"
+                    "$ref": "#/definitions/api.RiskMessages"
                 },
                 "sections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assessment.Section"
+                        "$ref": "#/definitions/api.Section"
                     }
                 },
                 "stakeholderGroups": {
@@ -5936,7 +5984,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/assessment.Thresholds"
+                    "$ref": "#/definitions/api.Thresholds"
                 },
                 "updateUser": {
                     "type": "string"
@@ -6149,14 +6197,6 @@ const docTemplate = `{
                 "value": {}
             }
         },
-        "api.FactMap": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "api.Fields": {
-            "type": "object",
-            "additionalProperties": {}
-        },
         "api.File": {
             "type": "object",
             "properties": {
@@ -6164,6 +6204,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "createUser": {
+                    "type": "string"
+                },
+                "encoding": {
                     "type": "string"
                 },
                 "expiration": {
@@ -6294,7 +6337,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "facts": {
-                    "$ref": "#/definitions/api.FactMap"
+                    "$ref": "#/definitions/api.Map"
                 },
                 "file": {
                     "type": "string"
@@ -6344,7 +6387,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "facts": {
-                    "$ref": "#/definitions/api.FactMap"
+                    "$ref": "#/definitions/api.Map"
                 },
                 "id": {
                     "type": "integer"
@@ -6508,17 +6551,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Label": {
-            "type": "object",
-            "properties": {
-                "label": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "api.Link": {
             "type": "object",
             "properties": {
@@ -6549,6 +6581,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "api.Map": {
+            "type": "object",
+            "additionalProperties": {}
         },
         "api.MigrationWave": {
             "type": "object",
@@ -6682,17 +6718,17 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "riskMessages": {
-                    "$ref": "#/definitions/assessment.RiskMessages"
+                    "$ref": "#/definitions/api.RiskMessages"
                 },
                 "sections": {
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/assessment.Section"
+                        "$ref": "#/definitions/api.Section"
                     }
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/assessment.Thresholds"
+                    "$ref": "#/definitions/api.Thresholds"
                 },
                 "updateUser": {
                     "type": "string"
@@ -6768,6 +6804,23 @@ const docTemplate = `{
                 },
                 "workPriority": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.RiskMessages": {
+            "type": "object",
+            "properties": {
+                "green": {
+                    "type": "string"
+                },
+                "red": {
+                    "type": "string"
+                },
+                "unknown": {
+                    "type": "string"
+                },
+                "yellow": {
+                    "type": "string"
                 }
             }
         },
@@ -6895,6 +6948,38 @@ const docTemplate = `{
                     }
                 },
                 "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Section": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "questions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Question"
+                    }
+                }
+            }
+        },
+        "api.Service": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "route": {
                     "type": "string"
                 }
             }
@@ -7089,6 +7174,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rank": {
+                    "description": "Deprecated",
                     "type": "integer"
                 },
                 "tags": {
@@ -7101,6 +7187,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "description": "Deprecated",
                     "type": "string"
                 }
             }
@@ -7152,7 +7239,7 @@ const docTemplate = `{
                 "labels": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Label"
+                        "$ref": "#/definitions/api.TargetLabel"
                     }
                 },
                 "name": {
@@ -7165,6 +7252,17 @@ const docTemplate = `{
                     "$ref": "#/definitions/api.RuleSet"
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TargetLabel": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -7253,6 +7351,50 @@ const docTemplate = `{
                 },
                 "ttl": {
                     "$ref": "#/definitions/api.TTL"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TaskDashboard": {
+            "type": "object",
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "locator": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "terminated": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -7366,6 +7508,9 @@ const docTemplate = `{
                 "postponed": {
                     "type": "integer"
                 },
+                "quotaBlocked": {
+                    "type": "integer"
+                },
                 "ready": {
                     "type": "integer"
                 },
@@ -7469,6 +7614,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.Thresholds": {
+            "type": "object",
+            "properties": {
+                "red": {
+                    "type": "integer"
+                },
+                "unknown": {
+                    "type": "integer"
+                },
+                "yellow": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.Ticket": {
             "type": "object",
             "required": [
@@ -7491,7 +7650,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "fields": {
-                    "$ref": "#/definitions/api.Fields"
+                    "$ref": "#/definitions/api.Map"
                 },
                 "id": {
                     "type": "integer"
@@ -7602,22 +7761,19 @@ const docTemplate = `{
                 }
             }
         },
-        "assessment.Answer": {
+        "github_com_konveyor_tackle2-hub_migration_v16_model.Answer": {
             "type": "object",
-            "required": [
-                "order"
-            ],
             "properties": {
                 "applyTags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assessment.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
                     }
                 },
                 "autoAnswerFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assessment.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
                     }
                 },
                 "autoAnswered": {
@@ -7649,7 +7805,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assessment.CategorizedTag": {
+        "github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag": {
             "type": "object",
             "properties": {
                 "category": {
@@ -7660,23 +7816,20 @@ const docTemplate = `{
                 }
             }
         },
-        "assessment.Question": {
+        "github_com_konveyor_tackle2-hub_migration_v16_model.Question": {
             "type": "object",
-            "required": [
-                "order"
-            ],
             "properties": {
                 "answers": {
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/assessment.Answer"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Answer"
                     }
                 },
                 "excludeFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assessment.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
                     }
                 },
                 "explanation": {
@@ -7685,7 +7838,7 @@ const docTemplate = `{
                 "includeFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assessment.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
                     }
                 },
                 "order": {
@@ -7693,61 +7846,6 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
-                }
-            }
-        },
-        "assessment.RiskMessages": {
-            "type": "object",
-            "properties": {
-                "green": {
-                    "type": "string"
-                },
-                "red": {
-                    "type": "string"
-                },
-                "unknown": {
-                    "type": "string"
-                },
-                "yellow": {
-                    "type": "string"
-                }
-            }
-        },
-        "assessment.Section": {
-            "type": "object",
-            "required": [
-                "order"
-            ],
-            "properties": {
-                "comment": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "order": {
-                    "type": "integer"
-                },
-                "questions": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/assessment.Question"
-                    }
-                }
-            }
-        },
-        "assessment.Thresholds": {
-            "type": "object",
-            "properties": {
-                "red": {
-                    "type": "integer"
-                },
-                "unknown": {
-                    "type": "integer"
-                },
-                "yellow": {
-                    "type": "integer"
                 }
             }
         },
