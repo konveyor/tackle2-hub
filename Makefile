@@ -1,6 +1,7 @@
 GOPATH ?= $(HOME)/go
 GOBIN ?= $(GOPATH)/bin
 GOIMPORTS = $(GOBIN)/goimports
+GOSWAG = $(GOBIN)/swag
 CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
@@ -86,6 +87,10 @@ $(CONTROLLERGEN):
 $(GOIMPORTS):
 	go install golang.org/x/tools/cmd/goimports@v0.24
 
+# Ensure swag installed.
+$(GOSWAG):
+	go install github.com/swaggo/swag/cmd/swag@latest
+
 # Build SAMPLE ADDON
 addon: fmt vet
 	go build -o bin/addon github.com/konveyor/tackle2-hub/hack/cmd/addon
@@ -93,8 +98,8 @@ addon: fmt vet
 docs: docs-html docs-openapi3 docs-binding
 
 # Build Swagger API spec into ./docs directory
-docs-swagger:
-	$(GOBIN)/swag init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir api,assessment
+docs-swagger: $(GOSWAG)
+	$(GOSWAG) init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir api,assessment
 
 # Build OpenAPI 3.0 docs
 docs-openapi3: docs-swagger
