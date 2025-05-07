@@ -699,7 +699,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 // @description see api.FactKey for details on key parameter format.
 // @tags applications
 // @produce json
-// @success 200 {object} api.FactMap
+// @success 200 {object} api.Map
 // @router /applications/{id}/facts/{source}: [get]
 // @param id path int true "Application ID"
 // @param source path string true "Source key"
@@ -891,7 +891,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 // @router /applications/{id}/facts/{source}: [put]
 // @param id path int true "Application ID"
 // @param source path string true "Fact key"
-// @param factmap body api.FactMap true "Fact map"
+// @param factmap body api.Map true "Fact map"
 func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
 	facts := Map{}
