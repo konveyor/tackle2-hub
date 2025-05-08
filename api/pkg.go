@@ -32,6 +32,12 @@ const (
 	Filter    = filter.QueryParam
 	Wildcard  = "wildcard"
 	FileField = "file"
+	Decrypted = "decrypted"
+)
+
+// Scopes
+const (
+	MethodDecrypt = "decrypt"
 )
 
 // Headers

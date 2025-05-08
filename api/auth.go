@@ -120,6 +120,9 @@ func Required(scope string) func(*gin.Context) {
 			return
 		}
 		rtx.User = result.User
-		rtx.Scopes = result.Scopes
+		rtx.Scope.Granted = result.Scopes
+		rtx.Scope.Required = append(
+			rtx.Scope.Required,
+			scope)
 	}
 }

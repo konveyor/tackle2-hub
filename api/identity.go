@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
@@ -18,8 +17,7 @@ const (
 
 // Params.
 const (
-	Decrypted = "decrypted"
-	AppId     = "application"
+	AppId = "application"
 )
 
 // IdentityHandler handles identity resource routes.
@@ -30,10 +28,10 @@ type IdentityHandler struct {
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
-	routeGroup.GET(IdentitiesRoot, h.setDecrypted, h.List)
-	routeGroup.GET(IdentitiesRoot+"/", h.setDecrypted, h.List)
+	routeGroup.GET(IdentitiesRoot, h.List)
+	routeGroup.GET(IdentitiesRoot+"/", h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)
-	routeGroup.GET(IdentityRoot, h.setDecrypted, h.Get)
+	routeGroup.GET(IdentityRoot, h.Get)
 	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 }
@@ -55,13 +53,10 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Identity{}
-	decrypted := ctx.GetBool(Decrypted)
-	if decrypted {
-		err := secret.Decrypt(m)
-		if err != nil {
-			h.Status(ctx, http.StatusInternalServerError)
-			return
-		}
+	err := h.Decrypt(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 	r.With(m)
 
@@ -93,17 +88,14 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	decrypted := ctx.GetBool(Decrypted)
 	resources := []Identity{}
 	for i := range list {
 		r := Identity{}
 		m := &list[i]
-		if decrypted {
-			err := secret.Decrypt(m)
-			if err != nil {
-				h.Status(ctx, http.StatusInternalServerError)
-				return
-			}
+		err := h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
 		}
 		r.With(m)
 		resources = append(resources, r)
@@ -216,22 +208,6 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	}
 
 	h.Status(ctx, http.StatusNoContent)
-}
-
-// Set `decrypted` in the context.
-// Results in 403 when the token does not have the required scope.
-func (h *IdentityHandler) setDecrypted(ctx *gin.Context) {
-	q := ctx.Query(Decrypted)
-	requested, _ := strconv.ParseBool(q)
-	ctx.Set(Decrypted, requested)
-	if requested {
-		if !h.HasScope(ctx, "identities:decrypt") {
-			h.Status(ctx, http.StatusForbidden)
-		} else {
-			ctx.Next()
-		}
-	}
-	return
 }
 
 // Identity REST resource.

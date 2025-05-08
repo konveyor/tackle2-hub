@@ -18,6 +18,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
+	"github.com/konveyor/tackle2-hub/secret"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -108,11 +109,41 @@ func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
 	in := auth.BaseScope{}
 	in.With(scope)
 	rtx := RichContext(ctx)
-	for _, s := range rtx.Scopes {
+	for _, s := range rtx.Scope.Granted {
 		b = s.Match(in.Resource, in.Method)
 		if b {
 			return
 		}
+	}
+	return
+}
+
+// Encrypt the model.
+func (h *BaseHandler) Encrypt(m any) (err error) {
+	err = secret.Encrypt(m)
+	return
+}
+
+// Decrypt the model.
+// When:
+//   - decrypted parameter true.
+//   - user has required scope.
+func (h *BaseHandler) Decrypt(ctx *gin.Context, m any) (err error) {
+	q := ctx.Query(Decrypted)
+	requested, _ := strconv.ParseBool(q)
+	if !requested {
+		return
+	}
+	rtx := RichContext(ctx)
+	for _, scope := range rtx.Scope.Required {
+		scope += ":" + MethodDecrypt
+		if h.HasScope(ctx, scope) {
+			err = secret.Decrypt(m)
+			return
+		}
+	}
+	err = &Forbidden{
+		Reason: ":decrypt (scope) required.",
 	}
 	return
 }
