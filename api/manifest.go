@@ -44,7 +44,6 @@ func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.manifest"))
 	routeGroup.GET(AppManifestRoot, h.AppGet)
-	routeGroup.POST(AppManifestRoot, h.AppCreate)
 }
 
 // Get godoc
@@ -242,41 +241,6 @@ func (h *ManifestHandler) AppGet(ctx *gin.Context) {
 	h.inject(ctx, &r)
 
 	h.Respond(ctx, http.StatusOK, r)
-}
-
-// AppCreate godoc
-// @summary Create a manifest associated with an application.
-// @description Create a manifest associated with an application.
-// @tags manifests
-// @accept json
-// @success 201
-// @router /applications/{id}/manifest [post]
-// @param id path int true "Application ID"
-// @param manifest body Manifest true "Manifest data"
-func (h *ManifestHandler) AppCreate(ctx *gin.Context) {
-	appId := h.pk(ctx)
-	r := &Manifest{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	m := r.Model()
-	m.ApplicationID = appId
-	err = secret.Encrypt(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	m.CreateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx)
-	err = db.Create(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r.With(m)
-	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // inject replaces secret refs with values.

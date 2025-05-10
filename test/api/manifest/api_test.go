@@ -5,13 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
-)
-
-var (
-	Decrypted = binding.Param{Key: api.Decrypted, Value: "1"}
-	Injected  = binding.Param{Key: api.Injected, Value: "1"}
 )
 
 func TestManifestCRUD(t *testing.T) {
