@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
@@ -64,7 +65,7 @@ func (h ManifestHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.Encrypt(m)
+	err = h.Decrypt(ctx, m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -199,6 +200,11 @@ func (h ManifestHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
+	err = secret.Encrypt(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx)
 	err = db.Save(m).Error
 	if err != nil {
@@ -285,13 +291,27 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 		for k, v := range m {
 			switch object := v.(type) {
 			case string:
-				match := SecretRefPattern.FindStringSubmatch(object)
-				if len(match) > 1 {
-					ref := match[1]
-					if s, found := r.Secret[ref]; found {
-						m[k] = s
+				matched := SecretRefPattern.FindAllStringSubmatch(object, -1)
+				for _, match := range matched {
+					if len(match) != 2 {
+						break
 					}
+					ref := match[1]
+					sv, found := r.Secret[ref]
+					if !found {
+						break
+					}
+					s, cast := sv.(string)
+					if !cast {
+						break
+					}
+					object = strings.Replace(
+						object,
+						match[0],
+						s,
+						-1)
 				}
+				m[k] = object
 			case Map:
 				inject(object)
 			case map[string]any:

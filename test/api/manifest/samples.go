@@ -15,6 +15,7 @@ var (
 				"user":     "$(user)",
 				"password": "$(password)",
 			},
+			"description": "Connect using $(user) and $(password)",
 		},
 		Secret: api.Map{
 			"key":      "ABCDEF",
@@ -22,6 +23,14 @@ var (
 			"password": "1234",
 		},
 	}
-
-	Samples = []api.Manifest{Base}
+	InjectedContent = api.Map{
+		"name": "Test",
+		"key":  "ABCDEF",
+		"database": api.Map{
+			"url":      "db.com",
+			"user":     "Elmer",
+			"password": "1234",
+		},
+		"description": "Connect using Elmer and 1234",
+	}
 )
