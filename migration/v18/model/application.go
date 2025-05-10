@@ -32,7 +32,7 @@ type Application struct {
 	MigrationWave     *MigrationWave
 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
-	Manifest          *Manifest    `gorm:"constraint:OnDelete:CASCADE"`
+	Manifest          []Manifest   `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Fact struct {
