@@ -80,6 +80,7 @@ func All() []Handler {
 		&JobFunctionHandler{},
 		&IdentityHandler{},
 		&ProxyHandler{},
+		&ManifestHandler{},
 		&ReviewHandler{},
 		&RuleSetHandler{},
 		&SchemaHandler{},

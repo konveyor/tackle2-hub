@@ -347,3 +347,28 @@ func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error
 	}
 	return
 }
+
+// Manifest returns the tags API.
+func (h *Application) Manifest(id uint) (f AppManifest) {
+	f = AppManifest{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+type AppManifest struct {
+	client *Client
+	appId  uint
+}
+
+// Get returns the LATEST manifest.
+// Params:
+// Param{Key: api.Decrypted, Value: "1"}
+// Param{Key: api.Injected, Value: "1"}
+func (h *AppManifest) Get(param ...Param) (r *api.Manifest, err error) {
+	r = &api.Manifest{}
+	path := Path(api.AppManifestRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Get(path, r, param...)
+	return
+}
