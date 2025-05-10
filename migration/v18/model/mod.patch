@@ -5,7 +5,7 @@ diff -ruN '--exclude=mod.patch' migration/v17/model/application.go migration/v18
  	MigrationWave     *MigrationWave
  	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
  	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
-+	Manifest          *Manifest    `gorm:"constraint:OnDelete:CASCADE"`
++	Manifest          []Manifest    `gorm:"constraint:OnDelete:CASCADE"`
  }
  
  type Fact struct {
