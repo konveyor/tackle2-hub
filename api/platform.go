@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
 )
@@ -57,29 +56,15 @@ func (h PlatformHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all platforms.
 // @description List all platforms.
-// @description filters:
-// @description   - application.id
 // @tags platforms
 // @produce json
 // @success 200 {object} []Platform
 // @router /platforms [get]
 func (h PlatformHandler) List(ctx *gin.Context) {
 	resources := []Platform{}
-	// Filter
-	filter, err := qf.New(ctx,
-		[]qf.Assert{
-			{Field: "application.id", Kind: qf.LITERAL},
-		})
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	filter = filter.Renamed("application.id", "applicationid")
-	// Fetch.
 	var list []model.Platform
 	db := h.DB(ctx)
-	db = filter.Where(db)
-	err = db.Find(&list).Error
+	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
