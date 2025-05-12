@@ -30,6 +30,8 @@ type Application struct {
 	Analyses          []Analysis    `gorm:"constraint:OnDelete:CASCADE"`
 	MigrationWaveID   *uint         `gorm:"index"`
 	MigrationWave     *MigrationWave
+	PlatformID        *uint `gorm:"index"`
+	Platform          *Platform
 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
 	Manifest          []Manifest   `gorm:"constraint:OnDelete:CASCADE"`

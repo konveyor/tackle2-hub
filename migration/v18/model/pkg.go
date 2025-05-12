@@ -34,6 +34,7 @@ func All() []any {
 		Manifest{},
 		MigrationWave{},
 		PK{},
+		Platform{},
 		Proxy{},
 		Review{},
 		Setting{},

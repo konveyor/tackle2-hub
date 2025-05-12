@@ -1139,6 +1139,7 @@ type Application struct {
 	Owner           *Ref        `json:"owner"`
 	Contributors    []Ref       `json:"contributors"`
 	MigrationWave   *Ref        `json:"migrationWave" yaml:"migrationWave"`
+	Platform        *Ref        `json:"platform"`
 	Archetypes      []Ref       `json:"archetypes"`
 	Assessments     []Ref       `json:"assessments"`
 	Assessed        bool        `json:"assessed"`
@@ -1189,6 +1190,7 @@ func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
 			ref)
 	}
 	r.MigrationWave = r.refPtr(m.MigrationWaveID, m.MigrationWave)
+	r.Platform = r.refPtr(m.PlatformID, m.Platform)
 	r.Assessments = []Ref{}
 	for _, a := range m.Assessments {
 		ref := Ref{}
@@ -1296,6 +1298,9 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	if r.MigrationWave != nil {
 		m.MigrationWaveID = &r.MigrationWave.ID
+	}
+	if r.Platform != nil {
+		m.PlatformID = &r.Platform.ID
 	}
 
 	return

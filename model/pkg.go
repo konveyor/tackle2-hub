@@ -33,6 +33,7 @@ type JobFunction = model.JobFunction
 type Manifest = model.Manifest
 type MigrationWave = model.MigrationWave
 type PK = model.PK
+type Platform = model.Platform
 type Proxy = model.Proxy
 type Questionnaire = model.Questionnaire
 type Review = model.Review
