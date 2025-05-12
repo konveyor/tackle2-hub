@@ -30,6 +30,7 @@ type Import = model.Import
 type ImportSummary = model.ImportSummary
 type ImportTag = model.ImportTag
 type JobFunction = model.JobFunction
+type Manifest = model.Manifest
 type MigrationWave = model.MigrationWave
 type PK = model.PK
 type Proxy = model.Proxy

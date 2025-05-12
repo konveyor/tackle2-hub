@@ -22,6 +22,7 @@ var AddonRole = []string{
 	"applications.analyses:*",
 	"identities:get",
 	"identities:decrypt",
+	"manifests:decrypt",
 	"proxies:get",
 	"settings:get",
 	"tags:*",

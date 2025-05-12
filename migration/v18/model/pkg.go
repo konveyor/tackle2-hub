@@ -31,6 +31,7 @@ func All() []any {
 		ImportSummary{},
 		ImportTag{},
 		JobFunction{},
+		Manifest{},
 		MigrationWave{},
 		PK{},
 		Proxy{},
