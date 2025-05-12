@@ -31,10 +31,12 @@ func TestPlatformCRUD(t *testing.T) {
 	}()
 
 	// Create.
-	r.Identity.ID = identity.ID
+	r.Identity = &api.Ref{
+		ID: identity.ID,
+	}
 	err = Platform.Create(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 
 	// Get
@@ -42,8 +44,8 @@ func TestPlatformCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	if !assert.FlatEqual(got, r) {
-		t.Errorf("Different response error. Got %+v, expected %+v", got, r)
+	if !assert.Eq(got, r) {
+		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
 	}
 
 	// Update.
@@ -56,8 +58,9 @@ func TestPlatformCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	if !assert.FlatEqual(got, r) {
-		t.Errorf("Different response error. Got %+v, expected %+v", got, r)
+	r.UpdateUser = got.UpdateUser
+	if !assert.Eq(got, r) {
+		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
 	}
 
 	// Delete.

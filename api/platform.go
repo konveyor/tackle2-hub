@@ -198,7 +198,7 @@ func (r *Platform) With(m *model.Platform) {
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.URL = m.URL
-	r.Identity = r.refPtr(m.IdentityID, m.IdentityID)
+	r.Identity = r.refPtr(m.IdentityID, m.Identity)
 	r.Applications = make([]Ref, len(m.Applications))
 	for _, application := range m.Applications {
 		r.Applications = append(

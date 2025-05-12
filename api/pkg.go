@@ -79,6 +79,7 @@ func All() []Handler {
 		&ImportHandler{},
 		&JobFunctionHandler{},
 		&IdentityHandler{},
+		&PlatformHandler{},
 		&ProxyHandler{},
 		&ManifestHandler{},
 		&ReviewHandler{},
