@@ -21,6 +21,7 @@ type RichClient struct {
 	File             File
 	Identity         Identity
 	JobFunction      JobFunction
+	Manifest         Manifest
 	MigrationWave    MigrationWave
 	Proxy            Proxy
 	Questionnaire    Questionnaire
@@ -76,6 +77,9 @@ func New(baseURL string) (r *RichClient) {
 			client: client,
 		},
 		JobFunction: JobFunction{
+			client: client,
+		},
+		Manifest: Manifest{
 			client: client,
 		},
 		MigrationWave: MigrationWave{
