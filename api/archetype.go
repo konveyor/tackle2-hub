@@ -389,7 +389,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 
 type TargetProfile struct {
 	Resource
-	Name       string `json:"name"`
+	Name       string `json:"name" binding:"required"`
 	Generators []Ref  `json:"generators"`
 }
 
