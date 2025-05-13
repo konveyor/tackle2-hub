@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/secret"
 )
 
 // Routes
@@ -152,11 +151,6 @@ func (h PlatformHandler) Update(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-	err = secret.Encrypt(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	db := h.DB(ctx)
 	err = db.Save(m).Error
 	if err != nil {
