@@ -23,6 +23,7 @@ var AddonRole = []string{
 	"identities:get",
 	"identities:decrypt",
 	"manifests:decrypt",
+	"platforms:get",
 	"proxies:get",
 	"settings:get",
 	"tags:*",
