@@ -49,7 +49,7 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Profiles.Generators")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -85,7 +85,7 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 // @router /archetypes [get]
 func (h ArchetypeHandler) List(ctx *gin.Context) {
 	var list []model.Archetype
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.preLoad(h.DB(ctx), clause.Associations, "Profiles.Generators")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -162,10 +162,17 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace("Profiles", m.Profiles)
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	for _, p := range m.Profiles {
+		err = h.DB(ctx).Model(&p).Association("Generators").Replace(p.Generators)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	archetypes := []model.Archetype{}
@@ -263,10 +270,17 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace("Profiles", m.Profiles)
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	for _, p := range m.Profiles {
+		err = h.DB(ctx).Model(&p).Association("Generators").Replace(p.Generators)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Status(ctx, http.StatusNoContent)
@@ -463,9 +477,9 @@ func (r *Archetype) With(m *model.Archetype) {
 	r.Risk = assessment.RiskUnassessed
 	r.Profiles = []TargetProfile{}
 	for _, p := range m.Profiles {
-		pm := TargetProfile{}
-		pm.With(&p)
-		r.Profiles = append(r.Profiles, pm)
+		pr := TargetProfile{}
+		pr.With(&p)
+		r.Profiles = append(r.Profiles, pr)
 	}
 }
 

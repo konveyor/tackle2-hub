@@ -182,8 +182,8 @@ func (r *Generator) With(m *model.Generator) {
 	r.Parameters = m.Parameters
 	r.Values = m.Values
 	if m.Repository != (model.Repository{}) {
-		repo := Repository(m.Repository)
-		r.Repository = &repo
+		repository := Repository(m.Repository)
+		r.Repository = &repository
 	}
 }
 
@@ -195,6 +195,9 @@ func (r *Generator) Model() (m *model.Generator) {
 	m.Name = r.Name
 	m.Parameters = r.Parameters
 	m.Values = r.Values
+	if r.Repository != nil {
+		m.Repository = model.Repository(*r.Repository)
+	}
 	if r.Identity != nil {
 		m.IdentityID = &r.Identity.ID
 	}

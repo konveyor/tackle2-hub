@@ -11,5 +11,13 @@ var (
 		Description: "Archetype minimal sample 1",
 		Comments:    "Archetype comments",
 	}
-	Samples = []api.Archetype{MinimalArchetype}
+	WithProfiles = api.Archetype{
+		Name:        "Minimal Archetype",
+		Description: "Archetype minimal sample 1",
+		Comments:    "Archetype comments",
+		Profiles: []api.TargetProfile{
+			{Name: "openshift"},
+		},
+	}
+	Samples = []api.Archetype{MinimalArchetype, WithProfiles}
 )

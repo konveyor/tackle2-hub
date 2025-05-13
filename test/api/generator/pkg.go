@@ -7,7 +7,7 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	Platform   binding.Platform
+	Generator  binding.Generator
 )
 
 func init() {
@@ -15,5 +15,5 @@ func init() {
 	RichClient = client.PrepareRichClient()
 
 	// Shortcut for RuleSet-related RichClient methods.
-	Platform = RichClient.Platform
+	Generator = RichClient.Generator
 }
