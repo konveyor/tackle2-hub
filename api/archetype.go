@@ -162,6 +162,11 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace("Profiles", m.Profiles)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	archetypes := []model.Archetype{}
 	db := h.preLoad(h.DB(ctx), "Tags", "CriteriaTags")
@@ -254,6 +259,11 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		return
 	}
 	err = h.DB(ctx).Model(m).Association("Tags").Replace("Tags", m.Tags)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace("Profiles", m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -363,22 +373,56 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
+type TargetProfile struct {
+	Resource
+	Name       string `json:"name"`
+	Generators []Ref  `json:"generators"`
+}
+
+// With updates the resource with the model.
+func (r *TargetProfile) With(m *model.TargetProfile) {
+	r.Resource.With(&m.Model)
+	r.Name = m.Name
+	r.Generators = []Ref{}
+	for _, g := range m.Generators {
+		ref := Ref{}
+		ref.With(g.ID, g.Name)
+		r.Generators = append(r.Generators, ref)
+	}
+}
+
+// Model builds a model from the resource.
+func (r *TargetProfile) Model() (m *model.TargetProfile) {
+	m = &model.TargetProfile{}
+	m.ID = r.ID
+	m.Name = r.Name
+	for _, ref := range r.Generators {
+		g := model.Generator{}
+		g.ID = ref.ID
+		m.Generators = append(
+			m.Generators,
+			g)
+	}
+	return
+}
+
 // Archetype REST resource.
 type Archetype struct {
 	Resource          `yaml:",inline"`
-	Name              string   `json:"name" yaml:"name"`
-	Description       string   `json:"description" yaml:"description"`
-	Comments          string   `json:"comments" yaml:"comments"`
-	Tags              []TagRef `json:"tags" yaml:"tags"`
-	Criteria          []TagRef `json:"criteria" yaml:"criteria"`
-	Stakeholders      []Ref    `json:"stakeholders" yaml:"stakeholders"`
-	StakeholderGroups []Ref    `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	Applications      []Ref    `json:"applications" yaml:"applications"`
-	Assessments       []Ref    `json:"assessments" yaml:"assessments"`
-	Assessed          bool     `json:"assessed"`
-	Risk              string   `json:"risk"`
-	Confidence        int      `json:"confidence"`
-	Review            *Ref     `json:"review"`
+	Name              string          `json:"name" yaml:"name"`
+	Description       string          `json:"description" yaml:"description"`
+	Comments          string          `json:"comments" yaml:"comments"`
+	Tags              []TagRef        `json:"tags" yaml:"tags"`
+	Criteria          []TagRef        `json:"criteria" yaml:"criteria"`
+	Stakeholders      []Ref           `json:"stakeholders" yaml:"stakeholders"`
+	StakeholderGroups []Ref           `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	Applications      []Ref           `json:"applications" yaml:"applications"`
+	Assessments       []Ref           `json:"assessments" yaml:"assessments"`
+	Assessed          bool            `json:"assessed"`
+	Risk              string          `json:"risk"`
+	Confidence        int             `json:"confidence"`
+	Review            *Ref            `json:"review"`
+	Profiles          []TargetProfile `json:"profiles" yaml:"-,omitempty"`
 }
 
 // With updates the resource with the model.
@@ -417,6 +461,12 @@ func (r *Archetype) With(m *model.Archetype) {
 		r.Review = ref
 	}
 	r.Risk = assessment.RiskUnassessed
+	r.Profiles = []TargetProfile{}
+	for _, p := range m.Profiles {
+		pm := TargetProfile{}
+		pm.With(&p)
+		r.Profiles = append(r.Profiles, pm)
+	}
 }
 
 // WithResolver uses an ArchetypeResolver to update the resource with
@@ -487,6 +537,12 @@ func (r *Archetype) Model() (m *model.Archetype) {
 					ID: ref.ID,
 				},
 			})
+	}
+	for _, p := range r.Profiles {
+		pm := p.Model()
+		m.Profiles = append(
+			m.Profiles,
+			*pm)
 	}
 
 	return
