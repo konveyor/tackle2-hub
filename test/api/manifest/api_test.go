@@ -15,7 +15,7 @@ func TestManifestCRUD(t *testing.T) {
 	// application
 	application := &api.Application{Name: t.Name()}
 	err := RichClient.Application.Create(application)
-	assert.Should(t, err)
+	assert.Must(t, err)
 	defer func() {
 		_ = RichClient.Application.Delete(application.ID)
 	}()
@@ -24,7 +24,7 @@ func TestManifestCRUD(t *testing.T) {
 	r.Application.ID = application.ID
 	err = Manifest.Create(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 	created := r
 	if !assert.MapEq(Base.Content, created.Content) {

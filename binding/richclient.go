@@ -23,6 +23,7 @@ type RichClient struct {
 	JobFunction      JobFunction
 	Manifest         Manifest
 	MigrationWave    MigrationWave
+	Platform         Platform
 	Proxy            Proxy
 	Questionnaire    Questionnaire
 	Review           Review
@@ -83,6 +84,9 @@ func New(baseURL string) (r *RichClient) {
 			client: client,
 		},
 		MigrationWave: MigrationWave{
+			client: client,
+		},
+		Platform: Platform{
 			client: client,
 		},
 		Proxy: Proxy{

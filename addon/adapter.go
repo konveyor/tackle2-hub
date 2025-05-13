@@ -59,6 +59,7 @@ type BucketContent = binding.BucketContent
 type File = binding.File
 type Identity = binding.Identity
 type Manifest = binding.Manifest
+type Platform = binding.Platform
 type Proxy = binding.Proxy
 type RuleSet = binding.RuleSet
 type Setting = binding.Setting
@@ -82,6 +83,8 @@ type Adapter struct {
 	Identity Identity
 	// Manifest
 	Manifest Manifest
+	// Platform
+	Platform Platform
 	// Proxy API.
 	Proxy Proxy
 	// TagCategory API.

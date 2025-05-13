@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 )
@@ -10,6 +11,14 @@ type Map = map[string]any
 // Simple equality check working for flat types (no nested types passed by reference).
 func FlatEqual(got, expected any) bool {
 	return fmt.Sprintf("%v", got) == fmt.Sprintf("%v", expected)
+}
+
+// Eq compares objects.
+func Eq(a, b any) (eq bool) {
+	jA, _ := json.Marshal(a)
+	jB, _ := json.Marshal(b)
+	eq = string(jA) == string(jB)
+	return
 }
 
 // MapEq compares maps.
