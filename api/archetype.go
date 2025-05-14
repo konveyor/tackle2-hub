@@ -296,13 +296,17 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups", "Assessments.Questionnaire")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Assessments.Stakeholders",
+		"Assessments.StakeholderGroups",
+		"Assessments.Questionnaire")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
 	resources := []Assessment{}
 	for i := range m.Assessments {
 		r := Assessment{}
@@ -387,6 +391,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
+// TargetProfile REST resource.
 type TargetProfile struct {
 	Resource
 	Name       string `json:"name" binding:"required"`
