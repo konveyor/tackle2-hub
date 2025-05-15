@@ -162,11 +162,7 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	for i := range m.Profiles {
-		p := &m.Profiles[i]
-		p.ArchetypeID = m.ID
-	}
-	err = h.DB(ctx).Omit(clause.Associations).Create(m.Profiles).Error
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -174,8 +170,7 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 	for _, p := range m.Profiles {
 		db := h.DB(ctx)
 		db = db.Model(&p)
-		db = db.Omit(clause.Associations)
-		err = db.Association("Generators").Replace("Generators", p.Generators)
+		err = db.Association("Generators").Replace(p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -282,11 +277,7 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	for i := range m.Profiles {
-		p := &m.Profiles[i]
-		p.ArchetypeID = m.ID
-	}
-	err = h.DB(ctx).Omit(clause.Associations).Create(m.Profiles).Error
+	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -294,7 +285,6 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 	for _, p := range m.Profiles {
 		db := h.DB(ctx)
 		db = db.Model(&p)
-		db = db.Omit(clause.Associations)
 		err = db.Association("Generators").Replace(p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
