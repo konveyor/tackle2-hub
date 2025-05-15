@@ -167,8 +167,8 @@ type Platform struct {
 	Kind         string `json:"kind" binding:"required"`
 	Name         string `json:"name"`
 	URL          string `json:"url"`
-	Identity     *Ref   `json:"identity,omitempty" yaml:"-,omitempty"`
-	Applications []Ref  `json:"applications,omitempty" yaml:"-,omitempty"`
+	Identity     *Ref   `json:"identity,omitempty" yaml:",omitempty"`
+	Applications []Ref  `json:"applications,omitempty" yaml:",omitempty"`
 }
 
 // With updates the resource with the model.

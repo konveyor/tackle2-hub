@@ -169,7 +169,7 @@ type Generator struct {
 	Repository *Repository `json:"repository"`
 	Parameters Map         `json:"parameters"`
 	Values     Map         `json:"values"`
-	Identity   *Ref        `json:"identity,omitempty" yaml:"-,omitempty"`
+	Identity   *Ref        `json:"identity,omitempty" yaml:",omitempty"`
 	Profiles   []Ref       `json:"profiles"`
 }
 

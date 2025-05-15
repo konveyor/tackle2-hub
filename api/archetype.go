@@ -162,13 +162,20 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
+	for i := range m.Profiles {
+		p := &m.Profiles[i]
+		p.ArchetypeID = m.ID
+	}
+	err = h.DB(ctx).Omit(clause.Associations).Create(m.Profiles).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	for _, p := range m.Profiles {
-		err = h.DB(ctx).Model(&p).Association("Generators").Replace(p.Generators)
+		db := h.DB(ctx)
+		db = db.Model(&p)
+		db = db.Omit(clause.Associations)
+		err = db.Association("Generators").Replace("Generators", p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -270,13 +277,25 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
+	err = h.DB(ctx).Model(&model.TargetProfile{}).Delete("ArchetypeID", m.ID).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range m.Profiles {
+		p := &m.Profiles[i]
+		p.ArchetypeID = m.ID
+	}
+	err = h.DB(ctx).Omit(clause.Associations).Create(m.Profiles).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	for _, p := range m.Profiles {
-		err = h.DB(ctx).Model(&p).Association("Generators").Replace(p.Generators)
+		db := h.DB(ctx)
+		db = db.Model(&p)
+		db = db.Omit(clause.Associations)
+		err = db.Association("Generators").Replace(p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -441,7 +460,7 @@ type Archetype struct {
 	Risk              string          `json:"risk"`
 	Confidence        int             `json:"confidence"`
 	Review            *Ref            `json:"review"`
-	Profiles          []TargetProfile `json:"profiles" yaml:"-,omitempty"`
+	Profiles          []TargetProfile `json:"profiles" yaml:",omitempty"`
 }
 
 // With updates the resource with the model.
