@@ -49,7 +49,10 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Profiles.Generators")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Profiles.Generators")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -85,7 +88,10 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 // @router /archetypes [get]
 func (h ArchetypeHandler) List(ctx *gin.Context) {
 	var list []model.Archetype
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Profiles.Generators")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Profiles.Generators")
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
