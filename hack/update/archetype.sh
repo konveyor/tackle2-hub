@@ -16,7 +16,8 @@ curl -X PUT ${host}/archetypes/${id} \
 id: ${id}
 name: ${name}
 profiles:
-  - name: openshift
+  - id: 1
+    name: openshift
     generators:
       - id: ${genid}
   - name: other

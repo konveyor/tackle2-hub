@@ -162,15 +162,13 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
+	err = h.Association(ctx, "Profiles").Owner(true).Replace(m, m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	for _, p := range m.Profiles {
-		db := h.DB(ctx)
-		db = db.Model(&p)
-		err = db.Association("Generators").Replace(p.Generators)
+		err = h.Association(ctx, "Generators").Replace(p, p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -272,26 +270,18 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(&model.TargetProfile{}).Delete("ArchetypeID", m.ID).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("Profiles").Replace(m.Profiles)
+	err = h.Association(ctx, "Profiles").Owner(true).Replace(m, m.Profiles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	for _, p := range m.Profiles {
-		db := h.DB(ctx)
-		db = db.Model(&p)
-		err = db.Association("Generators").Replace(p.Generators)
+		err = h.Association(ctx, "Generators").Replace(p, p.Generators)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 	}
-
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -402,7 +392,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 
 // TargetProfile REST resource.
 type TargetProfile struct {
-	Resource
+	Resource   `yaml:",inline"`
 	Name       string `json:"name" binding:"required"`
 	Generators []Ref  `json:"generators"`
 }
