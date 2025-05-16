@@ -48,11 +48,14 @@ func (r *Association) DB(v *gorm.DB) *Association {
 
 // Owner sets the owner flag.
 // Relation: many2many:
-//   No effect.
+//
+//	No effect.
+//
 // Relation: hasMany:
-//   Models no longer associated:
-//     When (true): deleted.
-//     When (false): FK=NULL.
+//
+//	Models no longer associated:
+//	  When (true): deleted.
+//	  When (false): FK=NULL.
 func (r *Association) Owner(v bool) *Association {
 	r.owner = v
 	return r
@@ -66,8 +69,8 @@ func (r *Association) Name(name string) *Association {
 
 // Replace associations.
 // Supported:
-//  - many2many
-//  - hasMany
+//   - many2many
+//   - hasMany
 func (a *Association) Replace(m any, related any) (err error) {
 	defer func() {
 		r := recover()
