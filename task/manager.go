@@ -291,7 +291,7 @@ func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
 }
 
 // Cancel a task.
-func (m *Manager) Cancel(db *gorm.DB, id uint, reason string) (err error) {
+func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 	task := &Task{}
 	err = db.First(task, id).Error
 	if err != nil {
@@ -314,7 +314,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint, reason string) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
-			err = task.Cancel(m.Client, reason)
+			err = task.Cancel(m.Client)
 			if err != nil {
 				return
 			}
@@ -1253,12 +1253,18 @@ func (m *Manager) next(task *Task) (err error) {
 					"Canceled:%d, when (pipelined) task:%d failed.",
 					member.ID,
 					task.ID)
+				member.Event(Canceled, reason)
+				nErr := member.Cancel(m.Client)
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
 				db = reflect.Select(
 					m.DB,
 					member.Task,
 					"State",
 					"Events")
-				nErr := m.Cancel(db, member.ID, reason)
+				nErr = db.Save(member).Error
 				if nErr != nil {
 					nErr = liberr.Wrap(nErr)
 					Log.Error(nErr, "")

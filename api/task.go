@@ -479,7 +479,7 @@ func (h TaskHandler) Submit(ctx *gin.Context) {
 func (h TaskHandler) Cancel(ctx *gin.Context) {
 	id := h.pk(ctx)
 	rtx := RichContext(ctx)
-	err := rtx.TaskManager.Cancel(h.DB(ctx), id, "Requested by user.")
+	err := rtx.TaskManager.Cancel(h.DB(ctx), id)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -532,7 +532,7 @@ func (h TaskHandler) BulkCancel(ctx *gin.Context) {
 	db = h.DB(ctx)
 	rtx := RichContext(ctx)
 	for _, m := range matched {
-		err := rtx.TaskManager.Cancel(db, m.ID, "Requested by user.")
+		err := rtx.TaskManager.Cancel(db, m.ID)
 		if err != nil {
 			_ = ctx.Error(err)
 			return

@@ -317,13 +317,13 @@ func (r *Task) podPending(pod *core.Pod) {
 }
 
 // Cancel the task.
-func (r *Task) Cancel(client k8s.Client, reason string) (err error) {
+func (r *Task) Cancel(client k8s.Client) (err error) {
 	err = r.Delete(client)
 	if err != nil {
 		return
 	}
 	r.State = Canceled
-	r.Event(Canceled, reason)
+	r.Event(Canceled)
 	r.SetBucket(nil)
 	Log.Info(
 		"Task canceled.",
