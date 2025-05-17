@@ -70,6 +70,12 @@ const (
 	ContainerKilled = "ContainerKilled"
 )
 
+// Mode
+const (
+	Batch    = "Batch"
+	Pipeline = "Pipeline"
+)
+
 // k8s labels.
 const (
 	TaskLabel = "task"
@@ -921,6 +927,11 @@ func (m *Manager) updateRunning(ctx context.Context) {
 			return
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
+		err = m.next(running)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 }
 
@@ -1185,6 +1196,43 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 			"Container KILLED.",
 			"name",
 			container)
+	}
+	return
+}
+
+// next makes the next task in a mode=pipeline task group Ready.
+func (m *Manager) next(task *Task) (err error) {
+	if task.TaskGroupID == nil || task.State != Succeeded {
+		return
+	}
+	var tasks []*model.TaskGroup
+	db := m.DB.Order("ID")
+	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			Log.Info("Task group not found.", "id", task.TaskGroupID)
+			err = nil
+			return
+		}
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, member := range tasks {
+		if task.ID != member.ID {
+			continue
+		}
+		switch member.State {
+		case "", Created:
+			member.State = Ready
+			db = m.DB.Select("State")
+			err = db.Save(member).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		default:
+			return
+		}
 	}
 	return
 }

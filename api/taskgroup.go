@@ -469,11 +469,23 @@ func (h *TaskGroupHandler) Propagate(m *model.TaskGroup) (err error) {
 		task.Extensions = m.Extensions
 		task.Priority = m.Priority
 		task.Policy = m.Policy
-		task.State = m.State
 		task.SetBucket(m.BucketID)
 		merged := task.Data.Merge(m.Data)
 		if !merged {
 			task.Data = m.Data
+		}
+	}
+	switch m.Mode {
+	case "", tasking.Batch:
+		for i := range m.Tasks {
+			task := &m.Tasks[i]
+			task.State = m.State
+		}
+	case tasking.Pipeline:
+		for i := range m.Tasks {
+			task := &m.Tasks[i]
+			task.State = m.State
+			break
 		}
 	}
 
