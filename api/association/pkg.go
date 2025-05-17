@@ -102,23 +102,23 @@ func (a *Association) Replace(m any, related any) (err error) {
 		}
 		return
 	}
-	field := stmt.Schema.PrioritizedPrimaryField
-	if field == nil {
+	pkField := stmt.Schema.PrioritizedPrimaryField
+	if pkField == nil {
 		err = &AssociationError{
 			Reason: "PK (field) not found.",
 		}
 		return
 	}
-	pk := field.ReflectValueOf(
-		stmt.Context,
-		reflect.ValueOf(m)).Interface()
+	mv := reflect.ValueOf(m)
+	pkv := pkField.ReflectValueOf(stmt.Context, mv)
+	pk := pkv.Interface()
 	switch relation.Type {
 	case schema.Many2Many:
 		db := a.db
 		joinTable := relation.JoinTable
 		if joinTable == nil {
 			err = &AssociationError{
-				Reason: "Join table not found.",
+				Reason: "Join refTable not found.",
 			}
 			return
 		}
@@ -151,18 +151,18 @@ func (a *Association) Replace(m any, related any) (err error) {
 		ref := relation.References[0]
 		fkField := ref.ForeignKey.DBName
 		refField := ref.PrimaryKey.DBName
-		table := relation.FieldSchema.Table
+		refTable := relation.FieldSchema.Table
 		var q string
 		if a.owner {
 			q = fmt.Sprintf(
 				"DELETE FROM %s WHERE %s = ?",
-				table,
+				refTable,
 				fkField,
 			)
 		} else {
 			q = fmt.Sprintf(
 				"UPDATE %s SET %s = NULL WHERE %s = ?",
-				table,
+				refTable,
 				fkField,
 				fkField,
 			)
@@ -186,7 +186,7 @@ func (a *Association) Replace(m any, related any) (err error) {
 		} else {
 			q = fmt.Sprintf(
 				"UPDATE %s SET %s = ? WHERE %s IN (?)",
-				table,
+				refTable,
 				fkField,
 				refField,
 			)
