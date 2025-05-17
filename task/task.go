@@ -698,11 +698,12 @@ type Event struct {
 	Message  string
 }
 
+// TaskGroup represents a task group.
 type TaskGroup struct {
 	*model.TaskGroup
 }
 
-// Submit task group.
+// Submit the task group.
 func (g *TaskGroup) Submit(db *gorm.DB, manager *Manager) (err error) {
 	g.State = Ready
 	err = g.propagate()
