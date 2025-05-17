@@ -23,6 +23,7 @@ import (
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -186,12 +187,14 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 		task.Data = requested.Data
 		task.ApplicationID = requested.ApplicationID
 		task.BucketID = requested.BucketID
+		task.TaskGroupID = requested.TaskGroupID
 	default:
 		err = &BadRequest{
 			Reason: "state must be (Created|Ready)",
 		}
 		return
 	}
+	db = db.Omit(clause.Associations)
 	err = db.Create(task).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -224,7 +227,8 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			"Policy",
 			"TTL",
 			"Data",
-			"ApplicationID")
+			"ApplicationID",
+			"TaskGroupID")
 		err = m.findRefs(requested)
 		if err != nil {
 			return
@@ -1205,26 +1209,24 @@ func (m *Manager) next(task *Task) (err error) {
 	if task.TaskGroupID == nil || task.State != Succeeded {
 		return
 	}
-	var tasks []*model.TaskGroup
+	var tasks []*model.Task
 	db := m.DB.Order("ID")
 	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			Log.Info("Task group not found.", "id", task.TaskGroupID)
-			err = nil
-			return
-		}
 		err = liberr.Wrap(err)
 		return
 	}
 	for _, member := range tasks {
-		if task.ID != member.ID {
+		if task.ID == member.ID {
 			continue
 		}
 		switch member.State {
 		case "", Created:
 			member.State = Ready
-			db = m.DB.Select("State")
+			db = reflect.Select(
+				m.DB,
+				member,
+				"State")
 			err = db.Save(member).Error
 			if err != nil {
 				err = liberr.Wrap(err)
