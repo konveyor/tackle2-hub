@@ -135,7 +135,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		err = m.Submit(db, rtx.TaskManager)
+		err = m.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -205,7 +205,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		err = m.Submit(db, rtx.TaskManager)
+		err = m.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
