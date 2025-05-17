@@ -1211,6 +1211,11 @@ func (m *Manager) next(task *Task) (err error) {
 	}
 	var tasks []*Task
 	db := m.DB.Order("ID")
+	db = reflect.Select(
+		m.DB,
+		task.Task,
+		"ID",
+		"State")
 	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1227,7 +1232,7 @@ func (m *Manager) next(task *Task) (err error) {
 				member.State = Ready
 				db = reflect.Select(
 					m.DB,
-					member.TaskGroupID,
+					member.Task,
 					"State")
 				nErr := db.Save(member).Error
 				if nErr != nil {
@@ -1248,12 +1253,12 @@ func (m *Manager) next(task *Task) (err error) {
 					"Canceled:%d, when (pipelined) task:%d failed.",
 					member.ID,
 					task.ID)
-				nErr := db.Save(member).Error
-				if nErr != nil {
-					nErr = liberr.Wrap(nErr)
-					Log.Error(nErr, "")
-				}
-				nErr = m.Cancel(db, member.ID, reason)
+				db = reflect.Select(
+					m.DB,
+					member.Task,
+					"State",
+					"Events")
+				nErr := m.Cancel(db, member.ID, reason)
 				if nErr != nil {
 					nErr = liberr.Wrap(nErr)
 					Log.Error(nErr, "")

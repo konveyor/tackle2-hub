@@ -55,7 +55,7 @@ func (r *Application) Updated(m *model.Application) (err error) {
 		taskGroup.List =
 			append(
 				taskGroup.List,
-				task)
+				task, task, task)
 	}
 	err = taskGroup.Submit(r.DB, r.TaskManager)
 	return
