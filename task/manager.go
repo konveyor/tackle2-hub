@@ -291,7 +291,7 @@ func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
 }
 
 // Cancel a task.
-func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
+func (m *Manager) Cancel(db *gorm.DB, id uint, reason string) (err error) {
 	task := &Task{}
 	err = db.First(task, id).Error
 	if err != nil {
@@ -314,7 +314,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
-			err = task.Cancel(m.Client)
+			err = task.Cancel(m.Client, reason)
 			if err != nil {
 				return
 			}
@@ -1206,7 +1206,7 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 
 // next makes the next task in a mode=pipeline task group Ready.
 func (m *Manager) next(task *Task) (err error) {
-	if task.TaskGroupID == nil || task.State != Succeeded {
+	if task.TaskGroupID == nil {
 		return
 	}
 	var tasks []*Task
@@ -1220,28 +1220,44 @@ func (m *Manager) next(task *Task) (err error) {
 		if task.ID == member.ID {
 			continue
 		}
-		switch member.State {
-		case "", Created:
-			member.State = Ready
-			db = reflect.Select(
-				m.DB,
-				member.TaskGroupID,
-				"State")
-			err = db.Save(member).Error
-			if err != nil {
-				err = liberr.Wrap(err)
+		switch task.State {
+		case Succeeded:
+			switch member.State {
+			case "", Created:
+				member.State = Ready
+				db = reflect.Select(
+					m.DB,
+					member.TaskGroupID,
+					"State")
+				nErr := db.Save(member).Error
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
+				return
+			default:
+				// next
 			}
-			return
 		case Failed:
-			reason := fmt.Sprintf(
-				"Canceled:%d, when (pipelined) task:%d failed.",
-				member.ID,
-				task.ID)
-			member.Event(Canceled, reason)
-			Log.Info(reason)
-			err = member.Cancel(m.Client)
-			if err != nil {
-				Log.Error(err, "")
+			switch member.State {
+			case Succeeded,
+				Failed,
+				Canceled:
+			default:
+				reason := fmt.Sprintf(
+					"Canceled:%d, when (pipelined) task:%d failed.",
+					member.ID,
+					task.ID)
+				nErr := db.Save(member).Error
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
+				nErr = m.Cancel(db, member.ID, reason)
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
 			}
 		default:
 			return
