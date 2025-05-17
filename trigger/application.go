@@ -2,6 +2,7 @@ package trigger
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
@@ -26,20 +27,36 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	if m.Repository == (model.Repository{}) {
 		return
 	}
-	kinds, err := r.FindTasks(Settings.Discovery.Label)
+	label := Settings.Discovery.Label
+	kinds, err := r.FindTasks(label)
 	if err != nil {
 		return
 	}
-	for _, kind := range kinds {
-		t := &tasking.Task{Task: &model.Task{}}
-		t.Kind = kind.Name
-		t.Name = fmt.Sprintf("%s-%s", m.Name, t.Kind)
-		t.ApplicationID = &m.ID
-		t.State = tasking.Ready
-		err = r.TaskManager.Create(r.DB, t)
-		if err != nil {
-			return
-		}
+	sort.Slice(
+		kinds,
+		func(i, j int) bool {
+			ik := kinds[i]
+			jk := kinds[j]
+			iL := ik.Labels[label]
+			jL := jk.Labels[label]
+			return iL < jL
+		})
+	taskGroup := &tasking.TaskGroup{
+		TaskGroup: &model.TaskGroup{
+			Mode: tasking.Pipeline,
+		},
 	}
+	taskGroup.Mode = tasking.Pipeline
+	for _, kind := range kinds {
+		task := model.Task{}
+		task.Kind = kind.Name
+		task.Name = fmt.Sprintf("%s-%s", m.Name, kind.Name)
+		task.ApplicationID = &m.ID
+		taskGroup.List =
+			append(
+				taskGroup.List,
+				task)
+	}
+	err = taskGroup.Submit(r.DB, r.TaskManager)
 	return
 }
