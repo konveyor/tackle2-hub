@@ -1209,7 +1209,7 @@ func (m *Manager) next(task *Task) (err error) {
 	if task.TaskGroupID == nil || task.State != Succeeded {
 		return
 	}
-	var tasks []*model.Task
+	var tasks []*Task
 	db := m.DB.Order("ID")
 	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
 	if err != nil {
@@ -1225,12 +1225,23 @@ func (m *Manager) next(task *Task) (err error) {
 			member.State = Ready
 			db = reflect.Select(
 				m.DB,
-				member,
+				member.TaskGroupID,
 				"State")
 			err = db.Save(member).Error
 			if err != nil {
 				err = liberr.Wrap(err)
-				return
+			}
+			return
+		case Failed:
+			reason := fmt.Sprintf(
+				"Canceled:%d, when (pipelined) task:%d failed.",
+				member.ID,
+				task.ID)
+			member.Event(Canceled, reason)
+			Log.Info(reason)
+			err = member.Cancel(m.Client)
+			if err != nil {
+				Log.Error(err, "")
 			}
 		default:
 			return
