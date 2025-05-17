@@ -76,6 +76,7 @@ func All() []Handler {
 		&BusinessServiceHandler{},
 		&CacheHandler{},
 		&DependencyHandler{},
+		&GeneratorHandler{},
 		&ImportHandler{},
 		&JobFunctionHandler{},
 		&IdentityHandler{},

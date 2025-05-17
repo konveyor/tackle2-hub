@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/api/association"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
@@ -39,6 +40,11 @@ func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 	rtx := RichContext(ctx)
 	db = rtx.DB.Debug()
 	return
+}
+
+// Association returns an association (manager).
+func (h *BaseHandler) Association(ctx *gin.Context, name string) *association.Association {
+	return association.New(h.DB(ctx), name)
 }
 
 // Client returns k8s client from the context.

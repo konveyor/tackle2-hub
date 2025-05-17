@@ -171,6 +171,7 @@ type Archetype struct {
 	Tags              []Tag              `gorm:"many2many:ArchetypeTags;constraint:OnDelete:CASCADE"`
 	Stakeholders      []Stakeholder      `gorm:"many2many:ArchetypeStakeholders;constraint:OnDelete:CASCADE"`
 	StakeholderGroups []StakeholderGroup `gorm:"many2many:ArchetypeStakeholderGroups;constraint:OnDelete:CASCADE"`
+	Profiles          []TargetProfile    `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Tag struct {
