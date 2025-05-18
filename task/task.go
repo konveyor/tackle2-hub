@@ -704,6 +704,8 @@ type TaskGroup struct {
 }
 
 // Submit the task group.
+// - propagate properties to members.
+// - create member (tasks).
 func (g *TaskGroup) Submit(db *gorm.DB, manager *Manager) (err error) {
 	g.State = Ready
 	err = g.propagate()
