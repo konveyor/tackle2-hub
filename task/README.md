@@ -300,12 +300,12 @@ Task groups are used to create collections of tasks.
 
 #### Modes ####
 
-- Batch (default) - Used to create a _batch_ of un-ordered, homogeneous tasks. When the group is submitted, Each member
+- Batch (default) - Used to create a _batch_ of un-ordered, homogeneous tasks. When the group is submitted, each member
   (task) is created. As part of task creation, group properties (kind, addon, extension, priority, policy, data) are 
   propagated to each member. The `Data` object is _merged_ into each Task.Data with Task.Data values taking precedent.
   Members (tasks) share group's bucket.
 - Pipeline - Used to create a collection of heterogeneous tasks to be executed in order. When the group is submitted, 
-  Each member (task) is created and the FIRST task's state is set to Ready. No other properties are propagated. 
+  each member (task) is created and the FIRST task's state is set to Ready. No other properties are propagated. 
   As each task completes (state=Succeeded), the next task's state is set to Ready.
 
 
