@@ -1,90 +1,11 @@
-diff -ruN '--exclude=mod.patch' migration/v16/model/core.go migration/v17/model/core.go
---- migration/v16/model/core.go	2025-04-28 11:34:53.297572353 -0500
-+++ migration/v17/model/core.go	2025-04-28 11:28:39.097388676 -0500
-@@ -196,76 +196,26 @@
- 	Name         string `gorm:"index;unique;not null"`
- 	Description  string
- 	User         string
--	Password     string
--	Key          string
--	Settings     string
-+	Password     string        `secret:"aes"`
-+	Key          string        `secret:"aes"`
-+	Settings     string        `secret:"aes"`
- 	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
- 	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
- }
- 
--// Encrypt sensitive fields.
--// The ref identity is used to determine when sensitive fields
--// have changed and need to be (re)encrypted.
--func (r *Identity) Encrypt(ref *Identity) (err error) {
-+// Encrypt secret fields.
-+func (r *Identity) Encrypt() (err error) {
- 	passphrase := Settings.Encryption.Passphrase
--	aes := encryption.AES{}
--	aes.Use(passphrase)
--	if r.Password != ref.Password {
--		if r.Password != "" {
--			r.Password, err = aes.Encrypt(r.Password)
--			if err != nil {
--				err = liberr.Wrap(err)
--				return
--			}
--		}
--	}
--	if r.Key != ref.Key {
--		if r.Key != "" {
--			r.Key, err = aes.Encrypt(r.Key)
--			if err != nil {
--				err = liberr.Wrap(err)
--				return
--			}
--		}
--	}
--	if r.Settings != ref.Settings {
--		if r.Settings != "" {
--			r.Settings, err = aes.Encrypt(r.Settings)
--			if err != nil {
--				err = liberr.Wrap(err)
--				return
--			}
--		}
--	}
-+	secret := encryption.Secret{Passphrase: passphrase}
-+	err = secret.Encrypt(r)
- 	return
- }
- 
--// Decrypt sensitive fields.
-+// Decrypt secret fields.
- func (r *Identity) Decrypt() (err error) {
- 	passphrase := Settings.Encryption.Passphrase
--	aes := encryption.AES{}
--	aes.Use(passphrase)
--	if r.Password != "" {
--		r.Password, err = aes.Decrypt(r.Password)
--		if err != nil {
--			err = liberr.Wrap(err)
--			return
--		}
--	}
--	if r.Key != "" {
--		r.Key, err = aes.Decrypt(r.Key)
--		if err != nil {
--			err = liberr.Wrap(err)
--			return
--		}
--	}
--	if r.Settings != "" {
--		r.Settings, err = aes.Decrypt(r.Settings)
--		if err != nil {
--			err = liberr.Wrap(err)
--			return
--		}
--	}
-+	secret := encryption.Secret{Passphrase: passphrase}
-+	err = secret.Decrypt(r)
- 	return
- }
- 
+diff -ruN '--exclude=mod.patch' migration/v17/model/core.go migration/v18/model/core.go
+--- migration/v17/model/core.go	2025-05-15 09:22:18.705884812 -0500
++++ migration/v18/model/core.go	2025-05-17 07:50:17.379033740 -0500
+@@ -164,6 +164,7 @@
+ 	Model
+ 	BucketOwner
+ 	Name       string
++	Mode       string
+ 	Kind       string
+ 	Addon      string
+ 	Extensions []string `gorm:"type:json;serializer:json"`
