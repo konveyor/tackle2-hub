@@ -44,9 +44,9 @@ type TaskReaper struct {
 //	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
 	Log.V(1).Info("Reaping tasks.")
-	list := []task.Task{}
-	result := r.DB.Find(
-		&list,
+	m := &task.Task{}
+	db := r.DB.Model(m)
+	db = db.Where(
 		"state IN ?",
 		[]string{
 			task.Created,
@@ -54,17 +54,24 @@ func (r *TaskReaper) Run() {
 			task.Failed,
 			task.Canceled,
 		})
-	Log.Error(result.Error, "")
-	if result.Error != nil {
+	cursor, err := db.Rows()
+	Log.Error(err, "")
+	if err != nil {
 		return
 	}
+	defer func() {
+		_ = cursor.Close()
+	}()
 	pipelines, err := r.pipelineMap()
 	if err != nil {
 		Log.Error(err, "")
 		return
 	}
-	for i := range list {
-		m := &list[i]
+	for cursor.Next() {
+		err = r.DB.ScanRows(cursor, m)
+		if err != nil {
+			return
+		}
 		switch m.State {
 		case task.Created:
 			mark := m.CreateTime
@@ -244,14 +251,23 @@ type GroupReaper struct {
 //	- Bucket is released immediately.
 func (r *GroupReaper) Run() {
 	Log.V(1).Info("Reaping groups.")
-	list := []model.TaskGroup{}
-	db := r.DB.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
+	m := &model.TaskGroup{}
+	db := r.DB.Model(m)
+	db = db.Preload(clause.Associations)
+	cursor, err := db.Rows()
+	Log.Error(err, "")
+	if err != nil {
 		return
 	}
-	for i := range list {
-		m := &list[i]
+	defer func() {
+		_ = cursor.Close()
+	}()
+
+	for cursor.Next() {
+		err = r.DB.ScanRows(cursor, m)
+		if err != nil {
+			return
+		}
 		switch m.State {
 		case task.Created:
 			mark := m.CreateTime
