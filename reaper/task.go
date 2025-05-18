@@ -208,18 +208,18 @@ func (r *TaskReaper) pipelineMap() (mp PipelineMap, err error) {
 		return
 	}
 	for _, m := range list {
-		mp[m.ID] = m.Mode
+		if m.Mode == task.Pipeline {
+			mp[m.ID] = m.Mode
+		}
 	}
 	return
 }
 
 // inPipelined returns true when the task is part of a pipeline.
 func (r *TaskReaper) inPipelined(mp PipelineMap, m *task.Task) (b bool) {
-	if m.TaskGroupID == nil {
-		return
+	if m.TaskGroupID != nil {
+		_, b = mp[*m.TaskGroupID]
 	}
-	mode := mp[*m.TaskGroupID]
-	b = mode == task.Pipeline
 	return
 }
 
@@ -261,12 +261,14 @@ func (r *GroupReaper) Run() {
 				r.delete(m)
 			}
 		case task.Ready:
-			if len(m.Tasks) == 0 {
-				r.delete(m)
-				continue
-			}
-			if m.HasBucket() {
+			mark := m.CreateTime
+			if time.Since(mark) > time.Hour {
 				r.release(m)
+				if len(m.Tasks) == 0 {
+					r.delete(m)
+				} else {
+					r.release(m)
+				}
 			}
 		}
 	}
@@ -274,12 +276,21 @@ func (r *GroupReaper) Run() {
 
 // release resources.
 func (r *GroupReaper) release(m *model.TaskGroup) {
-	m.SetBucket(nil)
-	err := r.DB.Save(m).Error
-	if err == nil {
+	nChanged := 0
+	if m.HasBucket() {
 		Log.Info("Group bucket released.", "id", m.ID)
-	} else {
-		Log.Error(err, "")
+		m.SetBucket(nil)
+		nChanged++
+	}
+	if len(m.List) > 0 {
+		m.List = nil
+		nChanged++
+	}
+	if nChanged > 0 {
+		err := r.DB.Save(m).Error
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 }
 

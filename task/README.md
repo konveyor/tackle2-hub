@@ -293,3 +293,47 @@ This is to prevent orphaned or stuck tasks from leaking resources such as bucket
 
 See [Reaper](https://github.com/konveyor/tackle2-hub/blob/main/reaper/README.md#reaper)
 settings for details.
+
+### Group ###
+
+Task groups are used to create collections of tasks.
+
+#### Modes ####
+
+- Batch (default) - Used to create a _batch_ of un-ordered, homogeneous tasks. When the group is submitted, Each member
+  (task) is created. As part of task creation, group properties (kind, addon, extension, priority, policy, data) are 
+  propagated to each member. The `Data` object is _merged_ into each Task.Data with Task.Data values taking precedent.
+  Members (tasks) share group's bucket.
+- Pipeline - Used to create a collection of heterogeneous tasks to be executed in order. When the group is submitted, 
+  Each member (task) is created and the FIRST task's state is set to Ready. No other properties are propagated. 
+  As each task completes (state=Succeeded), the next task's state is set to Ready.
+
+
+| Name        | Definition                                                                                                         |
+|-------------|--------------------------------------------------------------------------------------------------------------------|
+| ID          | Unique identifier.                                                                                                 |
+| CreateTime  | The timestamp of when the group was created.                                                                       |
+| CreateUser  | The user (name) that created the task.                                                                             |
+| UpdateUser  | The user (name) that last updated the task.                                                                        |
+| Mode        | The task mode (Batch\|Pipeline).                                                                                   |
+| Name        | The task mame (non-unique).                                                                                        |
+| Kind        | The kind references a Task (kind) CR by name.                                                                      |
+| Addon       | The addon to be executed. References an Addon CR by name. When not specified, the addon is selected based on kind. |
+| Extension   | The list of extensions to be injected into the addon pod as _sidecar_ containers.                                  |
+| State       | The task state.  See: [States](https://github.com/konveyor/tackle2-hub/tree/main/task#states).                                                                               |
+| Priority    | The task execution priority. See: [Priority](https://github.com/konveyor/tackle2-hub/tree/main/task#priority).                                                                 |
+| Policy      | The task execution policy. Determines when task is postponed. See: [Policies](https://github.com/konveyor/tackle2-hub/tree/main/task#policies).                                |
+| Data        | The data provided to the addon. The schema is dictated by each addon. This may be _ANY_ document.                  |
+| Tasks       | List of member tasks.                                                                                              |
+
+#### Reaper ####
+
+A task group may be reaped after existing in a state for the defined duration.
+This is to prevent orphaned groups from leaking resources such as buckets and files.
+
+| State     | Duration (default)    | Action   |
+|-----------|-----------------------|----------|
+| Created   | [Reaper.Created](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) | Deleted  |
+
+See [Reaper](https://github.com/konveyor/tackle2-hub/blob/main/reaper/README.md#reaper)
+settings for details.
