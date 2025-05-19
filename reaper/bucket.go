@@ -20,15 +20,6 @@ type BucketReaper struct {
 // A bucket is deleted when it is no longer referenced and the TTL has expired.
 func (r *BucketReaper) Run() {
 	Log.V(1).Info("Reaping buckets.")
-	list := []model.Bucket{}
-	err := r.DB.Find(&list).Error
-	if err != nil {
-		Log.Error(err, "")
-		return
-	}
-	if len(list) == 0 {
-		return
-	}
 	ids := make(map[uint]byte)
 	finder := RefFinder{DB: r.DB}
 	for _, m := range []any{
@@ -42,7 +33,22 @@ func (r *BucketReaper) Run() {
 			continue
 		}
 	}
-	for _, bucket := range list {
+	bucket := &model.Bucket{}
+	db := r.DB.Model(bucket)
+	cursor, err := db.Rows()
+	if err != nil {
+		Log.Error(err, "")
+		return
+	}
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = db.ScanRows(cursor, bucket)
+		if err != nil {
+			Log.Error(err, "")
+			return
+		}
 		if _, found := ids[bucket.ID]; found {
 			if bucket.Expiration != nil {
 				bucket.Expiration = nil
@@ -61,7 +67,7 @@ func (r *BucketReaper) Run() {
 		}
 		mark := time.Now()
 		if mark.After(*bucket.Expiration) {
-			err = r.delete(&bucket)
+			err = r.delete(bucket)
 			if err != nil {
 				Log.Error(err, "")
 				continue

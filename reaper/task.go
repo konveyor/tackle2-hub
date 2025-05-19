@@ -68,7 +68,7 @@ func (r *TaskReaper) Run() {
 		return
 	}
 	for cursor.Next() {
-		err = r.DB.ScanRows(cursor, m)
+		err = db.ScanRows(cursor, m)
 		if err != nil {
 			return
 		}
