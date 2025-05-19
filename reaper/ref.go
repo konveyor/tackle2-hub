@@ -130,9 +130,6 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 // id returns the uint (id).
 // Zero(0) indicates the type could not be converted.
 func (r *RefFinder) id(v any) (id uint) {
-	defer func() {
-		recover()
-	}()
 	switch n := v.(type) {
 	case *uint:
 		if n != nil {
@@ -148,8 +145,6 @@ func (r *RefFinder) id(v any) (id uint) {
 		if n != nil {
 			id = r.id(*n)
 		}
-	default:
-		fmt.Printf("unknown: %T\n", n)
 	}
 	return
 }
