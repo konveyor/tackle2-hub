@@ -64,6 +64,12 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: identities
       verbs:
         - delete
@@ -287,6 +293,12 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: identities
       verbs:
         - get
@@ -466,6 +478,9 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - get
     - name: identities
       verbs:
         - get
@@ -596,6 +611,9 @@
     - name: identities
       verbs:
         - get
+    - name: generators
+      verbs:
+        - get
     - name: imports
       verbs:
         - get
@@ -606,6 +624,9 @@
       verbs:
         - get
         - post
+    - name: platforms
+      verbs:
+        - get
     - name: proxies
       verbs:
         - get

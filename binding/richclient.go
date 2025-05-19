@@ -19,6 +19,7 @@ type RichClient struct {
 	BusinessService  BusinessService
 	Dependency       Dependency
 	File             File
+	Generator        Generator
 	Identity         Identity
 	JobFunction      JobFunction
 	Manifest         Manifest
@@ -72,6 +73,9 @@ func New(baseURL string) (r *RichClient) {
 			client: client,
 		},
 		File: File{
+			client: client,
+		},
+		Generator: Generator{
 			client: client,
 		},
 		Identity: Identity{

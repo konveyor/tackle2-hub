@@ -22,7 +22,7 @@ repository:
     kind: git
     url: ${repository}
 identities:
-  - id: 99999
+  - id: 1
 tags:
   - id: 1
   - id: 16
