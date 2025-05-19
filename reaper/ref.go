@@ -81,7 +81,6 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 		db = db.Debug()
 	}
 	var fields []string
-	var list []map[string]any
 	for i := range nfields {
 		fields = append(fields, nfields[i])
 	}
@@ -97,8 +96,10 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 				jfields[i],
 				i))
 	}
+	ref := make(map[string]any)
 	db = db.Select(fields)
-	err = db.Find(&list).Error
+	db = db.Debug()
+	cursor, err := db.Rows()
 	if err != nil {
 		err = liberr.Wrap(
 			err,
@@ -106,20 +107,49 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 			reflect.TypeOf(m).Name(),
 		)
 	}
-	for _, ref := range list {
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = db.ScanRows(cursor, &ref)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 		for _, v := range ref {
-			switch n := v.(type) {
-			case uint:
+			n := r.id(v)
+			if n > 0 {
 				ids[n] = 0
-			case *uint:
-				if n != nil {
-					ids[*n] = 0
-				}
-			case int64:
-				ids[uint(n)] = 0
 			}
 		}
 	}
 
+	return
+}
+
+// id returns the uint (id).
+// Zero(0) indicates the type could not be converted.
+func (r *RefFinder) id(v any) (id uint) {
+	defer func() {
+		recover()
+	}()
+	switch n := v.(type) {
+	case *uint:
+		if n != nil {
+			id = *n
+		}
+	case int64:
+		id = uint(n)
+	case *int64:
+		if n != nil {
+			id = uint(*n)
+		}
+	case *any:
+		if n != nil {
+			id = r.id(*n)
+		}
+	default:
+		fmt.Printf("unknown: %T\n", n)
+	}
 	return
 }
