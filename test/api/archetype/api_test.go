@@ -1,16 +1,37 @@
 package archetype
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestArchetypeCRUD(t *testing.T) {
-	for _, r := range Samples {
+	for i := range Samples {
+		var r api.Archetype
+		b, _ := json.Marshal(Samples[i])
+		_ = json.Unmarshal(b, &r)
 		t.Run(r.Name, func(t *testing.T) {
+			// generator
+			generator := &api.Generator{
+				Name: t.Name(),
+				Kind: t.Name(),
+			}
+			err := RichClient.Generator.Create(generator)
+			assert.Must(t, err)
+			defer func() {
+				_ = RichClient.Generator.Delete(generator.ID)
+			}()
 			// Create.
-			err := Archetype.Create(&r)
+			for i := range r.Profiles {
+				p := &r.Profiles[i]
+				p.Generators = append(
+					p.Generators,
+					api.Ref{ID: generator.ID})
+			}
+			err = Archetype.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
