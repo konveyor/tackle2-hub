@@ -306,7 +306,8 @@ Task groups are used to create collections of tasks.
   Members (tasks) share group's bucket.
 - Pipeline - Used to create a collection of heterogeneous tasks to be executed in order. When the group is submitted, 
   each member (task) is created and the FIRST task's state is set to Ready. No other properties are propagated. 
-  As each task completes (state=Succeeded), the next task's state is set to Ready.
+  As each task completes (state=Succeeded), the next task's state is set to Ready. 
+  Members (tasks) share group's bucket.
 
 
 | Name        | Definition                                                                                                         |

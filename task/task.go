@@ -768,6 +768,7 @@ func (g *TaskGroup) propagate() (err error) {
 		case Pipeline:
 			if i == 0 {
 				task.State = m.State
+				task.SetBucket(m.BucketID)
 			}
 		}
 	}
