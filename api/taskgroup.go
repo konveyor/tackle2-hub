@@ -107,6 +107,7 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // @router /taskgroups [post]
 // @param taskgroup body api.TaskGroup true "TaskGroup data"
 func (h TaskGroupHandler) Create(ctx *gin.Context) {
+	rtx := RichContext(ctx)
 	r := &TaskGroup{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -120,37 +121,24 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 	}
 	db := h.DB(ctx)
 	db = db.Omit(clause.Associations)
-	m := r.Model()
+	m := &tasking.TaskGroup{}
+	m.With(r.Model())
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	switch r.State {
 	case "":
 		m.State = tasking.Created
 		fallthrough
 	case tasking.Created:
-		result := db.Create(&m)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
+		err = db.Create(&m).Error
+		if err != nil {
+			_ = ctx.Error(err)
 			return
 		}
 	case tasking.Ready:
-		err := h.Propagate(m)
+		err = m.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
+			_ = ctx.Error(err)
 			return
-		}
-		result := db.Create(&m)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
-		rtx := RichContext(ctx)
-		for i := range m.Tasks {
-			task := &tasking.Task{}
-			task.With(&m.Tasks[i])
-			err = rtx.TaskManager.Create(h.DB(ctx), task)
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
 		}
 	default:
 		_ = ctx.Error(
@@ -160,7 +148,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	r.With(m)
+	r.With(m.TaskGroup)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -175,8 +163,9 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @param id path int true "Task ID"
 // @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
+	rtx := RichContext(ctx)
 	id := h.pk(ctx)
-	m := &model.TaskGroup{}
+	m := &tasking.TaskGroup{}
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -185,7 +174,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	r := &TaskGroup{}
 	if ctx.Request.Method == http.MethodPatch &&
 		ctx.Request.ContentLength > 0 {
-		r.With(m)
+		r.With(m.TaskGroup)
 	}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -204,7 +193,8 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		clause.Associations,
 		"BucketID",
 		"Bucket")
-	m = r.Model()
+	m = &tasking.TaskGroup{}
+	m.With(r.Model())
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	switch m.State {
@@ -215,35 +205,10 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		for i := range m.Tasks {
-			task := &m.Tasks[i]
-			if task.ID > 0 {
-				_ = ctx.Error(
-					&BadRequestError{
-						Reason: "already submitted.",
-					})
-				return
-			}
-		}
-		err := h.Propagate(m)
-		if err != nil {
-			return
-		}
-		err = db.Save(m).Error
+		err = m.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
-		}
-		rtx := RichContext(ctx)
-		for i := range m.Tasks {
-			task := &tasking.Task{}
-			task.With(&m.Tasks[i])
-			task.CreateUser = h.CurrentUser(ctx)
-			err = rtx.TaskManager.Create(h.DB(ctx), task)
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
 		}
 	default:
 		_ = ctx.Error(
@@ -469,11 +434,23 @@ func (h *TaskGroupHandler) Propagate(m *model.TaskGroup) (err error) {
 		task.Extensions = m.Extensions
 		task.Priority = m.Priority
 		task.Policy = m.Policy
-		task.State = m.State
 		task.SetBucket(m.BucketID)
 		merged := task.Data.Merge(m.Data)
 		if !merged {
 			task.Data = m.Data
+		}
+	}
+	switch m.Mode {
+	case "", tasking.Batch:
+		for i := range m.Tasks {
+			task := &m.Tasks[i]
+			task.State = m.State
+		}
+	case tasking.Pipeline:
+		for i := range m.Tasks {
+			task := &m.Tasks[i]
+			task.State = m.State
+			break
 		}
 	}
 
@@ -546,12 +523,6 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
-	}
-	for _, task := range r.Tasks {
-		member := task.Model()
-		m.Tasks = append(
-			m.Tasks,
-			*member)
 	}
 	return
 }

@@ -21,6 +21,8 @@ businessService:
 repository:
     kind: git
     url: ${repository}
+identities:
+  - id: 99999
 tags:
   - id: 1
   - id: 16
