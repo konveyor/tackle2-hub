@@ -289,7 +289,6 @@ func (r *GroupReaper) Run() {
 		case task.Ready:
 			mark := m.CreateTime
 			if time.Since(mark) > time.Hour {
-				r.release(m.TaskGroup)
 				if m.Count == 0 {
 					r.delete(m.TaskGroup)
 				} else {
