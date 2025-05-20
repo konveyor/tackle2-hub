@@ -42,7 +42,8 @@ type TaskReaper struct {
 //	- Bucket is released after the defined period.
 //	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
-	Log.V(1).Info("Reaping tasks.")
+	Log.Info("TaskReaper: beginning.")
+	mark := time.Now()
 	m := &task.Task{}
 	db := r.DB.Model(m)
 	db = db.Where(
@@ -150,6 +151,8 @@ func (r *TaskReaper) Run() {
 			}
 		}
 	}
+
+	Log.Info("TaskReaper: ended.", "duration", time.Since(mark))
 }
 
 // release bucket and file resources.
@@ -249,7 +252,8 @@ type GroupReaper struct {
 //	- Deleted when all of its task have been deleted.
 //	- Bucket is released immediately.
 func (r *GroupReaper) Run() {
-	Log.V(1).Info("Reaping groups.")
+	Log.Info("GroupReaper: beginning.")
+	mark := time.Now()
 	type M struct {
 		*model.TaskGroup
 		Count int64
@@ -294,6 +298,8 @@ func (r *GroupReaper) Run() {
 			}
 		}
 	}
+
+	Log.Info("GroupReaper: ended.", "duration", time.Since(mark))
 }
 
 // release resources.

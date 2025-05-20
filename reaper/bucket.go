@@ -19,7 +19,8 @@ type BucketReaper struct {
 // Run Executes the reaper.
 // A bucket is deleted when it is no longer referenced and the TTL has expired.
 func (r *BucketReaper) Run() {
-	Log.V(1).Info("Reaping buckets.")
+	Log.Info("BucketReaper: beginning.")
+	mark := time.Now()
 	ids := make(map[uint]byte)
 	finder := RefFinder{DB: r.DB}
 	for _, m := range []any{
@@ -74,6 +75,8 @@ func (r *BucketReaper) Run() {
 			}
 		}
 	}
+
+	Log.Info("BucketReaper: ended.", "duration", time.Since(mark))
 }
 
 // Delete bucket.

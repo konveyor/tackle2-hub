@@ -18,7 +18,8 @@ type FileReaper struct {
 // Run Executes the reaper.
 // A file is deleted when it is no longer referenced and the TTL has expired.
 func (r *FileReaper) Run() {
-	Log.V(1).Info("Reaping files.")
+	Log.Info("FileReaper: beginning.")
+	mark := time.Now()
 	ids := make(map[uint]byte)
 	finder := RefFinder{DB: r.DB}
 	for _, m := range []any{
@@ -74,6 +75,8 @@ func (r *FileReaper) Run() {
 			}
 		}
 	}
+
+	Log.Info("FileReaper: ended.", "duration", time.Since(mark))
 }
 
 // Delete file.
