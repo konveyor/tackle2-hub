@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/mattn/go-sqlite3"
 )
@@ -97,7 +98,10 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 		defer c.release()
 	}
 	if p, cast := c.wrapped.(driver.QueryerContext); cast {
-		r, err = p.QueryContext(ctx, query, args)
+		err = withRetry(func() (err error) {
+			r, err = p.QueryContext(ctx, query, args)
+			return
+		})
 	}
 	return
 }
@@ -109,7 +113,10 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 		defer c.release()
 	}
 	if p, cast := c.wrapped.(driver.ExecerContext); cast {
-		r, err = p.ExecContext(ctx, query, args)
+		err = withRetry(func() (err error) {
+			r, err = p.ExecContext(ctx, query, args)
+			return
+		})
 	}
 	return
 }
@@ -117,7 +124,10 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 // Begin a transaction.
 func (c *Conn) Begin() (tx driver.Tx, err error) {
 	c.acquire()
-	tx, err = c.wrapped.Begin()
+	err = withRetry(func() (err error) {
+		tx, err = c.wrapped.Begin()
+		return
+	})
 	if err != nil {
 		return
 	}
@@ -133,9 +143,15 @@ func (c *Conn) Begin() (tx driver.Tx, err error) {
 func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
 	c.acquire()
 	if p, cast := c.wrapped.(driver.ConnBeginTx); cast {
-		tx, err = p.BeginTx(ctx, opts)
+		err = withRetry(func() (err error) {
+			tx, err = p.BeginTx(ctx, opts)
+			return
+		})
 	} else {
-		tx, err = c.wrapped.Begin()
+		err = withRetry(func() (err error) {
+			tx, err = c.wrapped.Begin()
+			return
+		})
 	}
 	tx = &Tx{
 		conn:    c,
@@ -147,7 +163,10 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx
 
 // Prepare a statement.
 func (c *Conn) Prepare(query string) (stmt driver.Stmt, err error) {
-	stmt, err = c.wrapped.Prepare(query)
+	err = withRetry(func() (err error) {
+		stmt, err = c.wrapped.Prepare(query)
+		return
+	})
 	stmt = &Stmt{
 		conn:    c,
 		wrapped: stmt,
@@ -159,9 +178,15 @@ func (c *Conn) Prepare(query string) (stmt driver.Stmt, err error) {
 // PrepareContext prepares a statement with context.
 func (c *Conn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
 	if p, cast := c.wrapped.(driver.ConnPrepareContext); cast {
-		stmt, err = p.PrepareContext(ctx, query)
+		err = withRetry(func() (err error) {
+			stmt, err = p.PrepareContext(ctx, query)
+			return
+		})
 	} else {
-		stmt, err = c.Prepare(query)
+		err = withRetry(func() (err error) {
+			stmt, err = c.Prepare(query)
+			return
+		})
 	}
 	stmt = &Stmt{
 		conn:    c,
@@ -245,7 +270,10 @@ func (s *Stmt) Exec(args []driver.Value) (r driver.Result, err error) {
 		s.conn.acquire()
 		defer s.conn.release()
 	}
-	r, err = s.wrapped.Exec(args)
+	err = withRetry(func() (err error) {
+		r, err = s.wrapped.Exec(args)
+		return
+	})
 	return
 }
 
@@ -256,9 +284,15 @@ func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (r dri
 		defer s.conn.release()
 	}
 	if p, cast := s.wrapped.(driver.StmtExecContext); cast {
-		r, err = p.ExecContext(ctx, args)
+		err = withRetry(func() (err error) {
+			r, err = p.ExecContext(ctx, args)
+			return
+		})
 	} else {
-		r, err = s.Exec(s.values(args))
+		err = withRetry(func() (err error) {
+			r, err = s.Exec(s.values(args))
+			return
+		})
 	}
 	return
 }
@@ -269,7 +303,10 @@ func (s *Stmt) Query(args []driver.Value) (r driver.Rows, err error) {
 		s.conn.acquire()
 		defer s.conn.release()
 	}
-	r, err = s.wrapped.Query(args)
+	err = withRetry(func() (err error) {
+		r, err = s.wrapped.Query(args)
+		return
+	})
 	return
 }
 
@@ -280,9 +317,15 @@ func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (r dr
 		defer s.conn.release()
 	}
 	if p, cast := s.wrapped.(driver.StmtQueryContext); cast {
-		r, err = p.QueryContext(ctx, args)
+		err = withRetry(func() (err error) {
+			r, err = p.QueryContext(ctx, args)
+			return
+		})
 	} else {
-		r, err = s.Query(s.values(args))
+		err = withRetry(func() (err error) {
+			r, err = s.Query(s.values(args))
+			return
+		})
 	}
 	return
 }
@@ -314,7 +357,10 @@ func (t *Tx) Commit() (err error) {
 		t.conn.endTx()
 		t.conn.release()
 	}()
-	err = t.wrapped.Commit()
+	err = withRetry(func() (err error) {
+		err = t.wrapped.Commit()
+		return
+	})
 	return
 }
 
@@ -325,6 +371,28 @@ func (t *Tx) Rollback() (err error) {
 		t.conn.endTx()
 		t.conn.release()
 	}()
-	err = t.wrapped.Rollback()
+	err = withRetry(func() (err error) {
+		err = t.wrapped.Rollback()
+		return
+	})
+	return
+}
+
+// withRetry
+func withRetry(fn func() error) (err error) {
+	retries := 10
+	delay := 50 * time.Millisecond
+	for i := 0; i < retries; i++ {
+		err = fn()
+		if err == nil {
+			return
+		}
+		m := err.Error()
+		if strings.Contains(m, "database is locked") || strings.Contains(m, "database is busy") {
+			delay += 50 * time.Millisecond
+		} else {
+			break
+		}
+	}
 	return
 }
