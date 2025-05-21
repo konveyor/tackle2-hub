@@ -388,7 +388,8 @@ func withRetry(fn func() error) (err error) {
 			return
 		}
 		m := err.Error()
-		if strings.Contains(m, "locked") || strings.Contains(m, "busy") {
+		m = strings.ToUpper(m)
+		if strings.Contains(m, "LOCKED") || strings.Contains(m, "BUSY") {
 			delay += 50 * time.Millisecond
 		} else {
 			break
