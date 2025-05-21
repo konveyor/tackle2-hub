@@ -388,7 +388,7 @@ func withRetry(fn func() error) (err error) {
 			return
 		}
 		m := err.Error()
-		if strings.Contains(m, "database is locked") || strings.Contains(m, "database is busy") {
+		if strings.Contains(m, "locked") || strings.Contains(m, "busy") {
 			delay += 50 * time.Millisecond
 		} else {
 			break
