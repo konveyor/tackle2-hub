@@ -97,16 +97,16 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 
 // printHeap print heap statistics every 15 seconds.
 func printHeap() {
+	delay := time.Duration(Settings.Frequency.Heap) * time.Second
+	if delay == 0 {
+		return // disabled
+	}
 	go func() {
 		mb := func(n uint64) (f float64) {
 			f = float64(n) / 1024 / 1024
 			return
 		}
 		for {
-			delay := time.Duration(Settings.Frequency.Heap) * time.Second
-			if delay == 0 {
-				continue // disabled
-			}
 			var m runtime.MemStats
 			// debug.SetGCPercent(50)
 			// runtime.GC()
