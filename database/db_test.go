@@ -9,6 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/env"
 )
 
@@ -58,6 +59,9 @@ func TestConcurrent(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	sqlDB, _ := db.DB()
+	sqlDB.SetMaxOpenConns(N)
+	sqlDB.SetMaxIdleConns(N)
 
 	type A struct {
 		model.Model
@@ -103,7 +107,7 @@ func TestConcurrent(t *testing.T) {
 						panic(uErr)
 					}
 				}
-				for i := 0; i < 10; i++ {
+				for i := 0; i < 20; i++ {
 					fmt.Printf("(%.4d) LIST: %.4d/%.4d\n", id, n, i)
 					page := api.Page{}
 					cursor := api.Cursor{}
@@ -113,13 +117,13 @@ func TestConcurrent(t *testing.T) {
 					dbx = dbx.Limit(10)
 					cursor.With(dbx, page)
 					for cursor.Next(&mx) {
-						time.Sleep(time.Millisecond + 10)
+						time.Sleep(time.Duration(rand.Intn(3)) * time.Millisecond)
 						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
 				for i := 0; i < 4; i++ {
 					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Millisecond * 10)
+						time.Sleep(time.Duration(rand.Intn(3)) * time.Millisecond)
 						for i := 0; i < 3; i++ {
 							err = tx.Save(m).Error
 							if err != nil {
