@@ -205,17 +205,13 @@ func (c *Conn) Close() (err error) {
 }
 
 // needsMutex returns true when the query should is a write operation.
-func (c *Conn) needsMutex(query string) (matched bool) {
-	if query == "" {
-		return
+func (c *Conn) needsMutex(stmt string) (matched bool) {
+	stmt = strings.TrimSpace(stmt)
+	if stmt != "" {
+		action := strings.Fields(stmt)[0]
+		action = strings.ToUpper(stmt)
+		matched = action != "SELECT"
 	}
-	query = strings.ToUpper(query)
-	action := strings.Fields(query)[0]
-	action = strings.ToUpper(action)
-	matched = action == "CREATE" ||
-		action == "INSERT" ||
-		action == "UPDATE" ||
-		action == "DELETE"
 	return
 }
 
@@ -381,7 +377,7 @@ func (t *Tx) Rollback() (err error) {
 // withRetry
 func withRetry(fn func() error) (err error) {
 	retries := 10
-	delay := 50 * time.Millisecond
+	delay := time.Duration(0)
 	for i := 0; i < retries; i++ {
 		err = fn()
 		if err == nil {
@@ -391,6 +387,10 @@ func withRetry(fn func() error) (err error) {
 		m = strings.ToUpper(m)
 		if strings.Contains(m, "LOCKED") || strings.Contains(m, "BUSY") {
 			delay += 50 * time.Millisecond
+			if delay > time.Second {
+				delay = time.Second
+			}
+			time.Sleep(delay)
 		} else {
 			break
 		}

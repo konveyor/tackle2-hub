@@ -62,6 +62,10 @@ func TestConcurrent(t *testing.T) {
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxOpenConns(N)
 	sqlDB.SetMaxIdleConns(N)
+	_, err = sqlDB.Exec("PRAGMA busy_timeout = 1;")
+	if err != nil {
+		panic(err)
+	}
 
 	type A struct {
 		model.Model
@@ -117,19 +121,29 @@ func TestConcurrent(t *testing.T) {
 					dbx = dbx.Limit(10)
 					cursor.With(dbx, page)
 					for cursor.Next(&mx) {
-						time.Sleep(time.Duration(rand.Intn(3)) * time.Millisecond)
+						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
 						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
 				for i := 0; i < 4; i++ {
 					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Duration(rand.Intn(3)) * time.Millisecond)
+						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
 						for i := 0; i < 3; i++ {
 							err = tx.Save(m).Error
 							if err != nil {
 								break
 							}
 						}
+						return
+					})
+					if uErr != nil {
+						panic(uErr)
+					}
+					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
+						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
+						m2 := &B{N: n, A: a}
+						m2.ID = 1 // dup key: rollback.
+						_ = tx.Create(m2)
 						return
 					})
 					if uErr != nil {
