@@ -18,9 +18,9 @@ var Log = logr.WithName("db")
 var Settings = &settings.Settings
 
 const (
-	ConnectionString = "file:%s?_journal=WAL"
-	FKsOn            = "&_foreign_keys=yes"
-	FKsOff           = "&_foreign_keys=no"
+	DSN    = "file:%s?_journal="
+	FKsOn  = "&_foreign_keys=yes"
+	FKsOff = "&_foreign_keys=no"
 )
 
 func init() {
@@ -28,14 +28,22 @@ func init() {
 }
 
 // Open and auto-migrate the DB.
+// For sqlite3, the default journal mode:
+// - DELETE used for NFS.
+// - WAL used for non-network filesystems.
 func Open(enforceFKs bool) (db *gorm.DB, err error) {
-	connStr := fmt.Sprintf(ConnectionString, Settings.DB.Path)
-	if enforceFKs {
-		connStr += FKsOn
+	dsn := fmt.Sprintf(DSN, Settings.DB.Path)
+	if Settings.DB.NFS {
+		dsn += "DELETE"
 	} else {
-		connStr += FKsOff
+		dsn += "WAL"
 	}
-	dialector := sqlite.Open(connStr).(*sqlite.Dialector)
+	if enforceFKs {
+		dsn += FKsOn
+	} else {
+		dsn += FKsOff
+	}
+	dialector := sqlite.Open(dsn).(*sqlite.Dialector)
 	dialector.DriverName = "sqlite3x"
 	db, err = gorm.Open(
 		dialector,

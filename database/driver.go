@@ -203,6 +203,7 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (stmt driver.St
 func (c *Conn) Close() (err error) {
 	err = c.wrapped.Close()
 	c.hasMutex = false
+	c.hasTx = false
 	c.release()
 	return
 }

@@ -13,6 +13,7 @@ const (
 	EnvBuild                   = "BUILD"
 	EnvDbPath                  = "DB_PATH"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
+	EnvDbNFS                   = "DB_NFS"
 	EnvDbSeedPath              = "DB_SEED_PATH"
 	EnvBucketPath              = "BUCKET_PATH"
 	EnvRwxSupported            = "RWX_SUPPORTED"
@@ -55,6 +56,7 @@ type Hub struct {
 	DB struct {
 		Path          string
 		MaxConnection int
+		NFS           bool
 		SeedPath      string
 	}
 	// Bucket settings.
@@ -148,6 +150,7 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.DB.MaxConnection = 50
 	}
+	r.DB.NFS = getEnvBool(EnvDbNFS, false)
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {
 		r.DB.SeedPath = "/tmp/seed"
