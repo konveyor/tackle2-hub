@@ -14,7 +14,7 @@ import (
 	"k8s.io/utils/env"
 )
 
-var N, _ = env.GetInt("TEST_CONCURRENT", 6)
+var N, _ = env.GetInt("TEST_CONCURRENT", 4)
 var TestDir = env.GetString("TEST_DIR", "/tmp")
 
 func TestDriver(t *testing.T) {
