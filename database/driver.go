@@ -63,6 +63,8 @@ type Conn struct {
 func (c *Conn) Ping(ctx context.Context) (err error) {
 	if p, cast := c.wrapped.(driver.Pinger); cast {
 		err = p.Ping(ctx)
+	} else {
+		err = driver.ErrSkip
 	}
 	return
 }
@@ -77,6 +79,8 @@ func (c *Conn) ResetSession(ctx context.Context) (err error) {
 	}()
 	if p, cast := c.wrapped.(driver.SessionResetter); cast {
 		err = p.ResetSession(ctx)
+	} else {
+		err = driver.ErrSkip
 	}
 	return
 }
@@ -84,7 +88,6 @@ func (c *Conn) ResetSession(ctx context.Context) (err error) {
 // IsValid returns true when the connection is valid.
 // When true, the connection may be reused by the sql package.
 func (c *Conn) IsValid() (b bool) {
-	b = true
 	if p, cast := c.wrapped.(driver.Validator); cast {
 		b = p.IsValid()
 	}
@@ -102,6 +105,8 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 			r, err = p.QueryContext(ctx, query, args)
 			return
 		})
+	} else {
+		err = driver.ErrSkip
 	}
 	return
 }
@@ -117,6 +122,8 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args []driver.Name
 			r, err = p.ExecContext(ctx, query, args)
 			return
 		})
+	} else {
+		err = driver.ErrSkip
 	}
 	return
 }
@@ -148,10 +155,8 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx
 			return
 		})
 	} else {
-		err = withRetry(func() (err error) {
-			tx, err = c.wrapped.Begin()
-			return
-		})
+		err = driver.ErrSkip
+		return
 	}
 	tx = &Tx{
 		conn:    c,
@@ -183,10 +188,8 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (stmt driver.St
 			return
 		})
 	} else {
-		err = withRetry(func() (err error) {
-			stmt, err = c.Prepare(query)
-			return
-		})
+		err = driver.ErrSkip
+		return
 	}
 	stmt = &Stmt{
 		conn:    c,
@@ -209,7 +212,7 @@ func (c *Conn) needsMutex(stmt string) (matched bool) {
 	stmt = strings.TrimSpace(stmt)
 	if stmt != "" {
 		action := strings.Fields(stmt)[0]
-		action = strings.ToUpper(stmt)
+		action = strings.ToUpper(action)
 		matched = action != "SELECT"
 	}
 	return
@@ -285,10 +288,7 @@ func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (r dri
 			return
 		})
 	} else {
-		err = withRetry(func() (err error) {
-			r, err = s.Exec(s.values(args))
-			return
-		})
+		err = driver.ErrSkip
 	}
 	return
 }
@@ -318,10 +318,7 @@ func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (r dr
 			return
 		})
 	} else {
-		err = withRetry(func() (err error) {
-			r, err = s.Query(s.values(args))
-			return
-		})
+		err = driver.ErrSkip
 	}
 	return
 }

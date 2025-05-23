@@ -181,6 +181,6 @@ func assignPk(db *gorm.DB) {
 			break
 		}
 	default:
-		log.Info("[WARN] assignPk: unknown kind.")
+		Log.Info("[WARN] assignPk: unknown kind.")
 	}
 }

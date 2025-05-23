@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var log = logr.WithName("db")
+var Log = logr.WithName("db")
 
 var Settings = &settings.Settings
 
@@ -27,7 +27,7 @@ func init() {
 	sql.Register("sqlite3x", &Driver{})
 }
 
-// Open and automigrate the DB.
+// Open and auto-migrate the DB.
 func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	connStr := fmt.Sprintf(ConnectionString, Settings.DB.Path)
 	if enforceFKs {

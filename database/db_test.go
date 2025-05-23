@@ -59,10 +59,13 @@ func TestConcurrent(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer func() {
+		_ = os.Remove(Settings.DB.Path)
+	}()
 	sqlDB, _ := db.DB()
 	sqlDB.SetMaxOpenConns(N)
 	sqlDB.SetMaxIdleConns(N)
-	_, err = sqlDB.Exec("PRAGMA busy_timeout = 1;")
+	_, err = sqlDB.Exec("PRAGMA busy_timeout = 10;")
 	if err != nil {
 		panic(err)
 	}
@@ -78,6 +81,10 @@ func TestConcurrent(t *testing.T) {
 		AID uint
 	}
 	err = db.Migrator().AutoMigrate(&A{}, &B{})
+	if err != nil {
+		panic(err)
+	}
+	err = PK.Load(db, []any{&A{}, &B{}})
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +118,7 @@ func TestConcurrent(t *testing.T) {
 						panic(uErr)
 					}
 				}
-				for i := 0; i < 20; i++ {
+				for i := 0; i < 40; i++ {
 					fmt.Printf("(%.4d) LIST: %.4d/%.4d\n", id, n, i)
 					page := api.Page{}
 					cursor := api.Cursor{}
@@ -125,9 +132,9 @@ func TestConcurrent(t *testing.T) {
 						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
-				for i := 0; i < 4; i++ {
+				for i := 0; i < 10; i++ {
 					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
+						time.Sleep(time.Duration(rand.Intn(200)) * time.Millisecond)
 						for i := 0; i < 3; i++ {
 							err = tx.Save(m).Error
 							if err != nil {
@@ -139,16 +146,16 @@ func TestConcurrent(t *testing.T) {
 					if uErr != nil {
 						panic(uErr)
 					}
-					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
-						m2 := &B{N: n, A: a}
-						m2.ID = 1 // dup key: rollback.
-						_ = tx.Create(m2)
-						return
-					})
-					if uErr != nil {
-						panic(uErr)
-					}
+				}
+				uErr = db.Transaction(func(tx *gorm.DB) (err error) {
+					time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
+					m2 := &B{N: n, A: a}
+					m2.ID = 1 // dup key: rollback.
+					_ = tx.Create(m2)
+					return
+				})
+				if uErr != nil {
+					panic(uErr)
 				}
 			}
 			dq <- id
