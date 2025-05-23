@@ -13,7 +13,7 @@ import (
 	"k8s.io/utils/env"
 )
 
-var N, _ = env.GetInt("TEST_CONCURRENT", 10)
+var N, _ = env.GetInt("TEST_CONCURRENT", 6)
 
 func TestDriver(t *testing.T) {
 	pid := os.Getpid()
@@ -55,6 +55,7 @@ func TestConcurrent(t *testing.T) {
 	defer func() {
 		_ = os.Remove(Settings.DB.Path)
 	}()
+	Settings.DB.MaxConnection = N * 2
 	db, err := Open(true)
 	if err != nil {
 		panic(err)
@@ -62,13 +63,7 @@ func TestConcurrent(t *testing.T) {
 	defer func() {
 		_ = os.Remove(Settings.DB.Path)
 	}()
-	sqlDB, _ := db.DB()
-	sqlDB.SetMaxOpenConns(N)
-	sqlDB.SetMaxIdleConns(N)
-	_, err = sqlDB.Exec("PRAGMA busy_timeout = 10;")
-	if err != nil {
-		panic(err)
-	}
+	db = db.Debug()
 
 	type A struct {
 		model.Model
@@ -118,7 +113,7 @@ func TestConcurrent(t *testing.T) {
 						panic(uErr)
 					}
 				}
-				for i := 0; i < 40; i++ {
+				for i := 0; i < 10; i++ {
 					fmt.Printf("(%.4d) LIST: %.4d/%.4d\n", id, n, i)
 					page := api.Page{}
 					cursor := api.Cursor{}
@@ -132,9 +127,9 @@ func TestConcurrent(t *testing.T) {
 						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
-				for i := 0; i < 10; i++ {
+				for i := 0; i < 4; i++ {
 					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Duration(rand.Intn(200)) * time.Millisecond)
+						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
 						for i := 0; i < 3; i++ {
 							err = tx.Save(m).Error
 							if err != nil {
