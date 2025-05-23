@@ -18,16 +18,8 @@ type FileReaper struct {
 // Run Executes the reaper.
 // A file is deleted when it is no longer referenced and the TTL has expired.
 func (r *FileReaper) Run() {
-	Log.V(1).Info("Reaping files.")
-	list := []model.File{}
-	err := r.DB.Find(&list).Error
-	if err != nil {
-		Log.Error(err, "")
-		return
-	}
-	if len(list) == 0 {
-		return
-	}
+	Log.Info("FileReaper: beginning.")
+	mark := time.Now()
 	ids := make(map[uint]byte)
 	finder := RefFinder{DB: r.DB}
 	for _, m := range []any{
@@ -42,7 +34,22 @@ func (r *FileReaper) Run() {
 			continue
 		}
 	}
-	for _, file := range list {
+	file := &model.File{}
+	db := r.DB.Model(file)
+	cursor, err := db.Rows()
+	if err != nil {
+		Log.Error(err, "")
+		return
+	}
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = db.ScanRows(cursor, file)
+		if err != nil {
+			Log.Error(err, "")
+			return
+		}
 		if _, found := ids[file.ID]; found {
 			if file.Expiration != nil {
 				file.Expiration = nil
@@ -61,13 +68,15 @@ func (r *FileReaper) Run() {
 		}
 		mark := time.Now()
 		if mark.After(*file.Expiration) {
-			err = r.delete(&file)
+			err = r.delete(file)
 			if err != nil {
 				Log.Error(err, "")
 				continue
 			}
 		}
 	}
+
+	Log.Info("FileReaper: ended.", "duration", time.Since(mark))
 }
 
 // Delete file.

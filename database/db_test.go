@@ -8,15 +8,18 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/env"
 )
 
-var N, _ = env.GetInt("TEST_CONCURRENT", 10)
+var N, _ = env.GetInt("TEST_CONCURRENT", 4)
+var TestDir = env.GetString("TEST_DIR", "/tmp")
 
 func TestDriver(t *testing.T) {
 	pid := os.Getpid()
-	Settings.DB.Path = fmt.Sprintf("/tmp/driver-%d.db", pid)
+	Settings.DB.Path = fmt.Sprintf("%s/driver-%d.db", TestDir, pid)
 	defer func() {
 		_ = os.Remove(Settings.DB.Path)
 	}()
@@ -50,11 +53,22 @@ func TestDriver(t *testing.T) {
 
 func TestConcurrent(t *testing.T) {
 	pid := os.Getpid()
-	Settings.DB.Path = fmt.Sprintf("/tmp/concurrent-%d.db", pid)
+	Settings.DB.MaxConnection = 50
+	Settings.DB.NFS, _ = env.GetBool(settings.EnvDbNFS, false)
+	Settings.DB.Path = fmt.Sprintf("%s/concurrent-%d.db", TestDir, pid)
 	defer func() {
 		_ = os.Remove(Settings.DB.Path)
 	}()
 	db, err := Open(true)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = os.Remove(Settings.DB.Path)
+	}()
+	db = db.Debug()
+	_db, _ := db.DB()
+	_, err = _db.Exec("PRAGMA busy_timeout = 10")
 	if err != nil {
 		panic(err)
 	}
@@ -70,6 +84,10 @@ func TestConcurrent(t *testing.T) {
 		AID uint
 	}
 	err = db.Migrator().AutoMigrate(&A{}, &B{})
+	if err != nil {
+		panic(err)
+	}
+	err = PK.Load(db, []any{&A{}, &B{}})
 	if err != nil {
 		panic(err)
 	}
@@ -113,13 +131,13 @@ func TestConcurrent(t *testing.T) {
 					dbx = dbx.Limit(10)
 					cursor.With(dbx, page)
 					for cursor.Next(&mx) {
-						time.Sleep(time.Millisecond + 10)
+						time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
 						fmt.Printf("(%.4d) NEXT: %.4d/%.4d ID=%d\n", id, n, i, mx.ID)
 					}
 				}
 				for i := 0; i < 4; i++ {
 					uErr = db.Transaction(func(tx *gorm.DB) (err error) {
-						time.Sleep(time.Millisecond * 10)
+						time.Sleep(time.Duration(rand.Intn(200)) * time.Millisecond)
 						for i := 0; i < 3; i++ {
 							err = tx.Save(m).Error
 							if err != nil {
@@ -131,6 +149,16 @@ func TestConcurrent(t *testing.T) {
 					if uErr != nil {
 						panic(uErr)
 					}
+				}
+				uErr = db.Transaction(func(tx *gorm.DB) (err error) {
+					time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
+					m2 := &B{N: n, A: a}
+					m2.ID = 1 // dup key: rollback.
+					_ = tx.Create(m2)
+					return
+				})
+				if uErr != nil {
+					panic(uErr)
 				}
 			}
 			dq <- id

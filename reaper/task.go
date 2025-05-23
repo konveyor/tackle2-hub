@@ -6,7 +6,6 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,10 +42,11 @@ type TaskReaper struct {
 //	- Bucket is released after the defined period.
 //	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
-	Log.V(1).Info("Reaping tasks.")
-	list := []task.Task{}
-	result := r.DB.Find(
-		&list,
+	Log.Info("TaskReaper: beginning.")
+	mark := time.Now()
+	m := &task.Task{}
+	db := r.DB.Model(m)
+	db = db.Where(
 		"state IN ?",
 		[]string{
 			task.Created,
@@ -54,17 +54,24 @@ func (r *TaskReaper) Run() {
 			task.Failed,
 			task.Canceled,
 		})
-	Log.Error(result.Error, "")
-	if result.Error != nil {
+	cursor, err := db.Rows()
+	Log.Error(err, "")
+	if err != nil {
 		return
 	}
+	defer func() {
+		_ = cursor.Close()
+	}()
 	pipelines, err := r.pipelineMap()
 	if err != nil {
 		Log.Error(err, "")
 		return
 	}
-	for i := range list {
-		m := &list[i]
+	for cursor.Next() {
+		err = db.ScanRows(cursor, m)
+		if err != nil {
+			return
+		}
 		switch m.State {
 		case task.Created:
 			mark := m.CreateTime
@@ -144,6 +151,8 @@ func (r *TaskReaper) Run() {
 			}
 		}
 	}
+
+	Log.Info("TaskReaper: ended.", "duration", time.Since(mark))
 }
 
 // release bucket and file resources.
@@ -190,7 +199,7 @@ func (r *TaskReaper) delete(m *task.Task) {
 	if err != nil {
 		Log.Error(err, "")
 	}
-	err = r.DB.Select(clause.Associations).Delete(m).Error
+	err = r.DB.Delete(m).Error
 	if err == nil {
 		Log.Info("Task deleted.", "id", m.ID)
 	} else {
@@ -243,35 +252,53 @@ type GroupReaper struct {
 //	- Deleted when all of its task have been deleted.
 //	- Bucket is released immediately.
 func (r *GroupReaper) Run() {
-	Log.V(1).Info("Reaping groups.")
-	list := []model.TaskGroup{}
-	db := r.DB.Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
+	Log.Info("GroupReaper: beginning.")
+	mark := time.Now()
+	type M struct {
+		*model.TaskGroup
+		Count int64
+	}
+	m := &M{}
+	db := r.DB.Table("TaskGroup g")
+	db = db.Joins("LEFT JOIN Task t ON t.TaskGroupID = g.ID")
+	db = db.Select(
+		"g.*",
+		"COUNT(t.id) Count")
+	db = db.Group("g.ID")
+	cursor, err := db.Rows()
+	if err != nil {
+		Log.Error(err, "")
 		return
 	}
-	for i := range list {
-		m := &list[i]
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = r.DB.ScanRows(cursor, m)
+		if err != nil {
+			return
+		}
 		switch m.State {
-		case task.Created:
+		case "", task.Created:
 			mark := m.CreateTime
 			d := time.Duration(
 				Settings.Hub.Task.Reaper.Created) * Unit
 			if time.Since(mark) > d {
-				r.delete(m)
+				r.delete(m.TaskGroup)
 			}
 		case task.Ready:
 			mark := m.CreateTime
 			if time.Since(mark) > time.Hour {
-				r.release(m)
-				if len(m.Tasks) == 0 {
-					r.delete(m)
+				if m.Count == 0 {
+					r.delete(m.TaskGroup)
 				} else {
-					r.release(m)
+					r.release(m.TaskGroup)
 				}
 			}
 		}
 	}
+
+	Log.Info("GroupReaper: ended.", "duration", time.Since(mark))
 }
 
 // release resources.

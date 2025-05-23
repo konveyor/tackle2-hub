@@ -13,6 +13,7 @@ const (
 	EnvBuild                   = "BUILD"
 	EnvDbPath                  = "DB_PATH"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
+	EnvDbNFS                   = "DB_NFS"
 	EnvDbSeedPath              = "DB_SEED_PATH"
 	EnvBucketPath              = "BUCKET_PATH"
 	EnvRwxSupported            = "RWX_SUPPORTED"
@@ -34,6 +35,7 @@ const (
 	EnvTaskUid                 = "TASK_UID"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
+	EnvFrequencyHeap           = "FREQUENCY_HEAP"
 	EnvDevelopment             = "DEVELOPMENT"
 	EnvBucketTTL               = "BUCKET_TTL"
 	EnvFileTTL                 = "FILE_TTL"
@@ -54,6 +56,7 @@ type Hub struct {
 	DB struct {
 		Path          string
 		MaxConnection int
+		NFS           bool
 		SeedPath      string
 	}
 	// Bucket settings.
@@ -106,6 +109,7 @@ type Hub struct {
 	Frequency struct {
 		Task   int
 		Reaper int
+		Heap   int
 	}
 	// Development environment
 	Development bool
@@ -144,8 +148,9 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.DB.MaxConnection = n
 	} else {
-		r.DB.MaxConnection = 1
+		r.DB.MaxConnection = 50
 	}
+	r.DB.NFS = getEnvBool(EnvDbNFS, false)
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {
 		r.DB.SeedPath = "/tmp/seed"
@@ -234,6 +239,11 @@ func (r *Hub) Load() (err error) {
 		r.Frequency.Reaper = n
 	} else {
 		r.Frequency.Reaper = 1 // 1 minute.
+	}
+	s, found = os.LookupEnv(EnvFrequencyHeap)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Frequency.Heap = n // minutes.
 	}
 	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
 	if found {
