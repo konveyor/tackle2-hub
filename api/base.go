@@ -414,7 +414,7 @@ func (r *Cursor) Next(m any) (next bool) {
 	} else {
 		return
 	}
-	if r.pageLimited() || r.Index > MaxPage {
+	if r.pageLimited() {
 		for r.Rows.Next() {
 			r.Index++
 			if r.Index > MaxCount {
