@@ -55,17 +55,21 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tags, err := assessment.NewTagResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-	resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
+	resolver := assessment.NewArchetypeResolver(m, tagResolver, memberResolver, questResolver)
 	r := Archetype{}
 	r.With(m)
 	err = r.WithResolver(resolver)
@@ -100,7 +104,11 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	membership, err := assessment.NewMembershipResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	resources := []Archetype{}
 	for i := range list {
 		m := &list[i]
@@ -170,7 +178,11 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 	}
 
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
+	membership, err := assessment.NewMembershipResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
@@ -272,7 +284,12 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 func (h ArchetypeHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups", "Assessments.Questionnaire")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Assessments.Stakeholders",
+		"Assessments.StakeholderGroups",
+		"Assessments.Questionnaire")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
