@@ -2,7 +2,6 @@ package api
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +18,6 @@ import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/tar"
-	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
@@ -2377,7 +2375,7 @@ type DepAppReport struct {
 
 // IssueWriter used to create a file containing issues.
 type IssueWriter struct {
-	encoder
+	Encoder
 	ctx *gin.Context
 }
 
@@ -2415,7 +2413,7 @@ func (r *IssueWriter) db() (db *gorm.DB) {
 
 // Write the analysis file.
 func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count int64, err error) {
-	r.encoder, err = r.newEncoder(output)
+	r.Encoder, err = NewEncoder(r.ctx, output)
 	if err != nil {
 		return
 	}
@@ -2457,26 +2455,9 @@ func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count 
 	return
 }
 
-// newEncoder returns an encoder.
-func (r *IssueWriter) newEncoder(output io.Writer) (encoder encoder, err error) {
-	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
-	switch accepted {
-	case "",
-		binding.MIMEPOSTForm,
-		binding.MIMEJSON:
-		encoder = &jsonEncoder{output: output}
-	case binding.MIMEYAML:
-		encoder = &yamlEncoder{output: output}
-	default:
-		err = &BadRequestError{"MIME not supported."}
-	}
-
-	return
-}
-
 // AnalysisWriter used to create a file containing an analysis.
 type AnalysisWriter struct {
-	encoder
+	Encoder
 	ctx *gin.Context
 }
 
@@ -2520,7 +2501,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	r.encoder, err = r.newEncoder(output)
+	r.Encoder, err = NewEncoder(r.ctx, output)
 	if err != nil {
 		return
 	}
@@ -2537,23 +2518,6 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 		return
 	}
 	r.end()
-	return
-}
-
-// newEncoder returns an encoder.
-func (r *AnalysisWriter) newEncoder(output io.Writer) (encoder encoder, err error) {
-	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
-	switch accepted {
-	case "",
-		binding.MIMEPOSTForm,
-		binding.MIMEJSON:
-		encoder = &jsonEncoder{output: output}
-	case binding.MIMEYAML:
-		encoder = &yamlEncoder{output: output}
-	default:
-		err = &BadRequestError{"MIME not supported."}
-	}
-
 	return
 }
 
@@ -2614,7 +2578,7 @@ func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 
 // ReportWriter analysis report writer.
 type ReportWriter struct {
-	encoder
+	Encoder
 	ctx *gin.Context
 }
 
@@ -2678,14 +2642,14 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 		_ = file.Close()
 	}()
 	path = file.Name()
-	r.encoder = &jsonEncoder{output: file}
+	r.Encoder = &jsonEncoder{output: file}
 	r.write("window[\"apps\"]=[")
 	r.begin()
 	r.field("id").writeStr(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
 	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
 	aWriter := AnalysisWriter{ctx: r.ctx}
-	aWriter.encoder = r.encoder
+	aWriter.Encoder = r.Encoder
 	err = aWriter.addIssues(m)
 	if err != nil {
 		return
@@ -2720,163 +2684,6 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 	}
 	r.endList()
 	return
-}
-
-type encoder interface {
-	begin() encoder
-	end() encoder
-	write(s string) encoder
-	writeStr(s string) encoder
-	field(name string) encoder
-	beginList() encoder
-	endList() encoder
-	writeItem(batch, index int, object any) encoder
-	encode(object any) encoder
-	embed(object any) encoder
-}
-
-type jsonEncoder struct {
-	output io.Writer
-	fields int
-}
-
-func (r *jsonEncoder) begin() encoder {
-	r.write("{")
-	return r
-}
-
-func (r *jsonEncoder) end() encoder {
-	r.write("}")
-	return r
-}
-
-func (r *jsonEncoder) write(s string) encoder {
-	_, _ = r.output.Write([]byte(s))
-	return r
-}
-
-func (r *jsonEncoder) writeStr(s string) encoder {
-	r.write("\"" + s + "\"")
-	return r
-}
-
-func (r *jsonEncoder) field(s string) encoder {
-	if r.fields > 0 {
-		r.write(",")
-	}
-	r.writeStr(s).write(":")
-	r.fields++
-	return r
-}
-
-func (r *jsonEncoder) beginList() encoder {
-	r.write("[")
-	return r
-}
-
-func (r *jsonEncoder) endList() encoder {
-	r.write("]")
-	return r
-}
-
-func (r *jsonEncoder) writeItem(batch, index int, object any) encoder {
-	if batch > 0 || index > 0 {
-		r.write(",")
-	}
-	r.encode(object)
-	return r
-}
-
-func (r *jsonEncoder) encode(object any) encoder {
-	encoder := json.NewEncoder(r.output)
-	_ = encoder.Encode(object)
-	return r
-}
-
-func (r *jsonEncoder) embed(object any) encoder {
-	b := new(bytes.Buffer)
-	encoder := json.NewEncoder(b)
-	_ = encoder.Encode(object)
-	s := b.String()
-	mp := make(map[string]any)
-	err := json.Unmarshal([]byte(s), &mp)
-	if err == nil {
-		r.fields += len(mp)
-		s = s[1 : len(s)-2]
-	}
-	r.write(s)
-	return r
-}
-
-type yamlEncoder struct {
-	output io.Writer
-	fields int
-	depth  int
-}
-
-func (r *yamlEncoder) begin() encoder {
-	r.write("---\n")
-	return r
-}
-
-func (r *yamlEncoder) end() encoder {
-	return r
-}
-
-func (r *yamlEncoder) write(s string) encoder {
-	s += strings.Repeat("  ", r.depth)
-	_, _ = r.output.Write([]byte(s))
-	return r
-}
-
-func (r *yamlEncoder) writeStr(s string) encoder {
-	r.write("\"" + s + "\"")
-	return r
-}
-
-func (r *yamlEncoder) field(s string) encoder {
-	if r.fields > 0 {
-		r.write("\n")
-	}
-	r.write(s).write(": ")
-	r.fields++
-	return r
-}
-
-func (r *yamlEncoder) beginList() encoder {
-	r.write("\n")
-	r.depth++
-	return r
-}
-
-func (r *yamlEncoder) endList() encoder {
-	r.depth--
-	return r
-}
-
-func (r *yamlEncoder) writeItem(batch, index int, object any) encoder {
-	r.encode([]any{object})
-	return r
-}
-
-func (r *yamlEncoder) encode(object any) encoder {
-	encoder := yaml.NewEncoder(r.output)
-	_ = encoder.Encode(object)
-	return r
-}
-
-func (r *yamlEncoder) embed(object any) encoder {
-	b := new(bytes.Buffer)
-	encoder := yaml.NewEncoder(b)
-	_ = encoder.Encode(object)
-	s := b.String()
-	mp := make(map[string]any)
-	err := yaml.Unmarshal([]byte(s), &mp)
-	if err == nil {
-		r.fields += len(mp)
-	}
-	r.write(s)
-	return r
 }
 
 // ManifestReader analysis manifest reader.
