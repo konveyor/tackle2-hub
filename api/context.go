@@ -113,94 +113,108 @@ func Transaction(ctx *gin.Context) {
 // Render renders the response based on the Accept: header.
 // Opinionated towards json.
 func Render() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		ctx.Next()
-		rtx := RichContext(ctx)
-		body := rtx.Response.Body
-		if body != nil {
-			switch b := body.(type) {
-			case Iterator:
-				defer b.Close()
-				file, err := os.CreateTemp("", "render-*")
-				if err != nil {
-					_ = ctx.Error(err)
-					return
-				}
-				defer func() {
-					_ = file.Close()
-					_ = os.Remove(file.Name())
-				}()
-				encoder, err := NewEncoder(ctx, file)
-				if err != nil {
-					_ = ctx.Error(err)
-					return
-				}
-				encoder.beginList()
-				i := 0
-				for {
-					next, object := b.Next()
-					if !next {
-						break
-					}
-					if b.Error != nil {
-						_ = ctx.Error(b.Error)
-						return
-					}
-					encoder.writeItem(0, i, object)
-					i++
-				}
-				encoder.endList()
-				ctx.File(file.Name())
-			default:
-				bt := reflect.TypeOf(body)
-				bv := reflect.ValueOf(body)
-				if bt.Kind() == reflect.Ptr {
-					bt = bt.Elem()
-					bv = bv.Elem()
-				}
-				switch bt.Kind() {
-				case reflect.Slice:
-					file, err := os.CreateTemp("", "render-*")
-					if err != nil {
-						_ = ctx.Error(err)
-						return
-					}
-					defer func() {
-						_ = file.Close()
-						_ = os.Remove(file.Name())
-					}()
-					encoder, err := NewEncoder(ctx, file)
-					if err != nil {
-						_ = ctx.Error(err)
-						return
-					}
-					encoder.beginList()
-					for i := 0; i < bv.Len(); i++ {
-						v := bv.Index(i)
-						object := v.Interface()
-						encoder.writeItem(0, i, object)
-					}
-					encoder.endList()
-					ctx.File(file.Name())
-				default:
-					ctx.Negotiate(
-						rtx.Response.Status,
-						gin.Negotiate{
-							Offered: BindMIMEs,
-							Data:    body})
-				}
-			}
-		} else {
-			ctx.Status(rtx.Response.Status)
+	return Renderer{}.Render
+}
+
+// Renderer used to render the response body.
+type Renderer struct{}
+
+// Render renders the response based on the Accept: header.
+// Opinionated towards json.
+func (r Renderer) Render(ctx *gin.Context) {
+	ctx.Next()
+	rtx := RichContext(ctx)
+	body := rtx.Response.Body
+	if body == nil {
+		ctx.Status(rtx.Response.Status)
+		return
+	}
+	switch b := body.(type) {
+	case Iterator:
+		r.renderIterator(ctx, b)
+	default:
+		bt := reflect.TypeOf(body)
+		bv := reflect.ValueOf(body)
+		if bt.Kind() == reflect.Ptr {
+			bt = bt.Elem()
+			bv = bv.Elem()
+		}
+		switch bt.Kind() {
+		case reflect.Slice:
+			r.renderSlice(ctx, bv)
+		default:
+			ctx.Negotiate(
+				rtx.Response.Status,
+				gin.Negotiate{
+					Offered: BindMIMEs,
+					Data:    body})
 		}
 	}
 }
 
+// renderIterator renders an iterator (body).
+func (r Renderer) renderIterator(ctx *gin.Context, iter Iterator) {
+	file, err := os.CreateTemp("", "render-*")
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = file.Close()
+		_ = os.Remove(file.Name())
+	}()
+	encoder, err := NewEncoder(ctx, file)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	encoder.beginList()
+	for i := 0; ; i++ {
+		next, object := iter.Next()
+		if !next {
+			break
+		}
+		if iter.Error != nil {
+			_ = ctx.Error(iter.Error)
+			return
+		}
+		encoder.writeItem(0, i, object)
+	}
+	encoder.endList()
+	ctx.File(file.Name())
+}
+
+// renderSlice renders a slice (body).
+func (r Renderer) renderSlice(ctx *gin.Context, bv reflect.Value) {
+	file, err := os.CreateTemp("", "render-*")
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = file.Close()
+		_ = os.Remove(file.Name())
+	}()
+	encoder, err := NewEncoder(ctx, file)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	encoder.beginList()
+	for i := 0; i < bv.Len(); i++ {
+		v := bv.Index(i)
+		object := v.Interface()
+		encoder.writeItem(0, i, object)
+	}
+	encoder.endList()
+	ctx.File(file.Name())
+}
+
 // NewIterator returns an iterator.
-func NewIterator(m any, cursor *Cursor, builder ...Builder) (iter Iterator) {
+func NewIterator(m any, cursor *Cursor, builder Builder) (iter Iterator) {
 	iter = Iterator{
-		Cursor:  cursor,
 		Model:   m,
+		Cursor:  cursor,
 		Builder: builder,
 	}
 	return iter
@@ -211,9 +225,9 @@ type Builder = func(m []any) (r any, err error)
 
 // Iterator used to iterate a cursor to build and stream the response body.
 type Iterator struct {
-	Cursor  *Cursor
 	Model   any
-	Builder []Builder
+	Cursor  *Cursor
+	Builder Builder
 	Error   error
 	//
 	prev struct {
@@ -253,10 +267,7 @@ func (r *Iterator) Next() (next bool, object any) {
 	if !next {
 		return
 	}
-	for _, fn := range r.Builder {
-		object, r.Error = fn(batch)
-		break
-	}
+	object, r.Error = r.Builder(batch)
 	return
 }
 
