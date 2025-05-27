@@ -404,6 +404,17 @@ type Cursor struct {
 
 // Next returns true when has next row.
 func (r *Cursor) Next(m any) (next bool) {
+	defer func() {
+		p := recover()
+		if p != nil {
+			switch p.(type) {
+			case error:
+				r.Error = p.(error)
+			default:
+				r.Error = errors.New(fmt.Sprint(p))
+			}
+		}
+	}()
 	if r.Error != nil {
 		next = true
 		return

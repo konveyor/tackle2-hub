@@ -22,23 +22,21 @@ func (r *Application) With(m *model.Application) {
 }
 
 // NewApplicationResolver creates a new ApplicationResolver from an application and other shared resolvers.
-func NewApplicationResolver(m *model.Application, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
+func NewApplicationResolver(
+	tag *TagResolver,
+	member *MembershipResolver,
+	questionnaire *QuestionnaireResolver) (a *ApplicationResolver) {
 	a = &ApplicationResolver{
-		tagResolver:           tags,
-		membershipResolver:    membership,
+		tagResolver:           tag,
+		membershipResolver:    member,
 		questionnaireResolver: questionnaire,
 	}
-	app := Application{}
-	app.With(m)
-	a.application = app
-
 	return
 }
 
 // ApplicationResolver wraps an Application model
 // with archetype and assessment resolution behavior.
 type ApplicationResolver struct {
-	application           Application
 	archetypes            []Archetype
 	tagResolver           *TagResolver
 	membershipResolver    *MembershipResolver
@@ -46,19 +44,20 @@ type ApplicationResolver struct {
 }
 
 // Archetypes returns the list of archetypes the application is a member of.
-func (r *ApplicationResolver) Archetypes() (archetypes []Archetype, err error) {
+func (r *ApplicationResolver) Archetypes(app *model.Application) (archetypes []Archetype, err error) {
 	if len(r.archetypes) > 0 {
 		archetypes = r.archetypes
 		return
 	}
-
-	archetypes, err = r.membershipResolver.Archetypes(r.application)
+	ap := Application{}
+	ap.With(app)
+	archetypes, err = r.membershipResolver.Archetypes(ap)
 	return
 }
 
 // ArchetypeTags returns the list of tags that the application should inherit from the archetypes it is a member of.
-func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
-	archetypes, err := r.Archetypes()
+func (r *ApplicationResolver) ArchetypeTags(app *model.Application) (tags []model.Tag, err error) {
+	archetypes, err := r.Archetypes(app)
 	if err != nil {
 		return
 	}
@@ -76,8 +75,10 @@ func (r *ApplicationResolver) ArchetypeTags() (tags []model.Tag, err error) {
 }
 
 // RequiredAssessments returns the slice of assessments that are for required questionnaires.
-func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
-	for _, a := range r.application.Assessments {
+func (r *ApplicationResolver) RequiredAssessments(app *model.Application) (required []Assessment) {
+	ap := Application{}
+	ap.With(app)
+	for _, a := range ap.Assessments {
 		if r.questionnaireResolver.Required(a.QuestionnaireID) {
 			required = append(required, a)
 		}
@@ -88,10 +89,10 @@ func (r *ApplicationResolver) RequiredAssessments() (required []Assessment) {
 // AssessmentTags returns the list of tags that the application should inherit from the answers given
 // to its assessments or those of its archetypes. Archetype assessments are only inherited if the application
 // does not have any answers to required questionnaires.
-func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
+func (r *ApplicationResolver) AssessmentTags(app *model.Application) (tags []model.Tag) {
 	seenTags := make(map[uint]bool)
-	if len(r.RequiredAssessments()) > 0 {
-		for _, assessment := range r.RequiredAssessments() {
+	if len(r.RequiredAssessments(app)) > 0 {
+		for _, assessment := range r.RequiredAssessments(app) {
 			aTags := r.tagResolver.Assessment(assessment)
 			for _, t := range aTags {
 				if _, found := seenTags[t.ID]; !found {
@@ -103,7 +104,7 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 		return
 	}
 
-	archetypes, err := r.Archetypes()
+	archetypes, err := r.Archetypes(app)
 	if err != nil {
 		return
 	}
@@ -124,13 +125,13 @@ func (r *ApplicationResolver) AssessmentTags() (tags []model.Tag) {
 }
 
 // Risk returns the overall risk level for the application based on its or its archetypes' assessments.
-func (r *ApplicationResolver) Risk() (risk string, err error) {
+func (r *ApplicationResolver) Risk(app *model.Application) (risk string, err error) {
 	var assessments []Assessment
-	requiredAssessments := r.RequiredAssessments()
+	requiredAssessments := r.RequiredAssessments(app)
 	if len(requiredAssessments) > 0 {
 		assessments = requiredAssessments
 	} else {
-		archetypes, aErr := r.Archetypes()
+		archetypes, aErr := r.Archetypes(app)
 		if aErr != nil {
 			err = aErr
 			return
@@ -148,13 +149,13 @@ func (r *ApplicationResolver) Risk() (risk string, err error) {
 }
 
 // Confidence returns the application's overall assessment confidence score.
-func (r *ApplicationResolver) Confidence() (confidence int, err error) {
+func (r *ApplicationResolver) Confidence(app *model.Application) (confidence int, err error) {
 	var assessments []Assessment
-	requiredAssessments := r.RequiredAssessments()
+	requiredAssessments := r.RequiredAssessments(app)
 	if len(requiredAssessments) > 0 {
 		assessments = requiredAssessments
 	} else {
-		archetypes, aErr := r.Archetypes()
+		archetypes, aErr := r.Archetypes(app)
 		if aErr != nil {
 			err = aErr
 			return
@@ -172,16 +173,16 @@ func (r *ApplicationResolver) Confidence() (confidence int, err error) {
 }
 
 // Assessed returns whether the application has been fully assessed.
-func (r *ApplicationResolver) Assessed() (assessed bool, err error) {
+func (r *ApplicationResolver) Assessed(app *model.Application) (assessed bool, err error) {
 	// if the application has any of its own assessments, only consider them for
 	// determining whether it has been assessed.
-	assessments := r.RequiredAssessments()
+	assessments := r.RequiredAssessments(app)
 	if len(assessments) > 0 {
 		assessed = r.questionnaireResolver.Assessed(assessments)
 		return
 	}
 	// otherwise the application is assessed if all of its archetypes are fully assessed.
-	archetypes, err := r.Archetypes()
+	archetypes, err := r.Archetypes(app)
 	if err != nil {
 		return
 	}

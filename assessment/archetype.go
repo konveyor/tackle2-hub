@@ -20,7 +20,11 @@ func (r *Archetype) With(m *model.Archetype) {
 }
 
 // NewArchetypeResolver creates a new ArchetypeResolver.
-func NewArchetypeResolver(m *model.Archetype, tags *TagResolver, membership *MembershipResolver, questionnaire *QuestionnaireResolver) (a *ArchetypeResolver) {
+func NewArchetypeResolver(
+	m *model.Archetype,
+	tags *TagResolver,
+	membership *MembershipResolver,
+	questionnaire *QuestionnaireResolver) (a *ArchetypeResolver) {
 	a = &ArchetypeResolver{
 		tags:          tags,
 		membership:    membership,

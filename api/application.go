@@ -110,26 +110,30 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	tagMap, err := h.tagMap(ctx, []model.Application{*m})
+	tagMap, err := h.tagMap(ctx, []uint{id})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 	r := Application{}
 	r.With(m, tagMap[m.ID])
-	err = r.WithResolver(resolver)
+	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -145,44 +149,130 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []api.Application
 // @router /applications [get]
 func (h ApplicationHandler) List(ctx *gin.Context) {
-	var list []model.Application
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
-		return
-	}
-	tagMap, err := h.tagMap(ctx, list)
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	resources := []Application{}
-	for i := range list {
-		m := &list[i]
-		resolver := assessment.NewApplicationResolver(&list[i], tagsResolver, membership, questionnaire)
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+
+	tagMap, err := h.tagMap(ctx, nil)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	type M struct {
+		*model.Application
+		IdentityID   uint
+		IdentityName string
+		ServiceName  string
+		OwnerName    string
+		ContID       uint
+		ContName     string
+		WaveName     string
+		FactKey      string
+		FactSource   string
+		FactValue    string
+	}
+	db := h.DB(ctx)
+	db = db.Select(
+		"a.*",
+		"id.ID     IdentityID",
+		"id.Name   IdentityName",
+		"bs.Name   ServiceName",
+		"st.Name   OwnerName",
+		"cn.ID     ContID",
+		"cn.Name   ContName",
+		"mw.Name   WaveName",
+		"fa.Key    FactKey",
+		"fa.Source FactSource",
+		"fa.Value  FactValue",
+	)
+	db = db.Table("Application a")
+	db = db.Joins("LEFT JOIN Bucket b ON b.ID = a.BucketID")
+	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Identity id ON id.ID = ai.IdentityID")
+	db = db.Joins("LEFT JOIN BusinessService bs ON bs.ID = a.BusinessServiceID")
+	db = db.Joins("LEFT JOIN Stakeholder st ON st.ID = a.OwnerID")
+	db = db.Joins("LEFT JOIN ApplicationContributors ac ON ac.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Stakeholder cn ON cn.ID = ac.StakeholderID")
+	db = db.Joins("LEFT JOIN MigrationWave mw ON mw.ID = a.MigrationWaveID")
+	db = db.Joins("LEFT JOIN Fact fa ON fa.ApplicationID = a.ID")
+	db = db.Order("a.ID")
+	page := Page{}
+	page.With(ctx)
+	cursor := Cursor{}
+	cursor.With(db, page)
+	builder := func(batch []any) (out any, err error) {
+		app := &model.Application{}
+		for i := range batch {
+			m := batch[i].(*M)
+			if i == 0 {
+				app = m.Application
+				if app.BusinessServiceID != nil {
+					app.BusinessService = &model.BusinessService{}
+					app.BusinessService.ID = *app.BusinessServiceID
+					app.BusinessService.Name = m.ServiceName
+				}
+				if app.OwnerID != nil {
+					app.Owner = &model.Stakeholder{}
+					app.Owner.ID = *app.OwnerID
+					app.Owner.Name = m.OwnerName
+				}
+				if app.MigrationWave != nil {
+					app.MigrationWave = &model.MigrationWave{}
+					app.MigrationWave.ID = *app.MigrationWaveID
+					app.MigrationWave.Name = m.WaveName
+				}
+			}
+			if m.IdentityID > 0 {
+				ref := model.Identity{}
+				ref.ID = m.IdentityID
+				ref.Name = m.IdentityName
+				app.Identities = append(
+					app.Identities,
+					ref)
+			}
+			if m.FactKey != "" {
+				ref := model.Fact{}
+				ref.ApplicationID = app.ID
+				ref.Key = m.FactKey
+				ref.Source = m.FactSource
+				ref.Value = m.FactValue
+				app.Facts = append(app.Facts, ref)
+			}
+			if m.ContID > 0 {
+				ref := model.Stakeholder{}
+				ref.ID = m.ContID
+				ref.Name = m.ContName
+				app.Contributors = append(
+					app.Contributors,
+					ref)
+			}
+		}
 		r := Application{}
-		r.With(m, tagMap[m.ID])
-		err = r.WithResolver(resolver)
+		r.With(app, tagMap[app.ID])
+		err = r.WithResolver(app, appResolver)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		resources = append(resources, r)
+		out = r
+		return
 	}
-
-	h.Respond(ctx, http.StatusOK, resources)
+	iter := NewIterator(&M{}, &cursor, builder)
+	h.Respond(ctx, http.StatusOK, iter)
 }
 
 // Create godoc
@@ -221,11 +311,18 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
+	appTags := []AppTag{}
 	tags := []model.ApplicationTag{}
 	if len(r.Tags) > 0 {
 		for _, t := range r.Tags {
 			if !t.Virtual {
-				tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
+				appTag := AppTag{}
+				appTag.withRef(&t)
+				appTags = append(appTags, appTag)
+				tag := model.ApplicationTag{}
+				tag.ApplicationID = m.ID
+				tag.TagID = t.ID
+				tags = append(tags, tag)
 			}
 		}
 		result = h.DB(ctx).Create(&tags)
@@ -235,20 +332,24 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		}
 	}
 
-	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	r.With(m, tags)
-	err = r.WithResolver(resolver)
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	r.With(m, appTags)
+	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -527,20 +628,24 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	includeAssessment := !found || source == SourceAssessment
 	includeArchetype := !found || source == SourceArchetype
 	if includeAssessment || includeArchetype {
-		membership := assessment.NewMembershipResolver(h.DB(ctx))
-		tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+		questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+		memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		resolver := assessment.NewApplicationResolver(app, tagsResolver, membership, questionnaire)
+		tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 		if includeArchetype {
-			archetypeTags, err := resolver.ArchetypeTags()
+			archetypeTags, err := appResolver.ArchetypeTags(app)
 			if err != nil {
 				_ = ctx.Error(err)
 				return
@@ -552,7 +657,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 			}
 		}
 		if includeAssessment {
-			assessmentTags := resolver.AssessmentTags()
+			assessmentTags := appResolver.AssessmentTags(app)
 			for i := range assessmentTags {
 				r := TagRef{}
 				r.With(assessmentTags[i].ID, assessmentTags[i].Name, SourceAssessment, true)
@@ -983,27 +1088,35 @@ func (h ApplicationHandler) StakeholdersUpdate(ctx *gin.Context) {
 func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 	m := &model.Application{}
 	id := h.pk(ctx)
-	db := h.preLoad(h.DB(ctx), clause.Associations, "Assessments.Stakeholders", "Assessments.StakeholderGroups", "Assessments.Questionnaire")
+	db := h.preLoad(
+		h.DB(ctx),
+		clause.Associations,
+		"Assessments.Stakeholders",
+		"Assessments.StakeholderGroups",
+		"Assessments.Questionnaire")
 	db = db.Omit("Analyses")
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-
-	questionnaire, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	membership := assessment.NewMembershipResolver(h.DB(ctx))
-	tagsResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	resolver := assessment.NewApplicationResolver(m, tagsResolver, membership, questionnaire)
-	archetypes, err := resolver.Archetypes()
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	archetypes, err := appResolver.Archetypes(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1100,25 +1213,38 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-// tagMap returns a map of applicationTags indexed by application id.
+// tagMap returns a map of AppTag indexed by application id.
+// This is a performance and memory optimization.
 func (h *ApplicationHandler) tagMap(
 	ctx *gin.Context,
-	applications []model.Application) (mp map[uint][]model.ApplicationTag, err error) {
-	ids := []uint{}
-	for i := range applications {
-		m := &applications[i]
-		ids = append(ids, m.ID)
-	}
-	mp = make(map[uint][]model.ApplicationTag)
-	list := []model.ApplicationTag{}
+	appIds []uint) (mp TagMap, err error) {
+	tagCache := make(map[uint]*model.Tag)
+	var tags []*model.Tag
 	db := h.DB(ctx)
-	db = db.Joins("Tag")
-	err = db.Find(&list, "ApplicationID", ids).Error
+	err = db.Find(&tags).Error
 	if err != nil {
 		return
 	}
-	for _, m := range list {
-		mp[m.ApplicationID] = append(mp[m.ApplicationID], m)
+	for _, tag := range tags {
+		tagCache[tag.ID] = tag
+	}
+	mp = make(TagMap)
+	var appTags []AppTag
+	db = h.DB(ctx)
+	db = db.Omit(clause.Associations)
+	db = db.Table("ApplicationTags")
+	if len(appIds) > 0 {
+		db = db.Where("ApplicationID", appIds)
+	}
+	err = db.Find(&appTags).Error
+	if err != nil {
+		return
+	}
+	for _, m := range appTags {
+		m.Tag = tagCache[m.TagID]
+		mp[m.ApplicationID] = append(
+			mp[m.ApplicationID],
+			m)
 	}
 	return
 }
@@ -1148,7 +1274,7 @@ type Application struct {
 }
 
 // With updates the resource using the model.
-func (r *Application) With(m *model.Application, tags []model.ApplicationTag) {
+func (r *Application) With(m *model.Application, tags []AppTag) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
@@ -1216,8 +1342,8 @@ func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 
 // WithResolver uses an ApplicationResolver to update the resource with
 // values derived from the application's assessments and archetypes.
-func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (err error) {
-	archetypes, err := resolver.Archetypes()
+func (r *Application) WithResolver(m *model.Application, resolver *assessment.ApplicationResolver) (err error) {
+	archetypes, err := resolver.Archetypes(m)
 	if err != nil {
 		return
 	}
@@ -1226,22 +1352,22 @@ func (r *Application) WithResolver(resolver *assessment.ApplicationResolver) (er
 		ref.With(a.ID, a.Name)
 		r.Archetypes = append(r.Archetypes, ref)
 	}
-	archetypeTags, err := resolver.ArchetypeTags()
+	archetypeTags, err := resolver.ArchetypeTags(m)
 	if err != nil {
 		return
 	}
 	r.WithVirtualTags(archetypeTags, SourceArchetype)
-	r.WithVirtualTags(resolver.AssessmentTags(), SourceAssessment)
-	r.Assessed, err = resolver.Assessed()
+	r.WithVirtualTags(resolver.AssessmentTags(m), SourceAssessment)
+	r.Assessed, err = resolver.Assessed(m)
 	if err != nil {
 		return
 	}
 	if r.Assessed {
-		r.Confidence, err = resolver.Confidence()
+		r.Confidence, err = resolver.Confidence(m)
 		if err != nil {
 			return
 		}
-		r.Risk, err = resolver.Risk()
+		r.Risk, err = resolver.Risk(m)
 		if err != nil {
 			return
 		}
@@ -1398,4 +1524,26 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 			})
 	}
 	return
+}
+
+type TagMap map[uint][]AppTag
+
+// AppTag is a lightweight representation of ApplicationTag model.
+type AppTag struct {
+	ApplicationID uint
+	TagID         uint
+	Source        string
+	Tag           *model.Tag
+}
+
+func (r *AppTag) with(m *model.ApplicationTag) {
+	r.ApplicationID = m.ApplicationID
+	r.Source = m.Source
+	r.Tag = &m.Tag
+}
+
+func (r *AppTag) withRef(m *TagRef) {
+	r.Source = m.Source
+	r.Tag = &model.Tag{}
+	r.Tag.ID = m.ID
 }

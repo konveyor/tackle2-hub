@@ -3,6 +3,7 @@ package importcsv
 import (
 	"io/ioutil"
 	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -61,6 +62,16 @@ func TestImportCSV(t *testing.T) {
 					if r.ExpectedApplications[i].Binary != gotApp.Binary {
 						t.Errorf("Mismatch in binary of imported Application: Expected %s, Actual %s", r.ExpectedApplications[i].Binary, gotApp.Binary)
 					}
+					sort.Slice(
+						r.ExpectedApplications[i].Tags,
+						func(a, b int) bool {
+							return r.ExpectedApplications[i].Tags[a].ID < r.ExpectedApplications[i].Tags[b].ID
+						})
+					sort.Slice(
+						gotApp.Tags,
+						func(a, b int) bool {
+							return gotApp.Tags[a].ID < gotApp.Tags[b].ID
+						})
 					for j, tag := range r.ExpectedApplications[i].Tags {
 						if tag.Name != gotApp.Tags[j].Name {
 							t.Errorf("Mismatch in tag name of imported Application: Expected %s, Actual %s", tag.Name, gotApp.Tags[j].Name)

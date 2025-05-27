@@ -8,25 +8,24 @@ import (
 
 // NewQuestionnaireResolver builds a QuestionnaireResolver.
 func NewQuestionnaireResolver(db *gorm.DB) (a *QuestionnaireResolver, err error) {
-	a = &QuestionnaireResolver{db: db}
+	a = &QuestionnaireResolver{}
 	a.requiredQuestionnaires = NewSet()
-	err = a.cacheQuestionnaires()
+	err = a.cacheQuestionnaires(db)
 	return
 }
 
 // QuestionnaireResolver resolves questionnaire logic.
 type QuestionnaireResolver struct {
-	db                     *gorm.DB
 	requiredQuestionnaires Set
 }
 
-func (r *QuestionnaireResolver) cacheQuestionnaires() (err error) {
+func (r *QuestionnaireResolver) cacheQuestionnaires(db *gorm.DB) (err error) {
 	if r.requiredQuestionnaires.Size() > 0 {
 		return
 	}
 
 	questionnaires := []model.Questionnaire{}
-	result := r.db.Find(&questionnaires, "required = ?", true)
+	result := db.Find(&questionnaires, "required = ?", true)
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
