@@ -58,6 +58,11 @@ func (r *TaskReaper) Run() {
 	if result.Error != nil {
 		return
 	}
+	pipelines, err := r.pipelineMap()
+	if err != nil {
+		Log.Error(err, "")
+		return
+	}
 	for i := range list {
 		m := &list[i]
 		switch m.State {
@@ -66,12 +71,16 @@ func (r *TaskReaper) Run() {
 			if m.TTL.Created > 0 {
 				d := time.Duration(m.TTL.Created) * Unit
 				if time.Since(mark) > d {
-					r.delete(m)
+					if !r.inPipelined(pipelines, m) {
+						r.delete(m)
+					}
 				}
 			} else {
 				d := time.Duration(Settings.Hub.Task.Reaper.Created) * Unit
 				if time.Since(mark) > d {
-					r.release(m)
+					if !r.inPipelined(pipelines, m) {
+						r.release(m)
+					}
 				}
 			}
 		case task.Pending:
@@ -189,6 +198,33 @@ func (r *TaskReaper) delete(m *task.Task) {
 	}
 }
 
+// pipelines returns a map of TaskGroup.Mode keyed by ID.
+func (r *TaskReaper) pipelineMap() (mp PipelineMap, err error) {
+	var list []*model.TaskGroup
+	mp = make(map[uint]string)
+	db := r.DB.Select("ID", "Mode")
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, m := range list {
+		if m.Mode == task.Pipeline {
+			mp[m.ID] = m.Mode
+		}
+	}
+	return
+}
+
+// inPipelined returns true when the task is part of a pipeline.
+func (r *TaskReaper) inPipelined(mp PipelineMap, m *task.Task) (b bool) {
+	if m.TaskGroupID != nil {
+		_, b = mp[*m.TaskGroupID]
+	}
+	return
+}
+
+type PipelineMap = map[uint]string
+
 //
 //
 
@@ -225,12 +261,14 @@ func (r *GroupReaper) Run() {
 				r.delete(m)
 			}
 		case task.Ready:
-			if len(m.Tasks) == 0 {
-				r.delete(m)
-				continue
-			}
-			if m.HasBucket() {
+			mark := m.CreateTime
+			if time.Since(mark) > time.Hour {
 				r.release(m)
+				if len(m.Tasks) == 0 {
+					r.delete(m)
+				} else {
+					r.release(m)
+				}
 			}
 		}
 	}
@@ -238,12 +276,21 @@ func (r *GroupReaper) Run() {
 
 // release resources.
 func (r *GroupReaper) release(m *model.TaskGroup) {
-	m.SetBucket(nil)
-	err := r.DB.Save(m).Error
-	if err == nil {
+	nChanged := 0
+	if m.HasBucket() {
 		Log.Info("Group bucket released.", "id", m.ID)
-	} else {
-		Log.Error(err, "")
+		m.SetBucket(nil)
+		nChanged++
+	}
+	if len(m.List) > 0 {
+		m.List = nil
+		nChanged++
+	}
+	if nChanged > 0 {
+		err := r.DB.Save(m).Error
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 }
 

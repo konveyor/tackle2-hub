@@ -23,6 +23,7 @@ import (
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -68,6 +69,12 @@ const (
 	Escalated       = "Escalated"
 	Released        = "Released"
 	ContainerKilled = "ContainerKilled"
+)
+
+// Mode
+const (
+	Batch    = "Batch"
+	Pipeline = "Pipeline"
 )
 
 // k8s labels.
@@ -180,12 +187,14 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 		task.Data = requested.Data
 		task.ApplicationID = requested.ApplicationID
 		task.BucketID = requested.BucketID
+		task.TaskGroupID = requested.TaskGroupID
 	default:
 		err = &BadRequest{
 			Reason: "state must be (Created|Ready)",
 		}
 		return
 	}
+	db = db.Omit(clause.Associations)
 	err = db.Create(task).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -218,7 +227,8 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			"Policy",
 			"TTL",
 			"Data",
-			"ApplicationID")
+			"ApplicationID",
+			"TaskGroupID")
 		err = m.findRefs(requested)
 		if err != nil {
 			return
@@ -921,6 +931,11 @@ func (m *Manager) updateRunning(ctx context.Context) {
 			return
 		}
 		Log.V(1).Info("Task updated.", "id", running.ID)
+		err = m.next(running)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 }
 
@@ -1185,6 +1200,79 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 			"Container KILLED.",
 			"name",
 			container)
+	}
+	return
+}
+
+// next makes the next task in a mode=pipeline task group Ready.
+func (m *Manager) next(task *Task) (err error) {
+	if task.TaskGroupID == nil {
+		return
+	}
+	var tasks []*Task
+	db := m.DB.Order("ID")
+	db = reflect.Select(
+		m.DB,
+		task.Task,
+		"ID",
+		"State")
+	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, member := range tasks {
+		if task.ID == member.ID {
+			continue
+		}
+		switch task.State {
+		case Succeeded:
+			switch member.State {
+			case "", Created:
+				member.State = Ready
+				db = reflect.Select(
+					m.DB,
+					member.Task,
+					"State")
+				nErr := db.Save(member).Error
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
+				return
+			default:
+				// next
+			}
+		case Failed:
+			switch member.State {
+			case Succeeded,
+				Failed,
+				Canceled:
+			default:
+				reason := fmt.Sprintf(
+					"Canceled:%d, when (pipelined) task:%d failed.",
+					member.ID,
+					task.ID)
+				member.Event(Canceled, reason)
+				nErr := member.Cancel(m.Client)
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
+				db = reflect.Select(
+					m.DB,
+					member.Task,
+					"State",
+					"Events")
+				nErr = db.Save(member).Error
+				if nErr != nil {
+					nErr = liberr.Wrap(nErr)
+					Log.Error(nErr, "")
+				}
+			}
+		default:
+			return
+		}
 	}
 	return
 }

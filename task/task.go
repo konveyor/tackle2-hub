@@ -17,6 +17,7 @@ import (
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -695,4 +696,82 @@ type Event struct {
 	Age      string
 	Reporter string
 	Message  string
+}
+
+// TaskGroup represents a task group.
+type TaskGroup struct {
+	*model.TaskGroup
+}
+
+// Submit the task group.
+// - propagate properties to members.
+// - create member (tasks).
+func (g *TaskGroup) Submit(db *gorm.DB, manager *Manager) (err error) {
+	g.State = Ready
+	err = g.propagate()
+	if err != nil {
+		return
+	}
+	gdb := db.Omit(clause.Associations)
+	err = gdb.Save(g).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range g.Tasks {
+		task := &Task{}
+		task.With(&g.Tasks[i])
+		if task.ID > 0 {
+			err = &BadRequest{
+				Reason: "tasks already created",
+			}
+			return
+		}
+		task.TaskGroupID = &g.ID
+		err = manager.Create(db, task)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	return
+}
+
+func (g *TaskGroup) With(m *model.TaskGroup) {
+	g.TaskGroup = m
+}
+
+// Propagate group data into the task.
+func (g *TaskGroup) propagate() (err error) {
+	m := g.TaskGroup
+	m.Tasks = make([]model.Task, 0)
+	for i := range m.List {
+		m.Tasks = append(
+			m.Tasks,
+			m.List[i])
+	}
+	for i := range m.Tasks {
+		task := &m.Tasks[i]
+		switch m.Mode {
+		case "", Batch:
+			task.State = m.State
+			task.Kind = m.Kind
+			task.Addon = m.Addon
+			task.Extensions = m.Extensions
+			task.Priority = m.Priority
+			task.Policy = m.Policy
+			task.SetBucket(m.BucketID)
+			merged := task.Data.Merge(m.Data)
+			if !merged {
+				task.Data = m.Data
+			}
+		case Pipeline:
+			if i == 0 {
+				task.State = m.State
+				task.SetBucket(m.BucketID)
+			}
+		}
+	}
+
+	return
 }

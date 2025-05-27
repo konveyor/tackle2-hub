@@ -1,0 +1,11 @@
+diff -ruN '--exclude=mod.patch' migration/v17/model/core.go migration/v18/model/core.go
+--- migration/v17/model/core.go	2025-05-15 09:22:18.705884812 -0500
++++ migration/v18/model/core.go	2025-05-17 07:50:17.379033740 -0500
+@@ -164,6 +164,7 @@
+ 	Model
+ 	BucketOwner
+ 	Name       string
++	Mode       string
+ 	Kind       string
+ 	Addon      string
+ 	Extensions []string `gorm:"type:json;serializer:json"`
