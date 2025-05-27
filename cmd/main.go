@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
@@ -92,6 +95,37 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	return
 }
 
+// printHeap print heap statistics every 15 seconds.
+func printHeap() {
+	delay := time.Duration(Settings.Frequency.Heap) * time.Second
+	if delay == 0 {
+		return // disabled
+	}
+	go func() {
+		mb := func(n uint64) (f float64) {
+			f = float64(n) / 1024 / 1024
+			return
+		}
+		for {
+			var m runtime.MemStats
+			// debug.SetGCPercent(50)
+			// runtime.GC()
+			runtime.ReadMemStats(&m)
+			memory := m.HeapSys - m.HeapReleased
+			reserved := m.HeapIdle - m.HeapReleased
+			allocated := m.HeapAlloc
+			unknown := memory - allocated - reserved
+			fmt.Println("\nHEAP:")
+			fmt.Println("_______________________")
+			fmt.Printf("Memory   = %.2f MB\n", mb(memory))
+			fmt.Printf("Used     = %.2f MB\n", mb(allocated))
+			fmt.Printf("Reserved = %.2f MB\n", mb(reserved))
+			fmt.Printf("Unknown  = %.2f MB\n", mb(unknown))
+			time.Sleep(delay)
+		}
+	}()
+}
+
 // main.
 func main() {
 	log.Info("Started", "settings", Settings)
@@ -102,6 +136,7 @@ func main() {
 		}
 	}()
 	syscall.Umask(0)
+	printHeap()
 	//
 	// Model
 	db, err := Setup()
