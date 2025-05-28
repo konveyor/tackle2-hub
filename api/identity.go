@@ -33,7 +33,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
 	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.POST(IdentitiesRoot, h.Create)
+	routeGroup.POST(IdentitiesRoot, Transaction, h.Create)
 	routeGroup.GET(IdentityRoot, h.Get)
 	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
@@ -135,7 +135,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
-// @router /applications/:id/identities/:kind [get]
+// @router /applications/{id}/identities/{kind} [get]
 func (h IdentityHandler) AppList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	kind := ctx.Param("kind")
@@ -204,15 +204,35 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	if r.Default {
+		count := int64(0)
+		db := h.DB(ctx)
+		db = db.Model(m)
+		db = db.Where("kind = ?", r.Kind)
+		db = db.Where("default", true)
+		err = db.Count(&count).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if count > 0 {
+			err = &BadRequestError{
+				Reason: "Kind already has default.",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = secret.Encrypt(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	result := h.DB(ctx).Create(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	db := h.DB(ctx)
+	err = db.Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r.With(m)

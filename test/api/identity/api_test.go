@@ -105,3 +105,24 @@ func TestIdentityNotCreateDuplicates(t *testing.T) {
 	// Clean.
 	assert.Must(t, Identity.Delete(r.ID))
 }
+
+func TestIdentityNotCreateDupDefault(t *testing.T) {
+	identity := &api.Identity{
+		Name:    "Test",
+		Kind:    "Test",
+		Default: true,
+	}
+	err := Identity.Create(identity)
+	assert.Must(t, err)
+	defer func() {
+		_ = Identity.Delete(identity.ID)
+	}()
+	identity.Name = "Test2"
+	err = Identity.Create(identity)
+	if err == nil {
+		t.Errorf("Created duplicate (default) identity: %v", identity)
+		defer func() {
+			_ = Identity.Delete(identity.ID)
+		}()
+	}
+}
