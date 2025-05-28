@@ -27,44 +27,46 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(direct2.ID)
 	}()
-	inherited := &api.Identity{
+	indirect := &api.Identity{
 		Kind:    "Other",
-		Name:    "inherited",
+		Name:    "indirect",
 		Default: true,
 	}
-	err = RichClient.Identity.Create(inherited)
+	err = RichClient.Identity.Create(indirect)
 	assert.Must(t, err)
 	defer func() {
-		_ = RichClient.Identity.Delete(inherited.ID)
+		_ = RichClient.Identity.Delete(indirect.ID)
 	}()
 	application := &api.Application{
 		Name:       t.Name(),
 		Identities: []api.Ref{{ID: direct.ID}},
 	}
-	err = RichClient.Application.Create(application)
+	err = Application.Create(application)
 	assert.Must(t, err)
 	defer func() {
-		_ = RichClient.Application.Delete(application.ID)
+		_ = Application.Delete(application.ID)
 	}()
 	// Find direct.
 	identity, found, err := Application.FindIdentity(application.ID, direct.Kind)
 	assert.Must(t, err)
-	if !found {
-		t.Errorf("not found")
+	if found {
+		if identity.ID != direct.ID {
+			t.Errorf("find direct expected: id=%d", direct.ID)
+		}
+	} else {
+		t.Errorf("direct not found")
 	}
-	if identity.ID != direct.ID {
-		t.Errorf("find direct expected: id=%d", direct.ID)
-	}
-	// Find inherited.
-	identity, found, err = Application.FindIdentity(application.ID, inherited.Kind)
+	// Find indirect.
+	identity, found, err = Application.FindIdentity(application.ID, indirect.Kind)
 	assert.Must(t, err)
-	if !found {
-		t.Errorf("not found")
+	if found {
+		if identity.ID != indirect.ID {
+			t.Errorf("find indirect expected: id=%d", indirect.ID)
+		}
+	} else {
+		t.Errorf("indirect not found")
 	}
-	if identity.ID != inherited.ID {
-		t.Errorf("find inherited expected: id=%d", inherited.ID)
-	}
-	// Not find inherited.
+	// Not find indirect.
 	_, found, err = Application.FindIdentity(application.ID, "None")
 	assert.Must(t, err)
 	if found {

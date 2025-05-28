@@ -15,12 +15,13 @@ import (
 const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
+	//
+	AppIdentitiesRoot = ApplicationRoot + "/identities/:" + Kind
 )
 
 // Params.
 const (
-	AppId       = "application"
-	WithDefault = "default"
+	AppId = "application"
 )
 
 // IdentityHandler handles identity resource routes.
@@ -32,11 +33,12 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
 	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.GET(IdentitiesRoot+"/", h.List)
 	routeGroup.POST(IdentitiesRoot, h.Create)
 	routeGroup.GET(IdentityRoot, h.Get)
 	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
+	//
+	routeGroup.GET(AppIdentitiesRoot, h.AppList)
 }
 
 // Get godoc
@@ -112,14 +114,73 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	}
 	resources := []Identity{}
 	for i := range list {
-		r := Identity{}
 		m := &list[i]
+		r := Identity{}
 		err := h.Decrypt(ctx, m)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// AppList godoc
+// @summary List application identities.
+// @description List application identities.
+// @tags dependencies
+// @tags identities
+// @produce json
+// @success 200 {object} []Identity
+// @router /applications/:id/identities/:kind [get]
+func (h IdentityHandler) AppList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	kind := ctx.Param("kind")
+	var direct []model.Identity
+	db := h.DB(ctx)
+	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
+	db = db.Where("j.ApplicationID", id)
+	err := db.Find(&direct, "kind", kind).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	mp := map[string]Identity{}
+	for i := range direct {
+		m := &direct[i]
+		r := Identity{}
+		err := h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		r.With(m)
+		mp[r.Kind] = r
+	}
+	db = h.DB(ctx)
+	var indirect []model.Identity
+	db = db.Where("default", true)
+	err = db.Find(&indirect, "kind", kind).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range indirect {
+		m := &indirect[i]
+		r := Identity{}
+		err := h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		r.With(m)
+		mp[r.Kind] = r
+	}
+	resources := []Identity{}
+	for _, r := range mp {
 		resources = append(resources, r)
 	}
 

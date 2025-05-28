@@ -63,43 +63,20 @@ func (h *Application) Bucket(id uint) (b *BucketContent) {
 
 // FindIdentity by kind.
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
-	direct := []api.Identity{}
-	filter := Filter{}
-	filter.And("application.id").Eq(int(id))
-	filter.And("kind").Eq(kind)
-	p1 := filter.Param()
-	p2 := Param{
+	list := []api.Identity{}
+	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := Path(api.IdentitiesRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, &direct, p1, p2)
+	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: id, api.Kind: kind})
+	err = h.client.Get(path, &list, p)
 	if err != nil {
 		return
 	}
-	for i := range direct {
-		r = &direct[i]
+	for i := range list {
+		r = &list[i]
 		found = true
 		return
-	}
-	inherited := []api.Identity{}
-	filter = Filter{}
-	filter.And("kind").Eq(kind)
-	filter.And("default").Eq(true)
-	p1 = filter.Param()
-	p2 = Param{
-		Key:   api.Decrypted,
-		Value: "1",
-	}
-	path = Path(api.IdentitiesRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, &inherited, p1, p2)
-	if err != nil {
-		return
-	}
-	for i := range inherited {
-		r = &inherited[i]
-		found = true
-		break
 	}
 	return
 }
