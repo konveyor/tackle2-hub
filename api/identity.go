@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
 	"github.com/konveyor/tackle2-hub/trigger"
+	"gorm.io/gorm"
 )
 
 // Routes
@@ -17,7 +19,8 @@ const (
 
 // Params.
 const (
-	AppId = "application"
+	AppId       = "application"
+	WithDefault = "default"
 )
 
 // IdentityHandler handles identity resource routes.
@@ -66,22 +69,41 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all identities.
 // @description List all identities.
+// @description filters:
+// @description - kind
+// @description - name
+// @description - isDefault
+// @description - application.id
+// @tags dependencies
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
 // @router /identities [get]
 func (h IdentityHandler) List(ctx *gin.Context) {
-	var list []model.Identity
-	appId := ctx.Query(AppId)
-	kind := ctx.Query(Kind)
-	db := h.DB(ctx)
-	if appId != "" {
-		db = db.Where(
-			"id IN (SELECT identityID from ApplicationIdentity WHERE applicationID = ?)",
-			appId)
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "default", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-	if kind != "" {
-		db = db.Where(Kind, kind)
+	filter = filter.Renamed("default", "`default`")
+	// Find
+	var list []model.Identity
+	db := h.DB(ctx)
+	db = filter.Where(db)
+	appFilter := filter.Resource("application")
+	if !appFilter.Empty() {
+		q := h.DB(ctx)
+		q = q.Table("ApplicationIdentity")
+		q = q.Select("IdentityID")
+		appFilter = appFilter.Renamed("id", "ApplicationID")
+		db = db.Where("ID IN (?)", appFilter.Where(q))
 	}
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -210,10 +232,25 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// ids return identity IDs (query) based on the filter.
+func (h IdentityHandler) ids(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	appFilter := f.Resource("application")
+	if appFilter.Empty() {
+		return
+	}
+	q = q.Table("ApplicationIdentity")
+	q = q.Select("IdentityID")
+	appFilter = appFilter.Renamed("id", "ApplicationID")
+	q = q.Or("ID", appFilter.Where(q))
+	return
+}
+
 // Identity REST resource.
 type Identity struct {
 	Resource    `yaml:",inline"`
 	Kind        string `json:"kind" binding:"required"`
+	Default     bool   `json:"default"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	User        string `json:"user"`
@@ -226,6 +263,7 @@ type Identity struct {
 func (r *Identity) With(m *model.Identity) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
+	r.Default = m.Default
 	r.Name = m.Name
 	r.Description = m.Description
 	r.User = m.User
@@ -238,6 +276,7 @@ func (r *Identity) With(m *model.Identity) {
 func (r *Identity) Model() (m *model.Identity) {
 	m = &model.Identity{
 		Kind:        r.Kind,
+		Default:     r.Default,
 		Name:        r.Name,
 		Description: r.Description,
 		User:        r.User,

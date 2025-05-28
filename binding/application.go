@@ -2,7 +2,6 @@ package binding
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
@@ -64,28 +63,43 @@ func (h *Application) Bucket(id uint) (b *BucketContent) {
 
 // FindIdentity by kind.
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
-	list := []api.Identity{}
-	p1 := Param{
-		Key:   api.AppId,
-		Value: strconv.Itoa(int(id)),
-	}
+	direct := []api.Identity{}
+	filter := Filter{}
+	filter.And("application.id").Eq(int(id))
+	filter.And("kind").Eq(kind)
+	p1 := filter.Param()
 	p2 := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
 	path := Path(api.IdentitiesRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, &list, p1, p2)
+	err = h.client.Get(path, &direct, p1, p2)
 	if err != nil {
 		return
 	}
-	for i := range list {
-		r = &list[i]
-		if r.Kind == kind {
-			m := r.Model()
-			r.With(m)
-			found = true
-			break
-		}
+	for i := range direct {
+		r = &direct[i]
+		found = true
+		return
+	}
+	inherited := []api.Identity{}
+	filter = Filter{}
+	filter.And("kind").Eq(kind)
+	filter.And("default").Eq(true)
+	p1 = filter.Param()
+	p2 = Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	path = Path(api.IdentitiesRoot).Inject(Params{api.ID: id})
+	err = h.client.Get(path, &inherited, p1, p2)
+	if err != nil {
+		return
+	}
+	for i := range inherited {
+		r = &inherited[i]
+		found = true
+		break
 	}
 	return
 }
