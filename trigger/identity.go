@@ -9,7 +9,13 @@ type Identity struct {
 	Trigger
 }
 
-// Updated model created trigger.
+// Created model created trigger.
+func (r *Identity) Created(m *model.Identity) (err error) {
+	err = r.Updated(m)
+	return
+}
+
+// Updated model updated trigger.
 func (r *Identity) Updated(m *model.Identity) (err error) {
 	tr := Application{
 		Trigger: Trigger{

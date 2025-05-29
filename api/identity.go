@@ -231,6 +231,20 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	}
 	r.With(m)
 
+	rtx := RichContext(ctx)
+	tr := trigger.Identity{
+		Trigger: trigger.Trigger{
+			TaskManager: rtx.TaskManager,
+			Client:      rtx.Client,
+			DB:          h.DB(ctx),
+		},
+	}
+	err = tr.Created(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
