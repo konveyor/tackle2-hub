@@ -2,7 +2,6 @@ package trigger
 
 import (
 	"github.com/konveyor/tackle2-hub/model"
-	"gorm.io/gorm/clause"
 )
 
 // Identity trigger.
@@ -19,39 +18,16 @@ func (r *Identity) Updated(m *model.Identity) (err error) {
 			DB:          r.DB,
 		},
 	}
-	id := m.ID
-	m = &model.Identity{}
-	db := r.DB.Preload(clause.Associations)
-	err = db.First(m, id).Error
+	affected, err := r.affected(m)
 	if err != nil {
 		return
 	}
-	if m.Default {
-		direct := make(map[uint]byte)
-		for i := range m.Applications {
-			appId := m.Applications[i].ID
-			direct[appId] = 0
-		}
-		type M struct {
-			AppId uint
-			ID    uint
-			Kind  string
-		}
-		db := r.DB.Select(
-			"j.ApplicationID AppId",
-			"i.ID ID",
-			"i.Kind Kind")
-		db = r.DB.Table("Identity i")
-		db = db.Joins("JOIN ApplicationIdentity j ON a.ID = j.IdentityID")
-		err = r.DB.Find(&applications).Error
-		if err != nil {
-			return
-		}
-		for i := range m.Applications {
-			app := &m.Applications[i]
-		}
+	var appList []model.Application
+	err = r.DB.Find(&appList, affected).Error
+	if err != nil {
+		return
 	}
-	for i := range m.Applications {
+	for i := range appList {
 		err = tr.Updated(&m.Applications[i])
 		if err != nil {
 			return
@@ -60,32 +36,58 @@ func (r *Identity) Updated(m *model.Identity) (err error) {
 	return
 }
 
-func (r *Identity) affected(m *model.Identity) (appIds []uint, err error) {
+func (r *Identity) affected(changed *model.Identity) (appIds []uint, err error) {
 	type M struct {
 		ID      uint
 		Kind    string
 		Default bool
 		AppId   uint
 	}
-	var identities []M
 	db := r.DB.Select(
 		"i.ID ID",
 		"i.Kind Kind",
-		"i.Default Default",
+		"i.`Default` `Default`",
 		"j.ApplicationID AppId")
-	db = r.DB.Table("Identity i")
-	db = db.Joins("JOIN ApplicationIdentity j ON a.ID = j.IdentityID")
-	db = db.Where("i.Kind", m.Kind)
-	err = r.DB.Find(&identities).Error
+	db = db.Table("Identity i")
+	db = db.Joins("LEFT JOIN ApplicationIdentity j ON i.ID = j.IdentityID")
+	db = db.Where("i.Kind", changed.Kind)
+	cursor, err := db.Rows()
 	if err != nil {
 		return
 	}
-	direct := make(map[uint]byte)
-	for i := range identities {
-		m2 := &identities[i]
-		if m2.AppId > 0 {
-			direct[m2.ID] = 0
+	defer func() {
+		_ = cursor.Close()
+	}()
+	m := M{}
+	var records []M
+	for cursor.Next() {
+		err = db.ScanRows(cursor, &m)
+		if err != nil {
+			return
 		}
+		records = append(records, m)
+	}
+	direct := make(map[uint]uint)
+	for _, m2 := range records {
+		if m2.AppId > 0 {
+			direct[m2.AppId] = m2.ID
+		}
+	}
+	indirect := make(map[uint]uint)
+	for _, m2 := range records {
+		if m2.Default {
+			_, hasDirect := direct[m2.AppId]
+			if hasDirect || m2.AppId == 0 {
+				continue
+			}
+			indirect[m2.AppId] = m2.ID
+		}
+	}
+	for appId, _ := range direct {
+		appIds = append(appIds, appId)
+	}
+	for appId, _ := range indirect {
+		appIds = append(appIds, appId)
 	}
 	return
 }

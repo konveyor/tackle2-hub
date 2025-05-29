@@ -75,7 +75,6 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @description filters:
 // @description - kind
 // @description - name
-// @description - isDefault
 // @description - application.id
 // @tags dependencies
 // @tags identities
@@ -95,7 +94,6 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("default", "`default`")
 	// Find
 	var list []model.Identity
 	db := h.DB(ctx)
