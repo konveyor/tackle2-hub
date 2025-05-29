@@ -282,6 +282,26 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	if r.Default {
+		count := int64(0)
+		db := h.DB(ctx)
+		db = db.Model(m)
+		db = db.Where("kind = ?", r.Kind)
+		db = db.Where("default", true)
+		db = db.Where("id != ?", id)
+		err = db.Count(&count).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if count > 0 {
+			err = &BadRequestError{
+				Reason: "Kind already has default.",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	err = secret.Encrypt(m)
 	if err != nil {
 		_ = ctx.Error(err)
