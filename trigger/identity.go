@@ -36,6 +36,12 @@ func (r *Identity) Updated(m *model.Identity) (err error) {
 	return
 }
 
+// affected returns a list of affected application ids.
+// An application is affected when:
+//- the changed identity is directly associated
+//- the changed identity is the default (for the kind) and an
+//  application does not have an identity of the same kind
+//  directly associated.
 func (r *Identity) affected(changed *model.Identity) (appIds []uint, err error) {
 	type M struct {
 		ID      uint
