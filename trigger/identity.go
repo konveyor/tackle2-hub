@@ -11,7 +11,9 @@ type Identity struct {
 
 // Created model created trigger.
 func (r *Identity) Created(m *model.Identity) (err error) {
-	err = r.Updated(m)
+	if m.Default {
+		err = r.Updated(m)
+	}
 	return
 }
 
