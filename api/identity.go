@@ -1,18 +1,23 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
 	"github.com/konveyor/tackle2-hub/trigger"
+	"gorm.io/gorm"
 )
 
 // Routes
 const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
+	//
+	AppIdentitiesRoot = ApplicationRoot + "/identities/:" + Kind
 )
 
 // Params.
@@ -29,11 +34,12 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
 	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.GET(IdentitiesRoot+"/", h.List)
-	routeGroup.POST(IdentitiesRoot, h.Create)
+	routeGroup.POST(IdentitiesRoot, Transaction, h.Create)
 	routeGroup.GET(IdentityRoot, h.Get)
 	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
 	routeGroup.DELETE(IdentityRoot, h.Delete)
+	//
+	routeGroup.GET(AppIdentitiesRoot, h.AppList)
 }
 
 // Get godoc
@@ -66,22 +72,41 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all identities.
 // @description List all identities.
+// @description filters:
+// @description - kind
+// @description - name
+// @description - isDefault
+// @description - application.id
+// @tags dependencies
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
 // @router /identities [get]
 func (h IdentityHandler) List(ctx *gin.Context) {
-	var list []model.Identity
-	appId := ctx.Query(AppId)
-	kind := ctx.Query(Kind)
-	db := h.DB(ctx)
-	if appId != "" {
-		db = db.Where(
-			"id IN (SELECT identityID from ApplicationIdentity WHERE applicationID = ?)",
-			appId)
+	// Filter
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "default", Kind: qf.STRING},
+			{Field: "name", Kind: qf.STRING},
+			{Field: "application.id", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-	if kind != "" {
-		db = db.Where(Kind, kind)
+	filter = filter.Renamed("default", "`default`")
+	// Find
+	var list []model.Identity
+	db := h.DB(ctx)
+	db = filter.Where(db)
+	appFilter := filter.Resource("application")
+	if !appFilter.Empty() {
+		q := h.DB(ctx)
+		q = q.Table("ApplicationIdentity")
+		q = q.Select("IdentityID")
+		appFilter = appFilter.Renamed("id", "ApplicationID")
+		db = db.Where("ID IN (?)", appFilter.Where(q))
 	}
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -90,14 +115,73 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	}
 	resources := []Identity{}
 	for i := range list {
-		r := Identity{}
 		m := &list[i]
+		r := Identity{}
 		err := h.Decrypt(ctx, m)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// AppList godoc
+// @summary List application identities.
+// @description List application identities.
+// @tags dependencies
+// @tags identities
+// @produce json
+// @success 200 {object} []Identity
+// @router /applications/{id}/identities/{kind} [get]
+func (h IdentityHandler) AppList(ctx *gin.Context) {
+	id := h.pk(ctx)
+	kind := ctx.Param("kind")
+	var direct []model.Identity
+	db := h.DB(ctx)
+	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
+	db = db.Where("j.ApplicationID", id)
+	err := db.Find(&direct, "kind", kind).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	mp := map[string]Identity{}
+	for i := range direct {
+		m := &direct[i]
+		r := Identity{}
+		err := h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		r.With(m)
+		mp[r.Kind] = r
+	}
+	db = h.DB(ctx)
+	var indirect []model.Identity
+	db = db.Where("default", true)
+	err = db.Find(&indirect, "kind", kind).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range indirect {
+		m := &indirect[i]
+		r := Identity{}
+		err := h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		r.With(m)
+		mp[r.Kind] = r
+	}
+	resources := []Identity{}
+	for _, r := range mp {
 		resources = append(resources, r)
 	}
 
@@ -120,6 +204,20 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if r.Default {
+		defId, err := h.getDefault(ctx, r.Kind)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if defId > 0 {
+			err = &BadRequestError{
+				Reason: "Kind already has default.",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = secret.Encrypt(m)
@@ -127,9 +225,10 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	result := h.DB(ctx).Create(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	db := h.DB(ctx)
+	err = db.Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r.With(m)
@@ -178,6 +277,20 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if r.Default {
+		defId, err := h.getDefault(ctx, r.Kind)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if defId > 0 && defId != id {
+			err = &BadRequestError{
+				Reason: "Kind already has default.",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	m := r.Model()
 	err = secret.Encrypt(m)
 	if err != nil {
@@ -210,10 +323,43 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// ids return identity IDs (query) based on the filter.
+func (h IdentityHandler) ids(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	appFilter := f.Resource("application")
+	if appFilter.Empty() {
+		return
+	}
+	q = q.Table("ApplicationIdentity")
+	q = q.Select("IdentityID")
+	appFilter = appFilter.Renamed("id", "ApplicationID")
+	q = q.Or("ID", appFilter.Where(q))
+	return
+}
+
+// getDefault returns the default by kind.
+func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err error) {
+	db := h.DB(ctx)
+	m := &model.Identity{}
+	db = db.Model(m)
+	db = db.Where("kind", kind)
+	db = db.Where("default", true)
+	err = db.First(m).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		}
+		return
+	}
+	id = m.ID
+	return
+}
+
 // Identity REST resource.
 type Identity struct {
 	Resource    `yaml:",inline"`
 	Kind        string `json:"kind" binding:"required"`
+	Default     bool   `json:"default"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	User        string `json:"user"`
@@ -226,6 +372,7 @@ type Identity struct {
 func (r *Identity) With(m *model.Identity) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
+	r.Default = m.Default
 	r.Name = m.Name
 	r.Description = m.Description
 	r.User = m.User
@@ -238,6 +385,7 @@ func (r *Identity) With(m *model.Identity) {
 func (r *Identity) Model() (m *model.Identity) {
 	m = &model.Identity{
 		Kind:        r.Kind,
+		Default:     r.Default,
 		Name:        r.Name,
 		Description: r.Description,
 		User:        r.User,

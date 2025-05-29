@@ -38,6 +38,17 @@ func (h *Identity) List() (list []api.Identity, err error) {
 	return
 }
 
+// Find decrypted Identities.
+func (h *Identity) Find(filter Filter) (list []api.Identity, err error) {
+	list = []api.Identity{}
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	err = h.client.Get(api.IdentitiesRoot, &list, p, filter.Param())
+	return
+}
+
 // Update a Identity.
 func (h *Identity) Update(r *api.Identity) (err error) {
 	path := Path(api.IdentityRoot).Inject(Params{api.ID: r.ID})

@@ -2,7 +2,6 @@ package binding
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
@@ -65,27 +64,19 @@ func (h *Application) Bucket(id uint) (b *BucketContent) {
 // FindIdentity by kind.
 func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	p1 := Param{
-		Key:   api.AppId,
-		Value: strconv.Itoa(int(id)),
-	}
-	p2 := Param{
+	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := Path(api.IdentitiesRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, &list, p1, p2)
+	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: id, api.Kind: kind})
+	err = h.client.Get(path, &list, p)
 	if err != nil {
 		return
 	}
 	for i := range list {
 		r = &list[i]
-		if r.Kind == kind {
-			m := r.Model()
-			r.With(m)
-			found = true
-			break
-		}
+		found = true
+		return
 	}
 	return
 }
