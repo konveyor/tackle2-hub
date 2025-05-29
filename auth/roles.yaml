@@ -64,6 +64,12 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: identities
       verbs:
         - delete
@@ -86,6 +92,24 @@
       verbs:
         - get
         - post
+    - name: manifests
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: migrationwaves
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: platforms
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: proxies
       verbs:
         - delete
@@ -170,12 +194,6 @@
         - post
         - put
     - name: rulesets
-      verbs:
-        - delete
-        - get
-        - post
-        - put
-    - name: migrationwaves
       verbs:
         - delete
         - get
@@ -275,6 +293,12 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: identities
       verbs:
         - get
@@ -294,6 +318,24 @@
       verbs:
         - get
         - post
+    - name: manifests
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: migrationwaves
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: platforms
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: proxies
       verbs:
         - get
@@ -373,12 +415,6 @@
         - get
         - post
         - put
-    - name: migrationwaves
-      verbs:
-        - delete
-        - get
-        - post
-        - put
     - name: targets
       verbs:
         - delete
@@ -442,6 +478,9 @@
         - get
         - post
         - put
+    - name: generators
+      verbs:
+        - get
     - name: identities
       verbs:
         - get
@@ -455,6 +494,15 @@
       verbs:
         - get
         - post
+    - name: manifests
+      verbs:
+        - get
+    - name: migrationwaves
+      verbs:
+        - get
+    - name: platforms
+      verbs:
+        - get
     - name: proxies
       verbs:
         - get
@@ -505,9 +553,6 @@
       verbs:
         - get
     - name: rulesets
-      verbs:
-        - get
-    - name: migrationwaves
       verbs:
         - get
     - name: targets
@@ -566,6 +611,9 @@
     - name: identities
       verbs:
         - get
+    - name: generators
+      verbs:
+        - get
     - name: imports
       verbs:
         - get
@@ -576,6 +624,9 @@
       verbs:
         - get
         - post
+    - name: platforms
+      verbs:
+        - get
     - name: proxies
       verbs:
         - get

@@ -58,6 +58,8 @@ type Bucket = binding.Bucket
 type BucketContent = binding.BucketContent
 type File = binding.File
 type Identity = binding.Identity
+type Manifest = binding.Manifest
+type Platform = binding.Platform
 type Proxy = binding.Proxy
 type RuleSet = binding.RuleSet
 type Setting = binding.Setting
@@ -79,6 +81,10 @@ type Adapter struct {
 	Application Application
 	// Identity API.
 	Identity Identity
+	// Manifest
+	Manifest Manifest
+	// Platform
+	Platform Platform
 	// Proxy API.
 	Proxy Proxy
 	// TagCategory API.
@@ -149,6 +155,7 @@ func newAdapter() (adapter *Adapter) {
 		Setting:     richClient.Setting,
 		Application: richClient.Application,
 		Identity:    richClient.Identity,
+		Manifest:    richClient.Manifest,
 		Proxy:       richClient.Proxy,
 		TagCategory: richClient.TagCategory,
 		Tag:         richClient.Tag,

@@ -19,9 +19,12 @@ type RichClient struct {
 	BusinessService  BusinessService
 	Dependency       Dependency
 	File             File
+	Generator        Generator
 	Identity         Identity
 	JobFunction      JobFunction
+	Manifest         Manifest
 	MigrationWave    MigrationWave
+	Platform         Platform
 	Proxy            Proxy
 	Questionnaire    Questionnaire
 	Review           Review
@@ -72,13 +75,22 @@ func New(baseURL string) (r *RichClient) {
 		File: File{
 			client: client,
 		},
+		Generator: Generator{
+			client: client,
+		},
 		Identity: Identity{
 			client: client,
 		},
 		JobFunction: JobFunction{
 			client: client,
 		},
+		Manifest: Manifest{
+			client: client,
+		},
 		MigrationWave: MigrationWave{
+			client: client,
+		},
+		Platform: Platform{
 			client: client,
 		},
 		Proxy: Proxy{

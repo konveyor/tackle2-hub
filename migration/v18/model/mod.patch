@@ -9,3 +9,40 @@ diff -ruN '--exclude=mod.patch' migration/v17/model/core.go migration/v18/model/
  	Kind       string
  	Addon      string
  	Extensions []string `gorm:"type:json;serializer:json"`
+diff -ruN '--exclude=mod.patch' migration/v17/model/application.go migration/v18/model/application.go
+--- migration/v17/model/application.go	2025-05-07 15:47:21.397577860 -0500
++++ migration/v18/model/application.go	2025-05-08 10:30:04.320135768 -0500
+@@ -32,6 +32,7 @@
+ 	MigrationWave     *MigrationWave
+ 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
+ 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
++	Manifest          []Manifest    `gorm:"constraint:OnDelete:CASCADE"`
+ }
+
+ type Fact struct {
+diff -ruN '--exclude=mod.patch' migration/v17/model/pkg.go migration/v18/model/pkg.go
+--- migration/v17/model/pkg.go	2025-05-07 15:47:21.397577860 -0500
++++ migration/v18/model/pkg.go	2025-05-08 10:30:04.320135768 -0500
+@@ -31,6 +31,7 @@
+ 		ImportSummary{},
+ 		ImportTag{},
+ 		JobFunction{},
++		Manifest{},
+ 		MigrationWave{},
+ 		PK{},
+ 		Proxy{},
+diff -ruN '--exclude=mod.patch' migration/v17/model/platform.go migration/v18/model/platform.go
+--- migration/v17/model/platform.go	1969-12-31 18:00:00.000000000 -0600
++++ migration/v18/model/platform.go	2025-05-08 10:30:04.320135768 -0500
+@@ -0,0 +1,11 @@
++package model
++
++import "github.com/konveyor/tackle2-hub/migration/json"
++
++type Manifest struct {
++	Model
++	Content       json.Map `gorm:"type:json;serializer:json"`
++	Secret        json.Map `gorm:"type:json;serializer:json" secret:""`
++	ApplicationID uint
++	Application   Application
++}

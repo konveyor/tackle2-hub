@@ -30,8 +30,11 @@ type Application struct {
 	Analyses          []Analysis    `gorm:"constraint:OnDelete:CASCADE"`
 	MigrationWaveID   *uint         `gorm:"index"`
 	MigrationWave     *MigrationWave
+	PlatformID        *uint `gorm:"index"`
+	Platform          *Platform
 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
+	Manifest          []Manifest   `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Fact struct {
@@ -168,6 +171,7 @@ type Archetype struct {
 	Tags              []Tag              `gorm:"many2many:ArchetypeTags;constraint:OnDelete:CASCADE"`
 	Stakeholders      []Stakeholder      `gorm:"many2many:ArchetypeStakeholders;constraint:OnDelete:CASCADE"`
 	StakeholderGroups []StakeholderGroup `gorm:"many2many:ArchetypeStakeholderGroups;constraint:OnDelete:CASCADE"`
+	Profiles          []TargetProfile    `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Tag struct {
