@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -203,19 +204,13 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
 	if r.Default {
-		count := int64(0)
-		db := h.DB(ctx)
-		db = db.Model(m)
-		db = db.Where("kind = ?", r.Kind)
-		db = db.Where("default", true)
-		err = db.Count(&count).Error
+		defId, err := h.getDefault(ctx, r.Kind)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		if count > 0 {
+		if defId > 0 {
 			err = &BadRequestError{
 				Reason: "Kind already has default.",
 			}
@@ -223,6 +218,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 			return
 		}
 	}
+	m := r.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = secret.Encrypt(m)
 	if err != nil {
@@ -281,20 +277,13 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
 	if r.Default {
-		count := int64(0)
-		db := h.DB(ctx)
-		db = db.Model(m)
-		db = db.Where("kind = ?", r.Kind)
-		db = db.Where("default", true)
-		db = db.Where("id != ?", id)
-		err = db.Count(&count).Error
+		defId, err := h.getDefault(ctx, r.Kind)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		if count > 0 {
+		if defId > 0 && defId != id {
 			err = &BadRequestError{
 				Reason: "Kind already has default.",
 			}
@@ -302,6 +291,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 			return
 		}
 	}
+	m := r.Model()
 	err = secret.Encrypt(m)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -344,6 +334,24 @@ func (h IdentityHandler) ids(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = q.Select("IdentityID")
 	appFilter = appFilter.Renamed("id", "ApplicationID")
 	q = q.Or("ID", appFilter.Where(q))
+	return
+}
+
+// getDefault returns the default by kind.
+func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err error) {
+	db := h.DB(ctx)
+	m := &model.Identity{}
+	db = db.Model(m)
+	db = db.Where("kind", kind)
+	db = db.Where("default", true)
+	err = db.First(m).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		}
+		return
+	}
+	id = m.ID
 	return
 }
 
