@@ -83,21 +83,31 @@ func (r *Identity) affected(changed *model.Identity) (appIds [][]uint, err error
 		}
 		records = append(records, m)
 	}
-	direct := make(map[uint]uint)
+	// direct association.
+	// map[application.ID]map[Identity.ID]struct{}
+	direct := make(map[uint]map[uint]struct{})
 	for _, m2 := range records {
 		if m2.Id > 0 {
-			direct[m2.AppId] = m2.Id
+			ids, found := direct[m2.Id]
+			if !found {
+				ids = make(map[uint]struct{})
+				direct[m2.AppId] = ids
+			}
+			ids[m2.Id] = struct{}{}
 		}
 	}
-	indirect := make(map[uint]uint)
+	// indirect association.
+	// map[application.ID]struct{}
+	indirect := make(map[uint]struct{})
 	if changed.Default {
 		for _, m2 := range records {
 			_, hasDirect := direct[m2.AppId]
 			if !hasDirect {
-				indirect[m2.AppId] = m2.Id
+				indirect[m2.AppId] = struct{}{}
 			}
 		}
 	}
+	// batch
 	batch := make([]uint, 0, 100)
 	add := func(id uint) {
 		if len(batch) == cap(batch) {
@@ -111,8 +121,11 @@ func (r *Identity) affected(changed *model.Identity) (appIds [][]uint, err error
 			appIds = append(appIds, batch)
 		}
 	}()
-	for appId, _ := range direct {
-		add(appId)
+	for appId, ids := range direct {
+		_, found := ids[changed.ID]
+		if found {
+			add(appId)
+		}
 	}
 	for appId, _ := range indirect {
 		add(appId)
