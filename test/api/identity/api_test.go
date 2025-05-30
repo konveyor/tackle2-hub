@@ -126,3 +126,33 @@ func TestIdentityNotCreateDupDefault(t *testing.T) {
 		}()
 	}
 }
+
+func TestIdentityNotUpdateDupDefault(t *testing.T) {
+	def := &api.Identity{
+		Name:    "Test",
+		Kind:    "Test",
+		Default: true,
+	}
+	err := Identity.Create(def)
+	assert.Must(t, err)
+	defer func() {
+		_ = Identity.Delete(def.ID)
+	}()
+	other := &api.Identity{
+		Name: "Test2",
+		Kind: "Test",
+	}
+	err = Identity.Create(other)
+	assert.Must(t, err)
+	defer func() {
+		_ = Identity.Delete(other.ID)
+	}()
+	other.Default = true
+	err = Identity.Update(other)
+	if err == nil {
+		t.Errorf("Created duplicate (default) identity: %v", other)
+		defer func() {
+			_ = Identity.Delete(other.ID)
+		}()
+	}
+}
