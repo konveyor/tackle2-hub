@@ -7,7 +7,7 @@ name="${2:-Test}"
 kind="${3:-source}"
 def="${4:-0}"
 
-# create identity.
+# update an identity.
 curl -X PUT ${host}/identities/${id} \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
