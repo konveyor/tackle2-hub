@@ -805,7 +805,7 @@ func (r *Task) With(m *model.Task) {
 	r.Extensions = m.Extensions
 	r.State = m.State
 	r.Locator = m.Locator
-	r.Priority = m.Priority
+	r.Priority = r.userPriority(m.Priority)
 	r.Policy = TaskPolicy(m.Policy)
 	r.TTL = TTL(m.TTL)
 	r.Data = m.Data.Any
@@ -862,6 +862,16 @@ func (r *Task) Model() (m *model.Task) {
 	}
 	m.ID = r.ID
 	m.Data.Any = r.Data
+	return
+}
+
+// userPriority adjust (ensures) priority is greater than 10.
+// Priority: 0-9 reserved for system tasks.
+func (r *Task) userPriority(in int) (out int) {
+	out = in
+	if out < 10 {
+		out += 10
+	}
 	return
 }
 

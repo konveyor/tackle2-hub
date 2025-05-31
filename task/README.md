@@ -25,6 +25,8 @@ priority. As a result, task pods are created in the order of priority. However, 
 the pod scheduling order is at the discretion of the k8s node-scheduler. To maximize the influence of task
 priority ordering, it is highly recommended for administrators to create a k8s _Resource Quota_ in the
 namespace to restrict the number of pods created.
+Priority: 0-9 are reserved for system tasks. User defined tasks with a priority < 10 are adjusted
+to be priority+10.
 
 ### Resource Quota ###
 
