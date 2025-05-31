@@ -37,8 +37,13 @@ func (r *Application) Updated(m *model.Application) (err error) {
 		func(i, j int) bool {
 			ik := kinds[i]
 			jk := kinds[j]
+			iP := ik.Spec.Priority
+			jP := jk.Spec.Priority
 			iL := ik.Labels[label]
 			jL := jk.Labels[label]
+			if iP != jP {
+				return iP < jP
+			}
 			return iL < jL
 		})
 	taskGroup := &tasking.TaskGroup{
