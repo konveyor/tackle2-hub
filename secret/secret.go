@@ -1,6 +1,8 @@
 package secret
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -50,7 +52,12 @@ func (r Secret) Update(object any, fn func(string) string) (err error) {
 	defer func() {
 		p := recover()
 		if p != nil {
-			err = p.(error)
+			switch p.(type) {
+			case error:
+				err = p.(error)
+			default:
+				err = errors.New(fmt.Sprint(p))
+			}
 		}
 	}()
 	mt := reflect.TypeOf(object)
