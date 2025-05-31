@@ -27,8 +27,7 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	if m.Repository == (model.Repository{}) {
 		return
 	}
-	label := Settings.Discovery.Label
-	kinds, err := r.FindTasks(label)
+	kinds, err := r.FindTasks(Settings.Discovery.Label)
 	if err != nil {
 		return
 	}
@@ -37,9 +36,14 @@ func (r *Application) Updated(m *model.Application) (err error) {
 		func(i, j int) bool {
 			ik := kinds[i]
 			jk := kinds[j]
-			iL := ik.Labels[label]
-			jL := jk.Labels[label]
-			return iL < jL
+			iP := ik.Spec.Priority
+			jP := jk.Spec.Priority
+			iN := ik.Name
+			jN := jk.Name
+			if iP != jP {
+				return iP < jP
+			}
+			return iN < jN
 		})
 	taskGroup := &tasking.TaskGroup{
 		TaskGroup: &model.TaskGroup{
