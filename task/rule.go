@@ -19,10 +19,7 @@ type RuleUnique struct {
 
 // Match determines the match.
 func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
-	if ready.ApplicationID == nil || other.ApplicationID == nil {
-		return
-	}
-	if *ready.ApplicationID != *other.ApplicationID {
+	if !ready.MatchSubject(other) {
 		return
 	}
 	if ready.Addon != other.Addon {
@@ -51,7 +48,7 @@ func (r *RuleDeps) Match(ready, other *Task) (matched bool, reason string) {
 	if ready.Kind == "" || other.Kind == "" {
 		return
 	}
-	if *ready.ApplicationID != *other.ApplicationID {
+	if !ready.MatchSubject(other) {
 		return
 	}
 	def, found := r.cluster.Task(ready.Kind)

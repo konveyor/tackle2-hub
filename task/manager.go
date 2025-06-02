@@ -186,6 +186,7 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 		task.TTL = requested.TTL
 		task.Data = requested.Data
 		task.ApplicationID = requested.ApplicationID
+		task.PlatformID = requested.PlatformID
 		task.BucketID = requested.BucketID
 		task.TaskGroupID = requested.TaskGroupID
 	default:
@@ -228,6 +229,7 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 			"TTL",
 			"Data",
 			"ApplicationID",
+			"PlatformID",
 			"TaskGroupID")
 		err = m.findRefs(requested)
 		if err != nil {
@@ -1333,10 +1335,7 @@ func (p *Priority) graph(task *Task, ready []*Task) (deps []*Task) {
 			if r.Kind != d {
 				continue
 			}
-			if r.ApplicationID == nil || task.ApplicationID == nil {
-				continue
-			}
-			if *r.ApplicationID != *task.ApplicationID {
+			if !r.MatchSubject(task) {
 				continue
 			}
 			deps = append(deps, r)

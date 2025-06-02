@@ -121,6 +121,8 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 // @description - state
 // @description - application.id
 // @description - application.name
+// @description - platform.id
+// @description - platform.name
 // @description The state=queued is an alias for queued states.
 // @tags tasks
 // @produce json
@@ -140,6 +142,8 @@ func (h TaskHandler) List(ctx *gin.Context) {
 			{Field: "state", Kind: qf.STRING},
 			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "platform.id", Kind: qf.STRING},
+			{Field: "platform.name", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -166,6 +170,8 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	}
 	filter = filter.Renamed("application.id", "application__id")
 	filter = filter.Renamed("application.name", "application__name")
+	filter = filter.Renamed("platform.id", "platform__id")
+	filter = filter.Renamed("platform.name", "platform__name")
 	filter = filter.Renamed("createUser", "task\\.createUser")
 	filter = filter.Renamed("id", "task\\.id")
 	filter = filter.Renamed("name", "task\\.name")
@@ -176,6 +182,8 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	sort.Add("task.name", "name")
 	sort.Add("application__id", "application.id")
 	sort.Add("application__name", "application.name")
+	sort.Add("platform__id", "platform.id")
+	sort.Add("platform__name", "platform.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -185,6 +193,7 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
 	db = db.Joins("Application")
+	db = db.Joins("Platform")
 	db = db.Joins("Report")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
@@ -292,6 +301,8 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 // @description - state
 // @description - application.id
 // @description - application.name
+// @description - platform.id
+// @description - platform.name
 // @tags tasks
 // @produce json
 // @success 200 {object} []api.TaskDashboard
@@ -310,6 +321,8 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 			{Field: "state", Kind: qf.STRING},
 			{Field: "application.id", Kind: qf.STRING},
 			{Field: "application.name", Kind: qf.STRING},
+			{Field: "platform.id", Kind: qf.STRING},
+			{Field: "platform.name", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -317,6 +330,8 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	}
 	filter = filter.Renamed("application.id", "application__id")
 	filter = filter.Renamed("application.name", "application__name")
+	filter = filter.Renamed("platform.id", "platform__id")
+	filter = filter.Renamed("platform.name", "platform__name")
 	filter = filter.Renamed("createUser", "task\\.createUser")
 	filter = filter.Renamed("id", "task\\.id")
 	filter = filter.Renamed("name", "task\\.name")
@@ -327,6 +342,8 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	sort.Add("task.name", "name")
 	sort.Add("application__id", "application.id")
 	sort.Add("application__name", "application.name")
+	sort.Add("platform__id", "platform.id")
+	sort.Add("platform__name", "platform.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -336,6 +353,7 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
 	db = db.Joins("Application")
+	db = db.Joins("Platform")
 	db = db.Joins("Report")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
@@ -785,6 +803,7 @@ type Task struct {
 	TTL         TTL          `json:"ttl,omitempty" yaml:",omitempty"`
 	Data        any          `json:"data,omitempty" yaml:",omitempty"`
 	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
+	Platform    *Ref         `json:"platform,omitempty" yaml:",omitempty"`
 	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
 	Pod         string       `json:"pod,omitempty" yaml:",omitempty"`
 	Retries     int          `json:"retries,omitempty" yaml:",omitempty"`
@@ -810,6 +829,7 @@ func (r *Task) With(m *model.Task) {
 	r.TTL = TTL(m.TTL)
 	r.Data = m.Data.Any
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
+	r.Platform = r.refPtr(m.PlatformID, m.Platform)
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Pod = m.Pod
 	r.Retries = m.Retries
@@ -859,6 +879,7 @@ func (r *Task) Model() (m *model.Task) {
 		Policy:        model.TaskPolicy(r.Policy),
 		TTL:           model.TTL(r.TTL),
 		ApplicationID: r.idPtr(r.Application),
+		PlatformID:    r.idPtr(r.Platform),
 	}
 	m.ID = r.ID
 	m.Data.Any = r.Data
