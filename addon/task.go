@@ -42,6 +42,17 @@ func (h *Task) Application() (r *api.Application, err error) {
 	return
 }
 
+// Platform returns the platform associated with the task.
+func (h *Task) Platform() (r *api.Platform, err error) {
+	appRef := h.task.Platform
+	if appRef == nil {
+		err = &NotFound{}
+		return
+	}
+	r, err = h.richClient.Platform.Get(appRef.ID)
+	return
+}
+
 // Addon returns the addon associated with the task.
 // The extensions are filtered to include those specified in the task.
 // inject: perform injection.
