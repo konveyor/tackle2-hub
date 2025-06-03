@@ -2,14 +2,24 @@
 
 host="${HOST:-localhost:8080}"
 
-curl -X PUT ${host}/identities/1 -d \
-'{
-    "kind": "git",
-    "name":"test-git",
-    "description": "Forklift",
-    "user": "userB",
-    "password": "passwordB",
-    "key": "keyA",
-    "settings": "settingsB"
-}' | jq -M .
+id="${1:-0}" # 0=system-assigned.
+name="${2:-Test}"
+kind="${3:-source}"
+def="${4:-0}"
 
+# update an identity.
+curl -X PUT ${host}/identities/${id} \
+  -H 'Content-Type:application/x-yaml' \
+  -H 'Accept:application/x-yaml' \
+ -d \
+"
+id: ${id}
+name: ${name}
+kind: ${kind}
+default: ${def}
+description: ${name} Description
+user: userA
+password: passwordA
+key: keyA
+settings: settingsA
+"

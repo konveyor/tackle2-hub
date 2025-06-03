@@ -75,7 +75,6 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @description filters:
 // @description - kind
 // @description - name
-// @description - isDefault
 // @description - application.id
 // @tags dependencies
 // @tags identities
@@ -95,7 +94,6 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("default", "`default`")
 	// Find
 	var list []model.Identity
 	db := h.DB(ctx)
@@ -232,6 +230,20 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 		return
 	}
 	r.With(m)
+
+	rtx := RichContext(ctx)
+	tr := trigger.Identity{
+		Trigger: trigger.Trigger{
+			TaskManager: rtx.TaskManager,
+			Client:      rtx.Client,
+			DB:          h.DB(ctx),
+		},
+	}
+	err = tr.Created(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
