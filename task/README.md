@@ -255,6 +255,19 @@ When a task is created, either the `kind` or the `addon` may be specified. When 
 `addon` is specified, the addon is selected by matching the name. When the `kind` is specified,
 the addon is selected by matching the `Addon.Task` and evaluating the `Addon.Selector`.
 
+Supported selector:
+- tag:_category_=_tag_ - match application tags.
+  ```yaml
+  spec:
+    task: ^(analyzer|tech-discovery)$
+    selector: tag:Language=Java
+- platform:_kind_=_kind_ - match platform kind.
+  ```yaml
+  spec:
+    task: ^(analyzer|tech-discovery)$
+    selector: platform:cloudfoundry
+  ```
+
 ## Extensions ##
 
 An extension defines an additional _sidecar_ container to be included in the task pod.
@@ -272,6 +285,11 @@ Supported selector:
   spec:
     addon: ^(analyzer|tech-discovery)$
     selector: tag:Language=Java
+- platform:_kind_=_kind_ - match platform kind.
+  ```yaml
+  spec:
+    addon: ^(analyzer|tech-discovery)$
+    selector: platform:cloudfoundry
   ```
 
 ## Authorization ##
