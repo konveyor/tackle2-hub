@@ -27,6 +27,10 @@ func NewSelector(db *gorm.DB, task *Task) (selector *Selector) {
 				db:   db,
 				task: task,
 			},
+			"platform": &PlatformPredicate{
+				db:   db,
+				task: task,
+			},
 		},
 	}
 	return
@@ -215,6 +219,53 @@ func (r *TagPredicate) parse(s string) (category, name string) {
 	category = part[0]
 	if len(part) > 1 {
 		name = part[1]
+	}
+	return
+}
+
+// PlatformPredicate evaluates application tag references.
+type PlatformPredicate struct {
+	db   *gorm.DB
+	task *Task
+}
+
+// Match evaluates application tag references.
+// The `ref` has format: kind=<kind>.
+func (r *PlatformPredicate) Match(ref string) (matched bool, err error) {
+	key, value := r.parse(ref)
+	switch key {
+	case "kind":
+		// supported.
+	default:
+		Log.Info(
+			"PlatformSelector: key not supported.",
+			"key",
+			key)
+		return
+	}
+	db := r.db.Session(&gorm.Session{})
+	db = db.Where("id", r.task.PlatformID)
+	db = db.Where(key, value)
+	m := &model.Platform{}
+	err = db.First(m).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	matched = true
+	return
+}
+
+// parse kind ref.
+func (r *PlatformPredicate) parse(s string) (key, kind string) {
+	part := strings.SplitN(s, "=", 2)
+	key = part[0]
+	if len(part) > 1 {
+		kind = part[1]
 	}
 	return
 }

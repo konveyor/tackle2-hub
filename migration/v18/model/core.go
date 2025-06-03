@@ -138,6 +138,8 @@ type Task struct {
 	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint        `gorm:"index"`
 	Application   *Application
+	PlatformID    *uint `gorm:"index"`
+	Platform      *Platform
 	TaskGroupID   *uint `gorm:"<-:create"`
 	TaskGroup     *TaskGroup
 }

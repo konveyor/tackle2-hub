@@ -20,6 +20,7 @@ type Platform struct {
 	IdentityID   *uint
 	Identity     *Identity
 	Applications []Application `gorm:"constraint:OnDelete:SET NULL"`
+	Tasks        []Task        `gorm:"constraint:OnDelete:CASCADE"`
 }
 type TargetProfile struct {
 	Model

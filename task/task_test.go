@@ -84,6 +84,7 @@ func TestPriorityGraph(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	appId := uint(1)
+	platformId := uint(2)
 
 	kinds := make(map[string]*crd.Task)
 	ready := []*Task{}
@@ -102,6 +103,8 @@ func TestPriorityGraph(t *testing.T) {
 	c.Spec.Dependencies = []string{"b"}
 	kinds[c.Name] = &c
 
+	//
+	// subject: application
 	task := &Task{&model.Task{}}
 	task.ID = 1
 	task.Kind = "c"
@@ -135,6 +138,42 @@ func TestPriorityGraph(t *testing.T) {
 			tasks: kinds,
 		}}
 	deps := pE.graph(ready[0], ready)
+	g.Expect(len(deps)).To(gomega.Equal(2))
+	//
+	// subject: platform
+	task = &Task{&model.Task{}}
+	task.ID = 1
+	task.Kind = "c"
+	task.State = Ready
+	task.Priority = 10
+	task.PlatformID = &platformId
+	ready = append(ready, task)
+
+	task = &Task{&model.Task{}}
+	task.ID = 2
+	task.Kind = "b"
+	task.State = Ready
+	task.PlatformID = &platformId
+	ready = append(ready, task)
+
+	task = &Task{&model.Task{}}
+	task.ID = 3
+	task.Kind = "a"
+	task.State = Ready
+	task.PlatformID = &platformId
+	ready = append(ready, task)
+
+	task = &Task{&model.Task{}}
+	task.ID = 4
+	task.State = Ready
+	task.PlatformID = &platformId
+	ready = append(ready, task)
+
+	pE = Priority{
+		cluster: &Cluster{
+			tasks: kinds,
+		}}
+	deps = pE.graph(ready[0], ready)
 	g.Expect(len(deps)).To(gomega.Equal(2))
 }
 
