@@ -232,7 +232,7 @@ type PlatformPredicate struct {
 // Match evaluates application tag references.
 // The `ref` has format: kind=<kind>.
 func (r *PlatformPredicate) Match(ref string) (matched bool, err error) {
-	key, kind := r.parse(ref)
+	key, value := r.parse(ref)
 	switch key {
 	case "kind":
 		// supported.
@@ -245,7 +245,7 @@ func (r *PlatformPredicate) Match(ref string) (matched bool, err error) {
 	}
 	db := r.db.Session(&gorm.Session{})
 	db = db.Where("id", r.task.PlatformID)
-	db = db.Where(key, kind)
+	db = db.Where(key, value)
 	m := &model.Platform{}
 	err = db.First(m).Error
 	if err != nil {
