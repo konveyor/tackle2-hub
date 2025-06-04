@@ -70,7 +70,7 @@ func (h *Application) Tags(id uint) (tg AppTags) {
 	return
 }
 
-// Facts returns the tags API.
+// Facts returns the facts API.
 func (h *Application) Facts(id uint) (f AppFacts) {
 	f = AppFacts{
 		client: h.client,
@@ -88,7 +88,7 @@ func (h *Application) Analysis(id uint) (a Analysis) {
 	return
 }
 
-// Manifest returns the tags API.
+// Manifest returns the manifest API.
 func (h *Application) Manifest(id uint) (f AppManifest) {
 	f = AppManifest{
 		client: h.client,
@@ -97,7 +97,7 @@ func (h *Application) Manifest(id uint) (f AppManifest) {
 	return
 }
 
-// Identity returns the tags API.
+// Identity returns the identity API.
 func (h *Application) Identity(id uint) (f AppIdentity) {
 	f = AppIdentity{
 		client: h.client,
@@ -106,7 +106,7 @@ func (h *Application) Identity(id uint) (f AppIdentity) {
 	return
 }
 
-// Assessment returns the tags API.
+// Assessment returns the assessment API.
 func (h *Application) Assessment(id uint) (f AppAssessment) {
 	f = AppAssessment{
 		client: h.client,
