@@ -355,8 +355,7 @@ type AppIdentity struct {
 }
 
 // List identities.
-func (h AppIdentity) List() (r *api.Identity, found bool, err error) {
-	list := []api.Identity{}
+func (h AppIdentity) List() (list []api.Identity, err error) {
 	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
@@ -364,11 +363,6 @@ func (h AppIdentity) List() (r *api.Identity, found bool, err error) {
 	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.Get(path, &list, p)
 	if err != nil {
-		return
-	}
-	for i := range list {
-		r = &list[i]
-		found = true
 		return
 	}
 	return

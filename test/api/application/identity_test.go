@@ -72,4 +72,10 @@ func TestFindIdentity(t *testing.T) {
 	if found {
 		t.Errorf("not found expected")
 	}
+	// List
+	list, err := Application.Identity(application.ID).List()
+	assert.Must(t, err)
+	if len(list) != 2 {
+		t.Errorf("list expected: 1, actual: %d", len(list))
+	}
 }
