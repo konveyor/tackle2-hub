@@ -37,6 +37,16 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(indirect.ID)
 	}()
+	indirect2 := &api.Identity{
+		Kind:    "Test",
+		Name:    "indirect-shadowed",
+		Default: true,
+	}
+	err = RichClient.Identity.Create(indirect2)
+	assert.Must(t, err)
+	defer func() {
+		_ = RichClient.Identity.Delete(indirect2.ID)
+	}()
 	application := &api.Application{
 		Name:       t.Name(),
 		Identities: []api.Ref{{ID: direct.ID}},

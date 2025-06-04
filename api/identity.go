@@ -162,7 +162,7 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 			return
 		}
 		r.With(m)
-		mp[r.Kind] = r
+		mp[m.Kind] = r
 	}
 	db = h.DB(ctx)
 	var indirect []model.Identity
@@ -177,6 +177,9 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	}
 	for i := range indirect {
 		m := &indirect[i]
+		if _, found := mp[m.Kind]; found {
+			continue
+		}
 		r := Identity{}
 		err := h.Decrypt(ctx, m)
 		if err != nil {
