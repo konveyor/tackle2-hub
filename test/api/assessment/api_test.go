@@ -22,7 +22,7 @@ func TestAssessmentCRUD(t *testing.T) {
 				app := api.Application{Name: r.Application.Name}
 				assert.Must(t, RichClient.Application.Create(&app))
 				r.Application.ID = app.ID
-				err := RichClient.Application.CreateAssesment(app.ID, &r)
+				err := RichClient.Application.Assessment(app.ID).Create(&r)
 				if err != nil {
 					t.Errorf(err.Error())
 				}
@@ -39,7 +39,7 @@ func TestAssessmentCRUD(t *testing.T) {
 			}
 
 			// Get via parent object Application.
-			gotList, err := RichClient.Application.GetAssesments(r.Application.ID)
+			gotList, err := RichClient.Application.Assessment(r.Application.ID).List()
 			if err != nil {
 				t.Errorf(err.Error())
 			}

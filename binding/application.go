@@ -61,29 +61,54 @@ func (h *Application) Bucket(id uint) (b *BucketContent) {
 	return
 }
 
-// FindIdentity by kind.
-func (h *Application) FindIdentity(id uint, kind string) (r *api.Identity, found bool, err error) {
-	list := []api.Identity{}
-	p := Param{
-		Key:   api.Decrypted,
-		Value: "1",
-	}
-	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: id, api.Kind: kind})
-	err = h.client.Get(path, &list, p)
-	if err != nil {
-		return
-	}
-	for i := range list {
-		r = &list[i]
-		found = true
-		return
+// Tags returns the tags API.
+func (h *Application) Tags(id uint) (tg AppTags) {
+	tg = AppTags{
+		client: h.client,
+		appId:  id,
 	}
 	return
 }
 
-// Tags returns the tags API.
-func (h *Application) Tags(id uint) (tg AppTags) {
-	tg = AppTags{
+// Facts returns the facts API.
+func (h *Application) Facts(id uint) (f AppFacts) {
+	f = AppFacts{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+// Analysis returns the analysis API.
+func (h *Application) Analysis(id uint) (a Analysis) {
+	a = Analysis{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+// Manifest returns the manifest API.
+func (h *Application) Manifest(id uint) (f AppManifest) {
+	f = AppManifest{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+// Identity returns the identity API.
+func (h *Application) Identity(id uint) (f AppIdentity) {
+	f = AppIdentity{
+		client: h.client,
+		appId:  id,
+	}
+	return
+}
+
+// Assessment returns the assessment API.
+func (h *Application) Assessment(id uint) (f AppAssessment) {
+	f = AppAssessment{
 		client: h.client,
 		appId:  id,
 	}
@@ -193,15 +218,6 @@ func (h *AppTags) unique(ids []uint) (u []uint) {
 	return
 }
 
-// Facts returns the tags API.
-func (h *Application) Facts(id uint) (f AppFacts) {
-	f = AppFacts{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
 // AppFacts sub-resource API.
 // Provides association management of facts.
 type AppFacts struct {
@@ -273,31 +289,7 @@ func (h *AppFacts) Replace(facts api.Map) (err error) {
 	return
 }
 
-// Analysis returns the analysis API.
-func (h *Application) Analysis(id uint) (a Analysis) {
-	a = Analysis{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Create an Application Assessment.
-func (h *Application) CreateAssesment(id uint, r *api.Assessment) (err error) {
-	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: id})
-	err = h.client.Post(path, &r)
-	return
-}
-
-// Get Application Assessments.
-func (h *Application) GetAssesments(id uint) (list []api.Assessment, err error) {
-	list = []api.Assessment{}
-	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: id})
-	err = h.client.Get(path, &list)
-	return
-}
-
-// Analysis API.
+// Analysis sub-resource API.
 type Analysis struct {
 	client *Client
 	appId  uint
@@ -339,15 +331,7 @@ func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error
 	return
 }
 
-// Manifest returns the tags API.
-func (h *Application) Manifest(id uint) (f AppManifest) {
-	f = AppManifest{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
+// AppManifest sub-resource API.
 type AppManifest struct {
 	client *Client
 	appId  uint
@@ -361,5 +345,66 @@ func (h *AppManifest) Get(param ...Param) (r *api.Manifest, err error) {
 	r = &api.Manifest{}
 	path := Path(api.AppManifestRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.Get(path, r, param...)
+	return
+}
+
+// AppIdentity sub-resource API.
+type AppIdentity struct {
+	client *Client
+	appId  uint
+}
+
+// List identities.
+func (h AppIdentity) List() (list []api.Identity, err error) {
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Get(path, &list, p)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Find by kind.
+func (h AppIdentity) Find(kind string) (r *api.Identity, found bool, err error) {
+	list := []api.Identity{}
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	path := Path(api.AppIdentitiesKindRoot).Inject(Params{api.ID: h.appId, api.Kind: kind})
+	err = h.client.Get(path, &list, p)
+	if err != nil {
+		return
+	}
+	for i := range list {
+		r = &list[i]
+		found = true
+		return
+	}
+	return
+}
+
+// AppAssessment sub-resource API.
+type AppAssessment struct {
+	client *Client
+	appId  uint
+}
+
+// Create an Assessment.
+func (h AppAssessment) Create(r *api.Assessment) (err error) {
+	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Post(path, &r)
+	return
+}
+
+// List Assessments.
+func (h AppAssessment) List() (list []api.Assessment, err error) {
+	list = []api.Assessment{}
+	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Get(path, &list)
 	return
 }
