@@ -1107,8 +1107,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	resources := []*IssueReport{}
 	type M struct {
 		model.Issue
-		Files   int
-		Message string
+		Files int
 	}
 	id := h.pk(ctx)
 	err := h.DB(ctx).First(&model.Application{}, id).Error
@@ -1163,7 +1162,6 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		"i.Effort",
 		"i.Labels",
 		"i.Links",
-		"n.Message",
 		"COUNT(distinct n.File) Files")
 	q = q.Table("Issue i,")
 	q = q.Joins("Incident n")
@@ -1201,10 +1199,8 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	for i := range list {
 		m := list[i]
 		r := &IssueReport{
-			Files: m.Files,
-			// Append Incident Message to Description to provide more information on Issue detail
-			// (workaround until Analyzer output Violation struct gets updated to provide better structured data)
-			Description: fmt.Sprintf("%s\n\n%s", m.Description, m.Message),
+			Files:       m.Files,
+			Description: m.Description,
 			Category:    m.Category,
 			RuleSet:     m.RuleSet,
 			Rule:        m.Rule,
