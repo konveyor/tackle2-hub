@@ -24,6 +24,7 @@ func (r Migration) Models() []any {
 func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	db = db.Debug()
 	migrator := db.Migrator()
+	// issue
 	if !migrator.HasTable(&v17.Issue{}) {
 		return
 	}
@@ -35,12 +36,12 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = migrator.RenameColumn(&v17.Incident{}, "issueID", "insightID")
+	// incident
+	err = db.Exec("CREATE TABLE Tmp AS SELECT * FROM Incident").Error
 	if err != nil {
 		return
 	}
-	tmp := "Tmp"
-	err = migrator.RenameTable(&v17.Incident{}, tmp)
+	err = migrator.DropTable(&v17.Incident{})
 	if err != nil {
 		return
 	}
@@ -48,11 +49,11 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = db.Exec("INSERT INTO Incident SELECT * FROM ?", tmp).Error
+	err = db.Exec("INSERT INTO Incident SELECT * FROM Tmp").Error
 	if err != nil {
 		return
 	}
-	err = migrator.DropTable(tmp)
+	err = migrator.DropTable("Tmp")
 	if err != nil {
 		return
 	}
