@@ -9,12 +9,7 @@ import (
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-	migrator := db.Migrator()
-	err = migrator.DropIndex(v17.Issue{}, "issueA")
-	if err != nil {
-		return
-	}
-	err = migrator.RenameTable(v17.Issue{}, model.Insight{})
+	err = r.renameIssueToInsight(db)
 	if err != nil {
 		return
 	}
@@ -24,4 +19,17 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 
 func (r Migration) Models() []any {
 	return model.All()
+}
+
+func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
+	migrator := db.Migrator()
+	if !migrator.HasTable(&v17.Issue{}) {
+		return
+	}
+	err = migrator.DropIndex(v17.Issue{}, "issueA")
+	if err != nil {
+		return
+	}
+	err = migrator.RenameTable(v17.Issue{}, model.Insight{})
+	return
 }
