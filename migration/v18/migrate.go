@@ -35,15 +35,12 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = migrator.DropConstraint(&v17.Incident{}, "fk_Issue_Incidents")
-	if err != nil {
-		return
-	}
 	err = migrator.RenameColumn(&v17.Incident{}, "issueID", "insightID")
 	if err != nil {
 		return
 	}
-	err = migrator.RenameTable(&v17.Incident{}, "Incident2")
+	tmp := "Tmp"
+	err = migrator.RenameTable(&v17.Incident{}, tmp)
 	if err != nil {
 		return
 	}
@@ -51,11 +48,11 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = db.Exec("INSERT INTO Incident SELECT * FROM Incident2").Error
+	err = db.Exec("INSERT INTO Incident SELECT * FROM ?", tmp).Error
 	if err != nil {
 		return
 	}
-	err = migrator.DropTable("Incident2")
+	err = migrator.DropTable(tmp)
 	if err != nil {
 		return
 	}
