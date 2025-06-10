@@ -27,27 +27,35 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if !migrator.HasTable(&v17.Issue{}) {
 		return
 	}
-	err = migrator.DropIndex(v17.Issue{}, "issueA")
+	err = migrator.DropIndex(&v17.Issue{}, "issueA")
 	if err != nil {
 		return
 	}
-	err = migrator.RenameTable(v17.Issue{}, model.Insight{})
+	err = migrator.RenameTable(&v17.Issue{}, model.Insight{})
 	if err != nil {
 		return
 	}
-	err = migrator.DropConstraint(v17.Incident{}, "fk_Issue_Incidents")
+	err = migrator.DropConstraint(&v17.Incident{}, "fk_Issue_Incidents")
 	if err != nil {
 		return
 	}
-	err = db.AutoMigrate(model.Insight{}, model.Incident{})
+	err = migrator.RenameColumn(&v17.Incident{}, "issueID", "insightID")
 	if err != nil {
 		return
 	}
-	err = db.Exec("UPDATE Incident SET InsightID = issueID").Error
+	err = migrator.RenameTable(&v17.Incident{}, "Incident2")
 	if err != nil {
 		return
 	}
-	err = migrator.DropColumn(model.Incident{}, "issueID")
+	err = migrator.AutoMigrate(&model.Incident{})
+	if err != nil {
+		return
+	}
+	err = db.Exec("INSERT INTO Incident SELECT * FROM Incident2").Error
+	if err != nil {
+		return
+	}
+	err = migrator.DropTable("Incident2")
 	if err != nil {
 		return
 	}
