@@ -26,6 +26,10 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if !migrator.HasTable(&v17.Issue{}) {
 		return
 	}
+	err = migrator.RenameColumn(&v17.Issue{}, "issueID", "insightID")
+	if err != nil {
+		return
+	}
 	err = migrator.DropIndex(v17.Issue{}, "issueA")
 	if err != nil {
 		return
