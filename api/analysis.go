@@ -28,41 +28,41 @@ const (
 	AnalysesRoot          = "/analyses"
 	AnalysisRoot          = AnalysesRoot + "/:" + ID
 	AnalysisArchiveRoot   = AnalysisRoot + "/archive"
-	AnalysisIssuesRoot    = AnalysisRoot + "/issues"
-	AnalysisIncidentsRoot = AnalysesIssueRoot + "/incidents"
+	AnalysisInsightsRoot  = AnalysisRoot + "/insights"
+	AnalysisIncidentsRoot = AnalysesInsightRoot + "/incidents"
 	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
-	AnalysesIssuesRoot    = AnalysesRoot + "/issues"
-	AnalysesIssueRoot     = AnalysesIssuesRoot + "/:" + ID
+	AnalysesInsightsRoot  = AnalysesRoot + "/insights"
+	AnalysesInsightRoot   = AnalysesInsightsRoot + "/:" + ID
 	AnalysesIncidentsRoot = AnalysesRoot + "/incidents"
 	AnalysesIncidentRoot  = AnalysesIncidentsRoot + "/:" + ID
 	//
-	AnalysesReportRoot           = AnalysesRoot + "/report"
-	AnalysisReportDepsRoot       = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot       = AnalysesReportRoot + "/rules"
-	AnalysisReportIssuesRoot     = AnalysesReportRoot + "/issues"
-	AnalysisReportAppsRoot       = AnalysesReportRoot + "/applications"
-	AnalysisReportIssueRoot      = AnalysisReportIssuesRoot + "/:" + ID
-	AnalysisReportIssuesAppsRoot = AnalysisReportIssuesRoot + "/applications"
-	AnalysisReportDepsAppsRoot   = AnalysisReportDepsRoot + "/applications"
-	AnalysisReportAppsIssuesRoot = AnalysisReportAppsRoot + "/:" + ID + "/issues"
-	AnalysisReportFileRoot       = AnalysisReportIssueRoot + "/files"
+	AnalysesReportRoot             = AnalysesRoot + "/report"
+	AnalysisReportDepsRoot         = AnalysesReportRoot + "/dependencies"
+	AnalysisReportRuleRoot         = AnalysesReportRoot + "/rules"
+	AnalysisReportInsightsRoot     = AnalysesReportRoot + "/insights"
+	AnalysisReportAppsRoot         = AnalysesReportRoot + "/applications"
+	AnalysisReportInsightRoot      = AnalysisReportInsightsRoot + "/:" + ID
+	AnalysisReportInsightsAppsRoot = AnalysisReportInsightsRoot + "/applications"
+	AnalysisReportDepsAppsRoot     = AnalysisReportDepsRoot + "/applications"
+	AnalysisReportAppsInsightsRoot = AnalysisReportAppsRoot + "/:" + ID + "/insights"
+	AnalysisReportFileRoot         = AnalysisReportInsightRoot + "/files"
 	//
-	AppAnalysesRoot       = ApplicationRoot + "/analyses"
-	AppAnalysisRoot       = ApplicationRoot + "/analysis"
-	AppAnalysisReportRoot = AppAnalysisRoot + "/report"
-	AppAnalysisDepsRoot   = AppAnalysisRoot + "/dependencies"
-	AppAnalysisIssuesRoot = AppAnalysisRoot + "/issues"
+	AppAnalysesRoot         = ApplicationRoot + "/analyses"
+	AppAnalysisRoot         = ApplicationRoot + "/analysis"
+	AppAnalysisReportRoot   = AppAnalysisRoot + "/report"
+	AppAnalysisDepsRoot     = AppAnalysisRoot + "/dependencies"
+	AppAnalysisInsightsRoot = AppAnalysisRoot + "/insights"
 )
 
 // Manifest markers.
 // The GS=\x1D (group separator).
 const (
-	BeginMainMarker   = "\x1DBEGIN-MAIN\x1D"
-	EndMainMarker     = "\x1DEND-MAIN\x1D"
-	BeginIssuesMarker = "\x1DBEGIN-ISSUES\x1D"
-	EndIssuesMarker   = "\x1DEND-ISSUES\x1D"
-	BeginDepsMarker   = "\x1DBEGIN-DEPS\x1D"
-	EndDepsMarker     = "\x1DEND-DEPS\x1D"
+	BeginMainMarker     = "\x1DBEGIN-MAIN\x1D"
+	EndMainMarker       = "\x1DEND-MAIN\x1D"
+	BeginInsightsMarker = "\x1DBEGIN-INSIGHTS\x1D"
+	EndInsightsMarker   = "\x1DEND-INSIGHTS\x1D"
+	BeginDepsMarker     = "\x1DBEGIN-DEPS\x1D"
+	EndDepsMarker       = "\x1DEND-DEPS\x1D"
 )
 
 // AnalysisHandler handles analysis resource routes.
@@ -80,16 +80,16 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AnalysesRoot, h.List)
 	routeGroup.DELETE(AnalysisRoot, h.Delete)
 	routeGroup.GET(AnalysesDepsRoot, h.Deps)
-	routeGroup.GET(AnalysesIssuesRoot, h.Issues)
-	routeGroup.GET(AnalysesIssueRoot, h.Issue)
+	routeGroup.GET(AnalysesInsightsRoot, h.Insights)
+	routeGroup.GET(AnalysesInsightRoot, h.Insight)
 	routeGroup.GET(AnalysesIncidentsRoot, h.Incidents)
 	routeGroup.GET(AnalysesIncidentRoot, h.Incident)
-	routeGroup.GET(AnalysisIssuesRoot, h.AnalysisIssues)
-	routeGroup.GET(AnalysisIncidentsRoot, h.IssueIncidents)
+	routeGroup.GET(AnalysisInsightsRoot, h.AnalysisInsights)
+	routeGroup.GET(AnalysisIncidentsRoot, h.InsightIncidents)
 	// Report
 	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportAppsIssuesRoot, h.AppIssueReports)
-	routeGroup.GET(AnalysisReportIssuesAppsRoot, h.IssueAppReports)
+	routeGroup.GET(AnalysisReportAppsInsightsRoot, h.AppInsightReports)
+	routeGroup.GET(AnalysisReportInsightsAppsRoot, h.InsightAppReports)
 	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
 	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
 	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
@@ -101,7 +101,7 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
 	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
 	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
-	routeGroup.GET(AppAnalysisIssuesRoot, h.AppIssues)
+	routeGroup.GET(AppAnalysisInsightsRoot, h.AppInsights)
 }
 
 // Get godoc
@@ -278,7 +278,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
 	// Sort
 	sort := Sort{}
-	err := sort.With(ctx, &model.Issue{})
+	err := sort.With(ctx, &model.Insight{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -329,8 +329,8 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @description Section markers:
 // @description	  ^]BEGIN-MAIN^]
 // @description	  ^]END-MAIN^]
-// @description	  ^]BEGIN-ISSUES^]
-// @description	  ^]END-ISSUES^]
+// @description	  ^]BEGIN-INSIGHTS^]
+// @description	  ^]END-INSIGHTS^]
 // @description	  ^]BEGIN-DEPS^]
 // @description	  ^]END-DEPS^]
 // @description The encoding must be:
@@ -404,9 +404,9 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	//
-	// Issues
+	// Insights
 	reader = &ManifestReader{}
-	f, err = reader.open(file.Path, BeginIssuesMarker, EndIssuesMarker)
+	f, err = reader.open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -422,7 +422,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		return
 	}
 	for {
-		r := &Issue{}
+		r := &Insight{}
 		err = d.Decode(r)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -614,9 +614,9 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// AppIssues godoc
-// @summary List application issues.
-// @description List application issues.
+// AppInsights godoc
+// @summary List application insights.
+// @description List application insights.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -624,12 +624,12 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - labels
-// @tags issues
+// @tags insights
 // @produce json
-// @success 200 {object} []api.Issue
-// @router /application/{id}/analysis/issues [get]
+// @success 200 {object} []api.Insight
+// @router /application/{id}/analysis/insights [get]
 // @param id path int true "Application ID"
-func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
+func (h AnalysisHandler) AppInsights(ctx *gin.Context) {
 	// Latest
 	id := h.pk(ctx)
 	analysis := &model.Analysis{}
@@ -654,7 +654,7 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 		return
 	}
 	// Render
-	writer := IssueWriter{ctx: ctx}
+	writer := InsightWriter{ctx: ctx}
 	path, count, err := writer.Create(analysis.ID, filter)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -672,9 +672,9 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 	ctx.File(path)
 }
 
-// Issues godoc
-// @summary List all issues.
-// @description List all issues.
+// Insights godoc
+// @summary List all insights.
+// @description List all insights.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -685,11 +685,11 @@ func (h AnalysisHandler) AppIssues(ctx *gin.Context) {
 // @description - application.id
 // @description - application.name
 // @description - tag.id
-// @tags issues
+// @tags insights
 // @produce json
-// @success 200 {object} []api.Issue
-// @router /analyses/issues [get]
-func (h AnalysisHandler) Issues(ctx *gin.Context) {
+// @success 200 {object} []api.Insight
+// @router /analyses/insights [get]
+func (h AnalysisHandler) Insights(ctx *gin.Context) {
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -708,7 +708,7 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 		return
 	}
 	// Render
-	writer := IssueWriter{ctx: ctx}
+	writer := InsightWriter{ctx: ctx}
 	path, count, err := writer.Create(0, filter)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -726,9 +726,9 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 	ctx.File(path)
 }
 
-// AnalysisIssues godoc
-// @summary List issues for an analysis.
-// @description List issues for an analysis.
+// AnalysisInsights godoc
+// @summary List insights for an analysis.
+// @description List insights for an analysis.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -736,12 +736,12 @@ func (h AnalysisHandler) Issues(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - labels
-// @tags issues
+// @tags insights
 // @produce json
-// @success 200 {object} []api.Issue
-// @router /analyses/{id}/issues [get]
+// @success 200 {object} []api.Insight
+// @router /analyses/{id}/insights [get]
 // @param id path int true "Analysis ID"
-func (h AnalysisHandler) AnalysisIssues(ctx *gin.Context) {
+func (h AnalysisHandler) AnalysisInsights(ctx *gin.Context) {
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -758,7 +758,7 @@ func (h AnalysisHandler) AnalysisIssues(ctx *gin.Context) {
 	}
 	// Render
 	id := h.pk(ctx)
-	writer := IssueWriter{ctx: ctx}
+	writer := InsightWriter{ctx: ctx}
 	path, count, err := writer.Create(id, filter)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -776,17 +776,17 @@ func (h AnalysisHandler) AnalysisIssues(ctx *gin.Context) {
 	ctx.File(path)
 }
 
-// Issue godoc
-// @summary Get an issue.
-// @description Get an issue.
-// @tags issue
+// Insight godoc
+// @summary Get an insight.
+// @description Get an insight.
+// @tags insight
 // @produce json
-// @success 200 {object} api.Issue
-// @router /analyses/issues/{id} [get]
-// @param id path int true "Issue ID"
-func (h AnalysisHandler) Issue(ctx *gin.Context) {
+// @success 200 {object} api.Insight
+// @router /analyses/insights/{id} [get]
+// @param id path int true "Insight ID"
+func (h AnalysisHandler) Insight(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model.Issue{}
+	m := &model.Insight{}
 	db := h.DB(ctx)
 	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
@@ -794,7 +794,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r := Issue{}
+	r := Insight{}
 	r.With(m)
 
 	h.Respond(ctx, http.StatusOK, r)
@@ -805,7 +805,7 @@ func (h AnalysisHandler) Issue(ctx *gin.Context) {
 // @description List all incidents.
 // @description filters:
 // @description - file
-// @description - issue.id
+// @description - insight.id
 // @tags incidents
 // @produce json
 // @success 200 {object} []api.Incident
@@ -815,13 +815,13 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "file", Kind: qf.STRING},
-			{Field: "issue.id", Kind: qf.STRING},
+			{Field: "insight.id", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("issue.id", "issueid")
+	filter = filter.Renamed("insight.id", "insightid")
 	// Sort
 	sort := Sort{}
 	err = sort.With(ctx, &model.Incident{})
@@ -868,18 +868,18 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueIncidents godoc
-// @summary List incidents for an issue.
-// @description List incidents for an issue.
+// InsightIncidents godoc
+// @summary List incidents for an insight.
+// @description List incidents for an insight.
 // @description filters:
 // @description - file
 // @tags incidents
 // @produce json
 // @success 200 {object} []api.Incident
-// @router /analyses/issues/{id}/incidents [get]
-// @param id path int true "Issue ID"
-func (h AnalysisHandler) IssueIncidents(ctx *gin.Context) {
-	issueId := ctx.Param(ID)
+// @router /analyses/insights/{id}/incidents [get]
+// @param id path int true "Insight ID"
+func (h AnalysisHandler) InsightIncidents(ctx *gin.Context) {
+	insightId := ctx.Param(ID)
 	// Filter
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
@@ -899,7 +899,7 @@ func (h AnalysisHandler) IssueIncidents(ctx *gin.Context) {
 	// Find
 	db := h.DB(ctx)
 	db = db.Model(&model.Incident{})
-	db = db.Where("IssueID", issueId)
+	db = db.Where("InsightID", insightId)
 	db = filter.Where(db)
 	db = sort.Sorted(db)
 	var list []model.Incident
@@ -939,11 +939,11 @@ func (h AnalysisHandler) IssueIncidents(ctx *gin.Context) {
 // Incident godoc
 // @summary Get an incident.
 // @description Get an incident.
-// @tags issue
+// @tags insight
 // @produce json
 // @success 200 {object} api.Incident
 // @router /analyses/incidents/{id} [get]
-// @param id path int true "Issue ID"
+// @param id path int true "Insight ID"
 func (h AnalysisHandler) Incident(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Incident{}
@@ -961,7 +961,7 @@ func (h AnalysisHandler) Incident(ctx *gin.Context) {
 
 // RuleReports godoc
 // @summary List rule reports.
-// @description Each report collates issues by ruleset/rule.
+// @description Each report collates insights by ruleset/rule.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -987,7 +987,7 @@ func (h AnalysisHandler) Incident(ctx *gin.Context) {
 func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	resources := []*RuleReport{}
 	type M struct {
-		model.Issue
+		model.Insight
 		Applications int
 	}
 	// Filter
@@ -1028,11 +1028,11 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 		"i.Labels",
 		"i.Links",
 		"COUNT(distinct a.ID) Applications")
-	q = q.Table("Issue i,")
+	q = q.Table("Insight i,")
 	q = q.Joins("Analysis a")
 	q = q.Where("a.ID = i.AnalysisID")
 	q = q.Where("a.ID in (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
+	q = q.Where("i.ID IN (?)", h.insightIDs(ctx, filter))
 	q = q.Group("i.RuleSet,i.Rule")
 	// Find
 	db := h.DB(ctx)
@@ -1083,9 +1083,9 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// AppIssueReports godoc
-// @summary List application issue reports.
-// @description Each report collates issues by ruleset/rule.
+// AppInsightReports godoc
+// @summary List application insight reports.
+// @description Each report collates insights by ruleset/rule.
 // @description filters:
 // @description - ruleset
 // @description - rule
@@ -1098,15 +1098,15 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 // @description - category
 // @description - effort
 // @description - files
-// @tags issuereport
+// @tags insightreport
 // @produce json
-// @success 200 {object} []api.IssueReport
-// @router /analyses/report/applications/{id}/issues [get]
+// @success 200 {object} []api.InsightReport
+// @router /analyses/report/applications/{id}/insights [get]
 // @param id path int true "Application ID"
-func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
-	resources := []*IssueReport{}
+func (h AnalysisHandler) AppInsightReports(ctx *gin.Context) {
+	resources := []*InsightReport{}
 	type M struct {
-		model.Issue
+		model.Insight
 		Files int
 	}
 	id := h.pk(ctx)
@@ -1163,10 +1163,10 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 		"i.Labels",
 		"i.Links",
 		"COUNT(distinct n.File) Files")
-	q = q.Table("Issue i,")
+	q = q.Table("Insight i,")
 	q = q.Joins("Incident n")
-	q = q.Where("i.ID = n.IssueID")
-	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter))
+	q = q.Where("i.ID = n.InsightID")
+	q = q.Where("i.ID IN (?)", h.insightIDs(ctx, filter))
 	q = q.Where("i.AnalysisID", analysis.ID)
 	q = q.Group("i.RuleSet,i.Rule")
 	// Find
@@ -1198,7 +1198,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	// Render
 	for i := range list {
 		m := list[i]
-		r := &IssueReport{
+		r := &InsightReport{
 			Files:       m.Files,
 			Description: m.Description,
 			Category:    m.Category,
@@ -1218,7 +1218,7 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// IssueAppReports godoc
+// InsightAppReports godoc
 // @summary List application reports.
 // @description List application reports.
 // @description filters:
@@ -1229,13 +1229,13 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 // @description - effort
 // @description - incidents
 // @description - files
-// @description - issue.id
-// @description - issue.name
-// @description - issue.ruleset
-// @description - issue.rule
-// @description - issue.category
-// @description - issue.effort
-// @description - issue.labels
+// @description - insight.id
+// @description - insight.name
+// @description - insight.ruleset
+// @description - insight.rule
+// @description - insight.category
+// @description - insight.effort
+// @description - insight.labels
 // @description - application.id
 // @description - application.name
 // @description - businessService.id
@@ -1248,25 +1248,25 @@ func (h AnalysisHandler) AppIssueReports(ctx *gin.Context) {
 // @description - effort
 // @description - incidents
 // @description - files
-// @tags issueappreports
+// @tags insightappreports
 // @produce json
-// @success 200 {object} []api.IssueAppReport
+// @success 200 {object} []api.InsightAppReport
 // @router /analyses/report/applications [get]
-func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
-	resources := []IssueAppReport{}
+func (h AnalysisHandler) InsightAppReports(ctx *gin.Context) {
+	resources := []InsightAppReport{}
 	type M struct {
-		ID               uint
-		Name             string
-		Description      string
-		BusinessService  string
-		Effort           int
-		Incidents        int
-		Files            int
-		IssueID          uint
-		IssueName        string
-		IssueDescription string
-		RuleSet          string
-		Rule             string
+		ID                 uint
+		Name               string
+		Description        string
+		BusinessService    string
+		Effort             int
+		Incidents          int
+		Files              int
+		InsightID          uint
+		InsightName        string
+		InsightDescription string
+		RuleSet            string
+		Rule               string
 	}
 	// Filter
 	filter, err := qf.New(ctx,
@@ -1278,13 +1278,13 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 			{Field: "effort", Kind: qf.LITERAL},
 			{Field: "incidents", Kind: qf.LITERAL},
 			{Field: "files", Kind: qf.LITERAL},
-			{Field: "issue.id", Kind: qf.LITERAL},
-			{Field: "issue.name", Kind: qf.LITERAL},
-			{Field: "issue.ruleset", Kind: qf.STRING},
-			{Field: "issue.rule", Kind: qf.STRING},
-			{Field: "issue.category", Kind: qf.STRING},
-			{Field: "issue.effort", Kind: qf.LITERAL},
-			{Field: "issue.labels", Kind: qf.STRING, And: true},
+			{Field: "insight.id", Kind: qf.LITERAL},
+			{Field: "insight.name", Kind: qf.LITERAL},
+			{Field: "insight.ruleset", Kind: qf.STRING},
+			{Field: "insight.rule", Kind: qf.STRING},
+			{Field: "insight.category", Kind: qf.STRING},
+			{Field: "insight.effort", Kind: qf.LITERAL},
+			{Field: "insight.labels", Kind: qf.STRING, And: true},
 			{Field: "application.id", Kind: qf.LITERAL},
 			{Field: "application.name", Kind: qf.STRING},
 			{Field: "businessService.id", Kind: qf.LITERAL},
@@ -1312,17 +1312,17 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 		"i.Effort * COUNT(n.ID) as Effort",
 		"COUNT(n.ID) Incidents",
 		"COUNT(distinct n.File) Files",
-		"i.ID IssueID",
-		"i.Name IssueName",
+		"i.ID InsightID",
+		"i.Name InsightName",
 		"i.RuleSet",
 		"i.Rule")
-	q = q.Table("Issue i")
-	q = q.Joins("LEFT JOIN Incident n ON n.IssueID = i.ID")
+	q = q.Table("Insight i")
+	q = q.Joins("LEFT JOIN Incident n ON n.InsightID = i.ID")
 	q = q.Joins("LEFT JOIN Analysis a ON a.ID = i.AnalysisID")
 	q = q.Joins("LEFT JOIN Application app ON app.ID = a.ApplicationID")
 	q = q.Joins("LEFT OUTER JOIN BusinessService b ON b.ID = app.BusinessServiceID")
 	q = q.Where("a.ID IN (?)", h.analysisIDs(ctx, filter))
-	q = q.Where("i.ID IN (?)", h.issueIDs(ctx, filter.Resource("issue")))
+	q = q.Where("i.ID IN (?)", h.insightIDs(ctx, filter.Resource("insight")))
 	q = q.Group("i.ID")
 	// Find
 	db := h.DB(ctx)
@@ -1354,7 +1354,7 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 	// Render
 	for i := range list {
 		m := &list[i]
-		r := IssueAppReport{}
+		r := InsightAppReport{}
 		r.ID = m.ID
 		r.Name = m.Name
 		r.Description = m.Description
@@ -1362,11 +1362,11 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 		r.Effort = m.Effort
 		r.Incidents = m.Incidents
 		r.Files = m.Files
-		r.Issue.ID = m.IssueID
-		r.Issue.Name = m.IssueName
-		r.Issue.Description = m.IssueName
-		r.Issue.RuleSet = m.RuleSet
-		r.Issue.Rule = m.Rule
+		r.Insight.ID = m.InsightID
+		r.Insight.Name = m.InsightName
+		r.Insight.Description = m.InsightName
+		r.Insight.RuleSet = m.RuleSet
+		r.Insight.Rule = m.Rule
 		resources = append(resources, r)
 	}
 
@@ -1387,20 +1387,20 @@ func (h AnalysisHandler) IssueAppReports(ctx *gin.Context) {
 // @tags filereports
 // @produce json
 // @success 200 {object} []api.FileReport
-// @router /analyses/report/issues/{id}/files [get]
-// @param id path int true "Issue ID"
+// @router /analyses/report/insights/{id}/files [get]
+// @param id path int true "Insight ID"
 func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	resources := []FileReport{}
 	type M struct {
-		IssueId   uint
+		InsightId uint
 		File      string
 		Effort    int
 		Incidents int
 	}
-	// Issue
-	issueId := h.pk(ctx)
-	issue := &model.Issue{}
-	result := h.DB(ctx).First(issue, issueId)
+	// Insight
+	insightId := h.pk(ctx)
+	insight := &model.Insight{}
+	result := h.DB(ctx).First(insight, insightId)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -1427,13 +1427,13 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Model(&model.Incident{})
 	q = q.Select(
-		"IssueId",
+		"InsightId",
 		"File",
 		"Effort*COUNT(Incident.id) Effort",
 		"COUNT(Incident.id) Incidents")
-	q = q.Joins(",Issue")
-	q = q.Where("Issue.ID = IssueID")
-	q = q.Where("Issue.ID", issueId)
+	q = q.Joins(",Insight")
+	q = q.Where("Insight.ID = InsightID")
+	q = q.Where("Insight.ID", insightId)
 	q = q.Group("File")
 	// Find
 	db := h.DB(ctx)
@@ -1465,7 +1465,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	// Render
 	for _, m := range list {
 		r := FileReport{}
-		r.IssueID = m.IssueId
+		r.InsightID = m.InsightId
 		r.File = m.File
 		r.Effort = m.Effort
 		r.Incidents = m.Incidents
@@ -1961,13 +1961,13 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 	return
 }
 
-// issueIDs returns issue filtered issue IDs.
+// insightIDs returns insight filtered insight IDs.
 // Filter:
 //
-//	issue.*
-func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+//	insight.*
+func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model.Issue{})
+	q = q.Model(&model.Insight{})
 	q = q.Select("ID")
 	q = f.Where(q, "-Labels")
 	filter := f
@@ -1977,7 +1977,7 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			for _, f = range f.Expand() {
 				f = f.As("json_each.value")
 				iq := h.DB(ctx)
-				iq = iq.Table("Issue")
+				iq = iq.Table("Insight")
 				iq = iq.Joins("m ,json_each(Labels)")
 				iq = iq.Select("m.ID")
 				iq = f.Where(iq)
@@ -1987,7 +1987,7 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 		} else {
 			f = f.As("json_each.value")
 			iq := h.DB(ctx)
-			iq = iq.Table("Issue")
+			iq = iq.Table("Insight")
 			iq = iq.Joins("m ,json_each(Labels)")
 			iq = iq.Select("m.ID")
 			iq = f.Where(iq)
@@ -1997,7 +1997,7 @@ func (h *AnalysisHandler) issueIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	return
 }
 
-// depIDs returns issue filtered issue IDs.
+// depIDs returns insight filtered insight IDs.
 // Filter:
 //
 //	techDeps.*
@@ -2035,8 +2035,8 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 
 // archiveById
 // - Set the 'archived' flag.
-// - Set the 'summary' field with archived issues.
-// - Delete issues.
+// - Set the 'summary' field with archived insights.
+// - Delete insights.
 // - Delete dependencies.
 func (h *AnalysisHandler) archiveById(ctx *gin.Context) (err error) {
 	id := h.pk(ctx)
@@ -2048,8 +2048,8 @@ func (h *AnalysisHandler) archiveById(ctx *gin.Context) (err error) {
 
 // archiveByApp
 // - Set the 'archived' flag.
-// - Set the 'summary' field with archived issues.
-// - Delete issues.
+// - Set the 'summary' field with archived insights.
+// - Delete insights.
 // - Delete dependencies.
 func (h *AnalysisHandler) archiveByApp(ctx *gin.Context) (err error) {
 	id := h.pk(ctx)
@@ -2061,8 +2061,8 @@ func (h *AnalysisHandler) archiveByApp(ctx *gin.Context) (err error) {
 
 // archive
 // - Set the 'archived' flag.
-// - Set the 'summary' field with archived issues.
-// - Delete issues.
+// - Set the 'summary' field with archived insights.
+// - Delete insights.
 // - Delete dependencies.
 func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 	var unarchived []model.Analysis
@@ -2081,12 +2081,12 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 			"i.Category",
 			"i.Effort",
 			"COUNT(n.ID) Incidents")
-		db = db.Table("Issue i,")
+		db = db.Table("Insight i,")
 		db = db.Joins("Incident n")
-		db = db.Where("n.IssueID = i.ID")
+		db = db.Where("n.InsightID = i.ID")
 		db = db.Where("i.AnalysisID", m.ID)
 		db = db.Group("i.ID")
-		summary := []model.ArchivedIssue{}
+		summary := []model.ArchivedInsight{}
 		err = db.Scan(&summary).Error
 		if err != nil {
 			return
@@ -2102,7 +2102,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		}
 		db = h.DB(ctx)
 		db = db.Where("AnalysisID", m.ID)
-		err = db.Delete(&model.Issue{}).Error
+		err = db.Delete(&model.Insight{}).Error
 		if err != nil {
 			return
 		}
@@ -2120,13 +2120,13 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
-	Application  Ref              `json:"application"`
-	Effort       int              `json:"effort"`
-	Commit       string           `json:"commit,omitempty" yaml:",omitempty"`
-	Archived     bool             `json:"archived,omitempty" yaml:",omitempty"`
-	Issues       []Issue          `json:"issues,omitempty" yaml:",omitempty"`
-	Dependencies []TechDependency `json:"dependencies,omitempty" yaml:",omitempty"`
-	Summary      []ArchivedIssue  `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
+	Application  Ref               `json:"application"`
+	Effort       int               `json:"effort"`
+	Commit       string            `json:"commit,omitempty" yaml:",omitempty"`
+	Archived     bool              `json:"archived,omitempty" yaml:",omitempty"`
+	Insights     []Insight         `json:"insights,omitempty" yaml:",omitempty"`
+	Dependencies []TechDependency  `json:"dependencies,omitempty" yaml:",omitempty"`
+	Summary      []ArchivedInsight `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
 }
 
 // With updates the resource with the model.
@@ -2143,12 +2143,12 @@ func (r *Analysis) Model() (m *model.Analysis) {
 	m = &model.Analysis{}
 	m.Effort = r.Effort
 	m.Commit = r.Commit
-	m.Issues = []model.Issue{}
+	m.Insights = []model.Insight{}
 	return
 }
 
-// Issue REST resource.
-type Issue struct {
+// Insight REST resource.
+type Insight struct {
 	Resource    `yaml:",inline"`
 	Analysis    uint       `json:"analysis"`
 	RuleSet     string     `json:"ruleset" binding:"required"`
@@ -2164,7 +2164,7 @@ type Issue struct {
 }
 
 // With updates the resource with the model.
-func (r *Issue) With(m *model.Issue) {
+func (r *Insight) With(m *model.Insight) {
 	r.Resource.With(&m.Model)
 	r.Analysis = m.AnalysisID
 	r.RuleSet = m.RuleSet
@@ -2189,8 +2189,8 @@ func (r *Issue) With(m *model.Issue) {
 }
 
 // Model builds a model.
-func (r *Issue) Model() (m *model.Issue) {
-	m = &model.Issue{}
+func (r *Insight) Model() (m *model.Insight) {
+	m = &model.Insight{}
 	m.RuleSet = r.RuleSet
 	m.Rule = r.Rule
 	m.Name = r.Name
@@ -2252,7 +2252,7 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 // Incident REST resource.
 type Incident struct {
 	Resource `yaml:",inline"`
-	Issue    uint   `json:"issue"`
+	Insight  uint   `json:"insight"`
 	File     string `json:"file"`
 	Line     int    `json:"line"`
 	Message  string `json:"message"`
@@ -2263,7 +2263,7 @@ type Incident struct {
 // With updates the resource with the model.
 func (r *Incident) With(m *model.Incident) {
 	r.Resource.With(&m.Model)
-	r.Issue = m.IssueID
+	r.Insight = m.InsightID
 	r.File = m.File
 	r.Line = m.Line
 	r.Message = m.Message
@@ -2288,8 +2288,8 @@ type Link struct {
 	Title string `json:"title,omitempty" yaml:",omitempty"`
 }
 
-// ArchivedIssue created when issues are archived.
-type ArchivedIssue model.ArchivedIssue
+// ArchivedInsight created when insights are archived.
+type ArchivedInsight model.ArchivedInsight
 
 // RuleReport REST resource.
 type RuleReport struct {
@@ -2304,8 +2304,8 @@ type RuleReport struct {
 	Applications int      `json:"applications"`
 }
 
-// IssueReport REST resource.
-type IssueReport struct {
+// InsightReport REST resource.
+type InsightReport struct {
 	ID          uint     `json:"id"`
 	RuleSet     string   `json:"ruleset"`
 	Rule        string   `json:"rule"`
@@ -2318,8 +2318,8 @@ type IssueReport struct {
 	Files       int      `json:"files"`
 }
 
-// IssueAppReport REST resource.
-type IssueAppReport struct {
+// InsightAppReport REST resource.
+type InsightAppReport struct {
 	ID              uint   `json:"id"`
 	Name            string `json:"name"`
 	Description     string `json:"description"`
@@ -2327,18 +2327,18 @@ type IssueAppReport struct {
 	Effort          int    `json:"effort"`
 	Incidents       int    `json:"incidents"`
 	Files           int    `json:"files"`
-	Issue           struct {
+	Insight         struct {
 		ID          uint   `json:"id"`
 		Name        string `json:"name"`
 		Description string `json:"description"`
 		RuleSet     string `json:"ruleset"`
 		Rule        string `json:"rule"`
-	} `json:"issue"`
+	} `json:"insight"`
 }
 
 // FileReport REST resource.
 type FileReport struct {
-	IssueID   uint   `json:"issueId" yaml:"issueId"`
+	InsightID uint   `json:"insightId" yaml:"insightId"`
 	File      string `json:"file"`
 	Incidents int    `json:"incidents"`
 	Effort    int    `json:"effort"`
@@ -2369,14 +2369,14 @@ type DepAppReport struct {
 	} `json:"dependency"`
 }
 
-// IssueWriter used to create a file containing issues.
-type IssueWriter struct {
+// InsightWriter used to create a file containing insights.
+type InsightWriter struct {
 	Encoder
 	ctx *gin.Context
 }
 
-// Create an issues file and returns the path.
-func (r *IssueWriter) Create(id uint, filter qf.Filter) (path string, count int64, err error) {
+// Create an insights file and returns the path.
+func (r *InsightWriter) Create(id uint, filter qf.Filter) (path string, count int64, err error) {
 	ext := ".json"
 	accepted := r.ctx.NegotiateFormat(BindMIMEs...)
 	switch accepted {
@@ -2388,7 +2388,7 @@ func (r *IssueWriter) Create(id uint, filter qf.Filter) (path string, count int6
 	default:
 		err = &BadRequestError{"MIME not supported."}
 	}
-	file, err := os.CreateTemp("", "issue-*"+ext)
+	file, err := os.CreateTemp("", "insight-*"+ext)
 	if err != nil {
 		return
 	}
@@ -2401,14 +2401,14 @@ func (r *IssueWriter) Create(id uint, filter qf.Filter) (path string, count int6
 }
 
 // db returns a db client.
-func (r *IssueWriter) db() (db *gorm.DB) {
+func (r *InsightWriter) db() (db *gorm.DB) {
 	rtx := RichContext(r.ctx)
 	db = rtx.DB.Debug()
 	return
 }
 
 // Write the analysis file.
-func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count int64, err error) {
+func (r *InsightWriter) Write(id uint, filter qf.Filter, output io.Writer) (count int64, err error) {
 	r.Encoder, err = NewEncoder(r.ctx, output)
 	if err != nil {
 		return
@@ -2416,7 +2416,7 @@ func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count 
 	page := Page{}
 	page.With(r.ctx)
 	sort := Sort{}
-	err = sort.With(r.ctx, &model.Issue{})
+	err = sort.With(r.ctx, &model.Insight{})
 	if err != nil {
 		return
 	}
@@ -2432,18 +2432,18 @@ func (r *IssueWriter) Write(id uint, filter qf.Filter, output io.Writer) (count 
 		db = db.Limit(batch)
 		db = db.Offset(b)
 		db = sort.Sorted(db)
-		var issues []model.Issue
-		err = db.Find(&issues).Error
+		var insights []model.Insight
+		err = db.Find(&insights).Error
 		if err != nil {
 			return
 		}
-		if len(issues) == 0 {
+		if len(insights) == 0 {
 			break
 		}
-		for i := range issues {
-			issue := Issue{}
-			issue.With(&issues[i])
-			r.writeItem(b, i, issue)
+		for i := range insights {
+			insight := Insight{}
+			insight.With(&insights[i])
+			r.writeItem(b, i, insight)
 			count++
 		}
 	}
@@ -2505,7 +2505,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	rx := &Analysis{}
 	rx.With(m)
 	r.embed(rx)
-	err = r.addIssues(m)
+	err = r.addInsights(m)
 	if err != nil {
 		return
 	}
@@ -2517,9 +2517,9 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	return
 }
 
-// addIssues writes issues.
-func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
-	r.field("issues")
+// addInsights writes insights.
+func (r *AnalysisWriter) addInsights(m *model.Analysis) (err error) {
+	r.field("insights")
 	r.beginList()
 	batch := 10
 	for b := 0; ; b += batch {
@@ -2527,18 +2527,18 @@ func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 		db = db.Preload("Incidents")
 		db = db.Limit(batch)
 		db = db.Offset(b)
-		var issues []model.Issue
-		err = db.Find(&issues, "AnalysisID", m.ID).Error
+		var insights []model.Insight
+		err = db.Find(&insights, "AnalysisID", m.ID).Error
 		if err != nil {
 			return
 		}
-		if len(issues) == 0 {
+		if len(insights) == 0 {
 			break
 		}
-		for i := range issues {
-			issue := Issue{}
-			issue.With(&issues[i])
-			r.writeItem(b, i, issue)
+		for i := range insights {
+			insight := Insight{}
+			insight.With(&insights[i])
+			r.writeItem(b, i, insight)
 		}
 	}
 	r.endList()
@@ -2646,7 +2646,7 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
 	aWriter := AnalysisWriter{ctx: r.ctx}
 	aWriter.Encoder = r.Encoder
-	err = aWriter.addIssues(m)
+	err = aWriter.addInsights(m)
 	if err != nil {
 		return
 	}
@@ -2690,8 +2690,8 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //
 //	^]BEGIN-MAIN^]
 //	^]END-MAIN^]
-//	^]BEGIN-ISSUES^]
-//	^]END-ISSUES^]
+//	^]BEGIN-INSIGHTS^]
+//	^]END-INSIGHTS^]
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 type ManifestReader struct {
