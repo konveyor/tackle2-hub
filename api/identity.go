@@ -17,7 +17,8 @@ const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
 	//
-	AppIdentitiesRoot = ApplicationRoot + "/identities/:" + Kind
+	AppIdentitiesRoot     = ApplicationRoot + "/identities"
+	AppIdentitiesKindRoot = AppIdentitiesRoot + "/:" + Kind
 )
 
 // Params.
@@ -40,6 +41,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 	//
 	routeGroup.GET(AppIdentitiesRoot, h.AppList)
+	routeGroup.GET(AppIdentitiesKindRoot, h.AppList)
 }
 
 // Get godoc
@@ -142,7 +144,10 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
 	db = db.Where("j.ApplicationID", id)
-	err := db.Find(&direct, "kind", kind).Error
+	if kind != "" {
+		db = db.Where("kind", kind)
+	}
+	err := db.Find(&direct).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -157,18 +162,24 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 			return
 		}
 		r.With(m)
-		mp[r.Kind] = r
+		mp[m.Kind] = r
 	}
 	db = h.DB(ctx)
 	var indirect []model.Identity
 	db = db.Where("default", true)
-	err = db.Find(&indirect, "kind", kind).Error
+	if kind != "" {
+		db = db.Where("kind", kind)
+	}
+	err = db.Find(&indirect).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	for i := range indirect {
 		m := &indirect[i]
+		if _, found := mp[m.Kind]; found {
+			continue
+		}
 		r := Identity{}
 		err := h.Decrypt(ctx, m)
 		if err != nil {

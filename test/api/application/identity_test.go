@@ -37,6 +37,16 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(indirect.ID)
 	}()
+	indirect2 := &api.Identity{
+		Kind:    "Test",
+		Name:    "indirect-shadowed",
+		Default: true,
+	}
+	err = RichClient.Identity.Create(indirect2)
+	assert.Must(t, err)
+	defer func() {
+		_ = RichClient.Identity.Delete(indirect2.ID)
+	}()
 	application := &api.Application{
 		Name:       t.Name(),
 		Identities: []api.Ref{{ID: direct.ID}},
@@ -47,7 +57,7 @@ func TestFindIdentity(t *testing.T) {
 		_ = Application.Delete(application.ID)
 	}()
 	// Find direct.
-	identity, found, err := Application.FindIdentity(application.ID, direct.Kind)
+	identity, found, err := Application.Identity(application.ID).Find(direct.Kind)
 	assert.Must(t, err)
 	if found {
 		if identity.ID != direct.ID {
@@ -57,7 +67,7 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("direct not found")
 	}
 	// Find indirect.
-	identity, found, err = Application.FindIdentity(application.ID, indirect.Kind)
+	identity, found, err = Application.Identity(application.ID).Find(indirect.Kind)
 	assert.Must(t, err)
 	if found {
 		if identity.ID != indirect.ID {
@@ -67,9 +77,15 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("indirect not found")
 	}
 	// Not find indirect.
-	_, found, err = Application.FindIdentity(application.ID, "None")
+	_, found, err = Application.Identity(application.ID).Find("None")
 	assert.Must(t, err)
 	if found {
 		t.Errorf("not found expected")
+	}
+	// List
+	list, err := Application.Identity(application.ID).List()
+	assert.Must(t, err)
+	if len(list) != 2 {
+		t.Errorf("list expected: 1, actual: %d", len(list))
 	}
 }
