@@ -2155,7 +2155,7 @@ type Insight struct {
 	Rule        string     `json:"rule" binding:"required"`
 	Name        string     `json:"name" binding:"required"`
 	Description string     `json:"description,omitempty" yaml:",omitempty"`
-	Category    string     `json:"category" binding:"required"`
+	Category    string     `json:"category,omitempty" yaml:",omitempty"`
 	Effort      int        `json:"effort,omitempty" yaml:",omitempty"`
 	Incidents   []Incident `json:"incidents,omitempty" yaml:",omitempty"`
 	Links       []Link     `json:"links,omitempty" yaml:",omitempty"`
