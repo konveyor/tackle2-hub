@@ -11,10 +11,10 @@ type Analysis struct {
 	Effort        int
 	Commit        string
 	Archived      bool
-	Summary       []ArchivedIssue  `gorm:"type:json;serializer:json"`
-	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
-	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
-	ApplicationID uint             `gorm:"index;not null"`
+	Summary       []ArchivedInsight `gorm:"type:json;serializer:json"`
+	Insights      []Insight         `gorm:"constraint:OnDelete:CASCADE"`
+	Dependencies  []TechDependency  `gorm:"constraint:OnDelete:CASCADE"`
+	ApplicationID uint              `gorm:"index;not null"`
 	Application   *Application
 }
 
@@ -31,33 +31,33 @@ type TechDependency struct {
 	Analysis   *Analysis
 }
 
-// Issue report issue (violation).
-type Issue struct {
+// Insight report insights.
+type Insight struct {
 	Model
-	RuleSet     string `gorm:"uniqueIndex:issueA;not null"`
-	Rule        string `gorm:"uniqueIndex:issueA;not null"`
+	RuleSet     string `gorm:"uniqueIndex:insightA;not null"`
+	Rule        string `gorm:"uniqueIndex:insightA;not null"`
 	Name        string `gorm:"index"`
 	Description string
 	Category    string     `gorm:"index;not null"`
-	Incidents   []Incident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
+	Incidents   []Incident `gorm:"foreignKey:InsightID;constraint:OnDelete:CASCADE"`
 	Links       []Link     `gorm:"type:json;serializer:json"`
 	Facts       json.Map   `gorm:"type:json;serializer:json"`
 	Labels      []string   `gorm:"type:json;serializer:json"`
 	Effort      int        `gorm:"index;not null"`
-	AnalysisID  uint       `gorm:"index;uniqueIndex:issueA;not null"`
+	AnalysisID  uint       `gorm:"index;uniqueIndex:insightA;not null"`
 	Analysis    *Analysis
 }
 
 // Incident report an issue incident.
 type Incident struct {
 	Model
-	File     string `gorm:"index;not null"`
-	Line     int
-	Message  string
-	CodeSnip string
-	Facts    json.Map `gorm:"type:json;serializer:json"`
-	IssueID  uint     `gorm:"index;not null"`
-	Issue    *Issue
+	File      string `gorm:"index;not null"`
+	Line      int
+	Message   string
+	CodeSnip  string
+	Facts     json.Map `gorm:"type:json;serializer:json"`
+	InsightID uint     `gorm:"index;not null"`
+	Insight   *Insight
 }
 
 // RuleSet - Analysis ruleset.
@@ -146,8 +146,8 @@ func (r *Target) Builtin() bool {
 // JSON Fields.
 //
 
-// ArchivedIssue resource created when issues are archived.
-type ArchivedIssue struct {
+// ArchivedInsight resource created when issues are archived.
+type ArchivedInsight struct {
 	RuleSet     string `json:"ruleSet"`
 	Rule        string `json:"rule"`
 	Name        string `json:"name,omitempty" yaml:",omitempty"`
