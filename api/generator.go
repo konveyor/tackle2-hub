@@ -190,9 +190,7 @@ func (r *Generator) With(m *model.Generator) {
 	}
 	r.Profiles = make([]Ref, 0, len(m.Profiles))
 	for _, p := range m.Profiles {
-		r.Profiles = append(
-			r.Profiles,
-			r.ref(p.ID, &p))
+		r.Profiles = append(r.Profiles, r.ref(p.ID, &p))
 	}
 }
 
