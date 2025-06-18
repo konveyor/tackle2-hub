@@ -55,6 +55,13 @@ func Migrate(migrations []Migration) (err error) {
 		start -= MinimumVersion
 	}
 
+	if Settings.Hub.Development {
+		if start >= len(migrations) {
+			log.Info("Development mode: forcing last migration.")
+			start = len(migrations) - 1
+		}
+	}
+
 	for i := start; i < len(migrations); i++ {
 		m := migrations[i]
 		ver := i + MinimumVersion + 1
@@ -94,14 +101,6 @@ func Migrate(migrations []Migration) (err error) {
 		}
 	}
 
-	if Settings.Hub.Development {
-		log.Info("Running development auto-migration.")
-		err = autoMigrate(db, migrations[len(migrations)-1].Models())
-		if err != nil {
-			return
-		}
-	}
-
 	return
 }
 
@@ -112,26 +111,6 @@ func setVersion(db *gorm.DB, version int) (err error) {
 	result := db.Where("key", VersionKey).Updates(setting)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
-		return
-	}
-	return
-}
-
-// AutoMigrate the database.
-func autoMigrate(db *gorm.DB, models []any) (err error) {
-	db, err = database.Open(false)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = db.AutoMigrate(models...)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = database.Close(db)
-	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	return
