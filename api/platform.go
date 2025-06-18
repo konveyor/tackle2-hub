@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 )
 
 // Routes
@@ -42,6 +43,7 @@ func (h PlatformHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Platform{}
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -63,6 +65,7 @@ func (h PlatformHandler) List(ctx *gin.Context) {
 	resources := []Platform{}
 	var list []model.Platform
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -178,11 +181,9 @@ func (r *Platform) With(m *model.Platform) {
 	r.Name = m.Name
 	r.URL = m.URL
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	r.Applications = make([]Ref, len(m.Applications))
-	for _, application := range m.Applications {
-		r.Applications = append(
-			r.Applications,
-			r.ref(application.ID, application.ID))
+	r.Applications = make([]Ref, 0, len(m.Applications))
+	for _, a := range m.Applications {
+		r.Applications = append(r.Applications, r.ref(a.ID, &a))
 	}
 }
 

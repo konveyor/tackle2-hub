@@ -32,7 +32,8 @@ func TestPlatformCRUD(t *testing.T) {
 
 	// Create.
 	r.Identity = &api.Ref{
-		ID: identity.ID,
+		ID:   identity.ID,
+		Name: identity.Name,
 	}
 	err = Platform.Create(&r)
 	if err != nil {

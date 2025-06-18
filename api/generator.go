@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm/clause"
 )
 
 // Routes
@@ -42,6 +43,7 @@ func (h GeneratorHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Generator{}
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -63,6 +65,7 @@ func (h GeneratorHandler) List(ctx *gin.Context) {
 	resources := []Generator{}
 	var list []model.Generator
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -184,6 +187,10 @@ func (r *Generator) With(m *model.Generator) {
 	if m.Repository != (model.Repository{}) {
 		repository := Repository(m.Repository)
 		r.Repository = &repository
+	}
+	r.Profiles = make([]Ref, 0, len(m.Profiles))
+	for _, p := range m.Profiles {
+		r.Profiles = append(r.Profiles, r.ref(p.ID, &p))
 	}
 }
 
