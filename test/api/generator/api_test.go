@@ -25,7 +25,8 @@ func TestGeneratorCRUD(t *testing.T) {
 
 	// Create.
 	r.Identity = &api.Ref{
-		ID: identity.ID,
+		ID:   identity.ID,
+		Name: identity.Name,
 	}
 	err = Generator.Create(&r)
 	if err != nil {
