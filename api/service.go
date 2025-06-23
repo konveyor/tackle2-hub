@@ -12,8 +12,9 @@ import (
 
 // Routes
 const (
-	ServicesRoot = "/services"
-	ServiceRoot  = ServicesRoot + "/:name/*" + Wildcard
+	ServicesRoot      = "/services"
+	ServiceRoot       = ServicesRoot + "/:name"
+	ServiceNestedRoot = ServiceRoot + "/*" + Wildcard
 )
 
 // serviceRoutes name to route map.
@@ -30,6 +31,7 @@ type ServiceHandler struct {
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 	e.GET(ServicesRoot, h.List)
 	e.Any(ServiceRoot, h.Required, h.Forward)
+	e.Any(ServiceNestedRoot, h.Required, h.Forward)
 }
 
 // List godoc
