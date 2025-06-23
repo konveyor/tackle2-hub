@@ -220,9 +220,9 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	cursor.With(db, page)
 	builder := func(batch []any) (out any, err error) {
 		app := &model.Application{}
-		idMap := make(map[uint]model.Identity)
-		contMap := make(map[uint]model.Stakeholder)
-		anMap := make(map[uint]model.Analysis)
+		identities := make(map[uint]model.Identity)
+		contributors := make(map[uint]model.Stakeholder)
+		analyses := make(map[uint]model.Analysis)
 		for i := range batch {
 			m := batch[i].(*M)
 			app = m.Application
@@ -245,28 +245,28 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref := model.Identity{}
 				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
-				idMap[m.IdentityId] = ref
+				identities[m.IdentityId] = ref
 			}
 			if m.ContId > 0 {
 				ref := model.Stakeholder{}
 				ref.ID = m.ContId
 				ref.Name = m.ContName
-				contMap[m.ContId] = ref
+				contributors[m.ContId] = ref
 			}
 			if m.AnId > 0 {
 				ref := model.Analysis{}
 				ref.ApplicationID = app.ID
 				ref.Effort = m.AnEffort
-				anMap[m.AnId] = ref
+				analyses[m.AnId] = ref
 			}
 		}
-		for _, m := range idMap {
+		for _, m := range identities {
 			app.Identities = append(app.Identities, m)
 		}
-		for _, m := range contMap {
+		for _, m := range contributors {
 			app.Contributors = append(app.Contributors, m)
 		}
-		for _, m := range anMap {
+		for _, m := range analyses {
 			app.Analyses = append(app.Analyses, m)
 		}
 		r := Application{}
