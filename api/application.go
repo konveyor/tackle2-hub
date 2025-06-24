@@ -188,28 +188,30 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		PlatformName    string
 		ReviewId        uint
 		AssessmentId    uint
+		QuestionnaireId uint
 		AnalysisId      uint
 		Effort          int
 	}
 	db := h.DB(ctx)
 	db = db.Select(
 		"a.*",
-		"id.ID     IdentityId",
-		"id.Name   IdentityName",
-		"bs.ID     ServiceId",
-		"bs.Name   ServiceName",
-		"st.ID     OwnerId",
-		"st.Name   OwnerName",
-		"cn.ID     ContributorId",
-		"cn.Name   ContributorName",
-		"mw.ID     WaveId",
-		"mw.Name   WaveName",
-		"pf.ID     PlatformId",
-		"pf.Name   PlatformName",
-		"rv.ID     ReviewId",
-		"at.ID     AssessmentId",
-		"an.ID     AnalysisId",
-		"an.Effort Effort",
+		"id.ID              IdentityId",
+		"id.Name            IdentityName",
+		"bs.ID              ServiceId",
+		"bs.Name            ServiceName",
+		"st.ID              OwnerId",
+		"st.Name            OwnerName",
+		"cn.ID              ContributorId",
+		"cn.Name            ContributorName",
+		"mw.ID              WaveId",
+		"mw.Name            WaveName",
+		"pf.ID              PlatformId",
+		"pf.Name            PlatformName",
+		"rv.ID              ReviewId",
+		"at.ID              AssessmentId",
+		"at.QuestionnaireID QuestionnaireId",
+		"an.ID              AnalysisId",
+		"an.Effort          Effort",
 	)
 	db = db.Table("Application a")
 	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.ApplicationID = a.ID")
@@ -276,12 +278,14 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 			if m.AssessmentId > 0 {
 				ref := model.Assessment{}
 				ref.ID = m.AssessmentId
+				ref.QuestionnaireID = m.QuestionnaireId
 				assessments[m.AssessmentId] = ref
 			}
 			if m.AnalysisId > 0 {
 				ref := model.Analysis{}
 				ref.ID = m.AnalysisId
-				analyses[m.AssessmentId] = ref
+				ref.Effort = m.Effort
+				analyses[m.AnalysisId] = ref
 			}
 		}
 		for _, m := range identities {
