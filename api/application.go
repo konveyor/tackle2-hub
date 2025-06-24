@@ -174,33 +174,44 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 
 	type M struct {
 		*model.Application
-		IdentityID   uint
-		IdentityName string
-		ServiceName  string
-		OwnerName    string
-		ContID       uint
-		ContName     string
-		WaveName     string
-		FactKey      string
-		FactSource   string
-		FactValue    string
+		IdentityId      uint
+		IdentityName    string
+		ServiceId       uint
+		ServiceName     string
+		OwnerId         uint
+		OwnerName       string
+		ContributorId   uint
+		ContributorName string
+		WaveId          uint
+		WaveName        string
+		PlatformId      uint
+		PlatformName    string
+		ReviewId        uint
+		AssessmentId    uint
+		AnalysisId      uint
+		Effort          int
 	}
 	db := h.DB(ctx)
 	db = db.Select(
 		"a.*",
-		"id.ID     IdentityID",
+		"id.ID     IdentityId",
 		"id.Name   IdentityName",
+		"bs.ID     ServiceId",
 		"bs.Name   ServiceName",
+		"st.ID     OwnerId",
 		"st.Name   OwnerName",
-		"cn.ID     ContID",
-		"cn.Name   ContName",
+		"cn.ID     ContributorId",
+		"cn.Name   ContributorName",
+		"mw.ID     WaveId",
 		"mw.Name   WaveName",
-		"fa.Key    FactKey",
-		"fa.Source FactSource",
-		"fa.Value  FactValue",
+		"pf.ID     PlatformId",
+		"pf.Name   PlatformName",
+		"rv.ID     ReviewId",
+		"at.ID     AssessmentId",
+		"an.ID     AnalysisId",
+		"an.Effort Effort",
 	)
 	db = db.Table("Application a")
-	db = db.Joins("LEFT JOIN Bucket b ON b.ID = a.BucketID")
 	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Identity id ON id.ID = ai.IdentityID")
 	db = db.Joins("LEFT JOIN BusinessService bs ON bs.ID = a.BusinessServiceID")
@@ -208,7 +219,10 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Joins("LEFT JOIN ApplicationContributors ac ON ac.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Stakeholder cn ON cn.ID = ac.StakeholderID")
 	db = db.Joins("LEFT JOIN MigrationWave mw ON mw.ID = a.MigrationWaveID")
-	db = db.Joins("LEFT JOIN Fact fa ON fa.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Platform pf ON pf.ID = a.PlatformID")
+	db = db.Joins("LEFT JOIN Review rv ON rv.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
 	db = db.Order("a.ID")
 	page := Page{}
 	page.With(ctx)
@@ -216,51 +230,73 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	cursor.With(db, page)
 	builder := func(batch []any) (out any, err error) {
 		app := &model.Application{}
+		identities := make(map[uint]model.Identity)
+		contributors := make(map[uint]model.Stakeholder)
+		assessments := make(map[uint]model.Assessment)
+		analyses := make(map[uint]model.Analysis)
 		for i := range batch {
 			m := batch[i].(*M)
-			if i == 0 {
-				app = m.Application
-				if app.BusinessServiceID != nil {
-					app.BusinessService = &model.BusinessService{}
-					app.BusinessService.ID = *app.BusinessServiceID
-					app.BusinessService.Name = m.ServiceName
-				}
-				if app.OwnerID != nil {
-					app.Owner = &model.Stakeholder{}
-					app.Owner.ID = *app.OwnerID
-					app.Owner.Name = m.OwnerName
-				}
-				if app.MigrationWave != nil {
-					app.MigrationWave = &model.MigrationWave{}
-					app.MigrationWave.ID = *app.MigrationWaveID
-					app.MigrationWave.Name = m.WaveName
-				}
+			app = m.Application
+			if m.PlatformId > 0 {
+				app.Platform = &model.Platform{}
+				app.Platform.ID = m.PlatformId
+				app.Platform.Name = m.PlatformName
 			}
-			if m.IdentityID > 0 {
+			if m.ServiceId > 0 {
+				app.BusinessService = &model.BusinessService{}
+				app.BusinessService.ID = m.ServiceId
+				app.BusinessService.Name = m.ServiceName
+			}
+			if m.OwnerId > 0 {
+				app.Owner = &model.Stakeholder{}
+				app.Owner.ID = m.OwnerId
+				app.Owner.Name = m.OwnerName
+			}
+			if m.WaveId > 0 {
+				app.MigrationWave = &model.MigrationWave{}
+				app.MigrationWave.ID = m.WaveId
+				app.MigrationWave.Name = m.WaveName
+			}
+			if m.ReviewId > 0 {
+				app.Review = &model.Review{}
+				app.Review.ID = m.ReviewId
+			}
+			if m.IdentityId > 0 {
 				ref := model.Identity{}
-				ref.ID = m.IdentityID
+				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
-				app.Identities = append(
-					app.Identities,
-					ref)
+				identities[m.IdentityId] = ref
 			}
-			if m.FactKey != "" {
-				ref := model.Fact{}
-				ref.ApplicationID = app.ID
-				ref.Key = m.FactKey
-				ref.Source = m.FactSource
-				ref.Value = m.FactValue
-				app.Facts = append(app.Facts, ref)
-			}
-			if m.ContID > 0 {
+			if m.ContributorId > 0 {
 				ref := model.Stakeholder{}
-				ref.ID = m.ContID
-				ref.Name = m.ContName
-				app.Contributors = append(
-					app.Contributors,
-					ref)
+				ref.ID = m.ContributorId
+				ref.Name = m.ContributorName
+				contributors[m.ContributorId] = ref
+			}
+			if m.AssessmentId > 0 {
+				ref := model.Assessment{}
+				ref.ID = m.AssessmentId
+				assessments[m.AssessmentId] = ref
+			}
+			if m.AnalysisId > 0 {
+				ref := model.Analysis{}
+				ref.ID = m.AnalysisId
+				analyses[m.AssessmentId] = ref
 			}
 		}
+		for _, m := range identities {
+			app.Identities = append(app.Identities, m)
+		}
+		for _, m := range contributors {
+			app.Contributors = append(app.Contributors, m)
+		}
+		for _, m := range assessments {
+			app.Assessments = append(app.Assessments, m)
+		}
+		for _, m := range analyses {
+			app.Analyses = append(app.Analyses, m)
+		}
+		tagMap.Set(app)
 		r := Application{}
 		r.With(app, tagMap[app.ID])
 		err = r.WithResolver(app, appResolver)
@@ -1323,7 +1359,6 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 		ref.With(a.ID, "")
 		r.Assessments = append(r.Assessments, ref)
 	}
-
 	if len(m.Analyses) > 0 {
 		sort.Slice(m.Analyses, func(i, j int) bool {
 			return m.Analyses[i].ID < m.Analyses[j].ID
@@ -1532,6 +1567,15 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 }
 
 type TagMap map[uint][]AppTag
+
+// Set the Application.Tags.
+func (r TagMap) Set(m *model.Application) {
+	tags := r[m.ID]
+	m.Tags = make([]model.Tag, 0, len(tags))
+	for _, ref := range tags {
+		m.Tags = append(m.Tags, *ref.Tag)
+	}
+}
 
 // AppTag is a lightweight representation of ApplicationTag model.
 type AppTag struct {

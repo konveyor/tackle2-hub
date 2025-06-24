@@ -16,6 +16,10 @@ func NewMembershipResolver(db *gorm.DB) (m *MembershipResolver, err error) {
 	if err != nil {
 		return
 	}
+	err = m.cacheArchetypeMembers(db)
+	if err != nil {
+		return
+	}
 	return
 }
 
