@@ -23,7 +23,7 @@ import (
 
 type SchemaVersion struct {
 	Migration string               `json:"migration,omitempty"`
-	Content   runtime.RawExtension `json:"metadata,omitempty"`
+	Content   runtime.RawExtension `json:"content,omitempty"`
 }
 
 // SchemaSpec defines the desired state of the resource.
@@ -35,7 +35,7 @@ type SchemaSpec struct {
 	// Subject
 	Subject string `json:"subject"`
 	// Content
-	Versions []SchemaVersion `json:"content"`
+	Versions []SchemaVersion `json:"versions"`
 }
 
 // SchemaStatus defines the observed state of the resource.

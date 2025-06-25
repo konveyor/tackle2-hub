@@ -30,9 +30,8 @@ type SchemaHandler struct {
 // AddRoutes Adds routes.
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
-	//
-	// Routes
 	r.GET(SchemaRoot, h.GetAPI)
+	r.GET(SchemasRoot, h.Get)
 }
 
 // GetAPI godoc
