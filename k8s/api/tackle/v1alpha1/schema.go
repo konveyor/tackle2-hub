@@ -45,7 +45,7 @@ type SchemaStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-// Schema defines an addon extension.
+// Schema defines json document schemas.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
@@ -56,12 +56,6 @@ type Schema struct {
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	Spec            SchemaSpec   `json:"spec"`
 	Status          SchemaStatus `json:"status,omitempty"`
-}
-
-func (s *Schema) Match(domain, variant, subject string) bool {
-	return s.Spec.Domain == domain &&
-		s.Spec.Variant == variant &&
-		s.Spec.Subject == subject
 }
 
 // SchemaList is a list of Schema.
