@@ -1289,6 +1289,8 @@ func (h *ApplicationHandler) tagMap(
 	return
 }
 
+type Document = model.Document
+
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
@@ -1296,7 +1298,9 @@ type Application struct {
 	Description     string      `json:"description"`
 	Bucket          *Ref        `json:"bucket"`
 	Repository      *Repository `json:"repository"`
+	Assets          *Repository `json:"assets"`
 	Binary          string      `json:"binary"`
+	Coordinates     *Document   `json:"coordinates"`
 	Review          *Ref        `json:"review"`
 	Comments        string      `json:"comments"`
 	Identities      []Ref       `json:"identities"`

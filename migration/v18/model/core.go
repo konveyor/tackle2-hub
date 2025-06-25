@@ -246,3 +246,14 @@ type TTL struct {
 	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
 	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
 }
+
+type SchemaRef struct {
+	Domain  string `json:"domain"`
+	Variant string `json:"variant"`
+	Subject string `json:"subject"`
+	Version int    `json:"version,omitempty" yaml:",omitempty"`
+}
+type Document struct {
+	Schema  SchemaRef `json:"schema"`
+	Content json.Map  `json:"content"`
+}
