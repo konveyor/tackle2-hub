@@ -35,7 +35,7 @@ func (m *Manager) Load() (err error) {
 	}
 	for i := range list.Items {
 		r := &list.Items[i]
-		key := m.key(
+		key := m.Key(
 			r.Spec.Domain,
 			r.Spec.Variant,
 			r.Spec.Subject)
@@ -58,7 +58,7 @@ func (m *Manager) Get(domain, variant, subject string) (v []Version, err error) 
 	if err != nil {
 		return
 	}
-	key := m.key(domain, variant, subject)
+	key := m.Key(domain, variant, subject)
 	v, found := m.domains[key]
 	if !found {
 		err = &NotFound{}
@@ -71,7 +71,7 @@ func (m *Manager) Latest(domain, variant, subject string) (v Version, err error)
 	if err != nil {
 		return
 	}
-	key := m.key(domain, variant, subject)
+	key := m.Key(domain, variant, subject)
 	versions, found := m.domains[key]
 	if found {
 		slices.Reverse(versions)
@@ -84,7 +84,7 @@ func (m *Manager) Latest(domain, variant, subject string) (v Version, err error)
 	return
 }
 
-func (m *Manager) key(domain, variant, subject string) (k string) {
+func (m *Manager) Key(domain, variant, subject string) (k string) {
 	k = strings.Join(
 		[]string{domain, variant, subject},
 		".")
