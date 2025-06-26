@@ -14,8 +14,10 @@ const (
 )
 
 const (
-	SchemaRoot  = "/schema"
-	SchemasRoot = "/schemas" + "/:" + Domain + "/:" + Variant + "/:" + Subject
+	SchemaRoot     = "/schema"
+	SchemasRoot    = "schemas"
+	SchemasGetRoot = SchemasRoot + "/:" + Name
+	SchemaFindRoot = SchemaRoot + "/:" + Domain + "/:" + Variant + "/:" + Subject
 )
 
 // SchemaHandler providers schema (route) handler.
@@ -31,7 +33,9 @@ type SchemaHandler struct {
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
 	r.GET(SchemaRoot, h.GetAPI)
-	r.GET(SchemasRoot, h.Get)
+	r.GET(SchemasRoot, h.List)
+	r.GET(SchemasGetRoot, h.Get)
+	r.GET(SchemaFindRoot, h.Find)
 }
 
 // GetAPI godoc
@@ -54,27 +58,73 @@ func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 }
 
 // Get godoc
-// @summary Get a schema.
-// @description Get a schema.
+// @summary Find a schema.
+// @description Find a schema.
 // @tags schema
 // @produce json
 // @success 200 {object} Schema
 // @router /schema [get]
 func (h *SchemaHandler) Get(ctx *gin.Context) {
-	domain := ctx.Param(Domain)
-	variant := ctx.Param(Variant)
-	subject := ctx.Param(Subject)
+	name := ctx.Param(Name)
 	m := jsd.Manager{Client: h.Client(ctx)}
-	v, err := m.Latest(domain, variant, subject)
+	s, err := m.Get(name)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	r := Schema{
-		Domain:  domain,
-		Variant: variant,
-		Subject: subject,
-		Version: v.Id,
+	r := Schema(s)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// List godoc
+// @summary List schemas.
+// @description List schemas.
+// @tags schema
+// @produce json
+// @success 200 {object} []Schema
+// @router /schema [get]
+func (h *SchemaHandler) List(ctx *gin.Context) {
+	m := jsd.Manager{Client: h.Client(ctx)}
+	list, err := m.List()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := make([]Schema, len(list))
+	for i := range list {
+		r[i] = Schema(list[i])
+	}
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// Find godoc
+// @summary Find a schema.
+// @description Find a schema.
+// @tags schema
+// @produce json
+// @success 200 {object} Version
+// @router /schema [get]
+func (h *SchemaHandler) Find(ctx *gin.Context) {
+	domain := ctx.Param(Domain)
+	variant := ctx.Param(Variant)
+	subject := ctx.Param(Subject)
+	m := jsd.Manager{Client: h.Client(ctx)}
+	s, err := m.Find(domain, variant, subject)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if len(s.Versions) == 0 {
+		_ = ctx.Error(&jsd.NotFound{})
+		return
+	}
+	v := s.Versions.Latest()
+	r := Version{
+		Name:    s.Name,
+		Domain:  s.Domain,
+		Variant: s.Variant,
+		Subject: s.Subject,
+		Version: v.Number,
 		Content: v.Content,
 	}
 	h.Respond(ctx, http.StatusOK, r)
@@ -85,10 +135,13 @@ type RestAPI struct {
 	Paths   []string `json:"paths"`
 }
 
-type Schema struct {
+type Version struct {
+	Name    string `json:"name"`
 	Domain  string `json:"domain"`
 	Variant string `json:"variant"`
 	Subject string `json:"subject"`
 	Version int    `json:"version,omitempty"`
 	Content Map    `json:"content,omitempty"`
 }
+
+type Schema jsd.Schema

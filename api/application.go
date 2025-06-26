@@ -1289,8 +1289,6 @@ func (h *ApplicationHandler) tagMap(
 	return
 }
 
-type Document = model.Document
-
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
@@ -1326,6 +1324,10 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
 	r.Binary = m.Binary
+	if m.Coordinates != nil {
+		d := Document(*m.Coordinates)
+		r.Coordinates = &d
+	}
 	if m.Repository != (model.Repository{}) {
 		repo := Repository(m.Repository)
 		r.Repository = &repo
@@ -1429,6 +1431,10 @@ func (r *Application) Model() (m *model.Application) {
 		Binary:      r.Binary,
 	}
 	m.ID = r.ID
+	if r.Coordinates != nil {
+		d := model.Document(*r.Coordinates)
+		m.Coordinates = &d
+	}
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)
 	}
@@ -1482,6 +1488,12 @@ type Repository struct {
 	Branch string `json:"branch"`
 	Tag    string `json:"tag"`
 	Path   string `json:"path"`
+}
+
+// Document REST nested resource.
+type Document struct {
+	Content model.Map `json:"content" binding:"required"`
+	Schema  string    `json:"schema,omitempty"`
 }
 
 // Fact REST nested resource.

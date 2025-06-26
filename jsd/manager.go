@@ -2,7 +2,6 @@ package jsd
 
 import (
 	"context"
-	"slices"
 	"strings"
 
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -18,11 +17,13 @@ var (
 
 type Manager struct {
 	Client  client.Client
-	domains map[string][]Version
+	domains map[string]Schema
+	names   map[string]Schema
 }
 
 func (m *Manager) Load() (err error) {
-	m.domains = make(map[string][]Version)
+	m.domains = make(map[string]Schema)
+	m.names = make(map[string]Schema)
 	list := &crd.SchemaList{}
 	err = m.Client.List(
 		context.TODO(),
@@ -35,52 +36,51 @@ func (m *Manager) Load() (err error) {
 	}
 	for i := range list.Items {
 		r := &list.Items[i]
+		schema := Schema{Name: r.Name}
+		schema.With(r)
+		m.names[r.Name] = schema
 		key := m.Key(
 			r.Spec.Domain,
 			r.Spec.Variant,
 			r.Spec.Subject)
-		for n := range r.Spec.Versions {
-			mv := &r.Spec.Versions[n]
-			version := Version{}
-			version.Id = n
-			version.Migration = mv.Migration
-			_ = json.Unmarshal(mv.Content.Raw, &version.Content)
-			m.domains[key] =
-				append(m.domains[key],
-					version)
-		}
+		m.domains[key] = schema
 	}
 	return
 }
 
-func (m *Manager) Get(domain, variant, subject string) (v []Version, err error) {
+func (m *Manager) Get(name string) (s Schema, err error) {
 	err = m.Load()
 	if err != nil {
 		return
 	}
-	key := m.Key(domain, variant, subject)
-	v, found := m.domains[key]
+	s, found := m.names[name]
 	if !found {
 		err = &NotFound{}
 	}
 	return
 }
 
-func (m *Manager) Latest(domain, variant, subject string) (v Version, err error) {
+func (m *Manager) List() (list []Schema, err error) {
+	err = m.Load()
+	if err != nil {
+		return
+	}
+	for _, s := range m.names {
+		list = append(list, s)
+	}
+	return
+}
+
+func (m *Manager) Find(domain, variant, subject string) (s Schema, err error) {
 	err = m.Load()
 	if err != nil {
 		return
 	}
 	key := m.Key(domain, variant, subject)
-	versions, found := m.domains[key]
-	if found {
-		slices.Reverse(versions)
-		for _, version := range versions {
-			v = version
-			return
-		}
+	s, found := m.domains[key]
+	if !found {
+		err = &NotFound{}
 	}
-	err = &NotFound{}
 	return
 }
 
@@ -92,7 +92,40 @@ func (m *Manager) Key(domain, variant, subject string) (k string) {
 }
 
 type Version struct {
-	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Number    int    `json:"number"`
 	Migration string `json:"migration,omitempty"`
 	Content   json.Map
+}
+
+type Versions []Version
+
+func (v Versions) Latest() (latest Version) {
+	n := len(v)
+	if n > 0 {
+		latest = v[n-1]
+	}
+	return
+}
+
+type Schema struct {
+	Name     string   `json:"name"`
+	Domain   string   `json:"domain,omitempty"`
+	Variant  string   `json:"variant,omitempty"`
+	Subject  string   `json:"subject,omitempty"`
+	Versions Versions `json:"versions,omitempty"`
+}
+
+func (s *Schema) With(r *crd.Schema) {
+	sp := r.Spec
+	s.Domain = sp.Domain
+	s.Variant = sp.Variant
+	s.Subject = sp.Subject
+	s.Versions = make([]Version, len(sp.Versions))
+	for i := range sp.Versions {
+		rv := &sp.Versions[i]
+		sv := Version{Migration: rv.Migration}
+		_ = json.Unmarshal(rv.Content.Raw, &sv.Content)
+		s.Versions[i] = sv
+	}
 }

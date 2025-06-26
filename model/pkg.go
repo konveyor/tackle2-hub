@@ -62,7 +62,6 @@ type Attachment = model.Attachment
 type Document = model.Document
 type Link = model.Link
 type Repository = model.Repository
-type SchemaRef = model.SchemaRef
 type TargetLabel = model.TargetLabel
 type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent
