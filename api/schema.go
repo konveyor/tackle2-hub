@@ -102,7 +102,7 @@ func (h *SchemaHandler) List(ctx *gin.Context) {
 // @description Find a schema.
 // @tags schema
 // @produce json
-// @success 200 {object} Version
+// @success 200 {object} LatestSchema
 // @router /schema [get]
 func (h *SchemaHandler) Find(ctx *gin.Context) {
 	domain := ctx.Param(Domain)
@@ -119,7 +119,7 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 		return
 	}
 	v := s.Versions.Latest()
-	r := Version{
+	r := LatestSchema{
 		Name:    s.Name,
 		Domain:  s.Domain,
 		Variant: s.Variant,
@@ -135,7 +135,7 @@ type RestAPI struct {
 	Paths   []string `json:"paths"`
 }
 
-type Version struct {
+type LatestSchema struct {
 	Name    string `json:"name"`
 	Domain  string `json:"domain"`
 	Variant string `json:"variant"`
