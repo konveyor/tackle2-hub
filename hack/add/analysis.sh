@@ -5,14 +5,14 @@ set -e
 host="${HOST:-localhost:8080}"
 appId="${1:-0}"
 nRuleSet="${2:-10}"
-nIssue="${3:-10}"
+nInsight="${3:-10}"
 nIncident="${4:-25}"
 tmp=/tmp/${self}-${pid}
 file="/tmp/manifest.yaml"
 
 echo " Application: ${appId}"
 echo " RuleSets: ${nRuleSet}"
-echo " Issues: ${nIssue}"
+echo " Insights: ${nInsight}"
 echo " Incidents: ${nIncident}"
 echo " Manifest path: ${file}"
 
@@ -69,12 +69,12 @@ commit: "1234"
 " >> ${file}
 printf "\x1DEND-MAIN\x1D\n" >> ${file}
 #
-# Issues
+# Insights
 #
-printf "\x1DBEGIN-ISSUES\x1D\n" >> ${file}
+printf "\x1DBEGIN-INSIGHTS\x1D\n" >> ${file}
 for r in $(seq 1 ${nRuleSet})
 do
-for i in $(seq 1 ${nIssue})
+for i in $(seq 1 ${nInsight})
 do
 echo -n "---
 ruleset: ruleSet-${r}
@@ -82,8 +82,8 @@ rule: rule-${i}
 name: Rule-${r}.${i}-Violated
 description: |
   This is a test ${r}/${i} violation.
-    This is a **description** of the issue in markdown*.
-    Here's how to fix the issue.
+    This is a **description** of the insight in markdown*.
+    Here's how to fix the insight.
     
     For example:
     
@@ -111,7 +111,7 @@ do
 f=$(($n%3))
 echo -n "- file: /thing.com/file/${i}${f}.java
   message: |
-    This is a **description** of the issue on line ${n} *in markdown*. Here's how to fix the issue.
+    This is a **description** of the insight on line ${n} *in markdown*. Here's how to fix the insight.
     
     For example:
     
@@ -155,7 +155,7 @@ fi
 done
 done
 done
-printf "\x1DEND-ISSUES\x1D
+printf "\x1DEND-INSIGHTS\x1D
 \x1DBEGIN-DEPS\x1D\n" >> ${file}
 #
 # Deps
