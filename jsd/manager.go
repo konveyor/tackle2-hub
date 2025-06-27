@@ -1,15 +1,13 @@
 package jsd
 
 import (
-	"bytes"
 	"context"
 	"strings"
 
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/settings"
-	js "github.com/santhosh-tekuri/jsonschema/v5"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,6 +34,7 @@ func (m *Manager) Load() (err error) {
 			Namespace: Settings.Namespace,
 		})
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	for i := range list.Items {
@@ -55,12 +54,12 @@ func (m *Manager) Load() (err error) {
 	return
 }
 
-func (m *Manager) Get(name string) (s Schema, err error) {
+func (m *Manager) Get(name string) (schema Schema, err error) {
 	err = m.Load()
 	if err != nil {
 		return
 	}
-	s, found := m.names[name]
+	schema, found := m.names[name]
 	if !found {
 		err = &NotFound{}
 	}
@@ -109,93 +108,5 @@ func (m *Manager) Validate(schema *Schema) (valid bool) {
 		"Schema not valid.",
 		"name",
 		schema.Name)
-	return
-}
-
-type Version struct {
-	Name      string `json:"name"`
-	Number    int    `json:"number"`
-	Migration string `json:"migration,omitempty"`
-	Content   json.Map
-}
-
-func (v *Version) IsValid() (err error) {
-	_, err = v.jsd()
-	return
-}
-
-func (v *Version) Validate(document json.Map) (err error) {
-	jsd, err := v.jsd()
-	if err != nil {
-		return
-	}
-	err = jsd.Validate(document)
-	return
-}
-
-func (v *Version) jsd() (jsd *js.Schema, err error) {
-	compiler := js.NewCompiler()
-	content, err := json.Marshal(v.Content)
-	if err != nil {
-		return
-	}
-	err = compiler.AddResource(v.Name, bytes.NewReader(content))
-	if err != nil {
-		return
-	}
-	jsd, err = compiler.Compile(v.Name)
-	if err != nil {
-		err = &NotValid{
-			Reason: err.Error(),
-		}
-	}
-	return
-}
-
-type Versions []Version
-
-func (v Versions) Latest() (latest Version) {
-	n := len(v)
-	if n > 0 {
-		latest = v[n-1]
-	}
-	return
-}
-
-type Schema struct {
-	Name     string   `json:"name"`
-	Domain   string   `json:"domain,omitempty"`
-	Variant  string   `json:"variant,omitempty"`
-	Subject  string   `json:"subject,omitempty"`
-	Versions Versions `json:"versions,omitempty"`
-}
-
-func (s *Schema) With(r *crd.Schema) {
-	sp := r.Spec
-	s.Domain = sp.Domain
-	s.Variant = sp.Variant
-	s.Subject = sp.Subject
-	s.Versions = make([]Version, len(sp.Versions))
-	for i := range sp.Versions {
-		rv := &sp.Versions[i]
-		sv := Version{Migration: rv.Migration}
-		_ = json.Unmarshal(rv.Content.Raw, &sv.Content)
-		s.Versions[i] = sv
-	}
-}
-
-func (s *Schema) IsValid() (err error) {
-	for _, version := range s.Versions {
-		err = version.IsValid()
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
-func (s *Schema) Validate(document json.Map) (err error) {
-	v := s.Versions.Latest()
-	err = v.Validate(document)
 	return
 }

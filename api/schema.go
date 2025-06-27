@@ -125,7 +125,7 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 		Variant: s.Variant,
 		Subject: s.Subject,
 		Version: v.Number,
-		Content: v.Content,
+		Content: Map(v.Content),
 	}
 	h.Respond(ctx, http.StatusOK, r)
 }

@@ -1,0 +1,103 @@
+package jsd
+
+import (
+	"bytes"
+	"encoding/json"
+
+	liberr "github.com/jortel/go-utils/error"
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	js "github.com/santhosh-tekuri/jsonschema/v5"
+)
+
+type Version struct {
+	Name      string `json:"name"`
+	Number    int    `json:"number"`
+	Migration string `json:"migration,omitempty"`
+	Content   Map
+}
+
+func (v *Version) IsValid() (err error) {
+	_, err = v.jsd()
+	return
+}
+
+func (v *Version) Validate(document Map) (err error) {
+	jsd, err := v.jsd()
+	if err != nil {
+		return
+	}
+	d := EnsureEncoding(document)
+	err = jsd.Validate(d)
+	return
+}
+
+func (v *Version) jsd() (jsd *js.Schema, err error) {
+	compiler := js.NewCompiler()
+	d := EnsureEncoding(v.Content)
+	content, err := json.Marshal(d)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = compiler.AddResource(v.Name, bytes.NewReader(content))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	jsd, err = compiler.Compile(v.Name)
+	if err != nil {
+		err = &NotValid{
+			Reason: err.Error(),
+		}
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+type Versions []Version
+
+func (v Versions) Latest() (latest Version) {
+	n := len(v)
+	if n > 0 {
+		latest = v[n-1]
+	}
+	return
+}
+
+type Schema struct {
+	Name     string   `json:"name"`
+	Domain   string   `json:"domain,omitempty"`
+	Variant  string   `json:"variant,omitempty"`
+	Subject  string   `json:"subject,omitempty"`
+	Versions Versions `json:"versions,omitempty"`
+}
+
+func (s *Schema) With(r *crd.Schema) {
+	sp := r.Spec
+	s.Domain = sp.Domain
+	s.Variant = sp.Variant
+	s.Subject = sp.Subject
+	s.Versions = make([]Version, len(sp.Versions))
+	for i := range sp.Versions {
+		rv := &sp.Versions[i]
+		sv := Version{Migration: rv.Migration}
+		_ = json.Unmarshal(rv.Content.Raw, &sv.Content)
+		s.Versions[i] = sv
+	}
+}
+
+func (s *Schema) IsValid() (err error) {
+	for _, version := range s.Versions {
+		err = version.IsValid()
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (s *Schema) Validate(document Map) (err error) {
+	v := s.Versions.Latest()
+	err = v.Validate(document)
+	return
+}

@@ -21,6 +21,15 @@ businessService:
 repository:
     kind: git
     url: ${repository}
+coordinates:
+  schema: cf-coordinates
+  content:
+    name: jeff
+    age: 10
+    phone:
+      npa: '256'
+      nxx: '234'
+      number: '1234'
 identities:
   - id: 1
 tags:

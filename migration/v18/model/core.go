@@ -246,8 +246,3 @@ type TTL struct {
 	Succeeded int `json:"succeeded,omitempty" yaml:",omitempty"`
 	Failed    int `json:"failed,omitempty" yaml:",omitempty"`
 }
-
-type Document struct {
-	Content json.Map `json:"content" binding:"required"`
-	Schema  string   `json:"schema,omitempty"`
-}

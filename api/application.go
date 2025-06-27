@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/trigger"
@@ -332,6 +333,11 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	err = m.Coordinates.Validate(jsd.New(h.Client(ctx)))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	result := h.DB(ctx).Omit(clause.Associations).Create(m)
 	if result.Error != nil {

@@ -13,7 +13,7 @@ func TestGetSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if len(api.Paths) < 1 {
+	if len(api.Routes) < 1 {
 		t.Errorf("Got empty Paths from /schema.")
 	}
 }
