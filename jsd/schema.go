@@ -26,14 +26,14 @@ func (v *Version) Validate(document Map) (err error) {
 	if err != nil {
 		return
 	}
-	d := EnsureEncoding(document)
+	d := JsonSafe(document)
 	err = jsd.Validate(d)
 	return
 }
 
 func (v *Version) jsd() (jsd *js.Schema, err error) {
 	compiler := js.NewCompiler()
-	d := EnsureEncoding(v.Content)
+	d := JsonSafe(v.Content)
 	content, err := json.Marshal(d)
 	if err != nil {
 		err = liberr.Wrap(err)

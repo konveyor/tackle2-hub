@@ -8,11 +8,11 @@ import (
 
 type Map = map[string]any
 
-// EnsureEncoding ensures the object can be encoded as json.
+// JsonSafe ensures the object can be encoded as json.
 // The YAML decoder can produce map[any]any which is not valid for json.
 // Convert map[any]any to map[string]any as needed.
-func EnsureEncoding(in any) (out any) {
-	self := EnsureEncoding
+func JsonSafe(in any) (out any) {
+	self := JsonSafe
 	defer func() {
 		r := recover()
 		if r != nil {

@@ -50,7 +50,7 @@ func (r jsonSerializer) Scan(ctx context.Context, field *schema.Field, dst refle
 
 // Value implements serializer.
 func (r jsonSerializer) Value(_ context.Context, _ *schema.Field, _ reflect.Value, fieldValue any) (v any, err error) {
-	mp := jsd.EnsureEncoding(fieldValue)
+	mp := jsd.JsonSafe(fieldValue)
 	switch d := mp.(type) {
 	case Data:
 		mp = d.Any
