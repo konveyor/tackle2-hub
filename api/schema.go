@@ -39,8 +39,8 @@ func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 }
 
 // GetAPI godoc
-// @summary Get the API schema.
-// @description Get the API schema.
+// @summary Get the API routes.
+// @description Get the API routes.
 // @tags schema
 // @produce json
 // @success 200 {object} RestAPI
@@ -48,10 +48,10 @@ func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 	api := RestAPI{
 		Version: h.Version,
-		Paths:   []string{},
+		Routes:  []string{},
 	}
 	for _, rte := range h.router.Routes() {
-		api.Paths = append(api.Paths, rte.Path)
+		api.Routes = append(api.Routes, rte.Path)
 	}
 
 	h.Respond(ctx, http.StatusOK, api)
@@ -132,7 +132,7 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 
 type RestAPI struct {
 	Version string   `json:"version,omitempty"`
-	Paths   []string `json:"paths"`
+	Routes  []string `json:"routes"`
 }
 
 type LatestSchema struct {

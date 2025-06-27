@@ -1,18 +1,22 @@
 package jsd
 
 import (
+	"bytes"
 	"context"
 	"strings"
 
+	"github.com/jortel/go-utils/logr"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/settings"
+	js "github.com/santhosh-tekuri/jsonschema/v5"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
 	Settings = &settings.Settings
+	Log      = logr.WithName("jsd-manager")
 )
 
 type Manager struct {
@@ -38,6 +42,9 @@ func (m *Manager) Load() (err error) {
 		r := &list.Items[i]
 		schema := Schema{Name: r.Name}
 		schema.With(r)
+		if !m.Validate(&schema) {
+			continue
+		}
 		m.names[r.Name] = schema
 		key := m.Key(
 			r.Spec.Domain,
@@ -91,11 +98,58 @@ func (m *Manager) Key(domain, variant, subject string) (k string) {
 	return
 }
 
+func (m *Manager) Validate(schema *Schema) (valid bool) {
+	err := schema.IsValid()
+	if err == nil {
+		valid = true
+		return
+	}
+	Log.Error(
+		err,
+		"Schema not valid.",
+		"name",
+		schema.Name)
+	return
+}
+
 type Version struct {
 	Name      string `json:"name"`
 	Number    int    `json:"number"`
 	Migration string `json:"migration,omitempty"`
 	Content   json.Map
+}
+
+func (v *Version) IsValid() (err error) {
+	_, err = v.jsd()
+	return
+}
+
+func (v *Version) Validate(document json.Map) (err error) {
+	jsd, err := v.jsd()
+	if err != nil {
+		return
+	}
+	err = jsd.Validate(document)
+	return
+}
+
+func (v *Version) jsd() (jsd *js.Schema, err error) {
+	compiler := js.NewCompiler()
+	content, err := json.Marshal(v.Content)
+	if err != nil {
+		return
+	}
+	err = compiler.AddResource(v.Name, bytes.NewReader(content))
+	if err != nil {
+		return
+	}
+	jsd, err = compiler.Compile(v.Name)
+	if err != nil {
+		err = &NotValid{
+			Reason: err.Error(),
+		}
+	}
+	return
 }
 
 type Versions []Version
@@ -128,4 +182,20 @@ func (s *Schema) With(r *crd.Schema) {
 		_ = json.Unmarshal(rv.Content.Raw, &sv.Content)
 		s.Versions[i] = sv
 	}
+}
+
+func (s *Schema) IsValid() (err error) {
+	for _, version := range s.Versions {
+		err = version.IsValid()
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (s *Schema) Validate(document json.Map) (err error) {
+	v := s.Versions.Latest()
+	err = v.Validate(document)
+	return
 }

@@ -16,6 +16,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/onsi/gomega v1.31.1
 	github.com/prometheus/client_golang v1.15.0
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/swaggo/swag v1.16.1
 	golang.org/x/sys v0.19.0
 	gopkg.in/yaml.v2 v2.4.0

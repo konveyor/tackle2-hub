@@ -14,3 +14,17 @@ func (e *NotFound) Is(err error) (matched bool) {
 	matched = errors.As(err, &inst)
 	return
 }
+
+type NotValid struct {
+	Reason string
+}
+
+func (e *NotValid) Error() string {
+	return "Not Valid: " + e.Reason
+}
+
+func (e *NotValid) Is(err error) (matched bool) {
+	var inst *NotValid
+	matched = errors.As(err, &inst)
+	return
+}
