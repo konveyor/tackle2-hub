@@ -17,12 +17,14 @@ var (
 	Log      = logr.WithName("jsd-manager")
 )
 
+// Manager maintains the schema inventory.
 type Manager struct {
 	Client  client.Client
 	domains map[string]Schema
 	names   map[string]Schema
 }
 
+// Load inventory.
 func (m *Manager) Load() (err error) {
 	m.domains = make(map[string]Schema)
 	m.names = make(map[string]Schema)
@@ -54,6 +56,7 @@ func (m *Manager) Load() (err error) {
 	return
 }
 
+// Get schema by name.
 func (m *Manager) Get(name string) (schema Schema, err error) {
 	err = m.Load()
 	if err != nil {
@@ -66,6 +69,7 @@ func (m *Manager) Get(name string) (schema Schema, err error) {
 	return
 }
 
+// List schemas.
 func (m *Manager) List() (list []Schema, err error) {
 	err = m.Load()
 	if err != nil {
@@ -77,6 +81,7 @@ func (m *Manager) List() (list []Schema, err error) {
 	return
 }
 
+// Find schema by name, variant, and subject.
 func (m *Manager) Find(domain, variant, subject string) (s Schema, err error) {
 	err = m.Load()
 	if err != nil {
@@ -90,6 +95,7 @@ func (m *Manager) Find(domain, variant, subject string) (s Schema, err error) {
 	return
 }
 
+// Key returns a key based on name, variant, and subject.
 func (m *Manager) Key(domain, variant, subject string) (k string) {
 	k = strings.Join(
 		[]string{domain, variant, subject},
@@ -97,6 +103,7 @@ func (m *Manager) Key(domain, variant, subject string) (k string) {
 	return
 }
 
+// Validate the schema.
 func (m *Manager) Validate(schema *Schema) (valid bool) {
 	err := schema.IsValid()
 	if err == nil {
