@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 )
 
 func TestSafeMap(t *testing.T) {
@@ -14,7 +16,7 @@ func TestSafeMap(t *testing.T) {
 		"1": "B",
 	}
 	out := JsonSafe(in)
-	mp, cast := out.(map[string]any)
+	mp, cast := out.(Map)
 	g.Expect(cast).To(gomega.BeTrue())
 	g.Expect(len(mp)).To(gomega.Equal(len(in)))
 	g.Expect(mp["0"]).To(gomega.Equal(in[0]))
@@ -41,7 +43,7 @@ func TestSafeArrayStruct(t *testing.T) {
 
 	m, err := json.Marshal(list[0])
 	g.Expect(err).To(gomega.BeNil())
-	m2 := make(map[string]any)
+	m2 := make(Map)
 	err = json.Unmarshal(m, &m2)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(m2["id"]).To(gomega.Equal(float64(1)))
@@ -62,7 +64,7 @@ func TestSafeData(t *testing.T) {
 	out := JsonSafe(in)
 	d, cast := out.(Data)
 	g.Expect(cast).To(gomega.BeTrue())
-	dAny, cast := d.Any.(map[string]any)
+	dAny, cast := d.Any.(Map)
 	g.Expect(cast).To(gomega.BeTrue())
 	g.Expect(len(dAny)).To(gomega.Equal(2))
 	g.Expect(dAny["0"]).To(gomega.Equal(in.Any.(map[any]any)[0]))
@@ -89,7 +91,7 @@ func TestSafeDataPtr(t *testing.T) {
 	out := JsonSafe(in)
 	d, cast := out.(Data)
 	g.Expect(cast).To(gomega.BeTrue())
-	dAny, cast := d.Any.(map[string]any)
+	dAny, cast := d.Any.(Map)
 	g.Expect(cast).To(gomega.BeTrue())
 	g.Expect(len(dAny)).To(gomega.Equal(3))
 	g.Expect(dAny["0"]).To(gomega.Equal(in.Any.(map[any]any)[0]))
@@ -97,8 +99,123 @@ func TestSafeDataPtr(t *testing.T) {
 	d2Any := dAny["2"]
 	d2d, cast := d2Any.(Data)
 	g.Expect(cast).To(gomega.BeTrue())
-	d2dAny, cast := d2d.Any.(map[string]any)
+	d2dAny, cast := d2d.Any.(Map)
 	g.Expect(cast).To(gomega.BeTrue())
 	g.Expect(d2dAny["2"]).To(gomega.Equal("2A"))
 	g.Expect(d2dAny["3"]).To(gomega.Equal("3B"))
+}
+
+func TestSchema(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	specText := `
+spec:
+  domain: people
+  variant: manager
+  subject: n/a
+  versions:
+  - content:
+      '$schema': https://json-schema.org/draft/2020-12/schema
+      title: Person
+      type: object
+      required:
+        - name
+        - age
+        - phone
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+          minimum: 0
+        phone:
+          type: string
+          pattern: '^\d{3}-\d{3}-\d{4}$'
+          description: Phone number in the format 555-444-8888
+  - content:
+      '$schema': https://json-schema.org/draft/2020-12/schema
+      title: Person
+      type: object
+      required:
+        - name
+        - age
+        - phone
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+          minimum: 0
+        phone:
+          type: object
+          required:
+            - npa
+            - nxx
+            - number
+          properties:
+            npa:
+              type: string
+              pattern: '^\d{3}$'
+              description: 3-digit area code
+            nxx:
+              type: string
+              pattern: '^\d{3}$'
+              description: 3-digit exchange code
+            number:
+              type: string
+              pattern: '^\d{4}$'
+              description: 4-digit line number
+`
+
+	d1Text := `
+name: Elmer
+age: 44
+phone: "555-214-1438"
+`
+	d2Text := `
+name: Elmer
+age: 44
+phone: 
+  npa: "555"
+  nxx: "214"
+  number: "1438"
+`
+
+	specification := &crd.Schema{}
+	b := []byte(specText)
+	err := yaml.Unmarshal(b, &specification)
+	g.Expect(err).To(gomega.BeNil())
+
+	// v1
+	s1 := Schema{}
+	s1.With(specification)
+	s1.Versions = s1.Versions[:1]
+	// validate schema
+	err = s1.IsValid()
+	g.Expect(err).To(gomega.BeNil())
+	// v2
+	s2 := Schema{}
+	s2.With(specification)
+	// validate schema
+	err = s2.IsValid()
+	g.Expect(err).To(gomega.BeNil())
+
+	// validate v1 document
+	var d1 Map
+	b = []byte(d1Text)
+	err = yaml.Unmarshal(b, &d1)
+	g.Expect(err).To(gomega.BeNil())
+	err = s1.Validate(d1)
+	g.Expect(err).To(gomega.BeNil())
+	err = s2.Validate(d1)
+	g.Expect(err).ToNot(gomega.BeNil())
+
+	// validate v2 document
+	var d2 Map
+	b = []byte(d2Text)
+	err = yaml.Unmarshal(b, &d2)
+	g.Expect(err).To(gomega.BeNil())
+	err = s2.Validate(d2)
+	g.Expect(err).To(gomega.BeNil())
+	err = s1.Validate(d2)
+	g.Expect(err).ToNot(gomega.BeNil())
 }

@@ -8,7 +8,9 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	yq "github.com/mikefarah/yq/v4/pkg/yqlib"
 	js "github.com/santhosh-tekuri/jsonschema/v5"
+	"gopkg.in/yaml.v2"
 )
 
 // Version represents a schema version.
@@ -33,6 +35,43 @@ func (v *Version) Validate(document Map) (err error) {
 	}
 	d := JsonSafe(document)
 	err = jsd.Validate(d)
+	return
+}
+
+// Migrate the specified document as needed.
+func (v *Version) Migrate(document Map) (migrated Map, err error) {
+	if v.Migration == "" {
+		migrated = document
+		return
+	}
+	b, err := yaml.Marshal(document)
+	if err != nil {
+		err = &NotValid{
+			Reason: err.Error(),
+		}
+		return
+	}
+	yp := yq.NewDefaultYamlPreferences()
+	encoder := yq.NewYamlEncoder(yp)
+	decoder := yq.NewYamlDecoder(yp)
+	expression := yq.NewStringEvaluator()
+	output, err := expression.Evaluate(
+		v.Migration,
+		string(b),
+		encoder,
+		decoder,
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	b = []byte(output)
+	migrated = Map{}
+	err = yaml.Unmarshal(b, &migrated)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
@@ -111,5 +150,20 @@ func (s *Schema) IsValid() (err error) {
 func (s *Schema) Validate(document Map) (err error) {
 	v := s.Versions.Latest()
 	err = v.Validate(document)
+	return
+}
+
+// Migrate the specified document as needed.
+// Beginning at the `current` version (index) and continuing
+// through to the LATEST version.
+func (s *Schema) Migrate(current int, document Map) (migrated Map, err error) {
+	migrated = document
+	for i := current; i < len(s.Versions); i++ {
+		v := &s.Versions[i]
+		migrated, err = v.Migrate(migrated)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
