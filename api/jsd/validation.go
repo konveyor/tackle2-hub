@@ -48,8 +48,8 @@ func (v *Validator) fields(r any) (fields []*Document) {
 		if !ft.IsExported() {
 			continue
 		}
-		v := fv.Interface()
-		switch d := v.(type) {
+		object := fv.Interface()
+		switch d := object.(type) {
 		case *Document:
 			fields = append(fields, d)
 		case Document:
