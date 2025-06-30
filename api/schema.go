@@ -120,12 +120,8 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 	}
 	v := s.Versions.Latest()
 	r := LatestSchema{
-		Name:    s.Name,
-		Domain:  s.Domain,
-		Variant: s.Variant,
-		Subject: s.Subject,
-		Version: v.Number,
 		Content: Map(v.Content),
+		Name:    s.Name,
 	}
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -137,10 +133,6 @@ type RestAPI struct {
 
 type LatestSchema struct {
 	Name    string `json:"name"`
-	Domain  string `json:"domain"`
-	Variant string `json:"variant"`
-	Subject string `json:"subject"`
-	Version int    `json:"version,omitempty"`
 	Content Map    `json:"content,omitempty"`
 }
 
