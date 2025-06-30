@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
 )
@@ -107,12 +106,11 @@ func TestSafeDataPtr(t *testing.T) {
 
 func TestSchema(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	specText := `
-spec:
-  domain: people
-  variant: manager
-  subject: n/a
-  versions:
+	schemaText := `
+domain: people
+variant: manager
+subject: n/a
+versions:
   - content:
       '$schema': https://json-schema.org/draft/2020-12/schema
       title: Person
@@ -164,6 +162,7 @@ spec:
               type: string
               pattern: '^\d{4}$'
               description: 4-digit line number
+
 `
 
 	d1Text := `
@@ -179,24 +178,21 @@ phone:
   nxx: "214"
   number: "1438"
 `
-
-	specification := &crd.Schema{}
-	b := []byte(specText)
-	err := yaml.Unmarshal(b, &specification)
+	// v2
+	s2 := &Schema{}
+	b := []byte(schemaText)
+	err := yaml.Unmarshal(b, &s2)
+	g.Expect(err).To(gomega.BeNil())
+	err = s2.IsValid()
 	g.Expect(err).To(gomega.BeNil())
 
 	// v1
-	s1 := Schema{}
-	s1.With(specification)
-	s1.Versions = s1.Versions[:1]
-	// validate schema
-	err = s1.IsValid()
+	s1 := &Schema{}
+	b = []byte(schemaText)
+	err = yaml.Unmarshal(b, &s1)
 	g.Expect(err).To(gomega.BeNil())
-	// v2
-	s2 := Schema{}
-	s2.With(specification)
-	// validate schema
-	err = s2.IsValid()
+	s1.Versions = s1.Versions[:1]
+	err = s1.IsValid()
 	g.Expect(err).To(gomega.BeNil())
 
 	// validate v1 document
