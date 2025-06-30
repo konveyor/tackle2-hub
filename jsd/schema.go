@@ -1,3 +1,5 @@
+// Package jsd (json-schema definition) package provides tooling for
+// managing schemas and document validation.
 package jsd
 
 import (
@@ -9,6 +11,7 @@ import (
 	js "github.com/santhosh-tekuri/jsonschema/v5"
 )
 
+// Version represents a schema version.
 type Version struct {
 	Name      string `json:"name"`
 	Number    int    `json:"number"`
@@ -16,11 +19,13 @@ type Version struct {
 	Content   Map
 }
 
+// IsValid returns true when the jsd is valid.
 func (v *Version) IsValid() (err error) {
 	_, err = v.jsd()
 	return
 }
 
+// Validate the specified document.
 func (v *Version) Validate(document Map) (err error) {
 	jsd, err := v.jsd()
 	if err != nil {
@@ -31,6 +36,7 @@ func (v *Version) Validate(document Map) (err error) {
 	return
 }
 
+// jsd returns a compiled json-schema object.
 func (v *Version) jsd() (jsd *js.Schema, err error) {
 	compiler := js.NewCompiler()
 	d := JsonSafe(v.Content)
@@ -54,6 +60,7 @@ func (v *Version) jsd() (jsd *js.Schema, err error) {
 	return
 }
 
+// Versions represents an array of schema versions.
 type Versions []Version
 
 func (v Versions) Latest() (latest Version) {
@@ -64,6 +71,7 @@ func (v Versions) Latest() (latest Version) {
 	return
 }
 
+// Schema represents a document json-schema.
 type Schema struct {
 	Name     string   `json:"name"`
 	Domain   string   `json:"domain,omitempty"`
@@ -72,6 +80,7 @@ type Schema struct {
 	Versions Versions `json:"versions,omitempty"`
 }
 
+// With populates the object using the specified schema.
 func (s *Schema) With(r *crd.Schema) {
 	sp := r.Spec
 	s.Domain = sp.Domain
@@ -86,6 +95,7 @@ func (s *Schema) With(r *crd.Schema) {
 	}
 }
 
+// IsValid returns true when the ALL versions have valid schemas.
 func (s *Schema) IsValid() (err error) {
 	for _, version := range s.Versions {
 		err = version.IsValid()
@@ -96,6 +106,8 @@ func (s *Schema) IsValid() (err error) {
 	return
 }
 
+// Validate the specified document.
+// Delegated to the LATEST verison.
 func (s *Schema) Validate(document Map) (err error) {
 	v := s.Versions.Latest()
 	err = v.Validate(document)
