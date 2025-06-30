@@ -131,9 +131,9 @@ type RestAPI struct {
 	Routes  []string `json:"routes"`
 }
 
+type Schema jsd.Schema
+
 type LatestSchema struct {
 	Name    string `json:"name"`
 	Content Map    `json:"content,omitempty"`
 }
-
-type Schema jsd.Schema
