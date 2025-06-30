@@ -54,7 +54,7 @@ func (v *Version) Migrate(document Map) (migrated Map, err error) {
 		return
 	}
 	yp := yq.NewDefaultYamlPreferences()
-	encoder := yq.NewYamlEncoder(yp)
+	encoder := yq.NewYamlEncoder(0, false, yp)
 	decoder := yq.NewYamlDecoder(yp)
 	migrator := yq.NewStringEvaluator()
 	output, err := migrator.Evaluate(
