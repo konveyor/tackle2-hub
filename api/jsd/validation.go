@@ -1,7 +1,7 @@
 package jsd
 
 import (
-	reflect2 "reflect"
+	"reflect"
 
 	"github.com/konveyor/tackle2-hub/jsd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,9 +36,9 @@ func (v *Validator) Validate(r any) (err error) {
 
 // fields returns resource `Document` fields.
 func (v *Validator) fields(r any) (fields []*Document) {
-	rt := reflect2.TypeOf(r)
-	rv := reflect2.ValueOf(r)
-	if rt.Kind() == reflect2.Ptr {
+	rt := reflect.TypeOf(r)
+	rv := reflect.ValueOf(r)
+	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 		rv = rv.Elem()
 	}
