@@ -28,6 +28,9 @@ type Manager struct {
 func (m *Manager) Load() (err error) {
 	m.domains = make(map[string]Schema)
 	m.names = make(map[string]Schema)
+	if Settings.Disconnected {
+		return
+	}
 	list := &crd.SchemaList{}
 	err = m.Client.List(
 		context.TODO(),
