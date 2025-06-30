@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	reflect2 "reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -219,7 +220,11 @@ func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
-	err = h.jsdValidate(ctx, r)
+	rtx := RichContext(ctx)
+	jsdValidator := DocumentValidator{
+		manager: jsd.New(rtx.Client),
+	}
+	err = jsdValidator.Validate(r)
 	return
 }
 
@@ -281,30 +286,6 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 	ctx.Writer.Header().Set(
 		"Content-Disposition",
 		attachment)
-}
-
-// jsdValidate validates documents.
-func (h *BaseHandler) jsdValidate(ctx *gin.Context, r any) (err error) {
-	rtx := RichContext(ctx)
-	m := jsd.New(rtx.Client)
-	fields := reflect.Fields(r)
-	for _, field := range fields {
-		switch f := field.(type) {
-		case *Document:
-			if f != nil {
-				err = f.Validate(m)
-				if err != nil {
-					return
-				}
-			}
-		case Document:
-			err = f.Validate(m)
-			if err != nil {
-				return
-			}
-		}
-	}
-	return
 }
 
 // REST resource.
@@ -518,5 +499,49 @@ func (r *Cursor) pageLimited() (b bool) {
 		return
 	}
 	b = r.Index > int64(r.Limit)
+	return
+}
+
+// DocumentValidator jsd validator.
+type DocumentValidator struct {
+	manager *jsd.Manager
+}
+
+// Validate validate the specified document.
+func (h *DocumentValidator) Validate(r any) (err error) {
+	fields := h.fields(r)
+	for _, f := range fields {
+		if f != nil {
+			err = f.Validate(h.manager)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// fields returns resource `Document` fields.
+func (h *DocumentValidator) fields(r any) (fields []*Document) {
+	rt := reflect2.TypeOf(r)
+	rv := reflect2.ValueOf(r)
+	if rt.Kind() == reflect2.Ptr {
+		rt = rt.Elem()
+		rv = rv.Elem()
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		ft := rt.Field(i)
+		fv := rv.Field(i)
+		if !ft.IsExported() {
+			continue
+		}
+		v := fv.Interface()
+		switch d := v.(type) {
+		case *Document:
+			fields = append(fields, d)
+		case Document:
+			fields = append(fields, &d)
+		}
+	}
 	return
 }
