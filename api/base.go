@@ -17,6 +17,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api/association"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
+	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/secret"
@@ -187,7 +188,7 @@ func (h *BaseHandler) BindJSON(ctx *gin.Context, r any) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = h.Validate(r)
+	err = h.Validate(ctx, r)
 	return
 }
 
@@ -205,12 +206,12 @@ func (h *BaseHandler) BindYAML(ctx *gin.Context, r any) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = h.Validate(r)
+	err = h.Validate(ctx, r)
 	return
 }
 
 // Validate that the struct field values obey the binding field tags.
-func (h *BaseHandler) Validate(r any) (err error) {
+func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 	if binding.Validator == nil {
 		return
 	}
@@ -218,6 +219,7 @@ func (h *BaseHandler) Validate(r any) (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
+	err = h.jsdValidate(ctx, r)
 	return
 }
 
@@ -279,6 +281,30 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 	ctx.Writer.Header().Set(
 		"Content-Disposition",
 		attachment)
+}
+
+// jsdValidate validates documents.
+func (h *BaseHandler) jsdValidate(ctx *gin.Context, r any) (err error) {
+	rtx := RichContext(ctx)
+	m := jsd.New(rtx.Client)
+	fields := reflect.Fields(r)
+	for _, field := range fields {
+		switch f := field.(type) {
+		case *Document:
+			if f != nil {
+				err = f.Validate(m)
+				if err != nil {
+					return
+				}
+			}
+		case Document:
+			err = f.Validate(m)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
 }
 
 // REST resource.
@@ -358,6 +384,25 @@ func (r *TagRef) With(id uint, name string, source string, virtual bool) {
 	r.Name = name
 	r.Source = source
 	r.Virtual = virtual
+}
+
+// Document REST nested resource.
+type Document struct {
+	Content model.Map `json:"content" binding:"required"`
+	Schema  string    `json:"schema,omitempty"`
+}
+
+// Validate using the schema.
+func (d *Document) Validate(m *jsd.Manager) (err error) {
+	if d.Schema == "" {
+		return
+	}
+	schema, err := m.Get(d.Schema)
+	if err != nil {
+		return
+	}
+	err = schema.Validate(d.Content)
+	return
 }
 
 // Page provides pagination.
