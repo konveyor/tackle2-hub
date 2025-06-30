@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
@@ -1292,28 +1293,28 @@ func (h *ApplicationHandler) tagMap(
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
-	Name            string      `json:"name" binding:"required"`
-	Description     string      `json:"description"`
-	Bucket          *Ref        `json:"bucket"`
-	Repository      *Repository `json:"repository"`
-	Assets          *Repository `json:"assets"`
-	Binary          string      `json:"binary"`
-	Coordinates     *Document   `json:"coordinates"`
-	Review          *Ref        `json:"review"`
-	Comments        string      `json:"comments"`
-	Identities      []Ref       `json:"identities"`
-	Tags            []TagRef    `json:"tags"`
-	BusinessService *Ref        `json:"businessService" yaml:"businessService"`
-	Owner           *Ref        `json:"owner"`
-	Contributors    []Ref       `json:"contributors"`
-	MigrationWave   *Ref        `json:"migrationWave" yaml:"migrationWave"`
-	Platform        *Ref        `json:"platform"`
-	Archetypes      []Ref       `json:"archetypes"`
-	Assessments     []Ref       `json:"assessments"`
-	Assessed        bool        `json:"assessed"`
-	Risk            string      `json:"risk"`
-	Confidence      int         `json:"confidence"`
-	Effort          int         `json:"effort"`
+	Name            string        `json:"name" binding:"required"`
+	Description     string        `json:"description"`
+	Bucket          *Ref          `json:"bucket"`
+	Repository      *Repository   `json:"repository"`
+	Assets          *Repository   `json:"assets"`
+	Binary          string        `json:"binary"`
+	Coordinates     *jsd.Document `json:"coordinates"`
+	Review          *Ref          `json:"review"`
+	Comments        string        `json:"comments"`
+	Identities      []Ref         `json:"identities"`
+	Tags            []TagRef      `json:"tags"`
+	BusinessService *Ref          `json:"businessService" yaml:"businessService"`
+	Owner           *Ref          `json:"owner"`
+	Contributors    []Ref         `json:"contributors"`
+	MigrationWave   *Ref          `json:"migrationWave" yaml:"migrationWave"`
+	Platform        *Ref          `json:"platform"`
+	Archetypes      []Ref         `json:"archetypes"`
+	Assessments     []Ref         `json:"assessments"`
+	Assessed        bool          `json:"assessed"`
+	Risk            string        `json:"risk"`
+	Confidence      int           `json:"confidence"`
+	Effort          int           `json:"effort"`
 }
 
 // With updates the resource using the model.
@@ -1325,7 +1326,7 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	if m.Coordinates != nil {
-		d := Document(*m.Coordinates)
+		d := jsd.Document(*m.Coordinates)
 		r.Coordinates = &d
 	}
 	if m.Repository != (model.Repository{}) {

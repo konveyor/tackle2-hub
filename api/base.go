@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	reflect2 "reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +15,9 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/association"
+	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
-	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/secret"
@@ -221,9 +220,7 @@ func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 		err = liberr.Wrap(err)
 	}
 	rtx := RichContext(ctx)
-	jsdValidator := DocumentValidator{
-		manager: jsd.New(rtx.Client),
-	}
+	jsdValidator := jsd.New(rtx.Client)
 	err = jsdValidator.Validate(r)
 	return
 }
@@ -367,25 +364,6 @@ func (r *TagRef) With(id uint, name string, source string, virtual bool) {
 	r.Virtual = virtual
 }
 
-// Document REST nested resource.
-type Document struct {
-	Content model.Map `json:"content" binding:"required"`
-	Schema  string    `json:"schema,omitempty"`
-}
-
-// Validate using the schema.
-func (d *Document) Validate(m *jsd.Manager) (err error) {
-	if d.Schema == "" {
-		return
-	}
-	schema, err := m.Get(d.Schema)
-	if err != nil {
-		return
-	}
-	err = schema.Validate(d.Content)
-	return
-}
-
 // Page provides pagination.
 type Page struct {
 	Offset int
@@ -499,49 +477,5 @@ func (r *Cursor) pageLimited() (b bool) {
 		return
 	}
 	b = r.Index > int64(r.Limit)
-	return
-}
-
-// DocumentValidator jsd validator.
-type DocumentValidator struct {
-	manager *jsd.Manager
-}
-
-// Validate validate the specified document.
-func (h *DocumentValidator) Validate(r any) (err error) {
-	fields := h.fields(r)
-	for _, f := range fields {
-		if f != nil {
-			err = f.Validate(h.manager)
-			if err != nil {
-				return
-			}
-		}
-	}
-	return
-}
-
-// fields returns resource `Document` fields.
-func (h *DocumentValidator) fields(r any) (fields []*Document) {
-	rt := reflect2.TypeOf(r)
-	rv := reflect2.ValueOf(r)
-	if rt.Kind() == reflect2.Ptr {
-		rt = rt.Elem()
-		rv = rv.Elem()
-	}
-	for i := 0; i < rt.NumField(); i++ {
-		ft := rt.Field(i)
-		fv := rv.Field(i)
-		if !ft.IsExported() {
-			continue
-		}
-		v := fv.Interface()
-		switch d := v.(type) {
-		case *Document:
-			fields = append(fields, d)
-		case Document:
-			fields = append(fields, &d)
-		}
-	}
 	return
 }
