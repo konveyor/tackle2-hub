@@ -162,7 +162,13 @@ versions:
               type: string
               pattern: '^\d{4}$'
               description: 4-digit line number
-
+    migration: >
+      .phone |= (split("-") 
+        | {
+            "npa": .[0],
+            "nxx": .[1],
+            "number": .[2]
+          })
 `
 
 	d1Text := `
@@ -214,4 +220,14 @@ phone:
 	g.Expect(err).To(gomega.BeNil())
 	err = s1.Validate(d2)
 	g.Expect(err).ToNot(gomega.BeNil())
+
+	// migrate
+	// v1 => v1.
+	m1, err := s1.Migrate(0, d1)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m1).To(gomega.Equal(d1))
+	// v1 => v2.
+	m2, err := s2.Migrate(0, d1)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m2).To(gomega.Equal(d2))
 }

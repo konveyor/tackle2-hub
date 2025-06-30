@@ -5,6 +5,7 @@ package jsd
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
@@ -40,7 +41,8 @@ func (v *Version) Validate(document Map) (err error) {
 
 // Migrate the specified document as needed.
 func (v *Version) Migrate(document Map) (migrated Map, err error) {
-	if v.Migration == "" {
+	expression := v.expression()
+	if expression == "" {
 		migrated = document
 		return
 	}
@@ -54,9 +56,9 @@ func (v *Version) Migrate(document Map) (migrated Map, err error) {
 	yp := yq.NewDefaultYamlPreferences()
 	encoder := yq.NewYamlEncoder(yp)
 	decoder := yq.NewYamlDecoder(yp)
-	expression := yq.NewStringEvaluator()
-	output, err := expression.Evaluate(
-		v.Migration,
+	migrator := yq.NewStringEvaluator()
+	output, err := migrator.Evaluate(
+		expression,
 		string(b),
 		encoder,
 		decoder,
@@ -96,6 +98,26 @@ func (v *Version) jsd() (jsd *js.Schema, err error) {
 		}
 		err = liberr.Wrap(err)
 	}
+	return
+}
+
+// expression returns the yq migration expression.
+func (v *Version) expression() (expression string) {
+	expression = v.Migration
+	if expression == "" {
+		return
+	}
+	expression = strings.Replace(
+		expression,
+		"\n",
+		"",
+		-1)
+	expression = strings.Replace(
+		expression,
+		"\n",
+		"",
+		-1)
+	expression = strings.TrimSpace(expression)
 	return
 }
 
