@@ -21,9 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// SchemaVersion defines each version of a schema.
 type SchemaVersion struct {
-	Migration string               `json:"migration,omitempty"`
-	Content   runtime.RawExtension `json:"content,omitempty"`
+	// Migration defines a yq query to migrate the document.
+	Migration string `json:"migration,omitempty"`
+	// Content is the (jsd) json-schema definition.
+	Content runtime.RawExtension `json:"content"`
 }
 
 // SchemaSpec defines the desired state of the resource.
@@ -34,7 +37,7 @@ type SchemaSpec struct {
 	Variant string `json:"variant"`
 	// Subject
 	Subject string `json:"subject"`
-	// Content
+	// Versions
 	Versions []SchemaVersion `json:"versions"`
 }
 
