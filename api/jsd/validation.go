@@ -48,6 +48,9 @@ func (v *Validator) fields(r any) (fields []*Document) {
 		rt = rt.Elem()
 		rv = rv.Elem()
 	}
+	if rt.Kind() != reflect.Struct {
+		return
+	}
 	for i := 0; i < rt.NumField(); i++ {
 		ft := rt.Field(i)
 		fv := rv.Field(i)
