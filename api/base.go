@@ -218,6 +218,7 @@ func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 	err = binding.Validator.ValidateStruct(r)
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
 	}
 	rtx := RichContext(ctx)
 	jsdValidator := jsd.New(rtx.Client)
