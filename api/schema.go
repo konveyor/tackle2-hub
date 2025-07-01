@@ -17,7 +17,7 @@ const (
 	SchemaRoot     = "/schema"
 	SchemasRoot    = "schemas"
 	SchemasGetRoot = SchemasRoot + "/:" + Name
-	SchemaFindRoot = SchemaRoot + "/:" + Domain + "/:" + Variant + "/:" + Subject
+	SchemaFindRoot = SchemaRoot + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
 )
 
 // SchemaHandler providers schema (route) handler.
