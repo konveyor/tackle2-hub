@@ -16,10 +16,10 @@ import (
 
 // Version represents a schema version.
 type Version struct {
-	Name      string `json:"name"`
-	Number    int    `json:"number"`
-	Migration string `json:"migration,omitempty"`
-	Content   Map
+	Name       string `json:"name"`
+	Number     int    `json:"number"`
+	Migration  string `json:"migration,omitempty" yaml:",omitempty"`
+	Definition Map
 }
 
 // IsValid returns true when the jsd is valid.
@@ -80,13 +80,13 @@ func (v *Version) Migrate(document Map) (migrated Map, err error) {
 // jsd returns a compiled json-schema object.
 func (v *Version) jsd() (jsd *js.Schema, err error) {
 	compiler := js.NewCompiler()
-	d := JsonSafe(v.Content)
-	content, err := json.Marshal(d)
+	d := JsonSafe(v.Definition)
+	definition, err := json.Marshal(d)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = compiler.AddResource(v.Name, bytes.NewReader(content))
+	err = compiler.AddResource(v.Name, bytes.NewReader(definition))
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -135,10 +135,10 @@ func (v Versions) Latest() (latest Version) {
 // Schema represents a document json-schema.
 type Schema struct {
 	Name     string   `json:"name"`
-	Domain   string   `json:"domain,omitempty"`
-	Variant  string   `json:"variant,omitempty"`
-	Subject  string   `json:"subject,omitempty"`
-	Versions Versions `json:"versions,omitempty"`
+	Domain   string   `json:"domain"`
+	Variant  string   `json:"variant"`
+	Subject  string   `json:"subject"`
+	Versions Versions `json:"versions"`
 }
 
 // With populates the object using the specified schema.
@@ -151,7 +151,7 @@ func (s *Schema) With(r *crd.Schema) {
 	for i := range sp.Versions {
 		rv := &sp.Versions[i]
 		sv := Version{Migration: rv.Migration}
-		_ = json.Unmarshal(rv.Content.Raw, &sv.Content)
+		_ = json.Unmarshal(rv.Definition.Raw, &sv.Definition)
 		s.Versions[i] = sv
 	}
 }

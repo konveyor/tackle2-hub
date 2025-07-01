@@ -25,8 +25,8 @@ import (
 type SchemaVersion struct {
 	// Migration defines a yq query to migrate the document.
 	Migration string `json:"migration,omitempty"`
-	// Content is the (jsd) json-schema definition.
-	Content runtime.RawExtension `json:"content"`
+	// Definition is the (jsd) json-schema definition.
+	Definition runtime.RawExtension `json:"definition"`
 }
 
 // SchemaSpec defines the desired state of the resource.
