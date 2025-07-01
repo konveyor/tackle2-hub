@@ -49,15 +49,15 @@ spec:
                 items:
                   description: SchemaVersion defines each version of a schema.
                   properties:
-                    content:
-                      description: Content is the (jsd) json-schema definition.
+                    definition:
+                      description: Definition is the (jsd) json-schema definition.
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     migration:
                       description: Migration defines a yq query to migrate the document.
                       type: string
                   required:
-                  - content
+                  - definition
                   type: object
                 type: array
             required:

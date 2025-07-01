@@ -16,8 +16,7 @@ import (
 
 // Version represents a schema version.
 type Version struct {
-	Name       string `json:"name"`
-	Number     int    `json:"number"`
+	ID         int    `json:"id"`
 	Migration  string `json:"migration,omitempty" yaml:",omitempty"`
 	Definition Map
 }
@@ -86,12 +85,13 @@ func (v *Version) jsd() (jsd *js.Schema, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = compiler.AddResource(v.Name, bytes.NewReader(definition))
+	u := "jsd"
+	err = compiler.AddResource(u, bytes.NewReader(definition))
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	jsd, err = compiler.Compile(v.Name)
+	jsd, err = compiler.Compile(u)
 	if err != nil {
 		err = &NotValid{
 			Reason: err.Error(),
@@ -148,11 +148,14 @@ func (s *Schema) With(r *crd.Schema) {
 	s.Variant = sp.Variant
 	s.Subject = sp.Subject
 	s.Versions = make([]Version, len(sp.Versions))
-	for i := range sp.Versions {
-		rv := &sp.Versions[i]
-		sv := Version{Migration: rv.Migration}
+	for id := range sp.Versions {
+		rv := &sp.Versions[id]
+		sv := Version{
+			Migration: rv.Migration,
+			ID:        id,
+		}
 		_ = json.Unmarshal(rv.Definition.Raw, &sv.Definition)
-		s.Versions[i] = sv
+		s.Versions[id] = sv
 	}
 }
 

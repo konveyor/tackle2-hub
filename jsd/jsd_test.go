@@ -111,7 +111,7 @@ domain: people
 variant: manager
 subject: n/a
 versions:
-  - content:
+  - definition:
       '$schema': https://json-schema.org/draft/2020-12/schema
       title: Person
       type: object
@@ -129,7 +129,7 @@ versions:
           type: string
           pattern: '^\d{3}-\d{3}-\d{4}$'
           description: Phone number in the format 555-444-8888
-  - content:
+  - definition:
       '$schema': https://json-schema.org/draft/2020-12/schema
       title: Person
       type: object
