@@ -19,13 +19,17 @@ var (
 
 // Manager maintains the schema inventory.
 type Manager struct {
-	Client  client.Client
-	domains map[string]Schema
-	names   map[string]Schema
+	Client    client.Client
+	domains   map[string]Schema
+	names     map[string]Schema
+	hasLoaded bool
 }
 
 // Load inventory.
 func (m *Manager) Load() (err error) {
+	if m.hasLoaded {
+		return
+	}
 	m.domains = make(map[string]Schema)
 	m.names = make(map[string]Schema)
 	if Settings.Disconnected {
@@ -56,6 +60,7 @@ func (m *Manager) Load() (err error) {
 			r.Spec.Subject)
 		m.domains[key] = schema
 	}
+	m.hasLoaded = true
 	return
 }
 
