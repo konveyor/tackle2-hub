@@ -239,16 +239,24 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 				err = liberr.Wrap(err)
 				return
 			}
-			for cursor.Next() {
-				err = db.ScanRows(cursor, m)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
+			func() {
+				defer func() {
+					_ = cursor.Close()
+				}()
+				for cursor.Next() {
+					err = db.ScanRows(cursor, m)
+					if err != nil {
+						err = liberr.Wrap(err)
+						break
+					}
+					err = dm.jsdMigrate(m)
+					if err != nil {
+						break
+					}
 				}
-				err = dm.jsdMigrate(m)
-				if err != nil {
-					return
-				}
+			}()
+			if err != nil {
+				return
 			}
 		}
 		err = dm.updateSettings()
