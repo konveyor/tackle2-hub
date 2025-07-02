@@ -256,7 +256,7 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 }
 
 // Fields returns resource `Document` fields.
-func (dm *DocumentMigrator) Fields(r any) (fields []*json.Document) {
+func (dm *DocumentMigrator) fields(r any) (fields []*json.Document) {
 	rt := reflect.TypeOf(r)
 	rv := reflect.ValueOf(r)
 	if rt.Kind() == reflect.Ptr {
@@ -347,7 +347,7 @@ func (dm *DocumentMigrator) updateSettings() (err error) {
 // withDocuments returns the models with `Document` fields.
 func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
 	for _, m := range models {
-		fields := dm.Fields(m)
+		fields := dm.fields(m)
 		if len(fields) > 0 {
 			matched = append(matched, m)
 		}
@@ -358,7 +358,7 @@ func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
 // jsdMigrate migrates the `Document` fields.
 func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
 	migrated := false
-	for _, field := range dm.Fields(m) {
+	for _, field := range dm.fields(m) {
 		if field == nil || field.Schema == "" {
 			continue
 		}
