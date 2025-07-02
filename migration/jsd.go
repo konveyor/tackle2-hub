@@ -56,37 +56,6 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	return
 }
 
-// migrate the `Document` fields as needed.
-func (dm *DocumentMigrator) migrate(m any) (err error) {
-	mt := reflect.TypeOf(m)
-	m = reflect.New(mt).Interface()
-	db := dm.DB.Model(m)
-	db, err = dm.withSelect(db, m)
-	if err != nil {
-		return
-	}
-	cursor, err := db.Rows()
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	defer func() {
-		_ = cursor.Close()
-	}()
-	for cursor.Next() {
-		err = db.ScanRows(cursor, m)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = dm.jsdMigrate(m)
-		if err != nil {
-			return
-		}
-	}
-	return
-}
-
 // Fields returns resource `Document` fields.
 func (dm *DocumentMigrator) fields(r any) (fields []Field) {
 	rt := reflect.TypeOf(r)
@@ -197,8 +166,40 @@ func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
 	return
 }
 
-// jsdMigrate migrates the `Document` fields.
-func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
+// migrate the `Document` fields as needed.
+// Fetch models and migrate them.
+func (dm *DocumentMigrator) migrate(m any) (err error) {
+	mt := reflect.TypeOf(m)
+	m = reflect.New(mt).Interface()
+	db := dm.DB.Model(m)
+	db, err = dm.withSelect(db, m)
+	if err != nil {
+		return
+	}
+	cursor, err := db.Rows()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = db.ScanRows(cursor, m)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = dm.migrateFields(m)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// migrateFields migrates the `Document` fields.
+func (dm *DocumentMigrator) migrateFields(m any) (err error) {
 	var migrated []string
 	for _, field := range dm.fields(m) {
 		if field.empty() {
@@ -231,12 +232,6 @@ func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
 	return
 }
 
-// key returns the setting (table) key.
-func (dm *DocumentMigrator) key(schema string) (key string) {
-	key = fmt.Sprintf(".jsd.%s.version", schema)
-	return
-}
-
 // withSelect returns a DB with field names selected.
 func (dm *DocumentMigrator) withSelect(in *gorm.DB, m any) (out *gorm.DB, err error) {
 	out = in
@@ -258,6 +253,12 @@ func (dm *DocumentMigrator) withSelect(in *gorm.DB, m any) (out *gorm.DB, err er
 			field.name)
 	}
 	out = in.Select(names)
+	return
+}
+
+// key returns the setting (table) key.
+func (dm *DocumentMigrator) key(schema string) (key string) {
+	key = fmt.Sprintf(".jsd.%s.version", schema)
 	return
 }
 
