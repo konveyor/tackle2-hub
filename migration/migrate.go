@@ -228,7 +228,8 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 			mt := reflect.TypeOf(m)
 			st := reflect.SliceOf(mt)
 			sp := reflect.New(st)
-			err = dm.DB.Find(sp.Interface()).Error
+			db := dm.withSelect(dm.DB, dm.fields(m))
+			err = db.Find(sp.Interface()).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -256,7 +257,7 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 }
 
 // Fields returns resource `Document` fields.
-func (dm *DocumentMigrator) fields(r any) (fields []*json.Document) {
+func (dm *DocumentMigrator) fields(r any) (fields []Field) {
 	rt := reflect.TypeOf(r)
 	rv := reflect.ValueOf(r)
 	if rt.Kind() == reflect.Ptr {
@@ -275,9 +276,19 @@ func (dm *DocumentMigrator) fields(r any) (fields []*json.Document) {
 		object := fv.Interface()
 		switch d := object.(type) {
 		case *json.Document:
-			fields = append(fields, d)
+			fields = append(
+				fields,
+				Field{
+					name:     ft.Name,
+					document: d,
+				})
 		case json.Document:
-			fields = append(fields, &d)
+			fields = append(
+				fields,
+				Field{
+					name:     ft.Name,
+					document: &d,
+				})
 		}
 	}
 	return
@@ -357,28 +368,30 @@ func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
 
 // jsdMigrate migrates the `Document` fields.
 func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
-	migrated := false
+	var migrated []string
 	for _, field := range dm.fields(m) {
-		if field == nil || field.Schema == "" {
+		if field.empty() {
 			continue
 		}
-		schema, nErr := dm.manager.Get(field.Schema)
+		d := field.document
+		schema, nErr := dm.manager.Get(d.Schema)
 		if nErr != nil {
 			err = nErr
 			return
 		}
 		current := dm.versions[schema.Name]
 		newCurrent := current
-		field.Content, newCurrent, err = schema.Migrate(field.Content, current)
+		d.Content, newCurrent, err = schema.Migrate(d.Content, current)
 		if err != nil {
 			return
 		}
 		if newCurrent > current {
-			migrated = true
+			migrated = append(migrated, field.name)
 		}
 	}
-	if migrated {
-		err = dm.DB.Save(m).Error
+	if len(migrated) > 0 {
+		db := dm.DB.Select(migrated)
+		err = db.Save(m).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
@@ -390,5 +403,30 @@ func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
 // key returns the setting (table) key.
 func (dm *DocumentMigrator) key(schema string) (key string) {
 	key = fmt.Sprintf(".jsd.%s.version", schema)
+	return
+}
+
+// withSelect returns a DB with field names selected.
+func (dm *DocumentMigrator) withSelect(in *gorm.DB, fields []Field) (out *gorm.DB) {
+	out = in
+	names := []string{}
+	for _, field := range fields {
+		names = append(
+			names,
+			field.name)
+	}
+	if len(names) > 0 {
+		out = dm.DB.Select(names)
+	}
+	return
+}
+
+type Field struct {
+	name     string
+	document *json.Document
+}
+
+func (f *Field) empty() (empty bool) {
+	empty = f.document == nil || f.document.Schema == ""
 	return
 }

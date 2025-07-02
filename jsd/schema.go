@@ -183,6 +183,7 @@ func (s *Schema) Validate(document Map) (err error) {
 // through to the LATEST version.
 func (s *Schema) Migrate(document Map, current int) (migrated Map, newCurrent int, err error) {
 	migrated = document
+	newCurrent = current
 	next := current + 1
 	for i := next; i < len(s.Versions); i++ {
 		v := &s.Versions[i]
