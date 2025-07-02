@@ -37,7 +37,7 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	}
 	err = dm.DB.Transaction(func(tx *gorm.DB) (err error) {
 		dm.DB = tx
-		for _, m := range dm.withDocuments(models) {
+		for _, m := range dm.hasDocuments(models) {
 			err = dm.migrate(m)
 			if err != nil {
 				return
@@ -155,8 +155,8 @@ func (dm *DocumentMigrator) updateSettings() (err error) {
 	return
 }
 
-// withDocuments returns the models with `Document` fields.
-func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
+// hasDocuments returns the models with `Document` fields.
+func (dm *DocumentMigrator) hasDocuments(models []any) (matched []any) {
 	for _, m := range models {
 		fields := dm.fields(m)
 		if len(fields) > 0 {
