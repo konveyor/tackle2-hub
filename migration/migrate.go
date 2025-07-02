@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -226,22 +227,25 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 		dm.DB = tx
 		for _, m := range dm.withDocuments(models) {
 			mt := reflect.TypeOf(m)
-			st := reflect.SliceOf(mt)
-			sp := reflect.New(st)
-			db := dm.DB
-			db, err = dm.withSelect(m)
+			m = reflect.New(mt).Interface()
+			db := dm.DB.Model(m)
+			db, err = dm.withSelect(db, m)
 			if err != nil {
 				return
 			}
-			err = db.Find(sp.Interface()).Error
+			var cursor *sql.Rows
+			cursor, err = db.Rows()
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
 			}
-			sv := sp.Elem()
-			for i := 0; i < sv.Len(); i++ {
-				item := sv.Index(i).Interface()
-				err = dm.jsdMigrate(item)
+			for cursor.Next() {
+				err = db.ScanRows(cursor, m)
+				if err != nil {
+					err = liberr.Wrap(err)
+					return
+				}
+				err = dm.jsdMigrate(m)
 				if err != nil {
 					return
 				}
@@ -411,10 +415,10 @@ func (dm *DocumentMigrator) key(schema string) (key string) {
 }
 
 // withSelect returns a DB with field names selected.
-func (dm *DocumentMigrator) withSelect(m any) (db *gorm.DB, err error) {
-	db = dm.DB
+func (dm *DocumentMigrator) withSelect(in *gorm.DB, m any) (out *gorm.DB, err error) {
+	out = in
 	names := []string{}
-	stmt := &gorm.Statement{DB: db}
+	stmt := &gorm.Statement{DB: in}
 	err = stmt.Parse(m)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -430,7 +434,7 @@ func (dm *DocumentMigrator) withSelect(m any) (db *gorm.DB, err error) {
 			names,
 			field.name)
 	}
-	db = db.Select(names)
+	out = in.Select(names)
 	return
 }
 
