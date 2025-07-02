@@ -2,17 +2,23 @@ package migration
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/jsd"
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Migrate the hub by applying all necessary Migrations.
@@ -192,5 +198,197 @@ func writeSchema(db *gorm.DB, version int) (err error) {
 			return
 		}
 	}
+	return
+}
+
+// DocumentMigrator performs migration of
+// schema-driven `Document` fields.
+type DocumentMigrator struct {
+	DB       *gorm.DB
+	Client   client.Client
+	manager  *jsd.Manager
+	versions map[string]int
+}
+
+// Migrate `Document` fields.
+func (dm *DocumentMigrator) Migrate(models []any) (err error) {
+	dm.versions = make(map[string]int)
+	dm.manager = jsd.New(dm.Client)
+	err = dm.manager.Load()
+	if err != nil {
+		return
+	}
+	err = dm.readSettings()
+	if err != nil {
+		return
+	}
+	err = dm.DB.Transaction(func(tx *gorm.DB) (err error) {
+		dm.DB = tx
+		for _, m := range dm.withDocuments(models) {
+			mt := reflect.TypeOf(m)
+			st := reflect.SliceOf(mt)
+			sp := reflect.New(st)
+			err = dm.DB.Find(sp.Interface()).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+			sv := sp.Elem()
+			for i := 0; i < sv.Len(); i++ {
+				item := sv.Index(i).Interface()
+				err = dm.jsdMigrate(item)
+				if err != nil {
+					return
+				}
+			}
+		}
+		err = dm.updateSettings()
+		if err != nil {
+			return
+		}
+		return
+	})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+// Fields returns resource `Document` fields.
+func (dm *DocumentMigrator) Fields(r any) (fields []*json.Document) {
+	rt := reflect.TypeOf(r)
+	rv := reflect.ValueOf(r)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+		rv = rv.Elem()
+	}
+	if rt.Kind() != reflect.Struct {
+		return
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		ft := rt.Field(i)
+		fv := rv.Field(i)
+		if !ft.IsExported() {
+			continue
+		}
+		object := fv.Interface()
+		switch d := object.(type) {
+		case *json.Document:
+			fields = append(fields, d)
+		case json.Document:
+			fields = append(fields, &d)
+		}
+	}
+	return
+}
+
+// readSettings reads the settings (table) and populates `versions`.
+func (dm *DocumentMigrator) readSettings() (err error) {
+	dm.versions = make(map[string]int)
+	schemas, err := dm.manager.List()
+	if err != nil {
+		return
+	}
+	for _, schema := range schemas {
+		key := dm.key(schema.Name)
+		var setting model.Setting
+		err = dm.DB.First(&setting, "key", key).Error
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				err = liberr.Wrap(err)
+				return
+			} else {
+				setting.Value = 0
+			}
+		}
+		version := 0
+		err = setting.As(&version)
+		if err != nil {
+			return
+		}
+		dm.versions[schema.Name] = version
+	}
+	return
+}
+
+// updateSettings updates the settings (table) with current schema versions.
+func (dm *DocumentMigrator) updateSettings() (err error) {
+	dm.versions = make(map[string]int)
+	schemas, err := dm.manager.List()
+	if err != nil {
+		return
+	}
+	for _, schema := range schemas {
+		key := dm.key(schema.Name)
+		version := len(schema.Versions) - 1
+		if version < 0 {
+			version = 0
+		}
+		dm.versions[schema.Name] = version
+		setting := model.Setting{
+			Key:   key,
+			Value: version,
+		}
+		db := dm.DB.Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "key"}},
+				DoUpdates: clause.AssignmentColumns([]string{"value"}),
+			})
+		err = db.Save(&setting).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	return
+}
+
+// withDocuments returns the models with `Document` fields.
+func (dm *DocumentMigrator) withDocuments(models []any) (matched []any) {
+	for _, m := range models {
+		fields := dm.Fields(m)
+		if len(fields) > 0 {
+			matched = append(matched, m)
+		}
+	}
+	return
+}
+
+// jsdMigrate migrates the `Document` fields.
+func (dm *DocumentMigrator) jsdMigrate(m any) (err error) {
+	migrated := false
+	for _, field := range dm.Fields(m) {
+		if field == nil || field.Schema == "" {
+			continue
+		}
+		schema, nErr := dm.manager.Get(field.Schema)
+		if nErr != nil {
+			err = nErr
+			return
+		}
+		current := dm.versions[schema.Name]
+		newCurrent := current
+		field.Content, newCurrent, err = schema.Migrate(field.Content, current)
+		if err != nil {
+			return
+		}
+		if newCurrent > current {
+			migrated = true
+		}
+	}
+	if migrated {
+		err = dm.DB.Save(m).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	return
+}
+
+// key returns the setting (table) key.
+func (dm *DocumentMigrator) key(schema string) (key string) {
+	key = fmt.Sprintf(".jsd.%s.version", schema)
 	return
 }

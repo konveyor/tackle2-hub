@@ -179,16 +179,18 @@ func (s *Schema) Validate(document Map) (err error) {
 }
 
 // Migrate the specified document as needed.
-// Beginning at the `current` version (index) and continuing
+// Beginning at the `current` version +1 (index) and continuing
 // through to the LATEST version.
-func (s *Schema) Migrate(current int, document Map) (migrated Map, err error) {
+func (s *Schema) Migrate(document Map, current int) (migrated Map, newCurrent int, err error) {
 	migrated = document
-	for i := current; i < len(s.Versions); i++ {
+	next := current + 1
+	for i := next; i < len(s.Versions); i++ {
 		v := &s.Versions[i]
 		migrated, err = v.Migrate(migrated)
 		if err != nil {
 			return
 		}
+		newCurrent = i
 	}
 	return
 }

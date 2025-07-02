@@ -223,11 +223,13 @@ phone:
 
 	// migrate
 	// v1 => v1.
-	m1, err := s1.Migrate(0, d1)
+	m1, current, err := s1.Migrate(d1, 0)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(m1).To(gomega.Equal(d1))
+	g.Expect(0).To(gomega.Equal(current))
 	// v1 => v2.
-	m2, err := s2.Migrate(0, d1)
+	m2, current, err := s2.Migrate(d1, current)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(m2).To(gomega.Equal(d2))
+	g.Expect(1).To(gomega.Equal(current))
 }
