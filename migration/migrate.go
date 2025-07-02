@@ -228,7 +228,11 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 			mt := reflect.TypeOf(m)
 			st := reflect.SliceOf(mt)
 			sp := reflect.New(st)
-			db := dm.withSelect(dm.DB, dm.fields(m))
+			db := dm.DB
+			db, err = dm.withSelect(m)
+			if err != nil {
+				return
+			}
 			err = db.Find(sp.Interface()).Error
 			if err != nil {
 				err = liberr.Wrap(err)
@@ -407,17 +411,26 @@ func (dm *DocumentMigrator) key(schema string) (key string) {
 }
 
 // withSelect returns a DB with field names selected.
-func (dm *DocumentMigrator) withSelect(in *gorm.DB, fields []Field) (out *gorm.DB) {
-	out = in
+func (dm *DocumentMigrator) withSelect(m any) (db *gorm.DB, err error) {
+	db = dm.DB
 	names := []string{}
-	for _, field := range fields {
+	stmt := &gorm.Statement{DB: db}
+	err = stmt.Parse(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, field := range stmt.Schema.PrimaryFields {
+		names = append(
+			names,
+			field.Name)
+	}
+	for _, field := range dm.fields(m) {
 		names = append(
 			names,
 			field.name)
 	}
-	if len(names) > 0 {
-		out = dm.DB.Select(names)
-	}
+	db = db.Select(names)
 	return
 }
 
