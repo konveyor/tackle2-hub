@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -211,7 +210,7 @@ type DocumentMigrator struct {
 	versions map[string]int
 }
 
-// Migrate `Document` fields.
+// Migrate `Document` fields as needed.
 func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	dm.versions = make(map[string]int)
 	dm.manager = jsd.New(dm.Client)
@@ -226,35 +225,7 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	err = dm.DB.Transaction(func(tx *gorm.DB) (err error) {
 		dm.DB = tx
 		for _, m := range dm.withDocuments(models) {
-			mt := reflect.TypeOf(m)
-			m = reflect.New(mt).Interface()
-			db := dm.DB.Model(m)
-			db, err = dm.withSelect(db, m)
-			if err != nil {
-				return
-			}
-			var cursor *sql.Rows
-			cursor, err = db.Rows()
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-			func() {
-				defer func() {
-					_ = cursor.Close()
-				}()
-				for cursor.Next() {
-					err = db.ScanRows(cursor, m)
-					if err != nil {
-						err = liberr.Wrap(err)
-						break
-					}
-					err = dm.jsdMigrate(m)
-					if err != nil {
-						break
-					}
-				}
-			}()
+			err = dm.migrate(m)
 			if err != nil {
 				return
 			}
@@ -268,6 +239,37 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
+	}
+	return
+}
+
+// migrate the `Document` fields as needed.
+func (dm *DocumentMigrator) migrate(m any) (err error) {
+	mt := reflect.TypeOf(m)
+	m = reflect.New(mt).Interface()
+	db := dm.DB.Model(m)
+	db, err = dm.withSelect(db, m)
+	if err != nil {
+		return
+	}
+	cursor, err := db.Rows()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
+		_ = cursor.Close()
+	}()
+	for cursor.Next() {
+		err = db.ScanRows(cursor, m)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = dm.jsdMigrate(m)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
