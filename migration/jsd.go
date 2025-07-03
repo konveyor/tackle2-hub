@@ -20,12 +20,12 @@ type DocumentMigrator struct {
 	DB       *gorm.DB
 	Client   client.Client
 	manager  *jsd.Manager
-	versions map[string]int
+	versions map[string]Setting
 }
 
 // Migrate `Document` fields as needed.
 func (dm *DocumentMigrator) Migrate(models []any) (err error) {
-	dm.versions = make(map[string]int)
+	dm.versions = make(map[string]Setting)
 	dm.manager = jsd.New(dm.Client)
 	err = dm.manager.Load()
 	if err != nil {
@@ -35,6 +35,11 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	if err != nil {
 		return
 	}
+	if dm.skipMigration() {
+		Log.Info("jsd: migration skipped.")
+		return
+	}
+	Log.Info("jsd: migration started.")
 	err = dm.DB.Transaction(func(tx *gorm.DB) (err error) {
 		dm.DB = tx
 		for _, m := range dm.hasDocuments(models) {
@@ -53,6 +58,7 @@ func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	Log.Info("jsd: migration completed.")
 	return
 }
 
@@ -96,7 +102,7 @@ func (dm *DocumentMigrator) fields(r any) (fields []Field) {
 
 // readSettings reads the settings (table) and populates `versions`.
 func (dm *DocumentMigrator) readSettings() (err error) {
-	dm.versions = make(map[string]int)
+	dm.versions = make(map[string]Setting)
 	schemas, err := dm.manager.List()
 	if err != nil {
 		return
@@ -110,22 +116,22 @@ func (dm *DocumentMigrator) readSettings() (err error) {
 				err = liberr.Wrap(err)
 				return
 			} else {
-				setting.Value = 0
+				setting.Value = Setting{}
 			}
 		}
-		version := 0
-		err = setting.As(&version)
+		sv := Setting{}
+		err = setting.As(&sv)
 		if err != nil {
 			return
 		}
-		dm.versions[schema.Name] = version
+		dm.versions[schema.Name] = sv
 	}
 	return
 }
 
 // updateSettings updates the settings (table) with current schema versions.
 func (dm *DocumentMigrator) updateSettings() (err error) {
-	dm.versions = make(map[string]int)
+	dm.versions = make(map[string]Setting)
 	schemas, err := dm.manager.List()
 	if err != nil {
 		return
@@ -136,10 +142,14 @@ func (dm *DocumentMigrator) updateSettings() (err error) {
 		if version < 0 {
 			version = 0
 		}
-		dm.versions[schema.Name] = version
+		sv := Setting{
+			Digest:  schema.Digest(),
+			Version: version,
+		}
+		dm.versions[schema.Name] = sv
 		setting := model.Setting{
 			Key:   key,
-			Value: version,
+			Value: sv,
 		}
 		db := dm.DB.Clauses(
 			clause.OnConflict{
@@ -212,12 +222,12 @@ func (dm *DocumentMigrator) migrateFields(m any) (err error) {
 			return
 		}
 		current := dm.versions[schema.Name]
-		newCurrent := current
-		d.Content, newCurrent, err = schema.Migrate(d.Content, current)
+		newCurrent := current.Version
+		d.Content, newCurrent, err = schema.Migrate(d.Content, current.Version)
 		if err != nil {
 			return
 		}
-		if newCurrent > current {
+		if newCurrent > current.Version {
 			migrated = append(migrated, field.name)
 		}
 	}
@@ -256,6 +266,20 @@ func (dm *DocumentMigrator) withSelect(in *gorm.DB, m any) (out *gorm.DB, err er
 	return
 }
 
+// skipMigration returns true when no schemas has been added or changed.
+func (dm *DocumentMigrator) skipMigration() (skip bool) {
+	schemas, _ := dm.manager.List()
+	for _, schema := range schemas {
+		sv := dm.versions[schema.Name]
+		digest := schema.Digest()
+		if sv.Digest != digest {
+			return
+		}
+	}
+	skip = true
+	return
+}
+
 // key returns the setting (table) key.
 func (dm *DocumentMigrator) key(schema string) (key string) {
 	key = fmt.Sprintf(".jsd.%s.version", schema)
@@ -270,4 +294,9 @@ type Field struct {
 func (f *Field) empty() (empty bool) {
 	empty = f.document == nil || f.document.Schema == ""
 	return
+}
+
+type Setting struct {
+	Digest  string `json:"digest"`
+	Version int    `json:"version"`
 }

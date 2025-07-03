@@ -232,4 +232,11 @@ phone:
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(m2).To(gomega.Equal(d2))
 	g.Expect(1).To(gomega.Equal(current))
+
+	// digest.
+	digest1 := s1.Digest()
+	digest2 := s2.Digest()
+	g.Expect("4F3BC99FE3BC3D35").To(gomega.Equal(digest1))
+	g.Expect("13D15FE7A1B5269D").To(gomega.Equal(digest2))
+	g.Expect(digest1).ToNot(gomega.Equal(digest2))
 }

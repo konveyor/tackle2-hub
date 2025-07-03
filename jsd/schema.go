@@ -5,6 +5,9 @@ package jsd
 import (
 	"bytes"
 	"encoding/json"
+	"hash/fnv"
+	"sort"
+	"strconv"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -73,6 +76,38 @@ func (v *Version) Migrate(document Map) (migrated Map, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+// Digest returns an FNV-1a digest for the version.
+func (v *Version) Digest() (d string) {
+	h := fnv.New64a()
+	var add func(any)
+	add = func(object any) {
+		switch m := object.(type) {
+		case Map:
+			keySet := []string{}
+			for k := range m {
+				keySet = append(keySet, k)
+			}
+			sort.Strings(keySet)
+			for _, k := range keySet {
+				add(k)
+				add(m[k])
+			}
+		case []Map:
+			for _, v := range m {
+				add(v)
+			}
+		default:
+			b, _ := json.Marshal(m)
+			_, _ = h.Write(b)
+		}
+	}
+	add(JsonSafe(v.Definition))
+	n := h.Sum64()
+	d = strconv.FormatUint(n, 16)
+	d = strings.ToUpper(d)
 	return
 }
 
@@ -193,5 +228,18 @@ func (s *Schema) Migrate(document Map, current int) (migrated Map, newCurrent in
 		}
 		newCurrent = i
 	}
+	return
+}
+
+// Digest returns an FNV-1a digest for the schema.
+func (s *Schema) Digest() (d string) {
+	h := fnv.New64a()
+	for _, v := range s.Versions {
+		d := v.Digest()
+		_, _ = h.Write([]byte(d))
+	}
+	n := h.Sum64()
+	d = strconv.FormatUint(n, 16)
+	d = strings.ToUpper(d)
 	return
 }
