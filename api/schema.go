@@ -104,7 +104,7 @@ func (h *SchemaHandler) List(ctx *gin.Context) {
 // @tags schema
 // @produce json
 // @success 200 {object} LatestSchema
-// @router /schema [get]
+// @router /schema/jsd/{domain}/{variant}/{subject} [get]
 // @param domain path string true "The schema domain."
 // @param variant path string true "The schema variant."
 // @param subject path string true "The schema subject."
