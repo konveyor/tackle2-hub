@@ -63,7 +63,7 @@ func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 // @tags schemas
 // @produce json
 // @success 200 {object} Schema
-// @router /schemas [get]
+// @router /schemas/{name} [get]
 // @param name path int true "Schema name"
 func (h *SchemaHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
