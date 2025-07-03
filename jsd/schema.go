@@ -147,11 +147,6 @@ func (v *Version) expression() (expression string) {
 		"\n",
 		"",
 		-1)
-	expression = strings.Replace(
-		expression,
-		"\n",
-		"",
-		-1)
 	expression = strings.TrimSpace(expression)
 	return
 }

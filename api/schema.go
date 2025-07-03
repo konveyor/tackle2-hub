@@ -60,10 +60,11 @@ func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 // Get godoc
 // @summary Find a schema.
 // @description Find a schema.
-// @tags schema
+// @tags schemas
 // @produce json
 // @success 200 {object} Schema
-// @router /schema [get]
+// @router /schemas [get]
+// @param name path int true "Schema name"
 func (h *SchemaHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	m := jsd.Manager{Client: h.Client(ctx)}
@@ -82,7 +83,7 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 // @tags schema
 // @produce json
 // @success 200 {object} []Schema
-// @router /schema [get]
+// @router /schemas [get]
 func (h *SchemaHandler) List(ctx *gin.Context) {
 	m := jsd.Manager{Client: h.Client(ctx)}
 	list, err := m.List()
@@ -104,6 +105,9 @@ func (h *SchemaHandler) List(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} LatestSchema
 // @router /schema [get]
+// @param domain path string true "The schema domain."
+// @param variant path string true "The schema variant."
+// @param subject path string true "The schema subject."
 func (h *SchemaHandler) Find(ctx *gin.Context) {
 	domain := ctx.Param(Domain)
 	variant := ctx.Param(Variant)
