@@ -12,11 +12,11 @@ type Map json.Map
 // As convert the content into the object.
 // The object must be a pointer.
 func (m *Map) As(object any) (err error) {
-	b, err := json.Marshal(object)
+	b, err := json.Marshal(m)
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(b, m)
+	err = json.Unmarshal(b, object)
 	return
 }
 
