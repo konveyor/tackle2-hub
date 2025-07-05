@@ -21,9 +21,11 @@ func TestAppManifestGet(t *testing.T) {
 		_ = Application.Delete(application.ID)
 	}()
 
+	Manifest := Application.Manifest(application.ID)
+
 	// Create.
 	r.Application.ID = application.ID
-	err = RichClient.Manifest.Create(&r)
+	err = Manifest.Create(&r)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -31,7 +33,7 @@ func TestAppManifestGet(t *testing.T) {
 		_ = RichClient.Manifest.Delete(r.ID)
 	}()
 	created := r
-	Manifest := Application.Manifest(application.ID)
+
 	if !assert.MapEq(manifest.Base.Content, created.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", manifest.Base.Content, created.Content)
 	}

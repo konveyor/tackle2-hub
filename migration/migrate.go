@@ -66,7 +66,7 @@ func Migrate(migrations []Migration) (err error) {
 		}
 
 		f := func(db *gorm.DB) (err error) {
-			log.Info("Running migration.", "version", ver)
+			Log.Info("Running migration.", "version", ver)
 			err = m.Apply(db)
 			if err != nil {
 				return
@@ -95,7 +95,7 @@ func Migrate(migrations []Migration) (err error) {
 	}
 
 	if Settings.Hub.Development {
-		log.Info("Running development auto-migration.")
+		Log.Info("Running development auto-migration.")
 		err = autoMigrate(db, migrations[len(migrations)-1].Models())
 		if err != nil {
 			return

@@ -1,6 +1,7 @@
 package json
 
 import (
+	"github.com/konveyor/tackle2-hub/jsd"
 	"gopkg.in/yaml.v2"
 )
 
@@ -84,5 +85,21 @@ func (d *Data) AsMap() (mp map[any]any, isMap bool) {
 		return
 	}
 	isMap = true
+	return
+}
+
+// Document json document with (json-schema).
+type Document struct {
+	Content Map    `json:"content" binding:"required"`
+	Schema  string `json:"schema,omitempty"`
+}
+
+// Validate the content with the schema.
+func (d *Document) Validate(m *jsd.Manager) (err error) {
+	schema, err := m.Get(d.Schema)
+	if err != nil {
+		return
+	}
+	err = schema.Validate(d.Content)
 	return
 }

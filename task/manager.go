@@ -397,7 +397,7 @@ func (m *Manager) startReady() {
 	for _, task := range fetched {
 		list = append(list, &Task{task})
 	}
-	list, err = m.disconnected(list)
+	list, err = m.disabled(list)
 	if err != nil {
 		return
 	}
@@ -424,10 +424,10 @@ func (m *Manager) startReady() {
 	return
 }
 
-// disconnected fails tasks when hub is disconnected.
-// The returned list is empty when disconnected.
-func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
-	if !Settings.Disconnected {
+// disabled fails tasks when tasking is not enabled.
+// The returned list is empty when disabled.
+func (m *Manager) disabled(list []*Task) (kept []*Task, err error) {
+	if Settings.Hub.Task.Enabled {
 		kept = list
 		return
 	}
@@ -435,7 +435,7 @@ func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
 		mark := time.Now()
 		task.State = Failed
 		task.Terminated = &mark
-		task.Error("Error", "Hub is disconnected.")
+		task.Error("Error", "Tasking is disabled.")
 		err = task.update(m.DB)
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -452,7 +452,7 @@ func (m *Manager) disconnected(list []*Task) (kept []*Task, err error) {
 // - priority
 // The priority is defaulted to the kind as needed.
 func (m *Manager) findRefs(task *Task) (err error) {
-	if Settings.Disconnected {
+	if !Settings.Hub.Task.Enabled {
 		return
 	}
 	if task.Addon != "" {
@@ -1373,7 +1373,7 @@ type Cluster struct {
 func (k *Cluster) Refresh() (err error) {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
-	if Settings.Hub.Disconnected {
+	if !Settings.Hub.Task.Enabled {
 		k.tackle = &crd.Tackle{}
 		k.addons = make(map[string]*crd.Addon)
 		k.extensions = make(map[string]*crd.Extension)
