@@ -3,12 +3,27 @@ package jsd
 import (
 	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/migration/json"
+	"github.com/konveyor/tackle2-hub/model"
 )
+
+// Map unstructured object.
+type Map json.Map
+
+// As convert the content into the object.
+// The object must be a pointer.
+func (m *Map) As(object any) (err error) {
+	b, err := json.Marshal(object)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(b, m)
+	return
+}
 
 // Document REST nested resource.
 type Document struct {
-	Content json.Map `json:"content" binding:"required"`
-	Schema  string   `json:"schema,omitempty"`
+	Content Map    `json:"content" binding:"required"`
+	Schema  string `json:"schema,omitempty"`
 }
 
 // Validate based on schema.
@@ -26,10 +41,18 @@ func (d *Document) Validate(m *jsd.Manager) (err error) {
 
 // As deserialize the content into the object.
 func (d *Document) As(object any) (err error) {
-	b, err := json.Marshal(d.Content)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &object)
+	err = d.Content.As(object)
+	return
+}
+
+func (d *Document) With(md *model.Document) {
+	d.Content = md.Content
+	d.Schema = md.Schema
+}
+
+func (d *Document) Model() (m *model.Document) {
+	m = &model.Document{}
+	m.Content = d.Content
+	m.Schema = d.Schema
 	return
 }

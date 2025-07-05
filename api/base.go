@@ -351,6 +351,8 @@ func (r *Ref) With(id uint, name string) {
 // Map unstructured object.
 type Map model.Map
 
+// As convert the content into the object.
+// The object must be a pointer.
 func (m *Map) As(object any) (err error) {
 	b, err := json.Marshal(object)
 	if err != nil {

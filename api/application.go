@@ -1326,7 +1326,8 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	if m.Coordinates != nil {
-		d := jsd.Document(*m.Coordinates)
+		d := jsd.Document{}
+		d.With(m.Coordinates)
 		r.Coordinates = &d
 	}
 	if m.Repository != (model.Repository{}) {
@@ -1433,8 +1434,8 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	m.ID = r.ID
 	if r.Coordinates != nil {
-		d := model.Document(*r.Coordinates)
-		m.Coordinates = &d
+		d := r.Coordinates.Model()
+		m.Coordinates = d
 	}
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)
