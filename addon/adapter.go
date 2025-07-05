@@ -65,6 +65,8 @@ type RuleSet = binding.RuleSet
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
+type Archetype = binding.Archetype
+type Generator = binding.Generator
 
 // Filter
 type Filter = binding.Filter
@@ -95,6 +97,10 @@ type Adapter struct {
 	File File
 	// RuleSet API
 	RuleSet RuleSet
+	// Generator API.
+	Generator Generator
+	// Archetype
+	Archetype Archetype
 	// client A REST client.
 	client *Client
 }
@@ -161,6 +167,8 @@ func newAdapter() (adapter *Adapter) {
 		Tag:         richClient.Tag,
 		File:        richClient.File,
 		RuleSet:     richClient.RuleSet,
+		Generator:   richClient.Generator,
+		Archetype:   richClient.Archetype,
 	}
 
 	Log.Info("Addon (adapter) created.")
