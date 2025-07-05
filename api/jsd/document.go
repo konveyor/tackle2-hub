@@ -23,3 +23,13 @@ func (d *Document) Validate(m *jsd.Manager) (err error) {
 	err = schema.Validate(d.Content)
 	return
 }
+
+// As deserialize the content into the object.
+func (d *Document) As(object any) (err error) {
+	b, err := json.Marshal(d.Content)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(b, &object)
+	return
+}
