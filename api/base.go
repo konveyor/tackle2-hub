@@ -348,6 +348,18 @@ func (r *Ref) With(id uint, name string) {
 	r.Name = name
 }
 
+// Map unstructured object.
+type Map model.Map
+
+func (m *Map) As(object any) (err error) {
+	b, err := json.Marshal(object)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(b, m)
+	return
+}
+
 // TagRef represents a reference to a Tag.
 // Contains the tag ID, name, tag source.
 type TagRef struct {
