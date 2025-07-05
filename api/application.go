@@ -1334,6 +1334,10 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 		repo := Repository(m.Repository)
 		r.Repository = &repo
 	}
+	if m.Assets != (model.Repository{}) {
+		repo := Repository(m.Assets)
+		r.Assets = &repo
+	}
 	if m.Review != nil {
 		ref := &Ref{}
 		ref.With(m.Review.ID, "")
@@ -1439,6 +1443,9 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)
+	}
+	if r.Assets != nil {
+		m.Assets = model.Repository(*r.Assets)
 	}
 	if r.BusinessService != nil {
 		m.BusinessServiceID = &r.BusinessService.ID
