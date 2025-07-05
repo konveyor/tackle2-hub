@@ -162,6 +162,7 @@ func newAdapter() (adapter *Adapter) {
 		Application: richClient.Application,
 		Identity:    richClient.Identity,
 		Manifest:    richClient.Manifest,
+		Platform:    richClient.Platform,
 		Proxy:       richClient.Proxy,
 		TagCategory: richClient.TagCategory,
 		Tag:         richClient.Tag,
