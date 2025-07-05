@@ -15,6 +15,7 @@ var Settings = &settings.Settings
 var AddonRole = []string{
 	"addons:get",
 	"applications:get",
+	"applications:post",
 	"applications:put",
 	"applications.tags:*",
 	"applications.facts:*",
