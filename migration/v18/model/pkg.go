@@ -20,7 +20,7 @@ func All() []any {
 		TechDependency{},
 		Incident{},
 		Analysis{},
-		Issue{},
+		Insight{},
 		Bucket{},
 		BusinessService{},
 		Dependency{},

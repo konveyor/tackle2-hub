@@ -548,7 +548,7 @@ const docTemplate = `{
         },
         "/application/{id}/analyses": {
             "post": {
-                "description": "Create an analysis.\nForm fields:\nfile: A manifest file that contains 3 sections\ncontaining documents delimited by markers.\nThe manifest must contain ALL markers even when sections are empty.\nNote: ` + "`" + `^]` + "`" + ` = ` + "`" + `\\x1D` + "`" + ` = GS (group separator).\nSection markers:\n^]BEGIN-MAIN^]\n^]END-MAIN^]\n^]BEGIN-ISSUES^]\n^]END-ISSUES^]\n^]BEGIN-DEPS^]\n^]END-DEPS^]\nThe encoding must be:\n- application/json\n- application/x-yaml",
+                "description": "Create an analysis.\nForm fields:\nfile: A manifest file that contains 3 sections\ncontaining documents delimited by markers.\nThe manifest must contain ALL markers even when sections are empty.\nNote: ` + "`" + `^]` + "`" + ` = ` + "`" + `\\x1D` + "`" + ` = GS (group separator).\nSection markers:\n^]BEGIN-MAIN^]\n^]END-MAIN^]\n^]BEGIN-INSIGHTS^]\n^]END-INSIGHTS^]\n^]BEGIN-DEPS^]\n^]END-DEPS^]\nThe encoding must be:\n- application/json\n- application/x-yaml",
                 "produces": [
                     "application/json"
                 ],

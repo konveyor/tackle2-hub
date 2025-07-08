@@ -303,8 +303,8 @@ type Analysis struct {
 //
 //	^]BEGIN-MAIN^]
 //	^]END-MAIN^]
-//	^]BEGIN-ISSUES^]
-//	^]END-ISSUES^]
+//	^]BEGIN-INSIGHTS^]
+//	^]END-INSIGHTS^]
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 //
