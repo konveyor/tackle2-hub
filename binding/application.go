@@ -337,6 +337,13 @@ type AppManifest struct {
 	appId  uint
 }
 
+// Create manifest.
+func (h *AppManifest) Create(r *api.Manifest) (err error) {
+	r.Application.ID = h.appId
+	err = h.client.Post(api.ManifestsRoot, &r)
+	return
+}
+
 // Get returns the LATEST manifest.
 // Params:
 // Param{Key: api.Decrypted, Value: "1"}

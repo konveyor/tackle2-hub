@@ -15,6 +15,7 @@ PKG = ./addon/... \
       ./cmd/... \
       ./database/... \
       ./importer/... \
+      ./jsd/... \
       ./k8s/... \
       ./metrics/... \
       ./migration/... \

@@ -14,8 +14,10 @@ type Application struct {
 	BucketOwner
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
-	Review            *Review    `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        Repository `gorm:"type:json;serializer:json"`
+	Review            *Review        `gorm:"constraint:OnDelete:CASCADE"`
+	Repository        Repository     `gorm:"type:json;serializer:json"`
+	Assets            Repository     `gorm:"type:json;serializer:json"`
+	Coordinates       *json.Document `gorm:"type:json;serializer:json"`
 	Binary            string
 	Facts             []Fact `gorm:"constraint:OnDelete:CASCADE"`
 	Comments          string

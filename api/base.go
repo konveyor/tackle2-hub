@@ -15,6 +15,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/association"
+	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
@@ -187,7 +188,7 @@ func (h *BaseHandler) BindJSON(ctx *gin.Context, r any) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = h.Validate(r)
+	err = h.Validate(ctx, r)
 	return
 }
 
@@ -205,19 +206,23 @@ func (h *BaseHandler) BindYAML(ctx *gin.Context, r any) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = h.Validate(r)
+	err = h.Validate(ctx, r)
 	return
 }
 
 // Validate that the struct field values obey the binding field tags.
-func (h *BaseHandler) Validate(r any) (err error) {
+func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 	if binding.Validator == nil {
 		return
 	}
 	err = binding.Validator.ValidateStruct(r)
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
 	}
+	rtx := RichContext(ctx)
+	jsdValidator := jsd.New(rtx.Client)
+	err = jsdValidator.Validate(r)
 	return
 }
 
@@ -342,6 +347,9 @@ func (r *Ref) With(id uint, name string) {
 	r.ID = id
 	r.Name = name
 }
+
+// Map unstructured object.
+type Map = jsd.Map
 
 // TagRef represents a reference to a Tag.
 // Contains the tag ID, name, tag source.

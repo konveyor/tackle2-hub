@@ -774,9 +774,6 @@ type TTL model.TTL
 // TaskPolicy scheduling policies.
 type TaskPolicy model.TaskPolicy
 
-// Map unstructured object.
-type Map model.Map
-
 // TaskError used in Task.Errors.
 type TaskError struct {
 	Severity    string `json:"severity"`

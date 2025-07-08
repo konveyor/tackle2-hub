@@ -57,7 +57,7 @@ func Migrate(migrations []Migration) (err error) {
 
 	if Settings.Hub.Development {
 		if start >= len(migrations) {
-			log.Info("Development mode: forcing last migration.")
+			Log.Info("Development mode: forcing last migration.")
 			start = len(migrations) - 1
 		}
 	}
@@ -73,7 +73,7 @@ func Migrate(migrations []Migration) (err error) {
 		}
 
 		f := func(db *gorm.DB) (err error) {
-			log.Info("Running migration.", "version", ver)
+			Log.Info("Running migration.", "version", ver)
 			err = m.Apply(db)
 			if err != nil {
 				return
