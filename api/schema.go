@@ -15,7 +15,7 @@ const (
 
 const (
 	SchemaRoot     = "/schema"
-	SchemasRoot    = "schemas"
+	SchemasRoot    = "/schemas"
 	SchemasGetRoot = SchemasRoot + "/:" + Name
 	SchemaFindRoot = SchemaRoot + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
 )
