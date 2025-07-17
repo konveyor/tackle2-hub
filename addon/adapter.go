@@ -62,9 +62,12 @@ type Manifest = binding.Manifest
 type Platform = binding.Platform
 type Proxy = binding.Proxy
 type RuleSet = binding.RuleSet
+type Schema = binding.Schema
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
+type Archetype = binding.Archetype
+type Generator = binding.Generator
 
 // Filter
 type Filter = binding.Filter
@@ -77,6 +80,8 @@ type Adapter struct {
 	Log logapi.Logger
 	// Settings API.
 	Setting Setting
+	// Schema API
+	Schema Schema
 	// Application API.
 	Application Application
 	// Identity API.
@@ -95,6 +100,10 @@ type Adapter struct {
 	File File
 	// RuleSet API
 	RuleSet RuleSet
+	// Generator API.
+	Generator Generator
+	// Archetype
+	Archetype Archetype
 	// client A REST client.
 	client *Client
 }
@@ -153,14 +162,18 @@ func newAdapter() (adapter *Adapter) {
 		},
 		Log:         Log,
 		Setting:     richClient.Setting,
+		Schema:      richClient.Schema,
 		Application: richClient.Application,
 		Identity:    richClient.Identity,
 		Manifest:    richClient.Manifest,
+		Platform:    richClient.Platform,
 		Proxy:       richClient.Proxy,
 		TagCategory: richClient.TagCategory,
 		Tag:         richClient.Tag,
 		File:        richClient.File,
 		RuleSet:     richClient.RuleSet,
+		Generator:   richClient.Generator,
+		Archetype:   richClient.Archetype,
 	}
 
 	Log.Info("Addon (adapter) created.")

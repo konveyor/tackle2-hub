@@ -32,6 +32,7 @@ const (
 	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
 	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
 	EnvTaskUid                 = "TASK_UID"
+	EnvTaskEnabled             = "TASK_ENABLED"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
 	EnvFrequencyHeap           = "FREQUENCY_HEAP"
@@ -42,7 +43,6 @@ const (
 	EnvDisconnected            = "DISCONNECTED"
 	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
 	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
-	EnvDiscoveryEnabled        = "DISCOVERY_ENABLED"
 	EnvDiscoveryLabel          = "DISCOVERY_LABEL"
 )
 
@@ -82,6 +82,7 @@ type Hub struct {
 	}
 	// Task
 	Task struct {
+		Enabled bool
 		SA      string
 		Retries int
 		Reaper  struct { // minutes.
@@ -122,8 +123,7 @@ type Hub struct {
 	}
 	// Discovery settings.
 	Discovery struct {
-		Enabled bool
-		Label   string
+		Label string
 	}
 }
 
@@ -295,6 +295,18 @@ func (r *Hub) Load() (err error) {
 		}
 		r.Task.UID = uid
 	}
+	s, found = os.LookupEnv(EnvDisconnected)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Disconnected = b
+	}
+	s, found = os.LookupEnv(EnvTaskEnabled)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Task.Enabled = !r.Disconnected && b
+	} else {
+		r.Task.Enabled = !r.Disconnected
+	}
 	s, found = os.LookupEnv(EnvDevelopment)
 	if found {
 		b, _ := strconv.ParseBool(s)
@@ -318,11 +330,6 @@ func (r *Hub) Load() (err error) {
 	if found {
 		r.Product = !(s == "" || s == "tackle")
 	}
-	s, found = os.LookupEnv(EnvDisconnected)
-	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Disconnected = b
-	}
 	r.Analysis.ReportPath, found = os.LookupEnv(EnvAnalysisReportPath)
 	if !found {
 		r.Analysis.ReportPath = "/tmp/analysis/report"
@@ -333,13 +340,6 @@ func (r *Hub) Load() (err error) {
 		r.Analysis.ArchiverEnabled = b
 	} else {
 		r.Analysis.ArchiverEnabled = true
-	}
-	s, found = os.LookupEnv(EnvDiscoveryEnabled)
-	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Discovery.Enabled = !r.Disconnected && b
-	} else {
-		r.Discovery.Enabled = !r.Disconnected
 	}
 	s, found = os.LookupEnv(EnvDiscoveryLabel)
 	if found {

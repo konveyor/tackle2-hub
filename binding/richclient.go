@@ -28,6 +28,7 @@ type RichClient struct {
 	Proxy            Proxy
 	Questionnaire    Questionnaire
 	Review           Review
+	Schema           Schema
 	RuleSet          RuleSet
 	Setting          Setting
 	Stakeholder      Stakeholder
@@ -103,6 +104,9 @@ func New(baseURL string) (r *RichClient) {
 			client: client,
 		},
 		RuleSet: RuleSet{
+			client: client,
+		},
+		Schema: Schema{
 			client: client,
 		},
 		Setting: Setting{

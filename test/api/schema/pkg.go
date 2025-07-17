@@ -2,11 +2,13 @@ package schema
 
 import (
 	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	RichClient *binding.RichClient
+	Settings   = &settings.Settings
 )
 
 func init() {

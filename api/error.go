@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/sort"
+	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"github.com/mattn/go-sqlite3"
@@ -120,7 +121,8 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		if errors.Is(err, gorm.ErrRecordNotFound) ||
-			errors.Is(err, &NotFound{}) {
+			errors.Is(err, &NotFound{}) ||
+			errors.Is(err, &jsd.NotFound{}) {
 			if ctx.Request.Method == http.MethodDelete {
 				rtx.Status(http.StatusNoContent)
 				return
