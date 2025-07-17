@@ -14,7 +14,7 @@ require (
 	github.com/jortel/go-utils v0.1.4
 	github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744
 	github.com/mattn/go-sqlite3 v1.14.17
-	github.com/mikefarah/yq/v4 v4.41.1
+	github.com/mikefarah/yq/v4 v4.44.1
 	github.com/onsi/gomega v1.31.1
 	github.com/prometheus/client_golang v1.15.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
@@ -85,7 +85,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
@@ -105,7 +105,7 @@ require (
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
