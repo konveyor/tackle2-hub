@@ -62,6 +62,7 @@ type Manifest = binding.Manifest
 type Platform = binding.Platform
 type Proxy = binding.Proxy
 type RuleSet = binding.RuleSet
+type Schema = binding.Schema
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
@@ -79,6 +80,8 @@ type Adapter struct {
 	Log logapi.Logger
 	// Settings API.
 	Setting Setting
+	// Schema API
+	Schema Schema
 	// Application API.
 	Application Application
 	// Identity API.
@@ -159,6 +162,7 @@ func newAdapter() (adapter *Adapter) {
 		},
 		Log:         Log,
 		Setting:     richClient.Setting,
+		Schema:      richClient.Schema,
 		Application: richClient.Application,
 		Identity:    richClient.Identity,
 		Manifest:    richClient.Manifest,
