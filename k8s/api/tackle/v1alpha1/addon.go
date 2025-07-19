@@ -118,8 +118,7 @@ func (r *Addon) Migrate() (updated bool) {
 	return
 }
 
-// Provides returns true when the addon implements
-// the specified task kind.
+// Provides returns true when the addon provides the specified kind-of task.
 func (r *Addon) Provides(task string) (match bool) {
 	for _, kind := range r.Spec.Tasks {
 		match = task == kind
