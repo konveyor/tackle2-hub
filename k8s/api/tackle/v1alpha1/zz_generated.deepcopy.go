@@ -22,7 +22,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -103,6 +103,11 @@ func (in *AddonSpec) DeepCopyInto(out *AddonSpec) {
 		in, out := &in.Resources, &out.Resources
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Tasks != nil {
+		in, out := &in.Tasks, &out.Tasks
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	in.Container.DeepCopyInto(&out.Container)
 	in.Metadata.DeepCopyInto(&out.Metadata)
