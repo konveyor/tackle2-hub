@@ -37,7 +37,7 @@ type AddonSpec struct {
 	// Description
 	Description string `json:"description,omitempty"`
 	// Tasks declares tasks the addon provides.
-	Tasks []string `json:"task,omitempty"`
+	Tasks []string `json:"tasks,omitempty"`
 	// Selector defines criteria to be selected for a task.
 	Selector string `json:"selector,omitempty"`
 	// Container defines the addon container.
