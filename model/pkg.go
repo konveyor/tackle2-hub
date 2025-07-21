@@ -57,6 +57,7 @@ type Tracker = model.Tracker
 type Ref = json.Ref
 type Map = json.Map
 type Data = json.Data
+type Document = json.Document
 type ArchivedInsight = model.ArchivedInsight
 type Attachment = model.Attachment
 type Link = model.Link

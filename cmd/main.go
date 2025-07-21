@@ -172,7 +172,15 @@ func main() {
 		err = liberr.Wrap(err)
 		return
 	}
-
+	// Document migration.
+	jsdMigrator := migration.DocumentMigrator{
+		DB:     db.Debug(),
+		Client: client,
+	}
+	err = jsdMigrator.Migrate(model.ALL)
+	if err != nil {
+		return
+	}
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
