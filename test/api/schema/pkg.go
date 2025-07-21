@@ -14,4 +14,8 @@ var (
 func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).
 	RichClient = client.PrepareRichClient()
+	err := Settings.Load()
+	if err != nil {
+		panic(err)
+	}
 }
