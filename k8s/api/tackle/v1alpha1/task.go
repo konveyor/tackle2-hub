@@ -25,8 +25,6 @@ import (
 
 // TaskSpec defines the desired state the resource.
 type TaskSpec struct {
-	// Description
-	Description string `json:"description,omitempty"`
 	// Priority defines the task priority (0-n).
 	Priority int `json:"priority,omitempty"`
 	// Dependencies defines a list of task names on which this task depends.

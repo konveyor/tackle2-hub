@@ -34,8 +34,6 @@ type AddonSpec struct {
 	// +kubebuilder:validation:Optional
 	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	//
-	// Description
-	Description string `json:"description,omitempty"`
 	// Tasks declares tasks the addon provides.
 	Tasks []string `json:"tasks,omitempty"`
 	// Selector defines criteria to be selected for a task.

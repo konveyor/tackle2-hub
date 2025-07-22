@@ -24,8 +24,6 @@ import (
 
 // ExtensionSpec defines the desired state of the resource.
 type ExtensionSpec struct {
-	// Description
-	Description string `json:"description,omitempty"`
 	// Addon (name) declares addon compatibility.
 	Addon string `json:"addon"`
 	// Container defines the extension container.
