@@ -156,8 +156,8 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		return
 	}
 	err = h.adjustProfileIds(ctx, m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -273,8 +273,8 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		return
 	}
 	err = h.adjustProfileIds(ctx, m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
