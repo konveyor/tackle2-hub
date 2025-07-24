@@ -2521,7 +2521,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	return
 }
 
-// addInsights writes insights.
+// addIssues writes issues (effort > 0).
 func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 	r.field("issues")
 	r.beginList()
@@ -2551,7 +2551,7 @@ func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 	return
 }
 
-// addInsights writes insights.
+// addInsights writes insights (effort = 0).
 func (r *AnalysisWriter) addInsights(m *model.Analysis) (err error) {
 	r.field("insights")
 	r.beginList()
