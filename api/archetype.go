@@ -155,6 +155,11 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	err = h.adjustProfileIds(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	err = h.DB(ctx).Model(m).Association("Stakeholders").Replace("Stakeholders", m.Stakeholders)
 	if err != nil {
@@ -265,6 +270,11 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 	result := db.Save(m)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
+		return
+	}
+	err = h.adjustProfileIds(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -406,6 +416,31 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 
 	r.With(m)
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// adjustProfileIds adjust profile ids as needed.
+// Protect against:
+// - creating profiles with explicit ids.
+// - transferring a profile owned by another.
+func (h ArchetypeHandler) adjustProfileIds(ctx *gin.Context, m *model.Archetype) (err error) {
+	var owned []model.TargetProfile
+	db := h.DB(ctx)
+	db = db.Where("ArchetypeID", m.ID)
+	err = db.Find(&owned).Error
+	if err != nil {
+		return
+	}
+	ids := make(map[uint]uint)
+	for _, p := range owned {
+		ids[p.ID] = m.ID
+	}
+	for i := range m.Profiles {
+		p := &m.Profiles[i]
+		if _, found := ids[p.ID]; !found {
+			p.ID = 0
+		}
+	}
+	return
 }
 
 // TargetProfile REST resource.
