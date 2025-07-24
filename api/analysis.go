@@ -2533,17 +2533,17 @@ func (r *AnalysisWriter) addIssues(m *model.Analysis) (err error) {
 		db = db.Offset(b)
 		db = db.Where("AnalysisID", m.ID)
 		db = db.Where("effort > 0")
-		var issues []model.Insight
-		err = db.Find(&issues).Error
+		var insights []model.Insight
+		err = db.Find(&insights).Error
 		if err != nil {
 			return
 		}
-		if len(issues) == 0 {
+		if len(insights) == 0 {
 			break
 		}
-		for i := range issues {
+		for i := range insights {
 			insight := Insight{}
-			insight.With(&issues[i])
+			insight.With(&insights[i])
 			r.writeItem(b, i, insight)
 		}
 	}
