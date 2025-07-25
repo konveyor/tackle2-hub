@@ -350,14 +350,18 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 func (r *Task) podRunning(pod *core.Pod, client k8s.Client) {
 	r.State = Running
 	r.Event(PodRunning)
-	addonStatus := pod.Status.ContainerStatuses[0]
-	if addonStatus.State.Terminated != nil {
-		switch addonStatus.State.Terminated.ExitCode {
-		case 0:
-			r.podSucceeded(pod)
-		default: // failed.
-			r.podFailed(pod, client)
-			return
+	for i := range pod.Status.ContainerStatuses {
+		status := &pod.Status.ContainerStatuses[i]
+		if status.State.Terminated != nil {
+			switch status.State.Terminated.ExitCode {
+			case 0:
+				if i == 0 { // addon
+					r.podSucceeded(pod)
+				}
+			default: // failed.
+				r.podFailed(pod, client)
+				return
+			}
 		}
 	}
 }
