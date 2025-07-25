@@ -170,7 +170,7 @@ type Generator struct {
 	Kind       string      `json:"kind" binding:"required"`
 	Name       string      `json:"name"`
 	Repository *Repository `json:"repository"`
-	Parameters Map         `json:"parameters"`
+	Params     Map         `json:"params"`
 	Values     Map         `json:"values"`
 	Identity   *Ref        `json:"identity,omitempty" yaml:",omitempty"`
 	Profiles   []Ref       `json:"profiles"`
@@ -182,7 +182,7 @@ func (r *Generator) With(m *model.Generator) {
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	r.Parameters = m.Parameters
+	r.Params = m.Params
 	r.Values = m.Values
 	if m.Repository != (model.Repository{}) {
 		repository := Repository(m.Repository)
@@ -200,7 +200,7 @@ func (r *Generator) Model() (m *model.Generator) {
 	m.ID = r.ID
 	m.Kind = r.Kind
 	m.Name = r.Name
-	m.Parameters = r.Parameters
+	m.Params = r.Params
 	m.Values = r.Values
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)

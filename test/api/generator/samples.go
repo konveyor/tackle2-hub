@@ -12,7 +12,7 @@ var (
 		Repository: &api.Repository{
 			URL: "https://github.com/konveyor/tackle2-hub",
 		},
-		Parameters: api.Map{
+		Params: api.Map{
 			"p1": "v1",
 			"p2": "v2",
 		},
