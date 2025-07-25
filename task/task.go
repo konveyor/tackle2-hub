@@ -458,7 +458,7 @@ func (r *Task) matchTask(addon *crd.Addon, task *crd.Task) (matched bool, err er
 		}
 		matched = p.MatchString(task.Name)
 	} else {
-		matched = addon.Name == ref
+		matched = task.Name == ref
 	}
 	return
 }
