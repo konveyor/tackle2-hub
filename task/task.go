@@ -352,16 +352,17 @@ func (r *Task) podRunning(pod *core.Pod, client k8s.Client) {
 	r.Event(PodRunning)
 	for i := range pod.Status.ContainerStatuses {
 		status := &pod.Status.ContainerStatuses[i]
-		if status.State.Terminated != nil {
-			switch status.State.Terminated.ExitCode {
-			case 0:
-				if i == 0 { // addon
-					r.podSucceeded(pod)
-				}
-			default: // failed.
-				r.podFailed(pod, client)
-				return
+		if status.State.Terminated == nil {
+			continue
+		}
+		switch status.State.Terminated.ExitCode {
+		case 0:
+			if i == 0 { // addon
+				r.podSucceeded(pod)
 			}
+		default: // failed.
+			r.podFailed(pod, client)
+			return
 		}
 	}
 }
