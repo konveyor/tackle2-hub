@@ -540,7 +540,11 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 	var selected *crd.Addon
 	selector := NewSelector(m.DB, task)
 	for _, addon = range m.cluster.Addons() {
-		if !addon.Provides(kind.Name) {
+		matched, err = task.matchTask(addon, kind)
+		if err != nil {
+			return
+		}
+		if !matched {
 			continue
 		}
 		matched, err = selector.Match(addon.Spec.Selector)

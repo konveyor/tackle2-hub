@@ -440,6 +440,29 @@ func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err
 	return
 }
 
+// matchTask - returns true when the addon's `task`
+// (ref) matches the task name.
+// The `ref` is matched as a REGEX when it contains
+// characters other than: [0-9A-Za-z_].
+func (r *Task) matchTask(addon *crd.Addon, task *crd.Task) (matched bool, err error) {
+	ref := strings.TrimSpace(addon.Spec.Task)
+	p := IsRegex
+	if p.MatchString(ref) {
+		p, err = regexp.Compile(ref)
+		if err != nil {
+			err = &AddonTaskNotValid{
+				Addon:  addon.Name,
+				Reason: err.Error(),
+			}
+			return
+		}
+		matched = p.MatchString(task.Name)
+	} else {
+		matched = addon.Name == ref
+	}
+	return
+}
+
 // matchAddon - returns true when the extension's `addon`
 // (ref) matches the addon name.
 // The `ref` is matched as a REGEX when it contains
