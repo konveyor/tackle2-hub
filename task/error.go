@@ -250,6 +250,25 @@ func (e *ExtAddonNotValid) Is(err error) (matched bool) {
 	return
 }
 
+// AddonTaskNotValid reports addon task ref error.
+type AddonTaskNotValid struct {
+	Addon  string
+	Reason string
+}
+
+func (e *AddonTaskNotValid) Error() string {
+	return fmt.Sprintf(
+		"Addon '%s' task ref not valid. reason: %s",
+		e.Addon,
+		e.Reason)
+}
+
+func (e *AddonTaskNotValid) Is(err error) (matched bool) {
+	var inst *AddonTaskNotValid
+	matched = errors.As(err, &inst)
+	return
+}
+
 // PriorityNotFound report priority class not found.
 type PriorityNotFound struct {
 	Name  string
