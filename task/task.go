@@ -347,14 +347,22 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 }
 
 // podRunning handles pod running.
+// container[0] is the addon.
+// succeeded when: the addon has terminated with exit=0.
+// failed when: any container has terminated != 0.
 func (r *Task) podRunning(pod *core.Pod, client k8s.Client) {
 	r.State = Running
 	r.Event(PodRunning)
-	addonStatus := pod.Status.ContainerStatuses[0]
-	if addonStatus.State.Terminated != nil {
-		switch addonStatus.State.Terminated.ExitCode {
+	for i := range pod.Status.ContainerStatuses {
+		status := &pod.Status.ContainerStatuses[i]
+		if status.State.Terminated == nil {
+			continue
+		}
+		switch status.State.Terminated.ExitCode {
 		case 0:
-			r.podSucceeded(pod)
+			if i == 0 { // addon
+				r.podSucceeded(pod)
+			}
 		default: // failed.
 			r.podFailed(pod, client)
 			return
