@@ -2517,7 +2517,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 	return
 }
 
-// addInsights writes insights.
+// addInsights writes insights (effort = 0).
 func (r *AnalysisWriter) addInsights(m *model.Analysis) (err error) {
 	r.field("insights")
 	r.beginList()
@@ -2527,8 +2527,9 @@ func (r *AnalysisWriter) addInsights(m *model.Analysis) (err error) {
 		db = db.Preload("Incidents")
 		db = db.Limit(batch)
 		db = db.Offset(b)
+		db = db.Where("AnalysisID", m.ID)
 		var insights []model.Insight
-		err = db.Find(&insights, "AnalysisID", m.ID).Error
+		err = db.Find(&insights).Error
 		if err != nil {
 			return
 		}
@@ -2644,13 +2645,15 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	r.field("id").writeStr(strconv.Itoa(int(m.Application.ID)))
 	r.field("name").writeStr(m.Application.Name)
 	r.field("analysis").writeStr(strconv.Itoa(int(m.ID)))
-	aWriter := AnalysisWriter{ctx: r.ctx}
-	aWriter.Encoder = r.Encoder
-	err = aWriter.addInsights(m)
+	err = r.addIssues(m)
 	if err != nil {
 		return
 	}
-	err = aWriter.addDeps(m)
+	err = r.addInsights(m)
+	if err != nil {
+		return
+	}
+	err = r.addDeps(m)
 	if err != nil {
 		return
 	}
@@ -2660,6 +2663,93 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 	}
 	r.end()
 	r.write("]")
+	return
+}
+
+// addIssues writes issues (effort > 0).
+func (r *ReportWriter) addIssues(m *model.Analysis) (err error) {
+	r.field("issues")
+	r.beginList()
+	batch := 10
+	for b := 0; ; b += batch {
+		db := r.db()
+		db = db.Preload("Incidents")
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		db = db.Where("AnalysisID", m.ID)
+		db = db.Where("effort > 0")
+		var insights []model.Insight
+		err = db.Find(&insights).Error
+		if err != nil {
+			return
+		}
+		if len(insights) == 0 {
+			break
+		}
+		for i := range insights {
+			insight := Insight{}
+			insight.With(&insights[i])
+			r.writeItem(b, i, insight)
+		}
+	}
+	r.endList()
+	return
+}
+
+// addInsights writes insights (effort = 0).
+func (r *ReportWriter) addInsights(m *model.Analysis) (err error) {
+	r.field("insights")
+	r.beginList()
+	batch := 10
+	for b := 0; ; b += batch {
+		db := r.db()
+		db = db.Preload("Incidents")
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		db = db.Where("AnalysisID", m.ID)
+		db = db.Where("effort == 0")
+		var insights []model.Insight
+		err = db.Find(&insights).Error
+		if err != nil {
+			return
+		}
+		if len(insights) == 0 {
+			break
+		}
+		for i := range insights {
+			insight := Insight{}
+			insight.With(&insights[i])
+			r.writeItem(b, i, insight)
+		}
+	}
+	r.endList()
+	return
+}
+
+// addDeps writes dependencies.
+func (r *ReportWriter) addDeps(m *model.Analysis) (err error) {
+	r.field("dependencies")
+	r.beginList()
+	batch := 100
+	for b := 0; ; b += batch {
+		db := r.db()
+		db = db.Limit(batch)
+		db = db.Offset(b)
+		var deps []model.TechDependency
+		err = db.Find(&deps, "AnalysisID", m.ID).Error
+		if err != nil {
+			return
+		}
+		if len(deps) == 0 {
+			break
+		}
+		for i := range deps {
+			d := TechDependency{}
+			d.With(&deps[i])
+			r.writeItem(b, i, d)
+		}
+	}
+	r.endList()
 	return
 }
 

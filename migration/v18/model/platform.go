@@ -35,7 +35,7 @@ type Generator struct {
 	Kind       string
 	Name       string
 	Repository Repository `gorm:"type:json;serializer:json"`
-	Parameters json.Map   `gorm:"type:json;serializer:json"`
+	Params     json.Map   `gorm:"type:json;serializer:json"`
 	Values     json.Map   `gorm:"type:json;serializer:json"`
 	IdentityID *uint
 	Identity   *Identity
