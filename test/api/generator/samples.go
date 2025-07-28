@@ -7,8 +7,9 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	Base = api.Generator{
-		Kind: "base",
-		Name: "Test",
+		Kind:        "base",
+		Name:        "Test",
+		Description: "This is a test",
 		Repository: &api.Repository{
 			URL: "https://github.com/konveyor/tackle2-hub",
 		},

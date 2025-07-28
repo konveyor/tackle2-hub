@@ -32,12 +32,13 @@ type TargetProfile struct {
 
 type Generator struct {
 	Model
-	Kind       string
-	Name       string
-	Repository Repository `gorm:"type:json;serializer:json"`
-	Params     json.Map   `gorm:"type:json;serializer:json"`
-	Values     json.Map   `gorm:"type:json;serializer:json"`
-	IdentityID *uint
-	Identity   *Identity
-	Profiles   []TargetProfile `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
+	Kind        string
+	Name        string
+	Description string
+	Repository  Repository `gorm:"type:json;serializer:json"`
+	Params      json.Map   `gorm:"type:json;serializer:json"`
+	Values      json.Map   `gorm:"type:json;serializer:json"`
+	IdentityID  *uint
+	Identity    *Identity
+	Profiles    []TargetProfile `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
 }
