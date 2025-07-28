@@ -104,11 +104,6 @@ func (in *AddonSpec) DeepCopyInto(out *AddonSpec) {
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Tasks != nil {
-		in, out := &in.Tasks, &out.Tasks
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	in.Container.DeepCopyInto(&out.Container)
 	in.Metadata.DeepCopyInto(&out.Metadata)
 }

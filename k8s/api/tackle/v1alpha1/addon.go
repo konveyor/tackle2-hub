@@ -34,8 +34,8 @@ type AddonSpec struct {
 	// +kubebuilder:validation:Optional
 	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	//
-	// Tasks declares tasks the addon provides.
-	Tasks []string `json:"tasks,omitempty"`
+	// Task declares task compatability.
+	Task string `json:"task,omitempty"`
 	// Selector defines criteria to be selected for a task.
 	Selector string `json:"selector,omitempty"`
 	// Container defines the addon container.
@@ -112,17 +112,6 @@ func (r *Addon) Migrate() (updated bool) {
 	if r.Spec.Container.Name == "" {
 		r.Spec.Container.Name = "addon"
 		updated = true
-	}
-	return
-}
-
-// Provides returns true when the addon provides the specified kind-of task.
-func (r *Addon) Provides(task string) (match bool) {
-	for _, kind := range r.Spec.Tasks {
-		match = task == kind
-		if match {
-			break
-		}
 	}
 	return
 }
