@@ -39,6 +39,8 @@ type ExtensionStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Resource conditions.
+	Conditions []meta.Condition `json:"conditions,omitempty"`
 }
 
 // Extension defines an addon extension.
@@ -54,6 +56,22 @@ type Extension struct {
 	Spec ExtensionSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status ExtensionStatus `json:"status,omitempty"`
+}
+
+// Reconciled returns true when the resource has been reconciled.
+func (r *Extension) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *Extension) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
 }
 
 // ExtensionList is a list of Extension.

@@ -38,6 +38,8 @@ type TaskStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Resource conditions.
+	Conditions []meta.Condition `json:"conditions,omitempty"`
 }
 
 // Task defines a hub task.
@@ -53,6 +55,22 @@ type Task struct {
 	Spec TaskSpec `json:"spec,omitempty"`
 	// Status defines the observed state the resource.
 	Status TaskStatus `json:"status,omitempty"`
+}
+
+// Reconciled returns true when the resource has been reconciled.
+func (r *Task) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *Task) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
 }
 
 // HasDep return true if the task has the dependency.

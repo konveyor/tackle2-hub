@@ -46,6 +46,8 @@ type SchemaStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Resource conditions.
+	Conditions []meta.Condition `json:"conditions,omitempty"`
 }
 
 // Schema defines json document schemas.
@@ -59,6 +61,22 @@ type Schema struct {
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	Spec            SchemaSpec   `json:"spec"`
 	Status          SchemaStatus `json:"status,omitempty"`
+}
+
+// Reconciled returns true when the resource has been reconciled.
+func (r *Schema) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *Schema) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
 }
 
 // SchemaList is a list of Schema.
