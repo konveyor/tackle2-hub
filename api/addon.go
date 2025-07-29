@@ -107,16 +107,18 @@ func (h AddonHandler) List(ctx *gin.Context) {
 
 // Addon REST resource.
 type Addon struct {
-	Name       string         `json:"name"`
-	Container  core.Container `json:"container"`
-	Extensions []Extension    `json:"extensions,omitempty"`
-	Metadata   any            `json:"metadata,omitempty"`
+	Name       string          `json:"name"`
+	Container  core.Container  `json:"container"`
+	Extensions []Extension     `json:"extensions,omitempty"`
+	Metadata   any             `json:"metadata,omitempty"`
+	Status     crd.AddonStatus `json:"status,omitempty"`
 }
 
 // With model.
 func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 	r.Name = m.Name
 	r.Container = m.Spec.Container
+	r.Status = m.Status
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}
@@ -131,11 +133,12 @@ func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 
 // Extension REST resource.
 type Extension struct {
-	Name         string         `json:"name"`
-	Addon        string         `json:"addon"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Container    core.Container `json:"container"`
-	Metadata     any            `json:"metadata,omitempty"`
+	Name         string              `json:"name"`
+	Addon        string              `json:"addon"`
+	Capabilities []string            `json:"capabilities,omitempty"`
+	Container    core.Container      `json:"container"`
+	Metadata     any                 `json:"metadata,omitempty"`
+	Status       crd.ExtensionStatus `json:"status,omitempty"`
 }
 
 // With model.
@@ -143,6 +146,7 @@ func (r *Extension) With(m *crd.Extension) {
 	r.Name = m.Name
 	r.Addon = m.Spec.Addon
 	r.Container = m.Spec.Container
+	r.Status = m.Status
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}
