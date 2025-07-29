@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,7 +72,18 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Addon{}
-	r.With(addon, extensions.Items...)
+	matched := []crd.Extension{}
+	for _, extension := range extensions.Items {
+		match, err := (&tasking.Task{}).MatchAddon(&extension, addon)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if match {
+			matched = append(matched, extension)
+		}
+	}
+	r.With(addon, matched...)
 
 	h.Respond(ctx, http.StatusOK, r)
 }

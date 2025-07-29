@@ -137,7 +137,7 @@ func (r *Task) Run(cluster *Cluster) (started bool, err error) {
 	}
 	for _, extension := range extensions {
 		matched := false
-		matched, err = r.matchAddon(&extension, addon)
+		matched, err = r.MatchAddon(&extension, addon)
 		if err != nil {
 			return
 		}
@@ -263,6 +263,52 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 		pod.Name)
 	mark := time.Now()
 	r.Terminated = &mark
+	return
+}
+
+// MatchTask - returns true when the addon's `task`
+// (ref) matches the task name.
+// The `ref` is matched as a REGEX when it contains
+// characters other than: [0-9A-Za-z_].
+func (r *Task) MatchTask(addon *crd.Addon, task *crd.Task) (matched bool, err error) {
+	ref := strings.TrimSpace(addon.Spec.Task)
+	p := IsRegex
+	if p.MatchString(ref) {
+		p, err = regexp.Compile(ref)
+		if err != nil {
+			err = &AddonTaskNotValid{
+				Addon:  addon.Name,
+				Reason: err.Error(),
+			}
+			return
+		}
+		matched = p.MatchString(task.Name)
+	} else {
+		matched = task.Name == ref
+	}
+	return
+}
+
+// MatchAddon - returns true when the extension's `addon`
+// (ref) matches the addon name.
+// The `ref` is matched as a REGEX when it contains
+// characters other than: [0-9A-Za-z_].
+func (r *Task) MatchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
+	ref := strings.TrimSpace(extension.Spec.Addon)
+	p := IsRegex
+	if p.MatchString(ref) {
+		p, err = regexp.Compile(ref)
+		if err != nil {
+			err = &ExtAddonNotValid{
+				Extension: extension.Name,
+				Reason:    err.Error(),
+			}
+			return
+		}
+		matched = p.MatchString(addon.Name)
+	} else {
+		matched = addon.Name == ref
+	}
 	return
 }
 
@@ -444,52 +490,6 @@ func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err
 		extensions = append(
 			extensions,
 			extension)
-	}
-	return
-}
-
-// matchTask - returns true when the addon's `task`
-// (ref) matches the task name.
-// The `ref` is matched as a REGEX when it contains
-// characters other than: [0-9A-Za-z_].
-func (r *Task) matchTask(addon *crd.Addon, task *crd.Task) (matched bool, err error) {
-	ref := strings.TrimSpace(addon.Spec.Task)
-	p := IsRegex
-	if p.MatchString(ref) {
-		p, err = regexp.Compile(ref)
-		if err != nil {
-			err = &AddonTaskNotValid{
-				Addon:  addon.Name,
-				Reason: err.Error(),
-			}
-			return
-		}
-		matched = p.MatchString(task.Name)
-	} else {
-		matched = task.Name == ref
-	}
-	return
-}
-
-// matchAddon - returns true when the extension's `addon`
-// (ref) matches the addon name.
-// The `ref` is matched as a REGEX when it contains
-// characters other than: [0-9A-Za-z_].
-func (r *Task) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
-	ref := strings.TrimSpace(extension.Spec.Addon)
-	p := IsRegex
-	if p.MatchString(ref) {
-		p, err = regexp.Compile(ref)
-		if err != nil {
-			err = &ExtAddonNotValid{
-				Extension: extension.Name,
-				Reason:    err.Error(),
-			}
-			return
-		}
-		matched = p.MatchString(addon.Name)
-	} else {
-		matched = addon.Name == ref
 	}
 	return
 }
