@@ -113,6 +113,8 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return
 	}
 
+	r.Log.Info("Extension reconciled.", "name", extension.Name)
+
 	return
 }
 

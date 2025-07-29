@@ -113,6 +113,8 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return
 	}
 
+	r.Log.Info("Task reconciled.", "name", task.Name)
+
 	return
 }
 
