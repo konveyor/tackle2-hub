@@ -8,6 +8,7 @@ import (
 	"os"
 
 	logapi "github.com/go-logr/logr"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
@@ -17,6 +18,7 @@ import (
 
 var (
 	Settings = &settings.Settings
+	Wrap     = liberr.Wrap
 	Log      = logr.WithName("addon")
 )
 
@@ -128,6 +130,7 @@ func (h *Adapter) Run(addon func() error) {
 		}
 		if err != nil {
 			h.Failed(err.Error())
+			h.Log.Error(err, "Addon failed.")
 			os.Exit(1)
 		}
 	}()

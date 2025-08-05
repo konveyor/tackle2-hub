@@ -118,6 +118,7 @@ func (h *Task) Data() (d any) {
 func (h *Task) DataWith(object any) (err error) {
 	b, _ := json.Marshal(h.task.Data)
 	err = json.Unmarshal(b, object)
+	err = Wrap(err)
 	return
 }
 
