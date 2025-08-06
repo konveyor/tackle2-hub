@@ -1,11 +1,13 @@
-package controller
+package schema
 
 import (
 	"context"
 	"strings"
 
 	"github.com/go-logr/logr"
+	liberr "github.com/jortel/go-utils/error"
 	logr2 "github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/controller/addon"
 	api "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
@@ -22,21 +24,18 @@ import (
 )
 
 const (
-	Name = "addon"
+	Name = "schema"
 )
 
-// Package logger.
-var log = logr2.WithName(Name)
-
-// Settings defines applcation settings.
+// Settings defines application settings.
 var Settings = &settings.Settings
 
 // Add the controller.
-func Add(mgr manager.Manager, db *gorm.DB) error {
+func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 	reconciler := &Reconciler{
 		history: make(map[string]byte),
 		Client:  mgr.GetClient(),
-		Log:     log,
+		Log:     logr2.WithName(Name),
 		DB:      db,
 	}
 	cnt, err := controller.New(
@@ -46,22 +45,22 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 			Reconciler: reconciler,
 		})
 	if err != nil {
-		log.Error(err, "")
-		return err
+		err = liberr.Wrap(err)
+		return
 	}
 	// Primary CR.
 	err = cnt.Watch(
-		&source.Kind{Type: &api.Addon{}},
+		&source.Kind{Type: &api.Schema{}},
 		&handler.EnqueueRequestForObject{})
 	if err != nil {
-		log.Error(err, "")
-		return err
+		err = liberr.Wrap(err)
+		return
 	}
 
 	return nil
 }
 
-// Reconciler reconciles addon CRs.
+// Reconciler reconciles schema CRs.
 // The history is used to ensure resources are reconciled
 // at least once at startup.
 type Reconciler struct {
@@ -78,53 +77,55 @@ type Reconciler struct {
 func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	r.Log = logr2.WithName(
 		names.SimpleNameGenerator.GenerateName(Name+"|"),
-		"addon",
+		Name,
 		request)
 
 	// Fetch the CR.
-	addon := &api.Addon{}
-	err = r.Get(context.TODO(), request.NamespacedName, addon)
+	schema := &api.Schema{}
+	err = r.Get(context.TODO(), request.NamespacedName, schema)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
-			r.Log.Info("Addon deleted.", "name", request)
-			_ = r.addonDeleted(request.Name)
+			r.Log.Info("Schema deleted.", "name", request)
+			_ = r.schemaDeleted(request.Name)
 			err = nil
 		}
 		return
 	}
 	_, found := r.history[addon.Name]
-	if found && addon.Reconciled() {
+	if found && schema.Reconciled() {
 		return
 	}
-	r.history[addon.Name] = 1
-	addon.Status.Conditions = nil
-	addon.Status.ObservedGeneration = addon.Generation
+	r.history[schema.Name] = 1
+	schema.Status.Conditions = nil
+	schema.Status.ObservedGeneration = schema.Generation
 	// Changed
-	migrated, err := r.addonChanged(addon)
-	if migrated || err != nil {
-		return
-	}
-	// Ready condition.
-	addon.Status.Conditions = append(
-		addon.Status.Conditions,
-		r.ready(addon))
-	// Apply changes.
-	err = r.Status().Update(context.TODO(), addon)
+	err = r.schemaChanged(schema)
 	if err != nil {
 		return
 	}
+	// Ready condition.
+	schema.Status.Conditions = append(
+		schema.Status.Conditions,
+		r.ready(schema))
+	// Apply changes.
+	err = r.Status().Update(context.TODO(), schema)
+	if err != nil {
+		return
+	}
+
+	r.Log.Info("Schema reconciled.", "name", schema.Name)
 
 	return
 }
 
 // ready returns the ready condition.
-func (r *Reconciler) ready(addon *api.Addon) (ready v1.Condition) {
+func (r *Reconciler) ready(schema *api.Schema) (ready v1.Condition) {
 	ready = api.Ready
 	ready.LastTransitionTime = v1.Now()
-	ready.ObservedGeneration = addon.Status.ObservedGeneration
+	ready.ObservedGeneration = schema.Status.ObservedGeneration
 	err := make([]string, 0)
-	for i := range addon.Status.Conditions {
-		cnd := &addon.Status.Conditions[i]
+	for i := range schema.Status.Conditions {
+		cnd := &schema.Status.Conditions[i]
 		if cnd.Type == api.ValidationError {
 			err = append(err, cnd.Message)
 		}
@@ -140,27 +141,12 @@ func (r *Reconciler) ready(addon *api.Addon) (ready v1.Condition) {
 	return
 }
 
-// addonChanged an addon has been created/updated.
-func (r *Reconciler) addonChanged(addon *api.Addon) (migrated bool, err error) {
-	migrated = addon.Migrate()
-	if migrated {
-		err = r.Update(context.TODO(), addon)
-		if err != nil {
-			return
-		}
-	}
-	if addon.Spec.Container.Image == "" {
-		cnd := api.ImageNotDefined
-		cnd.LastTransitionTime = v1.Now()
-		cnd.ObservedGeneration = addon.Status.ObservedGeneration
-		addon.Status.Conditions = append(
-			addon.Status.Conditions,
-			cnd)
-	}
+// schemaChanged a schema has been created/updated.
+func (r *Reconciler) schemaChanged(schema *api.Schema) (err error) {
 	return
 }
 
-// addonDeleted an addon has been deleted.
-func (r *Reconciler) addonDeleted(name string) (err error) {
+// schemaDeleted a schema has been deleted.
+func (r *Reconciler) schemaDeleted(name string) (err error) {
 	return
 }

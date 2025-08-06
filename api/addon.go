@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	tasking "github.com/konveyor/tackle2-hub/task"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,7 +72,18 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 		return
 	}
 	r := Addon{}
-	r.With(addon, extensions.Items...)
+	matched := []crd.Extension{}
+	for _, extension := range extensions.Items {
+		match, err := (&tasking.Task{}).MatchAddon(&extension, addon)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		if match {
+			matched = append(matched, extension)
+		}
+	}
+	r.With(addon, matched...)
 
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -107,16 +119,18 @@ func (h AddonHandler) List(ctx *gin.Context) {
 
 // Addon REST resource.
 type Addon struct {
-	Name       string         `json:"name"`
-	Container  core.Container `json:"container"`
-	Extensions []Extension    `json:"extensions,omitempty"`
-	Metadata   any            `json:"metadata,omitempty"`
+	Name       string          `json:"name"`
+	Container  core.Container  `json:"container"`
+	Extensions []Extension     `json:"extensions,omitempty"`
+	Metadata   any             `json:"metadata,omitempty"`
+	Status     crd.AddonStatus `json:"status,omitempty"`
 }
 
 // With model.
 func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 	r.Name = m.Name
 	r.Container = m.Spec.Container
+	r.Status = m.Status
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}
@@ -131,11 +145,12 @@ func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 
 // Extension REST resource.
 type Extension struct {
-	Name         string         `json:"name"`
-	Addon        string         `json:"addon"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Container    core.Container `json:"container"`
-	Metadata     any            `json:"metadata,omitempty"`
+	Name         string              `json:"name"`
+	Addon        string              `json:"addon"`
+	Capabilities []string            `json:"capabilities,omitempty"`
+	Container    core.Container      `json:"container"`
+	Metadata     any                 `json:"metadata,omitempty"`
+	Status       crd.ExtensionStatus `json:"status,omitempty"`
 }
 
 // With model.
@@ -143,6 +158,7 @@ func (r *Extension) With(m *crd.Extension) {
 	r.Name = m.Name
 	r.Addon = m.Spec.Addon
 	r.Container = m.Spec.Container
+	r.Status = m.Status
 	if m.Spec.Metadata.Raw != nil {
 		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
 	}

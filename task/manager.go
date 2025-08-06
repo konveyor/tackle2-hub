@@ -540,7 +540,7 @@ func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 	var selected *crd.Addon
 	selector := NewSelector(m.DB, task)
 	for _, addon = range m.cluster.Addons() {
-		matched, err = task.matchTask(addon, kind)
+		matched, err = task.MatchTask(addon, kind)
 		if err != nil {
 			return
 		}
@@ -580,7 +580,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 	matched := false
 	selector := NewSelector(m.DB, task)
 	for _, extension := range m.cluster.Extensions() {
-		matched, err = task.matchAddon(extension, addon)
+		matched, err = task.MatchAddon(extension, addon)
 		if err != nil {
 			return
 		}

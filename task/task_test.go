@@ -188,23 +188,54 @@ func TestAddonRegex(t *testing.T) {
 	ext := &crd.Extension{}
 	ext.Name = "Test"
 	ext.Spec.Addon = "A"
-	matched, err := m.matchAddon(ext, addonA)
+	matched, err := m.MatchAddon(ext, addonA)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(matched).To(gomega.BeTrue())
-	matched, err = m.matchAddon(ext, addonB)
+	matched, err = m.MatchAddon(ext, addonB)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(matched).To(gomega.BeFalse())
 	// regex.
 	ext.Spec.Addon = "^(A|B)$"
-	matched, err = m.matchAddon(ext, addonA)
+	matched, err = m.MatchAddon(ext, addonA)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(matched).To(gomega.BeTrue())
-	matched, err = m.matchAddon(ext, addonB)
+	matched, err = m.MatchAddon(ext, addonB)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(matched).To(gomega.BeTrue())
 	// regex not valid.
 	ext.Spec.Addon = "(]$"
-	matched, err = m.matchAddon(ext, addonA)
+	matched, err = m.MatchAddon(ext, addonA)
+	g.Expect(err).ToNot(gomega.BeNil())
+}
+
+func TestTaskRegex(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	m := Task{}
+	taskA := &crd.Task{}
+	taskA.Name = "A"
+	taskB := &crd.Task{}
+	taskB.Name = "B"
+	// direct.
+	addon := &crd.Addon{}
+	addon.Name = "Test"
+	addon.Spec.Task = "A"
+	matched, err := m.MatchTask(addon, taskA)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, err = m.MatchTask(addon, taskB)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeFalse())
+	// regex.
+	addon.Spec.Task = "^(A|B)$"
+	matched, err = m.MatchTask(addon, taskA)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, err = m.MatchTask(addon, taskB)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(matched).To(gomega.BeTrue())
+	// regex not valid.
+	addon.Spec.Task = "(]$"
+	matched, err = m.MatchTask(addon, taskA)
 	g.Expect(err).ToNot(gomega.BeNil())
 }
 
