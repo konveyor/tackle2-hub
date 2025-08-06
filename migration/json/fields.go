@@ -34,6 +34,7 @@ func (d *Data) Merge(other Data) (merged bool) {
 		return
 	}
 	d.Any = d.merge(a, b)
+	d.Any = jsd.JsonSafe(d.Any)
 	merged = true
 	return
 }
