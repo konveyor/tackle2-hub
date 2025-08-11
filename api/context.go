@@ -181,6 +181,11 @@ func (r Renderer) renderIterator(ctx *gin.Context, iter Iterator) {
 		encoder.writeItem(0, i, object)
 	}
 	encoder.endList()
+	err = encoder.error()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	ctx.File(file.Name())
 }
 
@@ -207,6 +212,11 @@ func (r Renderer) renderSlice(ctx *gin.Context, bv reflect.Value) {
 		encoder.writeItem(0, i, object)
 	}
 	encoder.endList()
+	err = encoder.error()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	ctx.File(file.Name())
 }
 
@@ -348,11 +358,13 @@ type Encoder interface {
 	writeItem(batch, index int, object any) Encoder
 	encode(object any) Encoder
 	embed(object any) Encoder
+	error() error
 }
 
 type jsonEncoder struct {
 	output io.Writer
 	fields int
+	errors []error
 }
 
 func (r *jsonEncoder) begin() Encoder {
@@ -366,7 +378,8 @@ func (r *jsonEncoder) end() Encoder {
 }
 
 func (r *jsonEncoder) write(s string) Encoder {
-	_, _ = r.output.Write([]byte(s))
+	_, err := io.WriteString(r.output, s)
+	r.record(err)
 	return r
 }
 
@@ -404,17 +417,20 @@ func (r *jsonEncoder) writeItem(batch, index int, object any) Encoder {
 
 func (r *jsonEncoder) encode(object any) Encoder {
 	encoder := json.NewEncoder(r.output)
-	_ = encoder.Encode(object)
+	err := encoder.Encode(object)
+	r.record(err)
 	return r
 }
 
 func (r *jsonEncoder) embed(object any) Encoder {
 	b := new(bytes.Buffer)
 	encoder := json.NewEncoder(b)
-	_ = encoder.Encode(object)
+	err := encoder.Encode(object)
+	r.record(err)
 	s := b.String()
 	mp := make(map[string]any)
-	err := json.Unmarshal([]byte(s), &mp)
+	err = json.Unmarshal([]byte(s), &mp)
+	r.record(err)
 	if err == nil {
 		r.fields += len(mp)
 		s = s[1 : len(s)-2]
@@ -423,10 +439,26 @@ func (r *jsonEncoder) embed(object any) Encoder {
 	return r
 }
 
+// record appends errors.
+func (r *jsonEncoder) record(err error) {
+	if err != nil {
+		r.errors = append(r.errors, err)
+	}
+}
+
+// error returns the first error encountered.
+func (r *jsonEncoder) error() (err error) {
+	if len(r.errors) > 0 {
+		err = r.errors[0]
+	}
+	return
+}
+
 type yamlEncoder struct {
 	output io.Writer
 	fields int
 	depth  int
+	errors []error
 }
 
 func (r *yamlEncoder) begin() Encoder {
@@ -439,8 +471,11 @@ func (r *yamlEncoder) end() Encoder {
 }
 
 func (r *yamlEncoder) write(s string) Encoder {
-	s += strings.Repeat("  ", r.depth)
-	_, _ = r.output.Write([]byte(s))
+	indent := strings.Repeat("  ", r.depth)
+	_, err := io.WriteString(r.output, indent)
+	r.record(err)
+	_, err = io.WriteString(r.output, s)
+	r.record(err)
 	return r
 }
 
@@ -476,22 +511,42 @@ func (r *yamlEncoder) writeItem(batch, index int, object any) Encoder {
 
 func (r *yamlEncoder) encode(object any) Encoder {
 	encoder := yaml.NewEncoder(r.output)
-	_ = encoder.Encode(object)
-	_ = encoder.Close()
+	err := encoder.Encode(object)
+	r.record(err)
+	err = encoder.Close()
+	r.record(err)
 	return r
 }
 
 func (r *yamlEncoder) embed(object any) Encoder {
 	b := new(bytes.Buffer)
 	encoder := yaml.NewEncoder(b)
-	_ = encoder.Encode(object)
-	_ = encoder.Close()
+	err := encoder.Encode(object)
+	r.record(err)
+	err = encoder.Close()
+	r.record(err)
 	s := b.String()
 	mp := make(map[string]any)
-	err := yaml.Unmarshal([]byte(s), &mp)
+	err = yaml.Unmarshal([]byte(s), &mp)
+	r.record(err)
 	if err == nil {
 		r.fields += len(mp)
 	}
 	r.write(s)
 	return r
+}
+
+// record appends the error.
+func (r *yamlEncoder) record(err error) {
+	if err != nil {
+		r.errors = append(r.errors, err)
+	}
+}
+
+// error returns the first error encountered.
+func (r *yamlEncoder) error() (err error) {
+	if len(r.errors) > 0 {
+		err = r.errors[0]
+	}
+	return
 }
