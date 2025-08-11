@@ -39,7 +39,7 @@
         - get
         - post
         - put
-    - name: applications.manifest
+    - name: applications.manifests
       verbs:
         - get
         - post
@@ -278,7 +278,7 @@
         - get
         - post
         - put
-    - name: applications.manifest
+    - name: applications.manifests
       verbs:
         - get
         - post
@@ -480,7 +480,7 @@
     - name: applications.analyses
       verbs:
         - get
-    - name: applications.manifest
+    - name: applications.manifests
       verbs:
         - get
     - name: applications.assessments
@@ -616,7 +616,7 @@
     - name: applications.analyses
       verbs:
         - get
-    - name: applications.manifest
+    - name: applications.manifests
       verbs:
         - get
     - name: applications.stakeholders

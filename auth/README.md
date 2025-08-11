@@ -22,7 +22,7 @@ Full administrative access to nearly all resources — can create, read, update,
 | applications.tags         | ✅ | ✅ | ✅ | ✅ |
 | applications.bucket       | ✅ | ✅ | ✅ | ✅ |
 | applications.analyses     | ✅ | ✅ | ✅ | ✅ |
-| applications.manifest     | ✅ | ✅ | ❌ | ❌ |
+| applications.manifests    | ✅ | ✅ | ❌ | ❌ |
 | applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
 | applications.assessments  | ✅ | ✅ | ❌ | ❌ |
 | assessments               | ✅ | ✅ | ✅ | ✅ |
@@ -72,7 +72,7 @@ Broad create/update/delete rights but restricted on identities, proxies, setting
 | applications.tags         | ✅ | ✅ | ✅ | ✅ |
 | applications.bucket       | ✅ | ✅ | ✅ | ✅ |
 | applications.analyses     | ✅ | ✅ | ✅ | ✅ |
-| applications.manifest     | ✅ | ✅ | ❌ | ❌ |
+| applications.manifests    | ✅ | ✅ | ❌ | ❌ |
 | applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
 | applications.assessments  | ✅ | ✅ | ❌ | ❌ |
 | assessments               | ✅ | ✅ | ✅ | ✅ |
@@ -113,49 +113,49 @@ Broad create/update/delete rights but restricted on identities, proxies, setting
 ## 🚚 Role: **tackle-migrator**
 Mostly read-only, except can fully manage dependencies and tasks.
 
-| Resource                  | Create | Read | Update | Delete |
-|---------------------------|--------|------|--------|--------|
-| addons                    | ❌ | ✅ | ❌ | ❌ |
-| adoptionplans             | ✅ | ❌ | ❌ | ❌ |
-| applications              | ❌ | ✅ | ❌ | ❌ |
-| applications.facts        | ❌ | ✅ | ❌ | ❌ |
-| applications.tags         | ❌ | ✅ | ❌ | ❌ |
-| applications.bucket       | ❌ | ✅ | ❌ | ❌ |
-| applications.analyses     | ❌ | ✅ | ❌ | ❌ |
-| applications.manifest     | ❌ | ✅ | ❌ | ❌ |
-| applications.assessments  | ❌ | ✅ | ❌ | ❌ |
+| Resource                 | Create | Read | Update | Delete |
+|--------------------------|--------|------|--------|--------|
+| addons                   | ❌ | ✅ | ❌ | ❌ |
+| adoptionplans            | ✅ | ❌ | ❌ | ❌ |
+| applications             | ❌ | ✅ | ❌ | ❌ |
+| applications.facts       | ❌ | ✅ | ❌ | ❌ |
+| applications.tags        | ❌ | ✅ | ❌ | ❌ |
+| applications.bucket      | ❌ | ✅ | ❌ | ❌ |
+| applications.analyses    | ❌ | ✅ | ❌ | ❌ |
+| applications.manifests   | ❌ | ✅ | ❌ | ❌ |
+| applications.assessments | ❌ | ✅ | ❌ | ❌ |
 | assessments              | ❌ | ✅ | ❌ | ❌ |
-| businessservices          | ❌ | ✅ | ❌ | ❌ |
-| dependencies              | ✅ | ✅ | ✅ | ✅ |
-| generators                | ❌ | ✅ | ❌ | ❌ |
-| identities                | ❌ | ✅ | ❌ | ❌ |
-| imports                   | ❌ | ✅ | ❌ | ❌ |
-| jobfunctions              | ❌ | ✅ | ❌ | ❌ |
-| kai                       | ✅ | ✅ | ❌ | ❌ |
-| manifests                 | ❌ | ✅ | ❌ | ❌ |
-| migrationwaves            | ❌ | ✅ | ❌ | ❌ |
-| platforms                 | ❌ | ✅ | ❌ | ❌ |
-| proxies                   | ❌ | ✅ | ❌ | ❌ |
-| reviews                   | ❌ | ✅ | ❌ | ❌ |
-| schemas                   | ❌ | ✅ | ❌ | ❌ |
-| settings                  | ❌ | ✅ | ❌ | ❌ |
-| stakeholdergroups         | ❌ | ✅ | ❌ | ❌ |
-| stakeholders              | ❌ | ✅ | ❌ | ❌ |
-| tags                      | ❌ | ✅ | ❌ | ❌ |
-| tagcategories             | ❌ | ✅ | ❌ | ❌ |
-| tasks                     | ✅ | ✅ | ✅ | ✅ |
-| tasks.bucket              | ✅ | ✅ | ✅ | ✅ |
-| trackers                  | ❌ | ✅ | ❌ | ❌ |
-| tickets                   | ❌ | ✅ | ❌ | ❌ |
-| cache                     | ❌ | ✅ | ❌ | ❌ |
-| files                     | ❌ | ✅ | ❌ | ❌ |
-| buckets                   | ❌ | ✅ | ❌ | ❌ |
-| rulesets                  | ❌ | ✅ | ❌ | ❌ |
-| targets                   | ❌ | ✅ | ❌ | ❌ |
-| analyses                  | ❌ | ✅ | ❌ | ❌ |
-| archetypes                | ❌ | ✅ | ❌ | ❌ |
-| archetypes.assessments    | ❌ | ✅ | ❌ | ❌ |
-| questionnaires            | ❌ | ✅ | ❌ | ❌ |
+| businessservices         | ❌ | ✅ | ❌ | ❌ |
+| dependencies             | ✅ | ✅ | ✅ | ✅ |
+| generators               | ❌ | ✅ | ❌ | ❌ |
+| identities               | ❌ | ✅ | ❌ | ❌ |
+| imports                  | ❌ | ✅ | ❌ | ❌ |
+| jobfunctions             | ❌ | ✅ | ❌ | ❌ |
+| kai                      | ✅ | ✅ | ❌ | ❌ |
+| manifests                | ❌ | ✅ | ❌ | ❌ |
+| migrationwaves           | ❌ | ✅ | ❌ | ❌ |
+| platforms                | ❌ | ✅ | ❌ | ❌ |
+| proxies                  | ❌ | ✅ | ❌ | ❌ |
+| reviews                  | ❌ | ✅ | ❌ | ❌ |
+| schemas                  | ❌ | ✅ | ❌ | ❌ |
+| settings                 | ❌ | ✅ | ❌ | ❌ |
+| stakeholdergroups        | ❌ | ✅ | ❌ | ❌ |
+| stakeholders             | ❌ | ✅ | ❌ | ❌ |
+| tags                     | ❌ | ✅ | ❌ | ❌ |
+| tagcategories            | ❌ | ✅ | ❌ | ❌ |
+| tasks                    | ✅ | ✅ | ✅ | ✅ |
+| tasks.bucket             | ✅ | ✅ | ✅ | ✅ |
+| trackers                 | ❌ | ✅ | ❌ | ❌ |
+| tickets                  | ❌ | ✅ | ❌ | ❌ |
+| cache                    | ❌ | ✅ | ❌ | ❌ |
+| files                    | ❌ | ✅ | ❌ | ❌ |
+| buckets                  | ❌ | ✅ | ❌ | ❌ |
+| rulesets                 | ❌ | ✅ | ❌ | ❌ |
+| targets                  | ❌ | ✅ | ❌ | ❌ |
+| analyses                 | ❌ | ✅ | ❌ | ❌ |
+| archetypes               | ❌ | ✅ | ❌ | ❌ |
+| archetypes.assessments   | ❌ | ✅ | ❌ | ❌ |
+| questionnaires           | ❌ | ✅ | ❌ | ❌ |
 
 ---
 
@@ -171,7 +171,7 @@ Read-only for most resources, except can update `applications.stakeholders` and 
 | applications.tags         | ❌ | ✅ | ❌ | ❌ |
 | applications.bucket       | ❌ | ✅ | ❌ | ❌ |
 | applications.analyses     | ❌ | ✅ | ❌ | ❌ |
-| applications.manifest     | ❌ | ✅ | ❌ | ❌ |
+| applications.manifests    | ❌ | ✅ | ❌ | ❌ |
 | applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
 | applications.assessments  | ❌ | ✅ | ❌ | ❌ |
 | assessments               | ❌ | ✅ | ❌ | ❌ |
@@ -243,8 +243,8 @@ Read-only for most resources, except can update `applications.stakeholders` and 
 - applications.facts:get
 - applications.facts:post
 - applications.facts:put
-- applications.manifest:get
-- applications.manifest:post
+- applications.manifests:get
+- applications.manifests:post
 - applications.stakeholders:put
 - applications.tags:delete
 - applications.tags:get

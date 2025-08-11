@@ -17,7 +17,8 @@ const (
 	ManifestsRoot = "/manifests"
 	ManifestRoot  = ManifestsRoot + "/:" + ID
 	//
-	AppManifestRoot = ApplicationRoot + "/manifest"
+	AppManifestRoot  = ApplicationRoot + "/manifest"
+	AppManifestsRoot = ApplicationRoot + "/manifests"
 )
 
 const (
@@ -42,8 +43,9 @@ func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(ManifestRoot, h.Delete)
 	// application
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("applications.manifest"))
+	routeGroup.Use(Required("applications.manifests"))
 	routeGroup.GET(AppManifestRoot, h.AppGet)
+	routeGroup.POST(AppManifestsRoot, h.AppCreate)
 }
 
 // Get godoc
@@ -241,6 +243,42 @@ func (h *ManifestHandler) AppGet(ctx *gin.Context) {
 	h.inject(ctx, &r)
 
 	h.Respond(ctx, http.StatusOK, r)
+}
+
+// AppCreate godoc
+// @summary Create a manifest.
+// @description Create a manifest.
+// @tags manifests
+// @accept json
+// @produce json
+// @success 201 {object} Manifest
+// @router /applications/{id}/manifests [post]
+// @param id path int true "Application ID"
+// @param manifest body Manifest true "Manifest data"
+func (h ManifestHandler) AppCreate(ctx *gin.Context) {
+	appId := h.pk(ctx)
+	r := &Manifest{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	m := r.Model()
+	err = secret.Encrypt(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	m.ApplicationID = appId
+	m.CreateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx)
+	err = db.Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r.With(m)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // inject replaces secret refs with values.
