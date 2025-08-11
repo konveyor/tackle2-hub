@@ -79,7 +79,6 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @description - kind
 // @description - name
 // @description - application.id
-// @tags dependencies
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
