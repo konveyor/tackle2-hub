@@ -126,6 +126,12 @@
         - get
         - post
         - put
+    - name: schemas
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: settings
       verbs:
         - delete
@@ -353,6 +359,12 @@
         - get
         - post
         - put
+    - name: schemas
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: settings
       verbs:
         - get
@@ -518,6 +530,9 @@
       verbs:
         - get
     - name: reviews
+      verbs:
+        - get
+    - name: schemas
       verbs:
         - get
     - name: settings
