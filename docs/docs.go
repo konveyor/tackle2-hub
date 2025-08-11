@@ -4316,7 +4316,7 @@ const docTemplate = `{
                 "summary": "Find a schema.",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Schema name",
                         "name": "name",
                         "in": "path",

@@ -4641,7 +4641,7 @@
             "description": "Schema name",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             }
           }
         ],

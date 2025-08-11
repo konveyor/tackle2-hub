@@ -5627,7 +5627,7 @@ paths:
         in: path
         name: name
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
