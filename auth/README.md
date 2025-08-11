@@ -204,15 +204,22 @@ Read-only for most resources, except can update `applications.stakeholders` and 
 
 ## Scopes
 
+### Addon resources
 - addons:delete
 - addons:get
 - addons:post
 - addons:put
+
+### Adoptionplan resources
 - adoptionplans:post
+
+### Analysis resources
 - analyses:delete
 - analyses:get
 - analyses:post
 - analyses:put
+
+### Application resources
 - applications:delete
 - applications:get
 - applications:post
@@ -238,104 +245,156 @@ Read-only for most resources, except can update `applications.stakeholders` and 
 - applications.tags:get
 - applications.tags:post
 - applications.tags:put
+
+### Archetype resources
 - archetypes:delete
 - archetypes:get
 - archetypes:post
 - archetypes:put
 - archetypes.assessments:get
 - archetypes.assessments:post
+
+### Assessment resources
 - assessments:delete
 - assessments:get
 - assessments:post
 - assessments:put
+
+### Bucket resources
 - buckets:delete
 - buckets:get
 - buckets:post
 - buckets:put
+
+### Businessservice resources
 - businessservices:delete
 - businessservices:get
 - businessservices:post
 - businessservices:put
+
+### Cache resources
 - cache:delete
 - cache:get
+
+### Dependency resources
 - dependencies:delete
 - dependencies:get
 - dependencies:post
 - dependencies:put
+
+### File resources
 - files:delete
 - files:get
 - files:post
 - files:put
+
+### Generator resources
 - generators:delete
 - generators:get
 - generators:post
 - generators:put
+
+### Identity resources
 - identities:delete
 - identities:get
 - identities:post
 - identities:put
+
+### Import resources
 - imports:delete
 - imports:get
 - imports:post
 - imports:put
+
+### Jobfunction resources
 - jobfunctions:delete
 - jobfunctions:get
 - jobfunctions:post
 - jobfunctions:put
+
+### Kai resources
 - kai:get
 - kai:post
+
+### Manifest resources
 - manifests:delete
 - manifests:get
 - manifests:post
 - manifests:put
+
+### Migrationwave resources
 - migrationwaves:delete
 - migrationwaves:get
 - migrationwaves:post
 - migrationwaves:put
+
+### Platform resources
 - platforms:delete
 - platforms:get
 - platforms:post
 - platforms:put
+
+### Proxy resources
 - proxies:delete
 - proxies:get
 - proxies:post
 - proxies:put
+
+### Questionnaire resources
 - questionnaires:delete
 - questionnaires:get
 - questionnaires:post
 - questionnaires:put
+
+### Review resources
 - reviews:delete
 - reviews:get
 - reviews:post
 - reviews:put
+
+### Ruleset resources
 - rulesets:delete
 - rulesets:get
 - rulesets:post
 - rulesets:put
+
+### Setting resources
 - settings:delete
 - settings:get
 - settings:post
 - settings:put
+
+### Stakeholdergroup resources
 - stakeholdergroups:delete
 - stakeholdergroups:get
 - stakeholdergroups:post
 - stakeholdergroups:put
+
+### Stakeholder resources
 - stakeholders:delete
 - stakeholders:get
 - stakeholders:post
 - stakeholders:put
+
+### Tagcategory resources
 - tagcategories:delete
 - tagcategories:get
 - tagcategories:post
 - tagcategories:put
+
+### Tag resources
 - tags:delete
 - tags:get
 - tags:post
 - tags:put
+
+### Target resources
 - targets:delete
 - targets:get
 - targets:post
 - targets:put
+
+### Task resources
 - tasks:delete
 - tasks:get
 - tasks:patch
@@ -345,12 +404,17 @@ Read-only for most resources, except can update `applications.stakeholders` and 
 - tasks.bucket:get
 - tasks.bucket:post
 - tasks.bucket:put
+
+### Ticket resources
 - tickets:delete
 - tickets:get
 - tickets:post
 - tickets:put
+
+### Tracker resources
 - trackers:delete
 - trackers:get
 - trackers:post
 - trackers:put
+
 
