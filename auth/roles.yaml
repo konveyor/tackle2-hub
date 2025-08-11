@@ -361,10 +361,7 @@
         - put
     - name: schemas
       verbs:
-        - delete
         - get
-        - post
-        - put
     - name: settings
       verbs:
         - get
