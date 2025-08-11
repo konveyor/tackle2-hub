@@ -1,7 +1,128 @@
+diff -ruN '--exclude=mod.patch' migration/v17/model/analysis.go migration/v18/model/analysis.go
+--- migration/v17/model/analysis.go	2025-06-23 14:23:00.528319378 -0500
++++ migration/v18/model/analysis.go	2025-08-04 10:51:28.502058470 -0500
+@@ -11,10 +11,10 @@
+ 	Effort        int
+ 	Commit        string
+ 	Archived      bool
+-	Summary       []ArchivedIssue  `gorm:"type:json;serializer:json"`
+-	Issues        []Issue          `gorm:"constraint:OnDelete:CASCADE"`
+-	Dependencies  []TechDependency `gorm:"constraint:OnDelete:CASCADE"`
+-	ApplicationID uint             `gorm:"index;not null"`
++	Summary       []ArchivedInsight `gorm:"type:json;serializer:json"`
++	Insights      []Insight         `gorm:"constraint:OnDelete:CASCADE"`
++	Dependencies  []TechDependency  `gorm:"constraint:OnDelete:CASCADE"`
++	ApplicationID uint              `gorm:"index;not null"`
+ 	Application   *Application
+ }
+ 
+@@ -31,33 +31,33 @@
+ 	Analysis   *Analysis
+ }
+ 
+-// Issue report issue (violation).
+-type Issue struct {
++// Insight report insights.
++type Insight struct {
+ 	Model
+-	RuleSet     string `gorm:"uniqueIndex:issueA;not null"`
+-	Rule        string `gorm:"uniqueIndex:issueA;not null"`
++	RuleSet     string `gorm:"uniqueIndex:insightA;not null"`
++	Rule        string `gorm:"uniqueIndex:insightA;not null"`
+ 	Name        string `gorm:"index"`
+ 	Description string
+ 	Category    string     `gorm:"index;not null"`
+-	Incidents   []Incident `gorm:"foreignKey:IssueID;constraint:OnDelete:CASCADE"`
++	Incidents   []Incident `gorm:"foreignKey:InsightID;constraint:OnDelete:CASCADE"`
+ 	Links       []Link     `gorm:"type:json;serializer:json"`
+ 	Facts       json.Map   `gorm:"type:json;serializer:json"`
+ 	Labels      []string   `gorm:"type:json;serializer:json"`
+ 	Effort      int        `gorm:"index;not null"`
+-	AnalysisID  uint       `gorm:"index;uniqueIndex:issueA;not null"`
++	AnalysisID  uint       `gorm:"index;uniqueIndex:insightA;not null"`
+ 	Analysis    *Analysis
+ }
+ 
+ // Incident report an issue incident.
+ type Incident struct {
+ 	Model
+-	File     string `gorm:"index;not null"`
+-	Line     int
+-	Message  string
+-	CodeSnip string
+-	Facts    json.Map `gorm:"type:json;serializer:json"`
+-	IssueID  uint     `gorm:"index;not null"`
+-	Issue    *Issue
++	File      string `gorm:"index;not null"`
++	Line      int
++	Message   string
++	CodeSnip  string
++	Facts     json.Map `gorm:"type:json;serializer:json"`
++	InsightID uint     `gorm:"index;not null"`
++	Insight   *Insight
+ }
+ 
+ // RuleSet - Analysis ruleset.
+@@ -146,8 +146,8 @@
+ // JSON Fields.
+ //
+ 
+-// ArchivedIssue resource created when issues are archived.
+-type ArchivedIssue struct {
++// ArchivedInsight resource created when issues are archived.
++type ArchivedInsight struct {
+ 	RuleSet     string `json:"ruleSet"`
+ 	Rule        string `json:"rule"`
+ 	Name        string `json:"name,omitempty" yaml:",omitempty"`
+diff -ruN '--exclude=mod.patch' migration/v17/model/application.go migration/v18/model/application.go
+--- migration/v17/model/application.go	2025-06-23 14:23:00.528319378 -0500
++++ migration/v18/model/application.go	2025-07-21 13:52:29.984895565 -0500
+@@ -14,8 +14,10 @@
+ 	BucketOwner
+ 	Name              string `gorm:"index;unique;not null"`
+ 	Description       string
+-	Review            *Review    `gorm:"constraint:OnDelete:CASCADE"`
+-	Repository        Repository `gorm:"type:json;serializer:json"`
++	Review            *Review        `gorm:"constraint:OnDelete:CASCADE"`
++	Repository        Repository     `gorm:"type:json;serializer:json"`
++	Assets            Repository     `gorm:"type:json;serializer:json"`
++	Coordinates       *json.Document `gorm:"type:json;serializer:json"`
+ 	Binary            string
+ 	Facts             []Fact `gorm:"constraint:OnDelete:CASCADE"`
+ 	Comments          string
+@@ -30,8 +32,11 @@
+ 	Analyses          []Analysis    `gorm:"constraint:OnDelete:CASCADE"`
+ 	MigrationWaveID   *uint         `gorm:"index"`
+ 	MigrationWave     *MigrationWave
++	PlatformID        *uint `gorm:"index"`
++	Platform          *Platform
+ 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
+ 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
++	Manifest          []Manifest   `gorm:"constraint:OnDelete:CASCADE"`
+ }
+ 
+ type Fact struct {
+@@ -168,6 +173,7 @@
+ 	Tags              []Tag              `gorm:"many2many:ArchetypeTags;constraint:OnDelete:CASCADE"`
+ 	Stakeholders      []Stakeholder      `gorm:"many2many:ArchetypeStakeholders;constraint:OnDelete:CASCADE"`
+ 	StakeholderGroups []StakeholderGroup `gorm:"many2many:ArchetypeStakeholderGroups;constraint:OnDelete:CASCADE"`
++	Profiles          []TargetProfile    `gorm:"constraint:OnDelete:CASCADE"`
+ }
+ 
+ type Tag struct {
 diff -ruN '--exclude=mod.patch' migration/v17/model/core.go migration/v18/model/core.go
---- migration/v17/model/core.go	2025-05-15 09:22:18.705884812 -0500
-+++ migration/v18/model/core.go	2025-05-17 07:50:17.379033740 -0500
-@@ -164,6 +164,7 @@
+--- migration/v17/model/core.go	2025-06-23 14:23:00.528319378 -0500
++++ migration/v18/model/core.go	2025-08-01 08:16:51.450592247 -0500
+@@ -138,6 +138,8 @@
+ 	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
+ 	ApplicationID *uint        `gorm:"index"`
+ 	Application   *Application
++	PlatformID    *uint `gorm:"index"`
++	Platform      *Platform
+ 	TaskGroupID   *uint `gorm:"<-:create"`
+ 	TaskGroup     *TaskGroup
+ }
+@@ -164,6 +166,7 @@
  	Model
  	BucketOwner
  	Name       string
@@ -9,35 +130,61 @@ diff -ruN '--exclude=mod.patch' migration/v17/model/core.go migration/v18/model/
  	Kind       string
  	Addon      string
  	Extensions []string `gorm:"type:json;serializer:json"`
-diff -ruN '--exclude=mod.patch' migration/v17/model/application.go migration/v18/model/application.go
---- migration/v17/model/application.go	2025-05-07 15:47:21.397577860 -0500
-+++ migration/v18/model/application.go	2025-05-08 10:30:04.320135768 -0500
-@@ -32,6 +32,7 @@
- 	MigrationWave     *MigrationWave
- 	Ticket            *Ticket      `gorm:"constraint:OnDelete:CASCADE"`
- 	Assessments       []Assessment `gorm:"constraint:OnDelete:CASCADE"`
-+	Manifest          []Manifest    `gorm:"constraint:OnDelete:CASCADE"`
- }
-
- type Fact struct {
+@@ -191,8 +194,9 @@
+ // Identity represents and identity with a set of credentials.
+ type Identity struct {
+ 	Model
+-	Kind         string `gorm:"not null"`
++	Kind         string `gorm:"index,not null"`
+ 	Name         string `gorm:"index;unique;not null"`
++	Default      bool
+ 	Description  string
+ 	User         string
+ 	Password     string        `secret:""`
 diff -ruN '--exclude=mod.patch' migration/v17/model/pkg.go migration/v18/model/pkg.go
---- migration/v17/model/pkg.go	2025-05-07 15:47:21.397577860 -0500
-+++ migration/v18/model/pkg.go	2025-05-08 10:30:04.320135768 -0500
-@@ -31,6 +31,7 @@
+--- migration/v17/model/pkg.go	2025-06-23 14:23:00.528319378 -0500
++++ migration/v18/model/pkg.go	2025-07-08 18:00:15.869842600 -0500
+@@ -20,19 +20,22 @@
+ 		TechDependency{},
+ 		Incident{},
+ 		Analysis{},
+-		Issue{},
++		Insight{},
+ 		Bucket{},
+ 		BusinessService{},
+ 		Dependency{},
+ 		File{},
+ 		Fact{},
++		Generator{},
+ 		Identity{},
+ 		Import{},
  		ImportSummary{},
  		ImportTag{},
  		JobFunction{},
 +		Manifest{},
  		MigrationWave{},
  		PK{},
++		Platform{},
  		Proxy{},
+ 		Review{},
+ 		Setting{},
+@@ -43,6 +46,7 @@
+ 		Tag{},
+ 		TagCategory{},
+ 		Target{},
++		TargetProfile{},
+ 		Task{},
+ 		TaskGroup{},
+ 		TaskReport{},
 diff -ruN '--exclude=mod.patch' migration/v17/model/platform.go migration/v18/model/platform.go
 --- migration/v17/model/platform.go	1969-12-31 18:00:00.000000000 -0600
-+++ migration/v18/model/platform.go	2025-05-08 10:30:04.320135768 -0500
-@@ -0,0 +1,11 @@
++++ migration/v18/model/platform.go	2025-08-04 06:33:50.942119552 -0500
+@@ -0,0 +1,44 @@
 +package model
 +
-+import "github.com/konveyor/tackle2-hub/migration/json"
++import (
++	"github.com/konveyor/tackle2-hub/migration/json"
++)
 +
 +type Manifest struct {
 +	Model
@@ -45,4 +192,35 @@ diff -ruN '--exclude=mod.patch' migration/v17/model/platform.go migration/v18/mo
 +	Secret        json.Map `gorm:"type:json;serializer:json" secret:""`
 +	ApplicationID uint
 +	Application   Application
++}
++
++type Platform struct {
++	Model
++	Name         string
++	Kind         string
++	URL          string
++	IdentityID   *uint
++	Identity     *Identity
++	Applications []Application `gorm:"constraint:OnDelete:SET NULL"`
++	Tasks        []Task        `gorm:"constraint:OnDelete:CASCADE"`
++}
++type TargetProfile struct {
++	Model
++	Name        string      `gorm:"uniqueIndex:targetProfileA;not null"`
++	Generators  []Generator `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
++	ArchetypeID uint        `gorm:"uniqueIndex:targetProfileA;not null"`
++	Archetype   Archetype
++}
++
++type Generator struct {
++	Model
++	Kind        string
++	Name        string
++	Description string
++	Repository  Repository `gorm:"type:json;serializer:json"`
++	Params      json.Map   `gorm:"type:json;serializer:json"`
++	Values      json.Map   `gorm:"type:json;serializer:json"`
++	IdentityID  *uint
++	Identity    *Identity
++	Profiles    []TargetProfile `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
 +}
