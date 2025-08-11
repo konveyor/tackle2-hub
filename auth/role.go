@@ -28,6 +28,7 @@ var AddonRole = []string{
 	"manifests:*",
 	"platforms:get",
 	"proxies:get",
+	"schemas:get",
 	"settings:get",
 	"tags:*",
 	"tagcategories:*",
