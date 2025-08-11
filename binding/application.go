@@ -339,8 +339,8 @@ type AppManifest struct {
 
 // Create manifest.
 func (h *AppManifest) Create(r *api.Manifest) (err error) {
-	r.Application.ID = h.appId
-	err = h.client.Post(api.ManifestsRoot, &r)
+	path := Path(api.AppManifestsRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Post(path, &r)
 	return
 }
 
