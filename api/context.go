@@ -477,6 +477,7 @@ func (r *yamlEncoder) writeItem(batch, index int, object any) Encoder {
 func (r *yamlEncoder) encode(object any) Encoder {
 	encoder := yaml.NewEncoder(r.output)
 	_ = encoder.Encode(object)
+	_ = encoder.Close()
 	return r
 }
 
@@ -484,6 +485,7 @@ func (r *yamlEncoder) embed(object any) Encoder {
 	b := new(bytes.Buffer)
 	encoder := yaml.NewEncoder(b)
 	_ = encoder.Encode(object)
+	_ = encoder.Close()
 	s := b.String()
 	mp := make(map[string]any)
 	err := yaml.Unmarshal([]byte(s), &mp)
