@@ -16,6 +16,7 @@ VARIABLES
 
 var (
 	Settings = &settings.Settings
+	Wrap     = liberr.Wrap
 	Log      = logr.WithName("addon")
 )
 var (
@@ -31,10 +32,16 @@ type Adapter struct {
 	Log logapi.Logger
 	// Settings API.
 	Setting Setting
+	// Schema API
+	Schema Schema
 	// Application API.
 	Application Application
 	// Identity API.
 	Identity Identity
+	// Manifest
+	Manifest Manifest
+	// Platform
+	Platform Platform
 	// Proxy API.
 	Proxy Proxy
 	// TagCategory API.
@@ -45,6 +52,10 @@ type Adapter struct {
 	File File
 	// RuleSet API
 	RuleSet RuleSet
+	// Generator API.
+	Generator Generator
+	// Archetype
+	Archetype Archetype
 
 	// Has unexported fields.
 }
@@ -61,6 +72,8 @@ func (h *Adapter) Run(addon func() error)
 
 type Application = binding.Application
     Handler
+
+type Archetype = binding.Archetype
 
 type Bucket = binding.Bucket
 
@@ -84,7 +97,11 @@ type File = binding.File
 type Filter = binding.Filter
     Filter
 
+type Generator = binding.Generator
+
 type Identity = binding.Identity
+
+type Manifest = binding.Manifest
 
 type NotFound = binding.NotFound
 
@@ -94,12 +111,16 @@ type Params = binding.Params
 
 type Path = binding.Path
 
+type Platform = binding.Platform
+
 type Proxy = binding.Proxy
 
 type ResetError = binding.RestError
     Error
 
 type RuleSet = binding.RuleSet
+
+type Schema = binding.Schema
 
 type Setting = binding.Setting
 
@@ -168,6 +189,9 @@ func (h *Task) Increment()
 
 func (h *Task) Load()
     Load a task by ID.
+
+func (h *Task) Platform() (r *api.Platform, err error)
+    Platform returns the platform associated with the task.
 
 func (h *Task) Result(object api.Map)
     Result report addon result.
