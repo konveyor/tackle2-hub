@@ -190,7 +190,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "insight"
+                    "incident"
                 ],
                 "summary": "Get an incident.",
                 "parameters": [
@@ -1252,11 +1252,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "dependencies",
                     "identities"
                 ],
                 "summary": "List application identities.",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity kind",
+                        "name": "kind",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "boolean",
                         "description": "Decrypt fields",

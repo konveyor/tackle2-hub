@@ -2848,7 +2848,7 @@ paths:
             $ref: '#/definitions/api.Incident'
       summary: Get an incident.
       tags:
-      - insight
+      - incident
   /analyses/insights:
     get:
       description: |-
@@ -3576,6 +3576,16 @@ paths:
     get:
       description: List application identities.
       parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Identity kind
+        in: path
+        name: kind
+        required: true
+        type: string
       - description: Decrypt fields
         in: query
         name: decrypted
@@ -3591,7 +3601,6 @@ paths:
             type: array
       summary: List application identities.
       tags:
-      - dependencies
       - identities
   /applications/{id}/manifest:
     get:

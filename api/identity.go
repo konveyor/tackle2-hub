@@ -134,11 +134,12 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // AppList godoc
 // @summary List application identities.
 // @description List application identities.
-// @tags dependencies
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
 // @router /applications/{id}/identities/{kind} [get]
+// @param id path int true "Application ID"
+// @param kind path string true "Identity kind"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppList(ctx *gin.Context) {
 	id := h.pk(ctx)

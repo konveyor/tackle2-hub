@@ -185,7 +185,7 @@
     "/analyses/incidents/{id}": {
       "get": {
         "tags": [
-          "insight"
+          "incident"
         ],
         "summary": "Get an incident.",
         "description": "Get an incident.",
@@ -1342,12 +1342,29 @@
     "/applications/{id}/identities/{kind}": {
       "get": {
         "tags": [
-          "dependencies",
           "identities"
         ],
         "summary": "List application identities.",
         "description": "List application identities.",
         "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "Identity kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "decrypted",
             "in": "query",
