@@ -1331,6 +1331,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/manifests": {
+            "post": {
+                "description": "Create a manifest.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Create a manifest.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Manifest data",
+                        "name": "manifest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/stakeholders": {
             "patch": {
                 "description": "Update the owner and contributors of an Application.",
@@ -2702,7 +2743,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "dependencies",
                     "identities"
                 ],
                 "summary": "List all identities.",

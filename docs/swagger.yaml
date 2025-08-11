@@ -3629,6 +3629,33 @@ paths:
       summary: Get the latest application Manifest.
       tags:
       - manifests
+  /applications/{id}/manifests:
+    post:
+      consumes:
+      - application/json
+      description: Create a manifest.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Manifest data
+        in: body
+        name: manifest
+        required: true
+        schema:
+          $ref: '#/definitions/api.Manifest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Manifest'
+      summary: Create a manifest.
+      tags:
+      - manifests
   /applications/{id}/stakeholders:
     patch:
       description: Update the owner and contributors of an Application.
@@ -4565,7 +4592,6 @@ paths:
             type: array
       summary: List all identities.
       tags:
-      - dependencies
       - identities
     post:
       consumes:

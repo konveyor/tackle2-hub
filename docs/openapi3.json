@@ -1439,6 +1439,50 @@
         }
       }
     },
+    "/applications/{id}/manifests": {
+      "post": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Create a manifest.",
+        "description": "Create a manifest.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Manifest data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Manifest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Manifest"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "manifest"
+      }
+    },
     "/applications/{id}/stakeholders": {
       "patch": {
         "tags": [
@@ -2903,7 +2947,6 @@
     "/identities": {
       "get": {
         "tags": [
-          "dependencies",
           "identities"
         ],
         "summary": "List all identities.",
