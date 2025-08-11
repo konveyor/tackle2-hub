@@ -52,6 +52,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 // @success 200 {object} Identity
 // @router /identities/{id} [get]
 // @param id path int true "Identity ID"
+// @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Identity{}
@@ -83,6 +84,7 @@ func (h IdentityHandler) Get(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []Identity
 // @router /identities [get]
+// @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) List(ctx *gin.Context) {
 	// Filter
 	filter, err := qf.New(ctx,
@@ -137,6 +139,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []Identity
 // @router /applications/{id}/identities/{kind} [get]
+// @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	kind := ctx.Param("kind")

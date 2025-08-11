@@ -56,6 +56,8 @@ func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 // @success 200 {object} Manifest
 // @router /manifests/{id} [get]
 // @param id path int true "Manifest ID"
+// @Param injected query bool false "Inject secret references"
+// @Param decrypted query bool false "Decrypt secret references"
 func (h ManifestHandler) Get(ctx *gin.Context) {
 	r := Manifest{}
 	id := h.pk(ctx)
@@ -86,6 +88,8 @@ func (h ManifestHandler) Get(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []Manifest
 // @router /manifests [get]
+// @Param injected query bool false "Inject secret references"
+// @Param decrypted query bool false "Decrypt secret references"
 func (h ManifestHandler) List(ctx *gin.Context) {
 	resources := []Manifest{}
 	// Filter
@@ -224,6 +228,8 @@ func (h ManifestHandler) Update(ctx *gin.Context) {
 // @success 200 {object} Manifest
 // @router /applications/{id}/manifest [get]
 // @param id path int true "Application ID"
+// @Param injected query bool false "Inject secret references"
+// @Param decrypted query bool false "Decrypt secret references"
 func (h *ManifestHandler) AppGet(ctx *gin.Context) {
 	appId := h.pk(ctx)
 	r := Manifest{}

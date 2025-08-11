@@ -3575,6 +3575,11 @@ paths:
   /applications/{id}/identities/{kind}:
     get:
       description: List application identities.
+      parameters:
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -3597,6 +3602,14 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4527,6 +4540,11 @@ paths:
         - kind
         - name
         - application.id
+      parameters:
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4584,6 +4602,10 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4841,6 +4863,15 @@ paths:
         List all manifests.
         filters:
         - application.id
+      parameters:
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4897,6 +4928,14 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:

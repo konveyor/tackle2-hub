@@ -1256,6 +1256,14 @@ const docTemplate = `{
                     "identities"
                 ],
                 "summary": "List application identities.",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1286,6 +1294,18 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2673,6 +2693,14 @@ const docTemplate = `{
                     "identities"
                 ],
                 "summary": "List all identities.",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2735,6 +2763,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3144,6 +3178,20 @@ const docTemplate = `{
                     "manifests"
                 ],
                 "summary": "List all manifests.",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3206,6 +3254,18 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
                     }
                 ],
                 "responses": {

@@ -1347,6 +1347,16 @@
         ],
         "summary": "List application identities.",
         "description": "List application identities.",
+        "parameters": [
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1379,6 +1389,22 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -2865,6 +2891,16 @@
         ],
         "summary": "List all identities.",
         "description": "List all identities.\nfilters:\n- kind\n- name\n- application.id",
+        "parameters": [
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2928,6 +2964,14 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3373,6 +3417,24 @@
         ],
         "summary": "List all manifests.",
         "description": "List all manifests.\nfilters:\n- application.id",
+        "parameters": [
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -3436,6 +3498,22 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
