@@ -429,7 +429,9 @@ func (r *jsonEncoder) embed(object any) Encoder {
 	r.record(err)
 	s := b.String()
 	mp := make(map[string]any)
-	err = json.Unmarshal([]byte(s), &mp)
+	input := strings.NewReader(s)
+	decoder := json.NewDecoder(input)
+	err = decoder.Decode(&mp)
 	r.record(err)
 	if err == nil {
 		r.fields += len(mp)
@@ -527,7 +529,9 @@ func (r *yamlEncoder) embed(object any) Encoder {
 	r.record(err)
 	s := b.String()
 	mp := make(map[string]any)
-	err = yaml.Unmarshal([]byte(s), &mp)
+	input := strings.NewReader(s)
+	decoder := yaml.NewDecoder(input)
+	err = decoder.Decode(&mp)
 	r.record(err)
 	if err == nil {
 		r.fields += len(mp)

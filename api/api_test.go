@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 
@@ -72,4 +73,41 @@ func TestFactKey(t *testing.T) {
 	key.Qualify("test")
 	g.Expect(key.Source()).To(gomega.Equal("test"))
 	g.Expect(key.Name()).To(gomega.Equal(""))
+}
+
+func TestEncoder(t *testing.T) {
+	//g := gomega.NewGomegaWithT(t)
+
+	type Thing struct {
+		Name string
+		Age  int
+		List []string
+	}
+	thing := &Thing{
+		Name: "name",
+		Age:  1,
+		List: []string{"a", "b", "c", "d"},
+	}
+
+	for _, en := range []Encoder{&jsonEncoder{}, &yamlEncoder{}} {
+		b := &bytes.Buffer{}
+		if x, cast := en.(*jsonEncoder); cast {
+			x.output = b
+		}
+		if x, cast := en.(*yamlEncoder); cast {
+			x.output = b
+		}
+		en.begin()
+		en.field("root")
+		en.embed(thing)
+		en.field("items")
+		en.beginList()
+		en.writeItem(0, 0, "ITEM-0")
+		en.writeItem(0, 1, "ITEM-1")
+		en.writeItem(0, 2, "ITEM-2")
+		en.endList()
+		en.end()
+		s := b.String()
+		println(s)
+	}
 }
