@@ -473,10 +473,7 @@ func (r *yamlEncoder) end() Encoder {
 }
 
 func (r *yamlEncoder) write(s string) Encoder {
-	indent := strings.Repeat("  ", r.depth)
-	_, err := io.WriteString(r.output, indent)
-	r.record(err)
-	_, err = io.WriteString(r.output, s)
+	_, err := io.WriteString(r.output, s)
 	r.record(err)
 	return r
 }

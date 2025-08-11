@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -76,7 +77,7 @@ func TestFactKey(t *testing.T) {
 }
 
 func TestEncoder(t *testing.T) {
-	//g := gomega.NewGomegaWithT(t)
+	g := gomega.NewGomegaWithT(t)
 
 	type Thing struct {
 		Name string
@@ -84,7 +85,7 @@ func TestEncoder(t *testing.T) {
 		List []string
 	}
 	thing := &Thing{
-		Name: "name",
+		Name: "elmer",
 		Age:  1,
 		List: []string{"a", "b", "c", "d"},
 	}
@@ -98,16 +99,54 @@ func TestEncoder(t *testing.T) {
 			x.output = b
 		}
 		en.begin()
-		en.field("root")
 		en.embed(thing)
+		en.field("field")
+		en.writeStr("value")
+		en.field("things")
+		en.beginList()
+		en.writeItem(0, 0, thing)
+		en.endList()
 		en.field("items")
 		en.beginList()
-		en.writeItem(0, 0, "ITEM-0")
-		en.writeItem(0, 1, "ITEM-1")
-		en.writeItem(0, 2, "ITEM-2")
+		en.writeItem(0, 0, "item-0")
+		en.writeItem(0, 1, "item-1")
+		en.writeItem(0, 2, "item-2")
 		en.endList()
 		en.end()
 		s := b.String()
 		println(s)
+
+		err := en.error()
+		g.Expect(err).To(gomega.BeNil())
 	}
+}
+
+func TestEncoderError(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	for _, en := range []Encoder{&jsonEncoder{}, &yamlEncoder{}} {
+		err := fmt.Errorf("")
+		b := &_errorWriter{err: err}
+		if x, cast := en.(*jsonEncoder); cast {
+			x.output = b
+		}
+		if x, cast := en.(*yamlEncoder); cast {
+			x.output = b
+		}
+		en.begin()
+		en.field("root")
+		en.write("value")
+		en.embed(nil)
+		en.end()
+
+		g.Expect(err).To(gomega.Equal(en.error()))
+	}
+}
+
+type _errorWriter struct {
+	err error
+}
+
+func (f *_errorWriter) Write(p []byte) (int, error) {
+	return 0, f.err
 }
