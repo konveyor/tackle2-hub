@@ -939,7 +939,7 @@ func (h AnalysisHandler) InsightIncidents(ctx *gin.Context) {
 // Incident godoc
 // @summary Get an incident.
 // @description Get an incident.
-// @tags insight
+// @tags incident
 // @produce json
 // @success 200 {object} api.Incident
 // @router /analyses/incidents/{id} [get]

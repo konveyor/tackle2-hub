@@ -194,7 +194,7 @@ type Proxy struct {
 // Identity represents and identity with a set of credentials.
 type Identity struct {
 	Model
-	Kind         string `gorm:"index,not null"`
+	Kind         string `gorm:"index;not null"`
 	Name         string `gorm:"index;unique;not null"`
 	Default      bool
 	Description  string

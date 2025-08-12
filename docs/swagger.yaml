@@ -33,9 +33,9 @@ definitions:
         type: integer
       id:
         type: integer
-      issues:
+      insights:
         items:
-          $ref: '#/definitions/api.Issue'
+          $ref: '#/definitions/api.Insight'
         type: array
       summary:
         type: object
@@ -54,6 +54,8 @@ definitions:
         items:
           $ref: '#/definitions/api.Ref'
         type: array
+      assets:
+        $ref: '#/definitions/api.Repository'
       binary:
         type: string
       bucket:
@@ -68,6 +70,8 @@ definitions:
         items:
           $ref: '#/definitions/api.Ref'
         type: array
+      coordinates:
+        $ref: '#/definitions/jsd.Document'
       createTime:
         type: string
       createUser:
@@ -87,6 +91,8 @@ definitions:
       name:
         type: string
       owner:
+        $ref: '#/definitions/api.Ref'
+      platform:
         $ref: '#/definitions/api.Ref'
       repository:
         $ref: '#/definitions/api.Repository'
@@ -133,6 +139,10 @@ definitions:
         type: integer
       name:
         type: string
+      profiles:
+        items:
+          $ref: '#/definitions/api.TargetProfile'
+        type: array
       review:
         $ref: '#/definitions/api.Ref'
       risk:
@@ -358,8 +368,39 @@ definitions:
         type: string
       incidents:
         type: integer
-      issueId:
+      insightId:
         type: integer
+    type: object
+  api.Generator:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      params:
+        $ref: '#/definitions/api.Map'
+      profiles:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      repository:
+        $ref: '#/definitions/api.Repository'
+      updateUser:
+        type: string
+      values:
+        $ref: '#/definitions/api.Map'
+    required:
+    - kind
     type: object
   api.Identity:
     properties:
@@ -367,6 +408,8 @@ definitions:
         type: string
       createUser:
         type: string
+      default:
+        type: boolean
       description:
         type: string
       id:
@@ -429,7 +472,7 @@ definitions:
         type: string
       id:
         type: integer
-      issue:
+      insight:
         type: integer
       line:
         type: integer
@@ -438,7 +481,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.Issue:
+  api.Insight:
     properties:
       analysis:
         type: integer
@@ -477,12 +520,11 @@ definitions:
       updateUser:
         type: string
     required:
-    - category
     - name
     - rule
     - ruleset
     type: object
-  api.IssueAppReport:
+  api.InsightAppReport:
     properties:
       businessService:
         type: string
@@ -496,7 +538,7 @@ definitions:
         type: integer
       incidents:
         type: integer
-      issue:
+      insight:
         properties:
           description:
             type: string
@@ -512,7 +554,7 @@ definitions:
       name:
         type: string
     type: object
-  api.IssueReport:
+  api.InsightReport:
     properties:
       category:
         type: string
@@ -565,6 +607,13 @@ definitions:
     required:
     - name
     type: object
+  api.LatestSchema:
+    properties:
+      definition:
+        $ref: '#/definitions/api.Map'
+      name:
+        type: string
+    type: object
   api.Link:
     properties:
       title:
@@ -583,6 +632,23 @@ definitions:
       token:
         type: string
       user:
+        type: string
+    type: object
+  api.Manifest:
+    properties:
+      application:
+        $ref: '#/definitions/api.Ref'
+      content:
+        $ref: '#/definitions/api.Map'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      secret:
+        $ref: '#/definitions/api.Map'
+      updateUser:
         type: string
     type: object
   api.Map:
@@ -619,6 +685,31 @@ definitions:
     required:
     - endDate
     - startDate
+    type: object
+  api.Platform:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      updateUser:
+        type: string
+      url:
+        type: string
+    required:
+    - kind
     type: object
   api.Project:
     properties:
@@ -708,6 +799,15 @@ definitions:
       tag:
         type: string
       url:
+        type: string
+    type: object
+  api.RestAPI:
+    properties:
+      routes:
+        items:
+          type: string
+        type: array
+      version:
         type: string
     type: object
   api.Review:
@@ -823,12 +923,18 @@ definitions:
     type: object
   api.Schema:
     properties:
-      paths:
-        items:
-          type: string
-        type: array
-      version:
+      domain:
         type: string
+      name:
+        type: string
+      subject:
+        type: string
+      variant:
+        type: string
+      versions:
+        items:
+          $ref: '#/definitions/jsd.Version'
+        type: array
     type: object
   api.Section:
     properties:
@@ -840,7 +946,7 @@ definitions:
         type: integer
       questions:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Question'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Question'
         minItems: 1
         type: array
     type: object
@@ -1038,6 +1144,25 @@ definitions:
       name:
         type: string
     type: object
+  api.TargetProfile:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      generators:
+        items:
+          $ref: '#/definitions/api.Ref'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
   api.Task:
     properties:
       activity:
@@ -1079,6 +1204,8 @@ definitions:
         type: string
       name:
         type: string
+      platform:
+        $ref: '#/definitions/api.Ref'
       pod:
         type: string
       policy:
@@ -1366,15 +1493,21 @@ definitions:
       positionY:
         type: integer
     type: object
-  github_com_konveyor_tackle2-hub_migration_v16_model.Answer:
+  github_com_konveyor_tackle2-hub_api_jsd.Map:
+    additionalProperties: {}
+    type: object
+  github_com_konveyor_tackle2-hub_jsd.Map:
+    additionalProperties: {}
+    type: object
+  github_com_konveyor_tackle2-hub_migration_v18_model.Answer:
     properties:
       applyTags:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
         type: array
       autoAnswerFor:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
         type: array
       autoAnswered:
         type: boolean
@@ -1396,29 +1529,29 @@ definitions:
       text:
         type: string
     type: object
-  github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag:
+  github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag:
     properties:
       category:
         type: string
       tag:
         type: string
     type: object
-  github_com_konveyor_tackle2-hub_migration_v16_model.Question:
+  github_com_konveyor_tackle2-hub_migration_v18_model.Question:
     properties:
       answers:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Answer'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Answer'
         minItems: 1
         type: array
       excludeFor:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
         type: array
       explanation:
         type: string
       includeFor:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
         type: array
       order:
         type: integer
@@ -1445,6 +1578,24 @@ definitions:
     x-enum-varnames:
     - Int
     - String
+  jsd.Document:
+    properties:
+      content:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api_jsd.Map'
+      schema:
+        type: string
+    required:
+    - content
+    type: object
+  jsd.Version:
+    properties:
+      definition:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_jsd.Map'
+      id:
+        type: integer
+      migration:
+        type: string
+    type: object
   resource.Quantity:
     properties:
       Format:
@@ -2599,10 +2750,10 @@ paths:
       summary: List analysis dependencies.
       tags:
       - dependencies
-  /analyses/{id}/issues:
+  /analyses/{id}/insights:
     get:
       description: |-
-        List issues for an analysis.
+        List insights for an analysis.
         filters:
         - ruleset
         - rule
@@ -2623,11 +2774,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Issue'
+              $ref: '#/definitions/api.Insight'
             type: array
-      summary: List issues for an analysis.
+      summary: List insights for an analysis.
       tags:
-      - issues
+      - insights
   /analyses/dependencies:
     get:
       description: |-
@@ -2666,7 +2817,7 @@ paths:
         List all incidents.
         filters:
         - file
-        - issue.id
+        - insight.id
       produces:
       - application/json
       responses:
@@ -2683,7 +2834,7 @@ paths:
     get:
       description: Get an incident.
       parameters:
-      - description: Issue ID
+      - description: Insight ID
         in: path
         name: id
         required: true
@@ -2697,11 +2848,11 @@ paths:
             $ref: '#/definitions/api.Incident'
       summary: Get an incident.
       tags:
-      - issue
-  /analyses/issues:
+      - incident
+  /analyses/insights:
     get:
       description: |-
-        List all issues.
+        List all insights.
         filters:
         - ruleset
         - rule
@@ -2719,16 +2870,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Issue'
+              $ref: '#/definitions/api.Insight'
             type: array
-      summary: List all issues.
+      summary: List all insights.
       tags:
-      - issues
-  /analyses/issues/{id}:
+      - insights
+  /analyses/insights/{id}:
     get:
-      description: Get an issue.
+      description: Get an insight.
       parameters:
-      - description: Issue ID
+      - description: Insight ID
         in: path
         name: id
         required: true
@@ -2739,18 +2890,18 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Issue'
-      summary: Get an issue.
+            $ref: '#/definitions/api.Insight'
+      summary: Get an insight.
       tags:
-      - issue
-  /analyses/issues/{id}/incidents:
+      - insight
+  /analyses/insights/{id}/incidents:
     get:
       description: |-
-        List incidents for an issue.
+        List incidents for an insight.
         filters:
         - file
       parameters:
-      - description: Issue ID
+      - description: Insight ID
         in: path
         name: id
         required: true
@@ -2764,7 +2915,7 @@ paths:
             items:
               $ref: '#/definitions/api.Incident'
             type: array
-      summary: List incidents for an issue.
+      summary: List incidents for an insight.
       tags:
       - incidents
   /analyses/report/applications:
@@ -2812,10 +2963,10 @@ paths:
       summary: List application reports.
       tags:
       - depappreports
-  /analyses/report/applications/{id}/issues:
+  /analyses/report/applications/{id}/insights:
     get:
       description: |-
-        Each report collates issues by ruleset/rule.
+        Each report collates insights by ruleset/rule.
         filters:
         - ruleset
         - rule
@@ -2841,12 +2992,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.IssueReport'
+              $ref: '#/definitions/api.InsightReport'
             type: array
-      summary: List application issue reports.
+      summary: List application insight reports.
       tags:
-      - issuereport
-  /analyses/report/issues/{id}/files:
+      - insightreport
+  /analyses/report/insights/{id}/files:
     get:
       description: |-
         Each report collates incidents by file.
@@ -2859,7 +3010,7 @@ paths:
         - effort
         - incidents
       parameters:
-      - description: Issue ID
+      - description: Insight ID
         in: path
         name: id
         required: true
@@ -2879,7 +3030,7 @@ paths:
   /analyses/report/rules:
     get:
       description: |-
-        Each report collates issues by ruleset/rule.
+        Each report collates insights by ruleset/rule.
         filters:
         - ruleset
         - rule
@@ -2922,8 +3073,8 @@ paths:
         Section markers:
         ^]BEGIN-MAIN^]
         ^]END-MAIN^]
-        ^]BEGIN-ISSUES^]
-        ^]END-ISSUES^]
+        ^]BEGIN-INSIGHTS^]
+        ^]END-INSIGHTS^]
         ^]BEGIN-DEPS^]
         ^]END-DEPS^]
         The encoding must be:
@@ -2973,10 +3124,10 @@ paths:
       summary: List application dependencies.
       tags:
       - dependencies
-  /application/{id}/analysis/issues:
+  /application/{id}/analysis/insights:
     get:
       description: |-
-        List application issues.
+        List application insights.
         filters:
         - ruleset
         - rule
@@ -2997,11 +3148,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Issue'
+              $ref: '#/definitions/api.Insight'
             type: array
-      summary: List application issues.
+      summary: List application insights.
       tags:
-      - issues
+      - insights
   /applications:
     delete:
       description: Delete applications.
@@ -3421,6 +3572,90 @@ paths:
       summary: Replace all facts from a source.
       tags:
       - applications
+  /applications/{id}/identities/{kind}:
+    get:
+      description: List application identities.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Identity kind
+        in: path
+        name: kind
+        required: true
+        type: string
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Identity'
+            type: array
+      summary: List application identities.
+      tags:
+      - identities
+  /applications/{id}/manifest:
+    get:
+      description: Get the latest application Manifest.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Manifest'
+      summary: Get the latest application Manifest.
+      tags:
+      - manifests
+  /applications/{id}/manifests:
+    post:
+      consumes:
+      - application/json
+      description: Create a manifest.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Manifest data
+        in: body
+        name: manifest
+        required: true
+        schema:
+          $ref: '#/definitions/api.Manifest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Manifest'
+      summary: Create a manifest.
+      tags:
+      - manifests
   /applications/{id}/stakeholders:
     patch:
       description: Update the owner and contributors of an Application.
@@ -4242,9 +4477,110 @@ paths:
       summary: Append a file.
       tags:
       - file
+  /generators:
+    get:
+      description: List all generators.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Generator'
+            type: array
+      summary: List all generators.
+      tags:
+      - generators
+    post:
+      consumes:
+      - application/json
+      description: Create a generator.
+      parameters:
+      - description: Generator data
+        in: body
+        name: generator
+        required: true
+        schema:
+          $ref: '#/definitions/api.Generator'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Generator'
+      summary: Create a generator.
+      tags:
+      - generators
+  /generators/{id}:
+    delete:
+      description: Delete a generator.
+      parameters:
+      - description: Generator ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a generator.
+      tags:
+      - generators
+    get:
+      description: Get a Generator by ID.
+      parameters:
+      - description: Generator ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Generator'
+      summary: Get a Generator by ID.
+      tags:
+      - generators
+    put:
+      consumes:
+      - application/json
+      description: Update a generator.
+      parameters:
+      - description: Generator ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Generator data
+        in: body
+        name: generator
+        required: true
+        schema:
+          $ref: '#/definitions/api.Generator'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a generator.
+      tags:
+      - generators
   /identities:
     get:
-      description: List all identities.
+      description: |-
+        List all identities.
+        filters:
+        - kind
+        - name
+        - application.id
+      parameters:
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4301,6 +4637,10 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Decrypt fields
+        in: query
+        name: decrypted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4552,6 +4892,117 @@ paths:
       summary: Update a job function.
       tags:
       - jobfunctions
+  /manifests:
+    get:
+      description: |-
+        List all manifests.
+        filters:
+        - application.id
+      parameters:
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Manifest'
+            type: array
+      summary: List all manifests.
+      tags:
+      - manifests
+    post:
+      consumes:
+      - application/json
+      description: Create a manifest.
+      parameters:
+      - description: Manifest data
+        in: body
+        name: manifest
+        required: true
+        schema:
+          $ref: '#/definitions/api.Manifest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Manifest'
+      summary: Create a manifest.
+      tags:
+      - manifests
+  /manifests/{id}:
+    delete:
+      description: Delete a manifest.
+      parameters:
+      - description: Manifest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a manifest.
+      tags:
+      - manifests
+    get:
+      description: Get a Manifest by ID.
+      parameters:
+      - description: Manifest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Inject secret references
+        in: query
+        name: injected
+        type: boolean
+      - description: Decrypt secret references
+        in: query
+        name: decrypted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Manifest'
+      summary: Get a Manifest by ID.
+      tags:
+      - manifests
+    put:
+      consumes:
+      - application/json
+      description: Update a manifest.
+      parameters:
+      - description: Manifest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Manifest data
+        in: body
+        name: manifest
+        required: true
+        schema:
+          $ref: '#/definitions/api.Manifest'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a manifest.
+      tags:
+      - manifests
   /metrics:
     get:
       description: |-
@@ -4657,6 +5108,97 @@ paths:
       summary: Update a migration wave.
       tags:
       - migrationwaves
+  /platforms:
+    get:
+      description: List all platforms.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Platform'
+            type: array
+      summary: List all platforms.
+      tags:
+      - platforms
+    post:
+      consumes:
+      - application/json
+      description: Create a platform.
+      parameters:
+      - description: Platform data
+        in: body
+        name: platform
+        required: true
+        schema:
+          $ref: '#/definitions/api.Platform'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Platform'
+      summary: Create a platform.
+      tags:
+      - platforms
+  /platforms/{id}:
+    delete:
+      description: Delete a platform.
+      parameters:
+      - description: Platform ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a platform.
+      tags:
+      - platforms
+    get:
+      description: Get a Platform by ID.
+      parameters:
+      - description: Platform ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Platform'
+      summary: Get a Platform by ID.
+      tags:
+      - platforms
+    put:
+      consumes:
+      - application/json
+      description: Update a platform.
+      parameters:
+      - description: Platform ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Platform data
+        in: body
+        name: platform
+        required: true
+        schema:
+          $ref: '#/definitions/api.Platform'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a platform.
+      tags:
+      - platforms
   /proxies:
     get:
       description: List all proxies.
@@ -5048,7 +5590,70 @@ paths:
       - rulesets
   /schema:
     get:
-      description: Get the API schema.
+      description: Get the API routes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.RestAPI'
+      summary: Get the API routes.
+      tags:
+      - schema
+  /schema/jsd/{domain}/{variant}/{subject}:
+    get:
+      description: Find a schema.
+      parameters:
+      - description: The schema domain.
+        in: path
+        name: domain
+        required: true
+        type: string
+      - description: The schema variant.
+        in: path
+        name: variant
+        required: true
+        type: string
+      - description: The schema subject.
+        in: path
+        name: subject
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LatestSchema'
+      summary: Find a schema.
+      tags:
+      - schema
+  /schemas:
+    get:
+      description: List schemas.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.Schema'
+            type: array
+      summary: List schemas.
+      tags:
+      - schema
+  /schemas/{name}:
+    get:
+      description: Find a schema.
+      parameters:
+      - description: Schema name
+        in: path
+        name: name
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -5056,9 +5661,9 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.Schema'
-      summary: Get the API schema.
+      summary: Find a schema.
       tags:
-      - schema
+      - schemas
   /services:
     get:
       description: List named service routes.
@@ -5864,6 +6469,8 @@ paths:
         - state
         - application.id
         - application.name
+        - platform.id
+        - platform.name
       produces:
       - application/json
       responses:

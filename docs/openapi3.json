@@ -164,7 +164,7 @@
           "incidents"
         ],
         "summary": "List all incidents.",
-        "description": "List all incidents.\nfilters:\n- file\n- issue.id",
+        "description": "List all incidents.\nfilters:\n- file\n- insight.id",
         "responses": {
           "200": {
             "description": "OK",
@@ -185,7 +185,7 @@
     "/analyses/incidents/{id}": {
       "get": {
         "tags": [
-          "issue"
+          "incident"
         ],
         "summary": "Get an incident.",
         "description": "Get an incident.",
@@ -193,7 +193,7 @@
           {
             "name": "id",
             "in": "path",
-            "description": "Issue ID",
+            "description": "Insight ID",
             "required": true,
             "schema": {
               "type": "integer"
@@ -214,13 +214,13 @@
         }
       }
     },
-    "/analyses/issues": {
+    "/analyses/insights": {
       "get": {
         "tags": [
-          "issues"
+          "insights"
         ],
-        "summary": "List all issues.",
-        "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
+        "summary": "List all insights.",
+        "description": "List all insights.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
         "responses": {
           "200": {
             "description": "OK",
@@ -229,7 +229,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Issue"
+                    "$ref": "#/components/schemas/api.Insight"
                   }
                 }
               }
@@ -238,18 +238,18 @@
         }
       }
     },
-    "/analyses/issues/{id}": {
+    "/analyses/insights/{id}": {
       "get": {
         "tags": [
-          "issue"
+          "insight"
         ],
-        "summary": "Get an issue.",
-        "description": "Get an issue.",
+        "summary": "Get an insight.",
+        "description": "Get an insight.",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Issue ID",
+            "description": "Insight ID",
             "required": true,
             "schema": {
               "type": "integer"
@@ -262,7 +262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Issue"
+                  "$ref": "#/components/schemas/api.Insight"
                 }
               }
             }
@@ -270,18 +270,18 @@
         }
       }
     },
-    "/analyses/issues/{id}/incidents": {
+    "/analyses/insights/{id}/incidents": {
       "get": {
         "tags": [
           "incidents"
         ],
-        "summary": "List incidents for an issue.",
-        "description": "List incidents for an issue.\nfilters:\n- file",
+        "summary": "List incidents for an insight.",
+        "description": "List incidents for an insight.\nfilters:\n- file",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "Issue ID",
+            "description": "Insight ID",
             "required": true,
             "schema": {
               "type": "integer"
@@ -329,13 +329,13 @@
         }
       }
     },
-    "/analyses/report/applications/{id}/issues": {
+    "/analyses/report/applications/{id}/insights": {
       "get": {
         "tags": [
-          "issuereport"
+          "insightreport"
         ],
-        "summary": "List application issue reports.",
-        "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
+        "summary": "List application insight reports.",
+        "description": "Each report collates insights by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
         "parameters": [
           {
             "name": "id",
@@ -355,7 +355,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.IssueReport"
+                    "$ref": "#/components/schemas/api.InsightReport"
                   }
                 }
               }
@@ -364,7 +364,7 @@
         }
       }
     },
-    "/analyses/report/issues/{id}/files": {
+    "/analyses/report/insights/{id}/files": {
       "get": {
         "tags": [
           "filereports"
@@ -375,7 +375,7 @@
           {
             "name": "id",
             "in": "path",
-            "description": "Issue ID",
+            "description": "Insight ID",
             "required": true,
             "schema": {
               "type": "integer"
@@ -405,7 +405,7 @@
           "rulereports"
         ],
         "summary": "List rule reports.",
-        "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
+        "description": "Each report collates insights by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
         "responses": {
           "200": {
             "description": "OK",
@@ -540,13 +540,13 @@
         }
       }
     },
-    "/analyses/{id}/issues": {
+    "/analyses/{id}/insights": {
       "get": {
         "tags": [
-          "issues"
+          "insights"
         ],
-        "summary": "List issues for an analysis.",
-        "description": "List issues for an analysis.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+        "summary": "List insights for an analysis.",
+        "description": "List insights for an analysis.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
         "parameters": [
           {
             "name": "id",
@@ -566,7 +566,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Issue"
+                    "$ref": "#/components/schemas/api.Insight"
                   }
                 }
               }
@@ -581,7 +581,7 @@
           "analyses"
         ],
         "summary": "Create an analysis.",
-        "description": "Create an analysis.\nForm fields:\nfile: A manifest file that contains 3 sections\ncontaining documents delimited by markers.\nThe manifest must contain ALL markers even when sections are empty.\nNote: `^]` = `\\x1D` = GS (group separator).\nSection markers:\n^]BEGIN-MAIN^]\n^]END-MAIN^]\n^]BEGIN-ISSUES^]\n^]END-ISSUES^]\n^]BEGIN-DEPS^]\n^]END-DEPS^]\nThe encoding must be:\n- application/json\n- application/x-yaml",
+        "description": "Create an analysis.\nForm fields:\nfile: A manifest file that contains 3 sections\ncontaining documents delimited by markers.\nThe manifest must contain ALL markers even when sections are empty.\nNote: `^]` = `\\x1D` = GS (group separator).\nSection markers:\n^]BEGIN-MAIN^]\n^]END-MAIN^]\n^]BEGIN-INSIGHTS^]\n^]END-INSIGHTS^]\n^]BEGIN-DEPS^]\n^]END-DEPS^]\nThe encoding must be:\n- application/json\n- application/x-yaml",
         "parameters": [
           {
             "name": "id",
@@ -642,13 +642,13 @@
         }
       }
     },
-    "/application/{id}/analysis/issues": {
+    "/application/{id}/analysis/insights": {
       "get": {
         "tags": [
-          "issues"
+          "insights"
         ],
-        "summary": "List application issues.",
-        "description": "List application issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+        "summary": "List application insights.",
+        "description": "List application insights.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
         "parameters": [
           {
             "name": "id",
@@ -668,7 +668,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Issue"
+                    "$ref": "#/components/schemas/api.Insight"
                   }
                 }
               }
@@ -1337,6 +1337,150 @@
           }
         },
         "x-codegen-request-body-name": "factmap"
+      }
+    },
+    "/applications/{id}/identities/{kind}": {
+      "get": {
+        "tags": [
+          "identities"
+        ],
+        "summary": "List application identities.",
+        "description": "List application identities.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "Identity kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Identity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/manifest": {
+      "get": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Get the latest application Manifest.",
+        "description": "Get the latest application Manifest.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Manifest"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/manifests": {
+      "post": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Create a manifest.",
+        "description": "Create a manifest.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Manifest data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Manifest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Manifest"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "manifest"
       }
     },
     "/applications/{id}/stakeholders": {
@@ -2653,13 +2797,170 @@
         }
       }
     },
+    "/generators": {
+      "get": {
+        "tags": [
+          "generators"
+        ],
+        "summary": "List all generators.",
+        "description": "List all generators.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Generator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "generators"
+        ],
+        "summary": "Create a generator.",
+        "description": "Create a generator.",
+        "requestBody": {
+          "description": "Generator data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Generator"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Generator"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "generator"
+      }
+    },
+    "/generators/{id}": {
+      "get": {
+        "tags": [
+          "generators"
+        ],
+        "summary": "Get a Generator by ID.",
+        "description": "Get a Generator by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Generator ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Generator"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "generators"
+        ],
+        "summary": "Update a generator.",
+        "description": "Update a generator.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Generator ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Generator data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Generator"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "generator"
+      },
+      "delete": {
+        "tags": [
+          "generators"
+        ],
+        "summary": "Delete a generator.",
+        "description": "Delete a generator.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Generator ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
     "/identities": {
       "get": {
         "tags": [
           "identities"
         ],
         "summary": "List all identities.",
-        "description": "List all identities.",
+        "description": "List all identities.\nfilters:\n- kind\n- name\n- application.id",
+        "parameters": [
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2723,6 +3024,14 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt fields",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3161,6 +3470,187 @@
         }
       }
     },
+    "/manifests": {
+      "get": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "List all manifests.",
+        "description": "List all manifests.\nfilters:\n- application.id",
+        "parameters": [
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Manifest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Create a manifest.",
+        "description": "Create a manifest.",
+        "requestBody": {
+          "description": "Manifest data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Manifest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Manifest"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "manifest"
+      }
+    },
+    "/manifests/{id}": {
+      "get": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Get a Manifest by ID.",
+        "description": "Get a Manifest by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Manifest ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "injected",
+            "in": "query",
+            "description": "Inject secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "decrypted",
+            "in": "query",
+            "description": "Decrypt secret references",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Manifest"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Update a manifest.",
+        "description": "Update a manifest.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Manifest ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Manifest data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Manifest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "manifest"
+      },
+      "delete": {
+        "tags": [
+          "manifests"
+        ],
+        "summary": "Delete a manifest.",
+        "description": "Delete a manifest.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Manifest ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
     "/metrics": {
       "get": {
         "tags": [
@@ -3309,6 +3799,153 @@
             "name": "id",
             "in": "path",
             "description": "MigrationWave id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/platforms": {
+      "get": {
+        "tags": [
+          "platforms"
+        ],
+        "summary": "List all platforms.",
+        "description": "List all platforms.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Platform"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "platforms"
+        ],
+        "summary": "Create a platform.",
+        "description": "Create a platform.",
+        "requestBody": {
+          "description": "Platform data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Platform"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Platform"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "platform"
+      }
+    },
+    "/platforms/{id}": {
+      "get": {
+        "tags": [
+          "platforms"
+        ],
+        "summary": "Get a Platform by ID.",
+        "description": "Get a Platform by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Platform ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.Platform"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "platforms"
+        ],
+        "summary": "Update a platform.",
+        "description": "Update a platform.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Platform ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Platform data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api.Platform"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "platform"
+      },
+      "delete": {
+        "tags": [
+          "platforms"
+        ],
+        "summary": "Delete a platform.",
+        "description": "Delete a platform.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Platform ID",
             "required": true,
             "schema": {
               "type": "integer"
@@ -3943,8 +4580,114 @@
         "tags": [
           "schema"
         ],
-        "summary": "Get the API schema.",
-        "description": "Get the API schema.",
+        "summary": "Get the API routes.",
+        "description": "Get the API routes.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.RestAPI"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schema/jsd/{domain}/{variant}/{subject}": {
+      "get": {
+        "tags": [
+          "schema"
+        ],
+        "summary": "Find a schema.",
+        "description": "Find a schema.",
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "description": "The schema domain.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant",
+            "in": "path",
+            "description": "The schema variant.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject",
+            "in": "path",
+            "description": "The schema subject.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.LatestSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schemas": {
+      "get": {
+        "tags": [
+          "schema"
+        ],
+        "summary": "List schemas.",
+        "description": "List schemas.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/api.Schema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schemas/{name}": {
+      "get": {
+        "tags": [
+          "schemas"
+        ],
+        "summary": "Find a schema.",
+        "description": "Find a schema.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Schema name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -5239,7 +5982,7 @@
           "tasks"
         ],
         "summary": "List all task dashboard resources.",
-        "description": "List all task dashboard resources.\nFilters:\n- kind\n- createUser\n- addon\n- name\n- locator\n- state\n- application.id\n- application.name",
+        "description": "List all task dashboard resources.\nFilters:\n- kind\n- createUser\n- addon\n- name\n- locator\n- state\n- application.id\n- application.name\n- platform.id\n- platform.name",
         "responses": {
           "200": {
             "description": "OK",
@@ -6144,10 +6887,10 @@
           "id": {
             "type": "integer"
           },
-          "issues": {
+          "insights": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Issue"
+              "$ref": "#/components/schemas/api.Insight"
             }
           },
           "summary": {
@@ -6180,6 +6923,9 @@
               "$ref": "#/components/schemas/api.Ref"
             }
           },
+          "assets": {
+            "$ref": "#/components/schemas/api.Repository"
+          },
           "binary": {
             "type": "string"
           },
@@ -6200,6 +6946,9 @@
             "items": {
               "$ref": "#/components/schemas/api.Ref"
             }
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/jsd.Document"
           },
           "createTime": {
             "type": "string"
@@ -6229,6 +6978,9 @@
             "type": "string"
           },
           "owner": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "platform": {
             "$ref": "#/components/schemas/api.Ref"
           },
           "repository": {
@@ -6295,6 +7047,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TargetProfile"
+            }
           },
           "review": {
             "$ref": "#/components/schemas/api.Ref"
@@ -6642,8 +7400,55 @@
           "incidents": {
             "type": "integer"
           },
-          "issueId": {
+          "insightId": {
             "type": "integer"
+          }
+        }
+      },
+      "api.Generator": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "params": {
+            "$ref": "#/components/schemas/api.Map"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "repository": {
+            "$ref": "#/components/schemas/api.Repository"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "values": {
+            "$ref": "#/components/schemas/api.Map"
           }
         }
       },
@@ -6659,6 +7464,9 @@
           },
           "createUser": {
             "type": "string"
+          },
+          "default": {
+            "type": "boolean"
           },
           "description": {
             "type": "string"
@@ -6751,7 +7559,7 @@
           "id": {
             "type": "integer"
           },
-          "issue": {
+          "insight": {
             "type": "integer"
           },
           "line": {
@@ -6765,9 +7573,8 @@
           }
         }
       },
-      "api.Issue": {
+      "api.Insight": {
         "required": [
-          "category",
           "name",
           "rule",
           "ruleset"
@@ -6830,7 +7637,7 @@
           }
         }
       },
-      "api.IssueAppReport": {
+      "api.InsightAppReport": {
         "type": "object",
         "properties": {
           "businessService": {
@@ -6851,7 +7658,7 @@
           "incidents": {
             "type": "integer"
           },
-          "issue": {
+          "insight": {
             "type": "object",
             "properties": {
               "description": {
@@ -6876,7 +7683,7 @@
           }
         }
       },
-      "api.IssueReport": {
+      "api.InsightReport": {
         "type": "object",
         "properties": {
           "category": {
@@ -6957,6 +7764,17 @@
           }
         }
       },
+      "api.LatestSchema": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/api.Map"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "api.Link": {
         "type": "object",
         "properties": {
@@ -6984,6 +7802,32 @@
             "type": "string"
           },
           "user": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Manifest": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "content": {
+            "$ref": "#/components/schemas/api.Map"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/api.Map"
+          },
+          "updateUser": {
             "type": "string"
           }
         }
@@ -7038,6 +7882,44 @@
             "type": "string"
           },
           "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Platform": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "url": {
             "type": "string"
           }
         }
@@ -7173,6 +8055,20 @@
             "type": "string"
           },
           "url": {
+            "type": "string"
+          }
+        }
+      },
+      "api.RestAPI": {
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
             "type": "string"
           }
         }
@@ -7349,14 +8245,23 @@
       "api.Schema": {
         "type": "object",
         "properties": {
-          "paths": {
+          "domain": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "versions": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/jsd.Version"
             }
-          },
-          "version": {
-            "type": "string"
           }
         }
       },
@@ -7376,7 +8281,7 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.Question"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.Question"
             }
           }
         }
@@ -7677,6 +8582,35 @@
           }
         }
       },
+      "api.TargetProfile": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "generators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Ref"
+            }
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
       "api.Task": {
         "type": "object",
         "properties": {
@@ -7739,6 +8673,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/api.Ref"
           },
           "pod": {
             "type": "string"
@@ -8176,19 +9113,31 @@
           }
         }
       },
-      "github_com_konveyor_tackle2-hub_migration_v16_model.Answer": {
+      "github_com_konveyor_tackle2-hub_api_jsd.Map": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        }
+      },
+      "github_com_konveyor_tackle2-hub_jsd.Map": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        }
+      },
+      "github_com_konveyor_tackle2-hub_migration_v18_model.Answer": {
         "type": "object",
         "properties": {
           "applyTags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
             }
           },
           "autoAnswerFor": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
             }
           },
           "autoAnswered": {
@@ -8220,7 +9169,7 @@
           }
         }
       },
-      "github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag": {
+      "github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag": {
         "type": "object",
         "properties": {
           "category": {
@@ -8231,20 +9180,20 @@
           }
         }
       },
-      "github_com_konveyor_tackle2-hub_migration_v16_model.Question": {
+      "github_com_konveyor_tackle2-hub_migration_v18_model.Question": {
         "type": "object",
         "properties": {
           "answers": {
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.Answer"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.Answer"
             }
           },
           "excludeFor": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
             }
           },
           "explanation": {
@@ -8253,7 +9202,7 @@
           "includeFor": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
             }
           },
           "order": {
@@ -8292,6 +9241,34 @@
           "Int",
           "String"
         ]
+      },
+      "jsd.Document": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api_jsd.Map"
+          },
+          "schema": {
+            "type": "string"
+          }
+        }
+      },
+      "jsd.Version": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_jsd.Map"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "migration": {
+            "type": "string"
+          }
+        }
       },
       "resource.Quantity": {
         "type": "object",

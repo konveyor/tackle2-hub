@@ -64,7 +64,7 @@ func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} Schema
 // @router /schemas/{name} [get]
-// @param name path int true "Schema name"
+// @param name path string true "Schema name"
 func (h *SchemaHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	m := jsd.Manager{Client: h.Client(ctx)}

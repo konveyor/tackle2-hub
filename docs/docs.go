@@ -162,7 +162,7 @@ const docTemplate = `{
         },
         "/analyses/incidents": {
             "get": {
-                "description": "List all incidents.\nfilters:\n- file\n- issue.id",
+                "description": "List all incidents.\nfilters:\n- file\n- insight.id",
                 "produces": [
                     "application/json"
                 ],
@@ -190,13 +190,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "issue"
+                    "incident"
                 ],
                 "summary": "Get an incident.",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Issue ID",
+                        "description": "Insight ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -212,43 +212,43 @@ const docTemplate = `{
                 }
             }
         },
-        "/analyses/issues": {
+        "/analyses/insights": {
             "get": {
-                "description": "List all issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
+                "description": "List all insights.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels\n- application.id\n- application.name\n- tag.id",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issues"
+                    "insights"
                 ],
-                "summary": "List all issues.",
+                "summary": "List all insights.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Issue"
+                                "$ref": "#/definitions/api.Insight"
                             }
                         }
                     }
                 }
             }
         },
-        "/analyses/issues/{id}": {
+        "/analyses/insights/{id}": {
             "get": {
-                "description": "Get an issue.",
+                "description": "Get an insight.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issue"
+                    "insight"
                 ],
-                "summary": "Get an issue.",
+                "summary": "Get an insight.",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Issue ID",
+                        "description": "Insight ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -258,26 +258,26 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Issue"
+                            "$ref": "#/definitions/api.Insight"
                         }
                     }
                 }
             }
         },
-        "/analyses/issues/{id}/incidents": {
+        "/analyses/insights/{id}/incidents": {
             "get": {
-                "description": "List incidents for an issue.\nfilters:\n- file",
+                "description": "List incidents for an insight.\nfilters:\n- file",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "incidents"
                 ],
-                "summary": "List incidents for an issue.",
+                "summary": "List incidents for an insight.",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Issue ID",
+                        "description": "Insight ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -319,16 +319,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/analyses/report/applications/{id}/issues": {
+        "/analyses/report/applications/{id}/insights": {
             "get": {
-                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
+                "description": "Each report collates insights by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\nsort:\n- ruleset\n- rule\n- category\n- effort\n- files",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issuereport"
+                    "insightreport"
                 ],
-                "summary": "List application issue reports.",
+                "summary": "List application insight reports.",
                 "parameters": [
                     {
                         "type": "integer",
@@ -344,14 +344,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.IssueReport"
+                                "$ref": "#/definitions/api.InsightReport"
                             }
                         }
                     }
                 }
             }
         },
-        "/analyses/report/issues/{id}/files": {
+        "/analyses/report/insights/{id}/files": {
             "get": {
                 "description": "Each report collates incidents by file.\nfilters:\n- file\n- effort\n- incidents\nsort:\n- file\n- effort\n- incidents",
                 "produces": [
@@ -364,7 +364,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Issue ID",
+                        "description": "Insight ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -385,7 +385,7 @@ const docTemplate = `{
         },
         "/analyses/report/rules": {
             "get": {
-                "description": "Each report collates issues by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
+                "description": "Each report collates insights by ruleset/rule.\nfilters:\n- ruleset\n- rule\n- category\n- effort\n- labels\n- applications\n- application.id\n- application.name\n- businessService.id\n- businessService.name\n- tag.id\nsort:\n- ruleset\n- rule\n- category\n- effort\n- applications",
                 "produces": [
                     "application/json"
                 ],
@@ -514,16 +514,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/analyses/{id}/issues": {
+        "/analyses/{id}/insights": {
             "get": {
-                "description": "List issues for an analysis.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+                "description": "List insights for an analysis.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issues"
+                    "insights"
                 ],
-                "summary": "List issues for an analysis.",
+                "summary": "List insights for an analysis.",
                 "parameters": [
                     {
                         "type": "integer",
@@ -539,7 +539,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Issue"
+                                "$ref": "#/definitions/api.Insight"
                             }
                         }
                     }
@@ -607,16 +607,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/application/{id}/analysis/issues": {
+        "/application/{id}/analysis/insights": {
             "get": {
-                "description": "List application issues.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
+                "description": "List application insights.\nfilters:\n- ruleset\n- rule\n- name\n- category\n- effort\n- labels",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "issues"
+                    "insights"
                 ],
-                "summary": "List application issues.",
+                "summary": "List application insights.",
                 "parameters": [
                     {
                         "type": "integer",
@@ -632,7 +632,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Issue"
+                                "$ref": "#/definitions/api.Insight"
                             }
                         }
                     }
@@ -1241,6 +1241,133 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/applications/{id}/identities/{kind}": {
+            "get": {
+                "description": "List application identities.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "identities"
+                ],
+                "summary": "List application identities.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity kind",
+                        "name": "kind",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Identity"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/manifest": {
+            "get": {
+                "description": "Get the latest application Manifest.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Get the latest application Manifest.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/manifests": {
+            "post": {
+                "description": "Create a manifest.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Create a manifest.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Manifest data",
+                        "name": "manifest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
                     }
                 }
             }
@@ -2471,9 +2598,147 @@ const docTemplate = `{
                 }
             }
         },
+        "/generators": {
+            "get": {
+                "description": "List all generators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "generators"
+                ],
+                "summary": "List all generators.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Generator"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a generator.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "generators"
+                ],
+                "summary": "Create a generator.",
+                "parameters": [
+                    {
+                        "description": "Generator data",
+                        "name": "generator",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Generator"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Generator"
+                        }
+                    }
+                }
+            }
+        },
+        "/generators/{id}": {
+            "get": {
+                "description": "Get a Generator by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "generators"
+                ],
+                "summary": "Get a Generator by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Generator ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Generator"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a generator.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "generators"
+                ],
+                "summary": "Update a generator.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Generator ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Generator data",
+                        "name": "generator",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Generator"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a generator.",
+                "tags": [
+                    "generators"
+                ],
+                "summary": "Delete a generator.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Generator ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/identities": {
             "get": {
-                "description": "List all identities.",
+                "description": "List all identities.\nfilters:\n- kind\n- name\n- application.id",
                 "produces": [
                     "application/json"
                 ],
@@ -2481,6 +2746,14 @@ const docTemplate = `{
                     "identities"
                 ],
                 "summary": "List all identities.",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2543,6 +2816,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt fields",
+                        "name": "decrypted",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2942,6 +3221,170 @@ const docTemplate = `{
                 }
             }
         },
+        "/manifests": {
+            "get": {
+                "description": "List all manifests.\nfilters:\n- application.id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "List all manifests.",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Manifest"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a manifest.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Create a manifest.",
+                "parameters": [
+                    {
+                        "description": "Manifest data",
+                        "name": "manifest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                }
+            }
+        },
+        "/manifests/{id}": {
+            "get": {
+                "description": "Get a Manifest by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Get a Manifest by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Manifest ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Inject secret references",
+                        "name": "injected",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Decrypt secret references",
+                        "name": "decrypted",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a manifest.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Update a manifest.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Manifest ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Manifest data",
+                        "name": "manifest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Manifest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a manifest.",
+                "tags": [
+                    "manifests"
+                ],
+                "summary": "Delete a manifest.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Manifest ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/metrics": {
             "get": {
                 "description": "Get Prometheus metrics.\nWrapper for Prometheus-supplied handler.\nServed on port defined by METRICS_PORT environment variable.",
@@ -3085,6 +3528,144 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "MigrationWave id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/platforms": {
+            "get": {
+                "description": "List all platforms.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "platforms"
+                ],
+                "summary": "List all platforms.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Platform"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a platform.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "platforms"
+                ],
+                "summary": "Create a platform.",
+                "parameters": [
+                    {
+                        "description": "Platform data",
+                        "name": "platform",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Platform"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.Platform"
+                        }
+                    }
+                }
+            }
+        },
+        "/platforms/{id}": {
+            "get": {
+                "description": "Get a Platform by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "platforms"
+                ],
+                "summary": "Get a Platform by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Platform ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Platform"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a platform.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "platforms"
+                ],
+                "summary": "Update a platform.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Platform ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Platform data",
+                        "name": "platform",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Platform"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a platform.",
+                "tags": [
+                    "platforms"
+                ],
+                "summary": "Delete a platform.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Platform ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3679,14 +4260,109 @@ const docTemplate = `{
         },
         "/schema": {
             "get": {
-                "description": "Get the API schema.",
+                "description": "Get the API routes.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "schema"
                 ],
-                "summary": "Get the API schema.",
+                "summary": "Get the API routes.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.RestAPI"
+                        }
+                    }
+                }
+            }
+        },
+        "/schema/jsd/{domain}/{variant}/{subject}": {
+            "get": {
+                "description": "Find a schema.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schema"
+                ],
+                "summary": "Find a schema.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The schema domain.",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The schema variant.",
+                        "name": "variant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The schema subject.",
+                        "name": "subject",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LatestSchema"
+                        }
+                    }
+                }
+            }
+        },
+        "/schemas": {
+            "get": {
+                "description": "List schemas.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schema"
+                ],
+                "summary": "List schemas.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.Schema"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schemas/{name}": {
+            "get": {
+                "description": "Find a schema.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schemas"
+                ],
+                "summary": "Find a schema.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Schema name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4893,7 +5569,7 @@ const docTemplate = `{
         },
         "/tasks": {
             "get": {
-                "description": "List all task dashboard resources.\nFilters:\n- kind\n- createUser\n- addon\n- name\n- locator\n- state\n- application.id\n- application.name",
+                "description": "List all task dashboard resources.\nFilters:\n- kind\n- createUser\n- addon\n- name\n- locator\n- state\n- application.id\n- application.name\n- platform.id\n- platform.name",
                 "produces": [
                     "application/json"
                 ],
@@ -5745,10 +6421,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "issues": {
+                "insights": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Issue"
+                        "$ref": "#/definitions/api.Insight"
                     }
                 },
                 "summary": {
@@ -5780,6 +6456,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.Ref"
                     }
                 },
+                "assets": {
+                    "$ref": "#/definitions/api.Repository"
+                },
                 "binary": {
                     "type": "string"
                 },
@@ -5800,6 +6479,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.Ref"
                     }
+                },
+                "coordinates": {
+                    "$ref": "#/definitions/jsd.Document"
                 },
                 "createTime": {
                     "type": "string"
@@ -5829,6 +6511,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "platform": {
                     "$ref": "#/definitions/api.Ref"
                 },
                 "repository": {
@@ -5895,6 +6580,12 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "profiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TargetProfile"
+                    }
                 },
                 "review": {
                     "$ref": "#/definitions/api.Ref"
@@ -6238,8 +6929,55 @@ const docTemplate = `{
                 "incidents": {
                     "type": "integer"
                 },
-                "issueId": {
+                "insightId": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.Generator": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/api.Map"
+                },
+                "profiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "repository": {
+                    "$ref": "#/definitions/api.Repository"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "values": {
+                    "$ref": "#/definitions/api.Map"
                 }
             }
         },
@@ -6255,6 +6993,9 @@ const docTemplate = `{
                 },
                 "createUser": {
                     "type": "string"
+                },
+                "default": {
+                    "type": "boolean"
                 },
                 "description": {
                     "type": "string"
@@ -6345,7 +7086,7 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "issue": {
+                "insight": {
                     "type": "integer"
                 },
                 "line": {
@@ -6359,10 +7100,9 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Issue": {
+        "api.Insight": {
             "type": "object",
             "required": [
-                "category",
                 "name",
                 "rule",
                 "ruleset"
@@ -6424,7 +7164,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.IssueAppReport": {
+        "api.InsightAppReport": {
             "type": "object",
             "properties": {
                 "businessService": {
@@ -6445,7 +7185,7 @@ const docTemplate = `{
                 "incidents": {
                     "type": "integer"
                 },
-                "issue": {
+                "insight": {
                     "type": "object",
                     "properties": {
                         "description": {
@@ -6470,7 +7210,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.IssueReport": {
+        "api.InsightReport": {
             "type": "object",
             "properties": {
                 "category": {
@@ -6551,6 +7291,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.LatestSchema": {
+            "type": "object",
+            "properties": {
+                "definition": {
+                    "$ref": "#/definitions/api.Map"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Link": {
             "type": "object",
             "properties": {
@@ -6578,6 +7329,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Manifest": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "content": {
+                    "$ref": "#/definitions/api.Map"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "secret": {
+                    "$ref": "#/definitions/api.Map"
+                },
+                "updateUser": {
                     "type": "string"
                 }
             }
@@ -6630,6 +7407,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Platform": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }
@@ -6765,6 +7580,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RestAPI": {
+            "type": "object",
+            "properties": {
+                "routes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "version": {
                     "type": "string"
                 }
             }
@@ -6941,14 +7770,23 @@ const docTemplate = `{
         "api.Schema": {
             "type": "object",
             "properties": {
-                "paths": {
+                "domain": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "variant": {
+                    "type": "string"
+                },
+                "versions": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/jsd.Version"
                     }
-                },
-                "version": {
-                    "type": "string"
                 }
             }
         },
@@ -6968,7 +7806,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Question"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Question"
                     }
                 }
             }
@@ -7267,6 +8105,35 @@ const docTemplate = `{
                 }
             }
         },
+        "api.TargetProfile": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "generators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Ref"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Task": {
             "type": "object",
             "properties": {
@@ -7327,6 +8194,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/api.Ref"
                 },
                 "pod": {
                     "type": "string"
@@ -7761,19 +8631,27 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_konveyor_tackle2-hub_migration_v16_model.Answer": {
+        "github_com_konveyor_tackle2-hub_api_jsd.Map": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "github_com_konveyor_tackle2-hub_jsd.Map": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "github_com_konveyor_tackle2-hub_migration_v18_model.Answer": {
             "type": "object",
             "properties": {
                 "applyTags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
                     }
                 },
                 "autoAnswerFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
                     }
                 },
                 "autoAnswered": {
@@ -7805,7 +8683,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag": {
+        "github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag": {
             "type": "object",
             "properties": {
                 "category": {
@@ -7816,20 +8694,20 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_konveyor_tackle2-hub_migration_v16_model.Question": {
+        "github_com_konveyor_tackle2-hub_migration_v18_model.Question": {
             "type": "object",
             "properties": {
                 "answers": {
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.Answer"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Answer"
                     }
                 },
                 "excludeFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
                     }
                 },
                 "explanation": {
@@ -7838,7 +8716,7 @@ const docTemplate = `{
                 "includeFor": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v16_model.CategorizedTag"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
                     }
                 },
                 "order": {
@@ -7877,6 +8755,34 @@ const docTemplate = `{
                 "Int",
                 "String"
             ]
+        },
+        "jsd.Document": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api_jsd.Map"
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "jsd.Version": {
+            "type": "object",
+            "properties": {
+                "definition": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_jsd.Map"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "migration": {
+                    "type": "string"
+                }
+            }
         },
         "resource.Quantity": {
             "type": "object",
