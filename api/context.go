@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -353,6 +352,7 @@ type Encoder interface {
 	write(s string) Encoder
 	writeStr(s string) Encoder
 	field(name string) Encoder
+	node(name string, value any) Encoder
 	beginList() Encoder
 	endList() Encoder
 	writeItem(batch, index int, object any) Encoder
@@ -397,6 +397,24 @@ func (r *jsonEncoder) field(s string) Encoder {
 	return r
 }
 
+func (r *jsonEncoder) node(name string, value any) Encoder {
+	if r.fields > 0 {
+		r.write(",")
+	}
+	mp := Map{name: value}
+	r.fields += len(mp)
+	b, err := json.Marshal(mp)
+	if err != nil {
+		r.record(err)
+		return r
+	}
+	s := string(b)
+	s = strings.TrimPrefix(s, "{")
+	s = strings.TrimSuffix(s, "}")
+	r.write(s)
+	return r
+}
+
 func (r *jsonEncoder) beginList() Encoder {
 	r.write("[")
 	return r
@@ -416,27 +434,29 @@ func (r *jsonEncoder) writeItem(batch, index int, object any) Encoder {
 }
 
 func (r *jsonEncoder) encode(object any) Encoder {
-	encoder := json.NewEncoder(r.output)
-	err := encoder.Encode(object)
+	b, err := json.Marshal(object)
+	if err != nil {
+		r.record(err)
+		return r
+	}
+	r.write(string(b))
 	r.record(err)
 	return r
 }
 
 func (r *jsonEncoder) embed(object any) Encoder {
-	b := new(bytes.Buffer)
-	encoder := json.NewEncoder(b)
-	err := encoder.Encode(object)
+	b, err := json.Marshal(object)
 	r.record(err)
-	s := b.String()
 	mp := Map{}
-	input := strings.NewReader(s)
-	decoder := json.NewDecoder(input)
-	err = decoder.Decode(&mp)
+	err = json.Unmarshal(b, &mp)
+	s := string(b)
 	r.record(err)
-	if err == nil {
-		r.fields += len(mp)
-		s = s[1 : len(s)-2]
+	if err != nil {
+		return r
 	}
+	r.fields += len(mp)
+	s = strings.TrimPrefix(s, "{")
+	s = strings.TrimSuffix(s, "}")
 	r.write(s)
 	return r
 }
@@ -492,6 +512,16 @@ func (r *yamlEncoder) field(s string) Encoder {
 	return r
 }
 
+func (r *yamlEncoder) node(name string, value any) Encoder {
+	if r.fields > 0 {
+		r.write("\n")
+	}
+	mp := Map{name: value}
+	r.fields += len(mp)
+	r.encode(mp)
+	return r
+}
+
 func (r *yamlEncoder) beginList() Encoder {
 	r.write("\n")
 	r.depth++
@@ -509,26 +539,22 @@ func (r *yamlEncoder) writeItem(batch, index int, object any) Encoder {
 }
 
 func (r *yamlEncoder) encode(object any) Encoder {
-	encoder := yaml.NewEncoder(r.output)
-	err := encoder.Encode(object)
-	r.record(err)
-	err = encoder.Close()
+	b, err := yaml.Marshal(object)
+	if err != nil {
+		r.record(err)
+		return r
+	}
+	r.write(string(b))
 	r.record(err)
 	return r
 }
 
 func (r *yamlEncoder) embed(object any) Encoder {
-	b := new(bytes.Buffer)
-	encoder := yaml.NewEncoder(b)
-	err := encoder.Encode(object)
+	b, err := yaml.Marshal(object)
 	r.record(err)
-	err = encoder.Close()
-	r.record(err)
-	s := b.String()
 	mp := Map{}
-	input := strings.NewReader(s)
-	decoder := yaml.NewDecoder(input)
-	err = decoder.Decode(&mp)
+	err = yaml.Unmarshal(b, &mp)
+	s := string(b)
 	r.record(err)
 	if err == nil {
 		r.fields += len(mp)

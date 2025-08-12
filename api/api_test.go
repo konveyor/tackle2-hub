@@ -2,12 +2,14 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 )
 
 func TestAccepted(t *testing.T) {
@@ -90,7 +92,26 @@ func TestEncoder(t *testing.T) {
 		List: []string{"a", "b", "c", "d"},
 	}
 
-	for _, en := range []Encoder{&jsonEncoder{}, &yamlEncoder{}} {
+	type Test struct {
+		encoder Encoder
+		decoder func([]byte, any) error
+	}
+
+	cases := []Test{
+		{
+			encoder: &jsonEncoder{},
+			decoder: func(b []byte, object any) error {
+				return json.Unmarshal(b, object)
+			}},
+		{
+			encoder: &yamlEncoder{},
+			decoder: func(b []byte, object any) error {
+				return yaml.Unmarshal(b, object)
+			}},
+	}
+
+	for _, tc := range cases {
+		en := tc.encoder
 		b := &bytes.Buffer{}
 		if x, cast := en.(*jsonEncoder); cast {
 			x.output = b
@@ -112,11 +133,16 @@ func TestEncoder(t *testing.T) {
 		en.writeItem(0, 1, "item-1")
 		en.writeItem(0, 2, "item-2")
 		en.endList()
+		en.node("thing", thing)
 		en.end()
 		s := b.String()
 		println(s)
 
 		err := en.error()
+		g.Expect(err).To(gomega.BeNil())
+
+		expected := Map{}
+		err = tc.decoder([]byte(s), &expected)
 		g.Expect(err).To(gomega.BeNil())
 	}
 }
