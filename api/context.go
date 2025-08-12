@@ -402,7 +402,6 @@ func (r *jsonEncoder) node(name string, value any) Encoder {
 		r.write(",")
 	}
 	mp := Map{name: value}
-	r.fields += len(mp)
 	b, err := json.Marshal(mp)
 	if err != nil {
 		r.record(err)
@@ -412,6 +411,7 @@ func (r *jsonEncoder) node(name string, value any) Encoder {
 	s = strings.TrimPrefix(s, "{")
 	s = strings.TrimSuffix(s, "}")
 	r.write(s)
+	r.fields++
 	return r
 }
 
@@ -517,8 +517,8 @@ func (r *yamlEncoder) node(name string, value any) Encoder {
 		r.write("\n")
 	}
 	mp := Map{name: value}
-	r.fields += len(mp)
 	r.encode(mp)
+	r.fields++
 	return r
 }
 
