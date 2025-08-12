@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
@@ -145,6 +146,8 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all applications.
 // @description List all applications.
+// @description filters:
+// @description - platform.id
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Application
@@ -172,6 +175,16 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "platform.id", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	filter = filter.Renamed("platform.id", "PlatformId")
 
 	type M struct {
 		*model.Application
@@ -227,6 +240,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
 	db = db.Order("a.ID")
+	db = filter.Where(db)
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
