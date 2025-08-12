@@ -440,7 +440,6 @@ func (r *jsonEncoder) encode(object any) Encoder {
 		return r
 	}
 	r.write(string(b))
-	r.record(err)
 	return r
 }
 
@@ -545,7 +544,6 @@ func (r *yamlEncoder) encode(object any) Encoder {
 		return r
 	}
 	r.write(string(b))
-	r.record(err)
 	return r
 }
 
