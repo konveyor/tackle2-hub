@@ -2448,6 +2448,7 @@ func (r *InsightWriter) Write(id uint, filter qf.Filter, output io.Writer) (coun
 		}
 	}
 	r.endList()
+	err = r.Encoder.error()
 	return
 }
 
@@ -2514,6 +2515,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 		return
 	}
 	r.end()
+	err = r.Encoder.error()
 	return
 }
 
