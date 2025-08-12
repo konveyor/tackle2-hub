@@ -1006,6 +1006,7 @@ type TaskDashboard struct {
 	State       string     `json:"state,omitempty" yaml:",omitempty"`
 	Locator     string     `json:"locator,omitempty" yaml:",omitempty"`
 	Application *Ref       `json:"application,omitempty" yaml:",omitempty"`
+	Platform    *Ref       `json:"platform,omitempty" yaml:",omitempty"`
 	Started     *time.Time `json:"started,omitempty" yaml:",omitempty"`
 	Terminated  *time.Time `json:"terminated,omitempty" yaml:",omitempty"`
 	Errors      int        `json:"errors,omitempty" yaml:",omitempty"`
@@ -1019,6 +1020,7 @@ func (r *TaskDashboard) With(m *model.Task) {
 	r.State = m.State
 	r.Locator = m.Locator
 	r.Application = r.refPtr(m.ApplicationID, m.Application)
+	r.Platform = r.refPtr(m.PlatformID, m.Platform)
 	r.Started = m.Started
 	r.Terminated = m.Terminated
 	r.Errors = len(m.Errors)
