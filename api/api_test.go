@@ -136,13 +136,13 @@ func TestEncoder(t *testing.T) {
 		en.node("thing", thing)
 		en.end()
 		s := b.String()
-		println(s)
+		//println(s)
 
 		err := en.error()
 		g.Expect(err).To(gomega.BeNil())
 
-		expected := Map{}
-		err = tc.decoder([]byte(s), &expected)
+		decoded := map[string]any{}
+		err = tc.decoder([]byte(s), &decoded)
 		g.Expect(err).To(gomega.BeNil())
 	}
 }
