@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
@@ -145,6 +146,8 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // List godoc
 // @summary List all applications.
 // @description List all applications.
+// @description filters:
+// @description - platform.id
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Application
@@ -173,6 +176,16 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		return
 	}
 
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "platform.id", Kind: qf.LITERAL},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	filter = filter.Renamed("platform.id", "PlatformId")
+
 	type M struct {
 		*model.Application
 		IdentityId      uint
@@ -189,6 +202,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		PlatformName    string
 		ReviewId        uint
 		AssessmentId    uint
+		ManifestId      uint
 		QuestionnaireId uint
 		AnalysisId      uint
 		Effort          int
@@ -210,6 +224,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		"pf.Name            PlatformName",
 		"rv.ID              ReviewId",
 		"at.ID              AssessmentId",
+		"mf.ID              ManifestId",
 		"at.QuestionnaireID QuestionnaireId",
 		"an.ID              AnalysisId",
 		"an.Effort          Effort",
@@ -225,8 +240,10 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Joins("LEFT JOIN Platform pf ON pf.ID = a.PlatformID")
 	db = db.Joins("LEFT JOIN Review rv ON rv.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
+	db = db.Joins("LEFT JOIN Manifest mf ON mf.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
 	db = db.Order("a.ID")
+	db = filter.Where(db)
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -236,6 +253,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		identities := make(map[uint]model.Identity)
 		contributors := make(map[uint]model.Stakeholder)
 		assessments := make(map[uint]model.Assessment)
+		manifests := make(map[uint]model.Manifest)
 		analyses := make(map[uint]model.Analysis)
 		for i := range batch {
 			m := batch[i].(*M)
@@ -282,6 +300,11 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref.QuestionnaireID = m.QuestionnaireId
 				assessments[m.AssessmentId] = ref
 			}
+			if m.ManifestId > 0 {
+				ref := model.Manifest{}
+				ref.ID = m.ManifestId
+				manifests[m.ManifestId] = ref
+			}
 			if m.AnalysisId > 0 {
 				ref := model.Analysis{}
 				ref.ID = m.AnalysisId
@@ -297,6 +320,9 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		}
 		for _, m := range assessments {
 			app.Assessments = append(app.Assessments, m)
+		}
+		for _, m := range manifests {
+			app.Manifest = append(app.Manifest, m)
 		}
 		for _, m := range analyses {
 			app.Analyses = append(app.Analyses, m)
@@ -1311,6 +1337,7 @@ type Application struct {
 	Platform        *Ref          `json:"platform"`
 	Archetypes      []Ref         `json:"archetypes"`
 	Assessments     []Ref         `json:"assessments"`
+	Manifests       []Ref         `json:"manifests"`
 	Assessed        bool          `json:"assessed"`
 	Risk            string        `json:"risk"`
 	Confidence      int           `json:"confidence"`
@@ -1380,6 +1407,10 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 			return m.Analyses[i].ID < m.Analyses[j].ID
 		})
 		r.Effort = m.Analyses[len(m.Analyses)-1].Effort
+	}
+	r.Manifests = []Ref{}
+	for _, mf := range m.Manifest {
+		r.Manifests = append(r.Manifests, Ref{ID: mf.ID})
 	}
 	r.Risk = assessment.RiskUnassessed
 }
