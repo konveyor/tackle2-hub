@@ -2792,74 +2792,65 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 type ManifestReader struct {
-	file   *os.File
-	marker map[string]int64
-	begin  int64
-	end    int64
-	read   int64
+	*io.SectionReader
+	file          *os.File
+	marker        map[string]int64
+	sectionReader *io.SectionReader
 }
 
 // Open the reader delimited by the specified markers.
 func (r *ManifestReader) Open(path, begin, end string) (err error) {
-	found := false
 	err = r.scan(path)
 	if err != nil {
 		return
 	}
-	r.begin, found = r.marker[begin]
+	nBegin, found := r.marker[begin]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", begin),
 		}
 		return
 	}
-	r.end, found = r.marker[end]
+	nEnd, found := r.marker[end]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", end),
 		}
 		return
 	}
-	if r.begin >= r.end {
+	if nBegin >= nEnd {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s must preceed %s.", begin, end),
 		}
 		return
 	}
-	r.begin += int64(len(begin))
-	r.begin++
-	r.read = r.end - r.begin
+	nBegin += int64(len(begin))
+	nBegin++
+	n := nEnd - nBegin
 	r.file, err = os.Open(path)
 	if err != nil {
 		return
 	}
-	_, err = r.file.Seek(r.begin, io.SeekStart)
+	r.sectionReader = io.NewSectionReader(r.file, nBegin, n)
 	return
 }
 
 // Read bytes.
 func (r *ManifestReader) Read(b []byte) (n int, err error) {
-	if r.file == nil {
-		err = os.ErrClosed
-		return
-	}
-	n, err = r.file.Read(b)
-	if n == 0 || err != nil {
-		return
-	}
-	if int64(n) > r.read {
-		n = int(r.read)
-	}
-	r.read -= int64(n)
-	if n < 1 {
+	if r.sectionReader == nil {
 		err = io.EOF
+		return
 	}
+	n, err = r.sectionReader.Read(b)
 	return
 }
 
 // Close the reader.
 func (r *ManifestReader) Close() (err error) {
-	err = r.file.Close()
+	if r.file != nil {
+		err = r.file.Close()
+		r.file = nil
+	}
 	return
 }
 
