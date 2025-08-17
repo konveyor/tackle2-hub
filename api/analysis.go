@@ -2819,7 +2819,7 @@ func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	}
 	if nBegin >= nEnd {
 		err = &BadRequestError{
-			Reason: fmt.Sprintf("marker: %s must preceed %s.", begin, end),
+			Reason: fmt.Sprintf("marker: %s must precede %s.", begin, end),
 		}
 		return
 	}
