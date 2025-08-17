@@ -2854,9 +2854,6 @@ func (r *ManifestReader) Close() (err error) {
 
 // scan manifest and catalog position of markers.
 func (r *ManifestReader) scan(path string) (err error) {
-	if r.marker != nil {
-		return
-	}
 	f, err := os.Open(path)
 	if err != nil {
 		return
