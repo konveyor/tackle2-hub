@@ -371,16 +371,23 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			_ = ctx.Error(err)
 		}
 	}()
+	opened := []io.ReadCloser{}
+	defer func() {
+		for _, r := range opened {
+			_ = r.Close()
+		}
+	}()
+	//
+	// Main
 	reader := &ManifestReader{}
 	err = reader.Open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = reader.Close()
-	}()
 	d, err := h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -411,10 +418,9 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = reader.Close()
-	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -450,10 +456,9 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = reader.Close()
-	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
