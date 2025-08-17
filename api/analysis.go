@@ -2793,7 +2793,7 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //	^]END-DEPS^]
 type ManifestReader struct {
 	sectionReader *io.SectionReader
-	marker        map[string]int64
+	marker        map[string]Marker
 	file          *os.File
 }
 
@@ -2803,34 +2803,33 @@ func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	if err != nil {
 		return
 	}
-	nBegin, found := r.marker[begin]
+	mBegin, found := r.marker[begin]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", begin),
 		}
 		return
 	}
-	nEnd, found := r.marker[end]
+	mEnd, found := r.marker[end]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", end),
 		}
 		return
 	}
-	if nBegin >= nEnd {
+	if mEnd.begin < mBegin.begin {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s must precede %s.", begin, end),
 		}
 		return
 	}
-	nBegin += int64(len(begin))
-	nBegin++
-	n := nEnd - nBegin
 	r.file, err = os.Open(path)
 	if err != nil {
 		return
 	}
-	r.sectionReader = io.NewSectionReader(r.file, nBegin, n)
+	offset := mBegin.end
+	n := mEnd.begin - offset
+	r.sectionReader = io.NewSectionReader(r.file, offset, n)
 	return
 }
 
@@ -2869,20 +2868,41 @@ func (r *ManifestReader) scan(path string) (err error) {
 	if err != nil {
 		return
 	}
-	p := int64(0)
-	r.marker = make(map[string]int64)
-	scanner := bufio.NewScanner(r.file)
-	buf := make([]byte, 0, 0x10000) // 64K
-	scanner.Buffer(buf, 0x100000)   // 1M
-	for scanner.Scan() {
-		content := scanner.Text()
-		matched := strings.TrimSpace(content)
-		if pattern.Match([]byte(matched)) {
-			r.marker[matched] = p
+	offset := int64(0)
+	var content []byte
+	r.marker = make(map[string]Marker)
+	reader := bufio.NewReaderSize(r.file, 1<<20)
+	for {
+		content, err = reader.ReadBytes('\n')
+		if len(content) > 0 {
+			token := strings.TrimSpace(string(content))
+			token = strings.TrimRight(token, "\r\n")
+			if pattern.MatchString(token) {
+				m := Marker{}
+				m.with(offset, content)
+				r.marker[token] = m
+			}
+			offset += int64(len(content))
 		}
-		p += int64(len(content))
-		p++
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				err = nil
+			}
+			break
+		}
 	}
-	err = scanner.Err()
 	return
+}
+
+// Marker manifest marker.
+type Marker struct {
+	begin int64
+	end   int64
+}
+
+// with populates the marker.
+func (m *Marker) with(offset int64, content []byte) {
+	m.begin = offset
+	m.end = offset
+	m.end += int64(len(content))
 }
