@@ -2792,9 +2792,9 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 type ManifestReader struct {
-	sectionReader *io.SectionReader
-	marker        map[string]Marker
-	file          *os.File
+	section *io.SectionReader
+	marker  map[string]Marker
+	file    *os.File
 }
 
 // Open the reader delimited by the specified markers.
@@ -2829,17 +2829,17 @@ func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	}
 	offset := mBegin.end
 	n := mEnd.begin - offset
-	r.sectionReader = io.NewSectionReader(r.file, offset, n)
+	r.section = io.NewSectionReader(r.file, offset, n)
 	return
 }
 
 // Read bytes.
 func (r *ManifestReader) Read(b []byte) (n int, err error) {
-	if r.sectionReader == nil {
+	if r.section == nil {
 		err = io.EOF
 		return
 	}
-	n, err = r.sectionReader.Read(b)
+	n, err = r.section.Read(b)
 	return
 }
 
