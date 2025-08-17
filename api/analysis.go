@@ -372,7 +372,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		}
 	}()
 	reader := &ManifestReader{}
-	_, err = reader.open(file.Path, BeginMainMarker, EndMainMarker)
+	err = reader.Open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -406,7 +406,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Insights
 	reader = &ManifestReader{}
-	_, err = reader.open(file.Path, BeginInsightsMarker, EndInsightsMarker)
+	err = reader.Open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -445,7 +445,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Dependencies
 	reader = &ManifestReader{}
-	_, err = reader.open(file.Path, BeginDepsMarker, EndDepsMarker)
+	err = reader.Open(file.Path, BeginDepsMarker, EndDepsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
@@ -2794,42 +2794,8 @@ type ManifestReader struct {
 	read   int64
 }
 
-// scan manifest and catalog position of markers.
-func (r *ManifestReader) scan(path string) (err error) {
-	if r.marker != nil {
-		return
-	}
-	r.file, err = os.Open(path)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = r.file.Close()
-	}()
-	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
-	if err != nil {
-		return
-	}
-	p := int64(0)
-	r.marker = make(map[string]int64)
-	scanner := bufio.NewScanner(r.file)
-	buf := make([]byte, 0, 0x10000) // 64K
-	scanner.Buffer(buf, 0x100000)   // 1M
-	for scanner.Scan() {
-		content := scanner.Text()
-		matched := strings.TrimSpace(content)
-		if pattern.Match([]byte(matched)) {
-			r.marker[matched] = p
-		}
-		p += int64(len(content))
-		p++
-	}
-	err = scanner.Err()
-	return
-}
-
-// open returns a read delimited by the specified markers.
-func (r *ManifestReader) open(path, begin, end string) (reader io.ReadCloser, err error) {
+// Open the reader delimited by the specified markers.
+func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	found := false
 	err = r.scan(path)
 	if err != nil {
@@ -2863,12 +2829,15 @@ func (r *ManifestReader) open(path, begin, end string) (reader io.ReadCloser, er
 		return
 	}
 	_, err = r.file.Seek(r.begin, io.SeekStart)
-	reader = r
 	return
 }
 
 // Read bytes.
 func (r *ManifestReader) Read(b []byte) (n int, err error) {
+	if r.file == nil {
+		err = os.ErrClosed
+		return
+	}
 	n, err = r.file.Read(b)
 	if n == 0 || err != nil {
 		return
@@ -2886,5 +2855,39 @@ func (r *ManifestReader) Read(b []byte) (n int, err error) {
 // Close the reader.
 func (r *ManifestReader) Close() (err error) {
 	err = r.file.Close()
+	return
+}
+
+// scan manifest and catalog position of markers.
+func (r *ManifestReader) scan(path string) (err error) {
+	if r.marker != nil {
+		return
+	}
+	r.file, err = os.Open(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = r.file.Close()
+	}()
+	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
+	if err != nil {
+		return
+	}
+	p := int64(0)
+	r.marker = make(map[string]int64)
+	scanner := bufio.NewScanner(r.file)
+	buf := make([]byte, 0, 0x10000) // 64K
+	scanner.Buffer(buf, 0x100000)   // 1M
+	for scanner.Scan() {
+		content := scanner.Text()
+		matched := strings.TrimSpace(content)
+		if pattern.Match([]byte(matched)) {
+			r.marker[matched] = p
+		}
+		p += int64(len(content))
+		p++
+	}
+	err = scanner.Err()
 	return
 }
