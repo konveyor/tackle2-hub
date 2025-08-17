@@ -191,11 +191,11 @@ func TestManifestReader(t *testing.T) {
 	_, _ = f.WriteString("\n")
 
 	_, _ = f.WriteString(BeginInsightsMarker)
-	_, _ = f.WriteString("\n")
+	_, _ = f.WriteString("\r\n")
 	_, _ = f.WriteString("Insight-ONE\n")
 	_, _ = f.WriteString("Insight-TWO\n")
 	_, _ = f.WriteString(EndInsightsMarker)
-	_, _ = f.WriteString("\n")
+	_, _ = f.WriteString("\r\n")
 
 	_, _ = f.WriteString(BeginDepsMarker)
 	_, _ = f.WriteString("\n")
@@ -236,6 +236,14 @@ func TestManifestReader(t *testing.T) {
 	s = string(b[:n])
 	g.Expect("Dep-ONE\nDep-TWO\n").To(gomega.Equal(s))
 	_ = r.Close()
+
+	r = ManifestReader{}
+	err = r.Open(f.Name(), "XX", EndInsightsMarker)
+	g.Expect(err).ToNot(gomega.BeNil())
+	err = r.Open(f.Name(), BeginInsightsMarker, "XX")
+	g.Expect(err).ToNot(gomega.BeNil())
+	err = r.Open(f.Name(), EndDepsMarker, BeginDepsMarker)
+	g.Expect(err).ToNot(gomega.BeNil())
 }
 
 type _errorWriter struct {
