@@ -2792,10 +2792,9 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 type ManifestReader struct {
-	*io.SectionReader
-	file          *os.File
-	marker        map[string]int64
 	sectionReader *io.SectionReader
+	marker        map[string]int64
+	file          *os.File
 }
 
 // Open the reader delimited by the specified markers.
