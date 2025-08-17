@@ -2857,12 +2857,12 @@ func (r *ManifestReader) scan(path string) (err error) {
 	if r.marker != nil {
 		return
 	}
-	r.file, err = os.Open(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	defer func() {
-		_ = r.file.Close()
+		_ = f.Close()
 	}()
 	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
 	if err != nil {
@@ -2871,7 +2871,7 @@ func (r *ManifestReader) scan(path string) (err error) {
 	offset := int64(0)
 	var content []byte
 	r.marker = make(map[string]Marker)
-	reader := bufio.NewReaderSize(r.file, 1<<20)
+	reader := bufio.NewReaderSize(f, 1<<20)
 	for {
 		content, err = reader.ReadBytes('\n')
 		if len(content) > 0 {
