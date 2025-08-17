@@ -372,14 +372,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 		}
 	}()
 	reader := &ManifestReader{}
-	f, err := reader.open(file.Path, BeginMainMarker, EndMainMarker)
+	_, err = reader.open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = f.Close()
+		_ = reader.Close()
 	}()
 	d, err := h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
@@ -406,14 +406,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Insights
 	reader = &ManifestReader{}
-	f, err = reader.open(file.Path, BeginInsightsMarker, EndInsightsMarker)
+	_, err = reader.open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = f.Close()
+		_ = reader.Close()
 	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
@@ -445,14 +445,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Dependencies
 	reader = &ManifestReader{}
-	f, err = reader.open(file.Path, BeginDepsMarker, EndDepsMarker)
+	_, err = reader.open(file.Path, BeginDepsMarker, EndDepsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
-		_ = f.Close()
+		_ = reader.Close()
 	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
@@ -2813,6 +2813,8 @@ func (r *ManifestReader) scan(path string) (err error) {
 	p := int64(0)
 	r.marker = make(map[string]int64)
 	scanner := bufio.NewScanner(r.file)
+	buf := make([]byte, 0, 0x10000) // 64K
+	scanner.Buffer(buf, 0x100000)   // 1M
 	for scanner.Scan() {
 		content := scanner.Text()
 		matched := strings.TrimSpace(content)
@@ -2822,7 +2824,7 @@ func (r *ManifestReader) scan(path string) (err error) {
 		p += int64(len(content))
 		p++
 	}
-
+	err = scanner.Err()
 	return
 }
 
