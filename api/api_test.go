@@ -172,6 +172,10 @@ func TestEncoderError(t *testing.T) {
 
 func TestManifestReader(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
+	b := make([]byte, 1024)
+
+	//
+	// Test marker content.
 
 	f, err := os.CreateTemp("", "")
 	if err != nil {
@@ -205,16 +209,14 @@ func TestManifestReader(t *testing.T) {
 	_, _ = f.WriteString("\n")
 	_ = f.Close()
 
-	b := make([]byte, 1024)
-
 	r := ManifestReader{}
 	err = r.Open(f.Name(), BeginMainMarker, EndMainMarker)
 	g.Expect(err).To(gomega.BeNil())
 	n, err := r.Read(b)
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(18).To(gomega.Equal(n))
+	g.Expect(19).To(gomega.Equal(n))
 	s := string(b[:n])
-	g.Expect("Main-ONE\nMain-TWO\n").To(gomega.Equal(s))
+	g.Expect("\nMain-ONE\nMain-TWO\n").To(gomega.Equal(s))
 	_ = r.Close()
 
 	r = ManifestReader{}
@@ -222,9 +224,9 @@ func TestManifestReader(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 	n, err = r.Read(b)
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(24).To(gomega.Equal(n))
+	g.Expect(26).To(gomega.Equal(n))
 	s = string(b[:n])
-	g.Expect("Insight-ONE\nInsight-TWO\n").To(gomega.Equal(s))
+	g.Expect("\r\nInsight-ONE\nInsight-TWO\n").To(gomega.Equal(s))
 	_ = r.Close()
 
 	r = ManifestReader{}
@@ -232,10 +234,13 @@ func TestManifestReader(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 	n, err = r.Read(b)
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(16).To(gomega.Equal(n))
+	g.Expect(17).To(gomega.Equal(n))
 	s = string(b[:n])
-	g.Expect("Dep-ONE\nDep-TWO\n").To(gomega.Equal(s))
+	g.Expect("\nDep-ONE\nDep-TWO\n").To(gomega.Equal(s))
 	_ = r.Close()
+
+	//
+	// Test marker not found.
 
 	r = ManifestReader{}
 	err = r.Open(f.Name(), "XX", EndInsightsMarker)
@@ -244,6 +249,30 @@ func TestManifestReader(t *testing.T) {
 	g.Expect(err).ToNot(gomega.BeNil())
 	err = r.Open(f.Name(), EndDepsMarker, BeginDepsMarker)
 	g.Expect(err).ToNot(gomega.BeNil())
+
+	//
+	// Test empty marker sections.
+
+	f2, err := os.CreateTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	defer func() {
+		_ = f2.Close()
+		_ = os.Remove(f2.Name())
+	}()
+	_, _ = f2.WriteString(BeginMainMarker)
+	_, _ = f2.WriteString("\n")
+	_, _ = f2.WriteString(EndMainMarker)
+	_, _ = f2.WriteString("\n")
+	_ = f2.Close()
+	r = ManifestReader{}
+	err = r.Open(f2.Name(), BeginMainMarker, EndMainMarker)
+	g.Expect(err).To(gomega.BeNil())
+	n, err = r.Read(b)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(1).To(gomega.Equal(n))
 }
 
 type _errorWriter struct {

@@ -8,10 +8,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -2827,7 +2825,7 @@ func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	if err != nil {
 		return
 	}
-	offset := mBegin.end
+	offset := mBegin.end + 1
 	n := mEnd.begin - offset
 	r.section = io.NewSectionReader(r.file, offset, n)
 	return
@@ -2852,8 +2850,9 @@ func (r *ManifestReader) Close() (err error) {
 	return
 }
 
-// scan manifest and catalog position of markers.
+// scan manifest and catalog offsets of markers.
 func (r *ManifestReader) scan(path string) (err error) {
+	r.marker = make(map[string]Marker)
 	f, err := os.Open(path)
 	if err != nil {
 		return
@@ -2861,31 +2860,42 @@ func (r *ManifestReader) scan(path string) (err error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
-	if err != nil {
-		return
-	}
-	offset := int64(0)
-	var content []byte
-	r.marker = make(map[string]Marker)
-	reader := bufio.NewReaderSize(f, 256<<10)
+	begin := int64(-1)
+	offset := int64(-1)
+	window := make([]byte, 64<<10)
+	var token []byte
 	for {
-		content, err = reader.ReadBytes('\n')
-		if len(content) > 0 {
-			token := strings.TrimSpace(string(content))
-			token = strings.TrimRight(token, "\r\n")
-			if pattern.MatchString(token) {
-				m := Marker{}
-				m.with(offset, content)
-				r.marker[token] = m
-			}
-			offset += int64(len(content))
-		}
+		n := 0
+		n, err = f.Read(window)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				err = nil
 			}
 			break
+		}
+		for p := 0; p < n; p++ {
+			offset++
+			if window[p] == '\x1D' {
+				if begin == -1 {
+					token = []byte{window[p]}
+					begin = offset
+				} else {
+					token = append(token, window[p])
+					r.marker[string(token)] = Marker{
+						begin: begin,
+						end:   offset,
+					}
+					begin = -1
+				}
+			} else {
+				if begin != -1 {
+					token = append(token, window[p])
+				}
+			}
+		}
+		if len(token) > len(window) {
+			err = bufio.ErrTooLong
+			return
 		}
 	}
 	return
@@ -2895,11 +2905,4 @@ func (r *ManifestReader) scan(path string) (err error) {
 type Marker struct {
 	begin int64
 	end   int64
-}
-
-// with populates the marker.
-func (m *Marker) with(offset int64, content []byte) {
-	m.begin = offset
-	m.end = offset
-	m.end += int64(len(content))
 }
