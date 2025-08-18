@@ -2868,7 +2868,7 @@ func (r *ManifestReader) scan(path string) (err error) {
 	offset := int64(0)
 	var content []byte
 	r.marker = make(map[string]Marker)
-	reader := bufio.NewReaderSize(f, 1<<20)
+	reader := bufio.NewReaderSize(f, 256<<10)
 	for {
 		content, err = reader.ReadBytes('\n')
 		if len(content) > 0 {
