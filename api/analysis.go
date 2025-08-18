@@ -8,10 +8,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -371,16 +369,23 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			_ = ctx.Error(err)
 		}
 	}()
+	opened := []io.ReadCloser{}
+	defer func() {
+		for _, r := range opened {
+			_ = r.Close()
+		}
+	}()
+	//
+	// Main
 	reader := &ManifestReader{}
-	f, err := reader.open(file.Path, BeginMainMarker, EndMainMarker)
+	err = reader.Open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = f.Close()
-	}()
 	d, err := h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -406,15 +411,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Insights
 	reader = &ManifestReader{}
-	f, err = reader.open(file.Path, BeginInsightsMarker, EndInsightsMarker)
+	err = reader.Open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = f.Close()
-	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -445,15 +449,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	//
 	// Dependencies
 	reader = &ManifestReader{}
-	f, err = reader.open(file.Path, BeginDepsMarker, EndDepsMarker)
+	err = reader.Open(file.Path, BeginDepsMarker, EndDepsMarker)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
 		_ = ctx.Error(err)
 		return
+	} else {
+		opened = append(opened, reader)
 	}
-	defer func() {
-		_ = f.Close()
-	}()
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
 		err = &BadRequestError{err.Error()}
@@ -2787,102 +2790,119 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 //	^]BEGIN-DEPS^]
 //	^]END-DEPS^]
 type ManifestReader struct {
-	file   *os.File
-	marker map[string]int64
-	begin  int64
-	end    int64
-	read   int64
+	section *io.SectionReader
+	marker  map[string]Marker
+	file    *os.File
 }
 
-// scan manifest and catalog position of markers.
-func (r *ManifestReader) scan(path string) (err error) {
-	if r.marker != nil {
-		return
-	}
-	r.file, err = os.Open(path)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = r.file.Close()
-	}()
-	pattern, err := regexp.Compile(`^\x1D[A-Z-]+\x1D$`)
-	if err != nil {
-		return
-	}
-	p := int64(0)
-	r.marker = make(map[string]int64)
-	scanner := bufio.NewScanner(r.file)
-	for scanner.Scan() {
-		content := scanner.Text()
-		matched := strings.TrimSpace(content)
-		if pattern.Match([]byte(matched)) {
-			r.marker[matched] = p
-		}
-		p += int64(len(content))
-		p++
-	}
-
-	return
-}
-
-// open returns a read delimited by the specified markers.
-func (r *ManifestReader) open(path, begin, end string) (reader io.ReadCloser, err error) {
-	found := false
+// Open the reader delimited by the specified markers.
+func (r *ManifestReader) Open(path, begin, end string) (err error) {
 	err = r.scan(path)
 	if err != nil {
 		return
 	}
-	r.begin, found = r.marker[begin]
+	mBegin, found := r.marker[begin]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", begin),
 		}
 		return
 	}
-	r.end, found = r.marker[end]
+	mEnd, found := r.marker[end]
 	if !found {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("marker: %s not found.", end),
 		}
 		return
 	}
-	if r.begin >= r.end {
+	if mEnd.begin < mBegin.begin {
 		err = &BadRequestError{
-			Reason: fmt.Sprintf("marker: %s must preceed %s.", begin, end),
+			Reason: fmt.Sprintf("marker: %s must precede %s.", begin, end),
 		}
 		return
 	}
-	r.begin += int64(len(begin))
-	r.begin++
-	r.read = r.end - r.begin
 	r.file, err = os.Open(path)
 	if err != nil {
 		return
 	}
-	_, err = r.file.Seek(r.begin, io.SeekStart)
-	reader = r
+	offset := mBegin.end + 1
+	n := mEnd.begin - offset
+	r.section = io.NewSectionReader(r.file, offset, n)
 	return
 }
 
 // Read bytes.
 func (r *ManifestReader) Read(b []byte) (n int, err error) {
-	n, err = r.file.Read(b)
-	if n == 0 || err != nil {
+	if r.section == nil {
+		err = io.EOF
 		return
 	}
-	if int64(n) > r.read {
-		n = int(r.read)
-	}
-	r.read -= int64(n)
-	if n < 1 {
-		err = io.EOF
-	}
+	n, err = r.section.Read(b)
 	return
 }
 
 // Close the reader.
 func (r *ManifestReader) Close() (err error) {
-	err = r.file.Close()
+	if r.file != nil {
+		err = r.file.Close()
+		r.file = nil
+	}
 	return
+}
+
+// scan manifest and catalog offsets of markers.
+func (r *ManifestReader) scan(path string) (err error) {
+	r.marker = make(map[string]Marker)
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	begin := int64(-1)
+	offset := int64(-1)
+	window := make([]byte, 64<<10)
+	var token []byte
+	for {
+		n := 0
+		n, err = f.Read(window)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				err = nil
+			}
+			break
+		}
+		for p := 0; p < n; p++ {
+			offset++
+			if window[p] == '\x1D' {
+				if begin == -1 {
+					token = []byte{window[p]}
+					begin = offset
+				} else {
+					token = append(token, window[p])
+					r.marker[string(token)] = Marker{
+						begin: begin,
+						end:   offset,
+					}
+					begin = -1
+				}
+			} else {
+				if begin != -1 {
+					token = append(token, window[p])
+				}
+			}
+		}
+		if len(token) > len(window) {
+			err = bufio.ErrTooLong
+			return
+		}
+	}
+	return
+}
+
+// Marker manifest marker.
+type Marker struct {
+	begin int64
+	end   int64
 }
