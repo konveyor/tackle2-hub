@@ -1,4 +1,3 @@
-# Filter
 ## Overview
 
 The `filter` package provides a query filtering mechanism that allows users to filter data based on specific conditions. 
