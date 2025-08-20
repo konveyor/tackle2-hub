@@ -19,7 +19,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/reflect"
+	"github.com/konveyor/tackle2-hub/model/reflect"
 	"github.com/konveyor/tackle2-hub/secret"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"

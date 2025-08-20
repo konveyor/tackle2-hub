@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/reflect"
+	"github.com/konveyor/tackle2-hub/model/reflect"
 	"gorm.io/gorm"
 )
 

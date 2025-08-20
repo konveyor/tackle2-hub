@@ -11,6 +11,7 @@ import (
 // Fields returns a map of fields.
 // Used for:
 // - db.Updates()
+// - sorting
 func Fields(m any) (mp map[string]any) {
 	var inspect func(r any)
 	inspect = func(r any) {
@@ -49,12 +50,6 @@ func Fields(m any) (mp map[string]any) {
 				}
 			case reflect.Array:
 				continue
-			case reflect.Slice:
-				inst := fv.Interface()
-				switch inst.(type) {
-				case []byte:
-					mp[ft.Name] = fv.Interface()
-				}
 			default:
 				mp[ft.Name] = fv.Interface()
 			}
