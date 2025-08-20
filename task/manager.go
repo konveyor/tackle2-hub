@@ -20,7 +20,7 @@ import (
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/reflect"
+	"github.com/konveyor/tackle2-hub/model/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
