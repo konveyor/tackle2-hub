@@ -174,11 +174,15 @@ func (a *Association) Replace(m any, related any) (err error) {
 		if a.owner {
 			for i := range related.([]any) {
 				m := related.([]any)[i]
+				err = a.set(m, pkField.Name, uint(0))
+				if err != nil {
+					return
+				}
 				err = a.set(m, fkField, pk)
 				if err != nil {
 					return
 				}
-				err = db.Save(m).Error
+				err = db.Create(m).Error
 				if err != nil {
 					return
 				}
@@ -206,6 +210,17 @@ func (a *Association) Replace(m any, related any) (err error) {
 
 // set field value.
 func (a *Association) set(m any, field string, value any) (err error) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			rErr, cast := r.(error)
+			if cast {
+				err = rErr
+			} else {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
 	mv := reflect.ValueOf(m)
 	f := mv.Elem()
 	fv := f.FieldByName(field)
