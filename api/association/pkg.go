@@ -213,8 +213,7 @@ func (a *Association) set(m any, field string, value any) (err error) {
 	defer func() {
 		r := recover()
 		if r != nil {
-			rErr, cast := r.(error)
-			if cast {
+			if rErr, cast := r.(error); cast {
 				err = rErr
 			} else {
 				err = fmt.Errorf("%v", r)
