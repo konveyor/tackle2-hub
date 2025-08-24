@@ -56,5 +56,6 @@ func All() []any {
 		Questionnaire{},
 		Assessment{},
 		Archetype{},
+		ProfileGenerator{},
 	}
 }
