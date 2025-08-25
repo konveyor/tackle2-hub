@@ -23,7 +23,7 @@ func (d *Differ) Eq(expected, got any) (eq bool, report string) {
 	}
 	sep := "\n__________________________\n"
 	report = fmt.Sprintf(
-		"\nExpected:%s%s\n\nGot:%s%s\nDiff\n%s%s\n\n",
+		"\nExpected:%s%s\n\nGot:%s%s\nDiff%s%s\n\n",
 		sep,
 		Format(expected),
 		sep,
@@ -85,7 +85,7 @@ func (d *Differ) note(n string, v ...any) {
 		fmt.Sprintf(n, v...))
 }
 
-func (d *Differ) nvl(a, b any) (n bool) {
+func (d *Differ) cmpNIL(a, b any) (n bool) {
 	var nA, nB bool
 	switch v := a.(type) {
 	case reflect.Value:
@@ -102,12 +102,14 @@ func (d *Differ) nvl(a, b any) (n bool) {
 	if nA || nB {
 		if nA && !nB {
 			d.note(
-				"~ %s: <nil> expected: <ptr>",
+				"~ %s%s<nil> expected: <ptr>",
+				d.operator(),
 				d.at())
 		}
 		if nB && !nA {
 			d.note(
-				"~ %s: <ptr> expected: <nil>",
+				"~ %s%s<ptr> expected: <nil>",
+				d.operator(),
 				d.at())
 		}
 	}
@@ -132,15 +134,15 @@ func (d *Differ) kind() (k reflect.Kind) {
 func (d *Differ) operator() (op string) {
 	switch d.kind() {
 	case reflect.Map:
-		op = ":"
+		op = ": "
 	default:
-		op = "="
+		op = " = "
 	}
 	return
 }
 
 func (d *Differ) cmp(a, b any) {
-	if d.nvl(a, b) {
+	if d.cmpNIL(a, b) {
 		return
 	}
 	tA := reflect.TypeOf(a)
@@ -199,23 +201,17 @@ func (d *Differ) cmp(a, b any) {
 			d.push(kind, ".%s", kA.String())
 			vA := vA.MapIndex(kA)
 			vB := vB.MapIndex(kA)
-			if d.nvl(vA, vB) {
+			if d.cmpNIL(vA, vB) {
 				continue
 			}
 			xA := vA.Interface()
 			if !vB.IsValid() {
 				d.note(
-					"- %s: %#v",
-					d.at(),
-					xA)
-			}
-			xB := vB.Interface()
-			if !reflect.DeepEqual(xA, xB) {
-				d.note(
-					"~ %s: %#v expected:%#v",
-					d.at(),
-					xB,
-					xA)
+					"- %s: <value>",
+					d.at())
+			} else {
+				xB := vB.Interface()
+				d.cmp(xA, xB)
 			}
 			d.pop()
 		}
@@ -228,15 +224,13 @@ func (d *Differ) cmp(a, b any) {
 			d.push(kind, ".%s", kB.String())
 			vA := vA.MapIndex(kB)
 			vB := vB.MapIndex(kB)
-			if d.nvl(vA, vB) {
+			if d.cmpNIL(vA, vB) {
 				continue
 			}
-			xB := vB.Interface()
 			if !vA.IsValid() {
 				d.note(
-					"+ %s: %#v",
-					d.at(),
-					xB)
+					"+ %s: <value>",
+					d.at())
 			}
 			d.pop()
 		}
@@ -258,7 +252,7 @@ func (d *Differ) cmp(a, b any) {
 			if !ftA.Anonymous {
 				d.push(kind, ".%s", name)
 			}
-			if !d.nvl(fA, fB) {
+			if !d.cmpNIL(fA, fB) {
 				xA := fA.Interface()
 				xB := fB.Interface()
 				d.cmp(xA, xB)
@@ -272,8 +266,9 @@ func (d *Differ) cmp(a, b any) {
 			xA := vA.Interface()
 			xB := vB.Interface()
 			d.note(
-				"~ %s = %#v expected: %#v",
+				"~ %s%s%#v expected: %#v",
 				d.at(),
+				d.operator(),
 				xB,
 				xA)
 		}
