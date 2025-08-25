@@ -160,6 +160,8 @@ github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
 github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
 github.com/jortel/go-utils v0.1.4 h1:DzrID+gI9urEGkOoXYGYIKA/bozEIxmcYV/4cdVjW58=
 github.com/jortel/go-utils v0.1.4/go.mod h1:7vzFYbnb91+ltjjAmCv2jVL4CKX7Onz1i2EQPAvw9Cs=
+github.com/jortel/tackle2-seed v0.0.0-20250825155206-22c7c1bd575c h1:EfhTaan22KHmgmpwgvYb3RXh1iuPCV88eOKAvb/jsYM=
+github.com/jortel/tackle2-seed v0.0.0-20250825155206-22c7c1bd575c/go.mod h1:eOH51ZRWjwC3kCcpccDbMUn205thgDBBWLiAbJZn9E0=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
@@ -169,8 +171,6 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/klauspost/cpuid/v2 v2.2.4 h1:acbojRNwl3o09bUq+yDCtZFc1aiwaAAxtcn8YkZXnvk=
 github.com/klauspost/cpuid/v2 v2.2.4/go.mod h1:RVVoqg1df56z8g3pUjL/3lE5UfnlrJX8tyFgg4nqhuY=
-github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744 h1:/FkxudKacnx6eHscDiSFT5iLgJCswGFpMWmflOM/85U=
-github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744/go.mod h1:wt9Zb1l1PAd+XxW03KTp8z4dth3DkCDsRrcdZSWTyjA=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=

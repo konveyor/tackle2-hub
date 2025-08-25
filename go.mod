@@ -32,6 +32,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.13.1
 )
 
+replace github.com/konveyor/tackle2-seed => github.com/jortel/tackle2-seed v0.0.0-20250825155206-22c7c1bd575c
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/a8m/envsubst v1.4.2 // indirect

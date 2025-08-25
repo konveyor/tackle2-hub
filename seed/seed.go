@@ -18,6 +18,7 @@ type Hub struct {
 	RuleSet
 	Target
 	Questionnaire
+	Generator
 }
 
 // With collects the resources to be seeded.
@@ -33,6 +34,8 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 		err = r.Target.With(seed)
 	case libseed.KindQuestionnaire:
 		err = r.Questionnaire.With(seed)
+	case libseed.KindGenerator:
+		err = r.Generator.With(seed)
 	default:
 		err = liberr.New("unknown kind", "kind", seed.Kind, "file", seed.Filename())
 	}
@@ -58,6 +61,10 @@ func (r *Hub) Apply(db *gorm.DB) (err error) {
 		return
 	}
 	err = r.Questionnaire.Apply(db)
+	if err != nil {
+		return
+	}
+	err = r.Generator.Apply(db)
 	if err != nil {
 		return
 	}
