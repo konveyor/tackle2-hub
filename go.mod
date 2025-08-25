@@ -12,7 +12,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jortel/go-utils v0.1.4
-	github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744
+	github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/mikefarah/yq/v4 v4.44.1
 	github.com/onsi/gomega v1.31.1
@@ -31,8 +31,6 @@ require (
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.1
 )
-
-replace github.com/konveyor/tackle2-seed => github.com/jortel/tackle2-seed v0.0.0-20250825155206-22c7c1bd575c
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
