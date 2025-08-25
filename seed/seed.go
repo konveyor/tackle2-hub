@@ -22,7 +22,8 @@ type Hub struct {
 
 // With collects the resources to be seeded.
 func (r *Hub) With(seed libseed.Seed) (err error) {
-	switch strings.ToLower(seed.Kind) {
+	kind := strings.ToLower(seed.Kind)
+	switch kind {
 	case libseed.KindTagCategory:
 		err = r.TagCategory.With(seed)
 	case libseed.KindJobFunction:
@@ -34,7 +35,7 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 	case libseed.KindQuestionnaire:
 		err = r.Questionnaire.With(seed)
 	default:
-		err = liberr.New("unknown kind", "kind", seed.Kind, "file", seed.Filename())
+		log.Info("WARNING: " + kind + " not supported.")
 	}
 	return
 }
