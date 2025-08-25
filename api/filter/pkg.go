@@ -26,6 +26,9 @@ operator:
 
 \* is a wildcard for string matching.
 
+Notes:
+- The OR `|` operator may only be used inside a list `()`.
+
 
 Examples:
 ?filter=name:elmer
