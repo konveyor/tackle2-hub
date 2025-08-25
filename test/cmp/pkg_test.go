@@ -2,8 +2,6 @@ package cmp
 
 import (
 	"testing"
-
-	"github.com/konveyor/tackle2-hub/migration/json"
 )
 
 func TestCmp(t *testing.T) {
@@ -37,31 +35,86 @@ func TestCmp(t *testing.T) {
 	print(d)
 	print("\n")
 
-	tA := T{ID: 1, Thing: &T2{Name: "Roger", Age: 18, List: b}, List: a}
-	tB := T{ID: 1, Thing: &T2{Name: "Brian", Age: 18}, List: b}
-	eq, d = Eq(tA, tB)
-	print(eq)
-	print("\n")
-	print(d)
-	print("\n")
-
 	eq, d = Eq(nil, 10)
 	print(eq)
 	print("\n")
 	print(d)
 	print("\n")
 
-	mA := json.Map{
-		"id":   1,
-		"name": "Roger",
-		"age":  18,
+	mA := map[string]any{
+		"ID":   1,
+		"List": a,
+		"Name": map[string]any{
+			"First":  "Elmer",
+			"Middle": "James",
+			"Last":   "Fudd",
+		},
+		"Address": map[string]any{
+			"Street":  "123",
+			"City":    "Huntsville",
+			"State":   "AL",
+			"Country": "US",
+			"Zip":     "12345",
+		},
 	}
-	mB := json.Map{
-		"id":   1,
-		"name": "Brian",
-		"age":  18,
+
+	mB := map[string]any{
+		"ID":   1,
+		"List": b,
+		"Name": map[string]any{
+			"First":  "James",
+			"Middle": "",
+			"Last":   "Bond",
+		},
+		"Address": map[string]any{
+			"Street":  "44",
+			"City":    "London",
+			"State":   "",
+			"Country": "EN",
+			"Zip":     "34-0595",
+		},
 	}
+
 	eq, d = Eq(mA, mB)
+	print(eq)
+	print("\n")
+	print(d)
+	print("\n")
+
+	tA := T{
+		ID:   1,
+		List: a,
+		Name: &T2{
+			First:  "Elmer",
+			Middle: "James",
+			Last:   "Fudd",
+		},
+		Address: T3{
+			Street:  "123",
+			City:    "Huntsville",
+			State:   "AL",
+			Country: "US",
+			Zip:     "12345",
+		},
+	}
+	tB := T{
+		ID:   1,
+		List: b,
+		Name: &T2{
+			First:  "James",
+			Middle: "",
+			Last:   "Bond",
+		},
+		Address: T3{
+			Street:  "44",
+			City:    "London",
+			State:   "",
+			Country: "EN",
+			Zip:     "34-0595",
+		},
+	}
+
+	eq, d = Eq(tA, tB)
 	print(eq)
 	print("\n")
 	print(d)
@@ -69,13 +122,23 @@ func TestCmp(t *testing.T) {
 }
 
 type T struct {
-	ID    int
-	List  []int
-	Thing *T2
+	ID      int
+	List    []int
+	Name    *T2
+	Address T3
 }
 
 type T2 struct {
-	Name string
-	Age  int
-	List []int
+	First  string
+	Middle string
+	Last   string
+	List   []int
+}
+
+type T3 struct {
+	Street  string
+	City    string
+	State   string
+	Country string
+	Zip     string
 }

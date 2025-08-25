@@ -47,20 +47,22 @@
 package cmp
 
 import (
-	"gopkg.in/yaml.v2"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func New(ignoredPaths ...string) (cmp *Differ) {
 	return &Differ{IgnoredPaths: ignoredPaths}
 }
 
-// Pretty returns a YAML representation.
-func Pretty(a any) (s string) {
-	b, err := yaml.Marshal(a)
-	if err != nil {
-		panic(err)
+// Format returns a formatted representation.
+func Format(a any) (s string) {
+	cfg := spew.ConfigState{
+		Indent:                  "    ",
+		DisablePointerAddresses: true,
+		DisableCapacities:       true,
+		SortKeys:                true,
 	}
-	s = string(b)
+	s = cfg.Sdump(a)
 	return
 }
 

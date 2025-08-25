@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"unicode"
 )
 
 type Differ struct {
@@ -26,9 +25,9 @@ func (d *Differ) Eq(expected, got any) (eq bool, report string) {
 	report = fmt.Sprintf(
 		"\nExpected:%s%s\n\nGot:%s%s\nDiff\n%s%s\n\n",
 		sep,
-		Pretty(expected),
+		Format(expected),
 		sep,
-		Pretty(got),
+		Format(got),
 		sep,
 		report)
 	return
@@ -54,7 +53,7 @@ func (d *Differ) push(k reflect.Kind, p string, v ...any) {
 	if len(d.path) == 0 {
 		p = strings.TrimPrefix(p, ".")
 	}
-	d.path = append(d.path, d.mixedCase(p))
+	d.path = append(d.path, p)
 }
 
 func (d *Differ) pop() {
@@ -72,7 +71,7 @@ func (d *Differ) note(n string, v ...any) {
 		if strings.HasPrefix(p, "[") {
 			continue
 		}
-		parts = append(parts, d.mixedCase(p))
+		parts = append(parts, p)
 	}
 	current := strings.Join(parts, "")
 	for _, p := range d.IgnoredPaths {
@@ -84,29 +83,6 @@ func (d *Differ) note(n string, v ...any) {
 	d.notes = append(
 		d.notes,
 		fmt.Sprintf(n, v...))
-}
-
-func (d *Differ) mixedCase(in string) (out string) {
-	toLower := func(p string) (s string) {
-		s = p
-		if len(s) > 0 {
-			r := []rune(s)
-			r[0] = unicode.ToLower(r[0])
-			s = string(r)
-		}
-		return
-	}
-	out = toLower(in)
-	part := strings.Split(out, ".")
-	if len(part) > 1 {
-		cased := []string{}
-		for _, p := range part {
-			p = toLower(p)
-			cased = append(cased, p)
-		}
-		out = strings.Join(cased, ".")
-	}
-	return
 }
 
 func (d *Differ) nvl(a, b any) (n bool) {
