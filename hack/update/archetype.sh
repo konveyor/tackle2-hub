@@ -5,7 +5,9 @@ host="${HOST:-localhost:8080}"
 id="${1:-1}"
 kind="${2:-Test}"
 name="${3:-Test}-${id}"
-genid="${4:-1}"
+genA="${4:-1}"
+genB="${5:-2}"
+genC="${6:-3}"
 
 # update archetype
 curl -X PUT ${host}/archetypes/${id} \
@@ -16,11 +18,13 @@ curl -X PUT ${host}/archetypes/${id} \
 id: ${id}
 name: ${name}
 profiles:
-  - id: 1
-    name: openshift
+  - name: openshift
     generators:
-      - id: ${genid}
+      - id: ${genA}
+      - id: ${genB}
+      - id: ${genC}
   - name: other
     generators:
-      - id: ${genid}
+      - id: ${genA}
+      - id: ${genB}
 "

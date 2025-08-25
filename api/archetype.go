@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -49,10 +50,12 @@ func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	m := &model.Archetype{}
 	id := h.pk(ctx)
-	db := h.preLoad(
-		h.DB(ctx),
-		clause.Associations,
-		"Profiles.Generators")
+	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	db = db.Preload("Profiles.Generators.Generator")
+	db = db.Preload("Profiles.Generators", func(db *gorm.DB) *gorm.DB {
+		return db.Order("`Index`")
+	})
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -92,10 +95,12 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 // @router /archetypes [get]
 func (h ArchetypeHandler) List(ctx *gin.Context) {
 	var list []model.Archetype
-	db := h.preLoad(
-		h.DB(ctx),
-		clause.Associations,
-		"Profiles.Generators")
+	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	db = db.Preload("Profiles.Generators.Generator")
+	db = db.Preload("Profiles.Generators", func(db *gorm.DB) *gorm.DB {
+		return db.Order("`Index`")
+	})
 	result := db.Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -186,12 +191,10 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	for _, p := range m.Profiles {
-		err = h.Association(ctx, "Generators").Replace(p, p.Generators)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
+	err = h.updateGenerators(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 
 	archetypes := []model.Archetype{}
@@ -303,12 +306,10 @@ func (h ArchetypeHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	for _, p := range m.Profiles {
-		err = h.Association(ctx, "Generators").Replace(p, p.Generators)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
+	err = h.updateGenerators(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -443,6 +444,32 @@ func (h ArchetypeHandler) adjustProfileIds(ctx *gin.Context, m *model.Archetype)
 	return
 }
 
+// updateGenerators replaces generators.
+func (h ArchetypeHandler) updateGenerators(ctx *gin.Context, m *model.Archetype) (err error) {
+	for i := range m.Profiles {
+		p := &m.Profiles[i]
+		db := h.DB(ctx)
+		db = db.Where("TargetProfileId", p.ID)
+		err = db.Delete(&model.ProfileGenerator{}).Error
+		if err != nil {
+			return
+		}
+		for index := range p.Generators {
+			db := h.DB(ctx)
+			g := &p.Generators[index]
+			g.TargetProfileID = p.ID
+			g.TargetProfile.ID = p.ID
+			g.Generator.ID = g.GeneratorID
+			g.Index = index
+			err = db.Create(g).Error
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
 // TargetProfile REST resource.
 type TargetProfile struct {
 	Resource   `yaml:",inline"`
@@ -457,7 +484,7 @@ func (r *TargetProfile) With(m *model.TargetProfile) {
 	r.Generators = []Ref{}
 	for _, g := range m.Generators {
 		ref := Ref{}
-		ref.With(g.ID, g.Name)
+		ref.With(g.Generator.ID, g.Generator.Name)
 		r.Generators = append(r.Generators, ref)
 	}
 }
@@ -468,8 +495,9 @@ func (r *TargetProfile) Model() (m *model.TargetProfile) {
 	m.ID = r.ID
 	m.Name = r.Name
 	for _, ref := range r.Generators {
-		g := model.Generator{}
-		g.ID = ref.ID
+		g := model.ProfileGenerator{}
+		g.GeneratorID = ref.ID
+		g.TargetProfileID = m.ID
 		m.Generators = append(
 			m.Generators,
 			g)

@@ -7,13 +7,13 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	MinimalArchetype = api.Archetype{
-		Name:        "Minimal Archetype",
+		Name:        "Minimal",
 		Description: "Archetype minimal sample 1",
 		Comments:    "Archetype comments",
 	}
 	WithProfiles = api.Archetype{
-		Name:        "Minimal Archetype",
-		Description: "Archetype minimal sample 1",
+		Name:        "WithProfiles",
+		Description: "Archetype with profiles",
 		Comments:    "Archetype comments",
 		Profiles: []api.TargetProfile{
 			{Name: "openshift"},

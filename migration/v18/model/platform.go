@@ -22,13 +22,6 @@ type Platform struct {
 	Applications []Application `gorm:"constraint:OnDelete:SET NULL"`
 	Tasks        []Task        `gorm:"constraint:OnDelete:CASCADE"`
 }
-type TargetProfile struct {
-	Model
-	Name        string      `gorm:"uniqueIndex:targetProfileA;not null"`
-	Generators  []Generator `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
-	ArchetypeID uint        `gorm:"uniqueIndex:targetProfileA;not null"`
-	Archetype   Archetype
-}
 
 type Generator struct {
 	Model
