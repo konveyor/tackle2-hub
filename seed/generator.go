@@ -75,9 +75,9 @@ func (r *Generator) Apply(db *gorm.DB) (err error) {
 		m.Values = g.Values
 		m.Params = g.Params
 		m.Repository = model.Repository(g.Repository)
-		result := db.Save(&m)
-		if result.Error != nil {
-			err = liberr.Wrap(result.Error)
+		err = db.Save(m).Error
+		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 	}
