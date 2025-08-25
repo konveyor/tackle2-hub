@@ -31,16 +31,16 @@ func (r *Generator) With(seed libseed.Seed) (err error) {
 func (r *Generator) Apply(db *gorm.DB) (err error) {
 	log.Info("Applying Generators", "count", len(r.generators))
 	for i := range r.generators {
-		jf := r.generators[i]
-		generator, found, fErr := r.find(db, "uuid = ?", jf.UUID)
+		g := r.generators[i]
+		m, found, fErr := r.find(db, "uuid = ?", g.UUID)
 		if fErr != nil {
 			err = fErr
 			return
 		}
 		// model exists and is being renamed
-		if found && generator.Name != jf.Name {
+		if found && m.Name != g.Name {
 			// ensure that the target name is clear
-			collision, collides, fErr := r.find(db, "name = ? and id != ?", jf.Name, generator.ID)
+			collision, collides, fErr := r.find(db, "name = ? and id != ?", g.Name, m.ID)
 			if fErr != nil {
 				err = fErr
 				return
@@ -52,26 +52,31 @@ func (r *Generator) Apply(db *gorm.DB) (err error) {
 				}
 			}
 		} else if !found {
-			generator, found, fErr = r.find(db, "name = ?", jf.Name)
+			m, found, fErr = r.find(db, "name = ?", g.Name)
 			if fErr != nil {
 				err = fErr
 				return
 			}
-			if found && generator.CreateUser != "" {
-				err = r.rename(db, generator)
+			if found && m.CreateUser != "" {
+				err = r.rename(db, m)
 				if err != nil {
 					return
 				}
 				found = false
 			}
 			if !found {
-				generator = &model.Generator{}
+				m = &model.Generator{}
 			}
 		}
 
-		generator.Name = jf.Name
-		generator.UUID = &jf.UUID
-		result := db.Save(&generator)
+		m.UUID = &g.UUID
+		m.Kind = g.Kind
+		m.Name = g.Name
+		m.Description = g.Description
+		m.Values = g.Values
+		m.Params = g.Params
+		m.Repository = model.Repository(g.Repository)
+		result := db.Save(&m)
 		if result.Error != nil {
 			err = liberr.Wrap(result.Error)
 			return
