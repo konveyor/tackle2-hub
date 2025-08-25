@@ -174,10 +174,6 @@ func (a *Association) Replace(m any, related any) (err error) {
 		if a.owner {
 			for i := range related.([]any) {
 				m := related.([]any)[i]
-				err = a.set(m, pkField.Name, uint(0))
-				if err != nil {
-					return
-				}
 				err = a.set(m, fkField, pk)
 				if err != nil {
 					return
