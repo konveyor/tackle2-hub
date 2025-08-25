@@ -68,7 +68,6 @@ func (r *Generator) Apply(db *gorm.DB) (err error) {
 				m = &model.Generator{}
 			}
 		}
-
 		m.UUID = &g.UUID
 		m.Kind = g.Kind
 		m.Name = g.Name
@@ -86,14 +85,15 @@ func (r *Generator) Apply(db *gorm.DB) (err error) {
 }
 
 // Convenience method to find a Generator.
-func (r *Generator) find(db *gorm.DB, conditions ...any) (jf *model.Generator, found bool, err error) {
-	jf = &model.Generator{}
-	result := db.First(jf, conditions...)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+func (r *Generator) find(db *gorm.DB, conditions ...any) (m *model.Generator, found bool, err error) {
+	m = &model.Generator{}
+	err = db.First(m, conditions...).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
 			return
 		}
-		err = liberr.Wrap(result.Error)
+		err = liberr.Wrap(err)
 		return
 	}
 	found = true
@@ -101,21 +101,21 @@ func (r *Generator) find(db *gorm.DB, conditions ...any) (jf *model.Generator, f
 }
 
 // Rename a Generator by adding a suffix.
-func (r *Generator) rename(db *gorm.DB, jf *model.Generator) (err error) {
+func (r *Generator) rename(db *gorm.DB, m *model.Generator) (err error) {
 	suffix := 0
 	for {
 		suffix++
-		newName := fmt.Sprintf("%s (%d)", jf.Name, suffix)
+		newName := fmt.Sprintf("%s (%d)", m.Name, suffix)
 		_, found, fErr := r.find(db, "name = ?", newName)
 		if fErr != nil {
 			err = fErr
 			return
 		}
 		if !found {
-			jf.Name = newName
-			result := db.Save(jf)
-			if result.Error != nil {
-				err = liberr.Wrap(result.Error)
+			m.Name = newName
+			err = db.Save(m).Error
+			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 			return
