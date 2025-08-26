@@ -25,6 +25,7 @@ type Platform struct {
 
 type Generator struct {
 	Model
+	UUID        *string `gorm:"uniqueIndex"`
 	Kind        string
 	Name        string
 	Description string

@@ -169,8 +169,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/klauspost/cpuid/v2 v2.2.4 h1:acbojRNwl3o09bUq+yDCtZFc1aiwaAAxtcn8YkZXnvk=
 github.com/klauspost/cpuid/v2 v2.2.4/go.mod h1:RVVoqg1df56z8g3pUjL/3lE5UfnlrJX8tyFgg4nqhuY=
-github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744 h1:/FkxudKacnx6eHscDiSFT5iLgJCswGFpMWmflOM/85U=
-github.com/konveyor/tackle2-seed v0.0.0-20231025181853-8ce94f70f744/go.mod h1:wt9Zb1l1PAd+XxW03KTp8z4dth3DkCDsRrcdZSWTyjA=
+github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88 h1:y0vcQB0C72ivlweiqtK+5KhGDE1rW+LfxdVaSVz62rw=
+github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88/go.mod h1:eOH51ZRWjwC3kCcpccDbMUn205thgDBBWLiAbJZn9E0=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
