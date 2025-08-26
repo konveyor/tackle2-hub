@@ -188,24 +188,25 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 
 	type M struct {
 		*model.Application
-		IdentityId      uint
-		IdentityName    string
-		ServiceId       uint
-		ServiceName     string
-		OwnerId         uint
-		OwnerName       string
-		ContributorId   uint
-		ContributorName string
-		WaveId          uint
-		WaveName        string
-		PlatformId      uint
-		PlatformName    string
-		ReviewId        uint
-		AssessmentId    uint
-		ManifestId      uint
-		QuestionnaireId uint
-		AnalysisId      uint
-		Effort          int
+		IdentityId         uint
+		IdentityName       string
+		ServiceId          uint
+		ServiceName        string
+		OwnerId            uint
+		OwnerName          string
+		ContributorId      uint
+		ContributorName    string
+		WaveId             uint
+		WaveName           string
+		PlatformId         uint
+		PlatformName       string
+		ReviewId           uint
+		AssessmentId       uint
+		AssessmentSections []byte
+		ManifestId         uint
+		QuestionnaireId    uint
+		AnalysisId         uint
+		Effort             int
 	}
 	db := h.DB(ctx)
 	db = db.Select(
@@ -224,6 +225,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		"pf.Name            PlatformName",
 		"rv.ID              ReviewId",
 		"at.ID              AssessmentId",
+		"at.Sections        AssessmentSections",
 		"mf.ID              ManifestId",
 		"at.QuestionnaireID QuestionnaireId",
 		"an.ID              AnalysisId",
@@ -298,6 +300,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref := model.Assessment{}
 				ref.ID = m.AssessmentId
 				ref.QuestionnaireID = m.QuestionnaireId
+				_ = json.Unmarshal(m.AssessmentSections, &ref.Sections)
 				assessments[m.AssessmentId] = ref
 			}
 			if m.ManifestId > 0 {
