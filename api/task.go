@@ -393,7 +393,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	}
 	rtx := RichContext(ctx)
 	task := &tasking.Task{}
-	task.With(r.Model())
+	task.With(r.Patch(&model.Task{}))
 	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
@@ -455,7 +455,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if _, found := ctx.Get(Submit); found {
 		r.State = tasking.Ready
 	}
-	m = r.Model()
+	m = r.Patch(m)
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	rtx := RichContext(ctx)
@@ -863,24 +863,22 @@ func (r *Task) With(m *model.Task) {
 	}
 }
 
-// Model builds a model.
-func (r *Task) Model() (m *model.Task) {
-	m = &model.Task{
-		Name:          r.Name,
-		Kind:          r.Kind,
-		Addon:         r.Addon,
-		Extensions:    r.Extensions,
-		State:         r.State,
-		Locator:       r.Locator,
-		Priority:      r.Priority,
-		Policy:        model.TaskPolicy(r.Policy),
-		TTL:           model.TTL(r.TTL),
-		ApplicationID: r.idPtr(r.Application),
-		PlatformID:    r.idPtr(r.Platform),
-	}
+// Patch the specified model.
+func (r *Task) Patch(m *model.Task) *model.Task {
 	m.ID = r.ID
+	m.Name = r.Name
+	m.Kind = r.Kind
+	m.Addon = r.Addon
+	m.Extensions = r.Extensions
+	m.State = r.State
+	m.Locator = r.Locator
+	m.Priority = r.Priority
+	m.Policy = model.TaskPolicy(r.Policy)
+	m.TTL = model.TTL(r.TTL)
 	m.Data.Any = r.Data
-	return
+	m.ApplicationID = r.idPtr(r.Application)
+	m.PlatformID = r.idPtr(r.Platform)
+	return m
 }
 
 // userPriority adjust (ensures) priority is greater than 10.

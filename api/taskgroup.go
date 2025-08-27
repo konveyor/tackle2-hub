@@ -489,7 +489,7 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m.ID = r.ID
 	m.Data.Any = r.Data
 	for _, task := range r.Tasks {
-		m.List = append(m.List, *task.Model())
+		m.List = append(m.List, *task.Patch(&model.Task{}))
 	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
