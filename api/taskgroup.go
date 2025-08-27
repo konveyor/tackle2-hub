@@ -122,7 +122,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Omit(clause.Associations)
 	m := &tasking.TaskGroup{}
-	m.With(r.Model())
+	m.With(r.Patch(&model.TaskGroup{}))
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	switch r.State {
 	case "":
@@ -194,10 +194,8 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		"BucketID",
 		"Bucket")
 	m = &tasking.TaskGroup{}
-	m.With(r.Model())
+	m.With(r.Patch(m.TaskGroup))
 	m.ID = id
-	m.CreateUser = r.CreateUser
-	m.CreateTime = r.CreateTime
 	m.UpdateUser = h.CurrentUser(ctx)
 	switch m.State {
 	case "", tasking.Created:
@@ -475,18 +473,16 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	}
 }
 
-// Model builds a model.
-func (r *TaskGroup) Model() (m *model.TaskGroup) {
-	m = &model.TaskGroup{
-		Name:       r.Name,
-		Kind:       r.Kind,
-		Addon:      r.Addon,
-		Extensions: r.Extensions,
-		State:      r.State,
-		Priority:   r.Priority,
-		Policy:     model.TaskPolicy(r.Policy),
-	}
+// Patch the specified model.
+func (r *TaskGroup) Patch(m *model.TaskGroup) *model.TaskGroup {
 	m.ID = r.ID
+	m.Name = r.Name
+	m.Kind = r.Kind
+	m.Addon = r.Addon
+	m.Extensions = r.Extensions
+	m.State = r.State
+	m.Priority = r.Priority
+	m.Policy = model.TaskPolicy(r.Policy)
 	m.Data.Any = r.Data
 	for _, task := range r.Tasks {
 		m.List = append(m.List, *task.Patch(&model.Task{}))
@@ -494,5 +490,5 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
 	}
-	return
+	return m
 }
