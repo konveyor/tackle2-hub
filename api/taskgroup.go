@@ -193,7 +193,6 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		clause.Associations,
 		"BucketID",
 		"Bucket")
-	m = &tasking.TaskGroup{}
 	m.With(r.Patch(m.TaskGroup))
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
@@ -484,6 +483,7 @@ func (r *TaskGroup) Patch(m *model.TaskGroup) *model.TaskGroup {
 	m.Priority = r.Priority
 	m.Policy = model.TaskPolicy(r.Policy)
 	m.Data.Any = r.Data
+	m.List = make([]model.Task, 0, len(r.Tasks))
 	for _, task := range r.Tasks {
 		m.List = append(m.List, *task.Patch(&model.Task{}))
 	}
