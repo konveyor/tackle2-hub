@@ -865,6 +865,9 @@ func (r *Task) With(m *model.Task) {
 
 // Patch the specified model.
 func (r *Task) Patch(m *model.Task) *model.Task {
+	if m == nil {
+		m = &model.Task{}
+	}
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
@@ -952,8 +955,8 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	r.TaskID = m.TaskID
 	r.Activity = m.Activity
 	r.Result = m.Result.Any
-	r.Errors = make([]TaskError, 0)
-	r.Attached = make([]Attachment, 0)
+	r.Errors = make([]TaskError, 0, len(m.Errors))
+	r.Attached = make([]Attachment, 0, len(m.Attached))
 	for _, err := range m.Errors {
 		r.Errors = append(r.Errors, TaskError(err))
 	}
@@ -964,8 +967,8 @@ func (r *TaskReport) With(m *model.TaskReport) {
 
 // Patch the specified model.
 func (r *TaskReport) Patch(m *model.TaskReport) *model.TaskReport {
-	if r.Activity == nil {
-		r.Activity = []string{}
+	if m == nil {
+		m = &model.TaskReport{}
 	}
 	m.ID = r.ID
 	m.Status = r.Status
@@ -974,6 +977,8 @@ func (r *TaskReport) Patch(m *model.TaskReport) *model.TaskReport {
 	m.Activity = r.Activity
 	m.TaskID = r.TaskID
 	m.Result.Any = r.Result
+	m.Errors = make([]model.TaskError, 0, len(r.Errors))
+	m.Attached = make([]model.Attachment, 0, len(r.Attached))
 	for _, err := range r.Errors {
 		m.Errors = append(m.Errors, model.TaskError(err))
 	}

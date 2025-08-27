@@ -474,6 +474,9 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 
 // Patch the specified model.
 func (r *TaskGroup) Patch(m *model.TaskGroup) *model.TaskGroup {
+	if m == nil {
+		m = &model.TaskGroup{}
+	}
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
