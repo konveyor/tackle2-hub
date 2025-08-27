@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
@@ -102,26 +101,6 @@ func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 		err = liberr.Wrap(result.Error)
 		return
 	}
-	return
-}
-
-// migrationVersion gets the current migration version.
-func migrationVersion(db *gorm.DB) (version uint, err error) {
-	setting := &model.Setting{}
-	result := db.First(setting, model.Setting{Key: migration.VersionKey})
-	if result.Error != nil {
-		err = liberr.Wrap(result.Error)
-		return
-	}
-
-	var v migration.Version
-	err = setting.As(&v)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-
-	version = uint(v.Version)
 	return
 }
 

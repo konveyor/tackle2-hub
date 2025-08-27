@@ -1,11 +1,9 @@
 package migration
 
 import (
-	"errors"
 	"os"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -18,67 +16,56 @@ import (
 // Migrate the hub by applying all necessary Migrations.
 func Migrate(migrations []Migration) (err error) {
 	var db *gorm.DB
-
 	db, err = database.Open(false)
 	if err != nil {
 		return
 	}
-
 	defer func() {
 		if err != nil {
 			_ = database.Close(db)
 		}
 	}()
-
-	setting := &model.Setting{}
-	result := db.FirstOrCreate(setting, model.Setting{Key: VersionKey})
-	if result.Error != nil {
-		err = liberr.Wrap(result.Error)
+	version, isUpgrade, err := getVersion(db)
+	if err != nil {
 		return
 	}
-
+	err = version.Validate(migrations)
+	if err != nil {
+		return
+	}
 	err = database.Close(db)
 	if err != nil {
 		return
 	}
 
-	var v Version
-	err = setting.As(&v)
-	if err != nil {
-		return
+	var beginIndex int
+	if !isUpgrade || Settings.Development {
+		beginIndex = version.Latest(migrations).Index()
+	} else {
+		beginIndex = version.Next().Index()
 	}
-	var start = v.Version
-	if start != 0 && start < MinimumVersion {
-		err = errors.New("unsupported database version")
-		return
-	} else if start >= MinimumVersion {
-		start -= MinimumVersion
-	}
-
-	if Settings.Hub.Development {
-		if start >= len(migrations) {
-			Log.Info("Development mode: forcing last migration.")
-			start = len(migrations) - 1
-		}
-	}
-
-	for i := start; i < len(migrations); i++ {
+	for i := beginIndex; i < len(migrations); i++ {
+		version.With(i)
 		m := migrations[i]
-		ver := i + MinimumVersion + 1
-
+		if _, cast := m.(*NopMigration); cast {
+			err = setVersion(db, version)
+			if err != nil {
+				return
+			}
+			continue
+		}
 		db, err = database.Open(false)
 		if err != nil {
-			err = liberr.Wrap(err, "version")
+			err = liberr.Wrap(err)
 			return
 		}
-
 		f := func(db *gorm.DB) (err error) {
-			Log.Info("Running migration.", "version", ver)
+			Log.Info("Running migration.", "version", version.String())
 			err = m.Apply(db)
 			if err != nil {
 				return
 			}
-			err = setVersion(db, ver)
+			err = setVersion(db, version)
 			if err != nil {
 				return
 			}
@@ -86,17 +73,17 @@ func Migrate(migrations []Migration) (err error) {
 		}
 		err = db.Transaction(f)
 		if err != nil {
-			err = liberr.Wrap(err, "version", ver)
+			err = liberr.Wrap(err)
 			return
 		}
-		err = writeSchema(db, ver)
+		err = writeSchema(db, version)
 		if err != nil {
-			err = liberr.Wrap(err, "version", ver)
+			err = liberr.Wrap(err)
 			return
 		}
 		err = database.Close(db)
 		if err != nil {
-			err = liberr.Wrap(err, "version", ver)
+			err = liberr.Wrap(err)
 			return
 		}
 	}
@@ -104,20 +91,38 @@ func Migrate(migrations []Migration) (err error) {
 	return
 }
 
-// Set the version record.
-func setVersion(db *gorm.DB, version int) (err error) {
-	setting := &model.Setting{Key: VersionKey}
-	setting.Value = Version{Version: version}
-	result := db.Where("key", VersionKey).Updates(setting)
+func getVersion(db *gorm.DB) (v *Version, isUpgrade bool, err error) {
+	setting := &model.Setting{}
+	result := db.FirstOrCreate(setting, model.Setting{Key: VersionKey})
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
+		return
+	}
+	v = &Version{}
+	err = setting.As(v)
+	if err != nil {
+		err = liberr.Wrap(result.Error)
+		return
+	}
+	isUpgrade = result.RowsAffected == 0
+	return
+}
+
+// Set the version record.
+func setVersion(db *gorm.DB, v *Version) (err error) {
+	setting := &model.Setting{Key: VersionKey}
+	setting.Value = v
+	db = db.Where("key", VersionKey)
+	err = db.Updates(setting).Error
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	return
 }
 
 // writeSchema - writes the migrated schema to a file.
-func writeSchema(db *gorm.DB, version int) (err error) {
+func writeSchema(db *gorm.DB, version *Version) (err error) {
 	var list []struct {
 		Type     string `gorm:"column:type"`
 		Name     string `gorm:"column:name"`
@@ -135,7 +140,7 @@ func writeSchema(db *gorm.DB, version int) (err error) {
 		path.Dir(Settings.Hub.DB.Path),
 		"migration")
 	err = nas.MkDir(dir, 0755)
-	f, err := os.Create(path.Join(dir, strconv.Itoa(version)))
+	f, err := os.Create(path.Join(dir, version.String()))
 	if err != nil {
 		return
 	}

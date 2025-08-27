@@ -135,6 +135,9 @@ func main() {
 			log.Error(err, "")
 		}
 	}()
+	if Settings.Hub.Development {
+		log.Info("****** DEVELOPMENT MODE ********")
+	}
 	syscall.Umask(0)
 	printHeap()
 	//

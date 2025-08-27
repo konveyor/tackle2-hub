@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -15,11 +16,11 @@ func TestFreshInstall(t *testing.T) {
 
 	Settings.DB.Path = "/tmp/freshinstall.db"
 	_ = os.Remove(Settings.DB.Path)
-
-	MinimumVersion = 2
 	migrations := []Migration{
-		&TestMigration{Version: 3, ShouldRun: true},
-		&TestMigration{Version: 4, ShouldRun: true},
+		&TestMigration{Version: 1, ShouldRun: false},
+		&TestMigration{Version: 2, ShouldRun: false},
+		&TestMigration{Version: 3, ShouldRun: false},
+		&TestMigration{Version: 4, ShouldRun: false},
 		&TestMigration{Version: 5, ShouldRun: true},
 	}
 
@@ -41,9 +42,9 @@ func TestUpgrade(t *testing.T) {
 	Settings.DB.Path = "/tmp/existinginstall.db"
 	_ = os.Remove(Settings.DB.Path)
 	setup(g, 3)
-
-	MinimumVersion = 2
 	migrations := []Migration{
+		&TestMigration{Version: 1, ShouldRun: false},
+		&TestMigration{Version: 2, ShouldRun: false},
 		&TestMigration{Version: 3, ShouldRun: false},
 		&TestMigration{Version: 4, ShouldRun: true},
 		&TestMigration{Version: 5, ShouldRun: true},
@@ -58,6 +59,8 @@ func TestUpgrade(t *testing.T) {
 	expectVersion(g, 5)
 
 	migrations = []Migration{
+		&TestMigration{Version: 1, ShouldRun: false},
+		&TestMigration{Version: 2, ShouldRun: false},
 		&TestMigration{Version: 3, ShouldRun: false},
 		&TestMigration{Version: 4, ShouldRun: false},
 		&TestMigration{Version: 5, ShouldRun: false},
@@ -78,22 +81,22 @@ func TestUnsupportedVersion(t *testing.T) {
 
 	Settings.DB.Path = "/tmp/unsupported.db"
 	_ = os.Remove(Settings.DB.Path)
-	setup(g, 1)
-
-	MinimumVersion = 2
 	migrations := []Migration{
+		&TestMigration{Version: 1, ShouldRun: false},
+		&TestMigration{Version: 2, ShouldRun: false},
 		&TestMigration{Version: 3, ShouldRun: false},
 		&TestMigration{Version: 4, ShouldRun: false},
 		&TestMigration{Version: 5, ShouldRun: false},
 	}
+	setup(g, len(migrations)+1)
 	err := Migrate(migrations)
-	g.Expect(err.Error()).To(gomega.Equal("unsupported database version"))
+	g.Expect(errors.Is(err, &VersionError{})).To(gomega.BeTrue())
 	for _, m := range migrations {
 		migration := m.(*TestMigration)
 		g.Expect(migration.Ran).To(gomega.Equal(migration.ShouldRun))
 	}
 
-	expectVersion(g, 1)
+	expectVersion(g, len(migrations)+1)
 
 	_ = os.Remove(Settings.DB.Path)
 }
@@ -118,7 +121,7 @@ func setup(g *gomega.GomegaWithT, version int) {
 	g.Expect(err).To(gomega.BeNil())
 	result := db.Create(&model.Setting{Key: VersionKey})
 	g.Expect(result.Error).To(gomega.BeNil())
-	err = setVersion(db, version)
+	err = setVersion(db, &Version{Version: version})
 	g.Expect(err).To(gomega.BeNil())
 	err = database.Close(db)
 	g.Expect(err).To(gomega.BeNil())
@@ -127,11 +130,7 @@ func setup(g *gomega.GomegaWithT, version int) {
 func expectVersion(g *gomega.GomegaWithT, version int) {
 	db, err := database.Open(false)
 	g.Expect(err).To(gomega.BeNil())
-	setting := &model.Setting{}
-	result := db.Find(setting, "key", VersionKey)
-	g.Expect(result.Error).To(gomega.BeNil())
-	var v Version
-	_ = setting.As(&v)
+	v, _, err := getVersion(db)
 	g.Expect(v.Version).To(gomega.Equal(version))
 	_ = database.Close(db)
 }
