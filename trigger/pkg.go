@@ -19,6 +19,7 @@ var (
 
 // Trigger supports actions triggered by model changes.
 type Trigger struct {
+	User        string
 	TaskManager *tasking.Manager
 	Client      k8sclient.Client
 	DB          *gorm.DB

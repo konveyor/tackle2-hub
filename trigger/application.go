@@ -49,7 +49,7 @@ func (r *Application) Updated(m *model.Application) (err error) {
 	taskGroup := &tasking.TaskGroup{
 		TaskGroup: &model.TaskGroup{Mode: tasking.Pipeline},
 	}
-	taskGroup.CreateUser = m.CreateUser
+	taskGroup.CreateUser = r.User
 	for _, kind := range kinds {
 		task := model.Task{}
 		task.Kind = kind.Name
