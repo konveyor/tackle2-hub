@@ -798,7 +798,6 @@ func (g *TaskGroup) propagate() (err error) {
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
 		task.CreateUser = m.CreateUser
-		task.CreateTime = m.CreateTime
 		task.UpdateUser = m.UpdateUser
 		switch m.Mode {
 		case "", Batch:
