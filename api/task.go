@@ -657,11 +657,11 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 		return
 	}
 	report.TaskID = id
-	m := report.Model()
+	m := report.Patch(&model.TaskReport{})
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	result := h.DB(ctx).Create(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = h.DB(ctx).Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 	}
 	report.With(m)
 
@@ -686,7 +686,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 		return
 	}
 	report.TaskID = id
-	m := report.Model()
+	m := report.Patch(&model.TaskReport{})
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Where("taskid", id)
@@ -962,19 +962,17 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	}
 }
 
-// Model builds a model.
-func (r *TaskReport) Model() (m *model.TaskReport) {
+// Patch the specified model.
+func (r *TaskReport) Patch(m *model.TaskReport) *model.TaskReport {
 	if r.Activity == nil {
 		r.Activity = []string{}
 	}
-	m = &model.TaskReport{
-		Status:    r.Status,
-		Total:     r.Total,
-		Completed: r.Completed,
-		Activity:  r.Activity,
-		TaskID:    r.TaskID,
-	}
 	m.ID = r.ID
+	m.Status = r.Status
+	m.Total = r.Total
+	m.Completed = r.Completed
+	m.Activity = r.Activity
+	m.TaskID = r.TaskID
 	m.Result.Any = r.Result
 	for _, err := range r.Errors {
 		m.Errors = append(m.Errors, model.TaskError(err))
@@ -982,7 +980,7 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	for _, at := range r.Attached {
 		m.Attached = append(m.Attached, model.Attachment(at))
 	}
-	return
+	return m
 }
 
 // TaskQueue report.
