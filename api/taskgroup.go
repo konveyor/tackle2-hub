@@ -196,6 +196,8 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	m = &tasking.TaskGroup{}
 	m.With(r.Model())
 	m.ID = id
+	m.CreateUser = r.CreateUser
+	m.CreateTime = r.CreateTime
 	m.UpdateUser = h.CurrentUser(ctx)
 	switch m.State {
 	case "", tasking.Created:
@@ -422,38 +424,6 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 			r.Data = other.Any
 		}
 	}
-	return
-}
-
-// Propagate group data into the task.
-func (h *TaskGroupHandler) Propagate(m *model.TaskGroup) (err error) {
-	for i := range m.Tasks {
-		task := &m.Tasks[i]
-		task.Kind = m.Kind
-		task.Addon = m.Addon
-		task.Extensions = m.Extensions
-		task.Priority = m.Priority
-		task.Policy = m.Policy
-		task.SetBucket(m.BucketID)
-		merged := task.Data.Merge(m.Data)
-		if !merged {
-			task.Data = m.Data
-		}
-	}
-	switch m.Mode {
-	case "", tasking.Batch:
-		for i := range m.Tasks {
-			task := &m.Tasks[i]
-			task.State = m.State
-		}
-	case tasking.Pipeline:
-		for i := range m.Tasks {
-			task := &m.Tasks[i]
-			task.State = m.State
-			break
-		}
-	}
-
 	return
 }
 

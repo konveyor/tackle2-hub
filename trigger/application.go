@@ -47,11 +47,9 @@ func (r *Application) Updated(m *model.Application) (err error) {
 			return iL < jL
 		})
 	taskGroup := &tasking.TaskGroup{
-		TaskGroup: &model.TaskGroup{
-			Mode: tasking.Pipeline,
-		},
+		TaskGroup: &model.TaskGroup{Mode: tasking.Pipeline},
 	}
-	taskGroup.Mode = tasking.Pipeline
+	taskGroup.CreateUser = m.CreateUser
 	for _, kind := range kinds {
 		task := model.Task{}
 		task.Kind = kind.Name
