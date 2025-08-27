@@ -662,6 +662,7 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	err = h.DB(ctx).Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
+		return
 	}
 	report.With(m)
 
