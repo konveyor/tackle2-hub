@@ -40,7 +40,7 @@ type Version struct {
 }
 
 func (v *Version) Validate(migrations []Migration) (err error) {
-	if v.Version < 1 || v.Version > len(migrations) {
+	if v.Version > len(migrations) {
 		err = &VersionError{Version: v.Version}
 		err = liberr.Wrap(err)
 	}
