@@ -47,47 +47,47 @@ func Migrate(migrations []Migration) (err error) {
 	for i := beginIndex; i < len(migrations); i++ {
 		version.With(i)
 		m := migrations[i]
-		if _, cast := m.(*NopMigration); cast {
-			err = setVersion(db, version)
+		migrate := func() (err error) {
+			db, err = database.Open(false)
 			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
-			continue
-		}
-		db, err = database.Open(false)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		f := func(db *gorm.DB) (err error) {
-			Log.Info("Running migration.", "version", version.String())
-			err = m.Apply(db)
+			defer func() {
+				err = database.Close(db)
+			}()
+			err = db.Transaction(
+				func(tx *gorm.DB) (err error) {
+					if _, cast := m.(*NopMigration); !cast {
+						Log.Info("Running migration.", "version", version.String())
+						err = m.Apply(tx)
+						if err != nil {
+							return
+						}
+						err = writeSchema(db, version)
+						if err != nil {
+							err = liberr.Wrap(err)
+							return
+						}
+					}
+					err = setVersion(db, version)
+					if err != nil {
+						err = liberr.Wrap(err)
+						return
+					}
+					return
+				})
 			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
-			err = setVersion(db, version)
-			if err != nil {
-				return
-			}
 			return
 		}
-		err = db.Transaction(f)
+		err = migrate()
 		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = writeSchema(db, version)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = database.Close(db)
-		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
 	}
-
 	return
 }
 
@@ -101,7 +101,7 @@ func getVersion(db *gorm.DB) (v *Version, isUpgrade bool, err error) {
 	v = &Version{}
 	err = setting.As(v)
 	if err != nil {
-		err = liberr.Wrap(result.Error)
+		err = liberr.Wrap(err)
 		return
 	}
 	isUpgrade = result.RowsAffected == 0
