@@ -43,7 +43,7 @@ func (v *Version) Validate(migrations []Migration) (err error) {
 	if v.Version <= len(migrations) {
 		return
 	}
-	err = &VersionError{Version: v.Index()}
+	err = &VersionError{Version: v.Version}
 	err = liberr.Wrap(err)
 	return
 }
