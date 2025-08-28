@@ -687,6 +687,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	r := &TaskReport{}
 	err := h.Bind(ctx, r)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	m := &model.TaskReport{}
@@ -698,6 +699,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
+		return
 	}
 
 	h.Status(ctx, http.StatusNoContent)
