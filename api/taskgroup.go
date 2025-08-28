@@ -61,9 +61,9 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
 	db := h.DB(ctx).Preload(clause.Associations)
-	result := db.First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r := TaskGroup{}
@@ -82,9 +82,9 @@ func (h TaskGroupHandler) Get(ctx *gin.Context) {
 func (h TaskGroupHandler) List(ctx *gin.Context) {
 	var list []model.TaskGroup
 	db := h.DB(ctx).Preload(clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	resources := []TaskGroup{}
@@ -107,7 +107,6 @@ func (h TaskGroupHandler) List(ctx *gin.Context) {
 // @router /taskgroups [post]
 // @param taskgroup body api.TaskGroup true "TaskGroup data"
 func (h TaskGroupHandler) Create(ctx *gin.Context) {
-	rtx := RichContext(ctx)
 	r := &TaskGroup{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -119,11 +118,12 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	rtx := RichContext(ctx)
+	m := &model.TaskGroup{}
+	r.Patch(m)
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db = db.Omit(clause.Associations)
-	m := &tasking.TaskGroup{}
-	m.With(r.Patch(&model.TaskGroup{}))
-	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	switch r.State {
 	case "":
 		m.State = tasking.Created
@@ -135,7 +135,9 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		err = m.Submit(h.DB(ctx), rtx.TaskManager)
+		taskGroup := &tasking.TaskGroup{}
+		taskGroup.With(m)
+		err = taskGroup.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -148,7 +150,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	r.With(m.TaskGroup)
+	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -163,9 +165,8 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @param id path int true "Task ID"
 // @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
-	rtx := RichContext(ctx)
 	id := h.pk(ctx)
-	m := &tasking.TaskGroup{}
+	m := &model.TaskGroup{}
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -174,7 +175,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	r := &TaskGroup{}
 	if ctx.Request.Method == http.MethodPatch &&
 		ctx.Request.ContentLength > 0 {
-		r.With(m.TaskGroup)
+		r.With(m)
 	}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -188,23 +189,26 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	db := h.DB(ctx)
-	db = db.Omit(
-		clause.Associations,
-		"BucketID",
-		"Bucket")
-	m.With(r.Patch(m.TaskGroup))
+	r.Patch(m)
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	switch m.State {
 	case "", tasking.Created:
+		db := h.DB(ctx)
+		db = db.Omit(
+			clause.Associations,
+			"BucketID",
+			"Bucket")
 		err = db.Save(m).Error
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 	case tasking.Ready:
-		err = m.Submit(h.DB(ctx), rtx.TaskManager)
+		rtx := RichContext(ctx)
+		taskGroup := &tasking.TaskGroup{}
+		taskGroup.With(m)
+		err = taskGroup.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -285,9 +289,9 @@ func (h TaskGroupHandler) Submit(ctx *gin.Context) {
 func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -310,9 +314,9 @@ func (h TaskGroupHandler) BucketGet(ctx *gin.Context) {
 func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -335,9 +339,9 @@ func (h TaskGroupHandler) BucketPut(ctx *gin.Context) {
 func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.TaskGroup{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -473,10 +477,7 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 }
 
 // Patch the specified model.
-func (r *TaskGroup) Patch(m *model.TaskGroup) *model.TaskGroup {
-	if m == nil {
-		m = &model.TaskGroup{}
-	}
+func (r *TaskGroup) Patch(m *model.TaskGroup) {
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
@@ -488,10 +489,11 @@ func (r *TaskGroup) Patch(m *model.TaskGroup) *model.TaskGroup {
 	m.Data.Any = r.Data
 	m.List = make([]model.Task, 0, len(r.Tasks))
 	for _, task := range r.Tasks {
-		m.List = append(m.List, *task.Patch(&model.Task{}))
+		tm := model.Task{}
+		task.Patch(&tm)
+		m.List = append(m.List, tm)
 	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
 	}
-	return m
 }

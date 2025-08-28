@@ -90,9 +90,9 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	task := &model.Task{}
 	id := h.pk(ctx)
 	db := h.DB(ctx).Preload(clause.Associations)
-	result := db.First(task, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.First(task, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r := Task{}
@@ -101,7 +101,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	if b, _ := strconv.ParseBool(q); b {
 		err := r.injectFiles(h.DB(ctx))
 		if err != nil {
-			_ = ctx.Error(result.Error)
+			_ = ctx.Error(err)
 			return
 		}
 	}
@@ -392,9 +392,11 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		return
 	}
 	rtx := RichContext(ctx)
+	m := &model.Task{}
+	r.Patch(m)
+	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	task := &tasking.Task{}
-	task.With(r.Patch(&model.Task{}))
-	task.CreateUser = h.BaseHandler.CurrentUser(ctx)
+	task.With(m)
 	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -455,7 +457,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	if _, found := ctx.Get(Submit); found {
 		r.State = tasking.Ready
 	}
-	m = r.Patch(m)
+	r.Patch(m)
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	rtx := RichContext(ctx)
@@ -575,9 +577,9 @@ func (h TaskHandler) BulkCancel(ctx *gin.Context) {
 func (h TaskHandler) BucketGet(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -600,9 +602,9 @@ func (h TaskHandler) BucketGet(ctx *gin.Context) {
 func (h TaskHandler) BucketPut(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -625,9 +627,9 @@ func (h TaskHandler) BucketPut(ctx *gin.Context) {
 func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 	m := &model.Task{}
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	if !m.HasBucket() {
@@ -650,23 +652,24 @@ func (h TaskHandler) BucketDelete(ctx *gin.Context) {
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) CreateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
-	report := &TaskReport{}
-	err := h.Bind(ctx, report)
+	r := &TaskReport{}
+	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	report.TaskID = id
-	m := report.Patch(&model.TaskReport{})
+	m := &model.TaskReport{}
+	r.Patch(m)
+	m.TaskID = id
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
 	err = h.DB(ctx).Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	report.With(m)
+	r.With(m)
 
-	h.Respond(ctx, http.StatusCreated, report)
+	h.Respond(ctx, http.StatusCreated, r)
 }
 
 // UpdateReport godoc
@@ -681,19 +684,20 @@ func (h TaskHandler) CreateReport(ctx *gin.Context) {
 // @param task body api.TaskReport true "TaskReport data"
 func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	id := h.pk(ctx)
-	report := &TaskReport{}
-	err := h.Bind(ctx, report)
+	r := &TaskReport{}
+	err := h.Bind(ctx, r)
 	if err != nil {
 		return
 	}
-	report.TaskID = id
-	m := report.Patch(&model.TaskReport{})
+	m := &model.TaskReport{}
+	r.Patch(m)
+	m.TaskID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Where("taskid", id)
-	result := db.Save(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = db.Save(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 	}
 
 	h.Status(ctx, http.StatusNoContent)
@@ -713,9 +717,9 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	m := &model.TaskReport{}
 	m.ID = id
 	db := h.DB(ctx).Where("taskid", id)
-	result := db.Delete(&model.TaskReport{})
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.Delete(&model.TaskReport{}).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -865,10 +869,7 @@ func (r *Task) With(m *model.Task) {
 }
 
 // Patch the specified model.
-func (r *Task) Patch(m *model.Task) *model.Task {
-	if m == nil {
-		m = &model.Task{}
-	}
+func (r *Task) Patch(m *model.Task) {
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
@@ -882,7 +883,6 @@ func (r *Task) Patch(m *model.Task) *model.Task {
 	m.Data.Any = r.Data
 	m.ApplicationID = r.idPtr(r.Application)
 	m.PlatformID = r.idPtr(r.Platform)
-	return m
 }
 
 // userPriority adjust (ensures) priority is greater than 10.
@@ -967,10 +967,7 @@ func (r *TaskReport) With(m *model.TaskReport) {
 }
 
 // Patch the specified model.
-func (r *TaskReport) Patch(m *model.TaskReport) *model.TaskReport {
-	if m == nil {
-		m = &model.TaskReport{}
-	}
+func (r *TaskReport) Patch(m *model.TaskReport) {
 	m.ID = r.ID
 	m.Status = r.Status
 	m.Total = r.Total
@@ -986,7 +983,6 @@ func (r *TaskReport) Patch(m *model.TaskReport) *model.TaskReport {
 	for _, at := range r.Attached {
 		m.Attached = append(m.Attached, model.Attachment(at))
 	}
-	return m
 }
 
 // TaskQueue report.
