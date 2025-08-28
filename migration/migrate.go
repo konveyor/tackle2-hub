@@ -64,13 +64,13 @@ func Migrate(migrations []Migration) (err error) {
 						if err != nil {
 							return
 						}
-						err = writeSchema(db, version)
+						err = writeSchema(tx, version)
 						if err != nil {
 							err = liberr.Wrap(err)
 							return
 						}
 					}
-					err = setVersion(db, version)
+					err = setVersion(tx, version)
 					if err != nil {
 						err = liberr.Wrap(err)
 						return
