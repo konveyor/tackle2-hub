@@ -21,6 +21,7 @@ func (r *Identity) Created(m *model.Identity) (err error) {
 func (r *Identity) Updated(m *model.Identity) (err error) {
 	tr := Application{
 		Trigger: Trigger{
+			User:        r.User,
 			TaskManager: r.TaskManager,
 			Client:      r.Client,
 			DB:          r.DB,

@@ -248,6 +248,7 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	rtx := RichContext(ctx)
 	tr := trigger.Identity{
 		Trigger: trigger.Trigger{
+			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
 			DB:          h.DB(ctx),
@@ -335,6 +336,7 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	rtx := RichContext(ctx)
 	tr := trigger.Identity{
 		Trigger: trigger.Trigger{
+			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
 			DB:          h.DB(ctx),

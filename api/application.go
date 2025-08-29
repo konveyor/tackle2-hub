@@ -428,6 +428,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	rtx := RichContext(ctx)
 	tr := trigger.Application{
 		Trigger: trigger.Trigger{
+			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
 			DB:          h.DB(ctx),
@@ -567,6 +568,7 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	rtx := RichContext(ctx)
 	tr := trigger.Application{
 		Trigger: trigger.Trigger{
+			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
 			DB:          h.DB(ctx),

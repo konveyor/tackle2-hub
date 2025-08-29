@@ -786,7 +786,7 @@ func (g *TaskGroup) With(m *model.TaskGroup) {
 	g.TaskGroup = m
 }
 
-// Propagate group data into the task.
+// propagate group data into the task.
 func (g *TaskGroup) propagate() (err error) {
 	m := g.TaskGroup
 	m.Tasks = make([]model.Task, 0)
@@ -797,6 +797,8 @@ func (g *TaskGroup) propagate() (err error) {
 	}
 	for i := range m.Tasks {
 		task := &m.Tasks[i]
+		task.CreateUser = m.CreateUser
+		task.UpdateUser = m.UpdateUser
 		switch m.Mode {
 		case "", Batch:
 			task.State = m.State
