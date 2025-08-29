@@ -23,6 +23,7 @@ func (r *Setting) Apply(db *gorm.DB) (err error) {
 		{Key: "mvn.insecure.enabled", Value: JSON("false")},
 		{Key: "mvn.dependencies.update.forced", Value: JSON("false")},
 	}
+	log.Info("Applying settings", "count", len(settings))
 	for _, m := range settings {
 		err = db.Create(&m).Error
 		if err != nil {
@@ -34,6 +35,7 @@ func (r *Setting) Apply(db *gorm.DB) (err error) {
 		{Kind: "http", Host: "", Port: 0},
 		{Kind: "https", Host: "", Port: 0},
 	}
+	log.Info("Applying proxies", "count", len(proxies))
 	for _, m := range proxies {
 		err = db.Save(&m).Error
 		if err != nil {

@@ -56,6 +56,7 @@ func Migrate(migrations []Migration) (err error) {
 			defer func() {
 				_ = database.Close(db)
 			}()
+			db = db.Debug()
 			err = db.Transaction(
 				func(tx *gorm.DB) (err error) {
 					if _, cast := m.(*NopMigration); !cast {

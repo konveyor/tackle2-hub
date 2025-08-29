@@ -26,6 +26,7 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/tracker"
+	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -128,18 +129,23 @@ func printHeap() {
 
 // main.
 func main() {
-	log.Info("Started", "settings", Settings)
 	var err error
 	defer func() {
 		if err != nil {
 			log.Error(err, "")
 		}
 	}()
-	if Settings.Hub.Development {
-		log.Info("****** DEVELOPMENT MODE ********")
-	}
 	syscall.Umask(0)
 	printHeap()
+	// Settings
+	b, err := yaml.Marshal(Settings)
+	if err != nil {
+		panic(err)
+	}
+	log.Info("Started", "settings", string(b))
+	if Settings.Hub.Development {
+		log.Info("\n\n****** DEVELOPMENT MODE ********\n")
+	}
 	//
 	// Model
 	db, err := Setup()
