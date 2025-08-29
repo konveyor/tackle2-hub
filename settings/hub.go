@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -311,6 +312,8 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Development = b
+	} else {
+		r.Development = r.Build == "" || strings.HasSuffix(r.Build, "-main")
 	}
 	s, found = os.LookupEnv(EnvBucketTTL)
 	if found {

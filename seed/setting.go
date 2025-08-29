@@ -1,17 +1,19 @@
-package v2
+package seed
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/migration/v3/model"
-	"gorm.io/gorm/clause"
-
+	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type JSON = model.JSON
 
-// Seed the database with models.
-func seed(db *gorm.DB) (err error) {
+type Setting struct {
+}
+
+// Apply seeds the settings.
+func (r *Setting) Apply(db *gorm.DB) (err error) {
 	db = db.Clauses(clause.OnConflict{
 		DoNothing: true,
 	})
@@ -21,19 +23,25 @@ func seed(db *gorm.DB) (err error) {
 		{Key: "mvn.insecure.enabled", Value: JSON("false")},
 		{Key: "mvn.dependencies.update.forced", Value: JSON("false")},
 	}
-	err = db.Create(settings).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+	log.Info("Applying settings", "count", len(settings))
+	for _, m := range settings {
+		err = db.Create(&m).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	proxies := []model.Proxy{
 		{Kind: "http", Host: "", Port: 0},
 		{Kind: "https", Host: "", Port: 0},
 	}
-	err = db.Create(proxies).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+	log.Info("Applying proxies", "count", len(proxies))
+	for _, m := range proxies {
+		err = db.Save(&m).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }

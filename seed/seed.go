@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/migration"
 	"github.com/konveyor/tackle2-hub/model"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
@@ -13,6 +12,7 @@ import (
 
 // Hub is responsible for collecting and applying Hub seeds.
 type Hub struct {
+	Setting
 	TagCategory
 	JobFunction
 	RuleSet
@@ -45,6 +45,10 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 
 // Apply seeds the database with resources from the seed files.
 func (r *Hub) Apply(db *gorm.DB) (err error) {
+	err = r.Setting.Apply(db)
+	if err != nil {
+		return
+	}
 	err = r.TagCategory.Apply(db)
 	if err != nil {
 		return
@@ -102,26 +106,6 @@ func saveChecksum(db *gorm.DB, checksum []byte) (err error) {
 		err = liberr.Wrap(result.Error)
 		return
 	}
-	return
-}
-
-// migrationVersion gets the current migration version.
-func migrationVersion(db *gorm.DB) (version uint, err error) {
-	setting := &model.Setting{}
-	result := db.First(setting, model.Setting{Key: migration.VersionKey})
-	if result.Error != nil {
-		err = liberr.Wrap(result.Error)
-		return
-	}
-
-	var v migration.Version
-	err = setting.As(&v)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-
-	version = uint(v.Version)
 	return
 }
 
