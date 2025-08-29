@@ -12,6 +12,7 @@ import (
 
 // Hub is responsible for collecting and applying Hub seeds.
 type Hub struct {
+	Setting
 	TagCategory
 	JobFunction
 	RuleSet
@@ -44,6 +45,10 @@ func (r *Hub) With(seed libseed.Seed) (err error) {
 
 // Apply seeds the database with resources from the seed files.
 func (r *Hub) Apply(db *gorm.DB) (err error) {
+	err = r.Setting.Apply(db)
+	if err != nil {
+		return
+	}
 	err = r.TagCategory.Apply(db)
 	if err != nil {
 		return
