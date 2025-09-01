@@ -81,6 +81,8 @@ type Adapter struct {
 	Task
 	// Log API.
 	Log logapi.Logger
+	// Wrap error API.
+	Wrap func(error, ...any) error
 	// Settings API.
 	Setting Setting
 	// Schema API
@@ -165,6 +167,7 @@ func newAdapter() (adapter *Adapter) {
 			richClient: richClient,
 		},
 		Log:         Log,
+		Wrap:        Wrap,
 		Setting:     richClient.Setting,
 		Schema:      richClient.Schema,
 		Application: richClient.Application,
