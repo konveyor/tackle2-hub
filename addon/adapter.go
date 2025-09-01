@@ -5,6 +5,7 @@ Tackle hub/addon integration.
 package addon
 
 import (
+	"fmt"
 	"os"
 
 	logapi "github.com/go-logr/logr"
@@ -125,7 +126,7 @@ func (h *Adapter) Run(addon func() error) {
 			if pErr, cast := r.(error); cast {
 				err = pErr
 			} else {
-				panic(r)
+				err = fmt.Errorf("%#v", r)
 			}
 		}
 		if err != nil {
