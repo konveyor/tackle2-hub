@@ -143,6 +143,7 @@ func (m *Manager) Run(ctx context.Context) {
 				err := m.cluster.Refresh()
 				if err == nil {
 					m.deleteOrphanPods()
+					m.deleteRetainedPods()
 					m.runActions()
 					m.updateRunning(ctx)
 					m.deleteZombies()
@@ -910,12 +911,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					Log.Error(err, "")
 					continue
 				}
-				podRetention := 0
-				if running.State == Succeeded {
-					podRetention = Settings.Hub.Task.Pod.Retention.Succeeded
-				} else {
-					podRetention = Settings.Hub.Task.Pod.Retention.Failed
-				}
+				podRetention := task.podRetention()
 				if podRetention > 0 {
 					err = m.ensureTerminated(running, pod)
 					if err != nil {
@@ -928,6 +924,8 @@ func (m *Manager) updateRunning(ctx context.Context) {
 						Log.Error(err, "")
 						continue
 					}
+				} else {
+					task.Retained = true
 				}
 			}
 		}
@@ -936,8 +934,41 @@ func (m *Manager) updateRunning(ctx context.Context) {
 			err = liberr.Wrap(err)
 			return
 		}
-		Log.V(1).Info("Task updated.", "id", running.ID)
 		err = m.next(running)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+}
+
+// deleteRetained deletes expired retained tasks.
+func (m *Manager) deleteRetainedPods() {
+	var err error
+	defer func() {
+		Log.Error(err, "")
+	}()
+	list := []*model.Task{}
+	err = m.DB.Find(
+		&list,
+		"Retained",
+		true).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range list {
+		task := &Task{Task: list[i]}
+		if !task.podRetentionExpired() {
+			continue
+		}
+		err = task.Delete(m.Client)
+		if err != nil {
+			Log.Error(err, "")
+			continue
+		}
+		task.Retained = false
+		err = task.update(m.DB)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

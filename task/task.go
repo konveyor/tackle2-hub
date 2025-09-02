@@ -388,6 +388,16 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 	statuses = append(
 		statuses,
 		pod.Status.ContainerStatuses...)
+	if len(statuses) == 0 {
+		r.State = Failed
+		r.Terminated = &mark
+		r.Error(
+			"Error",
+			"Pod (%s) failed: %s",
+			pod.Name,
+			pod.Status.Reason)
+		return
+	}
 	for _, status := range statuses {
 		if status.State.Terminated == nil {
 			continue
@@ -725,12 +735,38 @@ func (r *Task) update(db *gorm.DB) (err error) {
 		"Priority",
 		"Started",
 		"Terminated",
+		"Retained",
 		"Events",
 		"Errors",
 		"Retries",
 		"Attached",
 		"Pod")
 	err = db.Save(r).Error
+	if err == nil {
+		Log.V(1).Info("Task updated.", "id", r.ID)
+	}
+	return
+}
+
+// podRetentionExpired returns true when the retention period has expired.
+func (r *Task) podRetentionExpired() (expired bool) {
+	period := r.podRetention()
+	mark := r.CreateTime
+	if r.Terminated != nil {
+		mark = *r.Terminated
+	}
+	d := time.Duration(period) * time.Second
+	expired = time.Since(mark) > d
+	return
+}
+
+// retention returns the retention period (seconds).
+func (r *Task) podRetention() (seconds int) {
+	if r.State == Succeeded {
+		seconds = Settings.Hub.Task.Pod.Retention.Succeeded
+	} else {
+		seconds = Settings.Hub.Task.Pod.Retention.Failed
+	}
 	return
 }
 
