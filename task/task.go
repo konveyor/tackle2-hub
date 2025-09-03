@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"path"
 	"regexp"
 	"strconv"
@@ -24,15 +25,29 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func NewTask(m *model.Task) (t *Task) {
+	t = &Task{}
+	t.With(m)
+	return
+}
+
+func NewTaskGroup(m *model.TaskGroup) (t *TaskGroup) {
+	t = &TaskGroup{}
+	t.With(m)
+	return
+}
+
 // Task is an runtime task.
 type Task struct {
 	// model.
 	*model.Task
+	digest string
 }
 
 // With initializes the object.
 func (r *Task) With(m *model.Task) {
 	r.Task = m
+	r.digest = r.getDigest()
 }
 
 // StateIn returns true matches on of the specified states.
@@ -745,6 +760,39 @@ func (r *Task) update(db *gorm.DB) (err error) {
 	if err == nil {
 		Log.V(1).Info("Task updated.", "id", r.ID)
 	}
+	return
+}
+
+// getDigest returns a digest.
+func (r *Task) getDigest() (d string) {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(r.Addon))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Extensions)))
+	_, _ = h.Write([]byte(r.State))
+	_, _ = h.Write([]byte(strconv.Itoa(r.Priority)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Events)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Errors)))
+	_, _ = h.Write([]byte(strconv.Itoa(r.Retries)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Attached)))
+	_, _ = h.Write([]byte(r.Pod))
+	if r.Started != nil {
+		_, _ = h.Write([]byte(r.Started.String()))
+	}
+	if r.Terminated != nil {
+		_, _ = h.Write([]byte(r.Terminated.String()))
+	}
+	if r.Retained {
+		_, _ = h.Write([]byte{1})
+	}
+	n := h.Sum64()
+	d = fmt.Sprintf("%x", n)
+	return
+}
+
+// hasChanged returns true when the digest has changed.
+func (r *Task) hasChanged() (changed bool) {
+	d := r.getDigest()
+	changed = d != r.digest
 	return
 }
 

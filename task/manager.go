@@ -168,7 +168,7 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 	if err != nil {
 		return
 	}
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	switch requested.State {
 	case "":
 		requested.State = Created
@@ -1013,7 +1013,7 @@ func (m *Manager) deleteOrphanPods() {
 		ref := path.Join(pod.Namespace, pod.Name)
 		if _, found := owned[ref]; !found {
 			Log.Info("Orphan pod found.", "ref", ref)
-			task := Task{&model.Task{}}
+			task := NewTask(&model.Task{})
 			task.Pod = ref
 			err = task.Delete(m.Client)
 			if err != nil {
@@ -1271,10 +1271,12 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 	err = m.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			for _, task := range tasks {
-				err = task.update(tx)
-				if err != nil {
-					err = liberr.Wrap(err)
-					break
+				if task.hasChanged() {
+					err = task.update(tx)
+					if err != nil {
+						err = liberr.Wrap(err)
+						break
+					}
 				}
 			}
 			return
@@ -1283,10 +1285,12 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 		return
 	}
 	for _, task := range tasks {
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			break
+		if task.hasChanged() {
+			err = task.update(m.DB)
+			if err != nil {
+				err = liberr.Wrap(err)
+				break
+			}
 		}
 	}
 	return
@@ -1296,7 +1300,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 func (m *Manager) taskList(in []*model.Task) (out []*Task) {
 	out = make([]*Task, len(in))
 	for i := range in {
-		out[i] = &Task{in[i]}
+		out[i] = NewTask(in[i])
 	}
 	return
 }
