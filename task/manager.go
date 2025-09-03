@@ -1215,6 +1215,14 @@ func (m *Manager) next(task *Task) (err error) {
 	if task.TaskGroupID == nil {
 		return
 	}
+	pipelineSet := PipelineSet{}
+	err = pipelineSet.With(m.DB)
+	if err != nil {
+		return
+	}
+	if !pipelineSet.Contains(task) {
+		return
+	}
 	var tasks []*Task
 	db := m.DB.Order("ID")
 	db = reflect.Select(
@@ -1609,4 +1617,32 @@ func ExtEnv(extension string, envar string) (s string) {
 type Preempt struct {
 	task *Task
 	by   *Task
+}
+
+// PipelineSet is a set of TaskGroup ids for ALL groups of mode=Pipeline.
+type PipelineSet map[uint]byte
+
+// With load the set.
+func (m *PipelineSet) With(db *gorm.DB) (err error) {
+	var list []*model.TaskGroup
+	db = db.Select("ID", "Mode")
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, p := range list {
+		if p.Mode == Pipeline {
+			(*m)[p.ID] = 0
+		}
+	}
+	return
+}
+
+// Contains returns true when set contains the group referenced by the task.
+func (m *PipelineSet) Contains(task *Task) (found bool) {
+	if task.TaskGroupID != nil {
+		_, found = (*m)[*task.TaskGroupID]
+	}
+	return
 }
