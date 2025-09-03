@@ -22,7 +22,7 @@ var AddonRole = []string{
 	"applications.bucket:*",
 	"applications.analyses:*",
 	"applications.manifests:*",
-	"archetypes.get",
+	"archetypes:get",
 	"generators:get",
 	"identities:get",
 	"identities:decrypt",
