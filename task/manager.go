@@ -394,10 +394,7 @@ func (m *Manager) startReady() {
 	if len(fetched) == 0 {
 		return
 	}
-	var list []*Task
-	for _, task := range fetched {
-		list = append(list, &Task{task})
-	}
+	list := m.taskList(fetched)
 	list, err = m.disabled(list)
 	if err != nil {
 		return
@@ -422,6 +419,10 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
+	err = m.batchUpdate(list)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -437,11 +438,6 @@ func (m *Manager) disabled(list []*Task) (kept []*Task, err error) {
 		task.State = Failed
 		task.Terminated = &mark
 		task.Error("Error", "Tasking is disabled.")
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 	}
 	return
 }
@@ -508,12 +504,6 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 				task.Error("Error", err.Error())
 				task.Terminated = &mark
 				task.State = Failed
-				err = task.update(m.DB)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-				err = nil
 			}
 		} else {
 			kept = append(kept, task)
@@ -657,7 +647,6 @@ func (m *Manager) postpone(list []*Task) (err error) {
 		return
 	}
 	for _, task := range list {
-		updated := false
 		reason, found := postponed[task.ID]
 		if found {
 			task.State = Postponed
@@ -668,19 +657,10 @@ func (m *Manager) postpone(list []*Task) (err error) {
 				task.ID,
 				"reason",
 				reason)
-			updated = true
 		}
 		_, found = released[task.ID]
 		if found {
 			task.State = Ready
-			updated = true
-		}
-		if updated {
-			err = task.update(m.DB)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
 		}
 	}
 	return
@@ -708,11 +688,6 @@ func (m *Manager) adjustPriority(list []*Task) (err error) {
 			return
 		}
 		task.State = Ready
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 	}
 	return
 }
@@ -739,16 +714,13 @@ func (m *Manager) createPod(list []*Task) (err error) {
 			Log.Error(err, "")
 			return
 		}
-		err = ready.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 		if started {
 			Log.Info("Task started.", "id", ready.ID)
 			if ready.Retries == 0 {
 				metrics.TasksInitiated.Inc()
 			}
+		} else {
+			break
 		}
 	}
 	return
@@ -856,11 +828,6 @@ func (m *Manager) preempt(list []*Task) (err error) {
 		p.Errors = nil
 		p.Event(Preempted, reason)
 		Log.Info(reason)
-		err = p.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 		n++
 		// preempt x%.
 		if len(blocked)/n*100 > preemption.Rate {
@@ -892,13 +859,9 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	if len(fetched) == 0 {
 		return
 	}
-	var list []*Task
-	for _, task := range fetched {
-		list = append(list, &Task{task})
-	}
-	for _, task := range list {
-		running := task
-		pod, found := running.Reflect(&m.cluster)
+	var updated []*Task
+	for _, task := range m.taskList(fetched) {
+		pod, found := task.Reflect(&m.cluster)
 		if found {
 			err = m.logManager.EnsureCollection(task, pod, ctx)
 			if err != nil {
@@ -906,20 +869,20 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				continue
 			}
 			if task.StateIn(Succeeded, Failed) {
-				err = m.podSnapshot(running, pod)
+				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
 					continue
 				}
 				podRetention := task.podRetention()
 				if podRetention > 0 {
-					err = m.ensureTerminated(running, pod)
+					err = m.ensureTerminated(task, pod)
 					if err != nil {
 						podRetention = 0
 					}
 				}
 				if podRetention == 0 {
-					err = running.Delete(m.Client)
+					err = task.Delete(m.Client)
 					if err != nil {
 						Log.Error(err, "")
 						continue
@@ -929,16 +892,18 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				}
 			}
 		}
-		err = running.update(m.DB)
+		updated = append(updated, task)
+		advanced, err := m.advancePipeline(task)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		err = m.next(running)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		updated = append(updated, advanced...)
+	}
+	err = m.batchUpdate(updated)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 }
 
@@ -948,17 +913,17 @@ func (m *Manager) deleteRetainedPods() {
 	defer func() {
 		Log.Error(err, "")
 	}()
-	list := []*model.Task{}
+	fetched := []*model.Task{}
 	err = m.DB.Find(
-		&list,
+		&fetched,
 		"Retained",
 		true).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	for i := range list {
-		task := &Task{Task: list[i]}
+	var updated []*Task
+	for _, task := range m.taskList(fetched) {
 		if !task.podRetentionExpired() {
 			continue
 		}
@@ -968,11 +933,12 @@ func (m *Manager) deleteRetainedPods() {
 			continue
 		}
 		task.Retained = false
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+		updated = append(updated, task)
+	}
+	err = m.batchUpdate(updated)
+	if err != nil {
+		Log.Error(err, "")
+		return
 	}
 }
 
@@ -1241,8 +1207,8 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 	return
 }
 
-// next makes the next task in a mode=pipeline task group Ready.
-func (m *Manager) next(task *Task) (err error) {
+// advancePipeline makes the next task in a mode=pipeline task group Ready.
+func (m *Manager) advancePipeline(task *Task) (updated []*Task, err error) {
 	if task.TaskGroupID == nil {
 		return
 	}
@@ -1256,11 +1222,6 @@ func (m *Manager) next(task *Task) (err error) {
 	}
 	var tasks []*Task
 	db := m.DB.Order("ID")
-	db = reflect.Select(
-		m.DB,
-		task.Task,
-		"ID",
-		"State")
 	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1275,15 +1236,7 @@ func (m *Manager) next(task *Task) (err error) {
 			switch member.State {
 			case "", Created:
 				member.State = Ready
-				db = reflect.Select(
-					m.DB,
-					member.Task,
-					"State")
-				nErr := db.Save(member).Error
-				if nErr != nil {
-					nErr = liberr.Wrap(nErr)
-					Log.Error(nErr, "")
-				}
+				updated = append(updated, member)
 				return
 			default:
 				// next
@@ -1304,20 +1257,46 @@ func (m *Manager) next(task *Task) (err error) {
 					nErr = liberr.Wrap(nErr)
 					Log.Error(nErr, "")
 				}
-				db = reflect.Select(
-					m.DB,
-					member.Task,
-					"State",
-					"Events")
-				nErr = db.Save(member).Error
-				if nErr != nil {
-					nErr = liberr.Wrap(nErr)
-					Log.Error(nErr, "")
-				}
+				updated = append(updated, member)
 			}
 		default:
 			return
 		}
+	}
+	return
+}
+
+// batchUpdate tasks.
+func (m *Manager) batchUpdate(tasks []*Task) (err error) {
+	err = m.DB.Transaction(
+		func(tx *gorm.DB) (err error) {
+			for _, task := range tasks {
+				err = task.update(tx)
+				if err != nil {
+					err = liberr.Wrap(err)
+					break
+				}
+			}
+			return
+		})
+	if err == nil {
+		return
+	}
+	for _, task := range tasks {
+		err = task.update(m.DB)
+		if err != nil {
+			err = liberr.Wrap(err)
+			break
+		}
+	}
+	return
+}
+
+// taskList returns a list of Task.
+func (m *Manager) taskList(in []*model.Task) (out []*Task) {
+	out = make([]*Task, len(in))
+	for i := range in {
+		out[i] = &Task{in[i]}
 	}
 	return
 }
