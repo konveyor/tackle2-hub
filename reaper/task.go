@@ -59,7 +59,7 @@ func (r *TaskReaper) Run() {
 		return
 	}
 	pipelineSet := task.PipelineSet{}
-	err := pipelineSet.With(r.DB)
+	err := pipelineSet.Load(r.DB)
 	if err != nil {
 		Log.Error(err, "")
 		return

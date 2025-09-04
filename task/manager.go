@@ -1216,7 +1216,7 @@ func (m *Manager) next(task *Task) (err error) {
 		return
 	}
 	pipelineSet := PipelineSet{}
-	err = pipelineSet.With(m.DB)
+	err = pipelineSet.Load(m.DB)
 	if err != nil {
 		return
 	}
@@ -1622,8 +1622,8 @@ type Preempt struct {
 // PipelineSet is a set of TaskGroup ids for ALL groups of mode=Pipeline.
 type PipelineSet map[uint]byte
 
-// With load the set.
-func (m *PipelineSet) With(db *gorm.DB) (err error) {
+// Load the set.
+func (m *PipelineSet) Load(db *gorm.DB) (err error) {
 	var list []*model.TaskGroup
 	db = db.Select("ID", "Mode")
 	err = db.Find(&list).Error
