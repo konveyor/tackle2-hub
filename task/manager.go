@@ -1705,7 +1705,7 @@ func (q *Quota) exhausted() (exhausted bool) {
 // string returns a string representation.
 func (q *Quota) string() (s string) {
 	s = fmt.Sprintf(
-		"quota: %d/%d",
+		"quota (pod): %d/%d",
 		q.quota,
 		q.count)
 	return s
