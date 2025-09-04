@@ -1684,17 +1684,12 @@ func (q *Quota) with(k *Cluster) {
 		}
 	}
 	q.capacity = q.quota - q.count
-	if q.capacity < 0 {
-		q.capacity = 0
-	}
 }
 
 // created indicates a task pod has been created.
 // decrements the capacity.
 func (q *Quota) created() {
-	if q.capacity > 0 {
-		q.capacity--
-	}
+	q.capacity--
 }
 
 // exhausted returns true when the capacity < 1.
