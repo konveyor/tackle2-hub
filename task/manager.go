@@ -1684,6 +1684,9 @@ func (q *Quota) with(k *Cluster) {
 		}
 	}
 	q.capacity = q.quota - q.count
+	if q.capacity < 0 {
+		q.capacity = 0
+	}
 }
 
 // created indicates a task pod has been created.
