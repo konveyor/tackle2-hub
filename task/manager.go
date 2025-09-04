@@ -376,6 +376,8 @@ func (m *Manager) startReady() {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	quota := &Quota{}
+	quota.with(&m.cluster)
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
@@ -411,7 +413,7 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.createPod(list)
+	err = m.createPod(list, quota)
 	if err != nil {
 		return
 	}
@@ -693,7 +695,7 @@ func (m *Manager) adjustPriority(list []*Task) (err error) {
 }
 
 // createPod creates a pod for the task.
-func (m *Manager) createPod(list []*Task) (err error) {
+func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 	sort.Slice(
 		list,
 		func(i, j int) bool {
@@ -709,7 +711,7 @@ func (m *Manager) createPod(list []*Task) (err error) {
 		}
 		ready := task
 		started := false
-		started, err = ready.Run(&m.cluster)
+		started, err = ready.Run(&m.cluster, quota)
 		if err != nil {
 			Log.Error(err, "")
 			return
@@ -719,8 +721,6 @@ func (m *Manager) createPod(list []*Task) (err error) {
 			if ready.Retries == 0 {
 				metrics.TasksInitiated.Inc()
 			}
-		} else {
-			break
 		}
 	}
 	return
@@ -1659,4 +1659,56 @@ func (m *PipelineSet) Contains(task *Task) (found bool) {
 		_, found = (*m)[*task.TaskGroupID]
 	}
 	return
+}
+
+// Quota tracks task pod quota/capacity.
+type Quota struct {
+	quota    int
+	count    int
+	capacity int
+}
+
+// with init with cluster.
+func (q *Quota) with(k *Cluster) {
+	q.count = 0
+	q.capacity = 0
+	q.quota = Settings.Hub.Task.Pod.Quota
+	for _, pod := range k.Pods() {
+		if _, found := pod.Labels[TaskLabel]; !found {
+			continue
+		}
+		switch pod.Status.Phase {
+		case core.PodPending,
+			core.PodRunning:
+			q.count++
+		}
+	}
+	q.capacity = q.quota - q.count
+}
+
+// created indicates a task pod has been created.
+// decrements the capacity.
+func (q *Quota) created() {
+	if q.capacity > 0 {
+		q.capacity--
+	}
+}
+
+// exhausted returns true when the capacity < 1.
+// A zero(0) quota is unlimited.
+func (q *Quota) exhausted() (exhausted bool) {
+	if q.quota < 1 {
+		return
+	}
+	exhausted = q.capacity < 1
+	return
+}
+
+// string returns a string representation.
+func (q *Quota) string() (s string) {
+	s = fmt.Sprintf(
+		"quota: %d/%d",
+		q.quota,
+		q.count)
+	return s
 }

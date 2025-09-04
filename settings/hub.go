@@ -25,6 +25,7 @@ const (
 	EnvTaskReapFailed          = "TASK_REAP_FAILED"
 	EnvTaskPodRetainSucceeded  = "TASK_POD_RETAIN_SUCCEEDED"
 	EnvTaskPodRetainFailed     = "TASK_POD_RETAIN_FAILED"
+	EnvTaskPodQuota            = "TASK_POD_QUOTA"
 	EnvTaskSA                  = "TASK_SA"
 	EnvTaskRetries             = "TASK_RETRIES"
 	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
@@ -97,6 +98,7 @@ type Hub struct {
 			Rate      int
 		}
 		Pod struct {
+			Quota     int
 			Retention struct {
 				Succeeded int
 				Failed    int
@@ -197,6 +199,13 @@ func (r *Hub) Load() (err error) {
 		r.Task.Reaper.Failed = n
 	} else {
 		r.Task.Reaper.Failed = 43200 // 720 hours (30 days).
+	}
+	s, found = os.LookupEnv(EnvTaskPodQuota)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Pod.Quota = n
+	} else {
+		r.Task.Pod.Quota = 0 // 0=unlimited
 	}
 	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
 	if found {
