@@ -125,11 +125,21 @@ func (r *Task) FindEvent(kind string) (matched []*model.TaskEvent) {
 }
 
 // Run the specified task.
-func (r *Task) Run(cluster *Cluster) (started bool, err error) {
+func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
+	if quota.exhausted() {
+		qe := &QuotaExceeded{Reason: quota.string()}
+		r.State = QuotaBlocked
+		r.Event(QuotaBlocked, qe.Reason)
+		err = qe
+		return
+	}
 	mark := time.Now()
 	client := cluster.Client
 	defer func() {
 		if err == nil {
+			if started {
+				quota.created()
+			}
 			return
 		}
 		matched, retry := SoftErr(err)
