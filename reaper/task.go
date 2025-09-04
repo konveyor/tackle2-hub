@@ -58,7 +58,8 @@ func (r *TaskReaper) Run() {
 	if result.Error != nil {
 		return
 	}
-	pipelines, err := r.pipelineMap()
+	pipelineSet := task.PipelineSet{}
+	err := pipelineSet.Load(r.DB)
 	if err != nil {
 		Log.Error(err, "")
 		return
@@ -71,14 +72,14 @@ func (r *TaskReaper) Run() {
 			if m.TTL.Created > 0 {
 				d := time.Duration(m.TTL.Created) * Unit
 				if time.Since(mark) > d {
-					if !r.inPipelined(pipelines, m) {
+					if !pipelineSet.Contains(m) {
 						r.delete(m)
 					}
 				}
 			} else {
 				d := time.Duration(Settings.Hub.Task.Reaper.Created) * Unit
 				if time.Since(mark) > d {
-					if !r.inPipelined(pipelines, m) {
+					if !pipelineSet.Contains(m) {
 						r.release(m)
 					}
 				}
@@ -197,33 +198,6 @@ func (r *TaskReaper) delete(m *task.Task) {
 		Log.Error(err, "")
 	}
 }
-
-// pipelines returns a map of TaskGroup.Mode keyed by ID.
-func (r *TaskReaper) pipelineMap() (mp PipelineMap, err error) {
-	var list []*model.TaskGroup
-	mp = make(map[uint]string)
-	db := r.DB.Select("ID", "Mode")
-	err = db.Find(&list).Error
-	if err != nil {
-		return
-	}
-	for _, m := range list {
-		if m.Mode == task.Pipeline {
-			mp[m.ID] = m.Mode
-		}
-	}
-	return
-}
-
-// inPipelined returns true when the task is part of a pipeline.
-func (r *TaskReaper) inPipelined(mp PipelineMap, m *task.Task) (b bool) {
-	if m.TaskGroupID != nil {
-		_, b = mp[*m.TaskGroupID]
-	}
-	return
-}
-
-type PipelineMap = map[uint]string
 
 //
 //
