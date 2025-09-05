@@ -961,13 +961,14 @@ func (m *Manager) deleteZombies() {
 	}
 	fetched := []*Task{}
 	db := m.DB.Select("Events")
-	db = db.Where("Pod", pods)
-	db = db.Where("state IN ?",
+	err = db.Find(
+		&fetched,
+		"state IN ? and pod IN ?",
 		[]string{
 			Succeeded,
 			Failed,
-		})
-	err = db.Find(&fetched).Error
+		},
+		pods).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
