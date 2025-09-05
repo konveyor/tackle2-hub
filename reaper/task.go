@@ -47,14 +47,17 @@ func (r *TaskReaper) Run() {
 	list := []task.Task{}
 	result := r.DB.Find(
 		&list,
-		"state IN ? and released = ?",
+		"state IN ? and reaped = 0",
 		[]string{
 			task.Created,
+			task.Ready,
+			task.Pending,
+			task.QuotaBlocked,
+			task.Running,
 			task.Succeeded,
 			task.Failed,
 			task.Canceled,
-		},
-		false)
+		})
 	Log.Error(result.Error, "")
 	if result.Error != nil {
 		return
@@ -85,7 +88,9 @@ func (r *TaskReaper) Run() {
 					}
 				}
 			}
-		case task.Pending:
+		case task.Ready,
+			task.Pending,
+			task.QuotaBlocked:
 			mark := m.CreateTime
 			if m.TTL.Pending > 0 {
 				d := time.Duration(m.TTL.Pending) * Unit
@@ -143,8 +148,8 @@ func (r *TaskReaper) Run() {
 // release bucket and file resources.
 func (r *TaskReaper) release(m *task.Task) {
 	nChanged := 0
-	if !m.Released {
-		m.Released = true
+	if !m.Reaped {
+		m.Reaped = true
 		nChanged++
 	}
 	if m.HasBucket() {
