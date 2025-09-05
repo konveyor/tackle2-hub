@@ -1,0 +1,12 @@
+diff -ruN '--exclude=mod.patch' v18/model/core.go v19/model/core.go
+--- v18/model/core.go	2025-09-05 06:43:33.368387670 -0500
++++ v19/model/core.go	2025-09-05 07:11:32.801627944 -0500
+@@ -130,6 +130,8 @@
+ 	Data          json.Data  `gorm:"type:json;serializer:json"`
+ 	Started       *time.Time
+ 	Terminated    *time.Time
++	Retained      bool        `gorm:"index"`
++	Reaped        bool        `gorm:"index"`
+ 	Errors        []TaskError `gorm:"type:json;serializer:json"`
+ 	Events        []TaskEvent `gorm:"type:json;serializer:json"`
+ 	Pod           string      `gorm:"index"`
