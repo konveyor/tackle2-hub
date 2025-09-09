@@ -184,23 +184,24 @@ func (r *TagPredicate) Match(ref string) (matched bool, err error) {
 		}
 		return
 	}
+	m := &model.Application{}
+	appId := Fk(r.task.ApplicationID)
 	db = r.db.Session(&gorm.Session{})
 	db = db.Preload("Tags")
-	application := &model.Application{}
-	err = db.First(application, r.task.ApplicationID).Error
+	err = db.First(m, appId).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			Log.Info(
 				"TagSelector: application not found.",
 				"id",
-				r.task.ApplicationID)
+				appId)
 			err = nil
 		} else {
 			err = liberr.Wrap(err)
 		}
 		return
 	}
-	for _, tag := range application.Tags {
+	for _, tag := range m.Tags {
 		if cat.ID != tag.CategoryID {
 			continue
 		}
@@ -243,10 +244,11 @@ func (r *PlatformPredicate) Match(ref string) (matched bool, err error) {
 			key)
 		return
 	}
-	db := r.db.Session(&gorm.Session{})
-	db = db.Where("id", r.task.PlatformID)
-	db = db.Where(key, value)
 	m := &model.Platform{}
+	platformId := Fk(r.task.PlatformID)
+	db := r.db.Session(&gorm.Session{})
+	db = db.Where("id", platformId)
+	db = db.Where(key, value)
 	err = db.First(m).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

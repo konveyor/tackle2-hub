@@ -268,15 +268,14 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 
 // MatchSubject returns true when the other task has the same subject.
 func (r *Task) MatchSubject(other *Task) (matched bool) {
-	matched = r.ApplicationID != nil &&
-		other.ApplicationID != nil &&
-		*r.ApplicationID == *other.ApplicationID
-	if matched {
-		return
+	id := Fk(r.ApplicationID)
+	otherId := Fk(other.ApplicationID)
+	matched = id != 0 && otherId != 0 && id == otherId
+	if !matched {
+		id = Fk(r.PlatformID)
+		otherId = Fk(other.PlatformID)
+		matched = id != 0 && otherId != 0 && id == otherId
 	}
-	matched = r.PlatformID != nil &&
-		other.PlatformID != nil &&
-		*r.PlatformID == *other.PlatformID
 	return
 }
 
