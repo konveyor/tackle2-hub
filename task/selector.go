@@ -12,6 +12,7 @@ import (
 	gv "github.com/PaesslerAG/gval"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/ptr"
 	"gorm.io/gorm"
 )
 
@@ -185,7 +186,7 @@ func (r *TagPredicate) Match(ref string) (matched bool, err error) {
 		return
 	}
 	m := &model.Application{}
-	appId := Fk(r.task.ApplicationID)
+	appId := ptr.ID(r.task.ApplicationID)
 	db = r.db.Session(&gorm.Session{})
 	db = db.Preload("Tags")
 	err = db.First(m, appId).Error
@@ -245,7 +246,7 @@ func (r *PlatformPredicate) Match(ref string) (matched bool, err error) {
 		return
 	}
 	m := &model.Platform{}
-	platformId := Fk(r.task.PlatformID)
+	platformId := ptr.ID(r.task.PlatformID)
 	db := r.db.Session(&gorm.Session{})
 	db = db.Where("id", platformId)
 	db = db.Where(key, value)
