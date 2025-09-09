@@ -265,6 +265,14 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 	return
 }
 
+// MatchSubject returns true when the other task has the same subject.
+func (r *Task) MatchSubject(other *Task) (matched bool) {
+	matched = r.ApplicationID != nil &&
+		other.ApplicationID != nil &&
+		*r.ApplicationID == *other.ApplicationID
+	return
+}
+
 // podPending handles pod pending.
 func (r *Task) podPending(pod *core.Pod) {
 	var status []core.ContainerStatus

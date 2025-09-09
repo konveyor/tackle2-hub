@@ -1245,8 +1245,8 @@ func (p *Priority) graph(task *Task, ready []*Task) (deps []*Task) {
 			if r.Kind != d {
 				continue
 			}
-			if r.ApplicationID == nil || task.ApplicationID == nil {
-				continue
+			if !r.MatchSubject(task) {
+				return
 			}
 			if *r.ApplicationID != *task.ApplicationID {
 				continue
