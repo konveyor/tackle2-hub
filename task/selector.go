@@ -183,13 +183,14 @@ func (r *TagPredicate) Match(ref string) (matched bool, err error) {
 	db = r.db.Session(&gorm.Session{})
 	db = db.Preload("Tags")
 	application := &model.Application{}
-	err = db.First(application, r.task.ApplicationID).Error
+	appId := Fk(r.task.ApplicationID)
+	err = db.First(application, appId).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			Log.Info(
 				"TagSelector: application not found.",
 				"id",
-				r.task.ApplicationID)
+				appId)
 			err = nil
 		} else {
 			err = liberr.Wrap(err)

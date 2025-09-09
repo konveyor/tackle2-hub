@@ -1514,6 +1514,19 @@ func ExtEnv(extension string, envar string) (s string) {
 	return
 }
 
+// Fk safely returns the foreign key.
+func Fk[T uint | *uint](in T) (id uint) {
+	switch v := any(in).(type) {
+	case uint:
+		return v
+	case *uint:
+		if v != nil {
+			return *v
+		}
+	}
+	return
+}
+
 // Preempt request.
 type Preempt struct {
 	task *Task
