@@ -12,6 +12,7 @@ import (
 	gv "github.com/PaesslerAG/gval"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/ptr"
 	"gorm.io/gorm"
 )
 
@@ -180,11 +181,11 @@ func (r *TagPredicate) Match(ref string) (matched bool, err error) {
 		}
 		return
 	}
+	m := &model.Application{}
+	appId := ptr.ID(r.task.ApplicationID)
 	db = r.db.Session(&gorm.Session{})
 	db = db.Preload("Tags")
-	application := &model.Application{}
-	appId := Fk(r.task.ApplicationID)
-	err = db.First(application, appId).Error
+	err = db.First(m, appId).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			Log.Info(
@@ -197,7 +198,7 @@ func (r *TagPredicate) Match(ref string) (matched bool, err error) {
 		}
 		return
 	}
-	for _, tag := range application.Tags {
+	for _, tag := range m.Tags {
 		if cat.ID != tag.CategoryID {
 			continue
 		}

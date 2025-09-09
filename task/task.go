@@ -14,6 +14,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/ptr"
 	"github.com/konveyor/tackle2-hub/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
@@ -267,8 +268,8 @@ func (r *Task) Delete(client k8s.Client) (err error) {
 
 // MatchSubject returns true when the other task has the same subject.
 func (r *Task) MatchSubject(other *Task) (matched bool) {
-	id := Fk(r.ApplicationID)
-	otherId := Fk(other.ApplicationID)
+	id := ptr.ID(r.ApplicationID)
+	otherId := ptr.ID(other.ApplicationID)
 	matched = id != 0 && otherId != 0 && id == otherId
 	return
 }
