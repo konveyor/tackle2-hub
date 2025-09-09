@@ -19,9 +19,6 @@ type RuleUnique struct {
 
 // Match determines the match.
 func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
-	if ready.ApplicationID == nil || other.ApplicationID == nil {
-		return
-	}
 	if !ready.MatchSubject(other) {
 		return
 	}
