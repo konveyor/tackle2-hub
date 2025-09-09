@@ -33,17 +33,19 @@ func (h *Task) Load() {
 
 // Application returns the application associated with the task.
 func (h *Task) Application() (r *api.Application, err error) {
-	appRef := h.task.Application
-	if appRef == nil {
-		err = &NotFound{}
+	ref := h.task.Application
+	if ref == nil {
+		err = Wrap(&NotFound{
+			ResetError{Reason: "application not specified."},
+		})
 		return
 	}
-	r, err = h.richClient.Application.Get(appRef.ID)
+	r, err = h.richClient.Application.Get(ref.ID)
 	if err != nil {
 		return
 	}
 	r.Identities = []api.Ref{}
-	identities, err := h.richClient.Application.Identity(appRef.ID).List()
+	identities, err := h.richClient.Application.Identity(ref.ID).List()
 	if err != nil {
 		return
 	}
@@ -60,12 +62,14 @@ func (h *Task) Application() (r *api.Application, err error) {
 
 // Platform returns the platform associated with the task.
 func (h *Task) Platform() (r *api.Platform, err error) {
-	appRef := h.task.Platform
-	if appRef == nil {
-		err = &NotFound{}
+	ref := h.task.Platform
+	if ref == nil {
+		err = Wrap(&NotFound{
+			ResetError{Reason: "platform not specified."},
+		})
 		return
 	}
-	r, err = h.richClient.Platform.Get(appRef.ID)
+	r, err = h.richClient.Platform.Get(ref.ID)
 	return
 }
 
@@ -75,7 +79,9 @@ func (h *Task) Platform() (r *api.Platform, err error) {
 func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	name := h.task.Addon
 	if name == "" {
-		err = &NotFound{}
+		err = Wrap(&NotFound{
+			ResetError{Reason: "addon not specified."},
+		})
 		return
 	}
 	r, err = h.richClient.Addon.Get(name)
