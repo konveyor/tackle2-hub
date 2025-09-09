@@ -36,7 +36,8 @@ func (h *Task) Application() (r *api.Application, err error) {
 	ref := h.task.Application
 	if ref == nil {
 		err = Wrap(&NotFound{
-			ResetError{Reason: "application not specified."},
+			RestError: ResetError{
+				Reason: "application not specified."},
 		})
 		return
 	}
@@ -65,7 +66,8 @@ func (h *Task) Platform() (r *api.Platform, err error) {
 	ref := h.task.Platform
 	if ref == nil {
 		err = Wrap(&NotFound{
-			ResetError{Reason: "platform not specified."},
+			RestError: ResetError{
+				Reason: "platform not specified."},
 		})
 		return
 	}
@@ -80,7 +82,8 @@ func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	name := h.task.Addon
 	if name == "" {
 		err = Wrap(&NotFound{
-			ResetError{Reason: "addon not specified."},
+			RestError: ResetError{
+				Reason: "addon not specified."},
 		})
 		return
 	}
