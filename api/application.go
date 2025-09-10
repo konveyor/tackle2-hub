@@ -1309,7 +1309,7 @@ func (h *ApplicationHandler) tagMap(
 	return
 }
 
-// 
+// roleMap returns a map of identity id=role as associated with the application.
 func (h *ApplicationHandler) roleMap(db *gorm.DB, appId uint) (roles map[uint]string, err error) {
 	roles = make(map[uint]string)
 	var list []model.ApplicationIdentity

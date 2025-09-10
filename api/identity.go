@@ -135,6 +135,9 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // AppList godoc
 // @summary List application identities.
 // @description List application identities.
+// @description Default identities may be included and filtered by:
+// @description 1. kind=filter.role
+// @description 2. kind=filter.kind
 // @description Filter by:
 // @description - kind
 // @description - role
