@@ -68,5 +68,15 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	err = migrator.DropConstraint(&model.ApplicationIdentity{}, "fk_M_Application")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = migrator.DropConstraint(&model.ApplicationIdentity{}, "fk_M_Identity")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
