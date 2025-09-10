@@ -40,16 +40,25 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	}
 	var saved []M
 	db2 := db.Table("saved")
-	db2 = db2.Joins("INNER JOIN Identity id ON  id.ID = saved.ApplicationIdentity.IdentityID")
-	err = db2.Table("appIdSaved").Find(&saved).Error
+	db2 = db2.Select(
+		"saved.IdentityID    IdentityID",
+		"saved.ApplicationID ApplicationID",
+		"id.Kind             Kind")
+	db2 = db2.Joins("INNER JOIN Identity id ON  id.ID = saved.IdentityID")
+	err = db2.Find(&saved).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	db3 := db.Clauses(clause.OnConflict{DoNothing: true})
+	db3 := db.Omit(clause.Associations)
+	db3 = db3.Clauses(clause.OnConflict{DoNothing: true})
 	for _, m := range saved {
-		m.Role = m.Kind
-		err = db3.Create(&m).Error
+		m2 := &model.ApplicationIdentity{
+			IdentityID:    m.IdentityID,
+			ApplicationID: m.ApplicationID,
+			Role:          m.Kind,
+		}
+		err = db3.Create(m2).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
