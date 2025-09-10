@@ -12,13 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	Role = "role"
+)
+
 // Routes
 const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
 	//
-	AppIdentitiesRoot     = ApplicationRoot + "/identities"
-	AppIdentitiesKindRoot = AppIdentitiesRoot + "/:" + Kind
+	AppIdentitiesRoot = ApplicationRoot + "/identities"
 )
 
 // Params.
@@ -41,7 +44,6 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 	//
 	routeGroup.GET(AppIdentitiesRoot, h.AppList)
-	routeGroup.GET(AppIdentitiesKindRoot, h.AppList)
 }
 
 // Get godoc
@@ -133,6 +135,9 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // AppList godoc
 // @summary List application identities.
 // @description List application identities.
+// @description Filter by:
+// @description - kind
+// @description - role
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
@@ -141,16 +146,23 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @param kind path string true "Identity kind"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppList(ctx *gin.Context) {
+	filter, err := qf.New(ctx,
+		[]qf.Assert{
+			{Field: "kind", Kind: qf.STRING},
+			{Field: "role", Kind: qf.STRING},
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	//
 	id := h.pk(ctx)
-	kind := ctx.Param("kind")
 	var direct []model.Identity
 	db := h.DB(ctx)
 	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
 	db = db.Where("j.ApplicationID", id)
-	if kind != "" {
-		db = db.Where("kind", kind)
-	}
-	err := db.Find(&direct).Error
+	db = filter.Where(db)
+	err = db.Find(&direct).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -170,8 +182,13 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	db = h.DB(ctx)
 	var indirect []model.Identity
 	db = db.Where("default", true)
-	if kind != "" {
-		db = db.Where("kind", kind)
+	if f, found := filter.Field("kind"); !found {
+		if f, found := filter.Field("role"); found {
+			f = f.As("kind")
+			db = f.Where(db)
+		}
+	} else {
+		db = f.Where(db)
 	}
 	err = db.Find(&indirect).Error
 	if err != nil {

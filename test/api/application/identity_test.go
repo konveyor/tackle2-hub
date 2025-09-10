@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -49,7 +50,7 @@ func TestFindIdentity(t *testing.T) {
 	}()
 	application := &api.Application{
 		Name:       t.Name(),
-		Identities: []api.Ref{{ID: direct.ID}},
+		Identities: []api.IdentityRef{{ID: direct.ID, Role: "asset"}},
 	}
 	err = Application.Create(application)
 	assert.Must(t, err)
@@ -57,7 +58,9 @@ func TestFindIdentity(t *testing.T) {
 		_ = Application.Delete(application.ID)
 	}()
 	// Find direct.
-	identity, found, err := Application.Identity(application.ID).Find(direct.Kind)
+	filter := binding.Filter{}
+	filter.And("kind").Eq(direct.Kind)
+	identity, found, err := Application.Identity(application.ID).Find(filter)
 	assert.Must(t, err)
 	if found {
 		if identity.ID != direct.ID {
@@ -67,7 +70,9 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("direct not found")
 	}
 	// Find indirect.
-	identity, found, err = Application.Identity(application.ID).Find(indirect.Kind)
+	filter = binding.Filter{}
+	filter.And("kind").Eq(indirect.Kind)
+	identity, found, err = Application.Identity(application.ID).Find(filter)
 	assert.Must(t, err)
 	if found {
 		if identity.ID != indirect.ID {
@@ -77,7 +82,9 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("indirect not found")
 	}
 	// Not find indirect.
-	_, found, err = Application.Identity(application.ID).Find("None")
+	filter = binding.Filter{}
+	filter.And("kind").Eq("none")
+	_, found, err = Application.Identity(application.ID).Find(filter)
 	assert.Must(t, err)
 	if found {
 		t.Errorf("not found expected")

@@ -375,15 +375,15 @@ func (h AppIdentity) List() (list []api.Identity, err error) {
 	return
 }
 
-// Find by kind.
-func (h AppIdentity) Find(kind string) (r *api.Identity, found bool, err error) {
+// Find with filter.
+func (h AppIdentity) Find(filter Filter) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := Path(api.AppIdentitiesKindRoot).Inject(Params{api.ID: h.appId, api.Kind: kind})
-	err = h.client.Get(path, &list, p)
+	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: h.appId})
+	err = h.client.Get(path, &list, p, filter.Param())
 	if err != nil {
 		return
 	}
