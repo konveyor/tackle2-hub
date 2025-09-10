@@ -24,7 +24,12 @@ func (r Migration) Models() []any {
 
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.RenameTable("ApplicationIdentity", "saved")
+	err = db.Exec("CREATE TABLE saved AS SELECT * FROM ApplicationIdentity").Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = migrator.DropTable("ApplicationIdentity")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
