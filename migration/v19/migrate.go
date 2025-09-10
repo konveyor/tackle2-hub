@@ -23,33 +23,23 @@ func (r Migration) Models() []any {
 }
 
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
+	db = db.Debug()
 	migrator := db.Migrator()
-	err = db.Exec("CREATE TABLE saved AS SELECT * FROM ApplicationIdentity").Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = migrator.DropTable("ApplicationIdentity")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = db.AutoMigrate(&model.ApplicationIdentity{})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	type M struct {
 		model.ApplicationIdentity
-		Kind string
+	}
+	err = db.AutoMigrate(&M{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 	var saved []M
-	db2 := db.Table("saved")
+	db2 := db.Table("ApplicationIdentity")
 	db2 = db2.Select(
-		"saved.IdentityID    IdentityID",
-		"saved.ApplicationID ApplicationID",
-		"id.Kind             Kind")
-	db2 = db2.Joins("INNER JOIN Identity id ON  id.ID = saved.IdentityID")
+		"IdentityID",
+		"ApplicationID",
+		"Kind Role")
+	db2 = db2.Joins("INNER JOIN Identity id ON  id.ID = IdentityID")
 	err = db2.Find(&saved).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -58,17 +48,25 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	db3 := db.Omit(clause.Associations)
 	db3 = db3.Clauses(clause.OnConflict{DoNothing: true})
 	for _, m := range saved {
-		m2 := &model.ApplicationIdentity{
-			IdentityID:    m.IdentityID,
-			ApplicationID: m.ApplicationID,
-			Role:          m.Kind,
-		}
+		m2 := &M{}
+		m2.IdentityID = m.IdentityID
+		m2.ApplicationID = m.ApplicationID
+		m2.Role = m.Role
 		err = db3.Create(m2).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
 	}
-	err = migrator.DropTable("saved")
+	err = migrator.DropTable(&model.ApplicationIdentity{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = migrator.RenameTable("M", "ApplicationIdentity")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
