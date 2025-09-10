@@ -65,7 +65,7 @@ func (ApplicationTag) TableName() string {
 
 type ApplicationIdentity struct {
 	ApplicationID uint        `gorm:"primaryKey"`
-	IdentityID    uint        `gorm:"primaryKey"`
+	IdentityID    uint        `gorm:"primaryKey;index"`
 	Role          string      `gorm:"primaryKey"`
 	Application   Application `gorm:"constraint:OnDelete:CASCADE"`
 	Identity      Identity    `gorm:"constraint:OnDelete:CASCADE"`
