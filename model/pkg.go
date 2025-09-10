@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/migration/json"
-	"github.com/konveyor/tackle2-hub/migration/v18/model"
+	"github.com/konveyor/tackle2-hub/migration/v19/model"
 )
 
 // Field (data) types.
@@ -79,6 +79,7 @@ type CategorizedTag = model.CategorizedTag
 
 // Join tables
 type ApplicationTag = model.ApplicationTag
+type ApplicationIdentity = model.ApplicationIdentity
 
 // Errors
 type DependencyCyclicError = model.DependencyCyclicError

@@ -13,6 +13,7 @@ import (
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/trigger"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -117,6 +118,12 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	roleMap, err := h.roleMap(h.DB(ctx), m.ID)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
@@ -133,13 +140,17 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		return
 	}
 	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+
 	r := Application{}
-	r.With(m, tagMap[m.ID])
+	tags := tagMap[m.ID]
+
+	r.With(m, tags, roleMap)
 	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -189,6 +200,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	type M struct {
 		*model.Application
 		IdentityId         uint
+		IdentityRole       string
 		IdentityName       string
 		ServiceId          uint
 		ServiceName        string
@@ -212,6 +224,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Select(
 		"a.*",
 		"id.ID              IdentityId",
+		"ai.Role            IdentityRole",
 		"id.Name            IdentityName",
 		"bs.ID              ServiceId",
 		"bs.Name            ServiceName",
@@ -252,6 +265,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	cursor.With(db, page)
 	builder := func(batch []any) (out any, err error) {
 		app := &model.Application{}
+		roleMap := make(map[uint]string)
 		identities := make(map[uint]model.Identity)
 		contributors := make(map[uint]model.Stakeholder)
 		assessments := make(map[uint]model.Assessment)
@@ -289,6 +303,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
 				identities[m.IdentityId] = ref
+				roleMap[ref.ID] = m.IdentityRole
 			}
 			if m.ContributorId > 0 {
 				ref := model.Stakeholder{}
@@ -332,7 +347,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		}
 		tagMap.Set(app)
 		r := Application{}
-		r.With(app, tagMap[app.ID])
+		tags := tagMap[app.ID]
+		r.With(app, tags, roleMap)
 		err = r.WithResolver(app, appResolver)
 		if err != nil {
 			_ = ctx.Error(err)
@@ -369,37 +385,20 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx).Model(m)
-	err = db.Association("Identities").Replace(m.Identities)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	db = h.DB(ctx).Model(m)
 	err = db.Association("Contributors").Replace(m.Contributors)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	appTags := []AppTag{}
-	tags := []model.ApplicationTag{}
-	if len(r.Tags) > 0 {
-		for _, t := range r.Tags {
-			if !t.Virtual {
-				appTag := AppTag{}
-				appTag.withRef(&t)
-				appTags = append(appTags, appTag)
-				tag := model.ApplicationTag{}
-				tag.ApplicationID = m.ID
-				tag.TagID = t.ID
-				tags = append(tags, tag)
-			}
-		}
-		result = h.DB(ctx).Create(&tags)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
+	err = h.replaceIdentities(h.DB(ctx), m.ID, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	appTags, err := h.replaceTags(h.DB(ctx), m.ID, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 
 	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
@@ -418,7 +417,14 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
-	r.With(m, appTags)
+
+	roleMap, err := h.roleMap(h.DB(ctx), m.ID)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r.With(m, appTags, roleMap)
 	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -510,10 +516,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	//
-	// Delete unwanted facts.
 	m := &model.Application{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db := h.DB(ctx)
 	result := db.First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -533,36 +537,20 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 		return
 	}
 	db = h.DB(ctx).Model(m)
-	err = db.Association("Identities").Replace(m.Identities)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	db = h.DB(ctx).Model(m)
 	err = db.Association("Contributors").Replace(m.Contributors)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	// delete existing tag associations and create new ones
-	err = h.DB(ctx).Delete(&model.ApplicationTag{}, "ApplicationID = ?", id).Error
+	err = h.replaceIdentities(h.DB(ctx), m.ID, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	if len(r.Tags) > 0 {
-		tags := []model.ApplicationTag{}
-		for _, t := range r.Tags {
-			if !t.Virtual {
-				tags = append(tags, model.ApplicationTag{TagID: t.ID, ApplicationID: m.ID, Source: t.Source})
-			}
-		}
-		result = h.DB(ctx).Create(&tags)
-		if result.Error != nil {
-			_ = ctx.Error(result.Error)
-			return
-		}
+	_, err = h.replaceTags(h.DB(ctx), m.ID, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 
 	rtx := RichContext(ctx)
@@ -1321,6 +1309,71 @@ func (h *ApplicationHandler) tagMap(
 	return
 }
 
+// 
+func (h *ApplicationHandler) roleMap(db *gorm.DB, appId uint) (roles map[uint]string, err error) {
+	roles = make(map[uint]string)
+	var list []model.ApplicationIdentity
+	err = db.Find(&list, "ApplicationID", appId).Error
+	if err != nil {
+		return
+	}
+	for _, m := range list {
+		roles[m.IdentityID] = m.Role
+	}
+	return
+}
+
+// replaceTags replaces tag associations.
+func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (appTags []AppTag, err error) {
+	appTags = []AppTag{}
+	var list []model.ApplicationTag
+	m := &model.ApplicationTag{}
+	err = db.Delete(m, "ApplicationID", id).Error
+	if err != nil {
+		return
+	}
+	for _, t := range r.Tags {
+		if !t.Virtual {
+			appTag := AppTag{}
+			appTag.withRef(&t)
+			appTags = append(appTags, appTag)
+			m := model.ApplicationTag{}
+			m.ApplicationID = id
+			m.TagID = t.ID
+			list = append(list, m)
+		}
+	}
+	err = db.Create(&list).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
+// replaceTags replaces identity associations.
+func (h *ApplicationHandler) replaceIdentities(db *gorm.DB, id uint, r *Application) (err error) {
+	m := &model.ApplicationIdentity{}
+	err = db.Delete(m, "ApplicationID", id).Error
+	if err != nil {
+		return
+	}
+	var list []model.ApplicationIdentity
+	for _, m := range r.Identities {
+		list = append(
+			list,
+			model.ApplicationIdentity{
+				ApplicationID: id,
+				IdentityID:    m.ID,
+				Role:          m.Role,
+			})
+	}
+	err = db.Create(&list).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
 // Application REST resource.
 type Application struct {
 	Resource        `yaml:",inline"`
@@ -1333,7 +1386,7 @@ type Application struct {
 	Coordinates     *jsd.Document `json:"coordinates"`
 	Review          *Ref          `json:"review"`
 	Comments        string        `json:"comments"`
-	Identities      []Ref         `json:"identities"`
+	Identities      []IdentityRef `json:"identities"`
 	Tags            []TagRef      `json:"tags"`
 	BusinessService *Ref          `json:"businessService" yaml:"businessService"`
 	Owner           *Ref          `json:"owner"`
@@ -1350,7 +1403,7 @@ type Application struct {
 }
 
 // With updates the resource using the model.
-func (r *Application) With(m *model.Application, tags []AppTag) {
+func (r *Application) With(m *model.Application, tags []AppTag, roleMap map[uint]string) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
@@ -1376,10 +1429,12 @@ func (r *Application) With(m *model.Application, tags []AppTag) {
 		r.Review = ref
 	}
 	r.BusinessService = r.refPtr(m.BusinessServiceID, m.BusinessService)
-	r.Identities = []Ref{}
+	r.Identities = []IdentityRef{}
 	for _, id := range m.Identities {
-		ref := Ref{}
-		ref.With(id.ID, id.Name)
+		ref := IdentityRef{}
+		ref.ID = id.ID
+		ref.Name = id.Name
+		ref.Role = roleMap[id.ID]
 		r.Identities = append(
 			r.Identities,
 			ref)
@@ -1654,4 +1709,11 @@ func (r *AppTag) withRef(m *TagRef) {
 	r.Source = m.Source
 	r.Tag = &model.Tag{}
 	r.Tag.ID = m.ID
+}
+
+// IdentityRef application identity ref.
+type IdentityRef struct {
+	ID   uint   `json:"id" binding:"required"`
+	Role string `json:"role" binding:"required"`
+	Name string `json:"name"`
 }
