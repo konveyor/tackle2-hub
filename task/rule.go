@@ -22,7 +22,7 @@ func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
 	if !ready.MatchSubject(other) {
 		return
 	}
-	if ready.Addon != other.Addon {
+	if ready.Kind != other.Kind || ready.Addon != other.Addon {
 		return
 	}
 	if _, found := r.matched[other.ID]; found {
