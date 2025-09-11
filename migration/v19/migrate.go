@@ -22,9 +22,18 @@ func (r Migration) Models() []any {
 	return model.All()
 }
 
+// This is more complicated than you would think.
+// Even if the ApplicationIdentity table is dropped and re-created, the migrator will not
+// include the new 'Role' column. As a result, the approach needs to be:
+// - create table M (created correctly)
+// - populate with the content of ApplicationIdentity.
+// - drop table M.
+// - drop M_ constraints.
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	db = db.Debug()
 	migrator := db.Migrator()
+	//
+	// migrated
 	type M struct {
 		model.ApplicationIdentity
 	}
@@ -58,6 +67,8 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 			return
 		}
 	}
+	//
+	// clean up.
 	err = migrator.DropTable(&model.ApplicationIdentity{})
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -77,6 +88,24 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
+	}
+	//
+	// kind=asset no longer used.
+	var ids []*model.Identity
+	err = db.Find(&ids).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, id := range ids {
+		if id.Kind == "asset" {
+			id.Kind = "source"
+			err = db.Save(&id).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
 	}
 	return
 }
