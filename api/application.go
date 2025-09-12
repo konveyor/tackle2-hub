@@ -304,7 +304,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
 				identities = append(identities, ref)
-				roleMap.add(app.ID, m.ID, m.IdentityRole)
+				roleMap.add(app.ID, m.IdentityId, m.IdentityRole)
 			}
 			if m.ContributorId > 0 {
 				ref := model.Stakeholder{}
