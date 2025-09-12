@@ -106,7 +106,7 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	for _, id := range ids {
 		if id.Kind == "asset" {
 			id.Kind = "source"
-			err = db.Save(&id).Error
+			err = db.Save(id).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
