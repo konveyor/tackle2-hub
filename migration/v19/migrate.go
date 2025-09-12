@@ -30,7 +30,6 @@ func (r Migration) Models() []any {
 // - drop table M.
 // - drop M_ constraints.
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
-	db = db.Debug()
 	migrator := db.Migrator()
 	if !migrator.HasTable(&model.ApplicationIdentity{}) {
 		return
