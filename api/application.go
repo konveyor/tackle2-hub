@@ -267,7 +267,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	builder := func(batch []any) (out any, err error) {
 		app := &model.Application{}
 		roleMap := RoleMap{}
-		identities := make(map[uint]model.Identity)
+		identities := make([]model.Identity, 0)
 		contributors := make(map[uint]model.Stakeholder)
 		assessments := make(map[uint]model.Assessment)
 		manifests := make(map[uint]model.Manifest)
@@ -303,7 +303,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				ref := model.Identity{}
 				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
-				identities[m.IdentityId] = ref
+				identities = append(identities, ref)
 				roleMap.add(app.ID, m.ID, m.IdentityRole)
 			}
 			if m.ContributorId > 0 {
