@@ -142,7 +142,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @success 200 {object} []Identity
 // @router /applications/{id}/identities/{role} [get]
 // @param id path int true "Application ID"
-// @param kind path string true "Identity role"
+// @param role path string true "Identity role"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
 	role := ctx.Param(Role)
