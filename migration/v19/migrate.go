@@ -32,6 +32,9 @@ func (r Migration) Models() []any {
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	db = db.Debug()
 	migrator := db.Migrator()
+	if migrator.HasColumn(&model.ApplicationIdentity{}, "Role") {
+		return
+	}
 	//
 	// migrated
 	type M struct {
