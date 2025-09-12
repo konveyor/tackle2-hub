@@ -97,21 +97,12 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	}
 	//
 	// kind=asset no longer used.
-	var ids []*model.Identity
-	err = db.Find(&ids).Error
+	err = db.Model(&model.Identity{}).
+		Where("kind", "asset").
+		Update("kind", "source").Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
-	}
-	for _, id := range ids {
-		if id.Kind == "asset" {
-			id.Kind = "source"
-			err = db.Save(id).Error
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		}
 	}
 	return
 }
