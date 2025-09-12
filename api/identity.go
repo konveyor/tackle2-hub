@@ -21,7 +21,8 @@ const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
 	//
-	AppIdentitiesRoot = ApplicationRoot + "/identities"
+	AppIdentitiesRoot     = ApplicationRoot + "/identities"
+	AppIdentitiesRoleRoot = AppIdentitiesRoot + "/:role" // deprecated
 )
 
 // Params.
@@ -44,6 +45,7 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 	//
 	routeGroup.GET(AppIdentitiesRoot, h.AppList)
+	routeGroup.GET(AppIdentitiesRoleRoot, h.AppListDeprecated)
 }
 
 // Get godoc
@@ -132,6 +134,24 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
+// AppListDeprecated godoc
+// @summary List application identities.
+// @description List application identities.
+// @tags identities
+// @produce json
+// @success 200 {object} []Identity
+// @router /applications/{id}/identities/{role} [get]
+// @param id path int true "Application ID"
+// @param kind path string true "Identity role"
+// @Param decrypted query bool false "Decrypt fields"
+func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
+	role := ctx.Param(Role)
+	q := ctx.Request.URL.Query()
+	q.Set("filter", "role="+role)
+	ctx.Request.URL.RawQuery = q.Encode()
+	h.AppList(ctx)
+}
+
 // AppList godoc
 // @summary List application identities.
 // @description List application identities.
@@ -144,9 +164,8 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
-// @router /applications/{id}/identities/{kind} [get]
+// @router /applications/{id}/identities
 // @param id path int true "Application ID"
-// @param kind path string true "Identity kind"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppList(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
