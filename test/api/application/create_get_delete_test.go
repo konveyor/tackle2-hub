@@ -11,6 +11,31 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 	// Create on array of Applications calls subtest
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
+			// Identities.
+			direct := &api.Identity{
+				Name: "direct",
+				Kind: "Test",
+			}
+			err := RichClient.Identity.Create(direct)
+			assert.Must(t, err)
+			defer func() {
+				_ = RichClient.Identity.Delete(direct.ID)
+			}()
+			direct2 := &api.Identity{
+				Name: "direct2",
+				Kind: "Other",
+			}
+			err = RichClient.Identity.Create(direct2)
+			assert.Must(t, err)
+			defer func() {
+				_ = RichClient.Identity.Delete(direct2.ID)
+			}()
+			r.Identities = append(
+				r.Identities,
+				api.IdentityRef{ID: direct.ID, Role: "A"},
+				api.IdentityRef{ID: direct2.ID, Role: "B"})
+
+			// Create
 			assert.Should(t, Application.Create(&r))
 
 			// Try get.
