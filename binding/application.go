@@ -375,22 +375,26 @@ func (h AppIdentity) List() (list []api.Identity, err error) {
 	return
 }
 
-// Find with filter.
-func (h AppIdentity) Find(filter Filter) (r *api.Identity, found bool, err error) {
+// Find with filters.
+// Each filter is applied until an identity is found.
+// This is intended to support hunting for an identity.
+func (h AppIdentity) Find(filter ...Filter) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
 	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: h.appId})
-	err = h.client.Get(path, &list, p, filter.Param())
-	if err != nil {
-		return
-	}
-	for i := range list {
-		r = &list[i]
-		found = true
-		return
+	for _, f := range filter {
+		err = h.client.Get(path, &list, p, f.Param())
+		if err != nil {
+			return
+		}
+		for i := range list {
+			r = &list[i]
+			found = true
+			return
+		}
 	}
 	return
 }

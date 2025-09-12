@@ -81,6 +81,20 @@ func TestFindIdentity(t *testing.T) {
 	} else {
 		t.Errorf("indirect not found")
 	}
+	// Find indirect (hunt).
+	filter = binding.Filter{}
+	filter.And("kind").Eq("none")
+	filter2 := binding.Filter{}
+	filter2.And("kind").Eq("Other")
+	identity, found, err = Application.Identity(application.ID).Find(filter, filter2)
+	assert.Must(t, err)
+	if found {
+		if identity.ID != indirect.ID {
+			t.Errorf("find indirect expected: id=%d", indirect.ID)
+		}
+	} else {
+		t.Errorf("indirect not found")
+	}
 	// Not find indirect.
 	filter = binding.Filter{}
 	filter.And("kind").Eq("none")

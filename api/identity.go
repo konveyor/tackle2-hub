@@ -142,12 +142,12 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 // @success 200 {object} []Identity
 // @router /applications/{id}/identities/{role} [get]
 // @param id path int true "Application ID"
-// @param role path string true "Identity role"
+// @param kind path string true "Identity kind"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
 	role := ctx.Param(Role)
 	q := ctx.Request.URL.Query()
-	q.Set("filter", "role="+role)
+	q.Set("filter", "kind="+role)
 	ctx.Request.URL.RawQuery = q.Encode()
 	h.AppList(ctx)
 }
@@ -204,12 +204,7 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	db = h.DB(ctx)
 	var indirect []model.Identity
 	db = db.Where("default", true)
-	if f, found := filter.Field("kind"); !found {
-		if f, found := filter.Field("role"); found {
-			f = f.As("kind")
-			db = f.Where(db)
-		}
-	} else {
+	if f, found := filter.Field("kind"); found {
 		db = f.Where(db)
 	}
 	err = db.Find(&indirect).Error
