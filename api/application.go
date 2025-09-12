@@ -1320,14 +1320,15 @@ func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (
 	if err != nil {
 		return
 	}
-	for _, t := range r.Tags {
-		if !t.Virtual {
+	for _, ref := range r.Tags {
+		if !ref.Virtual {
 			appTag := AppTag{}
-			appTag.withRef(&t)
+			appTag.withRef(&ref)
 			appTags = append(appTags, appTag)
 			m := model.ApplicationTag{}
 			m.ApplicationID = id
-			m.TagID = t.ID
+			m.TagID = ref.ID
+			m.Source = ref.Source
 			list = append(list, m)
 		}
 	}
