@@ -1346,13 +1346,13 @@ func (h *ApplicationHandler) replaceIdentities(db *gorm.DB, id uint, r *Applicat
 		return
 	}
 	var list []model.ApplicationIdentity
-	for _, m := range r.Identities {
+	for _, ref := range r.Identities {
 		list = append(
 			list,
 			model.ApplicationIdentity{
 				ApplicationID: id,
-				IdentityID:    m.ID,
-				Role:          m.Role,
+				IdentityID:    ref.ID,
+				Role:          ref.Role,
 			})
 	}
 	err = db.Create(&list).Error

@@ -100,6 +100,8 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	} else {
+		filter = filter.Renamed("default", "`default`")
 	}
 	// Find
 	var list []model.Identity
@@ -156,8 +158,8 @@ func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
 // @summary List application identities.
 // @description List application identities.
 // @description Filter by:
-// @description - kind
-// @description - role
+// @description - role - applied to direct.
+// @description - kind - applied to indirect.
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
@@ -174,17 +176,19 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	//
+	// direct.
 	id := h.pk(ctx)
 	var direct []model.Identity
 	db := h.DB(ctx)
 	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
 	db = db.Where("j.ApplicationID", id)
-	db = filter.Where(db)
-	err = db.Find(&direct).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if f, found := filter.Field("role"); found {
+		db = f.Where(db)
+		err = db.Find(&direct).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	mp := map[string]Identity{}
 	for i := range direct {
@@ -198,16 +202,17 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 		r.With(m)
 		mp[m.Kind] = r
 	}
+	// indirect
 	db = h.DB(ctx)
 	var indirect []model.Identity
 	db = db.Where("default", true)
 	if f, found := filter.Field("kind"); found {
 		db = f.Where(db)
-	}
-	err = db.Find(&indirect).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+		err = db.Find(&direct).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	for i := range indirect {
 		m := &indirect[i]

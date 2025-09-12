@@ -8,13 +8,9 @@ curl -X PUT ${host}/applications/1 -d \
     "description": "Dog application.-updated",
     "businessService": {"id":1},
     "identities": [
-      {"id":1}
+      {"id":1,"role": "other"},
+      {"id":1,"role": "other2"}
     ],
-    "facts": {
-       "A":"1-updated",
-       "B":"2-updated",
-       "C":"3"
-    },
     "tags":[
       {"id":1},
       {"id":2},
