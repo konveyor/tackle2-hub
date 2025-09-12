@@ -23,8 +23,10 @@ type RuleUnique struct {
 // - addon
 // - subject
 func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
-	if (ready.Kind != "" && other.Kind != "") &&
-		(ready.Kind != other.Kind || ready.Addon != other.Addon) {
+	if ready.Addon != other.Addon {
+		return
+	}
+	if ready.Kind != "" && other.Kind != "" && ready.Kind != other.Kind {
 		return
 	}
 	if !ready.MatchSubject(other) {
