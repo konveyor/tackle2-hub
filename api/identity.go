@@ -21,8 +21,7 @@ const (
 	IdentitiesRoot = "/identities"
 	IdentityRoot   = IdentitiesRoot + "/:" + ID
 	//
-	AppIdentitiesRoot     = ApplicationRoot + "/identities"
-	AppIdentitiesRoleRoot = AppIdentitiesRoot + "/:role" // deprecated
+	AppIdentitiesRoot = ApplicationRoot + "/identities"
 )
 
 // Params.
@@ -45,7 +44,6 @@ func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(IdentityRoot, h.Delete)
 	//
 	routeGroup.GET(AppIdentitiesRoot, h.AppList)
-	routeGroup.GET(AppIdentitiesRoleRoot, h.AppListDeprecated)
 }
 
 // Get godoc
@@ -136,24 +134,6 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// AppListDeprecated godoc
-// @summary List application identities.
-// @description List application identities.
-// @tags identities
-// @produce json
-// @success 200 {object} []Identity
-// @router /applications/{id}/identities/{role} [get]
-// @param id path int true "Application ID"
-// @param kind path string true "Identity kind"
-// @Param decrypted query bool false "Decrypt fields"
-func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
-	role := ctx.Param(Role)
-	q := ctx.Request.URL.Query()
-	q.Set("filter", "kind="+role)
-	ctx.Request.URL.RawQuery = q.Encode()
-	h.AppList(ctx)
-}
-
 // AppList godoc
 // @summary List application identities.
 // @description List application identities.
@@ -176,21 +156,18 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	// direct.
 	id := h.pk(ctx)
 	var direct []model.Identity
 	db := h.DB(ctx)
 	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
 	db = db.Where("j.ApplicationID", id)
-	if f, found := filter.Field("role"); found {
-		db = f.Where(db)
-		err = db.Find(&direct).Error
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
+	db = filter.Where(db)
+	err = db.Find(&direct).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
-	mp := map[string]Identity{}
+	resources := []Identity{}
 	for i := range direct {
 		m := &direct[i]
 		r := Identity{}
@@ -200,36 +177,6 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 			return
 		}
 		r.With(m)
-		mp[m.Kind] = r
-	}
-	// indirect
-	db = h.DB(ctx)
-	var indirect []model.Identity
-	db = db.Where("default", true)
-	if f, found := filter.Field("kind"); found {
-		db = f.Where(db)
-		err = db.Find(&direct).Error
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-	}
-	for i := range indirect {
-		m := &indirect[i]
-		if _, found := mp[m.Kind]; found {
-			continue
-		}
-		r := Identity{}
-		err := h.Decrypt(ctx, m)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		r.With(m)
-		mp[r.Kind] = r
-	}
-	resources := []Identity{}
-	for _, r := range mp {
 		resources = append(resources, r)
 	}
 

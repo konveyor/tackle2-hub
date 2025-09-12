@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -29,8 +28,8 @@ func TestFindIdentity(t *testing.T) {
 		_ = RichClient.Identity.Delete(direct2.ID)
 	}()
 	indirect := &api.Identity{
-		Kind:    "Other",
 		Name:    "indirect",
+		Kind:    "Other",
 		Default: true,
 	}
 	err = RichClient.Identity.Create(indirect)
@@ -48,9 +47,14 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(indirect2.ID)
 	}()
+	role := "source"
+	role2 := "asset"
 	application := &api.Application{
-		Name:       t.Name(),
-		Identities: []api.IdentityRef{{ID: direct.ID, Role: "asset"}},
+		Name: t.Name(),
+		Identities: []api.IdentityRef{
+			{ID: direct.ID, Role: role},
+			{ID: direct2.ID, Role: role2},
+		},
 	}
 	err = Application.Create(application)
 	assert.Must(t, err)
@@ -58,9 +62,11 @@ func TestFindIdentity(t *testing.T) {
 		_ = Application.Delete(application.ID)
 	}()
 	// Find direct.
-	filter := binding.Filter{}
-	filter.And("kind").Eq(direct.Kind)
-	identity, found, err := Application.Identity(application.ID).Find(filter)
+	q := Application.Identity(application.ID).Search()
+	identity, found, err :=
+		q.Direct(role).
+			Indirect(indirect.Kind).
+			Find()
 	assert.Must(t, err)
 	if found {
 		if identity.ID != direct.ID {
@@ -70,9 +76,11 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("direct not found")
 	}
 	// Find indirect.
-	filter = binding.Filter{}
-	filter.And("kind").Eq(indirect.Kind)
-	identity, found, err = Application.Identity(application.ID).Find(filter)
+	q = Application.Identity(application.ID).Search()
+	identity, found, err =
+		q.Direct("").
+			Indirect(indirect.Kind).
+			Find()
 	assert.Must(t, err)
 	if found {
 		if identity.ID != indirect.ID {
@@ -81,24 +89,27 @@ func TestFindIdentity(t *testing.T) {
 	} else {
 		t.Errorf("indirect not found")
 	}
-	// Find indirect (hunt).
-	filter = binding.Filter{}
-	filter.And("kind").Eq("none")
-	filter2 := binding.Filter{}
-	filter2.And("kind").Eq("Other")
-	identity, found, err = Application.Identity(application.ID).Find(filter, filter2)
+	// Find direct2
+	q = Application.Identity(application.ID).Search()
+	identity, found, err =
+		q.Direct("none").
+			Direct(role2).
+			Indirect(indirect.Kind).
+			Find()
 	assert.Must(t, err)
 	if found {
-		if identity.ID != indirect.ID {
-			t.Errorf("find indirect expected: id=%d", indirect.ID)
+		if identity.ID != direct2.ID {
+			t.Errorf("find indirect expected: id=%d", direct2.ID)
 		}
 	} else {
 		t.Errorf("indirect not found")
 	}
 	// Not find indirect.
-	filter = binding.Filter{}
-	filter.And("kind").Eq("none")
-	_, found, err = Application.Identity(application.ID).Find(filter)
+	q = Application.Identity(application.ID).Search()
+	identity, found, err =
+		q.Direct("none").
+			Indirect("none").
+			Find()
 	assert.Must(t, err)
 	if found {
 		t.Errorf("not found expected")

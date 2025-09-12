@@ -375,27 +375,53 @@ func (h AppIdentity) List() (list []api.Identity, err error) {
 	return
 }
 
-// Find with filters.
-// Each filter is applied until an identity is found.
-// This is intended to support hunting for an identity.
-func (h AppIdentity) Find(filter ...Filter) (r *api.Identity, found bool, err error) {
+// Direct finds identities associated with the application.
+func (h AppIdentity) Direct(role string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
+	filter := Filter{}
+	filter.And("role").Eq(role)
 	path := Path(api.AppIdentitiesRoot).Inject(Params{api.ID: h.appId})
-	for _, f := range filter {
-		err = h.client.Get(path, &list, p, f.Param())
-		if err != nil {
-			return
-		}
-		for i := range list {
-			r = &list[i]
-			found = true
-			return
-		}
+	err = h.client.Get(path, &list, p, filter.Param())
+	if err != nil {
+		return
 	}
+	for i := range list {
+		r = &list[i]
+		found = true
+		return
+	}
+	return
+}
+
+// Indirect returns identities associated indirectly with the application.
+func (h AppIdentity) Indirect(kind string) (r *api.Identity, found bool, err error) {
+	list := []api.Identity{}
+	p := Param{
+		Key:   api.Decrypted,
+		Value: "1",
+	}
+	filter := Filter{}
+	filter.And("kind").Eq(kind)
+	filter.And("default").Eq(true)
+	err = h.client.Get(api.IdentitiesRoot, &list, p, filter.Param())
+	if err != nil {
+		return
+	}
+	for i := range list {
+		r = &list[i]
+		found = true
+		return
+	}
+	return
+}
+
+// Search returns a search engine.
+func (h AppIdentity) Search() (s IdentitySearch) {
+	s.api = &h
 	return
 }
 
@@ -417,5 +443,42 @@ func (h AppAssessment) List() (list []api.Assessment, err error) {
 	list = []api.Assessment{}
 	path := Path(api.AppAssessmentsRoot).Inject(Params{api.ID: h.appId})
 	err = h.client.Get(path, &list)
+	return
+}
+
+// IdentitySearch engine.
+type IdentitySearch struct {
+	api        *AppIdentity
+	predicates []func() (*api.Identity, bool, error)
+}
+
+// Direct adds a direct search predicate.
+func (q IdentitySearch) Direct(role string) IdentitySearch {
+	q.predicates = append(
+		q.predicates,
+		func() (*api.Identity, bool, error) {
+			return q.api.Direct(role)
+		})
+	return q
+}
+
+// Indirect adds an indirect search predicate.
+func (q IdentitySearch) Indirect(kind string) IdentitySearch {
+	q.predicates = append(
+		q.predicates,
+		func() (*api.Identity, bool, error) {
+			return q.api.Indirect(kind)
+		})
+	return q
+}
+
+// Find performs the search.
+func (q IdentitySearch) Find() (r *api.Identity, found bool, err error) {
+	for _, p := range q.predicates {
+		r, found, err = p()
+		if err != nil || found {
+			break
+		}
+	}
 	return
 }
