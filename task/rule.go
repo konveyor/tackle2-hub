@@ -18,11 +18,16 @@ type RuleUnique struct {
 }
 
 // Match determines the match.
+// Match on:
+// - task (when specified on both)
+// - addon
+// - subject
 func (r *RuleUnique) Match(ready, other *Task) (matched bool, reason string) {
-	if !ready.MatchSubject(other) {
+	if (ready.Kind != "" && other.Kind != "") &&
+		(ready.Kind != other.Kind || ready.Addon != other.Addon) {
 		return
 	}
-	if ready.Kind != other.Kind || ready.Addon != other.Addon {
+	if !ready.MatchSubject(other) {
 		return
 	}
 	if _, found := r.matched[other.ID]; found {
