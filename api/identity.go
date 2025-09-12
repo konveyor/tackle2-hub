@@ -164,7 +164,7 @@ func (h IdentityHandler) AppListDeprecated(ctx *gin.Context) {
 // @tags identities
 // @produce json
 // @success 200 {object} []Identity
-// @router /applications/{id}/identities
+// @router /applications/{id}/identities [get]
 // @param id path int true "Application ID"
 // @Param decrypted query bool false "Decrypt fields"
 func (h IdentityHandler) AppList(ctx *gin.Context) {
