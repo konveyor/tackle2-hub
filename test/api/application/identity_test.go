@@ -62,9 +62,9 @@ func TestFindIdentity(t *testing.T) {
 		_ = Application.Delete(application.ID)
 	}()
 	// Find direct.
-	q := Application.Identity(application.ID).Search()
 	identity, found, err :=
-		q.Direct(role).
+		Application.Identity(application.ID).Search().
+			Direct(role).
 			Indirect(indirect.Kind).
 			Find()
 	assert.Must(t, err)
@@ -76,9 +76,9 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("direct not found")
 	}
 	// Find indirect.
-	q = Application.Identity(application.ID).Search()
 	identity, found, err =
-		q.Direct("").
+		Application.Identity(application.ID).Search().
+			Direct("").
 			Indirect(indirect.Kind).
 			Find()
 	assert.Must(t, err)
@@ -90,9 +90,9 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("indirect not found")
 	}
 	// Find direct2
-	q = Application.Identity(application.ID).Search()
 	identity, found, err =
-		q.Direct("none").
+		Application.Identity(application.ID).Search().
+			Direct("none").
 			Direct(role2).
 			Indirect(indirect.Kind).
 			Find()
@@ -105,9 +105,9 @@ func TestFindIdentity(t *testing.T) {
 		t.Errorf("indirect not found")
 	}
 	// Not find indirect.
-	q = Application.Identity(application.ID).Search()
 	identity, found, err =
-		q.Direct("none").
+		Application.Identity(application.ID).Search().
+			Direct("none").
 			Indirect("none").
 			Find()
 	assert.Must(t, err)
