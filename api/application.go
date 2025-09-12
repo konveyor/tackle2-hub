@@ -1423,7 +1423,7 @@ func (r *Application) With(m *model.Application, tags []AppTag, roleMap RoleMap)
 		ref := IdentityRef{}
 		ref.ID = id.ID
 		ref.Name = id.Name
-		ref.Role = roleMap.get(m.ID, id.ID)
+		ref.Role = roleMap.next(m.ID, id.ID)
 		r.Identities = append(
 			r.Identities,
 			ref)
@@ -1720,8 +1720,8 @@ func (r RoleMap) add(appId, idId uint, role string) {
 	m[idId] = append(m[idId], role)
 }
 
-// get role mapped to an application by identity id.
-func (r RoleMap) get(appId, idId uint) (role string) {
+// next returns the next role mapped to an application by identity id.
+func (r RoleMap) next(appId, idId uint) (role string) {
 	appMap, found := r[appId]
 	if !found {
 		return
