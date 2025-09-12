@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"slices"
 	"sort"
 	"strings"
 
@@ -1423,7 +1422,7 @@ func (r *Application) With(m *model.Application, tags []AppTag, roleMap RoleMap)
 		ref := IdentityRef{}
 		ref.ID = id.ID
 		ref.Name = id.Name
-		ref.Role = roleMap.next(m.ID, id.ID)
+		ref.Role = roleMap.get(m.ID, id.ID)
 		r.Identities = append(
 			r.Identities,
 			ref)
@@ -1711,18 +1710,18 @@ type IdentityRef struct {
 type RoleMap map[uint]map[uint][]string
 
 // add entry.
-func (r *RoleMap) add(appId, idId uint, role string) {
-	m, found := (*r)[appId]
+func (r RoleMap) add(appId, idId uint, role string) {
+	m, found := r[appId]
 	if !found {
 		m = make(map[uint][]string)
-		(*r)[appId] = m
+		r[appId] = m
 	}
 	m[idId] = append(m[idId], role)
 }
 
-// next role mapped to an application by identity id.
-func (r *RoleMap) next(appId, idId uint) (role string) {
-	appMap, found := (*r)[appId]
+// get role mapped to an application by identity id.
+func (r RoleMap) get(appId, idId uint) (role string) {
+	appMap, found := r[appId]
 	if !found {
 		return
 	}
@@ -1733,14 +1732,13 @@ func (r *RoleMap) next(appId, idId uint) (role string) {
 	if len(roles) == 0 {
 		return
 	}
-	slices.Reverse(roles)
 	role = roles[0]
 	appMap[idId] = roles[1:]
 	return
 }
 
 // fetch associations.
-func (r *RoleMap) fetch(db *gorm.DB, appId uint) (err error) {
+func (r RoleMap) fetch(db *gorm.DB, appId uint) (err error) {
 	var list []model.ApplicationIdentity
 	err = db.Find(&list, "ApplicationID", appId).Error
 	if err != nil {
