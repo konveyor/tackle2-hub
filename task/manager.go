@@ -1688,9 +1688,10 @@ func (q *Quota) with(k *Cluster) {
 }
 
 // created indicates a task pod has been created.
-// decrements the capacity.
+// increments count; decrements the capacity.
 func (q *Quota) created() {
 	q.capacity--
+	q.count++
 }
 
 // exhausted returns true when the capacity < 1.
@@ -1707,7 +1708,7 @@ func (q *Quota) exhausted() (exhausted bool) {
 func (q *Quota) string() (s string) {
 	s = fmt.Sprintf(
 		"quota (pod): %d/%d",
-		q.quota,
-		q.count)
+		q.count,
+		q.quota)
 	return s
 }

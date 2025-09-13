@@ -205,7 +205,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Pod.Quota = n
 	} else {
-		r.Task.Pod.Quota = 3 // 0=unlimited  TODO: THIS SHOULD BE 0 BEFORE MERGED
+		r.Task.Pod.Quota = 230 // 0=unlimited  TODO: THIS SHOULD BE 0 BEFORE MERGED
 	}
 	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
 	if found {
