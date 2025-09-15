@@ -42,22 +42,6 @@ func (h *Task) Application() (r *api.Application, err error) {
 		return
 	}
 	r, err = h.richClient.Application.Get(ref.ID)
-	if err != nil {
-		return
-	}
-	r.Identities = []api.Ref{}
-	identities, err := h.richClient.Application.Identity(ref.ID).List()
-	if err != nil {
-		return
-	}
-	for _, identity := range identities {
-		r.Identities = append(
-			r.Identities,
-			api.Ref{
-				ID:   identity.ID,
-				Name: identity.Name,
-			})
-	}
 	return
 }
 

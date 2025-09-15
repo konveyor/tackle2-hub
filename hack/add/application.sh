@@ -23,6 +23,7 @@ repository:
     url: ${repository}
 identities:
   - id: 1
+    role: source
 tags:
   - id: 1
   - id: 16

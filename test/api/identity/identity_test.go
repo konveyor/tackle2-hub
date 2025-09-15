@@ -30,7 +30,7 @@ func TestFindIdentity(t *testing.T) {
 	}()
 	application := &api.Application{
 		Name:       t.Name(),
-		Identities: []api.Ref{{ID: direct.ID}},
+		Identities: []api.IdentityRef{{ID: direct.ID}},
 	}
 	err = RichClient.Application.Create(application)
 	assert.Must(t, err)
