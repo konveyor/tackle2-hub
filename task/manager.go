@@ -121,6 +121,9 @@ type Manager struct {
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	if Settings.Debug.Task {
+		m.DB = m.DB.Debug()
+	}
 	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
 	m.logManager = LogManager{

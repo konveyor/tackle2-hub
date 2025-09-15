@@ -174,7 +174,7 @@ func main() {
 	}
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
-		DB:     db.Debug(),
+		DB:     db,
 		Client: client,
 	}
 	err = jsdMigrator.Migrate(model.ALL)

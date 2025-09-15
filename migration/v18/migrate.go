@@ -22,7 +22,6 @@ func (r Migration) Models() []any {
 }
 
 func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
-	db = db.Debug()
 	migrator := db.Migrator()
 	// issue
 	if !migrator.HasTable(&v17.Issue{}) {
