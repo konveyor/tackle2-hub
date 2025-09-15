@@ -33,7 +33,7 @@ func TestPriorityEscalate(t *testing.T) {
 	c.Spec.Dependencies = []string{"b"}
 	kinds[c.Name] = &c
 
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -41,27 +41,27 @@ func TestPriorityEscalate(t *testing.T) {
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 5
 	task.Kind = "b"
 	task.State = Ready
@@ -105,7 +105,7 @@ func TestPriorityGraph(t *testing.T) {
 
 	//
 	// subject: application
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -113,21 +113,21 @@ func TestPriorityGraph(t *testing.T) {
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.ApplicationID = &appId
@@ -141,7 +141,7 @@ func TestPriorityGraph(t *testing.T) {
 	g.Expect(len(deps)).To(gomega.Equal(2))
 	//
 	// subject: platform
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -149,21 +149,21 @@ func TestPriorityGraph(t *testing.T) {
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.PlatformID = &platformId
