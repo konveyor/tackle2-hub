@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -41,6 +42,8 @@ type Context struct {
 	Response Response
 	// Task manager.
 	TaskManager *tasking.Manager
+	// Mutex for transaction safety
+	mu sync.Mutex
 }
 
 // Attach to gin context.
@@ -93,6 +96,10 @@ func Transaction(ctx *gin.Context) {
 		http.MethodDelete:
 		rtx := RichContext(ctx)
 		err := rtx.DB.Transaction(func(tx *gorm.DB) (err error) {
+			// Lock the context to prevent concurrent DB access
+			rtx.mu.Lock()
+			defer rtx.mu.Unlock()
+
 			db := rtx.DB
 			rtx.DB = tx
 			ctx.Next()
