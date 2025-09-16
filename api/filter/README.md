@@ -39,7 +39,7 @@ A list is a collection of values enclosed in parentheses `()`. Values in the lis
 ### Logical Operators
 
 * `AND` ( implicit or using comma `,` ): combines two or more conditions.
-* `OR` ( using pipe `|` ): combines two or more conditions. Can only be used inside a list `()`.
+* `OR` ( `|` ): operator may only be used inside a list `()`.
 
 ## EBNF Grammar
 
@@ -56,7 +56,6 @@ LITERAL ::= [a-zA-Z0-9_]+
 
 ## Examples
 
-### Examples
 #### Filter by name equal to "elmer".
 ?filter=name:elmer
 
@@ -81,11 +80,8 @@ LITERAL ::= [a-zA-Z0-9_]+
 #### Filter by category equal to "mandatory" and effort equal to 20.
 ?filter=category:mandatory,effort:20
 
-#### Filter by category equal to "mandatory" or effort equal to 10.
-?filter=category:mandatory|effort:10
-
-#### Filter by tag.id equal to 1 and 2.
-?filter=tag.id:(1,2)
+#### Filter by effort greater than 0.
+?filter=effort>0
 
 ## Notes
 
