@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -266,6 +267,30 @@ func TestFilter(t *testing.T) {
 	sql, values = f.SQL()
 	g.Expect(sql).To(gomega.Equal("(category LIKE ? OR category LIKE ?)"))
 	g.Expect(values).To(gomega.Equal([]any{"a", "b"}))
+}
+
+func TestFilterAsColumn(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	p := Parser{}
+	AsColumn = func(name string) (snake string) {
+		var result []rune
+		for i, r := range name {
+			if i > 0 && r >= 'A' && r <= 'Z' {
+				result = append(result, '_')
+			}
+			result = append(result, r)
+		}
+		snake = strings.ToLower(string(result))
+		return
+	}
+
+	filter, err := p.Filter("FirstName:elmer,age:20")
+	g.Expect(err).To(gomega.BeNil())
+	f, found := filter.Field("FirstName")
+	g.Expect(found).To(gomega.BeTrue())
+	sql, values := f.SQL()
+	g.Expect(sql).To(gomega.Equal("first_name = ?"))
+	g.Expect(values[0]).To(gomega.Equal("elmer"))
 }
 
 func TestValidation(t *testing.T) {
