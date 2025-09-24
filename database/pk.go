@@ -56,7 +56,7 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	kind := strings.ToUpper(db.Statement.Table)
+	kind := strings.ToLower(db.Statement.Table)
 	m := &model.PK{}
 	db = r.session(db)
 	err := db.First(m, "kind", kind).Error

@@ -29,7 +29,7 @@ type PK struct {
 type Setting struct {
 	Model
 	Key   string `gorm:"<-:create;uniqueIndex"`
-	Value any    `gorm:"type:json;serializer:json"`
+	Value any    `gorm:"type:jsonb;serializer:json"`
 }
 
 // As unmarshalls the value of the Setting into the `ptr` parameter.
@@ -121,20 +121,20 @@ type Task struct {
 	Name          string `gorm:"index"`
 	Kind          string
 	Addon         string   `gorm:"index"`
-	Extensions    []string `gorm:"type:json;serializer:json"`
+	Extensions    []string `gorm:"type:jsonb;serializer:json"`
 	State         string   `gorm:"index"`
 	Locator       string   `gorm:"index"`
 	Priority      int
-	Policy        TaskPolicy `gorm:"type:json;serializer:json"`
-	TTL           TTL        `gorm:"type:json;serializer:json"`
-	Data          json.Data  `gorm:"type:json;serializer:json"`
+	Policy        TaskPolicy `gorm:"type:jsonb;serializer:json"`
+	TTL           TTL        `gorm:"type:jsonb;serializer:json"`
+	Data          json.Data  `gorm:"type:jsonb;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
-	Errors        []TaskError `gorm:"type:json;serializer:json"`
-	Events        []TaskEvent `gorm:"type:json;serializer:json"`
+	Errors        []TaskError `gorm:"type:jsonb;serializer:json"`
+	Events        []TaskEvent `gorm:"type:jsonb;serializer:json"`
 	Pod           string      `gorm:"index"`
 	Retries       int
-	Attached      []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
+	Attached      []Attachment `gorm:"type:jsonb;serializer:json" ref:"[]file"`
 	Report        *TaskReport  `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID *uint        `gorm:"index"`
 	Application   *Application
@@ -154,10 +154,10 @@ type TaskReport struct {
 	Status    string
 	Total     int
 	Completed int
-	Activity  []string     `gorm:"type:json;serializer:json"`
-	Errors    []TaskError  `gorm:"type:json;serializer:json"`
-	Attached  []Attachment `gorm:"type:json;serializer:json" ref:"[]file"`
-	Result    json.Data    `gorm:"type:json;serializer:json"`
+	Activity  []string     `gorm:"type:jsonb;serializer:json"`
+	Errors    []TaskError  `gorm:"type:jsonb;serializer:json"`
+	Attached  []Attachment `gorm:"type:jsonb;serializer:json" ref:"[]file"`
+	Result    json.Data    `gorm:"type:jsonb;serializer:json"`
 	TaskID    uint         `gorm:"<-:create;uniqueIndex"`
 	Task      *Task
 }
@@ -169,12 +169,12 @@ type TaskGroup struct {
 	Mode       string
 	Kind       string
 	Addon      string
-	Extensions []string `gorm:"type:json;serializer:json"`
+	Extensions []string `gorm:"type:jsonb;serializer:json"`
 	State      string
 	Priority   int
-	Policy     TaskPolicy `gorm:"type:json;serializer:json"`
-	Data       json.Data  `gorm:"type:json;serializer:json"`
-	List       []Task     `gorm:"type:json;serializer:json"`
+	Policy     TaskPolicy `gorm:"type:jsonb;serializer:json"`
+	Data       json.Data  `gorm:"type:jsonb;serializer:json"`
+	List       []Task     `gorm:"type:jsonb;serializer:json"`
 	Tasks      []Task     `gorm:"constraint:OnDelete:CASCADE"`
 }
 
@@ -186,7 +186,7 @@ type Proxy struct {
 	Kind       string `gorm:"uniqueIndex"`
 	Host       string `gorm:"not null"`
 	Port       int
-	Excluded   []string `gorm:"type:json;serializer:json"`
+	Excluded   []string `gorm:"type:jsonb;serializer:json"`
 	IdentityID *uint    `gorm:"index"`
 	Identity   *Identity
 }

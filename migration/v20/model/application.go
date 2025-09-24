@@ -15,9 +15,9 @@ type Application struct {
 	Name              string `gorm:"index;unique;not null"`
 	Description       string
 	Review            *Review        `gorm:"constraint:OnDelete:CASCADE"`
-	Repository        Repository     `gorm:"type:json;serializer:json"`
-	Assets            Repository     `gorm:"type:json;serializer:json"`
-	Coordinates       *json.Document `gorm:"type:json;serializer:json"`
+	Repository        Repository     `gorm:"type:jsonb;serializer:json"`
+	Assets            Repository     `gorm:"type:jsonb;serializer:json"`
+	Coordinates       *json.Document `gorm:"type:jsonb;serializer:json"`
 	Binary            string
 	Facts             []Fact `gorm:"constraint:OnDelete:CASCADE"`
 	Comments          string
@@ -43,7 +43,7 @@ type Fact struct {
 	ApplicationID uint   `gorm:"<-:create;primaryKey"`
 	Key           string `gorm:"<-:create;primaryKey"`
 	Source        string `gorm:"<-:create;primaryKey;not null"`
-	Value         any    `gorm:"type:json;not null;serializer:json"`
+	Value         any    `gorm:"type:jsonb;not null;serializer:json"`
 	Application   *Application
 }
 
@@ -223,7 +223,7 @@ type Ticket struct {
 	// Parent resource that this ticket should belong to in the tracker. (e.g. Jira project)
 	Parent string `gorm:"not null"`
 	// Custom fields to send to the tracker when creating the ticket
-	Fields json.Map `gorm:"type:json;serializer:json"`
+	Fields json.Map `gorm:"type:jsonb;serializer:json"`
 	// Whether the last attempt to do something with the ticket reported an error
 	Error bool
 	// Error message, if any

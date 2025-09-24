@@ -12,6 +12,11 @@ const (
 	EnvNamespace               = "NAMESPACE"
 	EnvBuild                   = "BUILD"
 	EnvDbPath                  = "DB_PATH"
+	EnvDbHost                  = "DB_HOST"
+	EnvDbPort                  = "DB_PORT"
+	EnvDbName                  = "DB_NAME"
+	EnvDbUser                  = "DB_USER"
+	EnvDbPassword              = "DB_PASSWORD"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
 	EnvDbSeedPath              = "DB_SEED_PATH"
 	EnvBucketPath              = "BUCKET_PATH"
@@ -54,6 +59,11 @@ type Hub struct {
 	// DB settings.
 	DB struct {
 		Path          string
+		Host          string
+		Port          int
+		Name          string
+		User          string
+		Password      string
 		MaxConnection int
 		SeedPath      string
 	}
@@ -141,12 +151,35 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.DB.Path = "/tmp/tackle.db"
 	}
-	s, found := os.LookupEnv(EnvDbMaxCon)
+	r.DB.Host, found = os.LookupEnv(EnvDbHost)
+	if !found {
+		r.DB.Host = "localhost"
+	}
+	s, found := os.LookupEnv(EnvDbPort)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.DB.Port = n
+	} else {
+		r.DB.Port = 5432
+	}
+	r.DB.Name, found = os.LookupEnv(EnvDbName)
+	if !found {
+		r.DB.Name = "hub"
+	}
+	r.DB.User, found = os.LookupEnv(EnvDbName)
+	if !found {
+		r.DB.User = "hub"
+	}
+	r.DB.Password, found = os.LookupEnv(EnvDbPassword)
+	if !found {
+		r.DB.Password = "hub"
+	}
+	s, found = os.LookupEnv(EnvDbMaxCon)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.DB.MaxConnection = n
 	} else {
-		r.DB.MaxConnection = 1
+		r.DB.MaxConnection = 20
 	}
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {

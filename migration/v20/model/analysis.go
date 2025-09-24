@@ -11,7 +11,7 @@ type Analysis struct {
 	Effort        int
 	Commit        string
 	Archived      bool
-	Summary       []ArchivedInsight `gorm:"type:json;serializer:json"`
+	Summary       []ArchivedInsight `gorm:"type:jsonb;serializer:json"`
 	Insights      []Insight         `gorm:"constraint:OnDelete:CASCADE"`
 	Dependencies  []TechDependency  `gorm:"constraint:OnDelete:CASCADE"`
 	ApplicationID uint              `gorm:"index;not null"`
@@ -26,7 +26,7 @@ type TechDependency struct {
 	Version    string `gorm:"uniqueIndex:depA"`
 	SHA        string `gorm:"uniqueIndex:depA"`
 	Indirect   bool
-	Labels     []string `gorm:"type:json;serializer:json"`
+	Labels     []string `gorm:"type:jsonb;serializer:json"`
 	AnalysisID uint     `gorm:"index;uniqueIndex:depA;not null"`
 	Analysis   *Analysis
 }
@@ -40,9 +40,9 @@ type Insight struct {
 	Description string
 	Category    string     `gorm:"index;not null"`
 	Incidents   []Incident `gorm:"foreignKey:InsightID;constraint:OnDelete:CASCADE"`
-	Links       []Link     `gorm:"type:json;serializer:json"`
-	Facts       json.Map   `gorm:"type:json;serializer:json"`
-	Labels      []string   `gorm:"type:json;serializer:json"`
+	Links       []Link     `gorm:"type:jsonb;serializer:json"`
+	Facts       json.Map   `gorm:"type:jsonb;serializer:json"`
+	Labels      []string   `gorm:"type:jsonb;serializer:json"`
 	Effort      int        `gorm:"index;not null"`
 	AnalysisID  uint       `gorm:"index;uniqueIndex:insightA;not null"`
 	Analysis    *Analysis
@@ -55,7 +55,7 @@ type Incident struct {
 	Line      int
 	Message   string
 	CodeSnip  string
-	Facts     json.Map `gorm:"type:json;serializer:json"`
+	Facts     json.Map `gorm:"type:jsonb;serializer:json"`
 	InsightID uint     `gorm:"index;not null"`
 	Insight   *Insight
 }
@@ -67,7 +67,7 @@ type RuleSet struct {
 	Kind        string
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description string
-	Repository  Repository `gorm:"type:json;serializer:json"`
+	Repository  Repository `gorm:"type:jsonb;serializer:json"`
 	IdentityID  *uint      `gorm:"index"`
 	Identity    *Identity
 	Rules       []Rule    `gorm:"constraint:OnDelete:CASCADE"`
@@ -116,7 +116,7 @@ type Rule struct {
 	Model
 	Name        string
 	Description string
-	Labels      []string `gorm:"type:json;serializer:json"`
+	Labels      []string `gorm:"type:jsonb;serializer:json"`
 	RuleSetID   uint     `gorm:"uniqueIndex:RuleA;not null"`
 	RuleSet     *RuleSet
 	FileID      *uint `gorm:"uniqueIndex:RuleA" ref:"file"`
@@ -131,7 +131,7 @@ type Target struct {
 	Description string
 	Provider    string
 	Choice      bool
-	Labels      []TargetLabel `gorm:"type:json;serializer:json"`
+	Labels      []TargetLabel `gorm:"type:jsonb;serializer:json"`
 	ImageID     uint          `gorm:"index" ref:"file"`
 	Image       *File
 	RuleSetID   *uint `gorm:"index"`

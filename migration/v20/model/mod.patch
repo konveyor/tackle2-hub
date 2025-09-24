@@ -1,0 +1,29 @@
+diff -ruN '--exclude=mod.patch' migration/v18/model/application.go migration/v19/model/application.go
+--- migration/v18/model/application.go	2025-09-09 09:34:03.584965738 -0500
++++ migration/v19/model/application.go	2025-09-09 10:54:22.106988441 -0500
+@@ -63,6 +63,14 @@
+ 	return "ApplicationTags"
+ }
+ 
++type ApplicationIdentity struct {
++	ApplicationID uint        `gorm:"primaryKey"`
++	IdentityID    uint        `gorm:"primaryKey"`
++	Role          string      `gorm:"primaryKey"`
++	Application   Application `gorm:"constraint:OnDelete:CASCADE"`
++	Identity      Identity    `gorm:"constraint:OnDelete:CASCADE"`
++}
++
+ // depMutex ensures Dependency.Create() is not executed concurrently.
+ var depMutex sync.Mutex
+ 
+diff -ruN '--exclude=mod.patch' migration/v18/model/pkg.go migration/v19/model/pkg.go
+--- migration/v18/model/pkg.go	2025-09-09 09:34:03.584965738 -0500
++++ migration/v19/model/pkg.go	2025-09-09 10:36:59.101876031 -0500
+@@ -53,6 +53,7 @@
+ 		Ticket{},
+ 		Tracker{},
+ 		ApplicationTag{},
++		ApplicationIdentity{},
+ 		Questionnaire{},
+ 		Assessment{},
+ 		Archetype{},
