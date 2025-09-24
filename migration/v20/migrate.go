@@ -8,6 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/database"
 	"github.com/konveyor/tackle2-hub/migration/v20/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var log = logr.WithName("migration|v20")
@@ -29,10 +30,10 @@ func (r Migration) Apply(sqlite *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	err = db.Delete(&model.PK{}).Error
 	err = r.migrateData(
 		db,
 		sqlite,
-		[]model.PK{},
 		[]model.Setting{})
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -52,7 +53,7 @@ func (r Migration) migrateData(db, sqlite *gorm.DB, collections ...any) (err err
 		if reflect.ValueOf(list).Len() == 0 {
 			return
 		}
-		err = db.Create(&list).Error
+		err = db.Clauses(clause.OnConflict{DoNothing: true}).Create(list).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

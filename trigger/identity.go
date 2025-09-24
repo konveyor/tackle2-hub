@@ -11,7 +11,7 @@ type Identity struct {
 
 // Created model created trigger.
 func (r *Identity) Created(m *model.Identity) (err error) {
-	if m.Default {
+	if m.IsDefault {
 		err = r.Updated(m)
 	}
 	return
@@ -100,7 +100,7 @@ func (r *Identity) affected(changed *model.Identity) (appIds [][]uint, err error
 	// indirect association.
 	// map[application.ID]struct{}
 	indirect := make(map[uint]struct{})
-	if changed.Default {
+	if changed.IsDefault {
 		for _, m2 := range records {
 			_, hasDirect := direct[m2.AppId]
 			if !hasDirect {

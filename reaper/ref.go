@@ -88,12 +88,10 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 	for i := range jfields {
 		fields = append(
 			fields,
-			fmt.Sprintf(
-				fmt.Sprintf("j%d->>'id'", i),
-				i))
+			fmt.Sprintf("j%d->>'id'", i))
 		db = db.Joins(
 			fmt.Sprintf(
-				"JOIN jsonb_array_elements(%s) j%d",
+				"JOIN LATERAL jsonb_array_elements(%s) j%d ON true",
 				jfields[i],
 				i,
 			),

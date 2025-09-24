@@ -196,9 +196,9 @@ type Identity struct {
 	Model
 	Kind         string `gorm:"index;not null"`
 	Name         string `gorm:"index;unique;not null"`
-	Default      bool
+	IsDefault    bool
 	Description  string
-	User         string
+	Userid       string
 	Password     string        `secret:""`
 	Key          string        `secret:""`
 	Settings     string        `secret:""`

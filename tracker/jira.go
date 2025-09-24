@@ -242,7 +242,7 @@ func (r *JiraConnector) client() (client *jira.Client, err error) {
 		httpclient = jiraTransport.Client()
 	case BasicAuth:
 		jiraTransport := jira.BasicAuthTransport{
-			Username:  r.tracker.Identity.User,
+			Username:  r.tracker.Identity.Userid,
 			Password:  r.tracker.Identity.Password,
 			Transport: transport,
 		}

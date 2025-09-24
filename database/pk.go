@@ -65,6 +65,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	}
 	m.LastID++
 	id = m.LastID
+	db = r.session(db)
 	err = db.Save(m).Error
 	if err != nil {
 		panic(err)
@@ -76,7 +77,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	kind := strings.ToUpper(db.Statement.Table)
+	kind := strings.ToLower(db.Statement.Table)
 	m := &model.PK{}
 	db = r.session(db)
 	err := db.First(m, "Kind", kind).Error
@@ -85,6 +86,7 @@ func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
 	}
 	if id > m.LastID {
 		m.LastID = id
+		db = r.session(db)
 		err = db.Save(m).Error
 		if err != nil {
 			panic(err)

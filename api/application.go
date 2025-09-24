@@ -1417,7 +1417,7 @@ func (r *Application) With(m *model.Application, tags []AppTag, identities []Ide
 	r.Description = m.Description
 	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
-	r.Binary = m.Binary
+	r.Binary = m.BinaryCoordinates
 	if m.Coordinates != nil {
 		d := jsd.Document{}
 		d.With(m.Coordinates)
@@ -1521,10 +1521,10 @@ func (r *Application) WithResolver(m *model.Application, resolver *assessment.Ap
 // Model builds a model.
 func (r *Application) Model() (m *model.Application) {
 	m = &model.Application{
-		Name:        r.Name,
-		Description: r.Description,
-		Comments:    r.Comments,
-		Binary:      r.Binary,
+		Name:              r.Name,
+		Description:       r.Description,
+		Comments:          r.Comments,
+		BinaryCoordinates: r.Binary,
 	}
 	m.ID = r.ID
 	if r.Coordinates != nil {

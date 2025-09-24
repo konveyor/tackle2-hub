@@ -99,7 +99,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	} else {
-		filter = filter.Renamed("default", "`default`")
+		filter = filter.Renamed("default", "isdefault")
 	}
 	// Find
 	var list []model.Identity
@@ -354,7 +354,7 @@ func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err
 	m := &model.Identity{}
 	db = db.Model(m)
 	db = db.Where("kind", kind)
-	db = db.Where("default", true)
+	db = db.Where("isdefault", true)
 	err = db.First(m).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -383,10 +383,10 @@ type Identity struct {
 func (r *Identity) With(m *model.Identity) {
 	r.Resource.With(&m.Model)
 	r.Kind = m.Kind
-	r.Default = m.Default
+	r.Default = m.IsDefault
 	r.Name = m.Name
 	r.Description = m.Description
-	r.User = m.User
+	r.User = m.Userid
 	r.Password = m.Password
 	r.Key = m.Key
 	r.Settings = m.Settings
@@ -396,10 +396,10 @@ func (r *Identity) With(m *model.Identity) {
 func (r *Identity) Model() (m *model.Identity) {
 	m = &model.Identity{
 		Kind:        r.Kind,
-		Default:     r.Default,
+		IsDefault:   r.Default,
 		Name:        r.Name,
 		Description: r.Description,
-		User:        r.User,
+		Userid:      r.User,
 		Password:    r.Password,
 		Key:         r.Key,
 		Settings:    r.Settings,
