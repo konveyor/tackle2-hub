@@ -6,9 +6,9 @@ type Questionnaire struct {
 	Name         string  `gorm:"unique"`
 	Description  string
 	Required     bool
-	Sections     []Section    `gorm:"type:json;serializer:json"`
-	Thresholds   Thresholds   `gorm:"type:json;serializer:json"`
-	RiskMessages RiskMessages `gorm:"type:json;serializer:json"`
+	Sections     []Section    `gorm:"type:jsonb;serializer:json"`
+	Thresholds   Thresholds   `gorm:"type:jsonb;serializer:json"`
+	RiskMessages RiskMessages `gorm:"type:jsonb;serializer:json"`
 	Assessments  []Assessment `gorm:"constraint:OnDelete:CASCADE"`
 }
 
@@ -25,9 +25,9 @@ type Assessment struct {
 	Archetype         *Archetype
 	QuestionnaireID   uint `gorm:"uniqueIndex:AssessmentA;uniqueIndex:AssessmentB"`
 	Questionnaire     Questionnaire
-	Sections          []Section          `gorm:"type:json;serializer:json"`
-	Thresholds        Thresholds         `gorm:"type:json;serializer:json"`
-	RiskMessages      RiskMessages       `gorm:"type:json;serializer:json"`
+	Sections          []Section          `gorm:"type:jsonb;serializer:json"`
+	Thresholds        Thresholds         `gorm:"type:jsonb;serializer:json"`
+	RiskMessages      RiskMessages       `gorm:"type:jsonb;serializer:json"`
 	Stakeholders      []Stakeholder      `gorm:"many2many:AssessmentStakeholders;constraint:OnDelete:CASCADE"`
 	StakeholderGroups []StakeholderGroup `gorm:"many2many:AssessmentStakeholderGroups;constraint:OnDelete:CASCADE"`
 }

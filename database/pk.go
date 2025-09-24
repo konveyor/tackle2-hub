@@ -29,10 +29,10 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 		if mt.Kind() == reflect.Ptr {
 			mt = mt.Elem()
 		}
-		kind := strings.ToUpper(mt.Name())
+		kind := strings.ToLower(mt.Name())
 		db = r.session(db)
 		q := db.Table(kind)
-		q = q.Select("MAX(ID) id")
+		q = q.Select("MAX(id) id")
 		cursor, err := q.Rows()
 		if err != nil || !cursor.Next() {
 			// not a table with id.
@@ -59,7 +59,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	kind := strings.ToUpper(db.Statement.Table)
 	m := &model.PK{}
 	db = r.session(db)
-	err := db.First(m, "Kind", kind).Error
+	err := db.First(m, "kind", kind).Error
 	if err != nil {
 		return
 	}

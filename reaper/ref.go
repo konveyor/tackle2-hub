@@ -89,13 +89,15 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 		fields = append(
 			fields,
 			fmt.Sprintf(
-				"json_extract(j%d.value,'$.id')",
+				fmt.Sprintf("j%d->>'id'", i),
 				i))
 		db = db.Joins(
 			fmt.Sprintf(
-				",json_each(%s) j%d",
+				"JOIN jsonb_array_elements(%s) j%d",
 				jfields[i],
-				i))
+				i,
+			),
+		)
 	}
 	db = db.Select(fields)
 	err = db.Find(&list).Error

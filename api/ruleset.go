@@ -179,19 +179,19 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
-				f = f.As("json_each.value")
+				f = f.As("label")
 				iq := h.DB(ctx)
 				iq = iq.Table("Rule")
-				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 				iq = iq.Select("m.RuleSetID")
 				qs = append(qs, iq)
 			}
 			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
-			f = f.As("json_each.value")
+			f = f.As("label")
 			iq := h.DB(ctx)
 			iq = iq.Table("Rule")
-			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 			iq = iq.Select("m.RuleSetID")
 			iq = f.Where(iq)
 			q = q.Where("ID IN (?)", iq)

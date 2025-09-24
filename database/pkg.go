@@ -3,11 +3,13 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/settings"
+	pg "gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -17,36 +19,39 @@ var log = logr.WithName("db")
 
 var Settings = &settings.Settings
 
-const (
-	ConnectionString = "file:%s?_journal=WAL"
-	FKsOn            = "&_foreign_keys=yes"
-	FKsOff           = "&_foreign_keys=no"
-)
-
-func init() {
-	sql.Register("sqlite3x", &Driver{})
-}
-
-// Open and automigrate the DB.
-func Open(enforceFKs bool) (db *gorm.DB, err error) {
-	connStr := fmt.Sprintf(ConnectionString, Settings.DB.Path)
-	if enforceFKs {
-		connStr += FKsOn
-	} else {
-		connStr += FKsOff
-	}
-	dialector := sqlite.Open(connStr).(*sqlite.Dialector)
-	dialector.DriverName = "sqlite3x"
-	db, err = gorm.Open(
-		dialector,
-		&gorm.Config{
-			PrepareStmt:     true,
-			CreateBatchSize: 500,
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
+// Open the DB.
+// prod = production (not migration).
+func Open(prod bool) (db *gorm.DB, err error) {
+	var driver gorm.Dialector
+	if prod {
+		dsn := "user=hub password=hub dbname=hub TimeZone=UTC"
+		driver = pg.New(pg.Config{
+			DSN:                  dsn,
+			WithoutQuotingCheck:  true,
+			PreferSimpleProtocol: !prod,
 		})
+		db, err = gorm.Open(
+			driver,
+			&gorm.Config{
+				PrepareStmt:     prod,
+				NamingStrategy:  &Namer{},
+				CreateBatchSize: 500,
+			})
+	} else {
+		Settings.DB.MaxConnection = 1
+		dsn := fmt.Sprintf("file:%s?_journal=WAL", Settings.DB.Path)
+		driver = sqlite.Open(dsn)
+		db, err = gorm.Open(
+			driver,
+			&gorm.Config{
+				PrepareStmt:     true,
+				CreateBatchSize: 500,
+				NamingStrategy: &schema.NamingStrategy{
+					SingularTable: true,
+					NoLowerCase:   true,
+				},
+			})
+	}
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -90,4 +95,16 @@ func Close(db *gorm.DB) (err error) {
 		return
 	}
 	return
+}
+
+type Namer struct {
+	schema.NamingStrategy
+}
+
+func (n Namer) TableName(table string) string {
+	return strings.ToLower(table)
+}
+
+func (n Namer) ColumnName(_, column string) string {
+	return strings.ToLower(column)
 }

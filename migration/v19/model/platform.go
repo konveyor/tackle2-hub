@@ -6,8 +6,8 @@ import (
 
 type Manifest struct {
 	Model
-	Content       json.Map `gorm:"type:json;serializer:json"`
-	Secret        json.Map `gorm:"type:json;serializer:json" secret:""`
+	Content       json.Map `gorm:"type:jsonb;serializer:json"`
+	Secret        json.Map `gorm:"type:jsonb;serializer:json" secret:""`
 	ApplicationID uint
 	Application   Application
 }
@@ -29,9 +29,9 @@ type Generator struct {
 	Kind        string
 	Name        string
 	Description string
-	Repository  Repository `gorm:"type:json;serializer:json"`
-	Params      json.Map   `gorm:"type:json;serializer:json"`
-	Values      json.Map   `gorm:"type:json;serializer:json"`
+	Repository  Repository `gorm:"type:jsonb;serializer:json"`
+	Params      json.Map   `gorm:"type:jsonb;serializer:json"`
+	Values      json.Map   `gorm:"type:jsonb;serializer:json"`
 	IdentityID  *uint
 	Identity    *Identity
 	Profiles    []TargetProfile `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`

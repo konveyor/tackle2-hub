@@ -114,7 +114,7 @@ func (r *TestMigration) Models() (models []any) {
 }
 
 func setup(g *gomega.GomegaWithT, version int) {
-	db, err := database.Open(false)
+	db, err := database.Open(true)
 	g.Expect(err).To(gomega.BeNil())
 	result := db.Create(&model.Setting{Key: VersionKey})
 	g.Expect(result.Error).To(gomega.BeNil())
@@ -125,7 +125,7 @@ func setup(g *gomega.GomegaWithT, version int) {
 }
 
 func expectVersion(g *gomega.GomegaWithT, version int) {
-	db, err := database.Open(false)
+	db, err := database.Open(true)
 	g.Expect(err).To(gomega.BeNil())
 	setting := &model.Setting{}
 	result := db.Find(setting, "key", VersionKey)

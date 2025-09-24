@@ -1978,20 +1978,20 @@ func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB)
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
-				f = f.As("json_each.value")
+				f = f.As("label")
 				iq := h.DB(ctx)
 				iq = iq.Table("Insight")
-				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 				iq = iq.Select("m.ID")
 				iq = f.Where(iq)
 				qs = append(qs, iq)
 			}
 			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
-			f = f.As("json_each.value")
+			f = f.As("label")
 			iq := h.DB(ctx)
 			iq = iq.Table("Insight")
-			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 			iq = iq.Select("m.ID")
 			iq = f.Where(iq)
 			q = q.Where("ID IN (?)", iq)
@@ -2014,20 +2014,20 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 		if f.Value.Operator(qf.AND) {
 			var qs []*gorm.DB
 			for _, f = range f.Expand() {
-				f = f.As("json_each.value")
+				f = f.As("label")
 				iq := h.DB(ctx)
 				iq = iq.Table("TechDependency")
-				iq = iq.Joins("m ,json_each(Labels)")
+				iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 				iq = iq.Select("m.ID")
 				iq = f.Where(iq)
 				qs = append(qs, iq)
 			}
 			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
-			f = f.As("json_each.value")
+			f = f.As("label")
 			iq := h.DB(ctx)
 			iq = iq.Table("TechDependency")
-			iq = iq.Joins("m ,json_each(Labels)")
+			iq = iq.Joins("m,jsonb_array_elements(Labels) label")
 			iq = iq.Select("m.ID")
 			iq = f.Where(iq)
 			q = q.Where("ID IN (?)", iq)

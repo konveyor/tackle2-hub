@@ -8,12 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	pg "github.com/jackc/pgconn"
 	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/jsd"
 	"github.com/konveyor/tackle2-hub/model"
 	tasking "github.com/konveyor/tackle2-hub/task"
-	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
 
@@ -171,16 +171,18 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
-		sqliteErr := &sqlite3.Error{}
-		if errors.As(err, sqliteErr) {
-			switch sqliteErr.ExtendedCode {
-			case sqlite3.ErrConstraintUnique,
-				sqlite3.ErrConstraintPrimaryKey:
+		pgErr := &pg.PgError{}
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505": // unique_violation
 				rtx.Respond(
 					http.StatusConflict,
-					gin.H{
-						"error": err.Error(),
-					})
+					gin.H{"error": err.Error()})
+				return
+			case "23503": // foreign_key_violation
+				rtx.Respond(
+					http.StatusBadRequest,
+					gin.H{"error": err.Error()})
 				return
 			}
 		}
