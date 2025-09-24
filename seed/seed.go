@@ -76,7 +76,7 @@ func (r *Hub) Apply(db *gorm.DB) (err error) {
 // compareChecksum compares the seed checksum to the stored checksum.
 func compareChecksum(db *gorm.DB, checksum []byte) (match bool, err error) {
 	setting := &model.Setting{}
-	result := db.Debug().FirstOrCreate(setting, model.Setting{Key: SeedKey})
+	result := db.FirstOrCreate(setting, model.Setting{Key: SeedKey})
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
 		return
