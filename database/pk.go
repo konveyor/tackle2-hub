@@ -3,13 +3,13 @@ package database
 import (
 	"errors"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 // PK singleton pk sequence.
@@ -29,7 +29,7 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 		if mt.Kind() == reflect.Ptr {
 			mt = mt.Elem()
 		}
-		kind := strings.ToLower(mt.Name())
+		kind := r.kind(mt.Name())
 		db = r.session(db)
 		q := db.Table(kind)
 		q = q.Select("MAX(id) id")
@@ -56,7 +56,7 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	kind := strings.ToLower(db.Statement.Table)
+	kind := r.kind(db.Statement.Table)
 	m := &model.PK{}
 	db = r.session(db)
 	err := db.First(m, "kind", kind).Error
@@ -77,7 +77,7 @@ func (r *PkSequence) Next(db *gorm.DB) (id uint) {
 func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	kind := strings.ToLower(db.Statement.Table)
+	kind := r.kind(db.Statement.Table)
 	m := &model.PK{}
 	db = r.session(db)
 	err := db.First(m, "Kind", kind).Error
@@ -130,6 +130,13 @@ func (r *PkSequence) add(db *gorm.DB, kind string, id uint) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// snakeCase ensure consistent naming.
+func (r *PkSequence) kind(name string) (kind string) {
+	namer := schema.NamingStrategy{}
+	kind = namer.TableName(name)
+	return
 }
 
 // assignPk assigns PK as needed.

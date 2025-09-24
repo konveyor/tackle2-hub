@@ -30,7 +30,6 @@ func (r Migration) Apply(sqlite *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Delete(&model.PK{}).Error
 	err = r.migrateData(
 		db,
 		sqlite,

@@ -34,5 +34,5 @@ type Generator struct {
 	Values      json.Map   `gorm:"type:jsonb;serializer:json"`
 	IdentityID  *uint
 	Identity    *Identity
-	Profiles    []TargetProfile `gorm:"many2many:TargetGenerator;constraint:OnDelete:CASCADE"`
+	Profiles    []TargetProfile `gorm:"many2many:generator_target_profiles;constraint:OnDelete:CASCADE"`
 }

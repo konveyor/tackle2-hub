@@ -99,7 +99,7 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	} else {
-		filter = filter.Renamed("default", "isdefault")
+		filter = filter.Renamed("default", "is_default")
 	}
 	// Find
 	var list []model.Identity
@@ -108,9 +108,9 @@ func (h IdentityHandler) List(ctx *gin.Context) {
 	appFilter := filter.Resource("application")
 	if !appFilter.Empty() {
 		q := h.DB(ctx)
-		q = q.Table("ApplicationIdentity")
-		q = q.Select("IdentityID")
-		appFilter = appFilter.Renamed("id", "ApplicationID")
+		q = q.Table("application_identities")
+		q = q.Select("identity_id")
+		appFilter = appFilter.Renamed("id", "application_id")
 		db = db.Where("ID IN (?)", appFilter.Where(q))
 	}
 	result := db.Find(&list)
@@ -159,8 +159,8 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var direct []model.Identity
 	db := h.DB(ctx)
-	db = db.Joins("JOIN ApplicationIdentity j ON j.IdentityID = Identity.ID")
-	db = db.Where("j.ApplicationID", id)
+	db = db.Joins("JOIN application_identities j ON j.identity_id = identity.id")
+	db = db.Where("j.application_id", id)
 	db = filter.Where(db)
 	err = db.Find(&direct).Error
 	if err != nil {
@@ -341,10 +341,10 @@ func (h IdentityHandler) ids(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	if appFilter.Empty() {
 		return
 	}
-	q = q.Table("ApplicationIdentity")
-	q = q.Select("IdentityID")
-	appFilter = appFilter.Renamed("id", "ApplicationID")
-	q = q.Or("ID", appFilter.Where(q))
+	q = q.Table("application_identities")
+	q = q.Select("identity_id")
+	appFilter = appFilter.Renamed("id", "application_id")
+	q = q.Or("id", appFilter.Where(q))
 	return
 }
 
@@ -354,7 +354,7 @@ func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err
 	m := &model.Identity{}
 	db = db.Model(m)
 	db = db.Where("kind", kind)
-	db = db.Where("isdefault", true)
+	db = db.Where("is_default", true)
 	err = db.First(m).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

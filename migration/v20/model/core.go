@@ -203,7 +203,7 @@ type Identity struct {
 	Key          string        `secret:""`
 	Settings     string        `secret:""`
 	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
-	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
+	Applications []Application `gorm:"many2many:application_identities;constraint:OnDelete:CASCADE"`
 }
 
 //

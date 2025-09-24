@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -34,7 +33,6 @@ func Open(prod bool) (db *gorm.DB, err error) {
 			driver,
 			&gorm.Config{
 				PrepareStmt:     prod,
-				NamingStrategy:  &Namer{},
 				CreateBatchSize: 500,
 			})
 	} else {
@@ -95,16 +93,4 @@ func Close(db *gorm.DB) (err error) {
 		return
 	}
 	return
-}
-
-type Namer struct {
-	schema.NamingStrategy
-}
-
-func (n Namer) TableName(table string) string {
-	return strings.ToLower(table)
-}
-
-func (n Namer) ColumnName(_, column string) string {
-	return strings.ToLower(column)
 }

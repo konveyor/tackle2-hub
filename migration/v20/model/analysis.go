@@ -71,7 +71,7 @@ type RuleSet struct {
 	IdentityID  *uint      `gorm:"index"`
 	Identity    *Identity
 	Rules       []Rule    `gorm:"constraint:OnDelete:CASCADE"`
-	DependsOn   []RuleSet `gorm:"many2many:RuleSetDependencies;constraint:OnDelete:CASCADE"`
+	DependsOn   []RuleSet `gorm:"many2many:rule_set_dependencies;constraint:OnDelete:CASCADE"`
 }
 
 func (r *RuleSet) Builtin() bool {

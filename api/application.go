@@ -223,42 +223,42 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select(
 		"a.*",
-		"id.ID              IdentityId",
-		"ai.Role            IdentityRole",
-		"id.Name            IdentityName",
-		"bs.ID              ServiceId",
-		"bs.Name            ServiceName",
-		"st.ID              OwnerId",
+		"id.id              IdentityId",
+		"ai.role            IdentityRole",
+		"id.name            IdentityName",
+		"bs.id              ServiceId",
+		"bs.name            ServiceName",
+		"st.id              OwnerId",
 		"st.Name            OwnerName",
-		"cn.ID              ContributorId",
-		"cn.Name            ContributorName",
-		"mw.ID              WaveId",
-		"mw.Name            WaveName",
-		"pf.ID              PlatformId",
-		"pf.Name            PlatformName",
-		"rv.ID              ReviewId",
-		"at.ID              AssessmentId",
-		"at.Sections        AssessmentSections",
-		"at.Thresholds     AssessmentThresholds",
-		"mf.ID              ManifestId",
-		"at.QuestionnaireID QuestionnaireId",
-		"an.ID              AnalysisId",
-		"an.Effort          Effort",
+		"cn.id              ContributorId",
+		"cn.name            ContributorName",
+		"mw.id              WaveId",
+		"mw.name            WaveName",
+		"pf.id              PlatformId",
+		"pf.name            PlatformName",
+		"rv.id              ReviewId",
+		"at.id              AssessmentId",
+		"at.sections        AssessmentSections",
+		"at.thresholds     AssessmentThresholds",
+		"mf.id              ManifestId",
+		"at.questionnaire_id QuestionnaireId",
+		"an.id              AnalysisId",
+		"an.effort          Effort",
 	)
-	db = db.Table("Application a")
-	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.ApplicationID = a.ID")
-	db = db.Joins("LEFT JOIN Identity id ON id.ID = ai.IdentityID")
-	db = db.Joins("LEFT JOIN BusinessService bs ON bs.ID = a.BusinessServiceID")
-	db = db.Joins("LEFT JOIN Stakeholder st ON st.ID = a.OwnerID")
-	db = db.Joins("LEFT JOIN ApplicationContributors ac ON ac.ApplicationID = a.ID")
-	db = db.Joins("LEFT JOIN Stakeholder cn ON cn.ID = ac.StakeholderID")
-	db = db.Joins("LEFT JOIN MigrationWave mw ON mw.ID = a.MigrationWaveID")
-	db = db.Joins("LEFT JOIN Platform pf ON pf.ID = a.PlatformID")
-	db = db.Joins("LEFT JOIN Review rv ON rv.ApplicationID = a.ID")
-	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
-	db = db.Joins("LEFT JOIN Manifest mf ON mf.ApplicationID = a.ID")
-	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
-	db = db.Order("a.ID")
+	db = db.Table("applications a")
+	db = db.Joins("LEFT JOIN application_identities ai ON ai.application_id = a.id")
+	db = db.Joins("LEFT JOIN identities id ON id.id = ai.identity_id")
+	db = db.Joins("LEFT JOIN business_services bs ON bs.id = a.business_service_id")
+	db = db.Joins("LEFT JOIN stakeholders st ON st.id = a.owner_id")
+	db = db.Joins("LEFT JOIN application_contributors ac ON ac.application_id = a.id")
+	db = db.Joins("LEFT JOIN stakeholders cn ON cn.id = ac.stakeholder_id")
+	db = db.Joins("LEFT JOIN migration_waves mw ON mw.id = a.migration_wave_id")
+	db = db.Joins("LEFT JOIN platforms pf ON pf.id = a.platform_id")
+	db = db.Joins("LEFT JOIN reviews rv ON rv.application_id = a.id")
+	db = db.Joins("LEFT JOIN assessments at ON at.application_id = a.id")
+	db = db.Joins("LEFT JOIN manifests mf ON mf.application_id = a.id")
+	db = db.Joins("LEFT JOIN analyses an ON an.application_id = a.id")
+	db = db.Order("a.id")
 	db = filter.Where(db)
 	page := Page{}
 	page.With(ctx)
@@ -668,7 +668,7 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	}
 
 	list := []model.ApplicationTag{}
-	result = db.Find(&list, "ApplicationID = ?", id)
+	result = db.Find(&list, "application_id = ?", id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -786,7 +786,7 @@ func (h ApplicationHandler) TagReplace(ctx *gin.Context) {
 
 	// remove all the existing tag associations for that source and app id.
 	// if source is not provided, all tag associations will be removed.
-	db := h.DB(ctx).Where("ApplicationID = ?", id)
+	db := h.DB(ctx).Where("application_id = ?", id)
 	source, found := ctx.GetQuery(Source)
 	if found {
 		condition := h.DB(ctx).Where("source = ?", source)
@@ -838,7 +838,7 @@ func (h ApplicationHandler) TagDelete(ctx *gin.Context) {
 		return
 	}
 
-	db := h.DB(ctx).Where("ApplicationID = ?", id).Where("TagID = ?", id2)
+	db := h.DB(ctx).Where("application_id = ?", id).Where("tag_id = ?", id2)
 	source, found := ctx.GetQuery(Source)
 	if found {
 		condition := h.DB(ctx).Where("source = ?", source)
@@ -867,7 +867,7 @@ func (h ApplicationHandler) FactList(ctx *gin.Context, key FactKey) {
 	id := h.pk(ctx)
 	list := []model.Fact{}
 	db := h.DB(ctx)
-	db = db.Where("ApplicationID", id)
+	db = db.Where("application_id", id)
 	db = db.Where("Source", key.Source())
 	result := db.Find(&list)
 	if result.Error != nil {
@@ -910,7 +910,7 @@ func (h ApplicationHandler) FactGet(ctx *gin.Context) {
 
 	list := []model.Fact{}
 	db := h.DB(ctx)
-	db = db.Where("ApplicationID", id)
+	db = db.Where("application_id", id)
 	db = db.Where("Source", key.Source())
 	db = db.Where("Key", key.Name())
 	result = db.Find(&list)
@@ -1029,7 +1029,7 @@ func (h ApplicationHandler) FactDelete(ctx *gin.Context) {
 	fact := &model.Fact{}
 	key := FactKey(ctx.Param(Key))
 	db := h.DB(ctx)
-	db = db.Where("ApplicationID", id)
+	db = db.Where("application_id", id)
 	db = db.Where("Source", key.Source())
 	db = db.Where("Key", key.Name())
 	result = db.Delete(fact)
@@ -1062,7 +1062,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 
 	// remove all the existing Facts for that source and app id.
 	db := h.DB(ctx)
-	db = db.Where("ApplicationID", id)
+	db = db.Where("application_id", id)
 	db = db.Where("Source", key.Source())
 	err = db.Delete(&model.Fact{}).Error
 	if err != nil {
@@ -1287,9 +1287,9 @@ func (h *ApplicationHandler) tagMap(
 	var appTags []AppTag
 	db = h.DB(ctx)
 	db = db.Omit(clause.Associations)
-	db = db.Table("ApplicationTags")
+	db = db.Table("application_tags")
 	if len(appIds) > 0 {
-		db = db.Where("ApplicationID", appIds)
+		db = db.Where("application_id", appIds)
 	}
 	err = db.Find(&appTags).Error
 	if err != nil {
@@ -1335,7 +1335,7 @@ func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (
 	appTags = []AppTag{}
 	var list []model.ApplicationTag
 	m := &model.ApplicationTag{}
-	err = db.Delete(m, "ApplicationID", id).Error
+	err = db.Delete(m, "application_id", id).Error
 	if err != nil {
 		return
 	}
@@ -1361,7 +1361,7 @@ func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (
 // replaceTags replaces identity associations.
 func (h *ApplicationHandler) replaceIdentities(db *gorm.DB, id uint, r *Application) (err error) {
 	m := &model.ApplicationIdentity{}
-	err = db.Delete(m, "ApplicationID", id).Error
+	err = db.Delete(m, "application_id", id).Error
 	if err != nil {
 		return
 	}

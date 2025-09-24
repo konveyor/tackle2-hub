@@ -28,8 +28,8 @@ type Assessment struct {
 	Sections          []Section          `gorm:"type:jsonb;serializer:json"`
 	Thresholds        Thresholds         `gorm:"type:jsonb;serializer:json"`
 	RiskMessages      RiskMessages       `gorm:"type:jsonb;serializer:json"`
-	Stakeholders      []Stakeholder      `gorm:"many2many:AssessmentStakeholders;constraint:OnDelete:CASCADE"`
-	StakeholderGroups []StakeholderGroup `gorm:"many2many:AssessmentStakeholderGroups;constraint:OnDelete:CASCADE"`
+	Stakeholders      []Stakeholder      `gorm:"many2many:assessment_stakeholders;constraint:OnDelete:CASCADE"`
+	StakeholderGroups []StakeholderGroup `gorm:"many2many:assessment_stakeholder_groups;constraint:OnDelete:CASCADE"`
 }
 
 type Review struct {
