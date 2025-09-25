@@ -98,7 +98,7 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 		)
 	}
 	db = db.Select(fields)
-	err = db.Debug().Find(&list).Error
+	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(
 			err,
