@@ -1971,30 +1971,18 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Insight{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
+		var v []string
+		pj := f.Value.Pj()
 		if f.Value.Operator(qf.AND) {
-			var qs []*gorm.DB
-			for _, f = range f.Expand() {
-				f = f.As("label")
-				iq := h.DB(ctx)
-				iq = iq.Table("Insight m")
-				iq = iq.Joins("JOIN LATERAL jsonb_array_elements(m.Labels) label ON true")
-				iq = iq.Select("m.ID")
-				iq = f.Where(iq)
-				qs = append(qs, iq)
-			}
-			q = q.Where("ID IN (?)", model.Intersect(qs...))
+			jv := pj.LitArray(&v)
+			q = q.Where("labels @> " + jv)
 		} else {
-			f = f.As("label m")
-			iq := h.DB(ctx)
-			iq = iq.Table("Insight m")
-			iq = iq.Joins("JOIN LATERAL jsonb_array_elements(m.Labels) label ON true")
-			iq = iq.Select("m.ID")
-			iq = f.Where(iq)
-			q = q.Where("ID IN (?)", iq)
+			jv := pj.Array(&v)
+			q = q.Where("labels ?| " + jv)
 		}
 	}
 	return
@@ -2011,26 +1999,14 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
+		var v []string
+		pj := f.Value.Pj()
 		if f.Value.Operator(qf.AND) {
-			var qs []*gorm.DB
-			for _, f = range f.Expand() {
-				f = f.As("label")
-				iq := h.DB(ctx)
-				iq = iq.Table("TechDependency m")
-				iq = iq.Joins("JOIN LATERAL jsonb_array_elements(m.Labels) label ON true")
-				iq = iq.Select("m.ID")
-				iq = f.Where(iq)
-				qs = append(qs, iq)
-			}
-			q = q.Where("ID IN (?)", model.Intersect(qs...))
+			jv := pj.LitArray(&v)
+			q = q.Where("labels @> " + jv)
 		} else {
-			f = f.As("label")
-			iq := h.DB(ctx)
-			iq = iq.Table("TechDependency m")
-			iq = iq.Joins("JOIN LATERAL jsonb_array_elements(m.Labels) label ON true")
-			iq = iq.Select("m.ID")
-			iq = f.Where(iq)
-			q = q.Where("ID IN (?)", iq)
+			jv := pj.Array(&v)
+			q = q.Where("labels ?| " + jv)
 		}
 	}
 	return

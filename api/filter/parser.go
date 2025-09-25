@@ -1,6 +1,10 @@
 package filter
 
-import "math"
+import (
+	"math"
+	"strconv"
+	"strings"
+)
 
 // Parser used to parse the filter.
 type Parser struct {
@@ -105,6 +109,82 @@ func (r *Value) Join(operator byte) (out Value) {
 		}
 		out = append(out, (*r)[i])
 	}
+	return
+}
+
+func (r *Value) As(x any) {
+	switch x := x.(type) {
+	case *[]string:
+		for _, t := range *r {
+			if t.Kind != OPERATOR {
+				*x = append(*x, t.Value)
+			}
+		}
+	case *[]int:
+		for _, t := range *r {
+			if t.Kind != OPERATOR {
+				n, _ := strconv.Atoi(t.Value)
+				*x = append(*x, n)
+			}
+		}
+	}
+	return
+}
+
+// Pj returns a postgres json value renderer.
+func (r *Value) Pj() (pj *Pj) {
+	pj = &Pj{Value: r}
+	return
+}
+
+// Pj is a postgres json value renderer.
+type Pj struct {
+	*Value
+}
+
+// Array render a postgres array[].
+func (p *Pj) Array(x any) (j string) {
+	p.As(x)
+	sv := make([]string, 0)
+	switch x := x.(type) {
+	case *[]string:
+		for i := range *x {
+			s := "'"
+			s += (*x)[i]
+			s += "'"
+			sv = append(sv, s)
+		}
+	case *[]int:
+		for _, n := range *x {
+			sv = append(sv, strconv.Itoa(n))
+		}
+	}
+	j = "array["
+	j += strings.Join(sv, ",")
+	j += "]"
+	return
+}
+
+// LitArray renders a (literal) postgres json array.
+func (p *Pj) LitArray(x any) (j string) {
+	p.As(x)
+	sv := make([]string, 0)
+	switch x := x.(type) {
+	case *[]string:
+		for i := range *x {
+			s := "\""
+			s += (*x)[i]
+			s += "\""
+			sv = append(sv, s)
+		}
+	case *[]int:
+		for _, n := range *x {
+			sv = append(sv, strconv.Itoa(n))
+		}
+	}
+	j = "'["
+	j += strings.Join(sv, ",")
+	j += "]'"
 	return
 }
 
