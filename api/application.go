@@ -188,7 +188,6 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
-			{Field: "id", Kind: qf.LITERAL},
 			{Field: "platform.id", Kind: qf.LITERAL},
 		})
 	if err != nil {
