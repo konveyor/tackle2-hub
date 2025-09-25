@@ -91,14 +91,14 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 			fmt.Sprintf("j%d->>'id'", i))
 		db = db.Joins(
 			fmt.Sprintf(
-				"JOIN LATERAL jsonb_array_elements(%s) j%d ON true",
+				",jsonb_array_elements(%s) j%d",
 				jfields[i],
 				i,
 			),
 		)
 	}
 	db = db.Select(fields)
-	err = db.Find(&list).Error
+	err = db.Debug().Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(
 			err,
