@@ -118,8 +118,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	roleMap := RoleMap{}
-	err = roleMap.fetch(h.DB(ctx), m.ID)
+	idMap, err := h.idMap(ctx, id)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -144,8 +143,7 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 
 	r := Application{}
 	tags := tagMap[m.ID]
-
-	r.With(m, tags, roleMap)
+	r.With(m, tags, idMap.List())
 	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -268,8 +266,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	cursor.With(db, page)
 	builder := func(batch []any) (out any, err error) {
 		app := &model.Application{}
-		roleMap := RoleMap{}
-		identities := make([]model.Identity, 0)
+		idMap := make(IdentityMap)
 		contributors := make(map[uint]model.Stakeholder)
 		assessments := make(map[uint]model.Assessment)
 		manifests := make(map[uint]model.Manifest)
@@ -302,11 +299,11 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				app.Review.ID = m.ReviewId
 			}
 			if m.IdentityId > 0 {
-				ref := model.Identity{}
+				ref := IdentityRef{}
 				ref.ID = m.IdentityId
 				ref.Name = m.IdentityName
-				identities = append(identities, ref)
-				roleMap.add(app.ID, m.IdentityId, m.IdentityRole)
+				ref.Role = m.IdentityRole
+				idMap[ref] = 0
 			}
 			if m.ContributorId > 0 {
 				ref := model.Stakeholder{}
@@ -334,9 +331,6 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 				analyses[m.AnalysisId] = ref
 			}
 		}
-		for _, m := range identities {
-			app.Identities = append(app.Identities, m)
-		}
 		for _, m := range contributors {
 			app.Contributors = append(app.Contributors, m)
 		}
@@ -352,7 +346,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		tagMap.Set(app)
 		r := Application{}
 		tags := tagMap[app.ID]
-		r.With(app, tags, roleMap)
+		r.With(app, tags, idMap.List())
 		err = r.WithResolver(app, appResolver)
 		if err != nil {
 			_ = ctx.Error(err)
@@ -388,6 +382,9 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
+
+	idMap := IdentityMap{}
+	idMap.With(r)
 	db := h.DB(ctx).Model(m)
 	err = db.Association("Contributors").Replace(m.Contributors)
 	if err != nil {
@@ -422,14 +419,7 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	}
 	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 
-	roleMap := RoleMap{}
-	err = roleMap.fetch(h.DB(ctx), m.ID)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	r.With(m, appTags, roleMap)
+	r.With(m, appTags, idMap.List())
 	err = r.WithResolver(m, appResolver)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1314,6 +1304,32 @@ func (h *ApplicationHandler) tagMap(
 	return
 }
 
+// idMap returns a loaded IdentityMap.
+func (h *ApplicationHandler) idMap(ctx *gin.Context, appId uint) (mp IdentityMap, err error) {
+	mp = make(IdentityMap)
+	var list []IdentityRef
+	db := h.DB(ctx)
+	db = db.Table("Identity id")
+	db = db.Select(
+		"id.ID",
+		"id.Name",
+		"ai.Role")
+	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.IdentityID = id.ID")
+	db = db.Where("ai.ApplicationID", appId)
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, m := range list {
+		ref := IdentityRef{}
+		ref.ID = m.ID
+		ref.Name = m.Name
+		ref.Role = m.Role
+		mp[ref] = 0
+	}
+	return
+}
+
 // replaceTags replaces tag associations.
 func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (appTags []AppTag, err error) {
 	appTags = []AppTag{}
@@ -1395,7 +1411,7 @@ type Application struct {
 }
 
 // With updates the resource using the model.
-func (r *Application) With(m *model.Application, tags []AppTag, roleMap RoleMap) {
+func (r *Application) With(m *model.Application, tags []AppTag, identities []IdentityRef) {
 	r.Resource.With(&m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
@@ -1421,16 +1437,7 @@ func (r *Application) With(m *model.Application, tags []AppTag, roleMap RoleMap)
 		r.Review = ref
 	}
 	r.BusinessService = r.refPtr(m.BusinessServiceID, m.BusinessService)
-	r.Identities = []IdentityRef{}
-	for _, id := range m.Identities {
-		ref := IdentityRef{}
-		ref.ID = id.ID
-		ref.Name = id.Name
-		ref.Role = roleMap.next(m.ID, id.ID)
-		r.Identities = append(
-			r.Identities,
-			ref)
-	}
+	r.Identities = identities
 	r.Tags = []TagRef{}
 	for i := range tags {
 		ref := TagRef{}
@@ -1710,46 +1717,20 @@ type IdentityRef struct {
 	Name string `json:"name"`
 }
 
-// RoleMap represents application/identity associations.
-type RoleMap map[uint]map[uint][]string
+// IdentityMap represents application/identity associations.
+type IdentityMap map[IdentityRef]byte
 
-// add entry.
-func (r RoleMap) add(appId, idId uint, role string) {
-	m, found := r[appId]
-	if !found {
-		m = make(map[uint][]string)
-		r[appId] = m
+// Update the map.
+func (r IdentityMap) With(a *Application) {
+	for _, ref := range a.Identities {
+		r[ref] = 0
 	}
-	m[idId] = append(m[idId], role)
 }
 
-// next returns the next role mapped to an application by identity id.
-func (r RoleMap) next(appId, idId uint) (role string) {
-	appMap, found := r[appId]
-	if !found {
-		return
-	}
-	roles, found := appMap[idId]
-	if !found {
-		return
-	}
-	if len(roles) == 0 {
-		return
-	}
-	role = roles[0]
-	appMap[idId] = roles[1:]
-	return
-}
-
-// fetch associations.
-func (r RoleMap) fetch(db *gorm.DB, appId uint) (err error) {
-	var list []model.ApplicationIdentity
-	err = db.Find(&list, "ApplicationID", appId).Error
-	if err != nil {
-		return
-	}
-	for _, m := range list {
-		r.add(appId, m.IdentityID, m.Role)
+// List returns a list of refs.
+func (r IdentityMap) List() (refs []IdentityRef) {
+	for ref, _ := range r {
+		refs = append(refs, ref)
 	}
 	return
 }
