@@ -194,7 +194,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("platform.id", "PlatformId")
+	filter = filter.Renamed("platform.id", "platform_id")
 
 	type M struct {
 		*model.Application
@@ -223,27 +223,27 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db := h.DB(ctx)
 	db = db.Select(
 		"a.*",
-		"id.id              IdentityId",
-		"ai.role            IdentityRole",
-		"id.name            IdentityName",
-		"bs.id              ServiceId",
-		"bs.name            ServiceName",
-		"st.id              OwnerId",
-		"st.Name            OwnerName",
-		"cn.id              ContributorId",
-		"cn.name            ContributorName",
-		"mw.id              WaveId",
-		"mw.name            WaveName",
-		"pf.id              PlatformId",
-		"pf.name            PlatformName",
-		"rv.id              ReviewId",
-		"at.id              AssessmentId",
-		"at.sections        AssessmentSections",
-		"at.thresholds     AssessmentThresholds",
-		"mf.id              ManifestId",
+		"id.id               IdentityId",
+		"ai.role             IdentityRole",
+		"id.name             IdentityName",
+		"bs.id               ServiceId",
+		"bs.name             ServiceName",
+		"st.id               OwnerId",
+		"st.Name             OwnerName",
+		"cn.id               ContributorId",
+		"cn.name             ContributorName",
+		"mw.id               WaveId",
+		"mw.name             WaveName",
+		"pf.id               PlatformId",
+		"pf.name             PlatformName",
+		"rv.id               ReviewId",
+		"at.id               AssessmentId",
+		"at.sections         AssessmentSections",
+		"at.thresholds       AssessmentThresholds",
+		"mf.id               ManifestId",
 		"at.questionnaire_id QuestionnaireId",
-		"an.id              AnalysisId",
-		"an.effort          Effort",
+		"an.id               AnalysisId",
+		"an.effort           Effort",
 	)
 	db = db.Table("applications a")
 	db = db.Joins("LEFT JOIN application_identities ai ON ai.application_id = a.id")
@@ -1309,13 +1309,13 @@ func (h *ApplicationHandler) idMap(ctx *gin.Context, appId uint) (mp IdentityMap
 	mp = make(IdentityMap)
 	var list []IdentityRef
 	db := h.DB(ctx)
-	db = db.Table("Identity id")
+	db = db.Table("identities id")
 	db = db.Select(
-		"id.ID",
-		"id.Name",
-		"ai.Role")
-	db = db.Joins("LEFT JOIN ApplicationIdentity ai ON ai.IdentityID = id.ID")
-	db = db.Where("ai.ApplicationID", appId)
+		"id.id",
+		"id.name",
+		"ai.role")
+	db = db.Joins("LEFT JOIN application_identities ai ON ai.identity_id = id.id")
+	db = db.Where("ai.application_id", appId)
 	err = db.Find(&list).Error
 	if err != nil {
 		return
@@ -1720,7 +1720,7 @@ type IdentityRef struct {
 // IdentityMap represents application/identity associations.
 type IdentityMap map[IdentityRef]byte
 
-// Update the map.
+// With populates the map.
 func (r IdentityMap) With(a *Application) {
 	for _, ref := range a.Identities {
 		r[ref] = 0
