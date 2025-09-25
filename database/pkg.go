@@ -23,7 +23,13 @@ var Settings = &settings.Settings
 func Open(prod bool) (db *gorm.DB, err error) {
 	var driver gorm.Dialector
 	if prod {
-		dsn := "user=hub password=hub dbname=hub TimeZone=UTC"
+		dsn := fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s TimeZone=UTC",
+			Settings.DB.Host,
+			Settings.DB.Port,
+			Settings.DB.User,
+			Settings.DB.Password,
+			Settings.DB.Name)
 		driver = pg.New(pg.Config{
 			DSN:                  dsn,
 			WithoutQuotingCheck:  true,
@@ -55,12 +61,12 @@ func Open(prod bool) (db *gorm.DB, err error) {
 		return
 	}
 	if Settings.DB.MaxConnection > 0 {
-		dbx, nErr := db.DB()
+		pdb, nErr := db.DB()
 		if nErr != nil {
 			err = liberr.Wrap(nErr)
 			return
 		}
-		dbx.SetMaxOpenConns(Settings.DB.MaxConnection)
+		pdb.SetMaxOpenConns(Settings.DB.MaxConnection)
 	}
 	err = db.AutoMigrate(model.PK{}, model.Setting{})
 	if err != nil {
@@ -81,13 +87,13 @@ func Open(prod bool) (db *gorm.DB, err error) {
 
 // Close the DB.
 func Close(db *gorm.DB) (err error) {
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
+	var pdb *sql.DB
+	pdb, err = db.DB()
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = sqlDB.Close()
+	err = pdb.Close()
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

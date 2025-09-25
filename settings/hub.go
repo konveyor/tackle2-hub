@@ -179,7 +179,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.DB.MaxConnection = n
 	} else {
-		r.DB.MaxConnection = 20
+		r.DB.MaxConnection = 100
 	}
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model/reflect"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 // Clause sort clause.
@@ -18,7 +19,9 @@ type Clause struct {
 type Sort struct {
 	fields  map[string]any
 	alias   map[string]string
+	columns map[string]string
 	clauses []Clause
+	namer   schema.NamingStrategy
 }
 
 // Add adds virtual field and aliases.
@@ -99,13 +102,17 @@ func (r *Sort) init() {
 	if r.alias == nil {
 		r.alias = make(map[string]string)
 	}
+	if r.columns == nil {
+		r.columns = make(map[string]string)
+	}
 }
 
 // inspect object and return fields.
 func (r *Sort) inspect(m any) {
 	r.init()
-	for key, v := range reflect.Fields(m) {
-		key = strings.ToLower(key)
+	for name, v := range reflect.Fields(m) {
+		key := strings.ToLower(name)
+		r.columns[key] = r.namer.ColumnName("", name)
 		r.fields[key] = v
 	}
 	return
@@ -118,6 +125,8 @@ func (r *Sort) resolved(in string) (out string) {
 	alias, found := r.alias[in]
 	if found {
 		out = alias
+	} else {
+		out = r.columns[out]
 	}
 	return
 }
