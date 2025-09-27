@@ -172,7 +172,7 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.RuleSet{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {

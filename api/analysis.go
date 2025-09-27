@@ -1907,7 +1907,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Application{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	appFilter := f.Resource("application")
 	q = appFilter.Where(q)
 	tagFilter := f.Resource("tag")
@@ -1948,7 +1948,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 func (h *AnalysisHandler) analysesIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.Analysis{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	q = q.Where("application_id IN (?)", h.appIDs(ctx, f))
 	q = q.Group("application_id")
 	return
@@ -1995,7 +1995,7 @@ func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB)
 func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.TechDependency{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
