@@ -1036,11 +1036,19 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	q = q.Where("a.id = i.analysis_id")
 	q = q.Where("a.id in (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.id IN (?)", h.insightIDs(ctx, filter))
-	q = q.Group("i.rule_set,i.rule")
+	q = q.Group(`
+		i.rule_set,
+		i.rule,
+		i.name,
+		i.description,
+		i.category,
+		i.effort,
+		i.labels,
+		i.links`)
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = sort.Sorted(db)
 	var list []M
 	var m M
@@ -1171,11 +1179,19 @@ func (h AnalysisHandler) AppInsightReports(ctx *gin.Context) {
 	q = q.Where("i.id = n.insight_id")
 	q = q.Where("i.id IN (?)", h.insightIDs(ctx, filter))
 	q = q.Where("i.analysis_id", analysis.ID)
-	q = q.Group("i.rule_set,i.rule")
+	q = q.Group(`
+		i.rule_set,
+		i.rule,
+		i.name,
+		i.description,
+		i.category,
+		i.effort,
+		i.labels,
+		i.links`)
 	// Find
 	db = h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = sort.Sorted(db)
 	var list []M
 	var m M
@@ -1326,11 +1342,20 @@ func (h AnalysisHandler) InsightAppReports(ctx *gin.Context) {
 	q = q.Joins("LEFT OUTER JOIN business_services b ON b.id = app.business_service_id")
 	q = q.Where("a.id IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("i.id IN (?)", h.insightIDs(ctx, filter.Resource("insight")))
-	q = q.Group("i.id")
+	q = q.Group(`
+		i.id,
+		app.id,
+		app.name,
+		app.description,
+		b.name,
+		i.id,
+		i.name,
+		i.rule_set,
+		i.rule`)
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = filter.Where(db)
 	db = sort.Sorted(db)
 	var list []M
@@ -1437,11 +1462,13 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	q = q.Joins(",insights i")
 	q = q.Where("i.ID = insight_id")
 	q = q.Where("i.ID", insightId)
-	q = q.Group("File")
+	q = q.Group(`
+		insight_id,
+		file`)
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = filter.Where(db)
 	db = sort.Sorted(db)
 	var list []M
@@ -1698,11 +1725,14 @@ func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	q = q.Table("tech_dependencies d")
 	q = q.Where("d.analysis_id IN (?)", h.analysisIDs(ctx, filter))
 	q = q.Where("d.id IN (?)", h.depIDs(ctx, filter))
-	q = q.Group("d.provider, d.name")
+	q = q.Group(`
+		d.provider,
+		d.name,
+		d.labels`)
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = sort.Sorted(db)
 	var list []M
 	var m M
@@ -1853,7 +1883,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
-	db = db.Table("(?)", q)
+	db = db.Table("(?) q", q)
 	db = filter.Where(db)
 	db = sort.Sorted(db)
 	var list []M
@@ -1950,7 +1980,6 @@ func (h *AnalysisHandler) analysesIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 	q = q.Model(&model.Analysis{})
 	q = q.Select("id")
 	q = q.Where("application_id IN (?)", h.appIDs(ctx, f))
-	q = q.Group("application_id")
 	return
 }
 
@@ -1972,6 +2001,7 @@ func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB)
 	q = h.DB(ctx)
 	q = q.Model(&model.Insight{})
 	q = q.Select("id")
+	f = f.Renamed("ruleset", "rule_set")
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
@@ -2064,7 +2094,14 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		db = db.Joins("incidents n")
 		db = db.Where("n.insight_id = i.ID")
 		db = db.Where("i.analysis_id", m.ID)
-		db = db.Group("i.id")
+		db = db.Group(`
+			i.id,
+			i.rule_set,
+			i.rule,
+			i.Name,
+			i.description,
+			i.category,
+			i.effort`)
 		summary := []model.ArchivedInsight{}
 		err = db.Scan(&summary).Error
 		if err != nil {

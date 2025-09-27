@@ -15,7 +15,6 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/association"
-	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/api/sort"
 	"github.com/konveyor/tackle2-hub/auth"
@@ -24,7 +23,6 @@ import (
 	"github.com/konveyor/tackle2-hub/secret"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -34,14 +32,6 @@ const (
 	MaxPage  = 500
 	MaxCount = 50000
 )
-
-func init() {
-	namer := schema.NamingStrategy{}
-	qf.AsColumn = func(name string) (column string) {
-		column = namer.ColumnName("", name)
-		return
-	}
-}
 
 // BaseHandler base handler.
 type BaseHandler struct{}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 const (
@@ -16,8 +17,10 @@ const (
 var AsColumn func(string) string
 
 func init() {
-	AsColumn = func(name string) string {
-		return name
+	AsColumn = func(name string) (named string) {
+		namer := schema.NamingStrategy{}
+		named = namer.ColumnName("", name)
+		return
 	}
 }
 
