@@ -170,6 +170,10 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.DB.User = "hub"
 	}
+	r.DB.User, found = os.LookupEnv(EnvDbUser)
+	if !found {
+		r.DB.User = "hub"
+	}
 	r.DB.Password, found = os.LookupEnv(EnvDbPassword)
 	if !found {
 		r.DB.Password = "hub"
