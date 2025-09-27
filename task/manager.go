@@ -235,7 +235,7 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 		if err != nil {
 			return
 		}
-		db = db.Where("State", Created)
+		db = db.Where("state", Created)
 		err = db.Save(requested).Error
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -964,7 +964,7 @@ func (m *Manager) deleteZombies() {
 	}
 	fetched := []*Task{}
 	db := m.DB.Select("Events")
-	db = db.Where("Pod", pods)
+	db = db.Where("pod", pods)
 	db = db.Where("state IN ?",
 		[]string{
 			Succeeded,

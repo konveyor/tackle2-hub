@@ -194,9 +194,9 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	// Fetch
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
-	db = db.Joins(",applications")
-	db = db.Joins(",platforms")
-	db = db.Joins(",task_reports")
+	db = db.Joins("LEFT JOIN applications a ON a.id = tasks.application_id")
+	db = db.Joins("LEFT JOIN platforms p ON p.id = tasks.platform_id")
+	db = db.Joins("LEFT JOIN task_reports r ON r.task_id = tasks.id")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
 	var m model.Task
@@ -256,9 +256,9 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 		State string
 		Count int
 	}
-	db = db.Select("State", "COUNT(*) Count")
+	db = db.Select("state", "COUNT(*) count")
 	db = db.Where(
-		"State", []string{
+		"state", []string{
 			tasking.Ready,
 			tasking.Postponed,
 			tasking.Pending,
@@ -354,9 +354,9 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	// Fetch
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
-	db = db.Joins(",applications")
-	db = db.Joins(",platforms")
-	db = db.Joins(",task_reports")
+	db = db.Joins("LEFT JOIN applications a ON a.id = tasks.application_id")
+	db = db.Joins("LEFT JOIN platforms p ON p.id = tasks.platform_id")
+	db = db.Joins("LEFT JOIN task_reports r ON r.task_id = tasks.id")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
 	var list []model.Task
