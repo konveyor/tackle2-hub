@@ -172,14 +172,14 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	filter = filter.Renamed("application.name", "application__name")
 	filter = filter.Renamed("platform.id", "platform__id")
 	filter = filter.Renamed("platform.name", "platform__name")
-	filter = filter.Renamed("createUser", "task\\.createUser")
+	filter = filter.Renamed("createUser", "task\\.create_user")
 	filter = filter.Renamed("id", "task\\.id")
 	filter = filter.Renamed("name", "task\\.name")
 	filter = filter.Renamed("kind", "task\\.kind")
 	// sort
 	sort := Sort{}
 	sort.Add("task.id", "id")
-	sort.Add("task.createUser", "createUser")
+	sort.Add("task.create_user", "create_user")
 	sort.Add("task.name", "name")
 	sort.Add("task.kind", "kind")
 	sort.Add("application__id", "application.id")
@@ -194,9 +194,9 @@ func (h TaskHandler) List(ctx *gin.Context) {
 	// Fetch
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
-	db = db.Joins("Application")
-	db = db.Joins("Platform")
-	db = db.Joins("Report")
+	db = db.Joins(",applications")
+	db = db.Joins(",platforms")
+	db = db.Joins(",task_reports")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
 	var m model.Task
@@ -250,7 +250,7 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Table("task")
+	db = db.Table("tasks")
 	db = filter.Where(db)
 	type M struct {
 		State string
@@ -334,13 +334,13 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	filter = filter.Renamed("application.name", "application__name")
 	filter = filter.Renamed("platform.id", "platform__id")
 	filter = filter.Renamed("platform.name", "platform__name")
-	filter = filter.Renamed("createUser", "task\\.createUser")
+	filter = filter.Renamed("create_user", "task\\.create_user")
 	filter = filter.Renamed("id", "task\\.id")
 	filter = filter.Renamed("name", "task\\.name")
 	// sort
 	sort := Sort{}
 	sort.Add("task.id", "id")
-	sort.Add("task.createUser", "createUser")
+	sort.Add("task.create_user", "create_user")
 	sort.Add("task.name", "name")
 	sort.Add("application__id", "application.id")
 	sort.Add("application__name", "application.name")
@@ -354,9 +354,9 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 	// Fetch
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
-	db = db.Joins("Application")
-	db = db.Joins("Platform")
-	db = db.Joins("Report")
+	db = db.Joins(",applications")
+	db = db.Joins(",platforms")
+	db = db.Joins(",task_reports")
 	db = sort.Sorted(db)
 	db = filter.Where(db)
 	var list []model.Task
@@ -541,7 +541,7 @@ func (h TaskHandler) BulkCancel(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("application.id", "applicationId")
+	filter = filter.Renamed("application.id", "application_id")
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
 	db = filter.Where(db)
@@ -697,7 +697,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	m.TaskID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
-	db = db.Where("taskid", id)
+	db = db.Where("task_id", id)
 	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -720,7 +720,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TaskReport{}
 	m.ID = id
-	db := h.DB(ctx).Where("taskid", id)
+	db := h.DB(ctx).Where("task_id", id)
 	err := db.Delete(&model.TaskReport{}).Error
 	if err != nil {
 		_ = ctx.Error(err)

@@ -153,7 +153,7 @@ func (r *Hub) Load() (err error) {
 	}
 	r.DB.Host, found = os.LookupEnv(EnvDbHost)
 	if !found {
-		r.DB.Host = "localhost"
+		r.DB.Host = "f35a.redhat.com"
 	}
 	s, found := os.LookupEnv(EnvDbPort)
 	if found {
