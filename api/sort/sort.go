@@ -88,7 +88,7 @@ func (r *Sort) Sorted(in *gorm.DB) (out *gorm.DB) {
 	}
 	clauses := []string{}
 	for _, clause := range r.clauses {
-		clauses = append(clauses, clause.name+" COLLATE NOCASE "+clause.direction)
+		clauses = append(clauses, clause.name+" "+clause.direction)
 	}
 	out = out.Order(strings.Join(clauses, ","))
 	return
