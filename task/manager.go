@@ -1230,7 +1230,7 @@ func (m *Manager) next(task *Task) (err error) {
 		task.Task,
 		"ID",
 		"State")
-	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
+	err = db.Find(&tasks, "task_group_id", task.TaskGroupID).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
