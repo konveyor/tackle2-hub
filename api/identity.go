@@ -159,7 +159,7 @@ func (h IdentityHandler) AppList(ctx *gin.Context) {
 	id := h.pk(ctx)
 	var direct []model.Identity
 	db := h.DB(ctx)
-	db = db.Joins("JOIN application_identities j ON j.identity_id = identity.id")
+	db = db.Joins("JOIN application_identities j ON j.identity_id = identities.id")
 	db = db.Where("j.application_id", id)
 	db = filter.Where(db)
 	err = db.Find(&direct).Error
