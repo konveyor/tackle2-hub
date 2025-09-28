@@ -110,9 +110,10 @@ func open(driver gorm.Dialector, cfg *gorm.Config) (db *gorm.DB, err error) {
 		time.Sleep(time.Second)
 		db, err = gorm.Open(driver, cfg)
 		if err != nil {
-			log.Error(
-				err,
-				"Database connection failed",
+			log.Info(
+				">> DATABASE CONNECTION FAILED <<",
+				"reason",
+				err.Error(),
 				"retries",
 				i)
 		} else {
