@@ -1455,16 +1455,16 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	q := h.DB(ctx)
 	q = q.Model(&model.Incident{})
 	q = q.Select(
-		"insight_id",
-		"file",
-		"effort*COUNT(i.id) effort",
-		"COUNT(Incident.id) incidents")
-	q = q.Joins(",insights i")
-	q = q.Where("i.ID = insight_id")
+		"incidents.id",
+		"incidents.file",
+		"i.effort*COUNT(incidents.id) effort",
+		"COUNT(incidents.id) incidents")
+	q = q.Joins("LEFT JOIN insights i ON i.id = incidents.insight_id")
 	q = q.Where("i.ID", insightId)
 	q = q.Group(`
-		insight_id,
-		file`)
+		incidents.id,
+		incidents.file,
+		i.effort`)
 	// Find
 	db := h.DB(ctx)
 	db = db.Select("*")
