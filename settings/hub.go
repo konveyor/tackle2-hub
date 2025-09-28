@@ -18,6 +18,7 @@ const (
 	EnvDbUser                  = "DB_USER"
 	EnvDbPassword              = "DB_PASSWORD"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
+	EnvDbRetries               = "DB_RETRIES"
 	EnvDbSeedPath              = "DB_SEED_PATH"
 	EnvBucketPath              = "BUCKET_PATH"
 	EnvRwxSupported            = "RWX_SUPPORTED"
@@ -65,6 +66,7 @@ type Hub struct {
 		User          string
 		Password      string
 		MaxConnection int
+		Retries       int
 		SeedPath      string
 	}
 	// Bucket settings.
@@ -184,6 +186,13 @@ func (r *Hub) Load() (err error) {
 		r.DB.MaxConnection = n
 	} else {
 		r.DB.MaxConnection = 100
+	}
+	s, found = os.LookupEnv(EnvDbRetries)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.DB.Retries = n
+	} else {
+		r.DB.Retries = 120
 	}
 	r.DB.SeedPath, found = os.LookupEnv(EnvDbSeedPath)
 	if !found {

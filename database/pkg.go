@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -35,7 +36,7 @@ func Open(prod bool) (db *gorm.DB, err error) {
 			WithoutQuotingCheck:  true,
 			PreferSimpleProtocol: !prod,
 		})
-		db, err = gorm.Open(
+		db, err = open(
 			driver,
 			&gorm.Config{
 				PrepareStmt:     prod,
@@ -45,7 +46,7 @@ func Open(prod bool) (db *gorm.DB, err error) {
 		Settings.DB.MaxConnection = 1
 		dsn := fmt.Sprintf("file:%s?_journal=WAL", Settings.DB.Path)
 		driver = sqlite.Open(dsn)
-		db, err = gorm.Open(
+		db, err = open(
 			driver,
 			&gorm.Config{
 				PrepareStmt:     true,
@@ -67,6 +68,8 @@ func Open(prod bool) (db *gorm.DB, err error) {
 			return
 		}
 		pdb.SetMaxOpenConns(Settings.DB.MaxConnection)
+		pdb.SetMaxIdleConns(Settings.DB.MaxConnection / 2)
+		pdb.SetConnMaxLifetime(5 * time.Minute)
 	}
 	err = db.AutoMigrate(model.PK{}, model.Setting{})
 	if err != nil {
@@ -97,6 +100,24 @@ func Close(db *gorm.DB) (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
+	}
+	return
+}
+
+// open used to open GORM with retries.
+func open(driver gorm.Dialector, cfg *gorm.Config) (db *gorm.DB, err error) {
+	for i := Settings.DB.Retries; i > 0; i-- {
+		time.Sleep(time.Second)
+		db, err = gorm.Open(driver, cfg)
+		if err != nil {
+			log.Error(
+				err,
+				"Database connection failed",
+				"retries",
+				i)
+		} else {
+			break
+		}
 	}
 	return
 }
