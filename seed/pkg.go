@@ -34,7 +34,7 @@ type Seeder interface {
 func Seed() (err error) {
 	var db *gorm.DB
 
-	db, err = database.Open(true)
+	db, err = database.Open()
 	if err != nil {
 		return
 	}

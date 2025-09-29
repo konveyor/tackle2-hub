@@ -7,8 +7,8 @@ import (
 )
 
 // Open the DB.
-func Open(migration bool) (db *gorm.DB, err error) {
-	db, err = postgres.Open(migration)
+func Open() (db *gorm.DB, err error) {
+	db, err = postgres.Open(false)
 	return
 }
 

@@ -5,7 +5,7 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/database/postgres"
 	"github.com/konveyor/tackle2-hub/migration/v20/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -20,7 +20,7 @@ func (r Migration) Models() []any {
 }
 
 func (r Migration) Apply(sqlite *gorm.DB) (err error) {
-	db, err := database.Open(true)
+	db, err := postgres.Open(true)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

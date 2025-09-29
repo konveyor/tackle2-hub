@@ -53,7 +53,7 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	db, err = database.Open(false)
+	db, err = database.Open()
 	if err != nil {
 		return
 	}

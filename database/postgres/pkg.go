@@ -18,7 +18,7 @@ var (
 )
 
 // Open the DB.
-func Open(migration bool) (db *gorm.DB, err error) {
+func Open(forMigration bool) (db *gorm.DB, err error) {
 	var driver gorm.Dialector
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s TimeZone=UTC",
@@ -30,12 +30,12 @@ func Open(migration bool) (db *gorm.DB, err error) {
 	driver = pg.New(pg.Config{
 		DSN:                  dsn,
 		WithoutQuotingCheck:  true,
-		PreferSimpleProtocol: migration,
+		PreferSimpleProtocol: forMigration,
 	})
 	db, err = open(
 		driver,
 		&gorm.Config{
-			PrepareStmt:     !migration,
+			PrepareStmt:     !forMigration,
 			CreateBatchSize: 500,
 		})
 	if err != nil {
