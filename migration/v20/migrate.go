@@ -31,8 +31,8 @@ func (r Migration) Apply(sqlite *gorm.DB) (err error) {
 		return
 	}
 	err = r.migrateData(
-		db,
 		sqlite,
+		db,
 		[]model.Setting{},
 		[]model.Proxy{})
 	if err != nil {
