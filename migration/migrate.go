@@ -5,6 +5,7 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/database/sqlite"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm"
 )
@@ -13,7 +14,7 @@ import (
 func Migrate(migrations []Migration) (err error) {
 	var db *gorm.DB
 
-	db, err = database.Open(false)
+	db, err = sqlite.Open()
 	if err != nil {
 		return
 	}
@@ -60,7 +61,7 @@ func Migrate(migrations []Migration) (err error) {
 		m := migrations[i]
 		ver := i + MinimumVersion + 1
 
-		db, err = database.Open(false)
+		db, err = sqlite.Open()
 		if err != nil {
 			err = liberr.Wrap(err, "version")
 			return
@@ -68,7 +69,6 @@ func Migrate(migrations []Migration) (err error) {
 
 		f := func(db *gorm.DB) (err error) {
 			Log.Info("Running migration.", "version", ver)
-			_ = db.Exec("SET CONSTRAINTS ALL DEFERRED;")
 			err = m.Apply(db)
 			if err != nil {
 				return

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/database/sqlite"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
@@ -114,7 +115,7 @@ func (r *TestMigration) Models() (models []any) {
 }
 
 func setup(g *gomega.GomegaWithT, version int) {
-	db, err := database.Open(true)
+	db, err := sqlite.Open()
 	g.Expect(err).To(gomega.BeNil())
 	result := db.Create(&model.Setting{Key: VersionKey})
 	g.Expect(result.Error).To(gomega.BeNil())
@@ -125,7 +126,7 @@ func setup(g *gomega.GomegaWithT, version int) {
 }
 
 func expectVersion(g *gomega.GomegaWithT, version int) {
-	db, err := database.Open(true)
+	db, err := sqlite.Open()
 	g.Expect(err).To(gomega.BeNil())
 	setting := &model.Setting{}
 	result := db.Find(setting, "key", VersionKey)

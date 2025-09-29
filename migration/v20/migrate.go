@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-var log = logr.WithName("migration|v20")
+var Log = logr.WithName("migration|v20")
 
 type Migration struct{}
 
