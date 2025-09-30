@@ -98,6 +98,9 @@ func Seed() (err error) {
 
 // skip returns true when seeding can be skipped.
 func skip(db *gorm.DB, checksum []byte) (skip bool, err error) {
+	if Settings.Development {
+		return
+	}
 	match, err := compareChecksum(db, checksum)
 	if err != nil {
 		return

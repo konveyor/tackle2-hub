@@ -24,8 +24,6 @@ COPY --from=report /usr/local/static-report /tmp/analysis/report
 
 RUN echo "${VERSION}" > /etc/hub-build
 
-#ENV DEVELOPMENT=1
-
 RUN microdnf -y install \
   sqlite \
  && microdnf -y clean all
