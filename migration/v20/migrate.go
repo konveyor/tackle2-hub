@@ -77,14 +77,17 @@ func (r Migration) Apply(sqlite *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, p := range Models {
-		Log.Info(p.String())
-		err = r.migratePair(sqlite, db, p)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
+	err = db.Transaction(func(tx *gorm.DB) (err error) {
+		for _, p := range Models {
+			Log.Info(p.String())
+			err = r.migratePair(sqlite, db, p)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
 		}
-	}
+		return
+	})
 	return
 }
 
