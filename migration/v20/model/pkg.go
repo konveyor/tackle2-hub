@@ -34,7 +34,6 @@ func All() []any {
 		JobFunction{},
 		Manifest{},
 		MigrationWave{},
-		PK{},
 		Platform{},
 		Proxy{},
 		Review{},
