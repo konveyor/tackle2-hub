@@ -14,7 +14,7 @@ import (
 func Migrate(migrations []Migration) (err error) {
 	var db *gorm.DB
 
-	db, err = sqlite.Open()
+	db, err = sqlite.Open(true)
 	if err != nil {
 		return
 	}
@@ -61,7 +61,7 @@ func Migrate(migrations []Migration) (err error) {
 		m := migrations[i]
 		ver := i + MinimumVersion + 1
 
-		db, err = sqlite.Open()
+		db, err = sqlite.Open(true)
 		if err != nil {
 			err = liberr.Wrap(err, "version")
 			return
