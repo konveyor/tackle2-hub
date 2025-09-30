@@ -21,7 +21,7 @@ var (
 func Open(forMigration bool) (db *gorm.DB, err error) {
 	dsn := fmt.Sprintf("file:%s?_journal=WAL", Settings.DB.Path)
 	if forMigration {
-		dsn += "?_foreign_keys=0"
+		dsn += "&_foreign_keys=0"
 	}
 	driver := sqlite.Open(dsn)
 	db, err = gorm.Open(

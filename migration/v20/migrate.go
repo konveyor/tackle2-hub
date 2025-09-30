@@ -16,48 +16,49 @@ import (
 var Log = logr.WithName("migration|v20")
 
 var Models []Pair = []Pair{
-	{mA: v19.Application{}, mB: model.Application{}, renamed: Map{"Binary": "BinaryCoordinates"}},
-	{mA: v19.TechDependency{}, mB: model.TechDependency{}},
-	{mA: v19.Incident{}, mB: model.Incident{}},
-	{mA: v19.Analysis{}, mB: model.Analysis{}},
-	{mA: v19.Insight{}, mB: model.Insight{}},
-	{mA: v19.Bucket{}, mB: model.Bucket{}},
-	{mA: v19.BusinessService{}, mB: model.BusinessService{}},
-	{mA: v19.Dependency{}, mB: model.Dependency{}},
-	{mA: v19.File{}, mB: model.File{}},
-	{mA: v19.Fact{}, mB: model.Fact{}},
-	{mA: v19.Generator{}, mB: model.Generator{}},
-	{mA: v19.Identity{}, mB: model.Identity{}, renamed: Map{"Default": "IsDefault", "User": "Userid"}},
-	{mA: v19.Import{}, mB: model.Import{}},
-	{mA: v19.ImportSummary{}, mB: model.ImportSummary{}},
-	{mA: v19.ImportTag{}, mB: model.ImportTag{}},
-	{mA: v19.JobFunction{}, mB: model.JobFunction{}},
-	{mA: v19.Manifest{}, mB: model.Manifest{}},
-	{mA: v19.MigrationWave{}, mB: model.MigrationWave{}},
-	{mA: v19.PK{}, mB: model.PK{}},
-	{mA: v19.Platform{}, mB: model.Platform{}},
-	{mA: v19.Proxy{}, mB: model.Proxy{}},
-	{mA: v19.Review{}, mB: model.Review{}},
-	{mA: v19.Setting{}, mB: model.Setting{}},
-	{mA: v19.RuleSet{}, mB: model.RuleSet{}},
-	{mA: v19.Rule{}, mB: model.Rule{}},
-	{mA: v19.Stakeholder{}, mB: model.Stakeholder{}},
-	{mA: v19.StakeholderGroup{}, mB: model.StakeholderGroup{}},
-	{mA: v19.Tag{}, mB: model.Tag{}},
+	// Models with no dependencies
 	{mA: v19.TagCategory{}, mB: model.TagCategory{}},
-	{mA: v19.Target{}, mB: model.Target{}},
-	{mA: v19.TargetProfile{}, mB: model.TargetProfile{}},
-	{mA: v19.Task{}, mB: model.Task{}},
-	{mA: v19.TaskGroup{}, mB: model.TaskGroup{}},
-	{mA: v19.TaskReport{}, mB: model.TaskReport{}},
-	{mA: v19.Ticket{}, mB: model.Ticket{}},
-	{mA: v19.Tracker{}, mB: model.Tracker{}},
-	{mA: v19.ApplicationTag{}, mB: model.ApplicationTag{}},
-	{mA: v19.ApplicationIdentity{}, mB: model.ApplicationIdentity{}},
-	{mA: v19.Questionnaire{}, mB: model.Questionnaire{}},
-	{mA: v19.Assessment{}, mB: model.Assessment{}},
-	{mA: v19.Archetype{}, mB: model.Archetype{}},
-	{mA: v19.ProfileGenerator{}, mB: model.ProfileGenerator{}},
+	{mA: v19.Identity{}, mB: model.Identity{}, renamed: Map{"Default": "IsDefault", "User": "Userid"}},
+	{mA: v19.JobFunction{}, mB: model.JobFunction{}},
+	{mA: v19.StakeholderGroup{}, mB: model.StakeholderGroup{}},
+	{mA: v19.File{}, mB: model.File{}},
+	{mA: v19.Setting{}, mB: model.Setting{}},
+	{mA: v19.Bucket{}, mB: model.Bucket{}},
+	// Models with dependencies
+	{mA: v19.Stakeholder{}, mB: model.Stakeholder{}},                                              // depends on JobFunction
+	{mA: v19.MigrationWave{}, mB: model.MigrationWave{}},                                          // depends on Stakeholders, Groups
+	{mA: v19.BusinessService{}, mB: model.BusinessService{}},                                      // depends on Stakeholder
+	{mA: v19.Application{}, mB: model.Application{}, renamed: Map{"Binary": "BinaryCoordinates"}}, // depends on BusinessService, Owner, Platform, MigrationWave, Bucket
+	{mA: v19.TaskGroup{}, mB: model.TaskGroup{}},                                                  // depends on Bucket
+	{mA: v19.Task{}, mB: model.Task{}},                                                            // depends on Application, Platform, TaskGroup, Bucket
+	{mA: v19.Manifest{}, mB: model.Manifest{}},                                                    // depends on Application
+	{mA: v19.Tracker{}, mB: model.Tracker{}},                                                      // depends on Identity
+	{mA: v19.Ticket{}, mB: model.Ticket{}},                                                        // depends on Application, Tracker
+	{mA: v19.Analysis{}, mB: model.Analysis{}},                                                    // depends on Application
+	{mA: v19.TechDependency{}, mB: model.TechDependency{}},                                        // depends on Analysis
+	{mA: v19.Insight{}, mB: model.Insight{}},                                                      // depends on Analysis
+	{mA: v19.Incident{}, mB: model.Incident{}},                                                    // depends on Insight
+	{mA: v19.RuleSet{}, mB: model.RuleSet{}},                                                      // depends on Identity and itself (many2many)
+	{mA: v19.Rule{}, mB: model.Rule{}},                                                            // depends on RuleSet, File
+	{mA: v19.Target{}, mB: model.Target{}},                                                        // depends on RuleSet, File
+	{mA: v19.Archetype{}, mB: model.Archetype{}},                                                  // depends on Review
+	{mA: v19.TargetProfile{}, mB: model.TargetProfile{}},                                          // depends on Archetype
+	{mA: v19.Generator{}, mB: model.Generator{}},                                                  // depends on Identity
+	{mA: v19.ProfileGenerator{}, mB: model.ProfileGenerator{}},                                    // depends on TargetProfile, Generator
+	{mA: v19.Questionnaire{}, mB: model.Questionnaire{}},                                          // depends on nothing internal
+	{mA: v19.Assessment{}, mB: model.Assessment{}},                                                // depends on Application, Archetype, Questionnaire
+	{mA: v19.ImportSummary{}, mB: model.ImportSummary{}},                                          // depends on nothing internal
+	{mA: v19.Import{}, mB: model.Import{}},                                                        // depends on ImportSummary
+	{mA: v19.ImportTag{}, mB: model.ImportTag{}},                                                  // depends on Import
+	{mA: v19.Fact{}, mB: model.Fact{}},                                                            // depends on Application
+	{mA: v19.Tag{}, mB: model.Tag{}},                                                              // depends on TagCategory
+	{mA: v19.ApplicationTag{}, mB: model.ApplicationTag{}},                                        // depends on Application, Tag
+	{mA: v19.ApplicationIdentity{}, mB: model.ApplicationIdentity{}},                              // depends on Application, Identity
+	{mA: v19.Platform{}, mB: model.Platform{}},                                                    // depends on Identity
+	{mA: v19.TaskReport{}, mB: model.TaskReport{}},                                                // depends on Task
+	{mA: v19.Review{}, mB: model.Review{}},                                                        // depends on Application, Archetype
+	{mA: v19.Dependency{}, mB: model.Dependency{}},                                                // depends on Application
+	{mA: v19.Proxy{}, mB: model.Proxy{}},                                                          // depends on Identity
 }
 
 type Migration struct{}
@@ -78,6 +79,13 @@ func (r Migration) Apply(sqlite *gorm.DB) (err error) {
 		return
 	}
 	err = db.Transaction(func(tx *gorm.DB) (err error) {
+		// migration v7 deleted seeded ruleSet but because
+		// FKs disabled, the related rules did not get deleted.
+		err = sqlite.Delete(&v19.Rule{}, "id <= ?", 14).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 		for _, p := range Models {
 			Log.Info(p.String())
 			err = r.migratePair(sqlite, db, p)
