@@ -56,6 +56,7 @@ func (r jsonSerializer) Value(_ context.Context, _ *schema.Field, _ reflect.Valu
 		mp = d.Any
 	default:
 	}
-	v, err = json.Marshal(mp)
+	b, err := json.Marshal(mp)
+	v = string(b)
 	return
 }

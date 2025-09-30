@@ -55,13 +55,6 @@ func Open(forMigration bool) (db *gorm.DB, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Callback().Create().Before("gorm:before_create").Register("assign-pk", func(db *gorm.DB) {
-
-	})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }
 
