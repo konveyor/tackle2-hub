@@ -3,6 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	stdLog "log"
+	"os"
+	"time"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -10,6 +13,7 @@ import (
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
@@ -27,7 +31,7 @@ func init() {
 	sql.Register("sqlite3x", &Driver{})
 }
 
-// Open and automigrate the DB.
+// Open and auto-migrate the DB.
 func Open(enforceFKs bool) (db *gorm.DB, err error) {
 	connStr := fmt.Sprintf(ConnectionString, Settings.DB.Path)
 	if enforceFKs {
@@ -36,10 +40,21 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 		connStr += FKsOff
 	}
 	dialector := sqlite.Open(connStr).(*sqlite.Dialector)
+	dbLogger := logger.New(
+		stdLog.New(os.Stdout, "\r\n", stdLog.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      false,
+			Colorful:                  true,
+		},
+	)
 	dialector.DriverName = "sqlite3x"
 	db, err = gorm.Open(
 		dialector,
 		&gorm.Config{
+			Logger:          dbLogger,
 			PrepareStmt:     true,
 			CreateBatchSize: 500,
 			NamingStrategy: &schema.NamingStrategy{

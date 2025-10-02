@@ -36,8 +36,6 @@ func (r *TackleSettings) Load() (err error) {
 	return
 }
 
-// String returns a YAML representation.
-// Redacted as needed.
 func (r TackleSettings) String() (s string) {
 	redacted := "********"
 	r.Encryption.Passphrase = redacted
