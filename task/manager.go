@@ -142,14 +142,31 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
+				mark := time.Now()
+				m2 := time.Now()
 				err := m.cluster.Refresh()
+				Log.Info("Duration (cluster refresh):" + time.Since(m2).String())
+				m2 = time.Now()
 				if err == nil {
 					m.deleteOrphanPods()
+					Log.Info("Duration (delete orphan pods):" + time.Since(m2).String())
+					m2 = time.Now()
 					m.deleteRetainedPods()
+					Log.Info("Duration (delete retained pods):" + time.Since(m2).String())
+					m2 = time.Now()
 					m.runActions()
+					Log.Info("Duration (run actions):" + time.Since(m2).String())
+					m2 = time.Now()
 					m.updateRunning(ctx)
+					Log.Info("Duration (update running):" + time.Since(m2).String())
+					m2 = time.Now()
 					m.deleteZombies()
+					Log.Info("Duration (delete zombies):" + time.Since(m2).String())
+					m2 = time.Now()
 					m.startReady()
+					Log.Info("Duration (start ready):" + time.Since(m2).String())
+					m2 = time.Now()
+					Log.Info("Duration (total):" + time.Since(mark).String())
 					m.pause()
 				} else {
 					if errors.Is(err, &NotReconciled{}) {
@@ -382,6 +399,7 @@ func (m *Manager) startReady() {
 	quota.with(&m.cluster)
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
+	mark := time.Now()
 	result := db.Find(
 		&fetched,
 		"state IN ?",
@@ -392,6 +410,8 @@ func (m *Manager) startReady() {
 			Pending,
 			Running,
 		})
+	Log.Info("START/Duration (fetch): " + time.Since(mark).String())
+	mark = time.Now()
 	if result.Error != nil {
 		return
 	}
@@ -407,26 +427,38 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (adjust priority): " + time.Since(mark).String())
+	mark = time.Now()
 	list, err = m.selectAddons(list)
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (select addons): " + time.Since(mark).String())
+	mark = time.Now()
 	err = m.postpone(list)
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (postpone): " + time.Since(mark).String())
+	mark = time.Now()
 	err = m.createPod(list, quota)
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (create pods): " + time.Since(mark).String())
+	mark = time.Now()
 	err = m.preempt(list)
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (preempt): " + time.Since(mark).String())
+	mark = time.Now()
 	err = m.batchUpdate(list)
 	if err != nil {
 		return
 	}
+	Log.Info("START/Duration (batch update): " + time.Since(mark).String())
+	mark = time.Now()
 	return
 }
 
@@ -623,28 +655,22 @@ func (m *Manager) postpone(list []*Task) (err error) {
 			cluster: &m.cluster,
 		},
 	}
+	domain := NewDomain(list)
 	for _, task := range list {
 		if !task.StateIn(Ready, Postponed, QuotaBlocked) {
 			continue
 		}
-		ready := task
-		for _, other := range list {
-			if ready.ID == other.ID {
-				continue
-			}
-			for _, rule := range ruleSet {
-				matched, reason := rule.Match(ready, other)
-				if matched {
-					postponed[task.ID] = reason
-					continue
-				}
+		var matched bool
+		var reason string
+		for _, rule := range ruleSet {
+			matched, reason = rule.Match(task, domain)
+			if matched {
+				postponed[task.ID] = reason
+				break
 			}
 		}
-		_, found := postponed[task.ID]
-		if !found {
-			if task.State == Postponed {
-				released[task.ID] = 0
-			}
+		if !matched && task.State == Postponed {
+			released[task.ID] = 0
 		}
 	}
 	if len(postponed)+len(released) == 0 {
@@ -847,6 +873,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	}()
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
+	mark := time.Now()
 	result := db.Find(
 		&fetched,
 		"state IN ?",
@@ -854,6 +881,8 @@ func (m *Manager) updateRunning(ctx context.Context) {
 			Pending,
 			Running,
 		})
+	Log.Info("UPDATE-RUNNING/Duration (fetch): " + time.Since(mark).String())
+	mark = time.Now()
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
 		return
@@ -861,30 +890,49 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	if len(fetched) == 0 {
 		return
 	}
+
+	reflectPod := time.Duration(0)
+	ensureCollection := time.Duration(0)
+	ensureTerminated := time.Duration(0)
+	snapshot := time.Duration(0)
+	deletePod := time.Duration(0)
+	advance := time.Duration(0)
+
 	var updated []*Task
 	for _, task := range m.taskList(fetched) {
+		mark = time.Now()
 		pod, found := task.Reflect(&m.cluster)
+		reflectPod += time.Since(mark)
+		mark = time.Now()
 		if found {
+			mark = time.Now()
 			err = m.logManager.EnsureCollection(task, pod, ctx)
+			ensureCollection += time.Since(mark)
 			if err != nil {
 				Log.Error(err, "")
 				continue
 			}
 			if task.StateIn(Succeeded, Failed) {
+				mark = time.Now()
 				err = m.podSnapshot(task, pod)
+				snapshot += time.Since(mark)
 				if err != nil {
 					Log.Error(err, "")
 					continue
 				}
 				podRetention := task.podRetention()
 				if podRetention > 0 {
+					mark = time.Now()
 					err = m.ensureTerminated(task, pod)
+					ensureTerminated += time.Since(mark)
 					if err != nil {
 						podRetention = 0
 					}
 				}
 				if podRetention == 0 {
+					mark = time.Now()
 					err = task.Delete(m.Client)
+					deletePod += time.Since(mark)
 					if err != nil {
 						Log.Error(err, "")
 						continue
@@ -892,17 +940,30 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				} else {
 					task.Retained = true
 				}
+				mark = time.Now()
+				advanced, err := m.advancePipeline(task)
+				advance += time.Since(mark)
+				if err != nil {
+					err = liberr.Wrap(err)
+					return
+				}
+				updated = append(updated, advanced...)
 			}
 		}
 		updated = append(updated, task)
-		advanced, err := m.advancePipeline(task)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		updated = append(updated, advanced...)
 	}
+
+	Log.Info("UPDATE-RUNNING/Duration (reflect): " + reflectPod.String())
+	Log.Info("UPDATE-RUNNING/Duration (ensureCollection): " + ensureTerminated.String())
+	Log.Info("UPDATE-RUNNING/Duration (snapshot): " + snapshot.String())
+	Log.Info("UPDATE-RUNNING/Duration (terminated): " + ensureTerminated.String())
+	Log.Info("UPDATE-RUNNING/Duration (delete pod): " + deletePod.String())
+	Log.Info("UPDATE-RUNNING/Duration (advance): " + advance.String())
+
+	mark = time.Now()
 	err = m.batchUpdate(updated)
+	Log.Info("UPDATE-RUNNING/Duration (batch update): " + time.Since(mark).String())
+
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

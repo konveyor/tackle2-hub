@@ -58,9 +58,11 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
+				mark := time.Now()
 				for _, r := range registered {
 					r.Run()
 				}
+				Log.Info("Duration: " + time.Since(mark).String())
 				m.pause()
 			}
 		}

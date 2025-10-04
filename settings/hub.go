@@ -216,7 +216,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Task.Pod.Quota = n
 	} else {
-		r.Task.Pod.Quota = 10 // 0=unlimited
+		r.Task.Pod.Quota = 250 // 0=unlimited
 	}
 	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
 	if found {
