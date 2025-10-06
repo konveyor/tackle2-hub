@@ -327,7 +327,7 @@ func (r *Task) podPending(pod *core.Pod) {
 		if state.Waiting != nil {
 			waiting := state.Waiting
 			reason := strings.ToLower(waiting.Reason)
-			if r.containsAny(reason, "invalid", "error", "backoff") {
+			if r.containsAny(reason, "invalid", "error", "never", "cannot") {
 				r.Error(
 					"Error",
 					"Container (%s) failed: %s",
