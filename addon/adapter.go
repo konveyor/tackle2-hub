@@ -132,8 +132,8 @@ func (h *Adapter) Run(addon func() error) {
 			}
 		}
 		if err != nil {
-			h.Failed(err.Error())
 			h.Log.Error(err, "Addon failed.")
+			h.Failed(err.Error())
 			os.Exit(1)
 		}
 	}()
