@@ -145,7 +145,7 @@ func (m *Manager) Run(ctx context.Context) {
 				mark := time.Now()
 				m2 := time.Now()
 				err := m.cluster.Refresh()
-				Log.Info("Duration (cluster refresh):" + time.Since(m2).String())
+				Log.Info("(BEGIN) Duration (cluster refresh):" + time.Since(m2).String())
 				m2 = time.Now()
 				if err == nil {
 					m.deleteOrphanPods()
@@ -166,7 +166,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.startReady()
 					Log.Info("Duration (start ready):" + time.Since(m2).String())
 					m2 = time.Now()
-					Log.Info("Duration (total):" + time.Since(mark).String())
+					Log.Info("(END) Duration (total):" + time.Since(mark).String())
 					m.pause()
 				} else {
 					if errors.Is(err, &NotReconciled{}) {
@@ -440,6 +440,12 @@ func (m *Manager) startReady() {
 		return
 	}
 	Log.Info("START/Duration (postpone): " + time.Since(mark).String())
+	mark = time.Now()
+	err = m.batchUpdate(list)
+	if err != nil {
+		return
+	}
+	Log.Info("START/Duration (batch update): " + time.Since(mark).String())
 	mark = time.Now()
 	err = m.createPod(list, quota)
 	if err != nil {
@@ -1538,11 +1544,24 @@ func (k *Cluster) Extension(name string) (r *crd.Extension, found bool) {
 	return
 }
 
-// Extensions returns an addon my name.
+// Extensions returns an extension my name.
 func (k *Cluster) Extensions() (list []*crd.Extension) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	for _, r := range k.extensions {
+		list = append(list, r)
+	}
+	return
+}
+
+// FindExtensions returns extensions by name.
+func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err error) {
+	for _, name := range names {
+		r, found := k.extensions[name]
+		if !found {
+			err = &ExtensionNotFound{name}
+			return
+		}
 		list = append(list, r)
 	}
 	return

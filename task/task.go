@@ -157,13 +157,13 @@ func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
 		err = &AddonNotFound{Name: r.Addon}
 		return
 	}
-	extensions, err := r.getExtensions(client)
+	extensions, err := cluster.FindExtensions(r.Extensions)
 	if err != nil {
 		return
 	}
 	for _, extension := range extensions {
 		matched := false
-		matched, err = r.matchAddon(&extension, addon)
+		matched, err = r.matchAddon(extension, addon)
 		if err != nil {
 			return
 		}
@@ -457,32 +457,6 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 	}
 }
 
-// getExtensions returns defined extensions.
-func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
-	for _, name := range r.Extensions {
-		extension := crd.Extension{}
-		err = client.Get(
-			context.TODO(),
-			k8s.ObjectKey{
-				Namespace: Settings.Hub.Namespace,
-				Name:      name,
-			},
-			&extension)
-		if err != nil {
-			if k8serr.IsNotFound(err) {
-				err = &ExtensionNotFound{name}
-			} else {
-				err = liberr.Wrap(err)
-			}
-			return
-		}
-		extensions = append(
-			extensions,
-			extension)
-	}
-	return
-}
-
 // matchTask - returns true when the addon's `task`
 // (ref) matches the task name.
 // The `ref` is matched as a REGEX when it contains
@@ -532,7 +506,7 @@ func (r *Task) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched b
 // pod build the pod.
 func (r *Task) pod(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	owner *crd.Tackle,
 	secret *core.Secret) (pod core.Pod) {
 	//
@@ -558,7 +532,7 @@ func (r *Task) pod(
 // specification builds a Pod specification.
 func (r *Task) specification(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	secret *core.Secret) (specification core.PodSpec) {
 	addonDir := core.Volume{
 		Name: Addon,
@@ -605,7 +579,7 @@ func (r *Task) specification(
 // container builds the pod containers.
 func (r *Task) containers(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
 	token := &core.EnvVarSource{
 		SecretKeyRef: &core.SecretKeySelector{
@@ -619,7 +593,7 @@ func (r *Task) containers(
 	plain = append(plain, addon.Spec.Container)
 	plain[0].Name = "addon"
 	for i := range extensions {
-		extension := &extensions[i]
+		extension := extensions[i]
 		container := extension.Spec.Container
 		container.Name = extension.Name
 		plain = append(
@@ -769,6 +743,7 @@ func (r *Task) update(db *gorm.DB) (err error) {
 	err = db.Save(r).Error
 	if err == nil {
 		Log.V(1).Info("Task updated.", "id", r.ID)
+		r.With(r.Task)
 	}
 	return
 }
