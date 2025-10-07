@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/heap"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
@@ -63,6 +64,8 @@ func (m *Manager) Run(ctx context.Context) {
 					r.Run()
 				}
 				Log.Info("Duration: " + time.Since(mark).String())
+				heap.Free()
+				heap.Print()
 				m.pause()
 			}
 		}
