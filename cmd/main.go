@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -135,6 +136,7 @@ func main() {
 			log.Error(err, "")
 		}
 	}()
+	debug.SetGCPercent(20)
 	syscall.Umask(0)
 	printHeap()
 	//
