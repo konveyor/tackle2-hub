@@ -253,6 +253,7 @@ func main() {
 		})
 	router.Use(api.Render())
 	router.Use(api.ErrorHandler())
+	router.Use(api.Limiter())
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
