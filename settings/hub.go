@@ -260,7 +260,9 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvFrequencyHeap)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Frequency.Heap = n // minutes.
+		r.Frequency.Heap = n // seconds.
+	} else {
+		r.Frequency.Heap = 600 // 10 minutes.
 	}
 	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
 	if found {

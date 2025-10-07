@@ -109,8 +109,7 @@ func printHeap() {
 		}
 		for {
 			var m runtime.MemStats
-			// debug.SetGCPercent(50)
-			// runtime.GC()
+			runtime.GC()
 			runtime.ReadMemStats(&m)
 			memory := m.HeapSys - m.HeapReleased
 			reserved := m.HeapIdle - m.HeapReleased
