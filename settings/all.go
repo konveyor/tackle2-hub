@@ -40,7 +40,10 @@ func (r *TackleSettings) Load() (err error) {
 // Redacted as needed.
 func (r TackleSettings) String() (s string) {
 	r.Encryption.Passphrase = "********"
-	b, _ := yaml.Marshal(r)
+	b, err := yaml.Marshal(r)
+	if err != nil {
+		panic(err)
+	}
 	s = string(b)
 	return
 }
