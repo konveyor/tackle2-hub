@@ -39,7 +39,11 @@ func (r *TackleSettings) Load() (err error) {
 // String returns a YAML representation.
 // Redacted as needed.
 func (r TackleSettings) String() (s string) {
-	r.Encryption.Passphrase = "********"
+	redacted := "********"
+	r.Encryption.Passphrase = redacted
+	r.Auth.Keycloak.ClientSecret = redacted
+	r.Auth.Keycloak.Admin.Pass = redacted
+	r.Auth.Keycloak.Admin.User = redacted
 	b, err := yaml.Marshal(r)
 	if err != nil {
 		panic(err)
