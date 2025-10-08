@@ -65,7 +65,6 @@ func (m *Manager) Run(ctx context.Context) {
 				}
 				Log.Info("Duration: " + time.Since(mark).String())
 				heap.Free()
-				heap.Print()
 				m.pause()
 			}
 		}

@@ -18,6 +18,7 @@ var (
 func Free() {
 	runtime.GC()
 	debug.FreeOSMemory()
+	Print()
 }
 
 func Print() {
@@ -25,7 +26,6 @@ func Print() {
 		f = float64(n) / 1024 / 1024
 		return
 	}
-	Free()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	memory := m.HeapSys - m.HeapReleased
@@ -50,7 +50,6 @@ func Monitor() {
 		for {
 			time.Sleep(delay)
 			Free()
-			Print()
 		}
 	}()
 }
