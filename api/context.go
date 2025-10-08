@@ -112,20 +112,22 @@ func Transaction(ctx *gin.Context) {
 
 // Limiter limit concurrent requests.
 // Limit concurrent request to the number of db connections
-// minus 2. This reserves connections for the reaper and task manager.
+// minus 2. This reserves connections for the (1) reaper and (2) task managers.
 func Limiter() (h gin.HandlerFunc) {
-	concurrent := Settings.DB.MaxConnection
-	if concurrent > 2 {
-		concurrent -= 2
+	capacity := Settings.DB.MaxConnection
+	if capacity > 2 {
+		capacity -= 2
 	}
-	ch := make(chan struct{}, concurrent)
+	ch := make(chan struct{}, capacity)
 	h = func(c *gin.Context) {
 		mark := time.Now()
 		ch <- struct{}{}
-		waited := time.Since(mark)
-		defer func() { <-ch }()
-		if waited > time.Second {
-			Log.Info("[Limiter] waited: " + waited.String())
+		d := time.Since(mark)
+		defer func() {
+			<-ch
+		}()
+		if d > time.Second {
+			Log.Info("[Limiter] waited: " + d.String())
 		}
 		c.Next()
 	}
