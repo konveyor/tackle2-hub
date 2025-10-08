@@ -60,7 +60,6 @@ func (r *Context) Detach() {
 	atomic.AddUint64(&requestCount, 1)
 	if requestCount%100 == 0 {
 		heap.Free()
-		heap.Print()
 	}
 
 }
