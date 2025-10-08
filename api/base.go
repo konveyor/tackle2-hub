@@ -39,7 +39,7 @@ type BaseHandler struct{}
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 	rtx := RichContext(ctx)
-	if Settings.Debug.Web {
+	if Settings.Log.Web > 0 {
 		db = rtx.DB.Debug()
 	} else {
 		db = rtx.DB

@@ -102,6 +102,10 @@ var (
 	Log      = logr.WithName("task-scheduler")
 )
 
+func init() {
+	Log = Log.V(Settings.Log.Reaper)
+}
+
 // Manager provides task management.
 type Manager struct {
 	// DB
@@ -120,7 +124,7 @@ type Manager struct {
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	if Settings.Debug.Task {
+	if Settings.Log.Task > 0 {
 		m.DB = m.DB.Debug()
 	}
 	m.queue = make(chan func(), 100)

@@ -45,10 +45,11 @@ const (
 	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
 	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
 	EnvDiscoveryLabel          = "DISCOVERY_LABEL"
-	EnvDebugMigration          = "DEBUG_MIGRATION"
-	EnvDebugWeb                = "DEBUG_WEB"
-	EnvDebugReaper             = "DEBUG_REAPER"
-	EnvDebugTask               = "DEBUG_TASK"
+	EnvLogMaster               = "LOG_MASTER"
+	EnvLogMigration            = "LOG_MIGRATION"
+	EnvLogWeb                  = "LOG_WEB"
+	EnvLogReaper               = "LOG_REAPER"
+	EnvLogTask                 = "LOG_TASK"
 )
 
 type Hub struct {
@@ -131,12 +132,13 @@ type Hub struct {
 	Discovery struct {
 		Label string
 	}
-	// Debug settings
-	Debug struct {
-		Migration bool
-		Web       bool
-		Reaper    bool
-		Task      bool
+	// Logging settings
+	Log struct {
+		Master    int
+		Migration int
+		Web       int
+		Reaper    int
+		Task      int
 	}
 }
 
@@ -369,25 +371,38 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Discovery.Label = "konveyor.io/discovery"
 	}
-	s, found = os.LookupEnv(EnvDebugMigration)
+	s, found = os.LookupEnv(EnvLogMaster)
 	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Debug.Migration = b
+		n, _ := strconv.Atoi(s)
+		r.Log.Master = n
 	}
-	s, found = os.LookupEnv(EnvDebugWeb)
+	s, found = os.LookupEnv(EnvLogMigration)
 	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Debug.Web = b
+		n, _ := strconv.Atoi(s)
+		r.Log.Migration = n
+	} else {
+		r.Log.Migration = r.Log.Master
 	}
-	s, found = os.LookupEnv(EnvDebugReaper)
+	s, found = os.LookupEnv(EnvLogWeb)
 	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Debug.Reaper = b
+		n, _ := strconv.Atoi(s)
+		r.Log.Web = n
+	} else {
+		r.Log.Migration = r.Log.Master
 	}
-	s, found = os.LookupEnv(EnvDebugTask)
+	s, found = os.LookupEnv(EnvLogReaper)
 	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Debug.Task = b
+		n, _ := strconv.Atoi(s)
+		r.Log.Reaper = n
+	} else {
+		r.Log.Migration = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogTask)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Task = n
+	} else {
+		r.Log.Migration = r.Log.Master
 	}
 	return
 }
