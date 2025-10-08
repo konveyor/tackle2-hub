@@ -3,6 +3,8 @@ package settings
 import (
 	"os"
 	"strconv"
+
+	"gopkg.in/yaml.v2"
 )
 
 var Settings TackleSettings
@@ -31,6 +33,15 @@ func (r *TackleSettings) Load() (err error) {
 	if err != nil {
 		return
 	}
+	return
+}
+
+// String returns a YAML representation.
+// Redacted as needed.
+func (r TackleSettings) String() (s string) {
+	r.Encryption.Passphrase = "********"
+	b, _ := yaml.Marshal(r)
+	s = string(b)
 	return
 }
 
