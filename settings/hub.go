@@ -185,7 +185,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.DB.MaxConnection = n
 	} else {
-		r.DB.MaxConnection = 50
+		r.DB.MaxConnection = 10
 	}
 	s, found = os.LookupEnv(EnvDbRetries)
 	if found {
