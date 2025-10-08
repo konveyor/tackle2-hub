@@ -107,22 +107,64 @@ func (r *MembershipResolver) cacheArchetypeMembers(db *gorm.DB) (err error) {
 	if r.membersCached {
 		return
 	}
-	list := []model.Application{}
-	result := db.Preload("Tags").Find(&list)
-	if result.Error != nil {
+	type M struct {
+		AppId      uint
+		TagId      uint
+		TagName    string
+		CategoryId uint
+	}
+	db = db.Select(
+		"a.id         AppId",
+		"t.id         TagId",
+		"t.name       TagName",
+		"t.categoryId CategoryId")
+	db = db.Table("application a")
+	db = db.Joins("JOIN applicationTags j ON j.applicationId = a.id")
+	db = db.Joins("JOIN tag t ON t.id = j.tagId")
+	db = db.Order("a.id")
+	cursor, err := db.Rows()
+	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	defer func() {
+		_ = cursor.Close()
+	}()
+	application := model.Application{}
+	for cursor.Next() {
+		var m M
+		err = db.ScanRows(cursor, &m)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		if m.AppId != application.ID {
+			if application.ID > 0 {
+				a := Application{Application: &application}
+				_, err = r.Archetypes(a)
+				if err != nil {
+					return
+				}
+			}
+			application.ID = m.AppId
+			application.Tags = nil
+		}
+		tag := model.Tag{}
+		tag.ID = m.TagId
+		tag.Name = m.TagName
+		tag.CategoryID = m.CategoryId
+		application.Tags = append(application.Tags, tag)
 
-	for i := range list {
-		a := Application{}
-		a.With(&list[i])
-		_, aErr := r.Archetypes(a)
-		if aErr != nil {
-			err = aErr
+	}
+	// Last
+	if application.ID > 0 {
+		a := Application{Application: &application}
+		_, err = r.Archetypes(a)
+		if err != nil {
 			return
 		}
 	}
+
 	r.membersCached = true
 
 	return
