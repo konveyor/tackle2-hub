@@ -3,6 +3,8 @@ package settings
 import (
 	"os"
 	"strconv"
+
+	"gopkg.in/yaml.v2"
 )
 
 var Settings TackleSettings
@@ -31,6 +33,22 @@ func (r *TackleSettings) Load() (err error) {
 	if err != nil {
 		return
 	}
+	return
+}
+
+// String returns a YAML representation.
+// Redacted as needed.
+func (r TackleSettings) String() (s string) {
+	redacted := "********"
+	r.Encryption.Passphrase = redacted
+	r.Auth.Keycloak.ClientSecret = redacted
+	r.Auth.Keycloak.Admin.Pass = redacted
+	r.Auth.Keycloak.Admin.User = redacted
+	b, err := yaml.Marshal(r)
+	if err != nil {
+		panic(err)
+	}
+	s = string(b)
 	return
 }
 

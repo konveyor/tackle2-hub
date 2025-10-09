@@ -128,7 +128,7 @@ func printHeap() {
 
 // main.
 func main() {
-	log.Info("Started", "settings", Settings)
+	log.Info("Started:\n" + Settings.String())
 	var err error
 	defer func() {
 		if err != nil {
