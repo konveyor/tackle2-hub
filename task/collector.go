@@ -27,7 +27,8 @@ type LogManager struct {
 func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Context) (err error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	for _, container := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		container := &pod.Status.ContainerStatuses[i]
 		if container.State.Waiting != nil {
 			continue
 		}
@@ -36,7 +37,7 @@ func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Con
 			Registry:  m.collector,
 			DB:        m.DB,
 			Pod:       pod,
-			Container: &container,
+			Container: container,
 		}
 		key := collector.key()
 		if _, found := m.collector[key]; found {
@@ -55,13 +56,7 @@ func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Con
 func (m *LogManager) terminated(collector *LogCollector) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	for i := range m.collector {
-		if collector == m.collector[i] {
-			key := collector.key()
-			delete(m.collector, key)
-			break
-		}
-	}
+	delete(m.collector, collector.key())
 }
 
 // LogCollector collect and report container logs.
