@@ -22,6 +22,8 @@ func NewClient() (newClient client.Client, err error) {
 		return
 	}
 	cfg, _ := config.GetConfig()
+	cfg.QPS = 100
+	cfg.Burst = 200
 	newClient, err = client.New(
 		cfg,
 		client.Options{
