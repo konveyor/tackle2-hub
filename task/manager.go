@@ -1103,7 +1103,7 @@ func (m *Manager) deleteOrphanPods() {
 //   - pod YAML
 //   - pod Events
 func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
-	events, err := m.podEvent(pod)
+	events, err := m.podEvents(pod)
 	if err != nil {
 		return
 	}
@@ -1167,8 +1167,8 @@ func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
 	return
 }
 
-// podEvent get pod events.
-func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
+// podEvents get pod events.
+func (m *Manager) podEvents(pod *core.Pod) (events []Event, err error) {
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
 		return
