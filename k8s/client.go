@@ -22,8 +22,8 @@ func NewClient() (newClient client.Client, err error) {
 		return
 	}
 	cfg, _ := config.GetConfig()
-	cfg.QPS = 100
-	cfg.Burst = 200
+	cfg.QPS = 200
+	cfg.Burst = 400
 	newClient, err = client.New(
 		cfg,
 		client.Options{
@@ -36,6 +36,8 @@ func NewClient() (newClient client.Client, err error) {
 // NewClientSet builds new k8s client.
 func NewClientSet() (newClient *k8s.Clientset, err error) {
 	cfg, _ := config.GetConfig()
+	cfg.QPS = 200
+	cfg.Burst = 400
 	newClient, err = k8s.NewForConfig(cfg)
 	err = liberr.Wrap(err)
 	return
