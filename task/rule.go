@@ -3,6 +3,8 @@ package task
 import (
 	"fmt"
 	"time"
+
+	"github.com/konveyor/tackle2-hub/model"
 )
 
 // Rule defines postpone rules.
@@ -60,11 +62,12 @@ func (r *RuleDeps) Match(ready *Task, d *Domain) (matched bool, reason string) {
 	if !found {
 		return
 	}
-	for _, other := range d.byKind[d.kind(ready)] {
-		if other.ID == ready.ID {
-			continue
-		}
-		matched = def.HasDep(other.Kind)
+	for _, kind := range def.Deps() {
+		other := NewTask(&model.Task{})
+		other.Kind = kind
+		other.ApplicationID = ready.ApplicationID
+		other.PlatformID = ready.PlatformID
+		matched, other = d.matchKind(other)
 		if matched {
 			reason = fmt.Sprintf(
 				"Rule:Dependency matched:%d, other:%d",
@@ -124,6 +127,7 @@ type Domain struct {
 	byIsolated []*Task
 }
 
+// Load with tasks.
 func (d *Domain) Load(list []*Task) {
 	d.tasks = list
 	d.byKind = make(map[string][]*Task)
