@@ -142,7 +142,7 @@ type Task struct {
 	Application   *Application
 	PlatformID    *uint `gorm:"index"`
 	Platform      *Platform
-	TaskGroupID   *uint `gorm:"<-:create"`
+	TaskGroupID   *uint `gorm:"<-:create;index"`
 	TaskGroup     *TaskGroup
 }
 
