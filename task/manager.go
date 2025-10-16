@@ -25,6 +25,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8r "k8s.io/apimachinery/pkg/runtime"
@@ -1518,6 +1519,16 @@ func (k *Cluster) Pod(name string) (r *core.Pod, found bool) {
 	return
 }
 
+// OtherPods returns a list of non-task pods.
+func (k *Cluster) OtherPods() (list []*core.Pod) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
+	for _, r := range k.pods.other {
+		list = append(list, r)
+	}
+	return
+}
+
 // TaskPods returns a list of task pods.
 func (k *Cluster) TaskPods() (list []*core.Pod) {
 	k.mutex.RLock()
@@ -1525,15 +1536,6 @@ func (k *Cluster) TaskPods() (list []*core.Pod) {
 	for _, r := range k.pods.tasks {
 		list = append(list, r)
 	}
-	return
-}
-
-// PodCount returns count of pods.
-func (k *Cluster) PodCount() (n int) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
-	n = len(k.pods.other)
-	n += len(k.pods.tasks)
 	return
 }
 
@@ -1548,9 +1550,10 @@ func (k *Cluster) Quotas() (list []*core.ResourceQuota) {
 }
 
 // PodQuota returns the most restricted pod quota.
-func (k *Cluster) PodQuota() (quota int) {
+func (k *Cluster) PodQuota() (quota int, found bool) {
 	for _, r := range k.Quotas() {
-		qty, found := r.Spec.Hard[core.ResourcePods]
+		var qty resource.Quantity
+		qty, found = r.Spec.Hard[core.ResourcePods]
 		if found {
 			n := int(qty.Value())
 			if quota == 0 || quota > n {
@@ -1744,61 +1747,4 @@ func (m *PipelineSet) Contains(task *Task) (found bool) {
 		_, found = (*m)[*task.TaskGroupID]
 	}
 	return
-}
-
-// Quota tracks task pod quota/capacity.
-type Quota struct {
-	hardQuota int
-	quota     int
-	count     int
-	capacity  int
-}
-
-// with init with cluster.
-// quota Zero(0) is unlimited.
-func (q *Quota) with(k *Cluster) {
-	q.hardQuota = k.PodQuota()
-	q.quota = 0
-	q.count = 0
-	q.capacity = 0
-	if q.hardQuota == 0 {
-		q.quota = Settings.Hub.Task.Pod.Quota
-		for _, pod := range k.TaskPods() {
-			switch pod.Status.Phase {
-			case core.PodPending,
-				core.PodRunning:
-				q.count++
-			}
-		}
-	} else {
-		q.quota = q.hardQuota
-		q.count = k.PodCount()
-	}
-	q.capacity = q.quota - q.count
-}
-
-// created indicates a task pod has been created.
-// increments count; decrements the capacity.
-func (q *Quota) created() {
-	q.capacity--
-	q.count++
-}
-
-// exhausted returns true when the capacity < 1.
-// A zero(0) quota is unlimited.
-func (q *Quota) exhausted() (exhausted bool) {
-	if q.quota < 1 {
-		return
-	}
-	exhausted = q.capacity < 1
-	return
-}
-
-// string returns a string representation.
-func (q *Quota) string() (s string) {
-	s += fmt.Sprintf(
-		"quota (pod): %d/%d",
-		q.count,
-		q.quota)
-	return s
 }
