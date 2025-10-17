@@ -318,7 +318,7 @@ func (r *Task) podPending(pod *core.Pod) {
 	for _, cnd := range pod.Status.Conditions {
 		if cnd.Type == core.PodScheduled &&
 			cnd.Reason == core.PodReasonUnschedulable {
-			r.Event(PodPending, cnd.Message)
+			r.Event(PodUnschedulable, cnd.Message)
 			return
 		}
 	}

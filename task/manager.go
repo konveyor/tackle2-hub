@@ -55,20 +55,21 @@ const (
 
 // Events
 const (
-	AddonSelected   = "AddonSelected"
-	ExtSelected     = "ExtensionSelected"
-	ImageError      = "ImageError"
-	PodNotFound     = "PodNotFound"
-	PodCreated      = "PodCreated"
-	PodPending      = "PodPending"
-	PodRunning      = "PodRunning"
-	Preempted       = "Preempted"
-	PodSucceeded    = "PodSucceeded"
-	PodFailed       = "PodFailed"
-	PodDeleted      = "PodDeleted"
-	Escalated       = "Escalated"
-	Released        = "Released"
-	ContainerKilled = "ContainerKilled"
+	AddonSelected    = "AddonSelected"
+	ExtSelected      = "ExtensionSelected"
+	ImageError       = "ImageError"
+	PodNotFound      = "PodNotFound"
+	PodCreated       = "PodCreated"
+	PodPending       = "PodPending"
+	PodUnschedulable = "PodUnschedulable"
+	PodRunning       = "PodRunning"
+	Preempted        = "Preempted"
+	PodSucceeded     = "PodSucceeded"
+	PodFailed        = "PodFailed"
+	PodDeleted       = "PodDeleted"
+	Escalated        = "Escalated"
+	Released         = "Released"
+	ContainerKilled  = "ContainerKilled"
 )
 
 // Mode
@@ -121,6 +122,9 @@ type Manager struct {
 	queue chan func()
 	// logManager provides pod log collection.
 	logManager LogManager
+	//
+	capacity    int
+	unscheduled int
 }
 
 // Run the manager.
@@ -147,6 +151,7 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
+				mark := time.Now()
 				err := m.cluster.Refresh()
 				if err == nil {
 					m.deleteOrphanPods()
@@ -155,6 +160,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.updateRunning(ctx)
 					m.deleteZombies()
 					m.startReady()
+					Log.Info(fmt.Sprintf("END: %s", time.Since(mark)))
 					m.pause()
 				} else {
 					if errors.Is(err, &NotReconciled{}) {
@@ -383,6 +389,10 @@ func (m *Manager) startReady() {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	if m.unscheduled > 0 {
+		Log.Info("END (start) paused.")
+		return
+	}
 	quota := &Quota{}
 	quota.with(&m.cluster)
 	fetched := []*model.Task{}
@@ -710,9 +720,20 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 				(it.Priority == jt.Priority &&
 					it.ID < jt.ID)
 		})
+	capacity := max(m.capacity, 1)
+	current := len(m.cluster.TaskPods())
 	for _, task := range list {
 		if !task.StateIn(Ready, QuotaBlocked) {
 			continue
+		}
+		Log.Info(
+			fmt.Sprintf(
+				"___END(start): queue: %d current: %d capacity: %d",
+				len(list),
+				current,
+				m.capacity))
+		if current >= capacity {
+			break
 		}
 		ready := task
 		started := false
@@ -722,10 +743,13 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 			return
 		}
 		if started {
+			current++
 			Log.Info("Task started.", "id", ready.ID)
 			if ready.Retries == 0 {
 				metrics.TasksInitiated.Inc()
 			}
+		} else {
+			break
 		}
 	}
 	return
@@ -895,10 +919,11 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				} else {
 					task.Retained = true
 				}
-				advanced, err := m.advancePipeline(task)
+				var advanced []*Task
+				advanced, err = m.advancePipeline(task)
 				if err != nil {
-					err = liberr.Wrap(err)
-					return
+					Log.Error(err, "")
+					continue
 				}
 				updated = append(updated, advanced...)
 			}
@@ -910,6 +935,50 @@ func (m *Manager) updateRunning(ctx context.Context) {
 		err = liberr.Wrap(err)
 		return
 	}
+
+	pods := 0
+	unscheduled := 0
+	for _, pod := range m.cluster.TaskPods() {
+		switch pod.Status.Phase {
+		case core.PodPending:
+			match := false
+			for _, p := range pod.Status.Conditions {
+				if p.Type == core.PodScheduled {
+					if p.Reason == core.PodReasonUnschedulable {
+						match = true
+						break
+					}
+				}
+			}
+			if match {
+				unscheduled++
+			} else {
+				pods++
+			}
+		case core.PodRunning:
+			pods++
+		}
+	}
+	if unscheduled == 0 {
+		next := float64(pods)
+		next *= 1.15
+		next = max(next, 1.0)
+		nextInt := int(next + 0.9999)
+		m.capacity = max(m.capacity, nextInt)
+	} else {
+		if unscheduled > m.unscheduled {
+			m.capacity = pods - (unscheduled - m.unscheduled)
+		}
+	}
+	m.unscheduled = unscheduled
+	m.capacity = max(m.capacity, 0)
+	Log.Info(
+		fmt.Sprintf(
+			"___END: pods: %d unscheduled: %d capacity: %d",
+			pods,
+			m.unscheduled,
+			m.capacity))
+
 }
 
 // deleteRetained deletes expired retained tasks.
