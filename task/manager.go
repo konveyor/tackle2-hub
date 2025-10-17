@@ -158,6 +158,7 @@ func (m *Manager) Run(ctx context.Context) {
 					m.deleteRetainedPods()
 					m.runActions()
 					m.updateRunning(ctx)
+					m.adjustCapacity()
 					m.deleteZombies()
 					m.startReady()
 					Log.Info(fmt.Sprintf("END: %s", time.Since(mark)))
@@ -935,7 +936,10 @@ func (m *Manager) updateRunning(ctx context.Context) {
 		err = liberr.Wrap(err)
 		return
 	}
+}
 
+// adjustCapacity adjusts scheduling controls.
+func (m *Manager) adjustCapacity() {
 	pods := 0
 	unscheduled := 0
 	for _, pod := range m.cluster.TaskPods() {
@@ -978,7 +982,6 @@ func (m *Manager) updateRunning(ctx context.Context) {
 			pods,
 			m.unscheduled,
 			m.capacity))
-
 }
 
 // deleteRetained deletes expired retained tasks.
