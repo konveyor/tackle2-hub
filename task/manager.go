@@ -151,7 +151,6 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
-				mark := time.Now()
 				err := m.cluster.Refresh()
 				if err == nil {
 					m.deleteOrphanPods()
@@ -161,7 +160,6 @@ func (m *Manager) Run(ctx context.Context) {
 					m.adjustCapacity()
 					m.deleteZombies()
 					m.startReady()
-					Log.Info(fmt.Sprintf("END: %s", time.Since(mark)))
 					m.pause()
 				} else {
 					if errors.Is(err, &NotReconciled{}) {
@@ -390,10 +388,29 @@ func (m *Manager) startReady() {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	//
+	mark := time.Now()
+	defer func() {
+		d := time.Since(mark)
+		threshold := 3 * time.Second
+		if d > threshold {
+			Log.Info(
+				"Ready tasks started.",
+				"duration",
+				d.String(),
+				"threshold",
+				threshold.String())
+		}
+	}()
+	//
 	if m.unscheduled > 0 {
-		Log.Info("END (start) paused.")
+		Log.Info(
+			"Task pod creation - paused.",
+			"unscheduled",
+			m.unscheduled)
 		return
 	}
+	//
 	quota := &Quota{}
 	quota.with(&m.cluster)
 	fetched := []*model.Task{}
@@ -712,6 +729,9 @@ func (m *Manager) adjustPriority(list []*Task) (err error) {
 
 // createPod creates a pod for the task.
 func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
+	if len(list) == 0 {
+		return
+	}
 	sort.Slice(
 		list,
 		func(i, j int) bool {
@@ -721,18 +741,13 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 				(it.Priority == jt.Priority &&
 					it.ID < jt.ID)
 		})
+	created := 0
 	capacity := max(m.capacity, 1)
 	current := len(m.cluster.TaskPods())
 	for _, task := range list {
 		if !task.StateIn(Ready, QuotaBlocked) {
 			continue
 		}
-		Log.Info(
-			fmt.Sprintf(
-				"___END(start): queue: %d current: %d capacity: %d",
-				len(list),
-				current,
-				m.capacity))
 		if current >= capacity {
 			break
 		}
@@ -745,6 +760,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		}
 		if started {
 			current++
+			created++
 			Log.Info("Task started.", "id", ready.ID)
 			if ready.Retries == 0 {
 				metrics.TasksInitiated.Inc()
@@ -753,6 +769,16 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 			break
 		}
 	}
+	Log.Info(
+		"Task pods created.",
+		"requested",
+		len(list),
+		"current",
+		current,
+		"capacity",
+		m.capacity,
+		"created",
+		created)
 	return
 }
 
@@ -873,6 +899,21 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	//
+	mark := time.Now()
+	defer func() {
+		d := time.Since(mark)
+		threshold := 3 * time.Second
+		if d > threshold {
+			Log.Info(
+				"Running tasks updated.",
+				"duration",
+				d.String(),
+				"threshold",
+				threshold.String())
+		}
+	}()
+	//
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
@@ -899,6 +940,10 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				continue
 			}
 			if task.StateIn(Succeeded, Failed) {
+				Log.Info(
+					"Task completed.",
+					"id",
+					task.ID)
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
@@ -963,6 +1008,9 @@ func (m *Manager) adjustCapacity() {
 			pods++
 		}
 	}
+	if pods == 0 {
+		return
+	}
 	if unscheduled == 0 {
 		next := float64(pods)
 		next *= 1.15
@@ -976,12 +1024,15 @@ func (m *Manager) adjustCapacity() {
 	}
 	m.unscheduled = unscheduled
 	m.capacity = max(m.capacity, 0)
+	//
 	Log.Info(
-		fmt.Sprintf(
-			"___END: pods: %d unscheduled: %d capacity: %d",
-			pods,
-			m.unscheduled,
-			m.capacity))
+		"Cluster capacity adjusted.",
+		"pods",
+		pods,
+		"unscheduled",
+		m.unscheduled,
+		"capacity",
+		m.capacity)
 }
 
 // deleteRetained deletes expired retained tasks.
@@ -1279,6 +1330,8 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 			container)
 		Log.Info(
 			"Container KILLED.",
+			"pod",
+			pod.Name,
 			"name",
 			container)
 	}
