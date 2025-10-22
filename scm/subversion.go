@@ -43,7 +43,7 @@ func (r *Subversion) Validate() (err error) {
 
 // Fetch clones the repository.
 func (r *Subversion) Fetch() (err error) {
-	err = nas.MkDir(r.Home(), 0755)
+	err = nas.MkDir(r.Home, 0755)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -56,7 +56,7 @@ func (r *Subversion) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	agent := ssh.New(r.Home())
+	agent := ssh.Agent{}
 	u := r.URL()
 	err = agent.Add(&r.Identity, u.Host)
 	if err != nil {
@@ -136,7 +136,7 @@ func (r *Subversion) URL() (u *SvnURL) {
 // svn returns an svn command.
 func (r *Subversion) svn() (cmd *command.Command) {
 	cmd = command.New("/usr/bin/svn")
-	cmd.Env = append(os.Environ(), "HOME="+r.Home())
+	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
 	if r.Insecure {
 		cmd.Options.Add("--trust-server-cert")
@@ -193,7 +193,7 @@ func (r *Subversion) addFiles(files []string) (err error) {
 // writeConfig writes configuration file.
 func (r *Subversion) writeConfig() (err error) {
 	path := pathlib.Join(
-		r.Home(),
+		r.Home,
 		".subversion",
 		"servers")
 	err = nas.MkDir(pathlib.Dir(path), 0755)
@@ -244,7 +244,7 @@ func (r *Subversion) writePassword() (err error) {
 		return
 	}
 	dir := pathlib.Join(
-		r.Home(),
+		r.Home,
 		".subversion",
 		"auth",
 		"svn.simple")

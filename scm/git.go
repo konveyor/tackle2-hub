@@ -38,7 +38,7 @@ func (r *Git) Validate() (err error) {
 
 // Fetch clones the repository.
 func (r *Git) Fetch() (err error) {
-	err = nas.MkDir(r.Home(), 0755)
+	err = nas.MkDir(r.Home, 0755)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -52,7 +52,7 @@ func (r *Git) Fetch() (err error) {
 		return
 	}
 	u := r.URL()
-	agent := ssh.New(r.Home())
+	agent := ssh.Agent{}
 	err = agent.Add(&r.Identity, u.Host)
 	if err != nil {
 		return
@@ -145,7 +145,7 @@ func (r *Git) git() (cmd *command.Command) {
 	cmd.Env = append(
 		os.Environ(),
 		"GIT_TERMINAL_PROMPT=0",
-		"HOME="+r.Home())
+		"HOME="+r.Home)
 	return
 }
 
@@ -160,7 +160,7 @@ func (r *Git) push() (err error) {
 
 // writeConfig writes config file.
 func (r *Git) writeConfig() (err error) {
-	path := pathlib.Join(r.Home(), ".gitconfig")
+	path := pathlib.Join(r.Home, ".gitconfig")
 	f, err := os.Create(path)
 	if err != nil {
 		err = liberr.Wrap(
@@ -178,7 +178,7 @@ func (r *Git) writeConfig() (err error) {
 	s += "email = konveyor-dev@googlegroups.com\n"
 	s += "[credential]\n"
 	s += "helper = store --file="
-	s += pathlib.Join(r.Home(), ".git-credentials")
+	s += pathlib.Join(r.Home, ".git-credentials")
 	s += "\n"
 	s += "[http]\n"
 	s += fmt.Sprintf("sslVerify = %t\n", !r.Insecure)
@@ -206,7 +206,7 @@ func (r *Git) writeCreds() (err error) {
 		fmt.Sprintf("Using identity: (id=%d) %s",
 			r.Identity.ID,
 			r.Identity.Name))
-	path := pathlib.Join(r.Home(), ".git-credentials")
+	path := pathlib.Join(r.Home, ".git-credentials")
 	f, err := os.Create(path)
 	if err != nil {
 		err = liberr.Wrap(

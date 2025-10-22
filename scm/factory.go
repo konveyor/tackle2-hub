@@ -1,8 +1,6 @@
 package scm
 
 import (
-	pathlib "path"
-
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
@@ -62,10 +60,10 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 // Base SCM.
 type Base struct {
 	Authenticated
-	HomeRoot string
-	Proxies  map[string]Proxy
-	Remote   Remote
-	Path     string
+	Home    string
+	Proxies map[string]Proxy
+	Remote  Remote
+	Path    string
 	//
 	id string
 }
@@ -78,17 +76,8 @@ func (b *Base) Id() string {
 	return b.id
 }
 
-// Home returns the Git home directory path.
-func (b *Base) Home() (home string) {
-	home = pathlib.Join(
-		b.HomeRoot,
-		b.Id(),
-		".git")
-	return
-}
-
 // Clean deletes created files.
 func (b *Base) Clean() {
-	_ = nas.RmDir(b.Home())
+	_ = nas.RmDir(b.Home)
 	_ = nas.RmDir(b.Path)
 }
