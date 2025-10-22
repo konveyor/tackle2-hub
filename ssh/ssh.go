@@ -9,19 +9,13 @@ import (
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/nas"
 )
 
-// Logf logger.
-var Logf func(s string, v ...any)
-
-func init() {
-	Logf = func(s string, v ...any) {
-		fmt.Printf(s, v...)
-	}
-}
+var Log = logr.WithName("ssh")
 
 func New(home string) (agent *Agent) {
 	return &Agent{
@@ -38,7 +32,6 @@ type Agent struct {
 
 // Start the ssh-agent.
 func (r *Agent) Start() (err error) {
-	Logf("[SSH] Starting: home=%s", r.home)
 	pid := os.Getpid()
 	socket := fmt.Sprintf("/tmp/agent.%d", pid)
 	cmd := command.New("/usr/bin/ssh-agent")
@@ -54,7 +47,7 @@ func (r *Agent) Start() (err error) {
 		return
 	}
 
-	Logf("[SSH] Agent started.")
+	Log.Info("[SSH] Agent started.", "home", r.home)
 
 	return
 }
@@ -64,7 +57,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	if id.Key == "" {
 		return
 	}
-	Logf("[SSH] Adding key: %s", id.Name)
+	Log.Info("[SSH] Adding key: %s", id.Name)
 	suffix := fmt.Sprintf("id_%d", id.ID)
 	path := pathlib.Join(
 		r.sshDir,
@@ -107,7 +100,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	if err != nil {
 		return
 	}
-	Logf("[SSH] Created %s.", path)
+	Log.Info("[SSH] Created: " + path)
 	return
 }
 
