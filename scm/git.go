@@ -199,7 +199,7 @@ func (r *Git) writeConfig() (err error) {
 			path)
 	}
 	_ = f.Close()
-	Log.Info("Created: " + path)
+	Log.Info("[GIT] Created: " + path)
 	return
 }
 
@@ -209,7 +209,7 @@ func (r *Git) writeCreds() (err error) {
 		return
 	}
 	Log.Info(
-		fmt.Sprintf("Using identity: (id=%d) %s",
+		fmt.Sprintf("[GIT] Using identity: (id=%d) %s",
 			r.Identity.ID,
 			r.Identity.Name))
 	path := pathlib.Join(r.Home, ".git-credentials")
@@ -247,7 +247,7 @@ func (r *Git) writeCreds() (err error) {
 		}
 	}
 	_ = f.Close()
-	Log.Info("Created: " + path)
+	Log.Info("[GIT] Created: " + path)
 	return
 }
 
@@ -274,7 +274,7 @@ func (r *Git) proxy() (proxy string, err error) {
 		}
 	}
 	Log.Info(
-		fmt.Sprintf("Using proxy:(id=%d) %s",
+		fmt.Sprintf("[GIT] Using proxy:(id=%d) %s",
 			p.ID,
 			p.Kind))
 	auth := ""
