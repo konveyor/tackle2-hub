@@ -7,21 +7,14 @@ package command
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os/exec"
 	"strings"
+
+	"github.com/jortel/go-utils/logr"
 )
 
-// Logf logger.
-var Logf func(s string, v ...any)
-
-func init() {
-	Logf = func(s string, v ...any) {
-		fmt.Printf(s, v...)
-		fmt.Print("\n")
-	}
-}
+var Log = logr.WithName("command")
 
 // New returns a command.
 func New(path string) (cmd *Command) {
@@ -53,7 +46,7 @@ func (r *Command) Run() (err error) {
 func (r *Command) RunWith(ctx context.Context) (err error) {
 	defer func() {
 		r.Error = err
-		Logf(r.String())
+		Log.Info(r.String())
 	}()
 	if r.Writer == nil {
 		r.Writer = &bytes.Buffer{}

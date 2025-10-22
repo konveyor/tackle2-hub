@@ -220,7 +220,7 @@ func (r *Subversion) writeConfig() (err error) {
 			path)
 	}
 	_ = f.Close()
-	Logf("Created: %s", path)
+	Log.Info("Created: " + path)
 	return
 }
 
@@ -229,6 +229,10 @@ func (r *Subversion) writePassword() (err error) {
 	if r.Identity.User == "" || r.Identity.Password == "" {
 		return
 	}
+	Log.Info(
+		fmt.Sprintf("Using identity:(id=%d) %s",
+			r.Identity.ID,
+			r.Identity.Name))
 	cmd := r.svn()
 	cmd.Options.Add("--username")
 	cmd.Options.Add(r.Identity.User)
@@ -301,7 +305,7 @@ func (r *Subversion) writePassword() (err error) {
 			path)
 		return
 	}
-	Logf("Created: %s", path)
+	Log.Info("Created: " + path)
 	return
 }
 
@@ -327,7 +331,10 @@ func (r *Subversion) proxy() (proxy string, err error) {
 			return
 		}
 	}
-	Logf("Using proxy: (id=%d) %s", p.ID, p.Kind)
+	Log.Info(
+		fmt.Sprintf("Using proxy:(id=%d) %s",
+			p.ID,
+			p.Kind))
 	proxy = "[global]\n"
 	proxy += fmt.Sprintf("http-proxy-host = %s\n", p.Host)
 	if p.Port > 0 {

@@ -4,19 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/pkg/errors"
 )
 
-// Logf logger.
-var Logf func(s string, v ...any)
-
-func init() {
-	Logf = func(s string, v ...any) {
-		fmt.Printf(s, v...)
-		fmt.Print("\n")
-	}
-}
+var Log = logr.WithName("SCM")
 
 // SCM interface.
 type SCM interface {
