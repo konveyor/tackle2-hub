@@ -14,6 +14,12 @@ import (
 	"github.com/konveyor/tackle2-hub/ssh"
 )
 
+var Home = ""
+
+func init() {
+	Home, _ = os.Getwd()
+}
+
 // Git repository.
 type Git struct {
 	Base
