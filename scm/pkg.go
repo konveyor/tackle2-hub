@@ -1,9 +1,6 @@
 package scm
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/pkg/errors"
@@ -24,14 +21,7 @@ type SCM interface {
 }
 
 // Remote defines and SCM.
-type Remote api.Repository
-
-func (r *Remote) String() (s string) {
-	return fmt.Sprintf(
-		"[%s]URL:%s",
-		strings.ToUpper(r.Kind),
-		r.URL)
-}
+type Remote = api.Repository
 
 // Proxy defines a web proxy.
 type Proxy struct {
