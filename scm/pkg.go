@@ -45,18 +45,12 @@ type Authenticated struct {
 	Insecure bool
 }
 
-// Insecure option
-type Insecure bool
-
 // Use option.
 // Options:
-// - Insecure
 // - *api.Identity
 // - api.Identity
 func (a *Authenticated) Use(option any) (err error) {
 	switch opt := option.(type) {
-	case Insecure:
-		a.Insecure = bool(opt)
 	case *api.Identity:
 		if opt != nil {
 			a.Identity = *opt

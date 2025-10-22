@@ -72,6 +72,7 @@ func (r *Command) Output() (b []byte) {
 	return
 }
 
+// String returns a string representation.
 func (r *Command) String() (s string) {
 	parts := []string{
 		"[CMD] ",

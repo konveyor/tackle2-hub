@@ -59,6 +59,7 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 	return
 }
 
+// Base SCM.
 type Base struct {
 	Authenticated
 	HomeRoot string
@@ -69,6 +70,7 @@ type Base struct {
 	id string
 }
 
+// Id returns the unique id.
 func (b *Base) Id() string {
 	if b.id == "" {
 		b.id = uuid.New().String()
@@ -85,6 +87,7 @@ func (b *Base) Home() (home string) {
 	return
 }
 
+// Clean deletes created files.
 func (b *Base) Clean() {
 	_ = nas.RmDir(b.Home())
 	_ = nas.RmDir(b.Path)
