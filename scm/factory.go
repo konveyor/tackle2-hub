@@ -10,11 +10,6 @@ import (
 )
 
 // New SCM repository factory.
-// Options:
-// - *api.Ref
-// - api.Ref
-// - *api.Identity
-// - api.Identity
 func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err error) {
 	switch remote.Kind {
 	case "subversion":

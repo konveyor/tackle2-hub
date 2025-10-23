@@ -1,3 +1,7 @@
+/*
+Package scm provides objects for working with
+SCM (Software Configuration Management) repositories.
+*/
 package scm
 
 import (
@@ -28,7 +32,7 @@ type SCM interface {
 	Clean()
 }
 
-// Remote defines and SCM.
+// Remote defines an SCM remote..
 type Remote = api.Repository
 
 // Proxy defines a web proxy.
@@ -44,9 +48,6 @@ type Authenticated struct {
 }
 
 // Use option.
-// Options:
-// - *api.Identity
-// - api.Identity
 func (a *Authenticated) Use(option any) (err error) {
 	switch opt := option.(type) {
 	case *api.Identity:
