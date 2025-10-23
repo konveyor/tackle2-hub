@@ -77,6 +77,9 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 
 // Output returns the command output.
 func (r *Command) Output() (b []byte) {
+	if seeker, cast := r.Writer.(io.Seeker); cast {
+		_, _ = seeker.Seek(0, io.SeekStart)
+	}
 	if reader, cast := r.Writer.(io.Reader); cast {
 		b, _ = io.ReadAll(reader)
 	}
