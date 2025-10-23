@@ -30,6 +30,8 @@ type Command struct {
 	Env     []string
 	Writer  io.Writer
 	Error   error
+	Begin   func()
+	End     func()
 }
 
 // Run executes the command.
@@ -47,7 +49,13 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 	defer func() {
 		r.Error = err
 		Log.Info(r.String())
+		if r.End != nil {
+			r.End()
+		}
 	}()
+	if r.Begin != nil {
+		r.Begin()
+	}
 	if r.Writer == nil {
 		r.Writer = &bytes.Buffer{}
 	}
