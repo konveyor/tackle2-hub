@@ -220,7 +220,7 @@ func (r *Subversion) writeConfig() (err error) {
 			path)
 	}
 	_ = f.Close()
-	Log.Info("[SNN] Created: " + path)
+	Log.Info("[SVN] Created: " + path)
 	return
 }
 
