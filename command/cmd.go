@@ -35,16 +35,12 @@ type Command struct {
 }
 
 // Run executes the command.
-// The command and output are both reported in
-// task Report.Activity.
 func (r *Command) Run() (err error) {
 	err = r.RunWith(context.TODO())
 	return
 }
 
 // RunWith executes the command with context.
-// The command and output are both reported in
-// task Report.Activity.
 func (r *Command) RunWith(ctx context.Context) (err error) {
 	defer func() {
 		r.Error = err
