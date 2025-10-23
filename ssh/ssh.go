@@ -1,3 +1,6 @@
+/*
+Package ssh provides a SSH related functionality.
+*/
 package ssh
 
 import (
@@ -52,7 +55,7 @@ func (r *Agent) Start() (err error) {
 	return
 }
 
-// Add ssh key.
+// Add an ssh key.
 func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	if id.Key == "" {
 		return
@@ -141,10 +144,12 @@ func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
 	return
 }
 
+// home returns the path to the client home directory.
 func (r *Agent) home() string {
 	return Home
 }
 
+// sshDir returns the directory where client keys are stored.
 func (r *Agent) sshDir() (p string) {
 	p = pathlib.Join(r.home(), ".ssh")
 	return
