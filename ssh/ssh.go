@@ -45,7 +45,7 @@ func (r *Agent) Start() (err error) {
 		return
 	}
 	_ = os.Setenv("SSH_AUTH_SOCK", socket)
-	err = nas.MkDir(r.home(), 0700)
+	err = nas.MkDir(r.sshDir(), 0700)
 	if err != nil {
 		return
 	}
@@ -60,7 +60,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	if id.Key == "" {
 		return
 	}
-	Log.Info("[SSH] Adding key: %s", id.Name)
+	Log.Info("[SSH] Adding key: %s" + id.Name)
 	suffix := fmt.Sprintf("id_%d", id.ID)
 	path := filepath.Join(
 		r.sshDir(),
@@ -129,6 +129,7 @@ func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
 	path = f.Name()
 	script := "#!/bin/sh\n"
 	script += "echo " + id.Password
+	_ = os.Chmod(path, 0700)
 	_, err = f.Write([]byte(script))
 	if err != nil {
 		err = liberr.Wrap(
