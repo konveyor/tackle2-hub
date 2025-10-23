@@ -16,12 +16,14 @@ import (
 )
 
 var (
-	Log  = logr.WithName("ssh")
-	Home = ""
+	Log        = logr.WithName("ssh")
+	NewCommand func(string) *command.Command
+	Home       = ""
 )
 
 func init() {
 	Home, _ = os.Getwd()
+	NewCommand = command.New
 }
 
 // Agent agent.
@@ -32,7 +34,7 @@ type Agent struct {
 func (r *Agent) Start() (err error) {
 	pid := os.Getpid()
 	socket := fmt.Sprintf("/tmp/agent.%d", pid)
-	cmd := command.New("/usr/bin/ssh-agent")
+	cmd := NewCommand("/usr/bin/ssh-agent")
 	cmd.Env = append(os.Environ(), "HOME="+r.home())
 	cmd.Options.Add("-a", socket)
 	err = cmd.Run()
@@ -87,7 +89,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 		context.TODO(),
 		time.Second)
 	defer fn()
-	cmd := command.New("/usr/bin/ssh-add")
+	cmd := NewCommand("/usr/bin/ssh-add")
 	cmd.Env = append(
 		os.Environ(),
 		"DISPLAY=:0",

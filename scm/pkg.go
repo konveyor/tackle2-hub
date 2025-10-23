@@ -3,10 +3,18 @@ package scm
 import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/command"
 	"github.com/pkg/errors"
 )
 
-var Log = logr.WithName("SCM")
+var (
+	Log        = logr.WithName("SCM")
+	NewCommand func(string) *command.Command
+)
+
+func init() {
+	NewCommand = command.New
+}
 
 // SCM interface.
 type SCM interface {

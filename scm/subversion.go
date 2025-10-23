@@ -135,7 +135,7 @@ func (r *Subversion) URL() (u *SvnURL) {
 
 // svn returns an svn command.
 func (r *Subversion) svn() (cmd *command.Command) {
-	cmd = command.New("/usr/bin/svn")
+	cmd = NewCommand("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
 	if r.Insecure {

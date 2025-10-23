@@ -147,7 +147,7 @@ func (r *Git) URL() (u GitURL) {
 
 // git returns git command.
 func (r *Git) git() (cmd *command.Command) {
-	cmd = command.New("/usr/bin/git")
+	cmd = NewCommand("/usr/bin/git")
 	cmd.Env = append(
 		os.Environ(),
 		"GIT_TERMINAL_PROMPT=0",
