@@ -86,7 +86,7 @@ func (r *Git) Branch(ref string) (err error) {
 	cmd.Options.Add("checkout", ref)
 	err = cmd.Run()
 	if err != nil {
-		cmd = command.New("/usr/bin/git")
+		cmd = r.git()
 		cmd.Dir = r.Path
 		cmd.Options.Add("checkout", "-b", ref)
 	}
