@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	pathlib "path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -62,7 +62,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	}
 	Log.Info("[SSH] Adding key: %s", id.Name)
 	suffix := fmt.Sprintf("id_%d", id.ID)
-	path := pathlib.Join(
+	path := filepath.Join(
 		r.sshDir(),
 		suffix)
 	f, err := os.OpenFile(
@@ -88,9 +88,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 	if err != nil {
 		return
 	}
-	ctx, fn := context.WithTimeout(
-		context.TODO(),
-		time.Second)
+	ctx, fn := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer fn()
 	cmd := NewCommand("/usr/bin/ssh-add")
 	cmd.Env = append(
@@ -117,11 +115,7 @@ func (r *Agent) format(in string) (out string) {
 
 // writeAsk writes script that returns the key password.
 func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
-	path = "/tmp/ask.sh"
-	f, err := os.OpenFile(
-		path,
-		os.O_RDWR|os.O_CREATE,
-		0700)
+	f, err := os.CreateTemp("", "askpass-*.sh")
 	if err != nil {
 		err = liberr.Wrap(
 			err,
@@ -132,6 +126,7 @@ func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
 	defer func() {
 		_ = f.Close()
 	}()
+	path = f.Name()
 	script := "#!/bin/sh\n"
 	script += "echo " + id.Password
 	_, err = f.Write([]byte(script))
@@ -151,6 +146,6 @@ func (r *Agent) home() string {
 
 // sshDir returns the directory where client keys are stored.
 func (r *Agent) sshDir() (p string) {
-	p = pathlib.Join(r.home(), ".ssh")
+	p = filepath.Join(r.home(), ".ssh")
 	return
 }

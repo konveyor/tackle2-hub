@@ -5,7 +5,7 @@ import (
 	"fmt"
 	urllib "net/url"
 	"os"
-	pathlib "path"
+	"path/filepath"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -166,7 +166,7 @@ func (r *Git) push() (err error) {
 
 // writeConfig writes config file.
 func (r *Git) writeConfig() (err error) {
-	path := pathlib.Join(r.Home, ".gitconfig")
+	path := filepath.Join(r.Home, ".gitconfig")
 	f, err := os.Create(path)
 	if err != nil {
 		err = liberr.Wrap(
@@ -184,7 +184,7 @@ func (r *Git) writeConfig() (err error) {
 	s += "email = konveyor-dev@googlegroups.com\n"
 	s += "[credential]\n"
 	s += "helper = store --file="
-	s += pathlib.Join(r.Home, ".git-credentials")
+	s += filepath.Join(r.Home, ".git-credentials")
 	s += "\n"
 	s += "[http]\n"
 	s += fmt.Sprintf("sslVerify = %t\n", !r.Insecure)
@@ -212,7 +212,7 @@ func (r *Git) writeCreds() (err error) {
 		fmt.Sprintf("[GIT] Using identity: (id=%d) %s",
 			r.Identity.ID,
 			r.Identity.Name))
-	path := pathlib.Join(r.Home, ".git-credentials")
+	path := filepath.Join(r.Home, ".git-credentials")
 	f, err := os.Create(path)
 	if err != nil {
 		err = liberr.Wrap(

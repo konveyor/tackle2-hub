@@ -1,7 +1,7 @@
 package scm
 
 import (
-	pathlib "path"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
@@ -19,7 +19,7 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 			return
 		}
 		svn := &Subversion{}
-		svn.Home = pathlib.Join(Home, svn.Id())
+		svn.Home = filepath.Join(Home, svn.Id())
 		svn.Path = destDir
 		svn.Remote = *remote
 		err = m.As(&svn.Insecure)
@@ -34,7 +34,7 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 			return
 		}
 		git := &Git{}
-		git.Home = pathlib.Join(Home, git.Id())
+		git.Home = filepath.Join(Home, git.Id())
 		git.Path = destDir
 		git.Remote = *remote
 		err = m.As(&git.Insecure)

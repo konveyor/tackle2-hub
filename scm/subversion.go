@@ -6,7 +6,7 @@ import (
 	"io"
 	urllib "net/url"
 	"os"
-	pathlib "path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -146,7 +146,7 @@ func (r *Subversion) svn() (cmd *command.Command) {
 
 // root returns a path to the cloned repository.
 func (r *Subversion) root() (p string) {
-	p = pathlib.Join(r.Path, r.Remote.Path)
+	p = filepath.Join(r.Path, r.Remote.Path)
 	return
 }
 
@@ -192,11 +192,11 @@ func (r *Subversion) addFiles(files []string) (err error) {
 
 // writeConfig writes configuration file.
 func (r *Subversion) writeConfig() (err error) {
-	path := pathlib.Join(
+	path := filepath.Join(
 		r.Home,
 		".subversion",
 		"servers")
-	err = nas.MkDir(pathlib.Dir(path), 0755)
+	err = nas.MkDir(filepath.Dir(path), 0755)
 	if err != nil {
 		return
 	}
@@ -243,7 +243,7 @@ func (r *Subversion) writePassword() (err error) {
 	if err != nil {
 		return
 	}
-	dir := pathlib.Join(
+	dir := filepath.Join(
 		r.Home,
 		".subversion",
 		"auth",
@@ -256,7 +256,7 @@ func (r *Subversion) writePassword() (err error) {
 			dir)
 		return
 	}
-	path := pathlib.Join(dir, files[0].Name())
+	path := filepath.Join(dir, files[0].Name())
 	f, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
 		err = liberr.Wrap(
@@ -377,7 +377,7 @@ func (u *SvnURL) With(r Remote) (err error) {
 // String returns a URL with Branch and RootPath appended.
 func (u *SvnURL) String() (s string) {
 	parsed, _ := urllib.Parse(u.Raw)
-	parsed.Path = pathlib.Join(parsed.Path, u.Branch, u.RootPath)
+	parsed.Path = filepath.Join(parsed.Path, u.Branch, u.RootPath)
 	s = parsed.String()
 	return
 }
