@@ -1,9 +1,13 @@
 package scm
 
 import (
+	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/google/uuid"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
@@ -79,4 +83,48 @@ func (b *Base) Id() string {
 func (b *Base) Clean() {
 	_ = nas.RmDir(b.Home)
 	_ = nas.RmDir(b.Path)
+}
+
+// Validate the repository.
+// Ensures that Home and Path either:
+// - do not exist.
+// - are empty directories.
+func (b *Base) Validate() (err error) {
+	for _, p := range []string{b.Home, b.Path} {
+		err = b.mustEmptyDir(p)
+		if err != nil {
+			break
+		}
+	}
+	return
+}
+
+// mustEmptyDir ensures the path either:
+// - does not exist.
+// - is an empty directory.
+func (b *Base) mustEmptyDir(p string) (err error) {
+	defer func() {
+		if errors.Is(err, os.ErrNotExist) {
+			err = nil
+		}
+	}()
+	st, err := os.Stat(p)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if !st.IsDir() {
+		err = fmt.Errorf("%s: must be a directory", p)
+		return
+	}
+	entries, err := os.ReadDir(p)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if len(entries) > 0 {
+		err = fmt.Errorf("%s: must be empty", p)
+		return
+	}
+	return
 }

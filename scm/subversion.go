@@ -26,6 +26,10 @@ type Subversion struct {
 
 // Validate settings.
 func (r *Subversion) Validate() (err error) {
+	err = r.Base.Validate()
+	if err != nil {
+		return
+	}
 	u := SvnURL{}
 	err = u.With(r.Remote)
 	if err != nil {

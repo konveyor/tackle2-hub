@@ -27,6 +27,10 @@ type Git struct {
 
 // Validate settings.
 func (r *Git) Validate() (err error) {
+	err = r.Base.Validate()
+	if err != nil {
+		return
+	}
 	u := GitURL{}
 	err = u.With(r.Remote.URL)
 	if err != nil {
