@@ -53,11 +53,7 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	db, err = database.Open(true)
-	if err != nil {
-		return
-	}
-	err = database.PK.Load(db, model.ALL)
+	db, err = database.Open()
 	if err != nil {
 		return
 	}
@@ -257,6 +253,7 @@ func main() {
 		})
 	router.Use(api.Render())
 	router.Use(api.ErrorHandler())
+	router.Use(api.Limiter())
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}

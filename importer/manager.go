@@ -158,10 +158,10 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 
 	// Build Binary attribute
 	if imp.BinaryGroup != "" {
-		app.Binary = fmt.Sprintf("%s:%s:%s", imp.BinaryGroup, imp.BinaryArtifact, imp.BinaryVersion)
+		app.BinaryCoordinates = fmt.Sprintf("%s:%s:%s", imp.BinaryGroup, imp.BinaryArtifact, imp.BinaryVersion)
 		if imp.BinaryPackaging != "" {
 			// Packaging can be empty
-			app.Binary = fmt.Sprintf("%s:%s", app.Binary, imp.BinaryPackaging)
+			app.BinaryCoordinates = fmt.Sprintf("%s:%s", app.BinaryCoordinates, imp.BinaryPackaging)
 		}
 	}
 

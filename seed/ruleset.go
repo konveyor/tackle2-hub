@@ -122,7 +122,7 @@ func (r *RuleSet) Apply(db *gorm.DB) (err error) {
 
 // Seed a RuleSet's Rules.
 func (r *RuleSet) applyRules(db *gorm.DB, ruleSet *model.RuleSet, rs libseed.RuleSet) (err error) {
-	result := db.Delete(&model.Rule{}, "RuleSetID = ?", ruleSet.ID)
+	result := db.Delete(&model.Rule{}, "rule_set_id = ?", ruleSet.ID)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
 		return

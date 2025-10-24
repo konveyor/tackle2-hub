@@ -2,8 +2,7 @@
 
 host="${HOST:-localhost:8080}"
 
-# pass Zero(0) for system assigned.
-application="${1:-0}"
+application="${1:-1}"
 key="${2:-pet}"
 kind="${3:-dog}"
 name="${4:-Rover}"

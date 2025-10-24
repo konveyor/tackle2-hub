@@ -192,7 +192,7 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 	if name, found := ctx.GetQuery(Name); found {
 		db = db.Where("name = ?", name)
 	}
-	result = db.Find(&list, "CategoryID = ?", id)
+	result = db.Find(&list, "category_id = ?", id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return

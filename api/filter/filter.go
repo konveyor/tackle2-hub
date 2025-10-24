@@ -6,11 +6,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 const (
 	QueryParam = "filter"
 )
+
+// AsColumn provides column naming.
+var AsColumn func(string) string
+
+func init() {
+	AsColumn = func(name string) (named string) {
+		namer := schema.NamingStrategy{}
+		named = namer.ColumnName("", name)
+		return
+	}
+}
 
 // New filter.
 func New(ctx *gin.Context, assertions []Assert) (f Filter, err error) {
@@ -253,7 +265,7 @@ func (f *Field) Where(in *gorm.DB) (out *gorm.DB) {
 // SQL builds SQL.
 // Returns statement and values (for ?).
 func (f *Field) SQL() (s string, vList []any) {
-	name := f.Name()
+	name := AsColumn(f.Name())
 	switch len(f.Value) {
 	case 0:
 	case 1:

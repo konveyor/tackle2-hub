@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -107,6 +108,30 @@ func Transaction(ctx *gin.Context) {
 			_ = ctx.Error(err)
 		}
 	}
+}
+
+// Limiter limit concurrent requests.
+// Limit concurrent request to the number of db connections
+// minus 2. This reserves connections for the (1) reaper and (2) task managers.
+func Limiter() (h gin.HandlerFunc) {
+	capacity := Settings.DB.MaxConnection
+	if capacity > 2 {
+		capacity -= 2
+	}
+	ch := make(chan struct{}, capacity)
+	h = func(c *gin.Context) {
+		mark := time.Now()
+		ch <- struct{}{}
+		d := time.Since(mark)
+		defer func() {
+			<-ch
+		}()
+		if d > time.Second {
+			Log.Info("[Limiter] waited: " + d.String())
+		}
+		c.Next()
+	}
+	return
 }
 
 // Render renders the response based on the Accept: header.

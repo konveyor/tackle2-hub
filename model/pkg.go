@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/migration/json"
-	"github.com/konveyor/tackle2-hub/migration/v19/model"
+	"github.com/konveyor/tackle2-hub/migration/v20/model"
 )
 
 // Field (data) types.
@@ -33,7 +33,7 @@ type ImportTag = model.ImportTag
 type JobFunction = model.JobFunction
 type Manifest = model.Manifest
 type MigrationWave = model.MigrationWave
-type PK = model.PK
+type PK = model.PK // Deprecated
 type Platform = model.Platform
 type ProfileGenerator = model.ProfileGenerator
 type Proxy = model.Proxy

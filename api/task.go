@@ -168,24 +168,24 @@ func (h TaskHandler) List(ctx *gin.Context) {
 		values = values.Join(qf.OR)
 		filter = filter.Revalued("state", values)
 	}
-	filter = filter.Renamed("application.id", "application__id")
-	filter = filter.Renamed("application.name", "application__name")
-	filter = filter.Renamed("platform.id", "platform__id")
-	filter = filter.Renamed("platform.name", "platform__name")
-	filter = filter.Renamed("createUser", "task\\.createUser")
-	filter = filter.Renamed("id", "task\\.id")
-	filter = filter.Renamed("name", "task\\.name")
-	filter = filter.Renamed("kind", "task\\.kind")
+	filter = filter.Renamed("application.id", "a.id")
+	filter = filter.Renamed("application.name", "a.name")
+	filter = filter.Renamed("platform.id", "p.id")
+	filter = filter.Renamed("platform.name", "p.name")
+	filter = filter.Renamed("createUser", "tasks\\.create_user")
+	filter = filter.Renamed("id", "tasks\\.id")
+	filter = filter.Renamed("name", "tasks\\.name")
+	filter = filter.Renamed("kind", "tasks\\.kind")
 	// sort
 	sort := Sort{}
-	sort.Add("task.id", "id")
-	sort.Add("task.createUser", "createUser")
-	sort.Add("task.name", "name")
-	sort.Add("task.kind", "kind")
-	sort.Add("application__id", "application.id")
-	sort.Add("application__name", "application.name")
-	sort.Add("platform__id", "platform.id")
-	sort.Add("platform__name", "platform.name")
+	sort.Add("tasks.id", "id")
+	sort.Add("tasks.create_user", "create_user")
+	sort.Add("tasks.name", "name")
+	sort.Add("tasks.kind", "kind")
+	sort.Add("applications.id", "application.id")
+	sort.Add("applications.name", "application.name")
+	sort.Add("platforms.id", "platform.id")
+	sort.Add("platforms.name", "platform.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -250,15 +250,15 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 		return
 	}
 	db := h.DB(ctx)
-	db = db.Table("task")
+	db = db.Table("tasks")
 	db = filter.Where(db)
 	type M struct {
 		State string
 		Count int
 	}
-	db = db.Select("State", "COUNT(*) Count")
+	db = db.Select("state", "COUNT(*) count")
 	db = db.Where(
-		"State", []string{
+		"state", []string{
 			tasking.Ready,
 			tasking.Postponed,
 			tasking.Pending,
@@ -330,22 +330,22 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("application.id", "application__id")
-	filter = filter.Renamed("application.name", "application__name")
-	filter = filter.Renamed("platform.id", "platform__id")
-	filter = filter.Renamed("platform.name", "platform__name")
-	filter = filter.Renamed("createUser", "task\\.createUser")
-	filter = filter.Renamed("id", "task\\.id")
-	filter = filter.Renamed("name", "task\\.name")
+	filter = filter.Renamed("application.id", "a.id")
+	filter = filter.Renamed("application.name", "a.name")
+	filter = filter.Renamed("platform.id", "p.id")
+	filter = filter.Renamed("platform.name", "p.name")
+	filter = filter.Renamed("createUser", "tasks\\.create_user")
+	filter = filter.Renamed("id", "tasks\\.id")
+	filter = filter.Renamed("name", "tasks\\.name")
 	// sort
 	sort := Sort{}
-	sort.Add("task.id", "id")
-	sort.Add("task.createUser", "createUser")
-	sort.Add("task.name", "name")
-	sort.Add("application__id", "application.id")
-	sort.Add("application__name", "application.name")
-	sort.Add("platform__id", "platform.id")
-	sort.Add("platform__name", "platform.name")
+	sort.Add("tasks.id", "id")
+	sort.Add("tasks.create_user", "createUser")
+	sort.Add("tasks.name", "name")
+	sort.Add("a.id", "application.id")
+	sort.Add("a.name", "application.name")
+	sort.Add("p.id", "platform.id")
+	sort.Add("p.name", "platform.name")
 	err = sort.With(ctx, &model.Task{})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -541,7 +541,7 @@ func (h TaskHandler) BulkCancel(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	filter = filter.Renamed("application.id", "applicationId")
+	filter = filter.Renamed("application.id", "application_id")
 	db := h.DB(ctx)
 	db = db.Model(&model.Task{})
 	db = filter.Where(db)
@@ -697,7 +697,7 @@ func (h TaskHandler) UpdateReport(ctx *gin.Context) {
 	m.TaskID = id
 	m.UpdateUser = h.BaseHandler.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
-	db = db.Where("taskid", id)
+	db = db.Where("task_id", id)
 	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -720,7 +720,7 @@ func (h TaskHandler) DeleteReport(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.TaskReport{}
 	m.ID = id
-	db := h.DB(ctx).Where("taskid", id)
+	db := h.DB(ctx).Where("task_id", id)
 	err := db.Delete(&model.TaskReport{}).Error
 	if err != nil {
 		_ = ctx.Error(err)

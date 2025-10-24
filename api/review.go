@@ -194,7 +194,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 			Comments:            m.Comments,
 			ApplicationID:       &id,
 		}
-		result = h.DB(ctx).Delete(&model.Review{}, "applicationid = ?", id)
+		result = h.DB(ctx).Delete(&model.Review{}, "application_id = ?", id)
 		if result.Error != nil {
 			_ = ctx.Error(result.Error)
 			return

@@ -84,7 +84,7 @@ func (h RuleSetHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	result := db.Where("ID IN (?)", h.ruleSetIDs(ctx, filter)).Find(&list)
+	result := db.Where("id IN (?)", h.ruleSetIDs(ctx, filter)).Find(&list)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -172,29 +172,26 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
 	q = q.Model(&model.RuleSet{})
-	q = q.Select("ID")
+	q = q.Select("id")
 	q = f.Where(q, "-Labels")
 	filter := f
 	if f, found := filter.Field("labels"); found {
+		var v []string
+		pj := f.Value.Pj()
 		if f.Value.Operator(qf.AND) {
-			var qs []*gorm.DB
-			for _, f = range f.Expand() {
-				f = f.As("json_each.value")
-				iq := h.DB(ctx)
-				iq = iq.Table("Rule")
-				iq = iq.Joins("m ,json_each(Labels)")
-				iq = iq.Select("m.RuleSetID")
-				qs = append(qs, iq)
-			}
-			q = q.Where("ID IN (?)", model.Intersect(qs...))
-		} else {
-			f = f.As("json_each.value")
+			jv := pj.LitArray(&v)
 			iq := h.DB(ctx)
-			iq = iq.Table("Rule")
-			iq = iq.Joins("m ,json_each(Labels)")
-			iq = iq.Select("m.RuleSetID")
-			iq = f.Where(iq)
-			q = q.Where("ID IN (?)", iq)
+			iq = iq.Table("rules")
+			iq = iq.Distinct("rule_set_id")
+			iq = iq.Where("labels @> " + jv)
+			q = q.Where("id IN (?)", iq)
+		} else {
+			jv := pj.Array(&v)
+			iq := h.DB(ctx)
+			iq = iq.Table("rules")
+			iq = iq.Distinct("rule_set_id")
+			iq = iq.Where("labels ?| " + jv)
+			q = q.Where("id IN (?)", iq)
 		}
 	}
 	return
