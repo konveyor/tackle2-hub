@@ -22,6 +22,9 @@ func NewClient() (newClient client.Client, err error) {
 		return
 	}
 	cfg, _ := config.GetConfig()
+	cfg.QPS = 200
+	cfg.Burst = 400
+	cfg.UserAgent = "konveyor/hub"
 	newClient, err = client.New(
 		cfg,
 		client.Options{
@@ -34,6 +37,9 @@ func NewClient() (newClient client.Client, err error) {
 // NewClientSet builds new k8s client.
 func NewClientSet() (newClient *k8s.Clientset, err error) {
 	cfg, _ := config.GetConfig()
+	cfg.QPS = 200
+	cfg.Burst = 400
+	cfg.UserAgent = "konveyor/hub"
 	newClient, err = k8s.NewForConfig(cfg)
 	err = liberr.Wrap(err)
 	return

@@ -397,8 +397,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	m := &model.Task{}
 	r.Patch(m)
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	task := &tasking.Task{}
-	task.With(m)
+	task := tasking.NewTask(m)
 	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -463,8 +462,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	rtx := RichContext(ctx)
-	task := &tasking.Task{}
-	task.With(m)
+	task := tasking.NewTask(m)
 	err = rtx.TaskManager.Update(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)

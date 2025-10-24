@@ -27,16 +27,16 @@ type LogManager struct {
 func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Context) (err error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	for _, container := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		container := &pod.Status.ContainerStatuses[i]
 		if container.State.Waiting != nil {
 			continue
 		}
 		collector := &LogCollector{
 			Owner:     m,
-			Registry:  m.collector,
 			DB:        m.DB,
 			Pod:       pod,
-			Container: &container,
+			Container: container,
 		}
 		key := collector.key()
 		if _, found := m.collector[key]; found {
@@ -55,19 +55,12 @@ func (m *LogManager) EnsureCollection(task *Task, pod *core.Pod, ctx context.Con
 func (m *LogManager) terminated(collector *LogCollector) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	for i := range m.collector {
-		if collector == m.collector[i] {
-			key := collector.key()
-			delete(m.collector, key)
-			break
-		}
-	}
+	delete(m.collector, collector.key())
 }
 
 // LogCollector collect and report container logs.
 type LogCollector struct {
 	Owner     *LogManager
-	Registry  map[string]*LogCollector
 	DB        *gorm.DB
 	Pod       *core.Pod
 	Container *core.ContainerStatus
@@ -77,27 +70,28 @@ type LogCollector struct {
 }
 
 // Begin - get container log and store in file.
-// - Request logs.
 // - Create file resource and attach to the task.
-// - Register collector.
+// - Request logs.
 // - Write (copy) log.
-// - Unregister collector.
+// - Unregister self.
 func (r *LogCollector) Begin(task *Task, ctx context.Context) (err error) {
-	reader, err := r.request(ctx)
-	if err != nil {
-		return
-	}
 	f, err := r.file(task)
 	if err != nil {
 		return
 	}
 	go func() {
 		defer func() {
-			_ = reader.Close()
-			_ = f.Close()
 			r.Owner.terminated(r)
+			_ = f.Close()
 		}()
-		err := r.copy(reader, f)
+		reader, err := r.request(ctx)
+		if err != nil {
+			return
+		}
+		defer func() {
+			_ = reader.Close()
+		}()
+		err = r.copy(reader, f)
 		Log.Error(err, "")
 	}()
 	return

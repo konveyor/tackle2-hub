@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"testing"
+	"time"
 
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
@@ -33,7 +34,7 @@ func TestPriorityEscalate(t *testing.T) {
 	c.Spec.Dependencies = []string{"b"}
 	kinds[c.Name] = &c
 
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -41,27 +42,27 @@ func TestPriorityEscalate(t *testing.T) {
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 5
 	task.Kind = "b"
 	task.State = Ready
@@ -105,7 +106,7 @@ func TestPriorityGraph(t *testing.T) {
 
 	//
 	// subject: application
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -113,21 +114,21 @@ func TestPriorityGraph(t *testing.T) {
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.ApplicationID = &appId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.ApplicationID = &appId
@@ -141,7 +142,7 @@ func TestPriorityGraph(t *testing.T) {
 	g.Expect(len(deps)).To(gomega.Equal(2))
 	//
 	// subject: platform
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 1
 	task.Kind = "c"
 	task.State = Ready
@@ -149,21 +150,21 @@ func TestPriorityGraph(t *testing.T) {
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 2
 	task.Kind = "b"
 	task.State = Ready
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 3
 	task.Kind = "a"
 	task.State = Ready
 	task.PlatformID = &platformId
 	ready = append(ready, task)
 
-	task = &Task{&model.Task{}}
+	task = NewTask(&model.Task{})
 	task.ID = 4
 	task.State = Ready
 	task.PlatformID = &platformId
@@ -257,4 +258,198 @@ func TestLogCollectorCopy(t *testing.T) {
 	err = collector.copy(reader, writer)
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(content).To(gomega.Equal(writer.String()))
+}
+
+func TestRuleIsolated(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	rule := RuleIsolated{}
+	tasks := []*Task{
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+	}
+	tasks[0].ID = 1
+	tasks[0].Policy = model.TaskPolicy{Isolated: true}
+	tasks[1].ID = 2
+
+	domain := NewDomain(tasks)
+
+	matched, _ := rule.Match(tasks[0], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	matched, _ = rule.Match(tasks[1], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+}
+
+func TestRuleUnique(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	rule := RuleUnique{
+		matched: make(map[uint]uint),
+	}
+	tasks := []*Task{
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+	}
+	one := uint(1)
+	two := uint(2)
+
+	tasks[0].ID = 1
+	tasks[0].Kind = "A"
+	tasks[0].ApplicationID = &one
+
+	tasks[1].ID = 2
+	tasks[1].Kind = "A"
+	tasks[1].ApplicationID = &one
+
+	tasks[2].ID = 3
+	tasks[2].Kind = "B"
+	tasks[2].ApplicationID = &two
+
+	tasks[3].ID = 4
+	tasks[3].Kind = "A"
+	tasks[3].PlatformID = &one
+
+	tasks[4].ID = 5
+	tasks[4].Kind = "A"
+	tasks[4].PlatformID = &one
+
+	tasks[5].ID = 6
+	tasks[5].Kind = "B"
+	tasks[5].PlatformID = &two
+
+	domain := NewDomain(tasks)
+
+	// 0 and 1 match on kind
+	matched, _ := rule.Match(tasks[0], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, _ = rule.Match(tasks[1], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+
+	// 2 not matched.  different kind.
+	matched, _ = rule.Match(tasks[2], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 0 and 1 no longer matched on addon.
+	tasks[0].Kind = ""
+	tasks[0].Addon = "A"
+	tasks[1].Addon = "B"
+	matched, _ = rule.Match(tasks[0], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 3 and 4 match on kind
+	matched, _ = rule.Match(tasks[3], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+	matched, _ = rule.Match(tasks[4], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+
+	// 4 not matched.  different kind.
+	matched, _ = rule.Match(tasks[5], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 3 and 5 no longer matched on addon.
+	tasks[3].Kind = ""
+	tasks[3].Addon = "A"
+	tasks[4].Addon = "B"
+	matched, _ = rule.Match(tasks[3], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+}
+
+func TestRuleDeps(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	rule := RuleDeps{}
+	rule.cluster = &Cluster{}
+	rule.cluster.tasks = make(map[string]*crd.Task)
+	rule.cluster.tasks["B"] = &crd.Task{
+		Spec: crd.TaskSpec{
+			Dependencies: []string{"A"},
+		}}
+
+	tasks := []*Task{
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+		NewTask(&model.Task{}),
+	}
+	one := uint(1)
+	two := uint(2)
+
+	tasks[0].ID = 1
+	tasks[0].Kind = "A"
+	tasks[0].ApplicationID = &one
+
+	tasks[1].ID = 2
+	tasks[1].Kind = "B"
+	tasks[1].ApplicationID = &one
+
+	tasks[2].ID = 3
+	tasks[2].Kind = "B"
+	tasks[2].ApplicationID = &two
+
+	tasks[3].ID = 4
+	tasks[3].Kind = "B"
+	tasks[3].PlatformID = &one
+
+	tasks[4].ID = 5
+	tasks[4].Kind = "B"
+	tasks[4].PlatformID = &two
+
+	tasks[5].ID = 6
+	tasks[5].Kind = "C"
+	tasks[5].PlatformID = &one
+
+	domain := NewDomain(tasks)
+
+	// no deps
+	matched, _ := rule.Match(tasks[0], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 1(B) depends on 0(A)
+	matched, _ = rule.Match(tasks[1], domain)
+	g.Expect(matched).To(gomega.BeTrue())
+
+	// 2(B) depends on 0(A) but different subject
+	matched, _ = rule.Match(tasks[2], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 3(B) depends on 0(A) but different subject
+	matched, _ = rule.Match(tasks[3], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 4(B) not depends on 0(A) and different subject
+	matched, _ = rule.Match(tasks[4], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+
+	// 5(C) not depends on 0(A) and different subject
+	matched, _ = rule.Match(tasks[5], domain)
+	g.Expect(matched).To(gomega.BeFalse())
+}
+
+func TestRulePreempted(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	p := &Settings.Hub.Task.Preemption
+	p.Enabled = true
+	p.Postponed = time.Second
+
+	rule := RulePreempted{}
+	task := NewTask(&model.Task{})
+	task.Event(Preempted)
+
+	// matched
+	matched, _ := rule.Match(task, &Domain{})
+	g.Expect(matched).To(gomega.BeTrue())
+
+	// expired
+	time.Sleep(time.Second)
+	matched, _ = rule.Match(task, &Domain{})
+	g.Expect(matched).To(gomega.BeFalse())
 }

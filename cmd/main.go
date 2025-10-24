@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"runtime"
+	"runtime/debug"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
@@ -15,6 +13,7 @@ import (
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/controller"
 	"github.com/konveyor/tackle2-hub/database"
+	"github.com/konveyor/tackle2-hub/heap"
 	"github.com/konveyor/tackle2-hub/importer"
 	"github.com/konveyor/tackle2-hub/k8s"
 	crd "github.com/konveyor/tackle2-hub/k8s/api"
@@ -95,37 +94,6 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	return
 }
 
-// printHeap print heap statistics every 15 seconds.
-func printHeap() {
-	delay := time.Duration(Settings.Frequency.Heap) * time.Second
-	if delay == 0 {
-		return // disabled
-	}
-	go func() {
-		mb := func(n uint64) (f float64) {
-			f = float64(n) / 1024 / 1024
-			return
-		}
-		for {
-			var m runtime.MemStats
-			// debug.SetGCPercent(50)
-			// runtime.GC()
-			runtime.ReadMemStats(&m)
-			memory := m.HeapSys - m.HeapReleased
-			reserved := m.HeapIdle - m.HeapReleased
-			allocated := m.HeapAlloc
-			unknown := memory - allocated - reserved
-			fmt.Println("\nHEAP:")
-			fmt.Println("_______________________")
-			fmt.Printf("Memory   = %.2f MB\n", mb(memory))
-			fmt.Printf("Used     = %.2f MB\n", mb(allocated))
-			fmt.Printf("Reserved = %.2f MB\n", mb(reserved))
-			fmt.Printf("Unknown  = %.2f MB\n", mb(unknown))
-			time.Sleep(delay)
-		}
-	}()
-}
-
 // main.
 func main() {
 	log.Info("Started:\n" + Settings.String())
@@ -136,7 +104,8 @@ func main() {
 		}
 	}()
 	syscall.Umask(0)
-	printHeap()
+	debug.SetGCPercent(20)
+	heap.Monitor()
 	//
 	// Model
 	db, err := Setup()
@@ -174,7 +143,7 @@ func main() {
 	}
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
-		DB:     db.Debug(),
+		DB:     db,
 		Client: client,
 	}
 	err = jsdMigrator.Migrate(model.ALL)

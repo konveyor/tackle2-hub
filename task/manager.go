@@ -25,12 +25,12 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8r "k8s.io/apimachinery/pkg/runtime"
 	k8j "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	k8y "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,20 +55,21 @@ const (
 
 // Events
 const (
-	AddonSelected   = "AddonSelected"
-	ExtSelected     = "ExtensionSelected"
-	ImageError      = "ImageError"
-	PodNotFound     = "PodNotFound"
-	PodCreated      = "PodCreated"
-	PodPending      = "PodPending"
-	PodRunning      = "PodRunning"
-	Preempted       = "Preempted"
-	PodSucceeded    = "PodSucceeded"
-	PodFailed       = "PodFailed"
-	PodDeleted      = "PodDeleted"
-	Escalated       = "Escalated"
-	Released        = "Released"
-	ContainerKilled = "ContainerKilled"
+	AddonSelected    = "AddonSelected"
+	ExtSelected      = "ExtensionSelected"
+	ImageError       = "ImageError"
+	PodNotFound      = "PodNotFound"
+	PodCreated       = "PodCreated"
+	PodPending       = "PodPending"
+	PodUnschedulable = "PodUnschedulable"
+	PodRunning       = "PodRunning"
+	Preempted        = "Preempted"
+	PodSucceeded     = "PodSucceeded"
+	PodFailed        = "PodFailed"
+	PodDeleted       = "PodDeleted"
+	Escalated        = "Escalated"
+	Released         = "Released"
+	ContainerKilled  = "ContainerKilled"
 )
 
 // Mode
@@ -103,6 +104,10 @@ var (
 	Log      = logr.WithName("task-scheduler")
 )
 
+func init() {
+	Log = Log.V(Settings.Log.Reaper)
+}
+
 // Manager provides task management.
 type Manager struct {
 	// DB
@@ -117,10 +122,16 @@ type Manager struct {
 	queue chan func()
 	// logManager provides pod log collection.
 	logManager LogManager
+	//
+	capacity    int
+	unscheduled int
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	if Settings.Log.Task > 0 {
+		m.DB = m.DB.Debug()
+	}
 	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
 	m.logManager = LogManager{
@@ -143,8 +154,10 @@ func (m *Manager) Run(ctx context.Context) {
 				err := m.cluster.Refresh()
 				if err == nil {
 					m.deleteOrphanPods()
+					m.deleteRetainedPods()
 					m.runActions()
 					m.updateRunning(ctx)
+					m.adjustCapacity()
 					m.deleteZombies()
 					m.startReady()
 					m.pause()
@@ -167,7 +180,7 @@ func (m *Manager) Create(db *gorm.DB, requested *Task) (err error) {
 	if err != nil {
 		return
 	}
-	task := &Task{&model.Task{}}
+	task := NewTask(&model.Task{})
 	switch requested.State {
 	case "":
 		requested.State = Created
@@ -375,6 +388,31 @@ func (m *Manager) startReady() {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	//
+	mark := time.Now()
+	defer func() {
+		d := time.Since(mark)
+		threshold := 3 * time.Second
+		if d > threshold {
+			Log.Info(
+				"Ready tasks started.",
+				"duration",
+				d.String(),
+				"threshold",
+				threshold.String())
+		}
+	}()
+	//
+	if m.unscheduled > 0 {
+		Log.Info(
+			"Task pod creation - paused.",
+			"unscheduled",
+			m.unscheduled)
+		return
+	}
+	//
+	quota := &Quota{}
+	quota.with(&m.cluster)
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
@@ -393,10 +431,7 @@ func (m *Manager) startReady() {
 	if len(fetched) == 0 {
 		return
 	}
-	var list []*Task
-	for _, task := range fetched {
-		list = append(list, &Task{task})
-	}
+	list := m.taskList(fetched)
 	list, err = m.disabled(list)
 	if err != nil {
 		return
@@ -413,11 +448,19 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.createPod(list)
+	err = m.batchUpdate(list)
+	if err != nil {
+		return
+	}
+	err = m.createPod(list, quota)
 	if err != nil {
 		return
 	}
 	err = m.preempt(list)
+	if err != nil {
+		return
+	}
+	err = m.batchUpdate(list)
 	if err != nil {
 		return
 	}
@@ -436,11 +479,6 @@ func (m *Manager) disabled(list []*Task) (kept []*Task, err error) {
 		task.State = Failed
 		task.Terminated = &mark
 		task.Error("Error", "Tasking is disabled.")
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 	}
 	return
 }
@@ -507,12 +545,6 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 				task.Error("Error", err.Error())
 				task.Terminated = &mark
 				task.State = Failed
-				err = task.update(m.DB)
-				if err != nil {
-					err = liberr.Wrap(err)
-					return
-				}
-				err = nil
 			}
 		} else {
 			kept = append(kept, task)
@@ -628,35 +660,28 @@ func (m *Manager) postpone(list []*Task) (err error) {
 			cluster: &m.cluster,
 		},
 	}
+	domain := NewDomain(list)
 	for _, task := range list {
 		if !task.StateIn(Ready, Postponed, QuotaBlocked) {
 			continue
 		}
-		ready := task
-		for _, other := range list {
-			if ready.ID == other.ID {
-				continue
-			}
-			for _, rule := range ruleSet {
-				matched, reason := rule.Match(ready, other)
-				if matched {
-					postponed[task.ID] = reason
-					continue
-				}
+		var matched bool
+		var reason string
+		for _, rule := range ruleSet {
+			matched, reason = rule.Match(task, domain)
+			if matched {
+				postponed[task.ID] = reason
+				break
 			}
 		}
-		_, found := postponed[task.ID]
-		if !found {
-			if task.State == Postponed {
-				released[task.ID] = 0
-			}
+		if !matched && task.State == Postponed {
+			released[task.ID] = 0
 		}
 	}
 	if len(postponed)+len(released) == 0 {
 		return
 	}
 	for _, task := range list {
-		updated := false
 		reason, found := postponed[task.ID]
 		if found {
 			task.State = Postponed
@@ -667,19 +692,10 @@ func (m *Manager) postpone(list []*Task) (err error) {
 				task.ID,
 				"reason",
 				reason)
-			updated = true
 		}
 		_, found = released[task.ID]
 		if found {
 			task.State = Ready
-			updated = true
-		}
-		if updated {
-			err = task.update(m.DB)
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
 		}
 	}
 	return
@@ -707,17 +723,15 @@ func (m *Manager) adjustPriority(list []*Task) (err error) {
 			return
 		}
 		task.State = Ready
-		err = task.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 	}
 	return
 }
 
 // createPod creates a pod for the task.
-func (m *Manager) createPod(list []*Task) (err error) {
+func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
+	if len(list) == 0 {
+		return
+	}
 	sort.Slice(
 		list,
 		func(i, j int) bool {
@@ -727,29 +741,44 @@ func (m *Manager) createPod(list []*Task) (err error) {
 				(it.Priority == jt.Priority &&
 					it.ID < jt.ID)
 		})
+	created := 0
+	capacity := max(m.capacity, 1)
+	current := len(m.cluster.TaskPods())
 	for _, task := range list {
 		if !task.StateIn(Ready, QuotaBlocked) {
 			continue
 		}
+		if current >= capacity {
+			break
+		}
 		ready := task
 		started := false
-		started, err = ready.Run(&m.cluster)
+		started, err = ready.Run(&m.cluster, quota)
 		if err != nil {
 			Log.Error(err, "")
 			return
 		}
-		err = ready.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 		if started {
+			current++
+			created++
 			Log.Info("Task started.", "id", ready.ID)
 			if ready.Retries == 0 {
 				metrics.TasksInitiated.Inc()
 			}
+		} else {
+			break
 		}
 	}
+	Log.Info(
+		"Task pods created.",
+		"requested",
+		len(list),
+		"current",
+		current,
+		"capacity",
+		m.capacity,
+		"created",
+		created)
 	return
 }
 
@@ -855,11 +884,6 @@ func (m *Manager) preempt(list []*Task) (err error) {
 		p.Errors = nil
 		p.Event(Preempted, reason)
 		Log.Info(reason)
-		err = p.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
 		n++
 		// preempt x%.
 		if len(blocked)/n*100 > preemption.Rate {
@@ -875,6 +899,21 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	defer func() {
 		Log.Error(err, "")
 	}()
+	//
+	mark := time.Now()
+	defer func() {
+		d := time.Since(mark)
+		threshold := 3 * time.Second
+		if d > threshold {
+			Log.Info(
+				"Running tasks updated.",
+				"duration",
+				d.String(),
+				"threshold",
+				threshold.String())
+		}
+	}()
+	//
 	fetched := []*model.Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
@@ -891,13 +930,9 @@ func (m *Manager) updateRunning(ctx context.Context) {
 	if len(fetched) == 0 {
 		return
 	}
-	var list []*Task
-	for _, task := range fetched {
-		list = append(list, &Task{task})
-	}
-	for _, task := range list {
-		running := task
-		pod, found := running.Reflect(&m.cluster)
+	var updated []*Task
+	for _, task := range m.taskList(fetched) {
+		pod, found := task.Reflect(&m.cluster)
 		if found {
 			err = m.logManager.EnsureCollection(task, pod, ctx)
 			if err != nil {
@@ -905,43 +940,133 @@ func (m *Manager) updateRunning(ctx context.Context) {
 				continue
 			}
 			if task.StateIn(Succeeded, Failed) {
-				err = m.podSnapshot(running, pod)
+				Log.Info(
+					"Task completed.",
+					"id",
+					task.ID)
+				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
 					continue
 				}
-				podRetention := 0
-				if running.State == Succeeded {
-					podRetention = Settings.Hub.Task.Pod.Retention.Succeeded
-				} else {
-					podRetention = Settings.Hub.Task.Pod.Retention.Failed
-				}
+				podRetention := task.podRetention()
 				if podRetention > 0 {
-					err = m.ensureTerminated(running, pod)
+					err = m.ensureTerminated(task, pod)
 					if err != nil {
 						podRetention = 0
 					}
 				}
 				if podRetention == 0 {
-					err = running.Delete(m.Client)
+					err = task.Delete(m.Client)
 					if err != nil {
 						Log.Error(err, "")
 						continue
 					}
+				} else {
+					task.Retained = true
 				}
+				var advanced []*Task
+				advanced, err = m.advancePipeline(task)
+				if err != nil {
+					Log.Error(err, "")
+					continue
+				}
+				updated = append(updated, advanced...)
 			}
 		}
-		err = running.update(m.DB)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
+		updated = append(updated, task)
+	}
+	err = m.batchUpdate(updated)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+}
+
+// adjustCapacity adjusts scheduling controls.
+func (m *Manager) adjustCapacity() {
+	pods := 0
+	unscheduled := 0
+	for _, pod := range m.cluster.TaskPods() {
+		switch pod.Status.Phase {
+		case core.PodPending:
+			match := false
+			for _, p := range pod.Status.Conditions {
+				if p.Type == core.PodScheduled {
+					if p.Reason == core.PodReasonUnschedulable {
+						match = true
+						break
+					}
+				}
+			}
+			if match {
+				unscheduled++
+			} else {
+				pods++
+			}
+		case core.PodRunning:
+			pods++
 		}
-		Log.V(1).Info("Task updated.", "id", running.ID)
-		err = m.next(running)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
+	}
+	if pods == 0 {
+		return
+	}
+	if unscheduled == 0 {
+		next := float64(pods)
+		next *= 1.15
+		next = max(next, 1.0)
+		nextInt := int(next + 0.9999)
+		m.capacity = max(m.capacity, nextInt)
+	} else {
+		if unscheduled > m.unscheduled {
+			m.capacity = pods - (unscheduled - m.unscheduled)
 		}
+	}
+	m.unscheduled = unscheduled
+	m.capacity = max(m.capacity, 0)
+	//
+	Log.Info(
+		"Cluster capacity adjusted.",
+		"pods",
+		pods,
+		"unscheduled",
+		m.unscheduled,
+		"capacity",
+		m.capacity)
+}
+
+// deleteRetained deletes expired retained tasks.
+func (m *Manager) deleteRetainedPods() {
+	var err error
+	defer func() {
+		Log.Error(err, "")
+	}()
+	fetched := []*model.Task{}
+	err = m.DB.Find(
+		&fetched,
+		"Retained",
+		true).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	var updated []*Task
+	for _, task := range m.taskList(fetched) {
+		if !task.podRetentionExpired() {
+			continue
+		}
+		err = task.Delete(m.Client)
+		if err != nil {
+			Log.Error(err, "")
+			continue
+		}
+		task.Retained = false
+		updated = append(updated, task)
+	}
+	err = m.batchUpdate(updated)
+	if err != nil {
+		Log.Error(err, "")
+		return
 	}
 }
 
@@ -954,7 +1079,7 @@ func (m *Manager) deleteZombies() {
 		Log.Error(err, "")
 	}()
 	var pods []string
-	for _, pod := range m.cluster.Pods() {
+	for _, pod := range m.cluster.TaskPods() {
 		if pod.Status.Phase == core.PodRunning {
 			ref := path.Join(pod.Namespace, pod.Name)
 			pods = append(
@@ -964,13 +1089,14 @@ func (m *Manager) deleteZombies() {
 	}
 	fetched := []*Task{}
 	db := m.DB.Select("Events")
-	db = db.Where("Pod", pods)
-	db = db.Where("state IN ?",
+	err = db.Find(
+		&fetched,
+		"state IN ? and pod IN ?",
 		[]string{
 			Succeeded,
 			Failed,
-		})
-	err = db.Find(&fetched).Error
+		},
+		pods).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -1012,11 +1138,11 @@ func (m *Manager) deleteOrphanPods() {
 	for _, task := range list {
 		owned[task.Pod] = 0
 	}
-	for _, pod := range m.cluster.Pods() {
+	for _, pod := range m.cluster.TaskPods() {
 		ref := path.Join(pod.Namespace, pod.Name)
 		if _, found := owned[ref]; !found {
 			Log.Info("Orphan pod found.", "ref", ref)
-			task := Task{&model.Task{}}
+			task := NewTask(&model.Task{})
 			task.Pod = ref
 			err = task.Delete(m.Client)
 			if err != nil {
@@ -1032,7 +1158,7 @@ func (m *Manager) deleteOrphanPods() {
 //   - pod YAML
 //   - pod Events
 func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
-	events, err := m.podEvent(pod)
+	events, err := m.podEvents(pod)
 	if err != nil {
 		return
 	}
@@ -1096,8 +1222,8 @@ func (m *Manager) podSnapshot(task *Task, pod *core.Pod) (err error) {
 	return
 }
 
-// podEvent get pod events.
-func (m *Manager) podEvent(pod *core.Pod) (events []Event, err error) {
+// podEvents get pod events.
+func (m *Manager) podEvents(pod *core.Pod) (events []Event, err error) {
 	clientSet, err := k8s2.NewClientSet()
 	if err != nil {
 		return
@@ -1204,14 +1330,16 @@ func (m *Manager) terminateContainer(task *Task, pod *core.Pod, container string
 			container)
 		Log.Info(
 			"Container KILLED.",
+			"pod",
+			pod.Name,
 			"name",
 			container)
 	}
 	return
 }
 
-// next makes the next task in a mode=pipeline task group Ready.
-func (m *Manager) next(task *Task) (err error) {
+// advancePipeline makes the next task in a mode=pipeline task group Ready.
+func (m *Manager) advancePipeline(task *Task) (updated []*Task, err error) {
 	if task.TaskGroupID == nil {
 		return
 	}
@@ -1225,11 +1353,6 @@ func (m *Manager) next(task *Task) (err error) {
 	}
 	var tasks []*Task
 	db := m.DB.Order("ID")
-	db = reflect.Select(
-		m.DB,
-		task.Task,
-		"ID",
-		"State")
 	err = db.Find(&tasks, "TaskGroupID", task.TaskGroupID).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1244,15 +1367,7 @@ func (m *Manager) next(task *Task) (err error) {
 			switch member.State {
 			case "", Created:
 				member.State = Ready
-				db = reflect.Select(
-					m.DB,
-					member.Task,
-					"State")
-				nErr := db.Save(member).Error
-				if nErr != nil {
-					nErr = liberr.Wrap(nErr)
-					Log.Error(nErr, "")
-				}
+				updated = append(updated, member)
 				return
 			default:
 				// next
@@ -1273,20 +1388,50 @@ func (m *Manager) next(task *Task) (err error) {
 					nErr = liberr.Wrap(nErr)
 					Log.Error(nErr, "")
 				}
-				db = reflect.Select(
-					m.DB,
-					member.Task,
-					"State",
-					"Events")
-				nErr = db.Save(member).Error
-				if nErr != nil {
-					nErr = liberr.Wrap(nErr)
-					Log.Error(nErr, "")
-				}
+				updated = append(updated, member)
 			}
 		default:
 			return
 		}
+	}
+	return
+}
+
+// batchUpdate tasks.
+func (m *Manager) batchUpdate(tasks []*Task) (err error) {
+	err = m.DB.Transaction(
+		func(tx *gorm.DB) (err error) {
+			for _, task := range tasks {
+				if task.hasChanged() {
+					err = task.update(tx)
+					if err != nil {
+						err = liberr.Wrap(err)
+						break
+					}
+				}
+			}
+			return
+		})
+	if err == nil {
+		return
+	}
+	for _, task := range tasks {
+		if task.hasChanged() {
+			err = task.update(m.DB)
+			if err != nil {
+				err = liberr.Wrap(err)
+				break
+			}
+		}
+	}
+	return
+}
+
+// taskList returns a list of Task.
+func (m *Manager) taskList(in []*model.Task) (out []*Task) {
+	out = make([]*Task, len(in))
+	for i := range in {
+		out[i] = NewTask(in[i])
 	}
 	return
 }
@@ -1378,7 +1523,11 @@ type Cluster struct {
 	addons     map[string]*crd.Addon
 	extensions map[string]*crd.Extension
 	tasks      map[string]*crd.Task
-	pods       map[string]*core.Pod
+	quotas     map[string]*core.ResourceQuota
+	pods       struct {
+		other map[string]*core.Pod
+		tasks map[string]*core.Pod
+	}
 }
 
 // Refresh the cache.
@@ -1390,7 +1539,9 @@ func (k *Cluster) Refresh() (err error) {
 		k.addons = make(map[string]*crd.Addon)
 		k.extensions = make(map[string]*crd.Extension)
 		k.tasks = make(map[string]*crd.Task)
-		k.pods = make(map[string]*core.Pod)
+		k.pods.other = make(map[string]*core.Pod)
+		k.pods.tasks = make(map[string]*core.Pod)
+		k.quotas = make(map[string]*core.ResourceQuota)
 		return
 	}
 	err = k.getTackle()
@@ -1410,6 +1561,10 @@ func (k *Cluster) Refresh() (err error) {
 		return
 	}
 	err = k.getPods()
+	if err != nil {
+		return
+	}
+	err = k.getQuotas()
 	if err != nil {
 		return
 	}
@@ -1450,11 +1605,24 @@ func (k *Cluster) Extension(name string) (r *crd.Extension, found bool) {
 	return
 }
 
-// Extensions returns an addon my name.
+// Extensions returns an extension my name.
 func (k *Cluster) Extensions() (list []*crd.Extension) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	for _, r := range k.extensions {
+		list = append(list, r)
+	}
+	return
+}
+
+// FindExtensions returns extensions by name.
+func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err error) {
+	for _, name := range names {
+		r, found := k.extensions[name]
+		if !found {
+			err = &ExtensionNotFound{name}
+			return
+		}
 		list = append(list, r)
 	}
 	return
@@ -1472,16 +1640,51 @@ func (k *Cluster) Task(name string) (r *crd.Task, found bool) {
 func (k *Cluster) Pod(name string) (r *core.Pod, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
-	r, found = k.pods[name]
+	r, found = k.pods.tasks[name]
 	return
 }
 
-// Pods returns a list of pods.
-func (k *Cluster) Pods() (list []*core.Pod) {
+// OtherPods returns a list of non-task pods.
+func (k *Cluster) OtherPods() (list []*core.Pod) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
-	for _, r := range k.pods {
+	for _, r := range k.pods.other {
 		list = append(list, r)
+	}
+	return
+}
+
+// TaskPods returns a list of task pods.
+func (k *Cluster) TaskPods() (list []*core.Pod) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
+	for _, r := range k.pods.tasks {
+		list = append(list, r)
+	}
+	return
+}
+
+// Quotas returns quotas.
+func (k *Cluster) Quotas() (list []*core.ResourceQuota) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
+	for _, r := range k.quotas {
+		list = append(list, r)
+	}
+	return
+}
+
+// PodQuota returns the most restricted pod quota.
+func (k *Cluster) PodQuota() (quota int, found bool) {
+	for _, r := range k.Quotas() {
+		var qty resource.Quantity
+		qty, found = r.Spec.Hard[core.ResourcePods]
+		if found {
+			n := int(qty.Value())
+			if quota == 0 || quota > n {
+				quota = n
+			}
+		}
 	}
 	return
 }
@@ -1576,10 +1779,9 @@ func (k *Cluster) getTasks() (err error) {
 
 // getPods
 func (k *Cluster) getPods() (err error) {
-	k.pods = make(map[string]*core.Pod)
+	k.pods.other = make(map[string]*core.Pod)
+	k.pods.tasks = make(map[string]*core.Pod)
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(TaskLabel, selection.Exists, []string{})
-	selector = selector.Add(*req)
 	options := &k8s.ListOptions{
 		Namespace:     Settings.Namespace,
 		LabelSelector: selector,
@@ -1595,7 +1797,32 @@ func (k *Cluster) getPods() (err error) {
 	}
 	for i := range list.Items {
 		r := &list.Items[i]
-		k.pods[r.Name] = r
+		if _, found := r.Labels[TaskLabel]; found {
+			k.pods.tasks[r.Name] = r
+		} else {
+			k.pods.other[r.Name] = r
+		}
+
+	}
+	return
+}
+
+// getQuotas
+func (k *Cluster) getQuotas() (err error) {
+	k.quotas = make(map[string]*core.ResourceQuota)
+	options := &k8s.ListOptions{Namespace: Settings.Namespace}
+	list := core.ResourceQuotaList{}
+	err = k.List(
+		context.TODO(),
+		&list,
+		options)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for i := range list.Items {
+		r := &list.Items[i]
+		k.quotas[r.Name] = r
 	}
 	return
 }

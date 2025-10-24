@@ -130,6 +130,8 @@ type Task struct {
 	Data          json.Data  `gorm:"type:json;serializer:json"`
 	Started       *time.Time
 	Terminated    *time.Time
+	Retained      bool        `gorm:"index"`
+	Reaped        bool        `gorm:"index"`
 	Errors        []TaskError `gorm:"type:json;serializer:json"`
 	Events        []TaskEvent `gorm:"type:json;serializer:json"`
 	Pod           string      `gorm:"index"`
@@ -140,7 +142,7 @@ type Task struct {
 	Application   *Application
 	PlatformID    *uint `gorm:"index"`
 	Platform      *Platform
-	TaskGroupID   *uint `gorm:"<-:create"`
+	TaskGroupID   *uint `gorm:"<-:create;index"`
 	TaskGroup     *TaskGroup
 }
 
