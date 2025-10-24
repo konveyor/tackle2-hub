@@ -308,12 +308,8 @@ func (r *Git) checkout() (err error) {
 	if branch == "" {
 		return
 	}
-	dir, _ := os.Getwd()
-	defer func() {
-		_ = os.Chdir(dir)
-	}()
-	_ = os.Chdir(r.Path)
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("checkout", branch)
 	err = cmd.Run()
 	return
