@@ -11,8 +11,17 @@ var (
 		Name:         "Questionnaire1",
 		Description:  "Questionnaire minimal sample 1",
 		Required:     true,
-		Thresholds:   api.Thresholds{},
-		RiskMessages: api.RiskMessages{},
+		Thresholds: api.Thresholds{
+			Red:     30,
+			Yellow:  20,
+			Unknown: 10,
+		},
+		RiskMessages: api.RiskMessages{
+			Red:     "Application requires deep changes in code or infrastructure.",
+			Yellow:  "Application requires some changes in code or configuration.",
+			Green:   "Application is ready for modernization.",
+			Unknown: "More information needed.",
+		},
 		Sections: []api.Section{
 			{
 				Order: 1,
