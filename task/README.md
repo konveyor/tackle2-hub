@@ -10,9 +10,10 @@ The manager processes tasks at an interval defined by the
 3. Delete orphaned pods. Orphans are pod within the namespace with task 
    labels that does not correspond to a task in the running state.
 4. Fetch running tasks; update their status based on the associated pod/container status.
-5. Kill zombies. Zombies are _sidecar_ containers that have not terminated on their own after the
+5. Adjust estimated cluster capacity.
+6. Kill zombies. Zombies are _sidecar_ containers that have not terminated on their own after the
    _main_ (addon) container has terminated.
-6. Fetch and run new (state=Ready) tasks:
+7. Fetch and run new (state=Ready) tasks:
    1. select addon. See: _Addons.Selection_.
    2. select extensions. See: _Extensions.Selection_.
    3. create pod. See: _Pods_.
@@ -30,11 +31,22 @@ adjusted to be the priority+10.  This preserves the intended priority ordering w
 For example: A task created without the priority specified (default:0) will be adjusted to have
 a priority=10.  A task created with priority=4 will be adjusted to priority=14.
 
-### Resource Quota ###
+### Quotas ###
 
+The task manager supports an _internal_ quota (setting) to restrict the number of task pods
+Pending or  Running at any given time. This is more effective than k8s ResourceQuotas because it
+differentiates between scheduled and completed pods. The pod quota _setting_ is ignored when a
+k8s ResourceQuota exists in the namespace.
 When a pod cannot be created due to quota restriction, the manager sets the state=_QuotaBlocked_ 
 and a _QuotaBlocked_ event is reported on the task. The manager will attempt to create the pod in
 every processing cycle.
+
+### Cluster capacity detection ###
+Task scheduling is based on an estimated cluster capacity detection and throttling algorithm.  
+The goal is to maximize the number of created/scheduled task pods while minimizing the number of pods that 
+cannot be scheduled to a node. The scheduler monitors the number of (task) pods the the k8s node scheduler 
+cannot schedule and self-throttles accordingly. As a result, a _target capacity_ is dynamically determined
+and constantly adjusted.
 
 ### Priority Escalation ###
 
