@@ -2406,7 +2406,7 @@ func (r *InsightWriter) Create(id uint, filter qf.Filter) (path string, count in
 // db returns a db client.
 func (r *InsightWriter) db() (db *gorm.DB) {
 	rtx := RichContext(r.ctx)
-	db = rtx.DB.Debug()
+	db = rtx.DB
 	return
 }
 
@@ -2464,7 +2464,7 @@ type AnalysisWriter struct {
 // db returns a db client.
 func (r *AnalysisWriter) db() (db *gorm.DB) {
 	rtx := RichContext(r.ctx)
-	db = rtx.DB.Debug()
+	db = rtx.DB
 	return
 }
 
@@ -2587,7 +2587,7 @@ type ReportWriter struct {
 // db returns a db client.
 func (r *ReportWriter) db() (db *gorm.DB) {
 	rtx := RichContext(r.ctx)
-	db = rtx.DB.Debug()
+	db = rtx.DB
 	return
 }
 

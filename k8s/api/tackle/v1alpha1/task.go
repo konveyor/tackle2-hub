@@ -55,16 +55,9 @@ type Task struct {
 	Status TaskStatus `json:"status,omitempty"`
 }
 
-// HasDep return true if the task has the dependency.
-func (r *Task) HasDep(name string) (found bool) {
-	for i := range r.Spec.Dependencies {
-		n := r.Spec.Dependencies[i]
-		if n == name {
-			found = true
-			break
-		}
-	}
-	return
+// Deps returns dependencies.
+func (t *Task) Deps() []string {
+	return t.Spec.Dependencies
 }
 
 // Data returns the task Data as map[string]any.

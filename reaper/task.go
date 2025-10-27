@@ -47,9 +47,13 @@ func (r *TaskReaper) Run() {
 	list := []task.Task{}
 	result := r.DB.Find(
 		&list,
-		"state IN ?",
+		"state IN ? and reaped = 0",
 		[]string{
 			task.Created,
+			task.Ready,
+			task.Pending,
+			task.QuotaBlocked,
+			task.Running,
 			task.Succeeded,
 			task.Failed,
 			task.Canceled,
@@ -84,7 +88,9 @@ func (r *TaskReaper) Run() {
 					}
 				}
 			}
-		case task.Pending:
+		case task.Ready,
+			task.Pending,
+			task.QuotaBlocked:
 			mark := m.CreateTime
 			if m.TTL.Pending > 0 {
 				d := time.Duration(m.TTL.Pending) * Unit
@@ -119,10 +125,6 @@ func (r *TaskReaper) Run() {
 					r.release(m)
 				}
 			}
-			d := time.Duration(Settings.Hub.Task.Pod.Retention.Succeeded) * Unit
-			if time.Since(mark) > d {
-				r.podDelete(m)
-			}
 		case task.Failed:
 			mark := m.CreateTime
 			if m.Terminated != nil {
@@ -139,10 +141,6 @@ func (r *TaskReaper) Run() {
 					r.release(m)
 				}
 			}
-			d := time.Duration(Settings.Hub.Task.Pod.Retention.Failed) * Unit
-			if time.Since(mark) > d {
-				r.podDelete(m)
-			}
 		}
 	}
 }
@@ -150,6 +148,10 @@ func (r *TaskReaper) Run() {
 // release bucket and file resources.
 func (r *TaskReaper) release(m *task.Task) {
 	nChanged := 0
+	if !m.Reaped {
+		m.Reaped = true
+		nChanged++
+	}
 	if m.HasBucket() {
 		Log.Info("Task bucket released.", "id", m.ID)
 		m.SetBucket(nil)

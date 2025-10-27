@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/heap"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
@@ -20,6 +21,10 @@ var (
 	Log      = logr.WithName("reaper")
 )
 
+func init() {
+	Log = Log.V(Settings.Log.Reaper)
+}
+
 type Task = task.Task
 
 // Manager provides task management.
@@ -32,6 +37,9 @@ type Manager struct {
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	if Settings.Log.Reaper > 0 {
+		m.DB = m.DB.Debug()
+	}
 	registered := []Reaper{
 		&TaskReaper{
 			Client: m.Client,
@@ -55,9 +63,12 @@ func (m *Manager) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
+				mark := time.Now()
 				for _, r := range registered {
 					r.Run()
 				}
+				Log.Info("Duration: " + time.Since(mark).String())
+				heap.Free()
 				m.pause()
 			}
 		}

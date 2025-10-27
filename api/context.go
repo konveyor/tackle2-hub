@@ -7,15 +7,20 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/auth"
+	"github.com/konveyor/tackle2-hub/heap"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// requestCount request count.
+var requestCount uint64
 
 // Response values.
 type Response struct {
@@ -52,6 +57,11 @@ func (r *Context) Attach(ctx *gin.Context) {
 // Detach from gin context
 func (r *Context) Detach() {
 	delete(r.Context.Keys, "RichContext")
+	atomic.AddUint64(&requestCount, 1)
+	if requestCount%100 == 0 {
+		heap.Free()
+	}
+
 }
 
 // Status sets the values to respond to the request with.

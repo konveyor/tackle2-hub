@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"path"
 	"regexp"
 	"strconv"
@@ -25,15 +26,29 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func NewTask(m *model.Task) (t *Task) {
+	t = &Task{}
+	t.With(m)
+	return
+}
+
+func NewTaskGroup(m *model.TaskGroup) (t *TaskGroup) {
+	t = &TaskGroup{}
+	t.With(m)
+	return
+}
+
 // Task is an runtime task.
 type Task struct {
 	// model.
 	*model.Task
+	digest string
 }
 
 // With initializes the object.
 func (r *Task) With(m *model.Task) {
 	r.Task = m
+	r.digest = r.getDigest()
 }
 
 // StateIn returns true matches on of the specified states.
@@ -110,11 +125,14 @@ func (r *Task) FindEvent(kind string) (matched []*model.TaskEvent) {
 }
 
 // Run the specified task.
-func (r *Task) Run(cluster *Cluster) (started bool, err error) {
+func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
 	mark := time.Now()
 	client := cluster.Client
 	defer func() {
 		if err == nil {
+			if started {
+				quota.created()
+			}
 			return
 		}
 		matched, retry := SoftErr(err)
@@ -127,18 +145,25 @@ func (r *Task) Run(cluster *Cluster) (started bool, err error) {
 			err = nil
 		}
 	}()
+	if quota.exhausted() {
+		qe := &QuotaExceeded{Reason: quota.string()}
+		r.State = QuotaBlocked
+		r.Event(QuotaBlocked, qe.Reason)
+		err = qe
+		return
+	}
 	addon, found := cluster.Addon(r.Addon)
 	if !found {
 		err = &AddonNotFound{Name: r.Addon}
 		return
 	}
-	extensions, err := r.getExtensions(client)
+	extensions, err := cluster.FindExtensions(r.Extensions)
 	if err != nil {
 		return
 	}
 	for _, extension := range extensions {
 		matched := false
-		matched, err = r.matchAddon(&extension, addon)
+		matched, err = r.matchAddon(extension, addon)
 		if err != nil {
 			return
 		}
@@ -293,7 +318,7 @@ func (r *Task) podPending(pod *core.Pod) {
 	for _, cnd := range pod.Status.Conditions {
 		if cnd.Type == core.PodScheduled &&
 			cnd.Reason == core.PodReasonUnschedulable {
-			r.Event(PodPending, cnd.Message)
+			r.Event(PodUnschedulable, cnd.Message)
 			return
 		}
 	}
@@ -302,7 +327,7 @@ func (r *Task) podPending(pod *core.Pod) {
 		if state.Waiting != nil {
 			waiting := state.Waiting
 			reason := strings.ToLower(waiting.Reason)
-			if r.containsAny(reason, "invalid", "error", "backoff") {
+			if r.containsAny(reason, "invalid", "error", "never", "cannot") {
 				r.Error(
 					"Error",
 					"Container (%s) failed: %s",
@@ -388,6 +413,16 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 	statuses = append(
 		statuses,
 		pod.Status.ContainerStatuses...)
+	if len(statuses) == 0 {
+		r.State = Failed
+		r.Terminated = &mark
+		r.Error(
+			"Error",
+			"Pod (%s) failed: %s",
+			pod.Name,
+			pod.Status.Reason)
+		return
+	}
 	for _, status := range statuses {
 		if status.State.Terminated == nil {
 			continue
@@ -420,32 +455,6 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 			return
 		}
 	}
-}
-
-// getExtensions returns defined extensions.
-func (r *Task) getExtensions(client k8s.Client) (extensions []crd.Extension, err error) {
-	for _, name := range r.Extensions {
-		extension := crd.Extension{}
-		err = client.Get(
-			context.TODO(),
-			k8s.ObjectKey{
-				Namespace: Settings.Hub.Namespace,
-				Name:      name,
-			},
-			&extension)
-		if err != nil {
-			if k8serr.IsNotFound(err) {
-				err = &ExtensionNotFound{name}
-			} else {
-				err = liberr.Wrap(err)
-			}
-			return
-		}
-		extensions = append(
-			extensions,
-			extension)
-	}
-	return
 }
 
 // matchTask - returns true when the addon's `task`
@@ -497,7 +506,7 @@ func (r *Task) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched b
 // pod build the pod.
 func (r *Task) pod(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	owner *crd.Tackle,
 	secret *core.Secret) (pod core.Pod) {
 	//
@@ -523,7 +532,7 @@ func (r *Task) pod(
 // specification builds a Pod specification.
 func (r *Task) specification(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	secret *core.Secret) (specification core.PodSpec) {
 	addonDir := core.Volume{
 		Name: Addon,
@@ -570,7 +579,7 @@ func (r *Task) specification(
 // container builds the pod containers.
 func (r *Task) containers(
 	addon *crd.Addon,
-	extensions []crd.Extension,
+	extensions []*crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
 	token := &core.EnvVarSource{
 		SecretKeyRef: &core.SecretKeySelector{
@@ -584,7 +593,7 @@ func (r *Task) containers(
 	plain = append(plain, addon.Spec.Container)
 	plain[0].Name = "addon"
 	for i := range extensions {
-		extension := &extensions[i]
+		extension := extensions[i]
 		container := extension.Spec.Container
 		container.Name = extension.Name
 		plain = append(
@@ -725,12 +734,72 @@ func (r *Task) update(db *gorm.DB) (err error) {
 		"Priority",
 		"Started",
 		"Terminated",
+		"Retained",
 		"Events",
 		"Errors",
 		"Retries",
 		"Attached",
 		"Pod")
 	err = db.Save(r).Error
+	if err == nil {
+		Log.V(1).Info("Task updated.", "id", r.ID)
+		r.With(r.Task)
+	}
+	return
+}
+
+// getDigest returns a digest.
+func (r *Task) getDigest() (d string) {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(r.Addon))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Extensions)))
+	_, _ = h.Write([]byte(r.State))
+	_, _ = h.Write([]byte(strconv.Itoa(r.Priority)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Events)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Errors)))
+	_, _ = h.Write([]byte(strconv.Itoa(r.Retries)))
+	_, _ = h.Write([]byte(fmt.Sprintf("%#v", r.Attached)))
+	_, _ = h.Write([]byte(r.Pod))
+	if r.Started != nil {
+		_, _ = h.Write([]byte(r.Started.String()))
+	}
+	if r.Terminated != nil {
+		_, _ = h.Write([]byte(r.Terminated.String()))
+	}
+	if r.Retained {
+		_, _ = h.Write([]byte{1})
+	}
+	n := h.Sum64()
+	d = fmt.Sprintf("%x", n)
+	return
+}
+
+// hasChanged returns true when the digest has changed.
+func (r *Task) hasChanged() (changed bool) {
+	d := r.getDigest()
+	changed = d != r.digest
+	return
+}
+
+// podRetentionExpired returns true when the retention period has expired.
+func (r *Task) podRetentionExpired() (expired bool) {
+	period := r.podRetention()
+	mark := r.CreateTime
+	if r.Terminated != nil {
+		mark = *r.Terminated
+	}
+	d := time.Duration(period) * time.Second
+	expired = time.Since(mark) > d
+	return
+}
+
+// retention returns the retention period (seconds).
+func (r *Task) podRetention() (seconds int) {
+	if r.State == Succeeded {
+		seconds = Settings.Hub.Task.Pod.Retention.Succeeded
+	} else {
+		seconds = Settings.Hub.Task.Pod.Retention.Failed
+	}
 	return
 }
 
