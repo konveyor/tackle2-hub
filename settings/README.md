@@ -34,8 +34,10 @@ These settings pertain to the Hub in general.
 
 ### Logging ###
 
-Logging verbosity (0=Lowest)
-For all components, 1+ will log SQL.
+Logging verbosity (0=Lowest).
+For all components:
+- 0 will log SQL slower than 1 second.
+- 1+ all SQL is logged.
 
 | Name          | T | Envar         | Default | Description                     |
 |---------------|---|---------------|---------|---------------------------------|
