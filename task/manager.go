@@ -1655,7 +1655,6 @@ func (k *Cluster) OtherPods() (list []*core.Pod) {
 }
 
 // TaskPods returns a list of task pods.
-//
 func (k *Cluster) TaskPods() (list []*core.Pod) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
