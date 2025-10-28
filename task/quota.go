@@ -52,7 +52,7 @@ func (q *Quota) string() (s string) {
 			q.quota)
 	} else {
 		s = fmt.Sprintf(
-			"quota (pod): %d/unlimited",
+			"quota (pod): %d/*",
 			q.count)
 	}
 	return s
