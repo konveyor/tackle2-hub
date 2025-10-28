@@ -223,11 +223,13 @@ func (r *LogCollector) copy(reader io.ReadCloser, writer io.Writer) (err error) 
 		b := buf[offset:nRead]
 		_, err = writer.Write(b)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		if f, cast := writer.(*os.File); cast {
 			err = f.Sync()
 			if err != nil {
+				err = liberr.Wrap(err)
 				return
 			}
 		}

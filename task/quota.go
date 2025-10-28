@@ -45,9 +45,15 @@ func (q *Quota) exhausted() (exhausted bool) {
 
 // string returns a string representation.
 func (q *Quota) string() (s string) {
-	s += fmt.Sprintf(
-		"quota (pod): %d/%d",
-		q.count,
-		q.quota)
+	if q.quota > 0 {
+		s = fmt.Sprintf(
+			"quota (pod): %d/%d",
+			q.count,
+			q.quota)
+	} else {
+		s = fmt.Sprintf(
+			"quota (pod): %d/unlimited",
+			q.count)
+	}
 	return s
 }

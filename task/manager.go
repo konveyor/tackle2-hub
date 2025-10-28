@@ -456,10 +456,6 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.preempt(list)
-	if err != nil {
-		return
-	}
 	err = m.batchUpdate(list)
 	if err != nil {
 		return
@@ -743,12 +739,14 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		})
 	created := 0
 	capacity := max(m.capacity, 1)
-	current := len(m.cluster.TaskPods())
+	scheduled := len(m.cluster.TaskPodsScheduled())
+	requested := len(list)
 	for _, task := range list {
 		if !task.StateIn(Ready, QuotaBlocked) {
+			requested--
 			continue
 		}
-		if current >= capacity {
+		if scheduled >= capacity {
 			break
 		}
 		ready := task
@@ -759,7 +757,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 			return
 		}
 		if started {
-			current++
+			scheduled++
 			created++
 			Log.Info("Task started.", "id", ready.ID)
 			if ready.Retries == 0 {
@@ -772,11 +770,13 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 	Log.Info(
 		"Task pods created.",
 		"requested",
-		len(list),
-		"current",
-		current,
+		requested,
+		"scheduled",
+		scheduled,
 		"capacity",
 		m.capacity,
+		"quota",
+		quota.string(),
 		"created",
 		created)
 	return
@@ -985,7 +985,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 
 // adjustCapacity adjusts scheduling controls.
 func (m *Manager) adjustCapacity() {
-	pods := 0
+	scheduled := 0
 	unscheduled := 0
 	for _, pod := range m.cluster.TaskPods() {
 		switch pod.Status.Phase {
@@ -1002,24 +1002,24 @@ func (m *Manager) adjustCapacity() {
 			if match {
 				unscheduled++
 			} else {
-				pods++
+				scheduled++
 			}
 		case core.PodRunning:
-			pods++
+			scheduled++
 		}
 	}
-	if pods == 0 {
+	if scheduled == 0 && m.capacity > 0 {
 		return
 	}
 	if unscheduled == 0 {
-		next := float64(pods)
+		next := float64(scheduled)
 		next *= 1.15
 		next = max(next, 1.0)
 		nextInt := int(next + 0.9999)
 		m.capacity = max(m.capacity, nextInt)
 	} else {
 		if unscheduled > m.unscheduled {
-			m.capacity = pods - (unscheduled - m.unscheduled)
+			m.capacity = scheduled - (unscheduled - m.unscheduled)
 		}
 	}
 	m.unscheduled = unscheduled
@@ -1027,8 +1027,8 @@ func (m *Manager) adjustCapacity() {
 	//
 	Log.Info(
 		"Cluster capacity adjusted.",
-		"pods",
-		pods,
+		"scheduled",
+		scheduled,
 		"unscheduled",
 		m.unscheduled,
 		"capacity",
@@ -1655,10 +1655,24 @@ func (k *Cluster) OtherPods() (list []*core.Pod) {
 }
 
 // TaskPods returns a list of task pods.
+//
 func (k *Cluster) TaskPods() (list []*core.Pod) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	for _, r := range k.pods.tasks {
+		list = append(list, r)
+	}
+	return
+}
+
+// TaskPodsScheduled returns a list of task pods scheduled.
+func (k *Cluster) TaskPodsScheduled() (list []*core.Pod) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
+	for _, r := range k.pods.tasks {
+		if r.Status.Phase == core.PodFailed || r.Status.Phase == core.PodSucceeded {
+			continue
+		}
 		list = append(list, r)
 	}
 	return
