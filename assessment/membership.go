@@ -74,8 +74,10 @@ func (r *MembershipResolver) Archetypes(m Application) (archetypes []Archetype, 
 		archetypes = kept
 		if !dominated {
 			archetypes = append(archetypes, a)
-			r.archetypeMembers[a.ID] = append(r.archetypeMembers[a.ID], m)
 		}
+	}
+	for _, a := range archetypes {
+		r.archetypeMembers[a.ID] = append(r.archetypeMembers[a.ID], m)
 	}
 	return
 }

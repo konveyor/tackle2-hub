@@ -46,7 +46,7 @@ func Open(enforceFKs bool) (db *gorm.DB, err error) {
 			SlowThreshold:             time.Second,
 			LogLevel:                  logger.Warn,
 			IgnoreRecordNotFoundError: true,
-			ParameterizedQueries:      false,
+			ParameterizedQueries:      true,
 			Colorful:                  true,
 		},
 	)

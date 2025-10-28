@@ -105,7 +105,7 @@ var (
 )
 
 func init() {
-	Log = Log.V(Settings.Log.Reaper)
+	Log = Log.V(Settings.Log.Task)
 }
 
 // Manager provides task management.

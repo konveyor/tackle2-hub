@@ -388,21 +388,21 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Log.Web = n
 	} else {
-		r.Log.Migration = r.Log.Master
+		r.Log.Web = r.Log.Master
 	}
 	s, found = os.LookupEnv(EnvLogReaper)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Log.Reaper = n
 	} else {
-		r.Log.Migration = r.Log.Master
+		r.Log.Reaper = r.Log.Master
 	}
 	s, found = os.LookupEnv(EnvLogTask)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Log.Task = n
 	} else {
-		r.Log.Migration = r.Log.Master
+		r.Log.Task = r.Log.Master
 	}
 	return
 }

@@ -761,6 +761,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					request.URL.Path))
 			if response.StatusCode == http.StatusGatewayTimeout {
 				if i < r.Retry {
+					_ = response.Body.Close()
 					time.Sleep(RetryDelay)
 					continue
 				}
@@ -773,6 +774,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					return
 				}
 				if refreshed {
+					_ = response.Body.Close()
 					continue
 				}
 			}
