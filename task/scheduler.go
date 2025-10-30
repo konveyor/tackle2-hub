@@ -94,6 +94,7 @@ func (m *Scheduler) Adjust(cluster *Cluster) {
 			m.capacity = scheduled - (unscheduled - m.unscheduled)
 		}
 	}
+	m.scheduled = scheduled
 	m.unscheduled = unscheduled
 	m.capacity = max(m.capacity, 0)
 	if m.digest() != digest {
