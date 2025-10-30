@@ -16,13 +16,13 @@ func (q *Quota) with(k *Cluster) {
 	q.count = len(k.TaskPods())
 	if qty, found := k.PodQuota(); found {
 		nOther := len(k.OtherPods())
-		q.enabled = true
 		q.quota = qty
 		q.quota -= nOther
 	} else {
 		q.quota = Settings.Hub.Task.Pod.Quota
-		q.enabled = q.quota > 0
 	}
+	q.enabled = q.quota > 0
+	q.quota = max(q.quota, 0)
 }
 
 // created indicates a task pod has been created.
