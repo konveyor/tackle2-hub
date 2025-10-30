@@ -43,11 +43,11 @@ func (q *Quota) exhausted() (exhausted bool) {
 func (q *Quota) string() (s string) {
 	if q.enabled {
 		s = fmt.Sprintf(
-			"quota (pod): %d/%d",
+			"%d/%d",
 			q.count,
 			q.quota)
 	} else {
-		s = "quota (pod): disabled"
+		s = "-/-"
 	}
 	return s
 }

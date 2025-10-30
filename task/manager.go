@@ -122,33 +122,34 @@ type Manager struct {
 	queue chan func()
 	// logManager provides pod log collection.
 	logManager LogManager
-	//
-	capacity    int
-	unscheduled int
+	// pod scheduler
+	scheduler Scheduler
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	if Settings.Log.Task > 0 {
-		m.DB = m.DB.Debug()
-	}
 	m.queue = make(chan func(), 100)
 	m.cluster.Client = m.Client
 	m.logManager = LogManager{
 		collector: make(map[string]*LogCollector),
 		DB:        m.DB,
 	}
+	m.scheduler.Run(ctx, &m.cluster)
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
 			Client: m.Client,
 		})
+	if Settings.Log.Task > 0 {
+		m.DB = m.DB.Debug()
+	}
 	go func() {
-		Log.Info("Started.")
+		Log.Info("Manager started.")
 		defer Log.Info("Done.")
 		for {
 			select {
 			case <-ctx.Done():
+				Log.Info("Manager stopped.")
 				return
 			default:
 				err := m.cluster.Refresh()
@@ -157,7 +158,6 @@ func (m *Manager) Run(ctx context.Context) {
 					m.deleteRetainedPods()
 					m.runActions()
 					m.updateRunning(ctx)
-					m.adjustCapacity()
 					m.deleteZombies()
 					m.startReady()
 					m.pause()
@@ -403,11 +403,8 @@ func (m *Manager) startReady() {
 		}
 	}()
 	//
-	if m.unscheduled > 0 {
-		Log.Info(
-			"Task pod creation - paused.",
-			"unscheduled",
-			m.unscheduled)
+	if m.scheduler.Saturated() {
+		Log.Info("Task pod creation - paused.")
 		return
 	}
 	//
@@ -738,7 +735,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 					it.ID < jt.ID)
 		})
 	created := 0
-	capacity := max(m.capacity, 1)
+	capacity := max(m.scheduler.Capacity(), 1)
 	scheduled := len(m.cluster.TaskPodsScheduled())
 	requested := len(list)
 	for _, task := range list {
@@ -774,7 +771,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		"scheduled",
 		scheduled,
 		"capacity",
-		m.capacity,
+		m.scheduler.Capacity(),
 		"quota",
 		quota.string(),
 		"created",
@@ -981,58 +978,6 @@ func (m *Manager) updateRunning(ctx context.Context) {
 		err = liberr.Wrap(err)
 		return
 	}
-}
-
-// adjustCapacity adjusts scheduling controls.
-func (m *Manager) adjustCapacity() {
-	scheduled := 0
-	unscheduled := 0
-	for _, pod := range m.cluster.TaskPods() {
-		switch pod.Status.Phase {
-		case core.PodPending:
-			match := false
-			for _, p := range pod.Status.Conditions {
-				if p.Type == core.PodScheduled {
-					if p.Reason == core.PodReasonUnschedulable {
-						match = true
-						break
-					}
-				}
-			}
-			if match {
-				unscheduled++
-			} else {
-				scheduled++
-			}
-		case core.PodRunning:
-			scheduled++
-		}
-	}
-	if scheduled == 0 && m.capacity > 0 {
-		return
-	}
-	if unscheduled == 0 {
-		next := float64(scheduled)
-		next *= 1.15
-		next = max(next, 1.0)
-		nextInt := int(next + 0.9999)
-		m.capacity = max(m.capacity, nextInt)
-	} else {
-		if unscheduled > m.unscheduled {
-			m.capacity = scheduled - (unscheduled - m.unscheduled)
-		}
-	}
-	m.unscheduled = unscheduled
-	m.capacity = max(m.capacity, 0)
-	//
-	Log.Info(
-		"Cluster capacity adjusted.",
-		"scheduled",
-		scheduled,
-		"unscheduled",
-		m.unscheduled,
-		"capacity",
-		m.capacity)
 }
 
 // deleteRetained deletes expired retained tasks.
