@@ -81,6 +81,8 @@ func (m *Scheduler) Adjust(cluster *Cluster) {
 		}
 	}
 	if scheduled == 0 && m.capacity > 0 {
+		m.scheduled = scheduled
+		m.unscheduled = unscheduled
 		return
 	}
 	if unscheduled == 0 {
