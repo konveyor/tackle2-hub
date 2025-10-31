@@ -22,9 +22,11 @@ PKG = ./addon/... \
       ./model/... \
       ./nas/... \
       ./reaper/... \
+      ./scm/... \
       ./secret/... \
       ./seed/... \
       ./settings/... \
+      ./ssh/... \
       ./tar/... \
       ./task/...  \
       ./test/...  \
