@@ -100,7 +100,7 @@ func (m *Scheduler) Adjust(cluster *Cluster) {
 	m.unscheduled = unscheduled
 	m.capacity = max(m.capacity, 0)
 	if m.digest() != digest {
-		Log.Info("Capacity adjusted: " + m.String())
+		Log.Info("Capacity adjusted: " + m.string())
 	}
 }
 
@@ -120,6 +120,14 @@ func (m *Scheduler) Saturated() bool {
 
 // String returns a string representation.
 func (m *Scheduler) String() (s string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	s = m.string()
+	return
+}
+
+// String returns a string representation.
+func (m *Scheduler) string() (s string) {
 	s = fmt.Sprintf(
 		"[pods] capacity:%d,scheduled:%d",
 		m.capacity,
