@@ -11,9 +11,9 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
-// Scheduler is the task pod scheduler state.
+// CapacityMonitor determines cluster capacity.
 // Maintains a running estimation of the cluster scheduling capacity.
-type Scheduler struct {
+type CapacityMonitor struct {
 	mutex       sync.Mutex
 	capacity    int
 	scheduled   int
@@ -22,7 +22,7 @@ type Scheduler struct {
 }
 
 // Reset the statistics.
-func (m *Scheduler) Reset() {
+func (m *CapacityMonitor) Reset() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.capacity = 1
@@ -31,16 +31,16 @@ func (m *Scheduler) Reset() {
 	m.growthRate = 1.05
 }
 
-// Run the scheduler.
-func (m *Scheduler) Run(ctx context.Context, cluster *Cluster) {
+// Run the monitor.
+func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
 	pause := Unit * time.Duration(Settings.Frequency.Task)
 	m.Reset()
-	Log.Info("Scheduler started.")
+	Log.Info("CapacityMonitor started.")
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Info("Scheduler stopped.")
+				Log.Info("CapacityMonitor stopped.")
 				return
 			default:
 				err := cluster.Refresh()
@@ -53,7 +53,7 @@ func (m *Scheduler) Run(ctx context.Context, cluster *Cluster) {
 }
 
 // Adjust updates estimated cluster capacity.
-func (m *Scheduler) Adjust(cluster *Cluster) {
+func (m *CapacityMonitor) Adjust(cluster *Cluster) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	scheduled := 0
@@ -104,22 +104,22 @@ func (m *Scheduler) Adjust(cluster *Cluster) {
 	}
 }
 
-// Capacity returns current capacity.
-func (m *Scheduler) Capacity() int {
+// Current returns current capacity.
+func (m *CapacityMonitor) Current() int {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	return m.capacity
 }
 
-// Saturated returns true when unscheduled pods are detected.
-func (m *Scheduler) Saturated() bool {
+// Exceeded returns true when unscheduled pods are detected.
+func (m *CapacityMonitor) Exceeded() bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	return m.unscheduled > 0
 }
 
 // String returns a string representation.
-func (m *Scheduler) String() (s string) {
+func (m *CapacityMonitor) String() (s string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	s = m.string()
@@ -127,7 +127,7 @@ func (m *Scheduler) String() (s string) {
 }
 
 // String returns a string representation.
-func (m *Scheduler) string() (s string) {
+func (m *CapacityMonitor) string() (s string) {
 	s = fmt.Sprintf(
 		"[pods] capacity:%d,scheduled:%d",
 		m.capacity,
@@ -139,7 +139,7 @@ func (m *Scheduler) string() (s string) {
 }
 
 // digest returns a digest.
-func (m *Scheduler) digest() (d string) {
+func (m *CapacityMonitor) digest() (d string) {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(strconv.Itoa(m.capacity)))
 	_, _ = h.Write([]byte(strconv.Itoa(m.scheduled)))

@@ -122,8 +122,8 @@ type Manager struct {
 	queue chan func()
 	// logManager provides pod log collection.
 	logManager LogManager
-	// pod scheduler
-	scheduler Scheduler
+	// pod capacity monitor
+	capacity CapacityMonitor
 }
 
 // Run the manager.
@@ -134,7 +134,7 @@ func (m *Manager) Run(ctx context.Context) {
 		collector: make(map[string]*LogCollector),
 		DB:        m.DB,
 	}
-	m.scheduler.Run(ctx, &m.cluster)
+	m.capacity.Run(ctx, &m.cluster)
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
@@ -402,12 +402,10 @@ func (m *Manager) startReady() {
 				threshold.String())
 		}
 	}()
-	//
-	if m.scheduler.Saturated() {
-		Log.Info("Task pod creation - paused.")
+	if m.capacity.Exceeded() {
+		Log.Info("Capacity exceeded: pod creation paused.")
 		return
 	}
-	//
 	quota := &Quota{}
 	quota.with(&m.cluster)
 	fetched := []*model.Task{}
@@ -735,7 +733,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 					it.ID < jt.ID)
 		})
 	created := 0
-	capacity := max(m.scheduler.Capacity(), 1)
+	capacity := max(m.capacity.Current(), 1)
 	scheduled := len(m.cluster.TaskPodsScheduled())
 	requested := len(list)
 	for _, task := range list {
@@ -771,7 +769,7 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		"scheduled",
 		scheduled,
 		"capacity",
-		m.scheduler.Capacity(),
+		capacity,
 		"quota",
 		quota.string(),
 		"created",
