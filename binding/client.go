@@ -130,6 +130,12 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+		if len(body) == 0 {
+			empty := &EmptyBody{}
+			empty.With(response)
+			err = empty
+			return
+		}
 		err = json.Unmarshal(body, object)
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -174,6 +180,12 @@ func (r *Client) Post(path string, object any) (err error) {
 		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
+			return
+		}
+		if len(body) == 0 {
+			empty := &EmptyBody{}
+			empty.With(response)
+			err = empty
 			return
 		}
 		err = json.Unmarshal(body, object)
@@ -228,6 +240,12 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+		if len(body) == 0 {
+			empty := &EmptyBody{}
+			empty.With(response)
+			err = empty
+			return
+		}
 		err = json.Unmarshal(body, object)
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -279,6 +297,12 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 		body, err = io.ReadAll(response.Body)
 		if err != nil {
 			err = liberr.Wrap(err)
+			return
+		}
+		if len(body) == 0 {
+			empty := &EmptyBody{}
+			empty.With(response)
+			err = empty
 			return
 		}
 		err = json.Unmarshal(body, object)
@@ -603,6 +627,12 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 			err = liberr.Wrap(err)
 			return
 		}
+		if len(body) == 0 {
+			empty := &EmptyBody{}
+			empty.With(response)
+			err = empty
+			return
+		}
 		err = json.Unmarshal(body, object)
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -729,6 +759,13 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					response.StatusCode,
 					request.Method,
 					request.URL.Path))
+			if response.StatusCode == http.StatusGatewayTimeout {
+				if i < r.Retry {
+					_ = response.Body.Close()
+					time.Sleep(RetryDelay)
+					continue
+				}
+			}
 			if response.StatusCode == http.StatusUnauthorized {
 				refreshed, nErr := r.refreshToken(request)
 				if nErr != nil {
@@ -737,6 +774,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					return
 				}
 				if refreshed {
+					_ = response.Body.Close()
 					continue
 				}
 			}

@@ -71,6 +71,9 @@ func Migrate(migrations []Migration) (err error) {
 			err = liberr.Wrap(err, "version")
 			return
 		}
+		if Settings.Log.Migration > 0 {
+			db = db.Debug()
+		}
 
 		f := func(db *gorm.DB) (err error) {
 			Log.Info("Running migration.", "version", ver)

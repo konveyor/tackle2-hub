@@ -135,8 +135,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 			return
 		}
 	case tasking.Ready:
-		taskGroup := &tasking.TaskGroup{}
-		taskGroup.With(m)
+		taskGroup := tasking.NewTaskGroup(m)
 		err = taskGroup.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)
@@ -206,8 +205,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		}
 	case tasking.Ready:
 		rtx := RichContext(ctx)
-		taskGroup := &tasking.TaskGroup{}
-		taskGroup.With(m)
+		taskGroup := tasking.NewTaskGroup(m)
 		err = taskGroup.Submit(h.DB(ctx), rtx.TaskManager)
 		if err != nil {
 			_ = ctx.Error(err)

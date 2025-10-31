@@ -25,6 +25,7 @@ const (
 	EnvTaskReapFailed          = "TASK_REAP_FAILED"
 	EnvTaskPodRetainSucceeded  = "TASK_POD_RETAIN_SUCCEEDED"
 	EnvTaskPodRetainFailed     = "TASK_POD_RETAIN_FAILED"
+	EnvTaskPodQuota            = "TASK_POD_QUOTA"
 	EnvTaskSA                  = "TASK_SA"
 	EnvTaskRetries             = "TASK_RETRIES"
 	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
@@ -44,6 +45,11 @@ const (
 	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
 	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
 	EnvDiscoveryLabel          = "DISCOVERY_LABEL"
+	EnvLogMaster               = "LOG_MASTER"
+	EnvLogMigration            = "LOG_MIGRATION"
+	EnvLogWeb                  = "LOG_WEB"
+	EnvLogReaper               = "LOG_REAPER"
+	EnvLogTask                 = "LOG_TASK"
 )
 
 type Hub struct {
@@ -97,6 +103,7 @@ type Hub struct {
 			Rate      int
 		}
 		Pod struct {
+			Quota     int
 			Retention struct {
 				Succeeded int
 				Failed    int
@@ -124,6 +131,14 @@ type Hub struct {
 	// Discovery settings.
 	Discovery struct {
 		Label string
+	}
+	// Logging settings
+	Log struct {
+		Master    int
+		Migration int
+		Web       int
+		Reaper    int
+		Task      int
 	}
 }
 
@@ -198,6 +213,13 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Task.Reaper.Failed = 43200 // 720 hours (30 days).
 	}
+	s, found = os.LookupEnv(EnvTaskPodQuota)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Task.Pod.Quota = n
+	} else {
+		r.Task.Pod.Quota = 0 // 0=disabled
+	}
 	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
 	if found {
 		n, _ := strconv.Atoi(s)
@@ -240,7 +262,9 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvFrequencyHeap)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Frequency.Heap = n // minutes.
+		r.Frequency.Heap = n // seconds.
+	} else {
+		r.Frequency.Heap = 240 // 4 minutes.
 	}
 	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
 	if found {
@@ -347,7 +371,39 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Discovery.Label = "konveyor.io/discovery"
 	}
-
+	s, found = os.LookupEnv(EnvLogMaster)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Master = n
+	}
+	s, found = os.LookupEnv(EnvLogMigration)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Migration = n
+	} else {
+		r.Log.Migration = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogWeb)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Web = n
+	} else {
+		r.Log.Web = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogReaper)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Reaper = n
+	} else {
+		r.Log.Reaper = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogTask)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Task = n
+	} else {
+		r.Log.Task = r.Log.Master
+	}
 	return
 }
 

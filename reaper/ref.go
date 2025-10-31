@@ -77,9 +77,6 @@ func (r *RefFinder) Find(m any, kind string, ids map[uint]byte) (err error) {
 		return
 	}
 	db := r.DB.Model(m)
-	if Log.V(1).Enabled() {
-		db = db.Debug()
-	}
 	var fields []string
 	var list []map[string]any
 	for i := range nfields {

@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -57,7 +58,8 @@ type Conflict struct {
 }
 
 func (e *Conflict) Is(err error) (matched bool) {
-	_, matched = err.(*Conflict)
+	var inst *Conflict
+	matched = errors.As(err, &inst)
 	return
 }
 
@@ -67,6 +69,18 @@ type NotFound struct {
 }
 
 func (e *NotFound) Is(err error) (matched bool) {
-	_, matched = err.(*NotFound)
+	var inst *NotFound
+	matched = errors.As(err, &inst)
+	return
+}
+
+// EmptyBody reports an empty body.
+type EmptyBody struct {
+	RestError
+}
+
+func (e *EmptyBody) Is(err error) (matched bool) {
+	var inst *EmptyBody
+	matched = errors.As(err, &inst)
 	return
 }
