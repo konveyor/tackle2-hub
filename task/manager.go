@@ -63,7 +63,6 @@ const (
 	PodPending       = "PodPending"
 	PodUnschedulable = "PodUnschedulable"
 	PodRunning       = "PodRunning"
-	Preempted        = "Preempted"
 	PodSucceeded     = "PodSucceeded"
 	PodFailed        = "PodFailed"
 	PodDeleted       = "PodDeleted"
@@ -418,7 +417,6 @@ func (m *Manager) startReady() {
 			Postponed,
 			QuotaBlocked,
 			Pending,
-			Running,
 		})
 	if result.Error != nil {
 		return
@@ -643,7 +641,6 @@ func (m *Manager) postpone(list []*Task) (err error) {
 	released := map[uint]any{}
 	ruleSet := []Rule{
 		&RuleIsolated{},
-		&RulePreempted{},
 		&RuleUnique{
 			matched: make(map[uint]uint),
 		},
@@ -774,117 +771,6 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		quota.string(),
 		"created",
 		created)
-	return
-}
-
-// preempt reschedules a Running task as needed.
-// The `preempted` task must be:
-// - state=Running.
-// - lower priority.
-// The `blocked` task must be:
-// - higher priority
-// - pod blocked by quota or pending for a defined period.
-// Preempt order:
-// - priority (lowest).
-// - age (newest).
-// Preempt limit: 10% each pass.
-func (m *Manager) preempt(list []*Task) (err error) {
-	preemption := Settings.Hub.Task.Preemption
-	if len(list) == 0 {
-		return
-	}
-	mark := time.Now()
-	blocked := []*Task{}
-	running := []*Task{}
-	preempt := []Preempt{}
-	sort.Slice(
-		list,
-		func(i, j int) bool {
-			it := list[i]
-			jt := list[j]
-			return it.Priority > jt.Priority ||
-				(it.Priority == jt.Priority &&
-					it.ID < jt.ID)
-		})
-	for _, task := range list {
-		switch task.State {
-		case Ready:
-		case QuotaBlocked:
-			enabled := preemption.Enabled || task.Policy.PreemptEnabled
-			if !enabled {
-				break
-			}
-			event, found := task.LastEvent(QuotaBlocked)
-			if found {
-				count := preemption.Delayed / time.Second
-				if event.Count > int(count) {
-					blocked = append(blocked, task)
-				}
-			}
-		case Pending:
-			enabled := preemption.Enabled || task.Policy.PreemptEnabled
-			if !enabled {
-				break
-			}
-			event, found := task.LastEvent(PodCreated)
-			if found {
-				if mark.Sub(event.Last) > preemption.Delayed {
-					blocked = append(blocked, task)
-				}
-			}
-		case Running:
-			exempt := task.Policy.PreemptExempt
-			if !exempt {
-				running = append(running, task)
-			}
-		}
-	}
-	if len(blocked) == 0 {
-		return
-	}
-	for _, b := range blocked {
-		for _, p := range running {
-			if b.Priority > p.Priority {
-				preempt = append(
-					preempt,
-					Preempt{
-						task: p,
-						by:   b,
-					})
-			}
-		}
-	}
-	sort.Slice(
-		preempt,
-		func(i, j int) bool {
-			it := list[i]
-			jt := list[j]
-			return it.Priority < jt.Priority ||
-				(it.Priority == jt.Priority &&
-					it.ID > jt.ID)
-		})
-	n := 0
-	for _, request := range preempt {
-		p := request.task
-		by := request.by
-		reason := fmt.Sprintf(
-			"Preempted:%d, by: %d",
-			p.ID,
-			by.ID)
-		_ = p.Delete(m.Client)
-		p.Pod = ""
-		p.State = Ready
-		p.Started = nil
-		p.Terminated = nil
-		p.Errors = nil
-		p.Event(Preempted, reason)
-		Log.Info(reason)
-		n++
-		// preempt x%.
-		if len(blocked)/n*100 > preemption.Rate {
-			break
-		}
-	}
 	return
 }
 
@@ -1794,12 +1680,6 @@ func ExtEnv(extension string, envar string) (s string) {
 		},
 		"_")
 	return
-}
-
-// Preempt request.
-type Preempt struct {
-	task *Task
-	by   *Task
 }
 
 // PipelineSet is a set of TaskGroup ids for ALL groups of mode=Pipeline.

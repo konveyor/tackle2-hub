@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"testing"
-	"time"
 
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
@@ -430,26 +429,5 @@ func TestRuleDeps(t *testing.T) {
 
 	// 5(C) not depends on 0(A) and different subject
 	matched, _ = rule.Match(tasks[5], domain)
-	g.Expect(matched).To(gomega.BeFalse())
-}
-
-func TestRulePreempted(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	p := &Settings.Hub.Task.Preemption
-	p.Enabled = true
-	p.Postponed = time.Second
-
-	rule := RulePreempted{}
-	task := NewTask(&model.Task{})
-	task.Event(Preempted)
-
-	// matched
-	matched, _ := rule.Match(task, &Domain{})
-	g.Expect(matched).To(gomega.BeTrue())
-
-	// expired
-	time.Sleep(time.Second)
-	matched, _ = rule.Match(task, &Domain{})
 	g.Expect(matched).To(gomega.BeFalse())
 }

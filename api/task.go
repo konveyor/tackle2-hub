@@ -865,9 +865,6 @@ func (r *Task) With(m *model.Task) {
 	for _, a := range m.Attached {
 		r.Attached = append(r.Attached, Attachment(a))
 	}
-	if Settings.Hub.Task.Preemption.Enabled {
-		r.Policy.PreemptEnabled = true
-	}
 }
 
 // Patch the specified model.
