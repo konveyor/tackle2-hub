@@ -189,6 +189,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
 			{Field: "platform.id", Kind: qf.LITERAL},
+			{Field: "repository.url", Kind: qf.STRING},
+			{Field: "repository.path", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -258,8 +260,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Manifest mf ON mf.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
+	db = db.Where("a.ID IN (?)", h.appIds(ctx, filter))
 	db = db.Order("a.ID")
-	db = filter.Where(db)
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -1379,6 +1381,33 @@ func (h *ApplicationHandler) replaceIdentities(db *gorm.DB, id uint, r *Applicat
 	if err != nil {
 		return
 	}
+	return
+}
+
+// appIds returns application ids based on filter.
+func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.Application{})
+	q = q.Select("ID")
+	q = f.Where(q)
+	filter := f
+	repository := filter.Resource("repository")
+	if repository.Empty() {
+		return
+	}
+	iq := h.DB(ctx)
+	iq = iq.Table("Application m")
+	iq = iq.Joins("LEFT JOIN json_tree(repository) j")
+	iq = iq.Select("m.ID")
+	for _, fn := range []string{"url", "path"} {
+		if f, found := repository.Field(fn); found {
+			_, fv := f.SQL()
+			iq = iq.Where("j.key", "url")
+			iq = iq.Where("j.value IN (?)", fv)
+		}
+	}
+	iq = f.Where(iq)
+	q = q.Where("ID IN (?)", iq)
 	return
 }
 
