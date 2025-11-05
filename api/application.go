@@ -1402,7 +1402,7 @@ func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 	for _, fn := range []string{"url", "path"} {
 		if f, found := repository.Field(fn); found {
 			_, fv := f.SQL()
-			iq = iq.Where("j.key", "url")
+			iq = iq.Where("j.key", fn)
 			iq = iq.Where("j.value IN (?)", fv)
 		}
 	}
