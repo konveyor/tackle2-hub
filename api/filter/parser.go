@@ -124,8 +124,10 @@ func (r *Value) Into(x any) {
 	case *[]int:
 		for _, t := range *r {
 			if t.Kind != OPERATOR {
-				n, _ := strconv.Atoi(t.Value)
-				*x = append(*x, n)
+				n, err := strconv.Atoi(t.Value)
+				if err == nil {
+					*x = append(*x, n)
+				}
 			}
 		}
 	}
