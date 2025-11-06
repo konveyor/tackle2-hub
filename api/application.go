@@ -1402,7 +1402,8 @@ func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 	iq = iq.Group("m.ID")
 	for _, fn := range []string{"url", "path"} {
 		if f, found := repository.Field(fn); found {
-			_, fv := f.SQL()
+			fv := make([]string, 0)
+			f.Value.Into(&fv)
 			iq = iq.Having(
 				"SUM(jt.key = ? AND jt.value IN (?)) > 0",
 				fn,

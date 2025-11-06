@@ -1,6 +1,9 @@
 package filter
 
-import "math"
+import (
+	"math"
+	"strconv"
+)
 
 // Parser used to parse the filter.
 type Parser struct {
@@ -104,6 +107,27 @@ func (r *Value) Join(operator byte) (out Value) {
 			out = append(out, Token{Kind: OPERATOR, Value: string(operator)})
 		}
 		out = append(out, (*r)[i])
+	}
+	return
+}
+
+// Into appends values into the specified slice.
+// Must be: (*[]string | *[]int)
+func (r *Value) Into(x any) {
+	switch x := x.(type) {
+	case *[]string:
+		for _, t := range *r {
+			if t.Kind != OPERATOR {
+				*x = append(*x, t.Value)
+			}
+		}
+	case *[]int:
+		for _, t := range *r {
+			if t.Kind != OPERATOR {
+				n, _ := strconv.Atoi(t.Value)
+				*x = append(*x, n)
+			}
+		}
 	}
 	return
 }
