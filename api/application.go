@@ -157,7 +157,10 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @summary List all applications.
 // @description List all applications.
 // @description filters:
+// @description - name
 // @description - platform.id
+// @description - repository.url
+// @description - repository.path
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Application
@@ -188,7 +191,10 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
 			{Field: "platform.id", Kind: qf.LITERAL},
+			{Field: "repository.url", Kind: qf.STRING},
+			{Field: "repository.path", Kind: qf.STRING},
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -258,8 +264,8 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 	db = db.Joins("LEFT JOIN Assessment at ON at.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Manifest mf ON mf.ApplicationID = a.ID")
 	db = db.Joins("LEFT JOIN Analysis an ON an.ApplicationID = a.ID")
+	db = db.Where("a.ID IN (?)", h.appIds(ctx, filter))
 	db = db.Order("a.ID")
-	db = filter.Where(db)
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -1379,6 +1385,37 @@ func (h *ApplicationHandler) replaceIdentities(db *gorm.DB, id uint, r *Applicat
 	if err != nil {
 		return
 	}
+	return
+}
+
+// appIds returns application ids based on filter.
+func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
+	q = h.DB(ctx)
+	q = q.Model(&model.Application{})
+	q = q.Select("ID")
+	q = f.Where(q)
+	filter := f
+	repository := filter.Resource("repository")
+	if repository.Empty() {
+		return
+	}
+	iq := h.DB(ctx)
+	iq = iq.Select("m.ID")
+	iq = iq.Table("Application m")
+	iq = iq.Joins("LEFT JOIN json_tree(repository) jt")
+	iq = iq.Group("m.ID")
+	for _, fn := range []string{"url", "path"} {
+		if f, found := repository.Field(fn); found {
+			fv := make([]string, 0)
+			f.Value.Into(&fv)
+			iq = iq.Having(
+				"SUM(jt.key = ? AND jt.value IN (?)) > 0",
+				fn,
+				fv)
+		}
+	}
+	iq = f.Where(iq)
+	q = q.Where("ID IN (?)", iq)
 	return
 }
 
