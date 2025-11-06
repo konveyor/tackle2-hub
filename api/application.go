@@ -1396,14 +1396,17 @@ func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 		return
 	}
 	iq := h.DB(ctx)
-	iq = iq.Table("Application m")
-	iq = iq.Joins("LEFT JOIN json_tree(repository) j")
 	iq = iq.Select("m.ID")
+	iq = iq.Table("Application m")
+	iq = iq.Joins("LEFT JOIN json_tree(repository) jt")
+	iq = iq.Group("m.ID")
 	for _, fn := range []string{"url", "path"} {
 		if f, found := repository.Field(fn); found {
 			_, fv := f.SQL()
-			iq = iq.Where("j.key", fn)
-			iq = iq.Where("j.value IN (?)", fv)
+			iq = iq.Having(
+				"SUM(jt.key = ? AND jt.value IN (?)) > 0",
+				fn,
+				fv)
 		}
 	}
 	iq = f.Where(iq)
