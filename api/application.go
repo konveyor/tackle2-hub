@@ -157,7 +157,10 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @summary List all applications.
 // @description List all applications.
 // @description filters:
+// @description - name
 // @description - platform.id
+// @description - repository.url
+// @description - repository.path
 // @tags applications
 // @produce json
 // @success 200 {object} []api.Application
@@ -188,6 +191,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 
 	filter, err := qf.New(ctx,
 		[]qf.Assert{
+			{Field: "name", Kind: qf.STRING},
 			{Field: "platform.id", Kind: qf.LITERAL},
 			{Field: "repository.url", Kind: qf.STRING},
 			{Field: "repository.path", Kind: qf.STRING},
