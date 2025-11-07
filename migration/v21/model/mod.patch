@@ -1,21 +1,64 @@
-diff -ruN '--exclude=mod.patch' migration/v19/model/core.go migration/v20/model/core.go
---- migration/v19/model/core.go	2025-10-27 16:17:15.057379687 -0500
-+++ migration/v20/model/core.go	2025-10-27 16:11:13.781809158 -0500
-@@ -130,6 +130,8 @@
- 	Data          json.Data  `gorm:"type:json;serializer:json"`
- 	Started       *time.Time
- 	Terminated    *time.Time
-+	Retained      bool        `gorm:"index"`
-+	Reaped        bool        `gorm:"index"`
- 	Errors        []TaskError `gorm:"type:json;serializer:json"`
- 	Events        []TaskEvent `gorm:"type:json;serializer:json"`
- 	Pod           string      `gorm:"index"`
-@@ -140,7 +142,7 @@
- 	Application   *Application
- 	PlatformID    *uint `gorm:"index"`
- 	Platform      *Platform
--	TaskGroupID   *uint `gorm:"<-:create"`
-+	TaskGroupID   *uint `gorm:"<-:create;index"`
- 	TaskGroup     *TaskGroup
+diff -ruN '--exclude=mod.patch' migration/v20/model/analysis.go migration/v21/model/analysis.go
+--- migration/v20/model/analysis.go	2025-10-27 16:11:13.781809158 -0500
++++ migration/v21/model/analysis.go	2025-11-07 12:08:40.454018870 -0600
+@@ -142,6 +142,19 @@
+ 	return r.UUID != nil
  }
  
++type AnalysisProfile struct {
++	Model
++	Name          string `gorm:"uniqueIndex"`
++	Description   string
++	WithDeps      bool
++	WithKnownLibs bool
++	Packages      InExList   `gorm:"type:json;serializer:json"`
++	Labels        InExList   `gorm:"type:json;serializer:json"`
++	Files         []json.Ref `gorm:"type:json;serializer:json" ref:"[]file"`
++	Repository    Repository `gorm:"type:json;serializer:json"`
++	Targets       []Target   `gorm:"many2many:analysisProfileTargets;constraint:OnDelete:CASCADE"`
++}
++
+ //
+ // JSON Fields.
+ //
+@@ -168,3 +181,9 @@
+ 	Name  string `json:"name"`
+ 	Label string `json:"label"`
+ }
++
++// InExList contains items included and excluded.
++type InExList struct {
++	Included []string `json:"included"`
++	Excluded []string `json:"excluded"`
++}
+diff -ruN '--exclude=mod.patch' migration/v20/model/application.go migration/v21/model/application.go
+--- migration/v20/model/application.go	2025-10-27 16:11:13.781809158 -0500
++++ migration/v21/model/application.go	2025-11-07 14:01:27.483825203 -0600
+@@ -186,10 +186,12 @@
+ 
+ type TargetProfile struct {
+ 	Model
+-	Name        string `gorm:"uniqueIndex:targetProfileA;not null"`
+-	ArchetypeID uint   `gorm:"uniqueIndex:targetProfileA;not null"`
+-	Archetype   Archetype
+-	Generators  []ProfileGenerator `gorm:"order:Index;constraint:OnDelete:CASCADE"`
++	Name              string `gorm:"uniqueIndex:targetProfileA;not null"`
++	ArchetypeID       uint   `gorm:"uniqueIndex:targetProfileA;not null"`
++	Archetype         Archetype
++	Generators        []ProfileGenerator `gorm:"order:Index;constraint:OnDelete:CASCADE"`
++	AnalysisProfileID *uint              `gorm:"index"`
++	AnalysisProfile   *AnalysisProfile   `gorm:"constraint:OnDelete:SET NULL"`
+ }
+ 
+ type ProfileGenerator struct {
+diff -ruN '--exclude=mod.patch' migration/v20/model/pkg.go migration/v21/model/pkg.go
+--- migration/v20/model/pkg.go	2025-10-27 16:11:13.781809158 -0500
++++ migration/v21/model/pkg.go	2025-11-07 12:08:40.454018870 -0600
+@@ -20,6 +20,7 @@
+ 		TechDependency{},
+ 		Incident{},
+ 		Analysis{},
++		AnalysisProfile{},
+ 		Insight{},
+ 		Bucket{},
+ 		BusinessService{},
