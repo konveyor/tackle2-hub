@@ -35,6 +35,7 @@ func (r *FileReaper) Run() {
 		&model.TaskReport{},
 		&model.Rule{},
 		&model.Target{},
+		&model.AnalysisProfile{},
 	} {
 		err := finder.Find(m, "file", ids)
 		if err != nil {

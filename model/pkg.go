@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/migration/json"
-	"github.com/konveyor/tackle2-hub/migration/v20/model"
+	"github.com/konveyor/tackle2-hub/migration/v21/model"
 )
 
 // Field (data) types.
@@ -18,6 +18,7 @@ type Assessment = model.Assessment
 type TechDependency = model.TechDependency
 type Incident = model.Incident
 type Analysis = model.Analysis
+type AnalysisProfile = model.AnalysisProfile
 type Insight = model.Insight
 type Bucket = model.Bucket
 type BucketOwner = model.BucketOwner
@@ -68,6 +69,7 @@ type TaskError = model.TaskError
 type TaskEvent = model.TaskEvent
 type TaskPolicy = model.TaskPolicy
 type TTL = model.TTL
+type InExList = model.InExList
 
 // Assessment JSON fields
 type Section = model.Section

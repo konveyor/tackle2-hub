@@ -1,0 +1,21 @@
+diff -ruN '--exclude=mod.patch' migration/v19/model/core.go migration/v20/model/core.go
+--- migration/v19/model/core.go	2025-10-27 16:17:15.057379687 -0500
++++ migration/v20/model/core.go	2025-10-27 16:11:13.781809158 -0500
+@@ -130,6 +130,8 @@
+ 	Data          json.Data  `gorm:"type:json;serializer:json"`
+ 	Started       *time.Time
+ 	Terminated    *time.Time
++	Retained      bool        `gorm:"index"`
++	Reaped        bool        `gorm:"index"`
+ 	Errors        []TaskError `gorm:"type:json;serializer:json"`
+ 	Events        []TaskEvent `gorm:"type:json;serializer:json"`
+ 	Pod           string      `gorm:"index"`
+@@ -140,7 +142,7 @@
+ 	Application   *Application
+ 	PlatformID    *uint `gorm:"index"`
+ 	Platform      *Platform
+-	TaskGroupID   *uint `gorm:"<-:create"`
++	TaskGroupID   *uint `gorm:"<-:create;index"`
+ 	TaskGroup     *TaskGroup
+ }
+ 
