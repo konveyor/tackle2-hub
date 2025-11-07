@@ -176,31 +176,37 @@ type InExList = model.InExList
 
 // AnalysisProfile REST resource.
 type AnalysisProfile struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name"`
-	Mode     struct {
+	Resource    `yaml:",inline"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty" yaml:",omitempty"`
+	Mode        struct {
 		WithDeps bool `json:"withDeps" yaml:"withDeps"`
 	} `json:"mode"`
 	Scope struct {
 		WithKnownLibs bool     `json:"withKnownLibs" yaml:"withKnownLibs"`
-		Packages      InExList `json:"packages"`
+		Packages      InExList `json:"packages,omitempty" yaml:",omitempty"`
 	} `json:"scope"`
 	Rules struct {
-		Targets    []Ref      `json:"targets"`
-		Labels     InExList   `json:"labels"`
-		Files      []Ref      `json:"files"`
-		Repository Repository `json:"repository"`
+		Targets    []Ref       `json:"targets"`
+		Labels     InExList    `json:"labels,omitempty" yaml:",omitempty"`
+		Files      []Ref       `json:"files,omitempty" yaml:",omitempty"`
+		Repository *Repository `json:"repository,omitempty" yaml:",omitempty"`
 	}
 }
 
 // With updates the resource with the model.
 func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
 	r.Resource.With(&m.Model)
+	r.Name = m.Name
+	r.Description = m.Description
 	r.Mode.WithDeps = m.WithDeps
 	r.Scope.WithKnownLibs = m.WithKnownLibs
 	r.Scope.Packages = m.Packages
 	r.Rules.Labels = m.Labels
-	r.Rules.Repository = Repository(m.Repository)
+	if m.Repository != (model.Repository{}) {
+		repository := Repository(m.Repository)
+		r.Rules.Repository = &repository
+	}
 	r.Rules.Targets = make([]Ref, len(m.Targets))
 	for i, t := range m.Targets {
 		r.Rules.Targets[i] =
@@ -218,11 +224,15 @@ func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
 // Model builds a model.
 func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	m = &model.AnalysisProfile{}
+	m.Name = r.Name
+	m.Description = r.Description
 	m.WithDeps = r.Mode.WithDeps
 	m.WithKnownLibs = r.Scope.WithKnownLibs
 	m.Packages = r.Scope.Packages
 	m.Labels = r.Rules.Labels
-	m.Repository = model.Repository(r.Rules.Repository)
+	if r.Rules.Repository != nil {
+		m.Repository = model.Repository(*r.Rules.Repository)
+	}
 	m.Targets = make([]model.Target, len(r.Rules.Targets))
 	for i, t := range r.Rules.Targets {
 		m.Targets[i] =

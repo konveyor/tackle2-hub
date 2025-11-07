@@ -145,6 +145,7 @@ func (r *Target) Builtin() bool {
 type AnalysisProfile struct {
 	Model
 	Name          string `gorm:"uniqueIndex"`
+	Description   string
 	WithDeps      bool
 	WithKnownLibs bool
 	Packages      InExList   `gorm:"type:json;serializer:json"`
