@@ -190,8 +190,8 @@ type TargetProfile struct {
 	ArchetypeID       uint   `gorm:"uniqueIndex:targetProfileA;not null"`
 	Archetype         Archetype
 	Generators        []ProfileGenerator `gorm:"order:Index;constraint:OnDelete:CASCADE"`
-	AnalysisProfileID *uint
-	AnalysisProfile   *AnalysisProfile `gorm:"constraint:OnDelete:SET NULL"`
+	AnalysisProfileID *uint              `gorm:"index"`
+	AnalysisProfile   *AnalysisProfile   `gorm:"constraint:OnDelete:SET NULL"`
 }
 
 type ProfileGenerator struct {
