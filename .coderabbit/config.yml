@@ -1,5 +1,7 @@
 reviews:
   path_instructions:
-      - path: migrations/*/model/*
-        instructions: |
-          Limit review to code referenced the diff described by the mod.path file.
+    - paths:
+        - "migrations/*/model/*"
+      instructions: |
+        Limit review to code referenced in the diff described by the mod.path file.
+
