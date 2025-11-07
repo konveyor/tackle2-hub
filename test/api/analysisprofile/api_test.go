@@ -1,4 +1,4 @@
-package manifest
+package analysisprofile
 
 import (
 	"encoding/json"
@@ -8,33 +8,18 @@ import (
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-func TestGeneratorCRUD(t *testing.T) {
-	var r api.Generator
+func TestAnalysisProfileCRUD(t *testing.T) {
+	var r api.AnalysisProfile
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
-	// identity
-	identity := &api.Identity{
-		Name: t.Name(),
-		Kind: t.Name(),
-	}
-	err := RichClient.Identity.Create(identity)
-	assert.Must(t, err)
-	defer func() {
-		_ = RichClient.Identity.Delete(identity.ID)
-	}()
 
-	// Create.
-	r.Identity = &api.Ref{
-		ID:   identity.ID,
-		Name: identity.Name,
-	}
-	err = Generator.Create(&r)
+	err := AnalysisProfile.Create(&r)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
 	// Get
-	got, err := Generator.Get(r.ID)
+	got, err := AnalysisProfile.Get(r.ID)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -44,11 +29,11 @@ func TestGeneratorCRUD(t *testing.T) {
 
 	// Update.
 	r.Name = r.Name + "updated"
-	err = Generator.Update(&r)
+	err = AnalysisProfile.Update(&r)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	got, err = Generator.Get(r.ID)
+	got, err = AnalysisProfile.Get(r.ID)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -58,11 +43,11 @@ func TestGeneratorCRUD(t *testing.T) {
 	}
 
 	// Delete.
-	err = Generator.Delete(r.ID)
+	err = AnalysisProfile.Delete(r.ID)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	_, err = Generator.Get(r.ID)
+	_, err = AnalysisProfile.Get(r.ID)
 	if err == nil {
 		t.Errorf("Resource exits, but should be deleted: %v", r)
 	}

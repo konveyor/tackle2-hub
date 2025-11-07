@@ -1,4 +1,4 @@
-package manifest
+package analysisprofile
 
 import (
 	"github.com/konveyor/tackle2-hub/binding"
@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	RichClient *binding.RichClient
-	Generator  binding.Generator
+	RichClient      *binding.RichClient
+	AnalysisProfile binding.AnalysisProfile
 )
 
 func init() {
@@ -15,5 +15,5 @@ func init() {
 	RichClient = client.PrepareRichClient()
 
 	// Shortcut for RuleSet-related RichClient methods.
-	Generator = RichClient.Generator
+	AnalysisProfile = RichClient.AnalysisProfile
 }
