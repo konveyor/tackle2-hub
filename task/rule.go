@@ -2,7 +2,6 @@ package task
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/konveyor/tackle2-hub/model"
 )
@@ -75,28 +74,6 @@ func (r *RuleDeps) Match(ready *Task, d *Domain) (matched bool, reason string) {
 				other.ID)
 			Log.Info(reason)
 			break
-		}
-	}
-	return
-}
-
-// RulePreempted - preempted tasks postponed to prevent thrashing.
-type RulePreempted struct {
-}
-
-// Match determines the match.
-// Postpone based on a duration after the last preempted event.
-func (r *RulePreempted) Match(ready *Task, _ *Domain) (matched bool, reason string) {
-	preemption := Settings.Hub.Task.Preemption
-	mark := time.Now()
-	event, found := ready.LastEvent(Preempted)
-	if found {
-		if mark.Sub(event.Last) < preemption.Postponed {
-			matched = true
-			reason = fmt.Sprintf(
-				"Rule:Preempted id:%d",
-				ready.ID)
-			Log.Info(reason)
 		}
 	}
 	return

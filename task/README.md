@@ -63,26 +63,6 @@ When scheduling both tasks, task(12) cannot run until task(10) has completed. Th
 condition effectively makes task(12) priority=0. To prevent this, the manager
 will _escalate_ task(10) priority=1 to match task(12). 
 
-### Preemption ###
-
-To prevent priority inversions, the manager supports preempting a _running_ task so that a
-higher priority _ready_ task pod may be scheduled. Preemption is the act of killing (deleting)
-the pod of a _running_ task, so that the higher _blocked_ task may be created/scheduled
-by the node-scheduler. A task is considered _blocked_ when it cannot be created due to
-a resource quota (state=QuotaBlocked) or cannot be scheduled by the node-scheduler
-(state=Pending) for a defined duration defined by the 
-[Preemption.Delayed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
-To trigger preemption, the _blocked_ task must have Policy.PreemptEnabled=TRUE. When
-the need for preemption is detected, the manger will preempt a percentage
-([Preemption.Rate](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager)) 
-of the newest, lower priority tasks processing cycle. To prevent _thrashing_ a preempted task will 
-be postponed for a defined duration defined by the
-[Preemption.Postponed](https://github.com/konveyor/tackle2-hub/tree/main/settings#task-manager) setting.
-When a task is preempted:
-1. The pod is deleted.
-2. The task state is reset to Ready.
-3. A `Preempted` event is recorded.
-
 ### Macros ###
 
 The manager supports injecting values into Addon and Extension specifications. 
@@ -200,7 +180,6 @@ Fields:
 | PodCreated        | A pod has been created.                               |
 | PodPending        | Pod (k8s) reported phase=Pending.                     |
 | PodRunning        | The pod (k8s) reported phase=Running.                 |
-| Preempted         | The task has been preempted by the manager.           |
 | PodSucceeded      | The pod (k8s) has reported phase=Succeeded.           |
 | PodFailed         | The pod (k8s) has reported phase=Error                |
 | PodDeleted        | The pod has been deleted.                             |
@@ -242,9 +221,6 @@ The task supports policies designed to influence scheduling.
 | Name           | Definition                                               |
 |----------------|----------------------------------------------------------|
 | Isolated       | ALL other tasks are postponed while the task is running. |
-| PreemptEnabled | When (true), the task _may_ trigger preemption.          |
-| PreemptExempt  | When (true), the task may NOT be preempted.              |
-
 
 ### TTL (Time-To-Live) ###
 
