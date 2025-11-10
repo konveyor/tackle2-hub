@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
 	"gorm.io/gorm/clause"
 )
@@ -13,6 +14,8 @@ const (
 	AnalysisProfilesRoot  = "/analysis/profiles"
 	AnalysisProfileRoot   = AnalysisProfilesRoot + "/:id"
 	AnalysisProfileBundle = AnalysisProfileRoot + "/:bundle"
+	//
+	AppAnalysisProfilesRoot = ApplicationRoot + "/analysis/profiles"
 )
 
 // AnalysisProfileHandler handles application Profile resource routes.
@@ -29,6 +32,8 @@ func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.POST(AnalysisProfilesRoot, h.Create)
 	routeGroup.PUT(AnalysisProfileRoot, h.Update)
 	routeGroup.DELETE(AnalysisProfileRoot, h.Delete)
+	//
+	routeGroup.GET(AppAnalysisProfilesRoot, h.AppProfileList)
 }
 
 // Get godoc
@@ -37,14 +42,13 @@ func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 // @tags Profiles
 // @produce json
 // @success 200 {object} AnalysisProfile
-// @router /Profiles/{id} [get]
+// @router /analysis/profiles/{id} [get]
 // @param id path int true "Profile ID"
 func (h AnalysisProfileHandler) Get(ctx *gin.Context) {
 	r := AnalysisProfile{}
 	id := h.pk(ctx)
 	m := &model.AnalysisProfile{}
 	db := h.DB(ctx)
-	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -61,12 +65,11 @@ func (h AnalysisProfileHandler) Get(ctx *gin.Context) {
 // @tags Profiles
 // @produce json
 // @success 200 {object} []AnalysisProfile
-// @router /Profiles [get]
+// @router /analysis/profiles [get]
 func (h AnalysisProfileHandler) List(ctx *gin.Context) {
 	resources := []AnalysisProfile{}
 	var list []model.AnalysisProfile
 	db := h.DB(ctx)
-	db = db.Preload(clause.Associations)
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -89,7 +92,7 @@ func (h AnalysisProfileHandler) List(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} Profile
-// @router /Profiles [post]
+// @router /analysis/profiles [post]
 // @param Profile body AnalysisProfile true "Profile data"
 func (h AnalysisProfileHandler) Create(ctx *gin.Context) {
 	r := &AnalysisProfile{}
@@ -122,7 +125,7 @@ func (h AnalysisProfileHandler) Create(ctx *gin.Context) {
 // @description Delete a Profile.
 // @tags Profiles
 // @success 204
-// @router /Profiles/{id} [delete]
+// @router /analysis/profiles/{id} [delete]
 // @param id path int true "Profile ID"
 func (h AnalysisProfileHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -145,10 +148,10 @@ func (h AnalysisProfileHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a Profile.
 // @description Update a Profile.
-// @tags Profiles
+// @tags AnalysisProfiles
 // @accept json
 // @success 204
-// @router /Profiles/{id} [put]
+// @router /analysis/profiles/{id} [put]
 // @param id path int true "Profile ID"
 // @param Profile body AnalysisProfile true "Profile data"
 func (h AnalysisProfileHandler) Update(ctx *gin.Context) {
@@ -172,26 +175,92 @@ func (h AnalysisProfileHandler) Update(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// AppProfileList godoc
+// @summary List analysis profiles.
+// @description List analysis profiles mapped to an application through archetypes.
+// @tags AnalysisProfiles
+// @produce json
+// @success 200 {object} []AnalysisProfile
+// @router /applications/{id}/analysis/profiles [get]
+// @param id path int true "Application ID"
+func (h AnalysisProfileHandler) AppProfileList(ctx *gin.Context) {
+	resources := []AnalysisProfile{}
+	// Fetch application.
+	application := &model.Application{}
+	id := h.pk(ctx)
+	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	result := db.First(application, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	// Resolve archetypes and profiles.
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	var ids []uint
+	app := assessment.Application{}
+	app.With(application)
+	archetypes, err := memberResolver.Archetypes(app)
+	for _, archetype := range archetypes {
+		for _, p := range archetype.Profiles {
+			if p.AnalysisProfileID != nil {
+				ids = append(ids, *p.AnalysisProfileID)
+			}
+		}
+	}
+	// Fetch profiles.
+	var list []model.AnalysisProfile
+	db = h.DB(ctx)
+	db = db.Preload(clause.Associations)
+	err = db.Find(&list, ids).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for i := range list {
+		m := &list[i]
+		r := AnalysisProfile{}
+		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// InExList include/exclude list.
 type InExList = model.InExList
+
+// ApMode analysis mode.
+type ApMode struct {
+	WithDeps bool `json:"withDeps" yaml:"withDeps"`
+}
+
+// ApScope analysis scope.
+type ApScope struct {
+	WithKnownLibs bool     `json:"withKnownLibs" yaml:"withKnownLibs"`
+	Packages      InExList `json:"packages,omitempty" yaml:",omitempty"`
+}
+
+// ApRules analysis rules.
+type ApRules struct {
+	Targets    []Ref       `json:"targets"`
+	Labels     InExList    `json:"labels,omitempty" yaml:",omitempty"`
+	Files      []Ref       `json:"files,omitempty" yaml:",omitempty"`
+	Repository *Repository `json:"repository,omitempty" yaml:",omitempty"`
+}
 
 // AnalysisProfile REST resource.
 type AnalysisProfile struct {
 	Resource    `yaml:",inline"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty" yaml:",omitempty"`
-	Mode        struct {
-		WithDeps bool `json:"withDeps" yaml:"withDeps"`
-	} `json:"mode"`
-	Scope struct {
-		WithKnownLibs bool     `json:"withKnownLibs" yaml:"withKnownLibs"`
-		Packages      InExList `json:"packages,omitempty" yaml:",omitempty"`
-	} `json:"scope"`
-	Rules struct {
-		Targets    []Ref       `json:"targets"`
-		Labels     InExList    `json:"labels,omitempty" yaml:",omitempty"`
-		Files      []Ref       `json:"files,omitempty" yaml:",omitempty"`
-		Repository *Repository `json:"repository,omitempty" yaml:",omitempty"`
-	}
+	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty" yaml:",omitempty"`
+	Mode        ApMode  `json:"mode"`
+	Scope       ApScope `json:"scope"`
+	Rules       ApRules `json:"rules"`
 }
 
 // With updates the resource with the model.
