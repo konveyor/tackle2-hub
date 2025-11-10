@@ -213,6 +213,10 @@ func (h AnalysisProfileHandler) AppProfileList(ctx *gin.Context) {
 	app := assessment.Application{}
 	app.With(application)
 	archetypes, err := memberResolver.Archetypes(app)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	for _, archetype := range archetypes {
 		for _, p := range archetype.Profiles {
 			if p.AnalysisProfileID != nil {

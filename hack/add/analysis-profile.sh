@@ -3,8 +3,8 @@
 host="${HOST:-localhost:8080}"
 
 id="${1:-0}" # 0=system-assigned.
-name="${1:-Test}-${id}"
-repository="${2:-https://github.com/WASdev/sample.daytrader7.git}"
+name="${2:-Test}-${id}"
+repository="${3:-https://github.com/WASdev/sample.daytrader7.git}"
 
 # create application.
 curl -X POST ${host}/analysis/profiles \
