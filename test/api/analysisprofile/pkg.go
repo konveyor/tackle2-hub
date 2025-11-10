@@ -14,6 +14,6 @@ func init() {
 	// Prepare RichClient and login to Hub API (configured from env variables).
 	RichClient = client.PrepareRichClient()
 
-	// Shortcut for RuleSet-related RichClient methods.
+	// Shortcut for Profile-related RichClient methods.
 	AnalysisProfile = RichClient.AnalysisProfile
 }
