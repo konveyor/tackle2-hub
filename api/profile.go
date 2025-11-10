@@ -173,6 +173,12 @@ func (h AnalysisProfileHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	db = h.DB(ctx).Model(m)
+	err = db.Association("Targets").Replace(m.Targets)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	h.Status(ctx, http.StatusNoContent)
 }
