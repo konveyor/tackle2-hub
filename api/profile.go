@@ -225,19 +225,21 @@ func (h AnalysisProfileHandler) AppProfileList(ctx *gin.Context) {
 		}
 	}
 	// Fetch profiles.
-	var list []model.AnalysisProfile
-	db = h.DB(ctx)
-	db = db.Preload(clause.Associations)
-	err = db.Find(&list, ids).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	for i := range list {
-		m := &list[i]
-		r := AnalysisProfile{}
-		r.With(m)
-		resources = append(resources, r)
+	if len(ids) > 0 {
+		db = h.DB(ctx)
+		db = db.Preload(clause.Associations)
+		var list []model.AnalysisProfile
+		err = db.Find(&list, ids).Error
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+		for i := range list {
+			m := &list[i]
+			r := AnalysisProfile{}
+			r.With(m)
+			resources = append(resources, r)
+		}
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
