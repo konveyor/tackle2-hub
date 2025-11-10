@@ -168,6 +168,7 @@ func (h AnalysisProfileHandler) Update(ctx *gin.Context) {
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx)
+	db = db.Omit(clause.Associations)
 	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
