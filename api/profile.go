@@ -49,6 +49,7 @@ func (h AnalysisProfileHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.AnalysisProfile{}
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -70,6 +71,7 @@ func (h AnalysisProfileHandler) List(ctx *gin.Context) {
 	resources := []AnalysisProfile{}
 	var list []model.AnalysisProfile
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
