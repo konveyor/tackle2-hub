@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/test/api/analysisprofile"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -29,14 +30,25 @@ func TestArchetypeCRUD(t *testing.T) {
 				_ = RichClient.Generator.Delete(genC.ID)
 				_ = RichClient.Generator.Delete(genD.ID)
 			}()
+			// analysis profile.
+			ap1 := &analysisprofile.Base
+			err := RichClient.AnalysisProfile.Create(ap1)
+			assert.Must(t, err)
+			defer func() {
+				_ = RichClient.AnalysisProfile.Delete(ap1.ID)
+			}()
 			// Create.
 			for i := range r.Profiles {
 				p := &r.Profiles[i]
+				p.AnalysisProfile = &api.Ref{
+					ID:   ap1.ID,
+					Name: ap1.Name,
+				}
 				p.Generators = append(
 					p.Generators,
 					api.Ref{ID: genA.ID, Name: genA.Name})
 			}
-			err := Archetype.Create(&r)
+			err = Archetype.Create(&r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}

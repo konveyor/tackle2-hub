@@ -8,9 +8,9 @@ import (
 // Set of valid resources for tests and reuse.
 var (
 	Questionnaire1 = api.Questionnaire{
-		Name:         "Questionnaire1",
-		Description:  "Questionnaire minimal sample 1",
-		Required:     true,
+		Name:        "Questionnaire1",
+		Description: "Questionnaire minimal sample 1",
+		Required:    true,
 		Thresholds: api.Thresholds{
 			Red:     30,
 			Yellow:  20,

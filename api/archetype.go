@@ -52,6 +52,7 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	db := h.DB(ctx)
 	db = db.Preload(clause.Associations)
+	db = db.Preload("Profiles.AnalysisProfile")
 	db = db.Preload("Profiles.Generators.Generator")
 	db = db.Preload("Profiles.Generators", func(db *gorm.DB) *gorm.DB {
 		return db.Order("`Index`")
@@ -97,6 +98,7 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 	var list []model.Archetype
 	db := h.DB(ctx)
 	db = db.Preload(clause.Associations)
+	db = db.Preload("Profiles.AnalysisProfile")
 	db = db.Preload("Profiles.Generators.Generator")
 	db = db.Preload("Profiles.Generators", func(db *gorm.DB) *gorm.DB {
 		return db.Order("`Index`")
@@ -472,9 +474,10 @@ func (h ArchetypeHandler) updateGenerators(ctx *gin.Context, m *model.Archetype)
 
 // TargetProfile REST resource.
 type TargetProfile struct {
-	Resource   `yaml:",inline"`
-	Name       string `json:"name" binding:"required"`
-	Generators []Ref  `json:"generators"`
+	Resource        `yaml:",inline"`
+	Name            string `json:"name" binding:"required"`
+	Generators      []Ref  `json:"generators"`
+	AnalysisProfile *Ref   `json:"analysisProfile,omitempty" yaml:"analysisProfile,omitempty"`
 }
 
 // With updates the resource with the model.
@@ -487,6 +490,9 @@ func (r *TargetProfile) With(m *model.TargetProfile) {
 		ref.With(g.Generator.ID, g.Generator.Name)
 		r.Generators = append(r.Generators, ref)
 	}
+	r.AnalysisProfile = r.refPtr(
+		m.AnalysisProfileID,
+		m.AnalysisProfile)
 }
 
 // Model builds a model from the resource.
@@ -501,6 +507,9 @@ func (r *TargetProfile) Model() (m *model.TargetProfile) {
 		m.Generators = append(
 			m.Generators,
 			g)
+	}
+	if r.AnalysisProfile != nil {
+		m.AnalysisProfileID = &r.AnalysisProfile.ID
 	}
 	return
 }

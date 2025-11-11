@@ -12,6 +12,7 @@ var (
 // The RichClient provides API integration.
 type RichClient struct {
 	Addon            Addon
+	AnalysisProfile  AnalysisProfile
 	Application      Application
 	Archetype        Archetype
 	Assessment       Assessment
@@ -53,6 +54,9 @@ func New(baseURL string) (r *RichClient) {
 	// Build RichClient.
 	r = &RichClient{
 		Addon: Addon{
+			client: client,
+		},
+		AnalysisProfile: AnalysisProfile{
 			client: client,
 		},
 		Application: Application{
