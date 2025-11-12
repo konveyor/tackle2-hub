@@ -62,10 +62,18 @@ func (r *Git) Fetch() (err error) {
 		return
 	}
 	u := r.URL()
-	agent := ssh.Agent{}
-	err = agent.Add(&r.Identity, u.Host)
-	if err != nil {
-		return
+	if r.Identity.Key != "" {
+		agent := ssh.Agent{}
+		key := ssh.Key{
+			ID:         r.Identity.ID,
+			Name:       r.Identity.Name,
+			Content:    r.Identity.Key,
+			Passphrase: r.Identity.Password,
+		}
+		err = agent.Add(key, u.Host)
+		if err != nil {
+			return
+		}
 	}
 	cmd := r.git()
 	cmd.Options.Add("clone")
@@ -269,7 +277,7 @@ func (r *Git) proxy() (proxy string, err error) {
 		return
 	}
 	p, found := r.Proxies[kind]
-	if !found || !p.Enabled {
+	if !found {
 		return
 	}
 	for _, h := range p.Excluded {

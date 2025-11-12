@@ -26,6 +26,10 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		svn.Home = filepath.Join(Home, svn.Id())
 		svn.Path = destDir
 		svn.Remote = *remote
+		svn.Proxies, err = proxyMap(db)
+		if err != nil {
+			return
+		}
 		err = m.As(&svn.Insecure)
 		if err != nil {
 			return
@@ -41,6 +45,10 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		git.Home = filepath.Join(Home, git.Id())
 		git.Path = destDir
 		git.Remote = *remote
+		git.Proxies, err = proxyMap(db)
+		if err != nil {
+			return
+		}
 		err = m.As(&git.Insecure)
 		if err != nil {
 			return
@@ -55,6 +63,31 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		err = r.Use(opt)
 		if err != nil {
 			return
+		}
+	}
+	return
+}
+
+type Factory struct {
+}
+
+// proxyMap returns a map of proxies.
+func proxyMap(db *gorm.DB) (mp map[string]Proxy, err error) {
+	var list []model.Proxy
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, p := range list {
+		if !p.Enabled {
+			continue
+		}
+		mp[p.Kind] = Proxy{
+			ID:       p.ID,
+			Kind:     p.Kind,
+			Host:     p.Host,
+			Port:     p.Port,
+			Excluded: p.Excluded,
 		}
 	}
 	return
