@@ -12,6 +12,12 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 )
 
+func CpDir(pathIn, pathTo string) (err error) {
+	cmd := exec.Command("/usr/bin/cp", "-rf", pathIn, pathTo)
+	err = cmd.Run()
+	return
+}
+
 // RmDir deletes the directory.
 func RmDir(path string) (err error) {
 	cmd := exec.Command("/usr/bin/rm", "-rf", path)

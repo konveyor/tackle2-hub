@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	pathlib "path"
 	"path/filepath"
 	"strconv"
 
@@ -501,7 +500,6 @@ func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 	fileDir := filepath.Join(ruleSetDir, "files")
 	err = nas.MkDir(fileDir, 0755)
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	for _, rule := range ruleSet.Rules {
@@ -511,7 +509,7 @@ func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 		}
 	}
 	err = b.addRepository(
-		filepath.Join(b.tmpDir, ruleSetDir, "repository"),
+		filepath.Join(ruleSetDir, "repository"),
 		&ruleSet.Repository)
 	if err != nil {
 		return
@@ -553,9 +551,14 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 	if repository.URL == "" {
 		return
 	}
-	rootDir = filepath.Join(
-		rootDir,
-		pathlib.Base(repository.URL))
+	tmpDir := filepath.Join(b.tmpDir, "tmp")
+	err = nas.MkDir(tmpDir, 0755)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = nas.RmDir(tmpDir)
+	}()
 	remote := scm.Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
@@ -563,14 +566,22 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 		Branch: repository.Branch,
 		Tag:    repository.Tag,
 	}
-	err = nas.MkDir(filepath.Join(rootDir), 0755)
-	if err != nil {
-		return
-	}
-	r, err := scm.New(b.db, rootDir, &remote)
+	r, err := scm.New(b.db, tmpDir, &remote)
 	if err != nil {
 		return
 	}
 	err = r.Fetch()
+	if err != nil {
+		return
+	}
+	err = nas.MkDir(filepath.Dir(rootDir), 0755)
+	if err != nil {
+		return
+	}
+	if remote.Path != "" {
+		err = nas.CpDir(filepath.Join(tmpDir, remote.Path), rootDir)
+	} else {
+		err = nas.CpDir(tmpDir, rootDir)
+	}
 	return
 }
