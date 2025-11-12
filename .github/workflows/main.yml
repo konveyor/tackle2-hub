@@ -93,5 +93,5 @@ jobs:
     uses: konveyor/ci/.github/workflows/global-ci-bundle.yml@main
     with:
       tackle_hub: ttl.sh/konveyor-hub-${{ github.sha }}:2h
-      api_hub_tests_ref:  ${{ github.base_ref || github.ref }}
-      api_tests_ref:  ${{ github.base_ref || github.ref }}
+      api_hub_tests_ref: "release-0.8"
+      api_tests_ref: "release-0.8"
