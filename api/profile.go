@@ -551,38 +551,16 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 	if repository.URL == "" {
 		return
 	}
-	tmpDir := filepath.Join(b.tmpDir, "tmp")
-	err = nas.MkDir(tmpDir, 0755)
-	if err != nil {
-		return
-	}
-	defer func() {
-		_ = nas.RmDir(tmpDir)
-	}()
 	remote := scm.Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
 		Path:   repository.Path,
 		Branch: repository.Branch,
 	}
-	r, err := scm.New(b.db, tmpDir, &remote)
-	if err == nil {
-		defer r.Clean()
-	} else {
-		return
-	}
-	err = r.Fetch()
+	mirror := scm.GetMirror(b.db, remote)
+	err = mirror.CopyTo(rootDir)
 	if err != nil {
 		return
-	}
-	err = nas.MkDir(filepath.Dir(rootDir), 0755)
-	if err != nil {
-		return
-	}
-	if remote.Path != "" {
-		err = nas.CpDir(filepath.Join(tmpDir, remote.Path), rootDir)
-	} else {
-		err = nas.CpDir(tmpDir, rootDir)
 	}
 	return
 }

@@ -48,6 +48,10 @@ func (r *Git) Validate() (err error) {
 
 // Fetch clones the repository.
 func (r *Git) Fetch() (err error) {
+	err = r.mustEmptyDir(r.Path)
+	if err != nil {
+		return
+	}
 	err = nas.MkDir(r.Home, 0755)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -88,6 +92,16 @@ func (r *Git) Fetch() (err error) {
 		return
 	}
 	err = r.checkout()
+	return
+}
+
+// Update the repository using the remote.
+func (r *Git) Update() (err error) {
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("fetch", "--depth", "1")
+	cmd.Options.Add("--prune")
+	err = cmd.Run()
 	return
 }
 

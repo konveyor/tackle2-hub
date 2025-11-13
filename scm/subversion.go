@@ -47,6 +47,10 @@ func (r *Subversion) Validate() (err error) {
 
 // Fetch clones the repository.
 func (r *Subversion) Fetch() (err error) {
+	err = r.mustEmptyDir(r.Path)
+	if err != nil {
+		return
+	}
 	err = nas.MkDir(r.Home, 0755)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -75,6 +79,15 @@ func (r *Subversion) Fetch() (err error) {
 		}
 	}
 	err = r.checkout()
+	return
+}
+
+// Update the repository using the remote.
+func (r *Subversion) Update() (err error) {
+	cmd := r.svn()
+	cmd.Dir = r.root()
+	cmd.Options.Add("update")
+	err = cmd.Run()
 	return
 }
 

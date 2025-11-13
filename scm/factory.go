@@ -113,9 +113,9 @@ func (b *Base) Id() string {
 }
 
 // Clean deletes created files.
-func (b *Base) Clean() {
-	_ = nas.RmDir(b.Home)
-	_ = nas.RmDir(b.Path)
+func (b *Base) Clean() (err error) {
+	err = nas.RmDir(b.Home)
+	return
 }
 
 // Validate the repository.
@@ -123,12 +123,7 @@ func (b *Base) Clean() {
 // - do not exist.
 // - are empty directories.
 func (b *Base) Validate() (err error) {
-	for _, p := range []string{b.Home, b.Path} {
-		err = b.mustEmptyDir(p)
-		if err != nil {
-			break
-		}
-	}
+	err = b.mustEmptyDir(b.Home)
 	return
 }
 

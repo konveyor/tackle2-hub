@@ -24,11 +24,12 @@ type SCM interface {
 	Id() string
 	Validate() (err error)
 	Fetch() (err error)
+	Update() (err error)
 	Branch(ref string) (err error)
 	Commit(files []string, msg string) (err error)
 	Head() (commit string, err error)
 	Use(option any) (err error)
-	Clean()
+	Clean() (err error)
 }
 
 // Proxy defines a proxy.
