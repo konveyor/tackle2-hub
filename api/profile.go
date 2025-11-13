@@ -558,11 +558,10 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 	remote := scm.Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
-		Path:   repository.Path,
 		Branch: repository.Branch,
 	}
 	mirror := scm.GetMirror(b.db, remote)
-	err = mirror.CopyTo(rootDir)
+	err = mirror.CopyTo(repository.Path, rootDir)
 	if err != nil {
 		return
 	}

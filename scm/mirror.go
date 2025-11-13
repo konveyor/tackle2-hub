@@ -58,7 +58,7 @@ func (m *Mirror) Update() (err error) {
 }
 
 // CopyTo updates the mirror and copies the repository to the destination.
-func (m *Mirror) CopyTo(destDir string) (err error) {
+func (m *Mirror) CopyTo(path, destDir string) (err error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	err = m.update()
@@ -66,8 +66,8 @@ func (m *Mirror) CopyTo(destDir string) (err error) {
 		return
 	}
 	home := m.home()
-	if m.Remote.Path != "" {
-		err = nas.CpDir(filepath.Join(home, m.Remote.Path), destDir)
+	if path != "" {
+		err = nas.CpDir(filepath.Join(home, path), destDir)
 	} else {
 		err = nas.CpDir(home, destDir)
 	}
