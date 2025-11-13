@@ -415,6 +415,10 @@ func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
 	if err != nil {
 		return
 	}
+	err = b.addFiles(m)
+	if err != nil {
+		return
+	}
 	path = b.tmpDir
 	return
 }
@@ -561,6 +565,49 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 	err = mirror.CopyTo(rootDir)
 	if err != nil {
 		return
+	}
+	return
+}
+
+// addFiles adds uploaded files referenced in the profile.
+func (b *ApBundle) addFiles(m *model.AnalysisProfile) (err error) {
+	fileDir := filepath.Join(b.ruleSetDir, "files")
+	err = nas.MkDir(fileDir, 0755)
+	if err != nil {
+		return
+	}
+	for _, ref := range m.Files {
+		file := &model.File{}
+		err = b.db.First(file, ref.ID).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		name := fmt.Sprintf(
+			"%d-%s",
+			file.ID,
+			file.Name)
+		var reader io.ReadCloser
+		var writer io.WriteCloser
+		pathIn := file.Path
+		pathOut := filepath.Join(fileDir, name)
+		reader, err = os.Open(pathIn)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		writer, err = os.Create(pathOut)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		_, err = io.Copy(writer, reader)
+		_ = reader.Close()
+		_ = writer.Close()
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }
