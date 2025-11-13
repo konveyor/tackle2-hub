@@ -14,6 +14,9 @@ RUN if [ ! -d "${SEED_ROOT}" ]; then \
 FROM quay.io/konveyor/static-report as report
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal
+RUN mkdir -p /hub && chmod 0777 /hub
+ENV HOME=/hub
+WORKDIR /hub
 ARG SEED_ROOT
 ARG VERSION=latest
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
@@ -28,6 +31,10 @@ RUN echo "${VERSION}" > /etc/hub-build
 
 RUN microdnf -y install \
   sqlite \
+  openssh-clients \
+  subversion \
+  git \
+  tar \
  && microdnf -y clean all
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd
 ENTRYPOINT ["/usr/local/bin/tackle-hub"]
