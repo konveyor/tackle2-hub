@@ -564,7 +564,6 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 		URL:    repository.URL,
 		Path:   repository.Path,
 		Branch: repository.Branch,
-		Tag:    repository.Tag,
 	}
 	r, err := scm.New(b.db, tmpDir, &remote)
 	if err != nil {

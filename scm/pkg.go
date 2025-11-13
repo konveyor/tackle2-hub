@@ -55,7 +55,6 @@ type Remote struct {
 	Kind   string
 	URL    string
 	Branch string
-	Tag    string
 	Path   string
 }
 
