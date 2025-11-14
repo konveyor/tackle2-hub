@@ -81,52 +81,36 @@ func (r *Git) Fetch() (err error) {
 	}
 	cmd := r.git()
 	cmd.Options.Add("clone")
-	cmd.Options.Add("--depth", "1")
-	if r.Remote.Branch != "" {
-		cmd.Options.Add("--single-branch")
-		cmd.Options.Add("--branch", r.Remote.Branch)
-	}
 	cmd.Options.Add(u.String(), r.Path)
 	err = cmd.Run()
 	if err != nil {
 		return
 	}
-	err = r.checkout()
+	if r.Remote.Branch != "" {
+		err = r.checkout(r.Remote.Branch)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
 // Update the repository using the remote.
 func (r *Git) Update() (err error) {
-	cmd := r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("fetch", "--depth", "1")
-	cmd.Options.Add("--prune")
-	err = cmd.Run()
+	err = r.fetch()
+	if err != nil {
+		return
+	}
+	err = r.pull()
+	if err != nil {
+		return
+	}
 	return
 }
 
 // Branch creates a branch with the given name if not exist and switch to it.
 func (r *Git) Branch(ref string) (err error) {
-	cmd := r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("checkout", ref)
-	err = cmd.Run()
-	if err != nil {
-		cmd = r.git()
-		cmd.Dir = r.Path
-		cmd.Options.Add("checkout", "-b", ref)
-	}
-	r.Remote.Branch = ref
-	err = cmd.Run()
-	return
-}
-
-// addFiles adds files to staging area.
-func (r *Git) addFiles(files []string) (err error) {
-	cmd := r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("add", files...)
-	err = cmd.Run()
+	err = r.checkout(ref)
 	return
 }
 
@@ -137,7 +121,6 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 		return err
 	}
 	cmd := r.git()
-	cmd.Dir = r.Path
 	cmd.Options.Add("commit")
 	cmd.Options.Add("--allow-empty")
 	cmd.Options.Add("-m", msg)
@@ -152,7 +135,6 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 // Head returns HEAD commit.
 func (r *Git) Head() (commit string, err error) {
 	cmd := r.git()
-	cmd.Dir = r.Path
 	cmd.Options.Add("rev-parse")
 	cmd.Options.Add("HEAD")
 	err = cmd.Run()
@@ -174,6 +156,7 @@ func (r *Git) URL() (u GitURL) {
 // git returns git command.
 func (r *Git) git() (cmd *command.Command) {
 	cmd = NewCommand("/usr/bin/git")
+	cmd.Dir = r.Path
 	cmd.Env = append(
 		os.Environ(),
 		"GIT_TERMINAL_PROMPT=0",
@@ -181,10 +164,56 @@ func (r *Git) git() (cmd *command.Command) {
 	return
 }
 
+// fetch refs and commits.
+func (r *Git) fetch() (err error) {
+	cmd := r.git()
+	cmd.Options.Add("fetch", "--prune")
+	err = cmd.Run()
+	return
+}
+
+// pull commits.
+func (r *Git) pull() (err error) {
+	cmd := r.git()
+	cmd.Options.Add("pull")
+	err = cmd.Run()
+	return
+}
+
+// checkout ref.
+func (r *Git) checkout(ref string) (err error) {
+	defer func() {
+		if err == nil {
+			r.Remote.Branch = ref
+		}
+	}()
+	err = r.fetch()
+	if err != nil {
+		return
+	}
+	cmd := r.git()
+	cmd.Options.Add("checkout", "-B", ref, "origin/"+ref)
+	err = cmd.Run()
+	if err == nil {
+		return
+	}
+	cmd = r.git()
+	cmd.Options.Add("checkout", ref)
+	err = cmd.Run()
+	return
+}
+
+// addFiles adds files to staging area.
+func (r *Git) addFiles(files []string) (err error) {
+	cmd := r.git()
+	cmd.Options.Add("add", files...)
+	err = cmd.Run()
+	return
+}
+
 // push changes to remote.
 func (r *Git) push() (err error) {
 	cmd := r.git()
-	cmd.Dir = r.Path
 	cmd.Options.Add("push", "origin", "HEAD")
 	err = cmd.Run()
 	return
@@ -321,19 +350,6 @@ func (r *Git) proxy() (proxy string, err error) {
 			proxy,
 			p.Port)
 	}
-	return
-}
-
-// checkout ref.
-func (r *Git) checkout() (err error) {
-	branch := r.Remote.Branch
-	if branch == "" {
-		return
-	}
-	cmd := r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("checkout", branch)
-	err = cmd.Run()
 	return
 }
 

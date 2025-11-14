@@ -85,7 +85,6 @@ func (r *Subversion) Fetch() (err error) {
 // Update the repository using the remote.
 func (r *Subversion) Update() (err error) {
 	cmd := r.svn()
-	cmd.Dir = r.root()
 	cmd.Options.Add("update")
 	err = cmd.Run()
 	return
@@ -126,7 +125,6 @@ func (r *Subversion) Commit(files []string, msg string) (err error) {
 		return
 	}
 	cmd := r.svn()
-	cmd.Dir = r.root()
 	cmd.Options.Add("commit", "-m", msg)
 	err = cmd.Run()
 	return
@@ -135,7 +133,6 @@ func (r *Subversion) Commit(files []string, msg string) (err error) {
 // Head returns the current revision.
 func (r *Subversion) Head() (commit string, err error) {
 	cmd := r.svn()
-	cmd.Dir = r.root()
 	cmd.Options.Add("info", "-r", "HEAD")
 	err = cmd.Run()
 	if err != nil {
@@ -162,6 +159,7 @@ func (r *Subversion) URL() (u *SvnURL) {
 func (r *Subversion) svn() (cmd *command.Command) {
 	cmd = NewCommand("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
+	cmd.Dir = r.root()
 	cmd.Options.Add("--non-interactive")
 	if r.Insecure {
 		cmd.Options.Add("--trust-server-cert")
@@ -208,7 +206,6 @@ func (r *Subversion) createBranch(baseURL string) (err error) {
 // addFiles adds files to staging area
 func (r *Subversion) addFiles(files []string) (err error) {
 	cmd := r.svn()
-	cmd.Dir = r.root()
 	cmd.Options.Add("add")
 	cmd.Options.Add("--force", files...)
 	err = cmd.Run()
