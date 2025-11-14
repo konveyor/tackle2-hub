@@ -112,12 +112,11 @@ func (m *Mirror) update() (err error) {
 	if err != nil {
 		return
 	}
-	if m.Remote.Branch != "" {
-		err = r.Branch(m.Remote.Branch)
-		if err != nil {
-			return
-		}
+	err = r.Branch(m.Remote.Branch)
+	if err != nil {
+		return
 	}
+
 	return
 }
 

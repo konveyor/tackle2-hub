@@ -5,7 +5,6 @@ executing (CLI) commands.
 package command
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os/exec"
@@ -64,7 +63,7 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 		}
 	}
 	if r.Writer == nil {
-		r.Writer = &bytes.Buffer{}
+		r.Writer = &Writer{}
 	}
 	cmd := exec.CommandContext(ctx, r.Path, r.Options...)
 	cmd.Dir = r.Dir
@@ -81,11 +80,18 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 
 // Output returns the command output.
 func (r *Command) Output() (b []byte) {
+	var err error
 	if seeker, cast := r.Writer.(io.Seeker); cast {
-		_, _ = seeker.Seek(0, io.SeekStart)
+		_, err = seeker.Seek(0, io.SeekStart)
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 	if reader, cast := r.Writer.(io.Reader); cast {
-		b, _ = io.ReadAll(reader)
+		b, err = io.ReadAll(reader)
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 	return
 }

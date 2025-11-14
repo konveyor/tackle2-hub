@@ -5,6 +5,7 @@ import (
 	"fmt"
 	urllib "net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -185,6 +186,12 @@ func (r *Git) pull() (err error) {
 
 // checkout ref.
 func (r *Git) checkout(ref string) (err error) {
+	if ref == "" {
+		ref, err = r.defaultBranch()
+		if err != nil {
+			return
+		}
+	}
 	defer func() {
 		if err == nil {
 			r.Remote.Branch = ref
@@ -223,6 +230,21 @@ func (r *Git) push() (err error) {
 	cmd.Dir = r.Path
 	cmd.Options.Add("push", "origin", "HEAD")
 	err = cmd.Run()
+	return
+}
+
+// defaultBranch returns the branch name.
+func (r *Git) defaultBranch() (name string, err error) {
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("rev-parse", "--abbrev-ref", "origin/HEAD")
+	err = cmd.Run()
+	if err != nil {
+		return
+	}
+	name = string(cmd.Output())
+	name = path.Base(name)
+	name = strings.TrimSpace(name)
 	return
 }
 
