@@ -12,9 +12,17 @@ import (
 	"strings"
 
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
-var Log = logr.WithName("command")
+var (
+	Settings = &settings.Settings
+	Log      = logr.WithName("command")
+)
+
+func init() {
+	Log = Log.V(Settings.Log.Master)
+}
 
 // New returns a command.
 func New(path string) (cmd *Command) {
@@ -44,7 +52,7 @@ func (r *Command) Run() (err error) {
 func (r *Command) RunWith(ctx context.Context) (err error) {
 	defer func() {
 		r.Error = err
-		Log.Info(r.String())
+		Log.V(1).Info(r.String())
 		if r.End != nil {
 			r.End()
 		}
