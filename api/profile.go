@@ -379,9 +379,9 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 }
 
 type ApBundle struct {
-	db         *gorm.DB
-	tmpDir     string
-	ruleSetDir string
+	db      *gorm.DB
+	tmpDir  string
+	ruleDir string
 }
 
 func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
@@ -394,10 +394,10 @@ func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
 	if err != nil {
 		return
 	}
-	b.ruleSetDir = filepath.Join(
+	b.ruleDir = filepath.Join(
 		b.tmpDir,
-		"rulesets")
-	err = nas.MkDir(b.ruleSetDir, 0755)
+		"rules")
+	err = nas.MkDir(b.ruleDir, 0755)
 	if err != nil {
 		return
 	}
@@ -410,7 +410,7 @@ func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
 		return
 	}
 	err = b.addRepository(
-		filepath.Join(b.ruleSetDir, "repository"),
+		filepath.Join(b.ruleDir, "repository"),
 		&m.Repository)
 	if err != nil {
 		return
@@ -500,8 +500,8 @@ func (b *ApBundle) addTargets(m *model.AnalysisProfile) (err error) {
 
 func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 	ruleSetId := strconv.Itoa(int(ruleSet.ID))
-	ruleSetDir := filepath.Join(b.ruleSetDir, ruleSetId)
-	fileDir := filepath.Join(ruleSetDir, "files")
+	ruleDir := filepath.Join(b.ruleDir, ruleSetId)
+	fileDir := filepath.Join(ruleDir, "files")
 	err = nas.MkDir(fileDir, 0755)
 	if err != nil {
 		return
@@ -513,7 +513,7 @@ func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 		}
 	}
 	err = b.addRepository(
-		filepath.Join(ruleSetDir, "repository"),
+		filepath.Join(ruleDir, "repository"),
 		&ruleSet.Repository)
 	if err != nil {
 		return
@@ -521,7 +521,7 @@ func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 	return
 }
 
-func (b *ApBundle) addRule(ruleSetDir string, rule *model.Rule) (err error) {
+func (b *ApBundle) addRule(ruleDir string, rule *model.Rule) (err error) {
 	if rule.File == nil {
 		return
 	}
@@ -530,7 +530,7 @@ func (b *ApBundle) addRule(ruleSetDir string, rule *model.Rule) (err error) {
 		rule.File.ID,
 		rule.File.Name)
 	pathIn := rule.File.Path
-	pathOut := filepath.Join(ruleSetDir, name)
+	pathOut := filepath.Join(ruleDir, name)
 	reader, err := os.Open(pathIn)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -570,7 +570,7 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 
 // addFiles adds uploaded files referenced in the profile.
 func (b *ApBundle) addFiles(m *model.AnalysisProfile) (err error) {
-	fileDir := filepath.Join(b.ruleSetDir, "files")
+	fileDir := filepath.Join(b.ruleDir, "files")
 	err = nas.MkDir(fileDir, 0755)
 	if err != nil {
 		return
