@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
 )
@@ -77,6 +78,11 @@ func (m *Mirror) CopyTo(path, destDir string) (err error) {
 // update the mirror.
 func (m *Mirror) update() (err error) {
 	path := m.home()
+	err = nas.MkDir(filepath.Dir(path), 0755)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	remote := &Remote{
 		URL: m.Remote.URL,
 	}

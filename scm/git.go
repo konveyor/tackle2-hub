@@ -121,6 +121,7 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 		return err
 	}
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("commit")
 	cmd.Options.Add("--allow-empty")
 	cmd.Options.Add("-m", msg)
@@ -135,6 +136,7 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 // Head returns HEAD commit.
 func (r *Git) Head() (commit string, err error) {
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("rev-parse")
 	cmd.Options.Add("HEAD")
 	err = cmd.Run()
@@ -156,7 +158,6 @@ func (r *Git) URL() (u GitURL) {
 // git returns git command.
 func (r *Git) git() (cmd *command.Command) {
 	cmd = NewCommand("/usr/bin/git")
-	cmd.Dir = r.Path
 	cmd.Env = append(
 		os.Environ(),
 		"GIT_TERMINAL_PROMPT=0",
@@ -167,6 +168,7 @@ func (r *Git) git() (cmd *command.Command) {
 // fetch refs and commits.
 func (r *Git) fetch() (err error) {
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("fetch", "--prune")
 	err = cmd.Run()
 	return
@@ -175,6 +177,7 @@ func (r *Git) fetch() (err error) {
 // pull commits.
 func (r *Git) pull() (err error) {
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("pull")
 	err = cmd.Run()
 	return
@@ -192,12 +195,14 @@ func (r *Git) checkout(ref string) (err error) {
 		return
 	}
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("checkout", "-B", ref, "origin/"+ref)
 	err = cmd.Run()
 	if err == nil {
 		return
 	}
 	cmd = r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("checkout", ref)
 	err = cmd.Run()
 	return
@@ -206,6 +211,7 @@ func (r *Git) checkout(ref string) (err error) {
 // addFiles adds files to staging area.
 func (r *Git) addFiles(files []string) (err error) {
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("add", files...)
 	err = cmd.Run()
 	return
@@ -214,6 +220,7 @@ func (r *Git) addFiles(files []string) (err error) {
 // push changes to remote.
 func (r *Git) push() (err error) {
 	cmd := r.git()
+	cmd.Dir = r.Path
 	cmd.Options.Add("push", "origin", "HEAD")
 	err = cmd.Run()
 	return
