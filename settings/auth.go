@@ -15,6 +15,7 @@ const (
 	EnvKeycloakAdminPass     = "KEYCLOAK_ADMIN_PASS"
 	EnvKeycloakAdminRealm    = "KEYCLOAK_ADMIN_REALM"
 	EnvKeycloakReqPassUpdate = "KEYCLOAK_REQ_PASS_UPDATE"
+	EnvKeycloakAudience      = "KEYCLOAK_AUDIENCE"
 	EnvBuiltinTokenKey       = "ADDON_TOKEN"
 	EnvRolePath              = "ROLE_PATH"
 	EnvUserPath              = "USER_PATH"
@@ -29,6 +30,7 @@ type Auth struct {
 		Realm        string
 		ClientID     string
 		ClientSecret string
+		Audience     string
 		Admin        struct {
 			User  string
 			Pass  string
@@ -67,6 +69,10 @@ func (r *Auth) Load() (err error) {
 	r.Keycloak.ClientSecret, found = os.LookupEnv(EnvKeycloakClientSecret)
 	if !found {
 		r.Keycloak.ClientSecret = ""
+	}
+	r.Keycloak.Audience, found = os.LookupEnv(EnvKeycloakAudience)
+	if !found {
+		r.Keycloak.Audience = r.Keycloak.ClientID
 	}
 	r.Keycloak.Admin.User, found = os.LookupEnv(EnvKeycloakAdminUser)
 	if !found {
