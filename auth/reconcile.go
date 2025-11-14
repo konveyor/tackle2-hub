@@ -136,11 +136,13 @@ func (r *Reconciler) ensureRealm() (err error) {
 // ensureClient ensures that the hub client exists.
 func (r *Reconciler) ensureClient() (err error) {
 	var found bool
-	_, found, err = r.getClient(r.id)
+	var existingClient *gocloak.Client
+	existingClient, found, err = r.getClient(r.id)
 	if err != nil {
 		return
 	}
 	if found {
+		err = r.ensureAudienceMapper(existingClient)
 		return
 	}
 
@@ -154,11 +156,65 @@ func (r *Reconciler) ensureClient() (err error) {
 		WebOrigins:                &[]string{"*"},
 	}
 	Log.Info("Creating client.", "client", r.id)
-	_, err = r.client.CreateClient(context.Background(), r.token.AccessToken, r.realm, newClient)
+	clientID, err := r.client.CreateClient(context.Background(), r.token.AccessToken, r.realm, newClient)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+
+	createdClient, err := r.client.GetClient(context.Background(), r.token.AccessToken, r.realm, clientID)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	err = r.ensureAudienceMapper(createdClient)
+	return
+}
+
+func (r *Reconciler) ensureAudienceMapper(client *gocloak.Client) (err error) {
+	if Settings.Auth.Keycloak.Audience == "" {
+		Log.Info("Skipping audience mapper creation - no audience configured")
+		return
+	}
+
+	mapperName := "audience-mapper"
+	if client.ProtocolMappers != nil {
+		for _, mapper := range *client.ProtocolMappers {
+			if mapper.Name != nil && *mapper.Name == mapperName {
+				Log.Info("Audience mapper already exists.", "client", *client.ClientID)
+				return
+			}
+		}
+	}
+
+	protocol := "openid-connect"
+	protocolMapper := "oidc-audience-mapper"
+	mapper := gocloak.ProtocolMapperRepresentation{
+		Name:           &mapperName,
+		Protocol:       &protocol,
+		ProtocolMapper: &protocolMapper,
+		Config: &map[string]string{
+			"included.client.audience": Settings.Auth.Keycloak.Audience,
+			"access.token.claim":       "true",
+			"id.token.claim":           "true",
+		},
+	}
+
+	_, err = r.client.CreateClientProtocolMapper(
+		context.Background(),
+		r.token.AccessToken,
+		r.realm,
+		*client.ID,
+		mapper,
+	)
+	if err != nil {
+		Log.Error(err, "Failed to create audience mapper", "client", *client.ClientID, "audience", Settings.Auth.Keycloak.Audience)
+		err = liberr.Wrap(err)
+		return
+	}
+
+	Log.Info("Created audience mapper.", "client", *client.ClientID, "audience", Settings.Auth.Keycloak.Audience)
 	return
 }
 
