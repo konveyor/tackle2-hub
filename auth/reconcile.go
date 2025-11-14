@@ -195,7 +195,7 @@ func (r *Reconciler) ensureAudienceMapper(client *gocloak.Client) (err error) {
 		Protocol:       &protocol,
 		ProtocolMapper: &protocolMapper,
 		Config: &map[string]string{
-			"included.client.audience": Settings.Auth.Keycloak.Audience,
+			"included.custom.audience": Settings.Auth.Keycloak.Audience,
 			"access.token.claim":       "true",
 			"id.token.claim":           "true",
 		},
