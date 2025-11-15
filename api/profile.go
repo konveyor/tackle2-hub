@@ -1,11 +1,22 @@
 package api
 
 import (
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/scm"
+	"github.com/konveyor/tackle2-hub/tar"
+	"gopkg.in/yaml.v2"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -13,7 +24,7 @@ import (
 const (
 	AnalysisProfilesRoot  = "/analysis/profiles"
 	AnalysisProfileRoot   = AnalysisProfilesRoot + "/:id"
-	AnalysisProfileBundle = AnalysisProfileRoot + "/:bundle"
+	AnalysisProfileBundle = AnalysisProfileRoot + "/bundle"
 	//
 	AppAnalysisProfilesRoot = ApplicationRoot + "/analysis/profiles"
 )
@@ -25,13 +36,14 @@ type AnalysisProfileHandler struct {
 
 func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("Profiles"), Transaction)
+	routeGroup.Use(Required("Profiles"))
 	routeGroup.GET(AnalysisProfileRoot, h.Get)
 	routeGroup.GET(AnalysisProfilesRoot, h.List)
 	routeGroup.GET(AnalysisProfilesRoot+"/", h.List)
-	routeGroup.POST(AnalysisProfilesRoot, h.Create)
-	routeGroup.PUT(AnalysisProfileRoot, h.Update)
-	routeGroup.DELETE(AnalysisProfileRoot, h.Delete)
+	routeGroup.GET(AnalysisProfileBundle, h.GetBundle)
+	routeGroup.POST(AnalysisProfilesRoot, h.Create, Transaction)
+	routeGroup.PUT(AnalysisProfileRoot, h.Update, Transaction)
+	routeGroup.DELETE(AnalysisProfileRoot, h.Delete, Transaction)
 	//
 	routeGroup.GET(AppAnalysisProfilesRoot, h.AppProfileList)
 }
@@ -58,6 +70,38 @@ func (h AnalysisProfileHandler) Get(ctx *gin.Context) {
 	r.With(m)
 
 	h.Respond(ctx, http.StatusOK, r)
+}
+
+// GetBundle godoc
+// @summary Get a Profile bundle by ID.
+// @description Get a Profile bundle by ID.
+// @tags ProfileBundles
+// @produce octet-stream
+// @success 200 {object} AnalysisProfile
+// @router /analysis/profiles/{id} [get]
+// @param id path int true "Profile ID"
+func (h AnalysisProfileHandler) GetBundle(ctx *gin.Context) {
+	id := h.pk(ctx)
+	bundle := ApBundle{}
+	tmpDir, err := bundle.Build(h.DB(ctx), id)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = nas.RmDir(tmpDir)
+	}()
+	h.Attachment(ctx, "bundle.tar.gz")
+	ctx.Status(http.StatusOK)
+	tarWriter := tar.NewWriter(ctx.Writer)
+	defer func() {
+		tarWriter.Close()
+	}()
+	err = tarWriter.AddDir(tmpDir)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 }
 
 // List godoc
@@ -330,6 +374,239 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	m.Files = make([]model.Ref, len(r.Rules.Files))
 	for i, f := range r.Rules.Files {
 		m.Files[i] = model.Ref(f)
+	}
+	return
+}
+
+type ApBundle struct {
+	db      *gorm.DB
+	tmpDir  string
+	ruleDir string
+}
+
+func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
+	b.db = db
+	m, err := b.fetch(id)
+	if err != nil {
+		return
+	}
+	b.tmpDir, err = os.MkdirTemp("", "")
+	if err != nil {
+		return
+	}
+	b.ruleDir = filepath.Join(
+		b.tmpDir,
+		"rules")
+	err = nas.MkDir(b.ruleDir, 0755)
+	if err != nil {
+		return
+	}
+	err = b.addProfile(m)
+	if err != nil {
+		return
+	}
+	err = b.addTargets(m)
+	if err != nil {
+		return
+	}
+	err = b.addRepository(
+		filepath.Join(b.ruleDir, "repository"),
+		&m.Repository)
+	if err != nil {
+		return
+	}
+	err = b.addFiles(m)
+	if err != nil {
+		return
+	}
+	path = b.tmpDir
+	return
+}
+
+func (b *ApBundle) fetch(id uint) (m *model.AnalysisProfile, err error) {
+	m = &model.AnalysisProfile{}
+	db := b.db.Preload(clause.Associations)
+	db = db.Preload("Targets.RuleSet")
+	db = db.Preload("Targets.RuleSet.Rules")
+	db = db.Preload("Targets.RuleSet.Rules.File")
+	err = db.First(m, id).Error
+	return
+}
+
+func (b *ApBundle) addProfile(m *model.AnalysisProfile) (err error) {
+	profile := &AnalysisProfile{}
+	profile.With(m)
+	profile.Rules.Labels.Included = b.expandIncluded(m)
+	path := filepath.Join(b.tmpDir, "profile.yaml")
+	f, err := os.Create(path)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	content, err := yaml.Marshal(profile)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	_, err = f.Write(content)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+func (b *ApBundle) expandIncluded(m *model.AnalysisProfile) (expanded []string) {
+	included := make(map[string]byte)
+	excluded := make(map[string]byte)
+	for _, n := range m.Labels.Excluded {
+		excluded[n] = 0
+	}
+	for _, ruleset := range m.Targets {
+		for _, ref := range ruleset.Labels {
+			v := ref.Label
+			if _, found := excluded[v]; !found {
+				included[v] = 0
+			}
+		}
+	}
+	for _, v := range m.Labels.Included {
+		if _, found := excluded[v]; !found {
+			included[v] = 0
+		}
+	}
+	expanded = make([]string, 0, len(included))
+	for v := range included {
+		expanded = append(expanded, v)
+	}
+	return
+}
+
+func (b *ApBundle) addTargets(m *model.AnalysisProfile) (err error) {
+	for _, target := range m.Targets {
+		if target.Builtin() {
+			continue
+		}
+		err = b.addRuleSet(target.RuleSet)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
+	ruleSetId := strconv.Itoa(int(ruleSet.ID))
+	ruleDir := filepath.Join(b.ruleDir, ruleSetId)
+	fileDir := filepath.Join(ruleDir, "files")
+	err = nas.MkDir(fileDir, 0755)
+	if err != nil {
+		return
+	}
+	for _, rule := range ruleSet.Rules {
+		err = b.addRule(fileDir, &rule)
+		if err != nil {
+			return
+		}
+	}
+	err = b.addRepository(
+		filepath.Join(ruleDir, "repository"),
+		&ruleSet.Repository)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (b *ApBundle) addRule(ruleDir string, rule *model.Rule) (err error) {
+	if rule.File == nil {
+		return
+	}
+	name := fmt.Sprintf(
+		"%d-%s",
+		rule.File.ID,
+		rule.File.Name)
+	pathIn := rule.File.Path
+	pathOut := filepath.Join(ruleDir, name)
+	reader, err := os.Open(pathIn)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	writer, err := os.Create(pathOut)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	_, err = io.Copy(writer, reader)
+	_ = reader.Close()
+	_ = writer.Close()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (err error) {
+	if repository.URL == "" {
+		return
+	}
+	remote := scm.Remote{
+		Kind:   repository.Kind,
+		URL:    repository.URL,
+		Branch: repository.Branch,
+	}
+	mirror := scm.GetMirror(b.db, remote)
+	err = mirror.CopyTo(repository.Path, rootDir)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// addFiles adds uploaded files referenced in the profile.
+func (b *ApBundle) addFiles(m *model.AnalysisProfile) (err error) {
+	fileDir := filepath.Join(b.ruleDir, "files")
+	err = nas.MkDir(fileDir, 0755)
+	if err != nil {
+		return
+	}
+	for _, ref := range m.Files {
+		file := &model.File{}
+		err = b.db.First(file, ref.ID).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		name := fmt.Sprintf(
+			"%d-%s",
+			file.ID,
+			file.Name)
+		var reader io.ReadCloser
+		var writer io.WriteCloser
+		pathIn := file.Path
+		pathOut := filepath.Join(fileDir, name)
+		reader, err = os.Open(pathIn)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		writer, err = os.Create(pathOut)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		_, err = io.Copy(writer, reader)
+		_ = reader.Close()
+		_ = writer.Close()
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }

@@ -5,16 +5,23 @@ executing (CLI) commands.
 package command
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os/exec"
 	"strings"
 
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
-var Log = logr.WithName("command")
+var (
+	Settings = &settings.Settings
+	Log      = logr.WithName("command")
+)
+
+func init() {
+	Log = Log.V(Settings.Log.Master)
+}
 
 // New returns a command.
 func New(path string) (cmd *Command) {
@@ -44,7 +51,7 @@ func (r *Command) Run() (err error) {
 func (r *Command) RunWith(ctx context.Context) (err error) {
 	defer func() {
 		r.Error = err
-		Log.Info(r.String())
+		Log.V(1).Info(r.String())
 		if r.End != nil {
 			r.End()
 		}
@@ -56,7 +63,7 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 		}
 	}
 	if r.Writer == nil {
-		r.Writer = &bytes.Buffer{}
+		r.Writer = &Writer{}
 	}
 	cmd := exec.CommandContext(ctx, r.Path, r.Options...)
 	cmd.Dir = r.Dir
@@ -73,11 +80,18 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 
 // Output returns the command output.
 func (r *Command) Output() (b []byte) {
+	var err error
 	if seeker, cast := r.Writer.(io.Seeker); cast {
-		_, _ = seeker.Seek(0, io.SeekStart)
+		_, err = seeker.Seek(0, io.SeekStart)
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 	if reader, cast := r.Writer.(io.Reader); cast {
-		b, _ = io.ReadAll(reader)
+		b, err = io.ReadAll(reader)
+		if err != nil {
+			Log.Error(err, "")
+		}
 	}
 	return
 }

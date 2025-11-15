@@ -14,7 +14,7 @@ import (
 )
 
 // New SCM repository factory.
-func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err error) {
+func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 	switch remote.Kind {
 	case "subversion":
 		m := model.Setting{}
@@ -22,11 +22,15 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
+		err = m.As(&remote.Insecure)
+		if err != nil {
+			return
+		}
 		svn := &Subversion{}
 		svn.Home = filepath.Join(Home, svn.Id())
 		svn.Path = destDir
 		svn.Remote = *remote
-		err = m.As(&svn.Insecure)
+		svn.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
 		}
@@ -37,11 +41,15 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
+		err = m.As(&remote.Insecure)
+		if err != nil {
+			return
+		}
 		git := &Git{}
 		git.Home = filepath.Join(Home, git.Id())
 		git.Path = destDir
 		git.Remote = *remote
-		err = m.As(&git.Insecure)
+		git.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
 		}
@@ -51,10 +59,29 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 	if err != nil {
 		return
 	}
-	for _, opt := range option {
-		err = r.Use(opt)
-		if err != nil {
-			return
+	return
+}
+
+type Factory struct {
+}
+
+// proxyMap returns a map of proxies.
+func proxyMap(db *gorm.DB) (mp map[string]Proxy, err error) {
+	var list []model.Proxy
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, p := range list {
+		if !p.Enabled {
+			continue
+		}
+		mp[p.Kind] = Proxy{
+			ID:       p.ID,
+			Kind:     p.Kind,
+			Host:     p.Host,
+			Port:     p.Port,
+			Excluded: p.Excluded,
 		}
 	}
 	return
@@ -62,7 +89,6 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 
 // Base SCM.
 type Base struct {
-	Authenticated
 	Home    string
 	Proxies map[string]Proxy
 	Remote  Remote
@@ -80,9 +106,9 @@ func (b *Base) Id() string {
 }
 
 // Clean deletes created files.
-func (b *Base) Clean() {
-	_ = nas.RmDir(b.Home)
-	_ = nas.RmDir(b.Path)
+func (b *Base) Clean() (err error) {
+	err = nas.RmDir(b.Home)
+	return
 }
 
 // Validate the repository.
@@ -90,12 +116,7 @@ func (b *Base) Clean() {
 // - do not exist.
 // - are empty directories.
 func (b *Base) Validate() (err error) {
-	for _, p := range []string{b.Home, b.Path} {
-		err = b.mustEmptyDir(p)
-		if err != nil {
-			break
-		}
-	}
+	err = b.mustEmptyDir(b.Home)
 	return
 }
 

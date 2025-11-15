@@ -13,7 +13,6 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/nas"
 )
@@ -27,6 +26,14 @@ var (
 func init() {
 	Home, _ = os.Getwd()
 	NewCommand = command.New
+}
+
+// Key is and SSH key.
+type Key struct {
+	ID         uint
+	Name       string
+	Content    string
+	Passphrase string
 }
 
 // Agent agent.
@@ -56,12 +63,12 @@ func (r *Agent) Start() (err error) {
 }
 
 // Add an ssh key.
-func (r *Agent) Add(id *api.Identity, host string) (err error) {
-	if id.Key == "" {
+func (r *Agent) Add(key Key, host string) (err error) {
+	if key.Content == "" {
 		return
 	}
-	Log.Info("[SSH] Adding key: %s" + id.Name)
-	suffix := fmt.Sprintf("id_%d", id.ID)
+	Log.Info("[SSH] Adding key: %s" + key.Name)
+	suffix := fmt.Sprintf("id_%d", key.ID)
 	path := filepath.Join(
 		r.sshDir(),
 		suffix)
@@ -76,7 +83,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 			path)
 		return
 	}
-	_, err = f.Write([]byte(r.format(id.Key)))
+	_, err = f.Write([]byte(r.format(key.Content)))
 	if err != nil {
 		err = liberr.Wrap(
 			err,
@@ -84,7 +91,7 @@ func (r *Agent) Add(id *api.Identity, host string) (err error) {
 			path)
 	}
 	_ = f.Close()
-	ask, err := r.writeAsk(id)
+	ask, err := r.writeAsk(key)
 	if err != nil {
 		return
 	}
@@ -114,7 +121,7 @@ func (r *Agent) format(in string) (out string) {
 }
 
 // writeAsk writes script that returns the key password.
-func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
+func (r *Agent) writeAsk(key Key) (path string, err error) {
 	f, err := os.CreateTemp("", "askpass-*.sh")
 	if err != nil {
 		err = liberr.Wrap(
@@ -128,7 +135,7 @@ func (r *Agent) writeAsk(id *api.Identity) (path string, err error) {
 	}()
 	path = f.Name()
 	script := "#!/bin/sh\n"
-	script += "echo " + id.Password
+	script += "echo " + key.Passphrase
 	_ = os.Chmod(path, 0700)
 	_, err = f.Write([]byte(script))
 	if err != nil {

@@ -37,7 +37,7 @@ func (r *Subversion) Validate() (err error) {
 	}
 	switch u.Scheme {
 	case "http":
-		if !r.Insecure {
+		if !r.Remote.Insecure {
 			err = errors.New("http URL used with snv.insecure.enabled = FALSE")
 			return
 		}
@@ -47,6 +47,10 @@ func (r *Subversion) Validate() (err error) {
 
 // Fetch clones the repository.
 func (r *Subversion) Fetch() (err error) {
+	err = r.mustEmptyDir(r.Path)
+	if err != nil {
+		return
+	}
 	err = nas.MkDir(r.Home, 0755)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -60,13 +64,31 @@ func (r *Subversion) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	agent := ssh.Agent{}
 	u := r.URL()
-	err = agent.Add(&r.Identity, u.Host)
-	if err != nil {
-		return
+	identity := r.Remote.Identity
+	if identity != nil && identity.Key != "" {
+		agent := ssh.Agent{}
+		key := ssh.Key{
+			ID:         identity.ID,
+			Name:       identity.Name,
+			Content:    identity.Key,
+			Passphrase: identity.Password,
+		}
+		err = agent.Add(key, u.Host)
+		if err != nil {
+			return
+		}
 	}
 	err = r.checkout()
+	return
+}
+
+// Update the repository using the remote.
+func (r *Subversion) Update() (err error) {
+	cmd := r.svn()
+	cmd.Dir = r.root()
+	cmd.Options.Add("update")
+	err = cmd.Run()
 	return
 }
 
@@ -76,7 +98,6 @@ func (r *Subversion) Fetch() (err error) {
 // - branch|tag path. (branches/stable).
 func (r *Subversion) Branch(ref string) (err error) {
 	branch := Subversion{}
-	branch.Authenticated = r.Authenticated
 	branch.Remote = r.Remote
 	branch.Path = r.Path
 	_, err = urllib.Parse(ref)
@@ -142,7 +163,7 @@ func (r *Subversion) svn() (cmd *command.Command) {
 	cmd = NewCommand("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
-	if r.Insecure {
+	if r.Remote.Insecure {
 		cmd.Options.Add("--trust-server-cert")
 	}
 	return
@@ -230,18 +251,22 @@ func (r *Subversion) writeConfig() (err error) {
 
 // writePassword injects the password into: auth/svn.simple.
 func (r *Subversion) writePassword() (err error) {
-	if r.Identity.User == "" || r.Identity.Password == "" {
+	identity := r.Remote.Identity
+	if identity == nil {
+		return
+	}
+	if identity.User == "" || identity.Password == "" {
 		return
 	}
 	Log.Info(
 		fmt.Sprintf("[SVN] Using identity:(id=%d) %s",
-			r.Identity.ID,
-			r.Identity.Name))
+			identity.ID,
+			identity.Name))
 	cmd := r.svn()
 	cmd.Options.Add("--username")
-	cmd.Options.Add(r.Identity.User)
+	cmd.Options.Add(identity.User)
 	cmd.Options.Add("--password")
-	cmd.Options.Add(r.Identity.Password)
+	cmd.Options.Add(identity.Password)
 	cmd.Options.Add("info", r.URL().String())
 	err = cmd.Run()
 	if err != nil {
@@ -294,12 +319,12 @@ func (r *Subversion) writePassword() (err error) {
 	s += "simple\n"
 	s += "K 8\n"
 	s += "username\n"
-	s += fmt.Sprintf("V %d\n", len(r.Identity.User))
-	s += fmt.Sprintf("%s\n", r.Identity.User)
+	s += fmt.Sprintf("V %d\n", len(identity.User))
+	s += fmt.Sprintf("%s\n", identity.User)
 	s += "K 8\n"
 	s += "password\n"
-	s += fmt.Sprintf("V %d\n", len(r.Identity.Password))
-	s += fmt.Sprintf("%s\n", r.Identity.Password)
+	s += fmt.Sprintf("V %d\n", len(identity.Password))
+	s += fmt.Sprintf("%s\n", identity.Password)
 	s += string(content)
 	_, err = f.Write([]byte(s))
 	if err != nil {
@@ -327,7 +352,7 @@ func (r *Subversion) proxy() (proxy string, err error) {
 		return
 	}
 	p, found := r.Proxies[kind]
-	if !found || !p.Enabled {
+	if !found {
 		return
 	}
 	for _, h := range p.Excluded {
