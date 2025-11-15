@@ -49,3 +49,8 @@ func (w *Writer) Seek(offset int64, whence int) (n int64, err error) {
 	w.read = int(n)
 	return
 }
+
+// Bytes returns the buffer.
+func (w *Writer) Bytes() []byte {
+	return w.buffer
+}
