@@ -269,7 +269,7 @@ func (r *Subversion) writeConfig() (err error) {
 			path)
 	}
 	_ = f.Close()
-	Log.Info("[SVN] Created: " + path)
+	Log.V(1).Info("[SVN] Created: " + path)
 	return
 }
 
@@ -282,7 +282,7 @@ func (r *Subversion) writePassword() (err error) {
 	if identity.User == "" || identity.Password == "" {
 		return
 	}
-	Log.Info(
+	Log.V(1).Info(
 		fmt.Sprintf("[SVN] Using identity:(id=%d) %s",
 			identity.ID,
 			identity.Name))
@@ -358,7 +358,7 @@ func (r *Subversion) writePassword() (err error) {
 			path)
 		return
 	}
-	Log.Info("[SVN] Created: " + path)
+	Log.V(1).Info("[SVN] Created: " + path)
 	return
 }
 
@@ -384,7 +384,7 @@ func (r *Subversion) proxy() (proxy string, err error) {
 			return
 		}
 	}
-	Log.Info(
+	Log.V(1).Info(
 		fmt.Sprintf("[SVN] Using proxy:(id=%d) %s",
 			p.ID,
 			p.Kind))

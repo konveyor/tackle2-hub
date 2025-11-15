@@ -309,7 +309,7 @@ func (r *Git) writeConfig() (err error) {
 			path)
 	}
 	_ = f.Close()
-	Log.Info("[GIT] Created: " + path)
+	Log.V(1).Info("[GIT] Created: " + path)
 	return
 }
 
@@ -322,7 +322,7 @@ func (r *Git) writeCreds() (err error) {
 	if identity.User == "" || identity.Password == "" {
 		return
 	}
-	Log.Info(
+	Log.V(1).Info(
 		fmt.Sprintf("[GIT] Using identity: (id=%d) %s",
 			identity.ID,
 			identity.Name))
@@ -361,7 +361,7 @@ func (r *Git) writeCreds() (err error) {
 		}
 	}
 	_ = f.Close()
-	Log.Info("[GIT] Created: " + path)
+	Log.V(1).Info("[GIT] Created: " + path)
 	return
 }
 
@@ -387,7 +387,7 @@ func (r *Git) proxy() (proxy string, err error) {
 			return
 		}
 	}
-	Log.Info(
+	Log.V(1).Info(
 		fmt.Sprintf("[GIT] Using proxy:(id=%d) %s",
 			p.ID,
 			p.Kind))

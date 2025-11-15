@@ -10,15 +10,18 @@ import (
 
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/command"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (
 	Log        = logr.WithName("SCM")
+	Settings   = &settings.Settings
 	NewCommand func(string) *command.Command
 )
 
 func init() {
 	NewCommand = command.New
+	Log = Log.V(Settings.Log.Master)
 }
 
 // SCM interface.

@@ -52,7 +52,7 @@ func (r *Agent) Start() (err error) {
 		return
 	}
 	_ = os.Setenv("SSH_AUTH_SOCK", socket)
-	Log.Info("[SSH] Agent started.", "home", r.home())
+	Log.V(1).Info("[SSH] Agent started.", "home", r.home())
 	return
 }
 
@@ -84,7 +84,7 @@ func (r *Agent) Add(key Key) (err error) {
 		_ = os.Remove(askPath)
 		return
 	}
-	Log.Info("[SSH] Created: " + keyPath)
+	Log.V(1).Info("[SSH] Created: " + keyPath)
 	return
 }
 
