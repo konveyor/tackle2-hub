@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	Log = Log.V(Settings.Log.Master)
+	Log = Log.V(Settings.Log.Cmd)
 }
 
 // New returns a command.

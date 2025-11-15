@@ -35,13 +35,6 @@ var Settings = &settings.Settings
 
 var log = logr.WithName("hub")
 
-func init() {
-	err := Settings.Load()
-	if err != nil {
-		panic(err)
-	}
-}
-
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
 	err = migration.Migrate(migration.All())

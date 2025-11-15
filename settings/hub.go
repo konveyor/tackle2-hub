@@ -50,6 +50,9 @@ const (
 	EnvLogWeb                  = "LOG_WEB"
 	EnvLogReaper               = "LOG_REAPER"
 	EnvLogTask                 = "LOG_TASK"
+	EnvLogCmd                  = "LOG_CMD"
+	EnvLogSsh                  = "LOG_SSH"
+	EnvLogScm                  = "LOG_SCM"
 )
 
 type Hub struct {
@@ -139,6 +142,9 @@ type Hub struct {
 		Web       int
 		Reaper    int
 		Task      int
+		Cmd       int
+		Scm       int
+		Ssh       int
 	}
 }
 
@@ -403,6 +409,27 @@ func (r *Hub) Load() (err error) {
 		r.Log.Task = n
 	} else {
 		r.Log.Task = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogCmd)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Cmd = n
+	} else {
+		r.Log.Cmd = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogSsh)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Ssh = n
+	} else {
+		r.Log.Ssh = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogScm)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Scm = n
+	} else {
+		r.Log.Scm = r.Log.Master
 	}
 	return
 }

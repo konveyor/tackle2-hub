@@ -21,7 +21,7 @@ var (
 
 func init() {
 	NewCommand = command.New
-	Log = Log.V(Settings.Log.Master)
+	Log = Log.V(Settings.Log.Scm)
 }
 
 // SCM interface.

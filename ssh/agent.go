@@ -28,6 +28,7 @@ var (
 func init() {
 	Home, _ = os.Getwd()
 	NewCommand = command.New
+	Log = Log.V(Settings.Log.Ssh)
 	err := agent.Start()
 	if err != nil {
 		panic(err)

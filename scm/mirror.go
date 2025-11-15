@@ -41,6 +41,8 @@ func (m *MirrorMap) Find(db *gorm.DB, remote Remote) (mirror *Mirror) {
 		}
 		m.content[remote.URL] = mirror
 	}
+	mirror.Remote.Branch = remote.Branch
+	m.content[remote.URL] = mirror
 	return
 }
 
