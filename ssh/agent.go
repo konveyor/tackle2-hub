@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -21,19 +20,16 @@ var (
 	Log        = logr.WithName("ssh")
 	NewCommand func(string) *command.Command
 	Home       = ""
+	agent      = Agent{}
 )
 
 func init() {
 	Home, _ = os.Getwd()
 	NewCommand = command.New
-}
-
-// Key is and SSH key.
-type Key struct {
-	ID         uint
-	Name       string
-	Content    string
-	Passphrase string
+	err := agent.Start()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Agent agent.
@@ -42,6 +38,10 @@ type Agent struct {
 
 // Start the ssh-agent.
 func (r *Agent) Start() (err error) {
+	err = nas.MkDir(r.sshDir(), 0700)
+	if err != nil {
+		return
+	}
 	pid := os.Getpid()
 	socket := fmt.Sprintf("/tmp/agent.%d", pid)
 	cmd := NewCommand("/usr/bin/ssh-agent")
@@ -52,46 +52,20 @@ func (r *Agent) Start() (err error) {
 		return
 	}
 	_ = os.Setenv("SSH_AUTH_SOCK", socket)
-	err = nas.MkDir(r.sshDir(), 0700)
-	if err != nil {
-		return
-	}
-
 	Log.Info("[SSH] Agent started.", "home", r.home())
-
 	return
 }
 
 // Add an ssh key.
-func (r *Agent) Add(key Key, host string) (err error) {
+func (r *Agent) Add(key Key) (err error) {
 	if key.Content == "" {
 		return
 	}
-	Log.Info("[SSH] Adding key: %s" + key.Name)
-	suffix := fmt.Sprintf("id_%d", key.ID)
-	path := filepath.Join(
-		r.sshDir(),
-		suffix)
-	f, err := os.OpenFile(
-		path,
-		os.O_RDWR|os.O_CREATE,
-		0600)
+	keyPath, err := r.writeKey(key)
 	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
 		return
 	}
-	_, err = f.Write([]byte(r.format(key.Content)))
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
-	}
-	_ = f.Close()
-	ask, err := r.writeAsk(key)
+	askPath, err := r.writeAsk(key)
 	if err != nil {
 		return
 	}
@@ -101,48 +75,72 @@ func (r *Agent) Add(key Key, host string) (err error) {
 	cmd.Env = append(
 		os.Environ(),
 		"DISPLAY=:0",
-		"SSH_ASKPASS="+ask,
+		"SSH_ASKPASS="+askPath,
 		"HOME="+r.home())
-	cmd.Options.Add(path)
+	cmd.Options.Add(keyPath)
 	err = cmd.RunWith(ctx)
 	if err != nil {
+		_ = os.Remove(keyPath)
+		_ = os.Remove(askPath)
 		return
 	}
-	Log.Info("[SSH] Created: " + path)
+	Log.Info("[SSH] Created: " + keyPath)
 	return
 }
 
-// Ensure key formatting.
-func (r *Agent) format(in string) (out string) {
-	if in != "" {
-		out = strings.TrimSpace(in) + "\n"
-	}
+// writeKey writes the ssh key.
+func (r *Agent) writeKey(key Key) (path string, err error) {
+	suffix := fmt.Sprintf("id_%d", key.ID)
+	path = filepath.Join(
+		r.sshDir(),
+		suffix)
+	err = r.fileWrite(path, key.Formatted(), 0600)
 	return
 }
 
 // writeAsk writes script that returns the key password.
 func (r *Agent) writeAsk(key Key) (path string, err error) {
-	f, err := os.CreateTemp("", "askpass-*.sh")
+	suffix := fmt.Sprintf("%d_askpass.sh", key.ID)
+	path = filepath.Join(
+		r.sshDir(),
+		suffix)
+	script := "#!/bin/sh\n"
+	script += "echo " + key.Passphrase
+	err = r.fileWrite(path, script, 0700)
+	return
+}
+
+// fileWrite provides an atomic file create/update.
+func (r *Agent) fileWrite(path string, content string, mode os.FileMode) (err error) {
+	f, err := os.CreateTemp(filepath.Dir(path), "")
 	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
+		err = liberr.Wrap(err, "path", path)
 		return
 	}
 	defer func() {
 		_ = f.Close()
+		_ = os.Remove(f.Name())
 	}()
-	path = f.Name()
-	script := "#!/bin/sh\n"
-	script += "echo " + key.Passphrase
-	_ = os.Chmod(path, 0700)
-	_, err = f.Write([]byte(script))
+	err = os.Chmod(f.Name(), mode)
 	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
+		err = liberr.Wrap(err, "path", path)
+		return
+	}
+	_, err = f.Write([]byte(content))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = f.Sync()
+	if err != nil {
+		err = liberr.Wrap(err, "path", path)
+		return
+	}
+	_ = f.Close()
+	err = os.Rename(f.Name(), path)
+	if err != nil {
+		err = liberr.Wrap(err, "path", path)
+		return
 	}
 	return
 }

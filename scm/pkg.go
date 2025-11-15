@@ -5,6 +5,9 @@ SCM (Software Configuration Management) repositories.
 package scm
 
 import (
+	"fmt"
+	"hash/fnv"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/command"
 )
@@ -40,6 +43,9 @@ type Proxy struct {
 	Identity *Identity
 }
 
+// ProxyMap keyed by scheme.
+type ProxyMap map[string]Proxy
+
 // Identity defines an identity.
 type Identity struct {
 	ID       uint
@@ -57,4 +63,15 @@ type Remote struct {
 	Path     string
 	Identity *Identity
 	Insecure bool
+}
+
+// digest calculates the digest of the remote based
+// on the remote kind and URL.
+func (r *Remote) digest() (d string) {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(r.Kind))
+	_, _ = h.Write([]byte(r.URL))
+	n := h.Sum64()
+	d = fmt.Sprintf("%x", n)
+	return
 }

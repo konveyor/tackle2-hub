@@ -1,14 +1,15 @@
 package scm
 
 import (
-	"fmt"
-	"hash/fnv"
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
 
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
 
@@ -83,8 +84,13 @@ func (m *Mirror) update() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	identity, err := m.identity()
+	if err != nil {
+		return
+	}
 	remote := &Remote{
-		URL: m.Remote.URL,
+		URL:      m.Remote.URL,
+		Identity: identity,
 	}
 	var r SCM
 	r, err = New(m.DB, m.home(), remote)
@@ -120,6 +126,35 @@ func (m *Mirror) update() (err error) {
 	return
 }
 
+// identity returns the default source identity.
+func (m *Mirror) identity() (id *Identity, err error) {
+	md := &model.Identity{}
+	db := m.DB
+	db = db.Where("kind", "source")
+	db = db.Where("default", true)
+	err = db.First(md).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			err = liberr.Wrap(err)
+		} else {
+			err = nil
+		}
+		return
+	}
+	err = secret.Decrypt(md)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	id = &Identity{}
+	id.ID = md.ID
+	id.Name = md.Name
+	id.User = md.User
+	id.Password = md.Password
+	id.Key = md.Key
+	return
+}
+
 // home returns the path to the repository.
 func (m *Mirror) home() (p string) {
 	p = filepath.Join(Home, ".mirror", m.digest())
@@ -129,10 +164,6 @@ func (m *Mirror) home() (p string) {
 // digest calculates the digest of the mirror based
 // on the remote kind and URL.
 func (m *Mirror) digest() (d string) {
-	h := fnv.New64a()
-	_, _ = h.Write([]byte(m.Remote.Kind))
-	_, _ = h.Write([]byte(m.Remote.URL))
-	n := h.Sum64()
-	d = fmt.Sprintf("%x", n)
+	d = m.Remote.digest()
 	return
 }

@@ -63,7 +63,7 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 		}
 	}
 	if r.Writer == nil {
-		r.Writer = &Writer{}
+		r.Writer = &Buffer{}
 	}
 	cmd := exec.CommandContext(ctx, r.Path, r.Options...)
 	cmd.Dir = r.Dir

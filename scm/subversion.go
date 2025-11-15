@@ -26,10 +26,6 @@ type Subversion struct {
 
 // Validate settings.
 func (r *Subversion) Validate() (err error) {
-	err = r.Base.Validate()
-	if err != nil {
-		return
-	}
 	u := SvnURL{}
 	err = u.With(r.Remote)
 	if err != nil {
@@ -51,33 +47,9 @@ func (r *Subversion) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	err = nas.MkDir(r.Home, 0755)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = r.writeConfig()
+	err = r.initHome()
 	if err != nil {
 		return
-	}
-	err = r.writePassword()
-	if err != nil {
-		return
-	}
-	u := r.URL()
-	identity := r.Remote.Identity
-	if identity != nil && identity.Key != "" {
-		agent := ssh.Agent{}
-		key := ssh.Key{
-			ID:         identity.ID,
-			Name:       identity.Name,
-			Content:    identity.Key,
-			Passphrase: identity.Password,
-		}
-		err = agent.Add(key, u.Host)
-		if err != nil {
-			return
-		}
 	}
 	err = r.checkout()
 	return
@@ -85,6 +57,10 @@ func (r *Subversion) Fetch() (err error) {
 
 // Update the repository using the remote.
 func (r *Subversion) Update() (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	cmd := r.svn()
 	cmd.Dir = r.root()
 	cmd.Options.Add("update")
@@ -97,6 +73,10 @@ func (r *Subversion) Update() (err error) {
 // - fully qualified URL (includes branch and root path)
 // - branch|tag path. (branches/stable).
 func (r *Subversion) Branch(ref string) (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	branch := Subversion{}
 	branch.Remote = r.Remote
 	branch.Path = r.Path
@@ -121,6 +101,10 @@ func (r *Subversion) Branch(ref string) (err error) {
 
 // Commit records changes to the repo and push to the server
 func (r *Subversion) Commit(files []string, msg string) (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	err = r.addFiles(files)
 	if err != nil {
 		return
@@ -134,6 +118,10 @@ func (r *Subversion) Commit(files []string, msg string) (err error) {
 
 // Head returns the current revision.
 func (r *Subversion) Head() (commit string, err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	cmd := r.svn()
 	cmd.Dir = r.root()
 	cmd.Options.Add("info", "-r", "HEAD")
@@ -155,6 +143,42 @@ func (r *Subversion) Head() (commit string, err error) {
 func (r *Subversion) URL() (u *SvnURL) {
 	u = &SvnURL{}
 	_ = u.With(r.Remote)
+	return
+}
+
+// initHome ensures the home directory is updated.
+func (r *Subversion) initHome() (err error) {
+	err = nas.RmDir(r.Home)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = nas.MkDir(r.Home, 0755)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = r.writeConfig()
+	if err != nil {
+		return
+	}
+	err = r.writePassword()
+	if err != nil {
+		return
+	}
+	identity := r.Remote.Identity
+	if identity != nil {
+		key := ssh.Key{
+			ID:         identity.ID,
+			Name:       identity.Name,
+			Content:    identity.Key,
+			Passphrase: identity.Password,
+		}
+		err = key.Add()
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

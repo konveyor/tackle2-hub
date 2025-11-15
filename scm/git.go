@@ -28,10 +28,6 @@ type Git struct {
 
 // Validate settings.
 func (r *Git) Validate() (err error) {
-	err = r.Base.Validate()
-	if err != nil {
-		return
-	}
 	u := GitURL{}
 	err = u.With(r.Remote.URL)
 	if err != nil {
@@ -53,34 +49,11 @@ func (r *Git) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	err = nas.MkDir(r.Home, 0755)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = r.writeConfig()
-	if err != nil {
-		return
-	}
-	err = r.writeCreds()
+	err = r.initHome()
 	if err != nil {
 		return
 	}
 	u := r.URL()
-	identity := r.Remote.Identity
-	if identity != nil && identity.Key != "" {
-		agent := ssh.Agent{}
-		key := ssh.Key{
-			ID:         identity.ID,
-			Name:       identity.Name,
-			Content:    identity.Key,
-			Passphrase: identity.Password,
-		}
-		err = agent.Add(key, u.Host)
-		if err != nil {
-			return
-		}
-	}
 	cmd := r.git()
 	cmd.Options.Add("clone")
 	cmd.Options.Add(u.String(), r.Path)
@@ -99,6 +72,10 @@ func (r *Git) Fetch() (err error) {
 
 // Update the repository using the remote.
 func (r *Git) Update() (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	err = r.fetch()
 	if err != nil {
 		return
@@ -112,12 +89,20 @@ func (r *Git) Update() (err error) {
 
 // Branch creates a branch with the given name if not exist and switch to it.
 func (r *Git) Branch(ref string) (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	err = r.checkout(ref)
 	return
 }
 
 // Commit files and push to remote.
 func (r *Git) Commit(files []string, msg string) (err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	err = r.addFiles(files)
 	if err != nil {
 		return err
@@ -137,6 +122,10 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 
 // Head returns HEAD commit.
 func (r *Git) Head() (commit string, err error) {
+	err = r.initHome()
+	if err != nil {
+		return
+	}
 	cmd := r.git()
 	cmd.Dir = r.Path
 	cmd.Options.Add("rev-parse")
@@ -154,6 +143,42 @@ func (r *Git) Head() (commit string, err error) {
 func (r *Git) URL() (u GitURL) {
 	u = GitURL{}
 	_ = u.With(r.Remote.URL)
+	return
+}
+
+// initHome ensures the home directory is updated.
+func (r *Git) initHome() (err error) {
+	err = nas.RmDir(r.Home)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = nas.MkDir(r.Home, 0755)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = r.writeConfig()
+	if err != nil {
+		return
+	}
+	err = r.writeCreds()
+	if err != nil {
+		return
+	}
+	identity := r.Remote.Identity
+	if identity != nil {
+		key := ssh.Key{
+			ID:         identity.ID,
+			Name:       identity.Name,
+			Content:    identity.Key,
+			Passphrase: identity.Password,
+		}
+		err = key.Add()
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

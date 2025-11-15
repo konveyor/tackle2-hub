@@ -3,10 +3,10 @@ package scm
 import (
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
@@ -62,11 +62,8 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 	return
 }
 
-type Factory struct {
-}
-
 // proxyMap returns a map of proxies.
-func proxyMap(db *gorm.DB) (mp map[string]Proxy, err error) {
+func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
 	var list []model.Proxy
 	err = db.Find(&list).Error
 	if err != nil {
@@ -76,7 +73,7 @@ func proxyMap(db *gorm.DB) (mp map[string]Proxy, err error) {
 		if !p.Enabled {
 			continue
 		}
-		mp[p.Kind] = Proxy{
+		pm[p.Kind] = Proxy{
 			ID:       p.ID,
 			Kind:     p.Kind,
 			Host:     p.Host,
@@ -98,9 +95,14 @@ type Base struct {
 }
 
 // Id returns the unique id.
+// Based on the remote digest and the (LOCAL) path.
 func (b *Base) Id() string {
 	if b.id == "" {
-		b.id = uuid.New().String()
+		h := fnv.New64a()
+		_, _ = h.Write([]byte(b.Remote.digest()))
+		_, _ = h.Write([]byte(b.Path))
+		n := h.Sum64()
+		b.id = fmt.Sprintf("%x", n)
 	}
 	return b.id
 }
@@ -108,15 +110,6 @@ func (b *Base) Id() string {
 // Clean deletes created files.
 func (b *Base) Clean() (err error) {
 	err = nas.RmDir(b.Home)
-	return
-}
-
-// Validate the repository.
-// Ensures that Home and Path either:
-// - do not exist.
-// - are empty directories.
-func (b *Base) Validate() (err error) {
-	err = b.mustEmptyDir(b.Home)
 	return
 }
 

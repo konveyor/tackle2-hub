@@ -5,21 +5,21 @@ import (
 	"io"
 )
 
-// Writer buffered command output writer.
-type Writer struct {
+// Buffer buffered command output writer.
+type Buffer struct {
 	buffer []byte
 	read   int
 }
 
 // Write command output.
-func (w *Writer) Write(p []byte) (n int, err error) {
+func (w *Buffer) Write(p []byte) (n int, err error) {
 	n = len(p)
 	w.buffer = append(w.buffer, p...)
 	return
 }
 
 // Read the buffer.
-func (w *Writer) Read(p []byte) (n int, err error) {
+func (w *Buffer) Read(p []byte) (n int, err error) {
 	if w.read >= len(w.buffer) {
 		err = io.EOF
 		return
@@ -30,7 +30,7 @@ func (w *Writer) Read(p []byte) (n int, err error) {
 }
 
 // Seek to read position.
-func (w *Writer) Seek(offset int64, whence int) (n int64, err error) {
+func (w *Buffer) Seek(offset int64, whence int) (n int64, err error) {
 	switch whence {
 	case io.SeekStart:
 		n = offset
@@ -51,6 +51,6 @@ func (w *Writer) Seek(offset int64, whence int) (n int64, err error) {
 }
 
 // Bytes returns the buffer.
-func (w *Writer) Bytes() []byte {
+func (w *Buffer) Bytes() []byte {
 	return w.buffer
 }
