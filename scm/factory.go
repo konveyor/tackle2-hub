@@ -14,11 +14,15 @@ import (
 )
 
 // New SCM repository factory.
-func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err error) {
+func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 	switch remote.Kind {
 	case "subversion":
 		m := model.Setting{}
 		err = db.First(&m, "key", "svn.insecure.enabled").Error
+		if err != nil {
+			return
+		}
+		err = m.As(&remote.Insecure)
 		if err != nil {
 			return
 		}
@@ -30,14 +34,14 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
-		err = m.As(&svn.Insecure)
-		if err != nil {
-			return
-		}
 		r = svn
 	default:
 		m := model.Setting{}
 		err = db.First(&m, "key", "git.insecure.enabled").Error
+		if err != nil {
+			return
+		}
+		err = m.As(&remote.Insecure)
 		if err != nil {
 			return
 		}
@@ -49,21 +53,11 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
-		err = m.As(&git.Insecure)
-		if err != nil {
-			return
-		}
 		r = git
 	}
 	err = r.Validate()
 	if err != nil {
 		return
-	}
-	for _, opt := range option {
-		err = r.Use(opt)
-		if err != nil {
-			return
-		}
 	}
 	return
 }
@@ -95,7 +89,6 @@ func proxyMap(db *gorm.DB) (mp map[string]Proxy, err error) {
 
 // Base SCM.
 type Base struct {
-	Authenticated
 	Home    string
 	Proxies map[string]Proxy
 	Remote  Remote

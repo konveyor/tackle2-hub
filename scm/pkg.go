@@ -7,7 +7,6 @@ package scm
 import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/command"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -28,7 +27,6 @@ type SCM interface {
 	Branch(ref string) (err error)
 	Commit(files []string, msg string) (err error)
 	Head() (commit string, err error)
-	Use(option any) (err error)
 	Clean() (err error)
 }
 
@@ -53,29 +51,10 @@ type Identity struct {
 
 // Remote defines an SCM remote.
 type Remote struct {
-	Kind   string
-	URL    string
-	Branch string
-	Path   string
-}
-
-// Authenticated repository.
-type Authenticated struct {
-	Identity Identity
+	Kind     string
+	URL      string
+	Branch   string
+	Path     string
+	Identity *Identity
 	Insecure bool
-}
-
-// Use option.
-func (a *Authenticated) Use(option any) (err error) {
-	switch opt := option.(type) {
-	case *Identity:
-		if opt != nil {
-			a.Identity = *opt
-		}
-	case Identity:
-		a.Identity = opt
-	default:
-		err = errors.Errorf("Invalid option: %T", opt)
-	}
-	return
 }

@@ -39,7 +39,7 @@ func (r *Git) Validate() (err error) {
 	}
 	switch u.Scheme {
 	case "http":
-		if !r.Insecure {
+		if !r.Remote.Insecure {
 			err = errors.New("http URL used with git.insecure.enabled = FALSE")
 			return
 		}
@@ -67,13 +67,14 @@ func (r *Git) Fetch() (err error) {
 		return
 	}
 	u := r.URL()
-	if r.Identity.Key != "" {
+	identity := r.Remote.Identity
+	if identity != nil && identity.Key != "" {
 		agent := ssh.Agent{}
 		key := ssh.Key{
-			ID:         r.Identity.ID,
-			Name:       r.Identity.Name,
-			Content:    r.Identity.Key,
-			Passphrase: r.Identity.Password,
+			ID:         identity.ID,
+			Name:       identity.Name,
+			Content:    identity.Key,
+			Passphrase: identity.Password,
 		}
 		err = agent.Add(key, u.Host)
 		if err != nil {
@@ -271,7 +272,7 @@ func (r *Git) writeConfig() (err error) {
 	s += filepath.Join(r.Home, ".git-credentials")
 	s += "\n"
 	s += "[http]\n"
-	s += fmt.Sprintf("sslVerify = %t\n", !r.Insecure)
+	s += fmt.Sprintf("sslVerify = %t\n", !r.Remote.Insecure)
 	if proxy != "" {
 		s += fmt.Sprintf("proxy = %s\n", proxy)
 	}
@@ -289,13 +290,17 @@ func (r *Git) writeConfig() (err error) {
 
 // writeCreds writes credentials (store) file.
 func (r *Git) writeCreds() (err error) {
-	if r.Identity.User == "" || r.Identity.Password == "" {
+	identity := r.Remote.Identity
+	if identity == nil {
+		return
+	}
+	if identity.User == "" || identity.Password == "" {
 		return
 	}
 	Log.Info(
 		fmt.Sprintf("[GIT] Using identity: (id=%d) %s",
-			r.Identity.ID,
-			r.Identity.Name))
+			identity.ID,
+			identity.Name))
 	path := filepath.Join(r.Home, ".git-credentials")
 	f, err := os.Create(path)
 	if err != nil {
@@ -312,12 +317,12 @@ func (r *Git) writeCreds() (err error) {
 	} {
 		entry := scheme
 		entry += "://"
-		if r.Identity.User != "" {
-			entry += urllib.PathEscape(r.Identity.User)
+		if identity.User != "" {
+			entry += urllib.PathEscape(identity.User)
 			entry += ":"
 		}
-		if r.Identity.Password != "" {
-			entry += urllib.PathEscape(r.Identity.Password)
+		if identity.Password != "" {
+			entry += urllib.PathEscape(identity.Password)
 			entry += "@"
 		}
 		entry += url.Host
