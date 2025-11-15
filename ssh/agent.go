@@ -14,11 +14,13 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (
 	Log        = logr.WithName("ssh")
 	NewCommand func(string) *command.Command
+	Settings   = &settings.Settings
 	Home       = ""
 	agent      = Agent{}
 )
