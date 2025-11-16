@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Log = logr.New("binding", logr.NORMAL)
+	Log = logr.New("binding", 0)
 )
 
 // The RichClient provides API integration.

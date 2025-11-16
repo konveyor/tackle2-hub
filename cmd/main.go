@@ -33,7 +33,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.New("hub", logr.NORMAL)
+	Log      = logr.New("hub", 0)
 )
 
 // Setup the DB and models.

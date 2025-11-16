@@ -14,7 +14,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.New("jsd-manager", logr.NORMAL)
+	Log      = logr.New("jsd-manager", 0)
 )
 
 // Manager maintains the schema inventory.
