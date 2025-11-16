@@ -12,8 +12,9 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 )
 
+// CpDir copies (recursively) the directory.
 func CpDir(pathIn, pathTo string) (err error) {
-	cmd := exec.Command("/usr/bin/cp", "-rf", pathIn, pathTo)
+	cmd := exec.Command("/usr/bin/cp", "-r", pathIn, pathTo)
 	err = cmd.Run()
 	return
 }
