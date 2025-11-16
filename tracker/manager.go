@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Log = logr.WithName("tickets")
+	Log = logr.New("tickets", logr.NORMAL)
 )
 
 // Intervals

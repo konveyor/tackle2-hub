@@ -50,6 +50,8 @@ const (
 	EnvLogWeb                  = "LOG_WEB"
 	EnvLogReaper               = "LOG_REAPER"
 	EnvLogTask                 = "LOG_TASK"
+	EnvLogAuth                 = "LOG_AUTH"
+	EnvLogHeap                 = "LOG_HEAP"
 	EnvLogCmd                  = "LOG_CMD"
 	EnvLogSsh                  = "LOG_SSH"
 	EnvLogScm                  = "LOG_SCM"
@@ -142,9 +144,11 @@ type Hub struct {
 		Web       int
 		Reaper    int
 		Task      int
-		Cmd       int
-		Scm       int
-		Ssh       int
+		Heap      int
+		Auth      int
+		Command   int
+		SCM       int
+		SSH       int
 	}
 }
 
@@ -410,26 +414,40 @@ func (r *Hub) Load() (err error) {
 	} else {
 		r.Log.Task = r.Log.Master
 	}
+	s, found = os.LookupEnv(EnvLogHeap)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Heap = n
+	} else {
+		r.Log.Heap = r.Log.Master
+	}
+	s, found = os.LookupEnv(EnvLogAuth)
+	if found {
+		n, _ := strconv.Atoi(s)
+		r.Log.Auth = n
+	} else {
+		r.Log.Auth = r.Log.Master
+	}
 	s, found = os.LookupEnv(EnvLogCmd)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Log.Cmd = n
+		r.Log.Command = n
 	} else {
-		r.Log.Cmd = r.Log.Master
+		r.Log.Command = r.Log.Master
 	}
 	s, found = os.LookupEnv(EnvLogSsh)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Log.Ssh = n
+		r.Log.SSH = n
 	} else {
-		r.Log.Ssh = r.Log.Master
+		r.Log.SSH = r.Log.Master
 	}
 	s, found = os.LookupEnv(EnvLogScm)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Log.Scm = n
+		r.Log.SCM = n
 	} else {
-		r.Log.Scm = r.Log.Master
+		r.Log.SCM = r.Log.Master
 	}
 	return
 }

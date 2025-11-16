@@ -14,14 +14,13 @@ import (
 )
 
 var (
-	Log        = logr.WithName("SCM")
 	Settings   = &settings.Settings
 	NewCommand func(string) *command.Command
+	Log        = logr.New("SCM", Settings.Log.SCM)
 )
 
 func init() {
 	NewCommand = command.New
-	Log = Log.V(Settings.Log.Scm)
 }
 
 // SCM interface.

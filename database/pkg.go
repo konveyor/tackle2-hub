@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var log = logr.WithName("db")
+var log = logr.New("db", logr.NORMAL)
 
 var Settings = &settings.Settings
 

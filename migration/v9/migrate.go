@@ -2,12 +2,9 @@ package v9
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v9/model"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v9")
 
 type Migration struct{}
 

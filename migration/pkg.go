@@ -26,7 +26,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var Log = logr.WithName("migration")
+var Log = logr.New("migration", Settings.Log.Migration)
 var Settings = &settings.Settings
 
 // VersionKey is the setting containing the migration version.

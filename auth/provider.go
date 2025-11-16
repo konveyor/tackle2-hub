@@ -11,7 +11,7 @@ import (
 
 var (
 	// Log logger.
-	Log = logr.WithName("auth")
+	Log = logr.New("auth", Settings.Log.Auth)
 	// Hub provider.
 	Hub Provider
 	// Remote provider.

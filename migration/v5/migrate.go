@@ -5,14 +5,11 @@ import (
 	"fmt"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/jortel/go-utils/logr"
 	v3 "github.com/konveyor/tackle2-hub/migration/v3/model"
 	v4 "github.com/konveyor/tackle2-hub/migration/v4/model"
 	"github.com/konveyor/tackle2-hub/migration/v5/model"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v5")
 
 type Migration struct{}
 

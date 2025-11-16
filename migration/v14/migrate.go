@@ -3,12 +3,9 @@ package v14
 import (
 	"strings"
 
-	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v14/model"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v14")
 
 type Migration struct{}
 

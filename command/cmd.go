@@ -16,12 +16,8 @@ import (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.WithName("command")
+	Log      = logr.New("command", Settings.Log.Command)
 )
-
-func init() {
-	Log = Log.V(Settings.Log.Cmd)
-}
 
 // New returns a command.
 func New(path string) (cmd *Command) {

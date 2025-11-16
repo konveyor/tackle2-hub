@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	Log        = logr.WithName("ssh")
 	NewCommand func(string) *command.Command
 	Settings   = &settings.Settings
+	Log        = logr.New("ssh", Settings.Log.SSH)
 	Home       = ""
 	agent      = Agent{}
 )
@@ -28,7 +28,6 @@ var (
 func init() {
 	Home, _ = os.Getwd()
 	NewCommand = command.New
-	Log = Log.V(Settings.Log.Ssh)
 	err := agent.Start()
 	if err != nil {
 		panic(err)

@@ -20,7 +20,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	log      = logr.WithName("api")
+	log      = logr.New("api", Settings.Log.Web)
 )
 
 // Params

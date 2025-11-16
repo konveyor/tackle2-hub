@@ -18,12 +18,8 @@ const (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.WithName("reaper")
+	Log      = logr.New("reaper", Settings.Log.Reaper)
 )
-
-func init() {
-	Log = Log.V(Settings.Log.Reaper)
-}
 
 type Task = task.Task
 
