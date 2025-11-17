@@ -231,13 +231,16 @@ func (r *Git) checkout(ref string) (err error) {
 	cmd.Dir = r.Path
 	cmd.Options.Add("checkout", "-B", ref, "origin/"+ref)
 	err = cmd.Run()
-	if err == nil {
-		return
+	if err != nil {
+		cmd = r.git()
+		cmd.Dir = r.Path
+		cmd.Options.Add("checkout", ref)
+		err = cmd.Run()
+		if err != nil {
+			return
+		}
 	}
-	cmd = r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("checkout", ref)
-	err = cmd.Run()
+	err = r.pull()
 	return
 }
 
