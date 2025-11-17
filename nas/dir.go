@@ -7,21 +7,23 @@ package nas
 import (
 	"errors"
 	"os"
-	"os/exec"
 
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/command"
 )
 
 // CpDir copies (recursively) the directory.
-func CpDir(pathIn, pathTo string) (err error) {
-	cmd := exec.Command("/usr/bin/cp", "-r", pathIn, pathTo)
+func CpDir(path, destination string) (err error) {
+	cmd := command.New("/usr/bin/cp")
+	cmd.Options.Add("-r", path, destination)
 	err = cmd.Run()
 	return
 }
 
 // RmDir deletes the directory.
 func RmDir(path string) (err error) {
-	cmd := exec.Command("/usr/bin/rm", "-rf", path)
+	cmd := command.New("/usr/bin/rm")
+	cmd.Options.Add("-rf", path)
 	err = cmd.Run()
 	return
 }

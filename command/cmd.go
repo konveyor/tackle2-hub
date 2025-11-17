@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/settings"
 )
@@ -68,9 +69,14 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 	cmd.Stderr = r.Writer
 	err = cmd.Start()
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = cmd.Wait()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
