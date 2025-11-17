@@ -42,7 +42,7 @@ func (w *Buffer) Seek(offset int64, whence int) (n int64, err error) {
 		err = fmt.Errorf("whence not valid: %d", whence)
 		return
 	}
-	if n < 0 || n > int64(len(w.buffer)) {
+	if n < 0 || n >= int64(len(w.buffer)) {
 		err = fmt.Errorf("out of bounds")
 		return
 	}

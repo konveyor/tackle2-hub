@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/assessment"
+	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/scm"
@@ -76,9 +77,9 @@ func (h AnalysisProfileHandler) Get(ctx *gin.Context) {
 // @summary Get a Profile bundle by ID.
 // @description Get a Profile bundle by ID.
 // @tags ProfileBundles
-// @produce octet-stream
-// @success 200 {object} AnalysisProfile
-// @router /analysis/profiles/{id} [get]
+// @produce application/gzip
+// @success 200 {file} bundle
+// @router /analysis/profiles/{id}/bundle [get]
 // @param id path int true "Profile ID"
 func (h AnalysisProfileHandler) GetBundle(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -378,12 +379,14 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	return
 }
 
+// ApBundle defines and builds the application bundle.
 type ApBundle struct {
 	db      *gorm.DB
 	tmpDir  string
 	ruleDir string
 }
 
+// Build constructs the bundle.
 func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
 	b.db = db
 	m, err := b.fetch(id)
@@ -423,6 +426,7 @@ func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
 	return
 }
 
+// fetch returns the profile.
 func (b *ApBundle) fetch(id uint) (m *model.AnalysisProfile, err error) {
 	m = &model.AnalysisProfile{}
 	db := b.db.Preload(clause.Associations)
@@ -433,6 +437,7 @@ func (b *ApBundle) fetch(id uint) (m *model.AnalysisProfile, err error) {
 	return
 }
 
+// addProfile adds the profile.
 func (b *ApBundle) addProfile(m *model.AnalysisProfile) (err error) {
 	profile := &AnalysisProfile{}
 	profile.With(m)
@@ -459,6 +464,8 @@ func (b *ApBundle) addProfile(m *model.AnalysisProfile) (err error) {
 	return
 }
 
+// expandInclude ensures the included labels are unique
+// superset of the labels listed in targets and in the profile.
 func (b *ApBundle) expandIncluded(m *model.AnalysisProfile) (expanded []string) {
 	included := make(map[string]byte)
 	excluded := make(map[string]byte)
@@ -485,6 +492,7 @@ func (b *ApBundle) expandIncluded(m *model.AnalysisProfile) (expanded []string) 
 	return
 }
 
+// addTargets adds targets referenced by the profile.
 func (b *ApBundle) addTargets(m *model.AnalysisProfile) (err error) {
 	for _, target := range m.Targets {
 		if target.Builtin() {
@@ -498,6 +506,7 @@ func (b *ApBundle) addTargets(m *model.AnalysisProfile) (err error) {
 	return
 }
 
+// AddRuleSet adds a ruleSet.
 func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 	ruleSetId := strconv.Itoa(int(ruleSet.ID))
 	ruleDir := filepath.Join(b.ruleDir, ruleSetId)
@@ -521,6 +530,7 @@ func (b *ApBundle) addRuleSet(ruleSet *model.RuleSet) (err error) {
 	return
 }
 
+// addRule adds a rule.
 func (b *ApBundle) addRule(ruleDir string, rule *model.Rule) (err error) {
 	if rule.File == nil {
 		return
@@ -536,14 +546,18 @@ func (b *ApBundle) addRule(ruleDir string, rule *model.Rule) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	defer func() {
+		_ = reader.Close()
+	}()
 	writer, err := os.Create(pathOut)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	defer func() {
+		_ = writer.Close()
+	}()
 	_, err = io.Copy(writer, reader)
-	_ = reader.Close()
-	_ = writer.Close()
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -551,6 +565,7 @@ func (b *ApBundle) addRule(ruleDir string, rule *model.Rule) (err error) {
 	return
 }
 
+// addRepository adds a repository.
 func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (err error) {
 	if repository.URL == "" {
 		return
@@ -576,37 +591,48 @@ func (b *ApBundle) addFiles(m *model.AnalysisProfile) (err error) {
 		return
 	}
 	for _, ref := range m.Files {
-		file := &model.File{}
-		err = b.db.First(file, ref.ID).Error
+		err = b.addFile(fileDir, ref)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
-		name := fmt.Sprintf(
-			"%d-%s",
-			file.ID,
-			file.Name)
-		var reader io.ReadCloser
-		var writer io.WriteCloser
-		pathIn := file.Path
-		pathOut := filepath.Join(fileDir, name)
-		reader, err = os.Open(pathIn)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		writer, err = os.Create(pathOut)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		_, err = io.Copy(writer, reader)
+	}
+	return
+}
+
+// addFile adds a file.
+func (b *ApBundle) addFile(fileDir string, ref json.Ref) (err error) {
+	file := &model.File{}
+	err = b.db.First(file, ref.ID).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	name := fmt.Sprintf(
+		"%d-%s",
+		file.ID,
+		file.Name)
+	pathIn := file.Path
+	pathOut := filepath.Join(fileDir, name)
+	reader, err := os.Open(pathIn)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
 		_ = reader.Close()
+	}()
+	writer, err := os.Create(pathOut)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	defer func() {
 		_ = writer.Close()
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
+	}()
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 	return
 }

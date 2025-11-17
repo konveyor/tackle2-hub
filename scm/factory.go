@@ -64,6 +64,7 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 
 // proxyMap returns a map of proxies.
 func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
+	pm = make(ProxyMap)
 	var list []model.Proxy
 	err = db.Find(&list).Error
 	if err != nil {
