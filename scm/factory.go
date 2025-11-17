@@ -27,9 +27,9 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 			return
 		}
 		svn := &Subversion{}
-		svn.Home = filepath.Join(Home, ".svn", svn.Id())
-		svn.Path = destDir
 		svn.Remote = *remote
+		svn.Path = destDir
+		svn.Home = filepath.Join(Home, ".svn", svn.Id())
 		svn.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
@@ -46,9 +46,9 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 			return
 		}
 		git := &Git{}
-		git.Home = filepath.Join(Home, ".git", git.Id())
-		git.Path = destDir
 		git.Remote = *remote
+		git.Path = destDir
+		git.Home = filepath.Join(Home, ".git", git.Id())
 		git.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
