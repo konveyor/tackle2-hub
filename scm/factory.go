@@ -74,13 +74,23 @@ func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
 		if !p.Enabled {
 			continue
 		}
-		pm[p.Kind] = Proxy{
+		proxy := Proxy{
 			ID:       p.ID,
 			Kind:     p.Kind,
 			Host:     p.Host,
 			Port:     p.Port,
 			Excluded: p.Excluded,
 		}
+		if p.Identity != nil {
+			proxy.Identity = &Identity{
+				ID:       p.Identity.ID,
+				Name:     p.Identity.Name,
+				User:     p.Identity.User,
+				Password: p.Identity.Password,
+				Key:      p.Identity.Key,
+			}
+		}
+		pm[p.Kind] = proxy
 	}
 	return
 }
