@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,18 +18,15 @@ const (
 	ServiceNestedRoot = ServiceRoot + "/*" + Wildcard
 )
 
-// serviceRoutes name to route map.
-var serviceRoutes = map[string]string{
-	"kai": os.Getenv("KAI_URL"),
-}
-
 // ServiceHandler handles service routes.
 type ServiceHandler struct {
 	BaseHandler
+	services map[string]string
 }
 
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
+	h.initServices()
 	e.GET(ServicesRoot, h.List)
 	e.Any(ServiceRoot, h.Required, h.Forward)
 	e.Any(ServiceNestedRoot, h.Required, h.Forward)
@@ -43,7 +41,7 @@ func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 // @router /services [get]
 func (h ServiceHandler) List(ctx *gin.Context) {
 	var r []Service
-	for name, route := range serviceRoutes {
+	for name, route := range h.services {
 		service := Service{Name: name, Route: route}
 		r = append(r, service)
 	}
@@ -60,7 +58,7 @@ func (h ServiceHandler) Required(ctx *gin.Context) {
 func (h ServiceHandler) Forward(ctx *gin.Context) {
 	path := ctx.Param(Wildcard)
 	name := ctx.Param(Name)
-	route, found := serviceRoutes[name]
+	route, found := h.services[name]
 	if !found {
 		err := &NotFound{Resource: name}
 		_ = ctx.Error(err)
@@ -92,6 +90,28 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 	}
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
+}
+
+// initServices finds services defined in the ENV.
+func (h ServiceHandler) initServices() {
+	suffix := "_URL"
+	h.services = make(map[string]string)
+	for _, en := range os.Environ() {
+		part := strings.SplitN(en, "=", 2)
+		if len(part) < 2 {
+			continue
+		}
+		key := part[0]
+		route := part[1]
+		key = strings.ToUpper(key)
+		if strings.HasSuffix(key, suffix) {
+			name := strings.TrimSuffix(key, suffix)
+			name = strings.Replace(name, "_", "-", -1)
+			name = strings.ToLower(name)
+			h.services[name] = route
+		}
+	}
+	return
 }
 
 // Service REST resource.
