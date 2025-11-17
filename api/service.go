@@ -21,7 +21,7 @@ const (
 // ServiceHandler handles service routes.
 type ServiceHandler struct {
 	BaseHandler
-	services map[string]string
+	serviceRoutes map[string]string
 }
 
 // AddRoutes adds routes.
@@ -41,7 +41,7 @@ func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 // @router /services [get]
 func (h ServiceHandler) List(ctx *gin.Context) {
 	var r []Service
-	for name, route := range h.services {
+	for name, route := range h.serviceRoutes {
 		service := Service{Name: name, Route: route}
 		r = append(r, service)
 	}
@@ -58,7 +58,7 @@ func (h ServiceHandler) Required(ctx *gin.Context) {
 func (h ServiceHandler) Forward(ctx *gin.Context) {
 	path := ctx.Param(Wildcard)
 	name := ctx.Param(Name)
-	route, found := h.services[name]
+	route, found := h.serviceRoutes[name]
 	if !found {
 		err := &NotFound{Resource: name}
 		_ = ctx.Error(err)
@@ -95,7 +95,7 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 // initServices finds services defined in the ENV.
 func (h ServiceHandler) initServices() {
 	suffix := "_URL"
-	h.services = make(map[string]string)
+	h.serviceRoutes = make(map[string]string)
 	for _, en := range os.Environ() {
 		part := strings.SplitN(en, "=", 2)
 		if len(part) < 2 {
@@ -108,7 +108,7 @@ func (h ServiceHandler) initServices() {
 			name := strings.TrimSuffix(key, suffix)
 			name = strings.Replace(name, "_", "-", -1)
 			name = strings.ToLower(name)
-			h.services[name] = route
+			h.serviceRoutes[name] = route
 		}
 	}
 	return
