@@ -62,17 +62,18 @@ These settings pertain to authentication and authorization.
 
 These settings pertain to the tasking system.
 
-| Name                    | T | Envar                     | Default    | Definition                                                                       |
-|-------------------------|---|---------------------------|------------|----------------------------------------------------------------------------------|
-| Enabled                 | B | TASK_ENABLED              | TRUE       | Tasking enabled. FALSE when Disconnected=TRUE.                                   |
-| SA                      | S | TASK_SA                   |            | Task pod service account name.                                                   |
-| Retries                 | I | TASK_RETRIES              | 1          | Task pod creation retires.                                                       |
-| Reaper.Created          | I | TASK_REAP_CREATED         | 72 (hour)  | (seconds) task may remain in state=CREATED before deleted.                       |
-| Reaper.Succeeded        | I | TASK_REAP_SUCCEEDED       | 72 (hour)  | (seconds) before SUCCEEDED task's bucket released.                               |
-| Pod.Retention.Succeeded | I | TASK_POD_RETAIN_SUCCEEDED | 1 (minute) | (minutes) before SUCCEEDED task pod is reaped (deleted).                         |
-| Pod.Retention.Failed    | I | TASK_POD_RETAIN_FAILED    | 72 (hour)  | (minutes) before FAILED task pod is reaped (deleted).                            |
-| Pod.UID                 | S | TASK_UID                  |            | Task pod run-as user id.                                                         |
-| Pod.Quota               | I | TASK_POD_QUOTA            | 20         | Task pod quota. (0=unlimited). May be overridden by k8s resource quota.          |
+| Name                    | T | Envar                     | Default    | Definition                                                              |
+|-------------------------|---|---------------------------|------------|-------------------------------------------------------------------------|
+| Enabled                 | B | TASK_ENABLED              | TRUE       | Tasking enabled. FALSE when Disconnected=TRUE.                          |
+| SA                      | S | TASK_SA                   |            | Task pod service account name.                                          |
+| Retries                 | I | TASK_RETRIES              | 1          | Task pod creation retires.                                              |
+| Reaper.Created          | I | TASK_REAP_CREATED         | 72 (hour)  | (seconds) task may remain in state=CREATED before deleted.              |
+| Reaper.Succeeded        | I | TASK_REAP_SUCCEEDED       | 72 (hour)  | (seconds) before SUCCEEDED task's bucket released.                      |
+| Reaper.Failed           | I | TASK_REAP_FAILED          | 720 (hour) | (seconds) before FAILED task's bucket released.                         |
+| Pod.Retention.Succeeded | I | TASK_POD_RETAIN_SUCCEEDED | 1 (minute) | (minutes) before SUCCEEDED task pod is reaped (deleted).                |
+| Pod.Retention.Failed    | I | TASK_POD_RETAIN_FAILED    | 72 (hour)  | (minutes) before FAILED task pod is reaped (deleted).                   |
+| Pod.UID                 | S | TASK_UID                  |            | Task pod run-as user id.                                                |
+| Pod.Quota               | I | TASK_POD_QUOTA            | 20         | Task pod quota. (0=unlimited). May be overridden by k8s resource quota. |
 
 
 ### Intervals/Frequencies ###
