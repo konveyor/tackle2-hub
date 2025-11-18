@@ -13,6 +13,7 @@ PKG = ./addon/... \
       ./binding/... \
       ./controller/... \
       ./cmd/... \
+      ./command/... \
       ./database/... \
       ./importer/... \
       ./jsd/... \
