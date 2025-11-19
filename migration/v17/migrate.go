@@ -2,14 +2,11 @@ package v17
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/jortel/go-utils/logr"
 	v16 "github.com/konveyor/tackle2-hub/migration/v16/model"
 	"github.com/konveyor/tackle2-hub/migration/v17/model"
 	"github.com/konveyor/tackle2-hub/secret"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v17")
 
 type Migration struct{}
 

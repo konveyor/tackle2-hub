@@ -100,12 +100,8 @@ var (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.WithName("task-scheduler")
+	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
-
-func init() {
-	Log = Log.V(Settings.Log.Task)
-}
 
 // Manager provides task management.
 type Manager struct {

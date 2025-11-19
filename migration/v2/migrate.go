@@ -4,10 +4,14 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v2/model"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
 
-var log = logr.WithName("migration|v2")
+var (
+	Settings = &settings.Settings
+	log      = logr.New("migration|v2", Settings.Log.Migration)
+)
 
 type Migration struct{}
 

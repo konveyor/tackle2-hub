@@ -20,7 +20,7 @@ import (
 var (
 	Settings = &settings.Settings
 	Wrap     = liberr.Wrap
-	Log      = logr.WithName("addon")
+	Log      = logr.New("addon", 0)
 )
 
 // Environment.

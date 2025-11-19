@@ -31,16 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var Settings = &settings.Settings
-
-var log = logr.WithName("hub")
-
-func init() {
-	err := Settings.Load()
-	if err != nil {
-		panic(err)
-	}
-}
+var (
+	Settings = &settings.Settings
+	Log      = logr.New("hub", 0)
+)
 
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
@@ -96,11 +90,11 @@ func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
 
 // main.
 func main() {
-	log.Info("Started:\n" + Settings.String())
+	Log.Info("Started:\n" + Settings.String())
 	var err error
 	defer func() {
 		if err != nil {
-			log.Error(err, "")
+			Log.Error(err, "")
 		}
 	}()
 	syscall.Umask(0)
@@ -203,7 +197,7 @@ func main() {
 	//
 	// Metrics
 	if Settings.Metrics.Enabled {
-		log.Info("Serving Prometheus metrics", "port", Settings.Metrics.Port)
+		Log.Info("Serving Prometheus metrics", "port", Settings.Metrics.Port)
 		http.Handle("/metrics", api.MetricsHandler())
 		go func() {
 			_ = http.ListenAndServe(Settings.Metrics.Address(), nil)

@@ -9,6 +9,13 @@ import (
 
 var Settings TackleSettings
 
+func init() {
+	err := Settings.Load()
+	if err != nil {
+		panic(err)
+	}
+}
+
 type TackleSettings struct {
 	Hub
 	Metrics

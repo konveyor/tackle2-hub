@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var Log = logr.WithName("api")
+var Log = logr.New("api", Settings.Log.Web)
 
 const (
 	MaxPage  = 500
@@ -39,7 +39,7 @@ type BaseHandler struct{}
 // DB return db client associated with the context.
 func (h *BaseHandler) DB(ctx *gin.Context) (db *gorm.DB) {
 	rtx := RichContext(ctx)
-	if Settings.Log.Web > 0 {
+	if Log.V(1).Enabled() {
 		db = rtx.DB.Debug()
 	} else {
 		db = rtx.DB

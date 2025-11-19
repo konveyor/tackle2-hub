@@ -14,7 +14,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	log      = logr.WithName("seeding")
+	log      = logr.New("seeding", Settings.Log.Migration)
 )
 
 const (

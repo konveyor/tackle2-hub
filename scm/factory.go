@@ -3,10 +3,10 @@ package scm
 import (
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
@@ -14,7 +14,7 @@ import (
 )
 
 // New SCM repository factory.
-func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err error) {
+func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 	switch remote.Kind {
 	case "subversion":
 		m := model.Setting{}
@@ -22,11 +22,15 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
+		err = m.As(&remote.Insecure)
+		if err != nil {
+			return
+		}
 		svn := &Subversion{}
-		svn.Home = filepath.Join(Home, svn.Id())
-		svn.Path = destDir
 		svn.Remote = *remote
-		err = m.As(&svn.Insecure)
+		svn.Path = destDir
+		svn.Home = filepath.Join(Home, ".svn", svn.Id())
+		svn.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
 		}
@@ -37,11 +41,15 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 		if err != nil {
 			return
 		}
+		err = m.As(&remote.Insecure)
+		if err != nil {
+			return
+		}
 		git := &Git{}
-		git.Home = filepath.Join(Home, git.Id())
-		git.Path = destDir
 		git.Remote = *remote
-		err = m.As(&git.Insecure)
+		git.Path = destDir
+		git.Home = filepath.Join(Home, ".git", git.Id())
+		git.Proxies, err = proxyMap(db)
 		if err != nil {
 			return
 		}
@@ -51,18 +59,44 @@ func New(db *gorm.DB, destDir string, remote *Remote, option ...any) (r SCM, err
 	if err != nil {
 		return
 	}
-	for _, opt := range option {
-		err = r.Use(opt)
-		if err != nil {
-			return
+	return
+}
+
+// proxyMap returns a map of proxies.
+func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
+	pm = make(ProxyMap)
+	var list []model.Proxy
+	err = db.Find(&list).Error
+	if err != nil {
+		return
+	}
+	for _, p := range list {
+		if !p.Enabled {
+			continue
 		}
+		proxy := Proxy{
+			ID:       p.ID,
+			Kind:     p.Kind,
+			Host:     p.Host,
+			Port:     p.Port,
+			Excluded: p.Excluded,
+		}
+		if p.Identity != nil {
+			proxy.Identity = &Identity{
+				ID:       p.Identity.ID,
+				Name:     p.Identity.Name,
+				User:     p.Identity.User,
+				Password: p.Identity.Password,
+				Key:      p.Identity.Key,
+			}
+		}
+		pm[p.Kind] = proxy
 	}
 	return
 }
 
 // Base SCM.
 type Base struct {
-	Authenticated
 	Home    string
 	Proxies map[string]Proxy
 	Remote  Remote
@@ -72,30 +106,21 @@ type Base struct {
 }
 
 // Id returns the unique id.
+// Based on the remote digest and the (LOCAL) path.
 func (b *Base) Id() string {
 	if b.id == "" {
-		b.id = uuid.New().String()
+		h := fnv.New64a()
+		_, _ = h.Write([]byte(b.Remote.digest()))
+		_, _ = h.Write([]byte(b.Path))
+		n := h.Sum64()
+		b.id = fmt.Sprintf("%x", n)
 	}
 	return b.id
 }
 
 // Clean deletes created files.
-func (b *Base) Clean() {
-	_ = nas.RmDir(b.Home)
-	_ = nas.RmDir(b.Path)
-}
-
-// Validate the repository.
-// Ensures that Home and Path either:
-// - do not exist.
-// - are empty directories.
-func (b *Base) Validate() (err error) {
-	for _, p := range []string{b.Home, b.Path} {
-		err = b.mustEmptyDir(p)
-		if err != nil {
-			break
-		}
-	}
+func (b *Base) Clean() (err error) {
+	err = nas.RmDir(b.Home)
 	return
 }
 

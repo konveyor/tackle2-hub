@@ -39,13 +39,18 @@ For all components:
 - 0 will log SQL slower than 1 second.
 - 1+ all SQL is logged.
 
-| Name          | T | Envar         | Default | Description                     |
-|---------------|---|---------------|---------|---------------------------------|
-| Log.Master    | I | LOG_MASTER    | 0       | Master logging verbosity.       |
-| Log.Migration | I | LOG_MIGRATION | 0       | Migrations logging verbosity    |
-| Log.Web       | I | LOG_WEB       | 0       | Web/REST API logging verbosity. |
-| Log.Reaper    | I | LOG_REAPER    | 0       | Reaper logging verbosity        |
-| Log.Task      | I | LOG_TASK      | 0       | Task manager logging verbosity. |
+| Name          | T | Envar         | Default | Description                         |
+|---------------|---|---------------|---------|-------------------------------------|
+| Log.Master    | I | LOG_MASTER    | 0       | Master logging verbosity.           |
+| Log.Migration | I | LOG_MIGRATION | 0       | Migrations logging verbosity        |
+| Log.Web       | I | LOG_WEB       | 0       | Web/REST API logging verbosity.     |
+| Log.Reaper    | I | LOG_REAPER    | 0       | Reaper logging verbosity            |
+| Log.Task      | I | LOG_TASK      | 0       | Task manager logging verbosity.     |
+| Log.Auth      | I | LOG_AUTH      | 0       | Auth logging verbosity.             |
+| Log.Heap      | I | LOG_HEAP      | 0       | Heap information logging verbosity. |
+| Log.Command   | I | LOG_CMD       | 0       | Command (shell) logging verbosity.  |
+| Log.SSH       | I | LOG_SSH       | 0       | SSH agent logging verbosity.        |
+| Log.SCM       | I | LOG_SCM       | 0       | SCM logging verbosity.              |
 
 ### Auth ###
 

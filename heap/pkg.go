@@ -12,7 +12,7 @@ import (
 
 var (
 	Settings = &settings.Settings
-	Log      = logr.WithName("heap")
+	Log      = logr.New("heap", Settings.Log.Heap)
 )
 
 func Free() {
@@ -38,7 +38,7 @@ func Print() {
 	s += fmt.Sprintf("Used     = %.2f MB\n", mb(allocated))
 	s += fmt.Sprintf("Reserved = %.2f MB\n", mb(reserved))
 	s += fmt.Sprintf("Unknown  = %.2f MB\n", mb(unknown))
-	Log.Info(s)
+	Log.V(1).Info(s)
 }
 
 func Monitor() {

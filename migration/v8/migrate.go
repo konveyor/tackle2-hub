@@ -4,13 +4,10 @@ import (
 	"encoding/json"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/jortel/go-utils/logr"
 	v7 "github.com/konveyor/tackle2-hub/migration/v7/model"
 	"github.com/konveyor/tackle2-hub/migration/v8/model"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v8")
 
 type Migration struct{}
 

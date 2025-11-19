@@ -3,12 +3,9 @@ package v6
 import (
 	"encoding/json"
 
-	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/migration/v6/model"
 	"gorm.io/gorm"
 )
-
-var log = logr.WithName("migration|v6")
 
 type Migration struct{}
 

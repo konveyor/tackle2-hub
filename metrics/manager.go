@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	Log = logr.WithName("metrics")
+	Log = logr.New("metrics", 0)
 )
 
 // Manager provides metrics management.
