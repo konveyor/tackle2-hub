@@ -31,18 +31,22 @@ type MirrorMap struct {
 
 // Find returns a mirror for the remote.
 func (m *MirrorMap) Find(db *gorm.DB, remote Remote) (mirror *Mirror) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	mirror, found := m.content[remote.URL]
-	if !found {
-		mirror = &Mirror{
-			Remote: remote,
-			DB:     db,
+	mirror = func() (mirror *Mirror) {
+		m.mutex.Lock()
+		defer m.mutex.Unlock()
+		mirror, found := m.content[remote.URL]
+		if !found {
+			mirror = &Mirror{
+				Remote: remote,
+				DB:     db,
+			}
+			m.content[remote.URL] = mirror
 		}
-		m.content[remote.URL] = mirror
-	}
+		return
+	}()
+	mirror.mutex.Lock()
+	defer mirror.mutex.Unlock()
 	mirror.Remote.Branch = remote.Branch
-	m.content[remote.URL] = mirror
 	return
 }
 
