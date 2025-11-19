@@ -33,9 +33,12 @@ RUN microdnf -y install \
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd
 
 ENV TINI_VERSION=v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-amd64 /usr/bin/tini
-RUN chmod +x /usr/bin/tini
-
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-amd64 /tmp/tini-amd64
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-amd64.sha256sum /tmp/tini.sha256
+RUN cd /tmp && \
+    sha256sum -c tini.sha256 && \
+    mv tini-amd64 /usr/bin/tini && \
+    chmod +x /usr/bin/tini
 
 ENTRYPOINT ["/usr/bin/tini", "--",  "/usr/local/bin/tackle-hub"]
 
