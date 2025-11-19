@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/user"
 	"strconv"
-	"time"
 )
 
 const (
@@ -28,10 +27,6 @@ const (
 	EnvTaskPodQuota            = "TASK_POD_QUOTA"
 	EnvTaskSA                  = "TASK_SA"
 	EnvTaskRetries             = "TASK_RETRIES"
-	EnvTaskPreemptEnabled      = "TASK_PREEMPT_ENABLED"
-	EnvTaskPreemptDelayed      = "TASK_PREEMPT_DELAYED"
-	EnvTaskPreemptPostponed    = "TASK_PREEMPT_POSTPONED"
-	EnvTaskPreemptRate         = "TASK_PREEMPT_RATE"
 	EnvTaskUid                 = "TASK_UID"
 	EnvTaskEnabled             = "TASK_ENABLED"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
@@ -95,12 +90,6 @@ type Hub struct {
 			Created   int
 			Succeeded int
 			Failed    int
-		}
-		Preemption struct { // seconds.
-			Enabled   bool
-			Delayed   time.Duration
-			Postponed time.Duration
-			Rate      int
 		}
 		Pod struct {
 			Quota     int
@@ -265,38 +254,6 @@ func (r *Hub) Load() (err error) {
 		r.Frequency.Heap = n // seconds.
 	} else {
 		r.Frequency.Heap = 240 // 4 minutes.
-	}
-	s, found = os.LookupEnv(EnvTaskPreemptEnabled)
-	if found {
-		b, _ := strconv.ParseBool(s)
-		r.Task.Preemption.Enabled = b
-	}
-	s, found = os.LookupEnv(EnvTaskPreemptDelayed)
-	if found {
-		n, _ := strconv.Atoi(s)
-		r.Task.Preemption.Delayed = time.Duration(n) * time.Second
-	} else {
-		r.Task.Preemption.Delayed = time.Minute
-	}
-	s, found = os.LookupEnv(EnvTaskPreemptPostponed)
-	if found {
-		n, _ := strconv.Atoi(s)
-		r.Task.Preemption.Postponed = time.Duration(n) * time.Second
-	} else {
-		r.Task.Preemption.Postponed = time.Minute
-	}
-	s, found = os.LookupEnv(EnvTaskPreemptRate)
-	if found {
-		n, _ := strconv.Atoi(s)
-		if n < 0 {
-			n = 0
-		}
-		if n > 100 {
-			n = 100
-		}
-		r.Task.Preemption.Rate = n
-	} else {
-		r.Task.Preemption.Rate = 10
 	}
 	s, found = os.LookupEnv(EnvTaskUid)
 	if found {

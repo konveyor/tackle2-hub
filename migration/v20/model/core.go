@@ -235,9 +235,7 @@ type TaskEvent struct {
 
 // TaskPolicy scheduling policy.
 type TaskPolicy struct {
-	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
-	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
-	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
+	Isolated bool `json:"isolated,omitempty" yaml:",omitempty"`
 }
 
 // TTL time-to-live.

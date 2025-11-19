@@ -8361,12 +8361,6 @@ const docTemplate = `{
                 "isolated": {
                     "type": "boolean"
                 },
-                "preemptEnabled": {
-                    "type": "boolean"
-                },
-                "preemptExempt": {
-                    "type": "boolean"
-                }
             }
         },
         "api.TaskQueue": {
