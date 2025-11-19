@@ -13,6 +13,7 @@ PKG = ./addon/... \
       ./binding/... \
       ./controller/... \
       ./cmd/... \
+      ./command/... \
       ./database/... \
       ./importer/... \
       ./jsd/... \
@@ -22,9 +23,11 @@ PKG = ./addon/... \
       ./model/... \
       ./nas/... \
       ./reaper/... \
+      ./scm/... \
       ./secret/... \
       ./seed/... \
       ./settings/... \
+      ./ssh/... \
       ./tar/... \
       ./task/...  \
       ./test/...  \
