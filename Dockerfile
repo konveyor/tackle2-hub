@@ -13,9 +13,13 @@ RUN if [ ! -d "${SEED_ROOT}" ]; then \
 
 FROM quay.io/konveyor/static-report as report
 
+FROM quay.io/centos/centos:stream9 as centos
+RUN dnf -y install epel-release && dnf -y install tini
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 ARG SEED_ROOT
 ARG VERSION=latest
+COPY --from=centos /usr/bin/tini /usr/bin/tini
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
@@ -31,14 +35,6 @@ RUN microdnf -y install \
  && microdnf -y clean all
 
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd
-
-ENV TINI_VERSION=v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-amd64 /tmp/tini-amd64
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-amd64.sha256sum /tmp/tini.sha256
-RUN cd /tmp && \
-    sha256sum -c tini.sha256 && \
-    mv tini-amd64 /usr/bin/tini && \
-    chmod +x /usr/bin/tini
 
 ENTRYPOINT ["/usr/bin/tini", "--",  "/usr/local/bin/tackle-hub"]
 
