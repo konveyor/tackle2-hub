@@ -13,12 +13,16 @@ RUN if [ ! -d "${SEED_ROOT}" ]; then \
 
 FROM quay.io/konveyor/static-report as report
 
+FROM quay.io/centos/centos:stream9 as centos
+RUN dnf -y install epel-release && dnf -y install tini
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 RUN mkdir -p /hub && chmod 0777 /hub
 ENV HOME=/hub
 WORKDIR /hub
 ARG SEED_ROOT
 ARG VERSION=latest
+COPY --from=centos /usr/bin/tini /usr/bin/tini
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder /opt/app-root/src/auth/roles.yaml /tmp/roles.yaml
 COPY --from=builder /opt/app-root/src/auth/users.yaml /tmp/users.yaml
@@ -36,8 +40,10 @@ RUN microdnf -y install \
   git \
   tar \
  && microdnf -y clean all
+
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd
-ENTRYPOINT ["/usr/local/bin/tackle-hub"]
+
+ENTRYPOINT ["/usr/bin/tini", "--",  "/usr/local/bin/tackle-hub"]
 
 LABEL name="konveyor/tackle2-hub" \
       description="Konveyor Tackle - Hub" \
