@@ -138,6 +138,6 @@ func (h ConfigMapHandler) List(ctx *gin.Context) {
 
 // ConfigMap configmap
 type ConfigMap struct {
-	Name string `json:"names"`
+	Name string `json:"name"`
 	Data any    `json:"data"`
 }
