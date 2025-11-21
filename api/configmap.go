@@ -105,7 +105,7 @@ func (h ConfigMapHandler) GetKey(ctx *gin.Context) {
 // @description List all configmap names.
 // @tags ConfigMaps
 // @produce json
-// @success 200 array api.ConfigMap
+// @success 200 {array} api.ConfigMap
 // @router /configmaps [get]
 func (h ConfigMapHandler) List(ctx *gin.Context) {
 	maps := &v1.ConfigMapList{}
