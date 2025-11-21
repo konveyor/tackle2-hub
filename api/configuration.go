@@ -14,39 +14,39 @@ import (
 
 // Routes
 const (
-	ConfigurationsRoot   = "/configurations"
-	ConfigurationRoot    = ConfigurationsRoot + "/:" + Name
-	ConfigurationKeyRoot = ConfigurationRoot + "/:" + Key
+	ConfigMapsRoot   = "/configmaps"
+	ConfigMapRoot    = ConfigMapsRoot + "/:" + Name
+	ConfigMapKeyRoot = ConfigMapRoot + "/:" + Key
 )
 
 const (
-	LabelConfiguration = "konveyor.io/configuration"
+	LabelConfigMap = "konveyor.io/configuration"
 )
 
-// ConfigurationHandler handles configuration routes.
-type ConfigurationHandler struct {
+// ConfigMapHandler handles configmap routes.
+type ConfigMapHandler struct {
 	BaseHandler
 }
 
 // AddRoutes add routes.
-func (h ConfigurationHandler) AddRoutes(e *gin.Engine) {
+func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("Configurations"))
-	routeGroup.GET(ConfigurationsRoot, h.List)
-	routeGroup.GET(ConfigurationsRoot+"/", h.List)
-	routeGroup.GET(ConfigurationRoot, h.Get)
-	routeGroup.GET(ConfigurationKeyRoot, h.Get)
+	routeGroup.Use(Required("ConfigMaps"))
+	routeGroup.GET(ConfigMapsRoot, h.List)
+	routeGroup.GET(ConfigMapsRoot+"/", h.List)
+	routeGroup.GET(ConfigMapRoot, h.Get)
+	routeGroup.GET(ConfigMapKeyRoot, h.Get)
 }
 
 // Get godoc
-// @summary Get a configuration by name.
-// @description Get a configuration by name.
-// @tags Configurations
+// @summary Get a configmap by name.
+// @description Get a configmap by name.
+// @tags ConfigMaps
 // @produce json
 // @success 200 {object} any
-// @router /Configurations/{name} [get]
+// @router /ConfigMaps/{name} [get]
 // @param name path string true "Name"
-func (h ConfigurationHandler) Get(ctx *gin.Context) {
+func (h ConfigMapHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
 	key := ctx.Param(Key)
 	mp := &v1.ConfigMap{}
@@ -66,7 +66,7 @@ func (h ConfigurationHandler) Get(ctx *gin.Context) {
 			return
 		}
 	}
-	if _, found := mp.Labels[LabelConfiguration]; !found {
+	if _, found := mp.Labels[LabelConfigMap]; !found {
 		h.Status(ctx, http.StatusNotFound)
 		return
 	}
@@ -85,30 +85,30 @@ func (h ConfigurationHandler) Get(ctx *gin.Context) {
 }
 
 // GetKey godoc
-// @summary Get a configuration by name and key.
-// @description Get a configuration by name and key.
-// @tags Configurations
+// @summary Get a configmap by name and key.
+// @description Get a configmap by name and key.
+// @tags ConfigMaps
 // @produce json
 // @success 200 {object} any
-// @router /Configurations/{name} [get]
+// @router /ConfigMaps/{name} [get]
 // @param name path string true "Key"
 // @param key path string true "Name"
-func (h ConfigurationHandler) GetKey(ctx *gin.Context) {
+func (h ConfigMapHandler) GetKey(ctx *gin.Context) {
 	h.Get(ctx)
 }
 
 // List godoc
-// @summary List all configuration names.
-// @description List all configuration names.
-// @tags Configurations
+// @summary List all configmap names.
+// @description List all configmap names.
+// @tags ConfigMaps
 // @produce json
-// @success 200 array api.Configuration
-// @router /Configurations [get]
-func (h ConfigurationHandler) List(ctx *gin.Context) {
+// @success 200 array api.ConfigMap
+// @router /ConfigMaps [get]
+func (h ConfigMapHandler) List(ctx *gin.Context) {
 	maps := &v1.ConfigMapList{}
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(
-		LabelConfiguration,
+		LabelConfigMap,
 		selection.Exists,
 		[]string{})
 	selector = selector.Add(*req)
@@ -123,11 +123,11 @@ func (h ConfigurationHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	var resources []Configuration
+	var resources []ConfigMap
 	for _, m := range maps.Items {
 		resources = append(
 			resources,
-			Configuration{
+			ConfigMap{
 				Name: m.Name,
 				Data: m.Data,
 			})
@@ -136,8 +136,8 @@ func (h ConfigurationHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
-// Configuration configuration
-type Configuration struct {
+// ConfigMap configmap
+type ConfigMap struct {
 	Name string `json:"names"`
 	Data any    `json:"data"`
 }
