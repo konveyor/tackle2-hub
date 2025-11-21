@@ -92,7 +92,7 @@ func (h ConfigMapHandler) Get(ctx *gin.Context) {
 // @description Get a configmap by name and key.
 // @tags ConfigMaps
 // @produce json
-// @success 200 {object} string
+// @success 200 {string} string
 // @router /configmaps/{name} [get]
 // @param name path string true "Name"
 // @param key path string true "Key"
