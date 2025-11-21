@@ -43,7 +43,7 @@ func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 // @description Get a configmap by name.
 // @tags ConfigMaps
 // @produce json
-// @success 200 {object} any
+// @success 200 {object} api.ConfigMap
 // @router /configmaps/{name} [get]
 // @param name path string true "Name"
 func (h ConfigMapHandler) Get(ctx *gin.Context) {
@@ -72,7 +72,10 @@ func (h ConfigMapHandler) Get(ctx *gin.Context) {
 	}
 	var r any
 	var found bool
-	r = mp.Data
+	r = ConfigMap{
+		Name: mp.Name,
+		Data: mp.Data,
+	}
 	if key != "" {
 		r, found = mp.Data[key]
 		if !found {
@@ -89,7 +92,7 @@ func (h ConfigMapHandler) Get(ctx *gin.Context) {
 // @description Get a configmap by name and key.
 // @tags ConfigMaps
 // @produce json
-// @success 200 {object} any
+// @success 200 {object} string
 // @router /configmaps/{name} [get]
 // @param name path string true "Name"
 // @param key path string true "Key"
