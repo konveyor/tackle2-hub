@@ -73,7 +73,7 @@ func All() []Handler {
 		&AnalysisProfileHandler{},
 		&AnalysisHandler{},
 		&ApplicationHandler{},
-		&ConfigurationHandler{},
+		&ConfigMapHandler{},
 		&AuthHandler{},
 		&BusinessServiceHandler{},
 		&CacheHandler{},
