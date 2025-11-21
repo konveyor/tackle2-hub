@@ -91,8 +91,8 @@ func (h ConfigMapHandler) Get(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} any
 // @router /configmaps/{name} [get]
-// @param name path string true "Key"
-// @param key path string true "Name"
+// @param name path string true "Name"
+// @param key path string true "Key"
 func (h ConfigMapHandler) GetKey(ctx *gin.Context) {
 	h.Get(ctx)
 }
