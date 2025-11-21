@@ -44,7 +44,7 @@ func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 // @tags ConfigMaps
 // @produce json
 // @success 200 {object} any
-// @router /ConfigMaps/{name} [get]
+// @router /configmaps/{name} [get]
 // @param name path string true "Name"
 func (h ConfigMapHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
@@ -90,7 +90,7 @@ func (h ConfigMapHandler) Get(ctx *gin.Context) {
 // @tags ConfigMaps
 // @produce json
 // @success 200 {object} any
-// @router /ConfigMaps/{name} [get]
+// @router /configmaps/{name} [get]
 // @param name path string true "Key"
 // @param key path string true "Name"
 func (h ConfigMapHandler) GetKey(ctx *gin.Context) {
@@ -103,7 +103,7 @@ func (h ConfigMapHandler) GetKey(ctx *gin.Context) {
 // @tags ConfigMaps
 // @produce json
 // @success 200 array api.ConfigMap
-// @router /ConfigMaps [get]
+// @router /configmaps [get]
 func (h ConfigMapHandler) List(ctx *gin.Context) {
 	maps := &v1.ConfigMapList{}
 	selector := labels.NewSelector()
