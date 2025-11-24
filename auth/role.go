@@ -14,6 +14,7 @@ var Settings = &settings.Settings
 // AddonRole defines the addon scopes.
 var AddonRole = []string{
 	"addons:get",
+	"analysis.profiles:get",
 	"applications:get",
 	"applications:post",
 	"applications:put",

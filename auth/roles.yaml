@@ -9,6 +9,12 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: analysis.profiles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications
       verbs:
         - delete
@@ -248,6 +254,12 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: analysis.profiles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: applications
       verbs:
         - delete
@@ -465,6 +477,9 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: analysis.profiles
+      verbs:
+        - get
     - name: applications
       verbs:
         - get
@@ -601,6 +616,9 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: analysis.profiles
+      verbs:
+        - get
     - name: applications
       verbs:
         - get
