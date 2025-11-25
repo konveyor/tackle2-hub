@@ -35,9 +35,9 @@ func (r *RuleUnique) Match(ready *Task, d *Domain) (matched bool, reason string)
 		return
 	}
 	if _, found := r.matched[other.ID]; found {
+		matched = false
 		return
 	}
-	matched = true
 	r.matched[ready.ID] = other.ID
 	reason = fmt.Sprintf(
 		"Rule:Unique matched:%d, other:%d",

@@ -324,11 +324,12 @@ func TestRuleUnique(t *testing.T) {
 
 	domain := NewDomain(tasks)
 
-	// 0 and 1 match on kind
+	// 0 matches 1 on kind
 	matched, _ := rule.Match(tasks[0], domain)
 	g.Expect(matched).To(gomega.BeTrue())
+	g.Expect(rule.matched[tasks[0].ID]).To(gomega.Equal(tasks[1].ID))
 	matched, _ = rule.Match(tasks[1], domain)
-	g.Expect(matched).To(gomega.BeTrue())
+	g.Expect(matched).To(gomega.BeFalse())
 
 	// 2 not matched.  different kind.
 	matched, _ = rule.Match(tasks[2], domain)
@@ -344,8 +345,9 @@ func TestRuleUnique(t *testing.T) {
 	// 3 and 4 match on kind
 	matched, _ = rule.Match(tasks[3], domain)
 	g.Expect(matched).To(gomega.BeTrue())
+	g.Expect(rule.matched[tasks[3].ID]).To(gomega.Equal(tasks[4].ID))
 	matched, _ = rule.Match(tasks[4], domain)
-	g.Expect(matched).To(gomega.BeTrue())
+	g.Expect(matched).To(gomega.BeFalse())
 
 	// 4 not matched.  different kind.
 	matched, _ = rule.Match(tasks[5], domain)
