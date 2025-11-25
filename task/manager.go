@@ -135,7 +135,7 @@ func (m *Manager) Run(ctx context.Context) {
 		&Validator{
 			Client: m.Client,
 		})
-	if Settings.Log.Task > 0 {
+	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
 	go func() {

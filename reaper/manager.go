@@ -33,7 +33,7 @@ type Manager struct {
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	if Settings.Log.Reaper > 0 {
+	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
 	registered := []Reaper{
@@ -51,6 +51,7 @@ func (m *Manager) Run(ctx context.Context) {
 			DB: m.DB,
 		},
 	}
+	threshold := 10 * time.Second
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Died.")
@@ -63,7 +64,10 @@ func (m *Manager) Run(ctx context.Context) {
 				for _, r := range registered {
 					r.Run()
 				}
-				Log.Info("Duration: " + time.Since(mark).String())
+				d := time.Since(mark)
+				if d > threshold {
+					Log.Info("Duration: " + d.String())
+				}
 				heap.Free()
 				m.pause()
 			}
