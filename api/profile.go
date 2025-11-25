@@ -37,7 +37,7 @@ type AnalysisProfileHandler struct {
 
 func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("Profiles"))
+	routeGroup.Use(Required("analysis.profiles"))
 	routeGroup.GET(AnalysisProfileRoot, h.Get)
 	routeGroup.GET(AnalysisProfilesRoot, h.List)
 	routeGroup.GET(AnalysisProfilesRoot+"/", h.List)
