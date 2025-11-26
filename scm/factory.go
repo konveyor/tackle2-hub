@@ -11,6 +11,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // New SCM repository factory.
@@ -66,6 +67,7 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
 	pm = make(ProxyMap)
 	var list []model.Proxy
+	db = db.Preload(clause.Associations)
 	err = db.Find(&list).Error
 	if err != nil {
 		return
