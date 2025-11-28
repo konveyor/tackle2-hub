@@ -94,7 +94,7 @@ func (m *Mirror) update() (err error) {
 	if err != nil {
 		return
 	}
-	remote := &Remote{
+	remote := Remote{
 		URL:      m.Remote.URL,
 		Identity: identity,
 	}
