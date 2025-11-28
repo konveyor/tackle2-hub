@@ -15,7 +15,7 @@ import (
 )
 
 // New SCM repository factory.
-func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
+func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
 	switch remote.Kind {
 	case "subversion":
 		m := model.Setting{}
@@ -28,7 +28,7 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 			return
 		}
 		svn := &Subversion{}
-		svn.Remote = *remote
+		svn.Remote = remote
 		svn.Path = destDir
 		svn.Home = filepath.Join(Home, ".svn", svn.Id())
 		svn.Proxies, err = proxyMap(db)
@@ -47,7 +47,7 @@ func New(db *gorm.DB, destDir string, remote *Remote) (r SCM, err error) {
 			return
 		}
 		git := &Git{}
-		git.Remote = *remote
+		git.Remote = remote
 		git.Path = destDir
 		git.Home = filepath.Join(Home, ".git", git.Id())
 		git.Proxies, err = proxyMap(db)
