@@ -207,6 +207,13 @@ func (r *Git) fetch() (err error) {
 
 // pull commits.
 func (r *Git) pull() (err error) {
+	onTag, err := r.onTag(r.Remote.Branch)
+	if err != nil {
+		return
+	}
+	if onTag {
+		return
+	}
 	cmd := r.git()
 	cmd.Dir = r.Path
 	cmd.Options.Add("pull")
@@ -229,6 +236,17 @@ func (r *Git) checkout(ref string) (err error) {
 	}()
 	err = r.fetch()
 	if err != nil {
+		return
+	}
+	onTag, err := r.onTag(ref)
+	if err != nil {
+		return
+	}
+	if onTag {
+		cmd := r.git()
+		cmd.Dir = r.Path
+		cmd.Options.Add("checkout", ref)
+		err = cmd.Run()
 		return
 	}
 	cmd := r.git()
@@ -278,6 +296,29 @@ func (r *Git) defaultBranch() (name string, err error) {
 	name = string(cmd.Output())
 	name = path.Base(name)
 	name = strings.TrimSpace(name)
+	return
+}
+
+// onTag returns true when a when the remote references tag.
+func (r *Git) onTag(ref string) (matched bool, err error) {
+	if ref == "" {
+		return
+	}
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("tag")
+	err = cmd.Run()
+	if err != nil {
+		output := string(cmd.Output())
+		tags := strings.Split(output, "\n")
+		for _, tag := range tags {
+			tag = strings.TrimSpace(tag)
+			if tag == ref {
+				matched = true
+				break
+			}
+		}
+	}
 	return
 }
 
