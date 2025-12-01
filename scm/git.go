@@ -200,7 +200,7 @@ func (r *Git) git() (cmd *command.Command) {
 func (r *Git) fetch() (err error) {
 	cmd := r.git()
 	cmd.Dir = r.Path
-	cmd.Options.Add("fetch", "--prune")
+	cmd.Options.Add("fetch", "--tags", "--prune")
 	err = cmd.Run()
 	return
 }
