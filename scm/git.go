@@ -299,7 +299,7 @@ func (r *Git) defaultBranch() (name string, err error) {
 	return
 }
 
-// onTag returns true when a when the remote references tag.
+// onTag returns true when a when the remote references a tag.
 func (r *Git) onTag(ref string) (matched bool, err error) {
 	if ref == "" {
 		return
