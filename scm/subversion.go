@@ -174,6 +174,10 @@ func (r *Subversion) initHome() (err error) {
 			Content:    identity.Key,
 			Passphrase: identity.Password,
 		}
+		Log.V(1).Info(
+			fmt.Sprintf("[SVN] Using identity: (id=%d) %s",
+				identity.ID,
+				identity.Name))
 		err = key.Add()
 		if err != nil {
 			return

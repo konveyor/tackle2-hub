@@ -174,6 +174,10 @@ func (r *Git) initHome() (err error) {
 			Content:    identity.Key,
 			Passphrase: identity.Password,
 		}
+		Log.V(1).Info(
+			fmt.Sprintf("[GIT] Using identity: (id=%d) %s",
+				identity.ID,
+				identity.Name))
 		err = key.Add()
 		if err != nil {
 			return
