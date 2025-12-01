@@ -207,11 +207,11 @@ func (r *Git) fetch() (err error) {
 
 // pull commits.
 func (r *Git) pull() (err error) {
-	onTag, err := r.onTag(r.Remote.Branch)
+	isTag, err := r.isTag(r.Remote.Branch)
 	if err != nil {
 		return
 	}
-	if onTag {
+	if isTag {
 		return
 	}
 	cmd := r.git()
@@ -238,11 +238,11 @@ func (r *Git) checkout(ref string) (err error) {
 	if err != nil {
 		return
 	}
-	onTag, err := r.onTag(ref)
+	isTag, err := r.isTag(ref)
 	if err != nil {
 		return
 	}
-	if onTag {
+	if isTag {
 		cmd := r.git()
 		cmd.Dir = r.Path
 		cmd.Options.Add("checkout", ref)
@@ -299,8 +299,8 @@ func (r *Git) defaultBranch() (name string, err error) {
 	return
 }
 
-// onTag returns true when a when the remote references a tag.
-func (r *Git) onTag(ref string) (matched bool, err error) {
+// isTag returns true when a when the remote references a tag.
+func (r *Git) isTag(ref string) (matched bool, err error) {
 	if ref == "" {
 		return
 	}
