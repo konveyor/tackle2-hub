@@ -309,14 +309,15 @@ func (r *Git) onTag(ref string) (matched bool, err error) {
 	cmd.Options.Add("tag")
 	err = cmd.Run()
 	if err != nil {
-		output := string(cmd.Output())
-		tags := strings.Split(output, "\n")
-		for _, tag := range tags {
-			tag = strings.TrimSpace(tag)
-			if tag == ref {
-				matched = true
-				break
-			}
+		return
+	}
+	output := string(cmd.Output())
+	tags := strings.Split(output, "\n")
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		if tag == ref {
+			matched = true
+			break
 		}
 	}
 	return
