@@ -200,13 +200,20 @@ func (r *Git) git() (cmd *command.Command) {
 func (r *Git) fetch() (err error) {
 	cmd := r.git()
 	cmd.Dir = r.Path
-	cmd.Options.Add("fetch", "--prune")
+	cmd.Options.Add("fetch", "--tags", "--prune")
 	err = cmd.Run()
 	return
 }
 
 // pull commits.
 func (r *Git) pull() (err error) {
+	isTag, err := r.isTag(r.Remote.Branch)
+	if err != nil {
+		return
+	}
+	if isTag {
+		return
+	}
 	cmd := r.git()
 	cmd.Dir = r.Path
 	cmd.Options.Add("pull")
@@ -229,6 +236,17 @@ func (r *Git) checkout(ref string) (err error) {
 	}()
 	err = r.fetch()
 	if err != nil {
+		return
+	}
+	isTag, err := r.isTag(ref)
+	if err != nil {
+		return
+	}
+	if isTag {
+		cmd := r.git()
+		cmd.Dir = r.Path
+		cmd.Options.Add("checkout", ref)
+		err = cmd.Run()
 		return
 	}
 	cmd := r.git()
@@ -278,6 +296,30 @@ func (r *Git) defaultBranch() (name string, err error) {
 	name = string(cmd.Output())
 	name = path.Base(name)
 	name = strings.TrimSpace(name)
+	return
+}
+
+// isTag returns true when a when ref is a tag.
+func (r *Git) isTag(ref string) (matched bool, err error) {
+	if ref == "" {
+		return
+	}
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("tag")
+	err = cmd.Run()
+	if err != nil {
+		return
+	}
+	output := string(cmd.Output())
+	tags := strings.Split(output, "\n")
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		if tag == ref {
+			matched = true
+			break
+		}
+	}
 	return
 }
 
