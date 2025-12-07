@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	PredRegex = regexp.MustCompile(`(\w+)\:([\w/=]+)`)
+	PredRegex = regexp.MustCompile(`(\w+)\:([\w/=#]+)`)
 )
 
 // NewSelector returns a selector.

@@ -433,3 +433,18 @@ func TestRuleDeps(t *testing.T) {
 	matched, _ = rule.Match(tasks[5], domain)
 	g.Expect(matched).To(gomega.BeFalse())
 }
+
+func TestPredRegex(t *testing.T) {
+	// Test PredRegex pattern
+	g := gomega.NewGomegaWithT(t)
+
+	matches := PredRegex.FindAllStringSubmatch("tag:Language=Java", -1)
+	g.Expect(len(matches)).To(gomega.Equal(1))
+	g.Expect(matches[0][1]).To(gomega.Equal("tag"))
+	g.Expect(matches[0][2]).To(gomega.Equal("Language=Java"))
+
+	matches = PredRegex.FindAllStringSubmatch("tag:Language=C#", -1)
+	g.Expect(len(matches)).To(gomega.Equal(1))
+	g.Expect(matches[0][1]).To(gomega.Equal("tag"))
+	g.Expect(matches[0][2]).To(gomega.Equal("Language=C#"))
+}
