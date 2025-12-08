@@ -68,6 +68,9 @@
         - get
         - post
         - put
+    - name: configmaps
+      verbs:
+        - get
     - name: dependencies
       verbs:
         - delete
@@ -313,6 +316,9 @@
         - get
         - post
         - put
+    - name: configmaps
+      verbs:
+        - get
     - name: dependencies
       verbs:
         - delete
@@ -507,6 +513,9 @@
     - name: businessservices
       verbs:
         - get
+    - name: configmaps
+      verbs:
+        - get
     - name: dependencies
       verbs:
         - delete
@@ -647,6 +656,9 @@
       verbs:
         - get
     - name: businessservices
+      verbs:
+        - get
+    - name: configmaps
       verbs:
         - get
     - name: dependencies

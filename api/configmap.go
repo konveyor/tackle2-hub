@@ -31,7 +31,7 @@ type ConfigMapHandler struct {
 // AddRoutes add routes.
 func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("ConfigMaps"))
+	routeGroup.Use(Required("configmaps"))
 	routeGroup.GET(ConfigMapsRoot, h.List)
 	routeGroup.GET(ConfigMapsRoot+"/", h.List)
 	routeGroup.GET(ConfigMapRoot, h.Get)
