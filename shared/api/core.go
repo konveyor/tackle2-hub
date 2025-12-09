@@ -2,8 +2,6 @@ package api
 
 import (
 	"time"
-
-	core "k8s.io/api/core/v1"
 )
 
 // Setting REST Resource
@@ -40,19 +38,19 @@ type Bucket struct {
 
 // Addon REST resource.
 type Addon struct {
-	Name       string         `json:"name"`
-	Container  core.Container `json:"container"`
-	Extensions []Extension    `json:"extensions,omitempty"`
-	Metadata   any            `json:"metadata,omitempty"`
+	Name       string      `json:"name"`
+	Container  Map         `json:"container"`
+	Extensions []Extension `json:"extensions,omitempty"`
+	Metadata   any         `json:"metadata,omitempty"`
 }
 
 // Extension REST resource.
 type Extension struct {
-	Name         string         `json:"name"`
-	Addon        string         `json:"addon"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Container    core.Container `json:"container"`
-	Metadata     any            `json:"metadata,omitempty"`
+	Name         string   `json:"name"`
+	Addon        string   `json:"addon"`
+	Capabilities []string `json:"capabilities,omitempty"`
+	Container    Map      `json:"container"`
+	Metadata     any      `json:"metadata,omitempty"`
 }
 
 // Identity REST resource.

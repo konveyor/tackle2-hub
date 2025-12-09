@@ -12,15 +12,13 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 )
 
 var (
 	NewCommand func(string) *command.Command
-	Settings   = &settings.Settings
-	Log        = logr.New("ssh", Settings.Log.SSH)
+	Log        = logr.New("ssh", 0)
 	Home       = ""
 	agent      = Agent{}
 )

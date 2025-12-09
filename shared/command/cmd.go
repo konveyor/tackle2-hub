@@ -12,12 +12,10 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
 var (
-	Settings = &settings.Settings
-	Log      = logr.New("command", Settings.Log.Command)
+	Log = logr.New("command", 0)
 )
 
 // New returns a command.

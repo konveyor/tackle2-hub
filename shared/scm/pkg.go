@@ -9,14 +9,12 @@ import (
 	"hash/fnv"
 
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 var (
-	Settings   = &settings.Settings
 	NewCommand func(string) *command.Command
-	Log        = logr.New("SCM", Settings.Log.SCM)
+	Log        = logr.New("SCM", 0)
 )
 
 func init() {

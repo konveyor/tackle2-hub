@@ -11,8 +11,8 @@ import (
 	logapi "github.com/go-logr/logr"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/task"
 	"golang.org/x/sys/unix"
 )
@@ -36,11 +36,6 @@ var Addon *Adapter
 
 func init() {
 	unix.Umask(0)
-	err := Settings.Addon.Load()
-	if err != nil {
-		panic(err)
-	}
-
 	Addon = newAdapter()
 }
 
