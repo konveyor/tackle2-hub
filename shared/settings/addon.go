@@ -11,12 +11,16 @@ const (
 	EnvHubToken     = "TOKEN"
 	EnvTask         = "TASK"
 	EnvAddonHomeDir = "ADDON_HOME"
+	EnvSharedPath   = "SHARED_PATH"
+	EnvCachePath    = "CACHE_PATH"
 )
 
 // Addon settings.
 type Addon struct {
 	// HomeDir working directory.
-	HomeDir string
+	HomeDir   string
+	SharedDir string
+	CacheDir  string
 	// Hub settings.
 	Hub struct {
 		// URL for the hub API.
@@ -33,6 +37,14 @@ func (r *Addon) Load() (err error) {
 	r.HomeDir, found = os.LookupEnv(EnvAddonHomeDir)
 	if !found {
 		r.HomeDir = "/addon"
+	}
+	r.SharedDir, found = os.LookupEnv(EnvSharedPath)
+	if !found {
+		r.SharedDir = "/shared"
+	}
+	r.CacheDir, found = os.LookupEnv(EnvCachePath)
+	if !found {
+		r.CacheDir = "/cache"
 	}
 	r.Hub.URL, found = os.LookupEnv(EnvHubBaseURL)
 	if !found {
