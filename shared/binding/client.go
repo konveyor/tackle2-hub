@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	qf "github.com/konveyor/tackle2-hub/shared/binding/filter"
@@ -104,7 +103,7 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -163,7 +162,7 @@ func (r *Client) Post(path string, object any) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		return
 	}
 	response, err := r.send(request)
@@ -214,7 +213,7 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -273,7 +272,7 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -325,7 +324,7 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -584,7 +583,7 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 			URL:    r.join(path),
 		}
 		mp := multipart.NewWriter(pw)
-		request.Header.Set(api.Accept, binding.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		go func() {
 			var err error
@@ -867,9 +866,9 @@ func (f *Field) encoding() (mt string) {
 	}
 	switch pathlib.Ext(f.Path) {
 	case ".json":
-		mt = binding.MIMEJSON
+		mt = api.MIMEJSON
 	case ".yaml":
-		mt = binding.MIMEYAML
+		mt = api.MIMEYAML
 	default:
 		mt = "application/octet-stream"
 	}

@@ -24,6 +24,8 @@ const (
 // MIME Types
 const (
 	MIMEOCTETSTREAM = "application/octet-stream"
+	MIMEJSON        = "application/json"
+	MIMEYAML        = "application/x-yaml"
 )
 
 // Header Values

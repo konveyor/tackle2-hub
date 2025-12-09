@@ -3,7 +3,6 @@ package binding
 import (
 	"errors"
 
-	"github.com/gin-gonic/gin/binding"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -314,9 +313,9 @@ type Analysis struct {
 func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
 	switch encoding {
 	case "":
-		encoding = binding.MIMEJSON
-	case binding.MIMEJSON,
-		binding.MIMEYAML:
+		encoding = api.MIMEJSON
+	case api.MIMEJSON,
+		api.MIMEYAML:
 	default:
 		err = liberr.New(
 			"Encoding: %s not supported",
