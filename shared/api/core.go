@@ -36,23 +36,6 @@ type Bucket struct {
 	Expiration *time.Time `json:"expiration,omitempty"`
 }
 
-// Addon REST resource.
-type Addon struct {
-	Name       string      `json:"name"`
-	Container  Map         `json:"container"`
-	Extensions []Extension `json:"extensions,omitempty"`
-	Metadata   any         `json:"metadata,omitempty"`
-}
-
-// Extension REST resource.
-type Extension struct {
-	Name         string   `json:"name"`
-	Addon        string   `json:"addon"`
-	Capabilities []string `json:"capabilities,omitempty"`
-	Container    Map      `json:"container"`
-	Metadata     any      `json:"metadata,omitempty"`
-}
-
 // Identity REST resource.
 type Identity struct {
 	Resource    `yaml:",inline"`
