@@ -1,6 +1,10 @@
 package settings
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/konveyor/tackle2-hub/shared/env"
+)
 
 const (
 	EnvHubBaseURL   = "HUB_BASE_URL"
@@ -29,12 +33,12 @@ type Addon struct {
 }
 
 func (r *Addon) Load() (err error) {
-	r.HomeDir = GetString(EnvAddonHomeDir, "/addon")
-	r.SharedDir = GetString(EnvSharedPath, "/shared")
-	r.CacheDir = GetString(EnvCachePath, "/cache")
-	r.Hub.URL = GetString(EnvHubBaseURL, "http://localhost:8080")
-	r.Hub.Token = GetString(EnvHubToken, "")
-	r.Task = GetInt(EnvTask, 0)
+	r.HomeDir = env.GetString(EnvAddonHomeDir, "/addon")
+	r.SharedDir = env.GetString(EnvSharedPath, "/shared")
+	r.CacheDir = env.GetString(EnvCachePath, "/cache")
+	r.Hub.URL = env.GetString(EnvHubBaseURL, "http://localhost:8080")
+	r.Hub.Token = env.GetString(EnvHubToken, "")
+	r.Task = env.GetInt(EnvTask, 0)
 	_, err = url.Parse(r.Hub.URL)
 	return
 }
