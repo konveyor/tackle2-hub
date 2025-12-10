@@ -7,6 +7,14 @@ var (
 	Log   = adapter.Log
 )
 
+// Environment.
+const (
+	EnvSharedDir = adapter.EnvSharedDir
+	EnvCacheDir  = adapter.EnvCacheDir
+	EnvToken     = adapter.EnvToken
+	EnvTask      = adapter.EnvTask
+)
+
 // Client
 type Client = adapter.Client
 type Params = adapter.Params
