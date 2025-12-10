@@ -9,6 +9,7 @@ require (
 	github.com/jortel/go-utils v0.1.5
 	github.com/onsi/gomega v1.31.1
 	golang.org/x/sys v0.23.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
