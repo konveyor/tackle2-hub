@@ -1,6 +1,9 @@
 package addon
 
-import "github.com/konveyor/tackle2-hub/shared/addon/adapter"
+import (
+	"github.com/konveyor/tackle2-hub/shared/addon/adapter"
+	"github.com/konveyor/tackle2-hub/shared/settings"
+)
 
 var (
 	Addon = adapter.Addon
@@ -9,10 +12,10 @@ var (
 
 // Environment.
 const (
-	EnvSharedDir = adapter.EnvSharedDir
-	EnvCacheDir  = adapter.EnvCacheDir
-	EnvToken     = adapter.EnvToken
-	EnvTask      = adapter.EnvTask
+	EnvSharedDir = settings.EnvSharedPath
+	EnvCacheDir  = settings.EnvCachePath
+	EnvToken     = settings.EnvHubToken
+	EnvTask      = settings.EnvTask
 )
 
 // Client
