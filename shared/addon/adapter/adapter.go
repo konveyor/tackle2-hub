@@ -23,14 +23,6 @@ var (
 	Log      = logr.New("addon", 0)
 )
 
-// Environment.
-const (
-	EnvSharedDir = settings.EnvSharedPath
-	EnvCacheDir  = settings.EnvCachePath
-	EnvToken     = settings.EnvHubToken
-	EnvTask      = settings.EnvTask
-)
-
 // Addon An addon adapter configured for a task execution.
 var Addon *Adapter
 
