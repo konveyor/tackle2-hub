@@ -154,8 +154,8 @@ func (h *Adapter) Run(addon func() error) {
 
 // newAdapter builds a new Addon Adapter object.
 func newAdapter() (adapter *Adapter) {
-	richClient := binding.New(Settings.Addon.Hub.URL)
-	richClient.Client.Login.Token = Settings.Addon.Hub.Token
+	richClient := binding.New(Settings.Hub.URL)
+	richClient.Client.Login.Token = Settings.Hub.Token
 	adapter = &Adapter{
 		client: richClient.Client,
 		Task: Task{
