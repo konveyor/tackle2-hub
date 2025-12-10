@@ -1,5 +1,16 @@
 package api
 
+// Manifest markers.
+// The GS=\x1D (group separator).
+const (
+	BeginMainMarker     = "\x1DBEGIN-MAIN\x1D"
+	EndMainMarker       = "\x1DEND-MAIN\x1D"
+	BeginInsightsMarker = "\x1DBEGIN-INSIGHTS\x1D"
+	EndInsightsMarker   = "\x1DEND-INSIGHTS\x1D"
+	BeginDepsMarker     = "\x1DBEGIN-DEPS\x1D"
+	EndDepsMarker       = "\x1DEND-DEPS\x1D"
+)
+
 // Analysis REST resource.
 type Analysis struct {
 	Resource     `yaml:",inline"`
