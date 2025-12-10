@@ -2,7 +2,7 @@
 Tackle hub/addon integration.
 */
 
-package addon
+package adapter
 
 import (
 	"fmt"
@@ -45,12 +45,12 @@ type Params = binding.Params
 type Param = binding.Param
 type Path = binding.Path
 
-// Error
-type ResetError = binding.RestError
+// Errors
+type RestError = binding.RestError
 type Conflict = binding.Conflict
 type NotFound = binding.NotFound
 
-// Handler
+// Handlers
 type Application = binding.Application
 type Bucket = binding.Bucket
 type BucketContent = binding.BucketContent
