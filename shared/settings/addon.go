@@ -1,10 +1,6 @@
 package settings
 
-import (
-	"net/url"
-	"os"
-	"strconv"
-)
+import "net/url"
 
 const (
 	EnvHubBaseURL   = "HUB_BASE_URL"
@@ -33,31 +29,12 @@ type Addon struct {
 }
 
 func (r *Addon) Load() (err error) {
-	var found bool
-	r.HomeDir, found = os.LookupEnv(EnvAddonHomeDir)
-	if !found {
-		r.HomeDir = "/addon"
-	}
-	r.SharedDir, found = os.LookupEnv(EnvSharedPath)
-	if !found {
-		r.SharedDir = "/shared"
-	}
-	r.CacheDir, found = os.LookupEnv(EnvCachePath)
-	if !found {
-		r.CacheDir = "/cache"
-	}
-	r.Hub.URL, found = os.LookupEnv(EnvHubBaseURL)
-	if !found {
-		r.Hub.URL = "http://localhost:8080"
-	}
+	r.HomeDir = GetString(EnvAddonHomeDir, "/addon")
+	r.SharedDir = GetString(EnvSharedPath, "/shared")
+	r.CacheDir = GetString(EnvCachePath, "/cache")
+	r.Hub.URL = GetString(EnvHubBaseURL, "http://localhost:8080")
+	r.Hub.Token = GetString(EnvHubToken, "")
+	r.Task = GetInt(EnvTask, 0)
 	_, err = url.Parse(r.Hub.URL)
-	if err != nil {
-		panic(err)
-	}
-	r.Hub.Token, found = os.LookupEnv(EnvHubToken)
-	if s, found := os.LookupEnv(EnvTask); found {
-		r.Task, _ = strconv.Atoi(s)
-	}
-
 	return
 }
