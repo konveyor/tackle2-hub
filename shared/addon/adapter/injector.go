@@ -1,4 +1,4 @@
-package addon
+package adapter
 
 import (
 	"encoding/json"

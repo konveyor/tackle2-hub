@@ -1,4 +1,4 @@
-package addon
+package adapter
 
 // SoftError A "soft" anticipated error.
 // Deprecated:
