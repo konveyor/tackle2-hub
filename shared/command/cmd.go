@@ -15,13 +15,15 @@ import (
 )
 
 var (
+	New func(string) *Command
 	Log = logr.New("command", 0)
 )
 
-// New returns a command.
-func New(path string) (cmd *Command) {
-	cmd = &Command{Path: path}
-	return
+func init() {
+	New = func(path string) (cmd *Command) {
+		cmd = &Command{Path: path}
+		return
+	}
 }
 
 // Command execution.
