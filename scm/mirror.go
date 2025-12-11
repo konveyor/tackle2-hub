@@ -8,8 +8,8 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/secret"
+	"github.com/konveyor/tackle2-hub/shared/nas"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 )
