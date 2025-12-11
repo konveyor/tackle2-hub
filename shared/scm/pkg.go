@@ -65,9 +65,9 @@ type Remote struct {
 	Insecure bool
 }
 
-// digest calculates the digest of the remote based
+// Digest calculates the digest of the remote based
 // on the remote kind and URL.
-func (r *Remote) digest() (d string) {
+func (r *Remote) Digest() (d string) {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(r.Kind))
 	_, _ = h.Write([]byte(r.URL))

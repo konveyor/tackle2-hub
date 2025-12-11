@@ -1,18 +1,37 @@
 package scm
 
 import (
-	"errors"
-	"fmt"
-	"hash/fnv"
 	"os"
 	"path/filepath"
 
-	liberr "github.com/jortel/go-utils/error"
+	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+type SCM = scm.SCM
+type Remote = scm.Remote
+type Identity = scm.Identity
+type Proxy = scm.Proxy
+type ProxyMap = scm.ProxyMap
+
+type Git = scm.Git
+type Subversion = scm.Subversion
+
+var (
+	Home     = ""
+	Settings = &settings.Settings
+)
+
+func init() {
+	Home, _ = os.Getwd()
+	scm.NewCommand = command.New
+	scm.Log = logr.New("scm", Settings.Log.SCM)
+}
 
 // New SCM repository factory.
 func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
@@ -93,65 +112,6 @@ func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
 			}
 		}
 		pm[p.Kind] = proxy
-	}
-	return
-}
-
-// Base SCM.
-type Base struct {
-	Home    string
-	Proxies map[string]Proxy
-	Remote  Remote
-	Path    string
-	//
-	id string
-}
-
-// Id returns the unique id.
-// Based on the remote digest and the (LOCAL) path.
-func (b *Base) Id() string {
-	if b.id == "" {
-		h := fnv.New64a()
-		_, _ = h.Write([]byte(b.Remote.digest()))
-		_, _ = h.Write([]byte(b.Path))
-		n := h.Sum64()
-		b.id = fmt.Sprintf("%x", n)
-	}
-	return b.id
-}
-
-// Clean deletes created files.
-func (b *Base) Clean() (err error) {
-	err = nas.RmDir(b.Home)
-	return
-}
-
-// mustEmptyDir ensures the path either:
-// - does not exist.
-// - is an empty directory.
-func (b *Base) mustEmptyDir(p string) (err error) {
-	defer func() {
-		if errors.Is(err, os.ErrNotExist) {
-			err = nil
-		}
-	}()
-	st, err := os.Stat(p)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if !st.IsDir() {
-		err = fmt.Errorf("%s: must be a directory", p)
-		return
-	}
-	entries, err := os.ReadDir(p)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if len(entries) > 0 {
-		err = fmt.Errorf("%s: must be empty", p)
-		return
 	}
 	return
 }
