@@ -2,6 +2,7 @@ package addon
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/addon/adapter"
+	addonCmd "github.com/konveyor/tackle2-hub/shared/addon/command"
 	"github.com/konveyor/tackle2-hub/shared/addon/sink"
 	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/konveyor/tackle2-hub/shared/scm"
@@ -15,6 +16,7 @@ var (
 )
 
 func init() {
+	command.New = addonCmd.New
 	command.Log = command.Log.WithSink(sink.New(true))
 	scm.Log = scm.Log.WithSink(sink.New(true))
 	ssh.Log = ssh.Log.WithSink(sink.New(true))
