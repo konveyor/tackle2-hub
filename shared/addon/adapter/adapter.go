@@ -28,7 +28,7 @@ var Addon *Adapter
 
 func init() {
 	unix.Umask(0)
-	Addon = newAdapter()
+	Addon = New()
 }
 
 // Client
@@ -96,6 +96,8 @@ type Adapter struct {
 	Generator Generator
 	// Archetype
 	Archetype Archetype
+	// SCM
+	SCM SCM
 	// client A REST client.
 	client *Client
 }
@@ -144,8 +146,8 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-// newAdapter builds a new Addon Adapter object.
-func newAdapter() (adapter *Adapter) {
+// New builds a new Addon Adapter object.
+func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Login.Token = Settings.Hub.Token
 	adapter = &Adapter{
@@ -168,6 +170,7 @@ func newAdapter() (adapter *Adapter) {
 		RuleSet:     richClient.RuleSet,
 		Generator:   richClient.Generator,
 		Archetype:   richClient.Archetype,
+		SCM:         SCM{},
 	}
 
 	Log.Info("Addon (adapter) created.")

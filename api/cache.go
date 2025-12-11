@@ -69,7 +69,7 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	path := pathlib.Join(
-		Settings.Cache.Path,
+		Settings.Addon.CacheDir,
 		dir)
 	_, err := os.Stat(path)
 	if err != nil {
@@ -93,13 +93,13 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 	cache = &Cache{}
 	cache.Path = pathlib.Join(
-		Settings.Cache.Path,
+		Settings.Addon.CacheDir,
 		dir)
-	_, err = os.Stat(Settings.Cache.Path)
+	_, err = os.Stat(Settings.Addon.CacheDir)
 	if err != nil {
 		return
 	}
-	cmd := exec.Command("/usr/bin/df", "-h", Settings.Cache.Path)
+	cmd := exec.Command("/usr/bin/df", "-h", Settings.Addon.CacheDir)
 	stdout, err := cmd.Output()
 	if err != nil {
 		err = liberr.Wrap(err)

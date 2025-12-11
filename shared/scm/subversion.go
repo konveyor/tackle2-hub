@@ -188,7 +188,7 @@ func (r *Subversion) initHome() (err error) {
 
 // svn returns an svn command.
 func (r *Subversion) svn() (cmd *command.Command) {
-	cmd = NewCommand("/usr/bin/svn")
+	cmd = command.New("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
 	if r.Remote.Insecure {

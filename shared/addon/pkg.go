@@ -2,7 +2,11 @@ package addon
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/addon/adapter"
+	"github.com/konveyor/tackle2-hub/shared/addon/sink"
+	"github.com/konveyor/tackle2-hub/shared/command"
+	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/konveyor/tackle2-hub/shared/settings"
+	"github.com/konveyor/tackle2-hub/shared/ssh"
 )
 
 var (
@@ -10,10 +14,16 @@ var (
 	Log   = adapter.Log
 )
 
+func init() {
+	command.Log = command.Log.WithSink(sink.New(true))
+	scm.Log = scm.Log.WithSink(sink.New(true))
+	ssh.Log = ssh.Log.WithSink(sink.New(true))
+}
+
 // Environment.
 const (
-	EnvSharedDir = settings.EnvSharedPath
-	EnvCacheDir  = settings.EnvCachePath
+	EnvSharedDir = settings.EnvSharedDir
+	EnvCacheDir  = settings.EnvCacheDir
 	EnvToken     = settings.EnvHubToken
 	EnvTask      = settings.EnvTask
 )

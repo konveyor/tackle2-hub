@@ -23,6 +23,9 @@ import (
 	"github.com/konveyor/tackle2-hub/reaper"
 	"github.com/konveyor/tackle2-hub/seed"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/command"
+	"github.com/konveyor/tackle2-hub/shared/scm"
+	"github.com/konveyor/tackle2-hub/shared/ssh"
 	"github.com/konveyor/tackle2-hub/task"
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm"
@@ -35,6 +38,12 @@ var (
 	Settings = &settings.Settings
 	Log      = logr.New("hub", 0)
 )
+
+func init() {
+	command.Log = logr.New("command", Settings.Log.Command)
+	scm.Log = logr.New("scm", Settings.Log.SCM)
+	ssh.Log = logr.New("ssh", Settings.Log.SSH)
+}
 
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {

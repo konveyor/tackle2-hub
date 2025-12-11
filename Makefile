@@ -11,7 +11,6 @@ PKG = ./api/... \
       ./auth/... \
       ./controller/... \
       ./cmd/... \
-      ./command/... \
       ./database/... \
       ./importer/... \
       ./jsd/... \
@@ -25,8 +24,6 @@ PKG = ./api/... \
       ./secret/... \
       ./seed/... \
       ./settings/... \
-      ./ssh/... \
-      ./tar/... \
       ./task/...  \
       ./test/...  \
       ./tracker/...

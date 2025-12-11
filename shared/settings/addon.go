@@ -11,16 +11,20 @@ const (
 	EnvHubToken     = "TOKEN"
 	EnvTask         = "TASK"
 	EnvAddonHomeDir = "ADDON_HOME"
-	EnvSharedPath   = "SHARED_PATH"
-	EnvCachePath    = "CACHE_PATH"
+	EnvSharedDir    = "SHARED_PATH"
+	EnvCacheDir     = "CACHE_PATH"
 )
 
 // Addon settings.
 type Addon struct {
 	// HomeDir working directory.
-	HomeDir   string
+	HomeDir string
+	// SharedDir shared mount directory.
 	SharedDir string
-	CacheDir  string
+	// CacheDir cache mount directory.
+	CacheDir string
+	// Task current task id.
+	Task int
 	// Hub settings.
 	Hub struct {
 		// URL for the hub API.
@@ -28,16 +32,14 @@ type Addon struct {
 		// Token for the hub API.
 		Token string
 	}
-	//
-	Task int
 }
 
 func (r *Addon) Load() (err error) {
-	r.HomeDir = env.GetString(EnvAddonHomeDir, "/addon")
-	r.SharedDir = env.GetString(EnvSharedPath, "/shared")
-	r.CacheDir = env.GetString(EnvCachePath, "/cache")
-	r.Hub.URL = env.GetString(EnvHubBaseURL, "http://localhost:8080")
-	r.Hub.Token = env.GetString(EnvHubToken, "")
+	r.HomeDir = env.Get(EnvAddonHomeDir, "/addon")
+	r.SharedDir = env.Get(EnvSharedDir, "/shared")
+	r.CacheDir = env.Get(EnvCacheDir, "/cache")
+	r.Hub.URL = env.Get(EnvHubBaseURL, "http://localhost:8080")
+	r.Hub.Token = env.Get(EnvHubToken, "")
 	r.Task = env.GetInt(EnvTask, 0)
 	_, err = url.Parse(r.Hub.URL)
 	return

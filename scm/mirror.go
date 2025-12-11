@@ -10,6 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/secret"
+	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +19,7 @@ var (
 )
 
 // GetMirror returns a mirror for the remote.
-func GetMirror(db *gorm.DB, remote Remote) (mirror *Mirror) {
+func GetMirror(db *gorm.DB, remote scm.Remote) (mirror *Mirror) {
 	mirror = mirrorMap.Find(db, remote)
 	return
 }
@@ -30,7 +31,7 @@ type MirrorMap struct {
 }
 
 // Find returns a mirror for the remote.
-func (m *MirrorMap) Find(db *gorm.DB, remote Remote) (mirror *Mirror) {
+func (m *MirrorMap) Find(db *gorm.DB, remote scm.Remote) (mirror *Mirror) {
 	mirror = func() (mirror *Mirror) {
 		m.mutex.Lock()
 		defer m.mutex.Unlock()
@@ -53,7 +54,7 @@ func (m *MirrorMap) Find(db *gorm.DB, remote Remote) (mirror *Mirror) {
 // Mirror provides a (mirror) repository.
 type Mirror struct {
 	DB     *gorm.DB
-	Remote Remote
+	Remote scm.Remote
 	mutex  sync.Mutex
 }
 
@@ -94,11 +95,11 @@ func (m *Mirror) update() (err error) {
 	if err != nil {
 		return
 	}
-	remote := Remote{
+	remote := scm.Remote{
 		URL:      m.Remote.URL,
 		Identity: identity,
 	}
-	var r SCM
+	var r scm.SCM
 	r, err = New(m.DB, m.home(), remote)
 	if err != nil {
 		return
@@ -133,7 +134,7 @@ func (m *Mirror) update() (err error) {
 }
 
 // identity returns the default source identity.
-func (m *Mirror) identity() (id *Identity, err error) {
+func (m *Mirror) identity() (id *scm.Identity, err error) {
 	md := &model.Identity{}
 	db := m.DB
 	db = db.Where("kind", "source")
@@ -152,7 +153,7 @@ func (m *Mirror) identity() (id *Identity, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	id = &Identity{}
+	id = &scm.Identity{}
 	id.ID = md.ID
 	id.Name = md.Name
 	id.User = md.User

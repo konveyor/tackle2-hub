@@ -1,25 +1,26 @@
-package scm
+package adapter
 
 import (
 	"os"
 	"path"
 
-	"github.com/konveyor/tackle2-hub/shared/addon/adapter"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 )
 
 var (
-	Dir   = ""
-	addon = adapter.Addon
+	Dir = ""
 )
 
 func init() {
 	Dir, _ = os.Getwd()
 }
 
+type SCM struct {
+}
+
 // New SCM repository factory.
-func New(destDir string, repository api.Repository, identity *api.Identity) (r scm.SCM, err error) {
+func (_ *SCM) New(destDir string, repository api.Repository, identity *api.Identity) (r scm.SCM, err error) {
 	remote := scm.Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
@@ -37,7 +38,7 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 	}
 	switch remote.Kind {
 	case "subversion":
-		remote.Insecure, err = addon.Setting.Bool("svn.insecure.enabled")
+		remote.Insecure, err = Addon.Setting.Bool("svn.insecure.enabled")
 		if err != nil {
 			return
 		}
@@ -51,7 +52,7 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 		}
 		r = svn
 	default:
-		remote.Insecure, err = addon.Setting.Bool("git.insecure.enabled")
+		remote.Insecure, err = Addon.Setting.Bool("git.insecure.enabled")
 		if err != nil {
 			return
 		}
@@ -72,7 +73,7 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 // proxyMap returns a map of proxies.
 func proxyMap() (pm scm.ProxyMap, err error) {
 	pm = make(scm.ProxyMap)
-	list, err := addon.Proxy.List()
+	list, err := Addon.Proxy.List()
 	if err != nil {
 		return
 	}
@@ -89,7 +90,7 @@ func proxyMap() (pm scm.ProxyMap, err error) {
 		}
 		if p.Identity != nil {
 			var identity *api.Identity
-			identity, err = addon.Identity.Get(p.Identity.ID)
+			identity, err = Addon.Identity.Get(p.Identity.ID)
 			if err != nil {
 				return
 			}
