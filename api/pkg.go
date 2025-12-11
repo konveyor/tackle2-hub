@@ -12,10 +12,10 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 var (
@@ -25,14 +25,14 @@ var (
 
 // Params
 const (
-	ID        = "id"
-	ID2       = "id2"
-	Key       = "key"
-	Name      = "name"
+	ID        = api.ID
+	ID2       = api.ID2
+	Key       = api.Key
+	Name      = api.Name
 	Filter    = filter.QueryParam
-	Wildcard  = "wildcard"
-	FileField = "file"
-	Decrypted = "decrypted"
+	Wildcard  = api.Wildcard
+	FileField = api.FileField
+	Decrypted = api.Decrypted
 )
 
 // Scopes
@@ -42,27 +42,25 @@ const (
 
 // Headers
 const (
-	Accept        = "Accept"
-	Authorization = "Authorization"
-	ContentLength = "Content-Length"
-	ContentType   = "Content-Type"
-	Directory     = "X-Directory"
-	Total         = "X-Total"
+	Accept        = api.Accept
+	Authorization = api.Authorization
+	ContentType   = api.ContentType
+	Directory     = api.Directory
+	Total         = api.Total
 )
 
 // MIME Types.
 const (
-	MIMEOCTETSTREAM = "application/octet-stream"
-	TAR             = "application/x-tar"
+	MIMEOCTETSTREAM = api.MIMEOCTETSTREAM
+	TAR             = api.TAR
 )
 
 // BindMIMEs supported binding MIME types.
-var BindMIMEs = []string{binding.MIMEJSON, binding.MIMEYAML}
+var BindMIMEs = []string{api.MIMEJSON, api.MIMEYAML}
 
 // Header Values
 const (
-	DirectoryArchive = "archive"
-	DirectoryExpand  = "expand"
+	DirectoryExpand = api.DirectoryExpand
 )
 
 // All builds all handlers.

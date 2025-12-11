@@ -13,10 +13,12 @@ const (
 
 // Headers
 const (
-	Accept        = "Accept"
-	Authorization = "Authorization"
-	ContentType   = "Content-Type"
-	Directory     = "X-Directory"
+	Accept          = "Accept"
+	Authorization   = "Authorization"
+	ContentType     = "Content-Type"
+	Directory       = "X-Directory"
+	DirectoryExpand = "expand"
+	Total           = "X-Total"
 )
 
 // MIME Types
@@ -24,11 +26,7 @@ const (
 	MIMEOCTETSTREAM = "application/octet-stream"
 	MIMEJSON        = "application/json"
 	MIMEYAML        = "application/x-yaml"
-)
-
-// Header Values
-const (
-	DirectoryExpand = "expand"
+	TAR             = "application/x-tar"
 )
 
 // Schema Params

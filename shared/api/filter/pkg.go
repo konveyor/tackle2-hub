@@ -11,3 +11,7 @@ const (
 	LT    = '<'
 	GT    = '>'
 )
+
+const (
+	Filter = "filter"
+)

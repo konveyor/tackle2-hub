@@ -8,7 +8,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -21,6 +20,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/model/reflect"
 	"github.com/konveyor/tackle2-hub/secret"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -291,12 +291,7 @@ func (h *BaseHandler) Attachment(ctx *gin.Context, name string) {
 }
 
 // REST resource.
-type Resource struct {
-	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
-	CreateUser string    `json:"createUser" yaml:"createUser,omitempty"`
-	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
-	CreateTime time.Time `json:"createTime" yaml:"createTime,omitempty"`
-}
+type Resource api.Resource
 
 // With updates the resource with the model.
 func (r *Resource) With(m *model.Model) {
