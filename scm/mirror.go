@@ -170,6 +170,6 @@ func (m *Mirror) home() (p string) {
 // digest calculates the digest of the mirror based
 // on the remote kind and URL.
 func (m *Mirror) digest() (d string) {
-	d = m.Remote.digest()
+	d = m.Remote.Digest()
 	return
 }

@@ -3,7 +3,7 @@ package ticket
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	TrackerSamples "github.com/konveyor/tackle2-hub/test/api/tracker"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )

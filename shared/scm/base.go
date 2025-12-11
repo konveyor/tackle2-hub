@@ -25,7 +25,7 @@ type Base struct {
 func (b *Base) Id() string {
 	if b.id == "" {
 		h := fnv.New64a()
-		_, _ = h.Write([]byte(b.Remote.digest()))
+		_, _ = h.Write([]byte(b.Remote.Digest()))
 		_, _ = h.Write([]byte(b.Path))
 		n := h.Sum64()
 		b.id = fmt.Sprintf("%x", n)

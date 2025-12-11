@@ -1,7 +1,7 @@
 package dependency
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Struct to hold dependency sample data.

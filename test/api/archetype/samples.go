@@ -1,7 +1,7 @@
 package archetype
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid resources for tests and reuse.
