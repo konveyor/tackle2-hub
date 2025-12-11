@@ -13,7 +13,7 @@ var (
 
 // New returns a command.
 func New(p string) (cmd *command.Command) {
-	cmd = command.New(p)
+	cmd = &command.Command{Path: p}
 	reporter := &Reporter{}
 	writer := &Writer{}
 	writer.reporter = reporter
