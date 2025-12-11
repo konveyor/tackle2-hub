@@ -188,7 +188,7 @@ func (r *Git) initHome() (err error) {
 
 // git returns git command.
 func (r *Git) git() (cmd *command.Command) {
-	cmd = NewCommand("/usr/bin/git")
+	cmd = command.New("/usr/bin/git")
 	cmd.Env = append(
 		os.Environ(),
 		"GIT_TERMINAL_PROMPT=0",

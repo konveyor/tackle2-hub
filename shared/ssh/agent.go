@@ -17,15 +17,13 @@ import (
 )
 
 var (
-	NewCommand func(string) *command.Command
-	Log        = logr.New("ssh", 0)
-	Home       = ""
-	agent      = Agent{}
+	Log   = logr.New("ssh", 0)
+	Home  = ""
+	agent = Agent{}
 )
 
 func init() {
 	Home, _ = os.Getwd()
-	NewCommand = command.New
 	err := agent.Start()
 	if err != nil {
 		panic(err)
@@ -44,7 +42,7 @@ func (r *Agent) Start() (err error) {
 	}
 	pid := os.Getpid()
 	socket := fmt.Sprintf("/tmp/agent.%d", pid)
-	cmd := NewCommand("/usr/bin/ssh-agent")
+	cmd := command.New("/usr/bin/ssh-agent")
 	cmd.Env = append(os.Environ(), "HOME="+r.home())
 	cmd.Options.Add("-a", socket)
 	err = cmd.Run()
@@ -71,7 +69,7 @@ func (r *Agent) Add(key Key) (err error) {
 	}
 	ctx, fn := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer fn()
-	cmd := NewCommand("/usr/bin/ssh-add")
+	cmd := command.New("/usr/bin/ssh-add")
 	cmd.Env = append(
 		os.Environ(),
 		"DISPLAY=:0",

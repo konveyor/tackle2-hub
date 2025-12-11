@@ -4,34 +4,25 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+var (
+	Home = ""
+)
+
+func init() {
+	Home, _ = os.Getwd()
+}
 
 type SCM = scm.SCM
 type Remote = scm.Remote
 type Identity = scm.Identity
 type Proxy = scm.Proxy
 type ProxyMap = scm.ProxyMap
-
-type Git = scm.Git
-type Subversion = scm.Subversion
-
-var (
-	Home     = ""
-	Settings = &settings.Settings
-)
-
-func init() {
-	Home, _ = os.Getwd()
-	scm.NewCommand = command.New
-	scm.Log = logr.New("scm", Settings.Log.SCM)
-}
 
 // New SCM repository factory.
 func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
@@ -46,7 +37,7 @@ func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
 		if err != nil {
 			return
 		}
-		svn := &Subversion{}
+		svn := &scm.Subversion{}
 		svn.Remote = remote
 		svn.Path = destDir
 		svn.Home = filepath.Join(Home, ".svn", svn.Id())
@@ -65,7 +56,7 @@ func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
 		if err != nil {
 			return
 		}
-		git := &Git{}
+		git := &scm.Git{}
 		git.Remote = remote
 		git.Path = destDir
 		git.Home = filepath.Join(Home, ".git", git.Id())

@@ -15,7 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/scm"
-	"github.com/konveyor/tackle2-hub/tar"
+	"github.com/konveyor/tackle2-hub/shared/tar"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

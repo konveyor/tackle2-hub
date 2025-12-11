@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/nas"
-	"github.com/konveyor/tackle2-hub/tar"
+	"github.com/konveyor/tackle2-hub/shared/tar"
 )
 
 // Routes

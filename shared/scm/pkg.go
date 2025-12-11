@@ -9,17 +9,11 @@ import (
 	"hash/fnv"
 
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 var (
-	NewCommand func(string) *command.Command
-	Log        = logr.New("SCM", 0)
+	Log = logr.New("SCM", 0)
 )
-
-func init() {
-	NewCommand = command.New
-}
 
 // SCM interface.
 type SCM interface {
