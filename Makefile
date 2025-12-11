@@ -18,7 +18,6 @@ PKG = ./api/... \
       ./metrics/... \
       ./migration/... \
       ./model/... \
-      ./nas/... \
       ./reaper/... \
       ./scm/... \
       ./secret/... \
