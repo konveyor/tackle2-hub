@@ -11,14 +11,14 @@ type AnalysisProfile struct {
 
 // Create a AnalysisProfile.
 func (h *AnalysisProfile) Create(r *api.AnalysisProfile) (err error) {
-	err = h.client.Post(api.AnalysisProfilesRoot, &r)
+	err = h.client.Post(api.AnalysisProfilesRoute, &r)
 	return
 }
 
 // Get a AnalysisProfile by ID.
 func (h *AnalysisProfile) Get(id uint) (r *api.AnalysisProfile, err error) {
 	r = &api.AnalysisProfile{}
-	path := Path(api.AnalysisProfileRoot).Inject(Params{api.ID: id})
+	path := Path(api.AnalysisProfileRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -26,19 +26,19 @@ func (h *AnalysisProfile) Get(id uint) (r *api.AnalysisProfile, err error) {
 // List AnalysisProfiles.
 func (h *AnalysisProfile) List() (list []api.AnalysisProfile, err error) {
 	list = []api.AnalysisProfile{}
-	err = h.client.Get(api.AnalysisProfilesRoot, &list)
+	err = h.client.Get(api.AnalysisProfilesRoute, &list)
 	return
 }
 
 // Update a AnalysisProfile.
 func (h *AnalysisProfile) Update(r *api.AnalysisProfile) (err error) {
-	path := Path(api.AnalysisProfileRoot).Inject(Params{api.ID: r.ID})
+	path := Path(api.AnalysisProfileRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a AnalysisProfile.
 func (h *AnalysisProfile) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.AnalysisProfileRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.AnalysisProfileRoute).Inject(Params{api.ID: id}))
 	return
 }

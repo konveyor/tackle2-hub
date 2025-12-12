@@ -13,14 +13,14 @@ type Bucket struct {
 
 // Create a Bucket.
 func (h *Bucket) Create(r *api.Bucket) (err error) {
-	err = h.client.Post(api.BucketsRoot, &r)
+	err = h.client.Post(api.BucketsRoute, &r)
 	return
 }
 
 // Get a bucket.
 func (h *Bucket) Get(id uint) (r *api.Bucket, err error) {
 	r = &api.Bucket{}
-	path := Path(api.BucketRoot).Inject(Params{api.ID: id})
+	path := Path(api.BucketRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -28,13 +28,13 @@ func (h *Bucket) Get(id uint) (r *api.Bucket, err error) {
 // List buckets.
 func (h *Bucket) List() (list []api.Bucket, err error) {
 	list = []api.Bucket{}
-	err = h.client.Get(api.BucketsRoot, &list)
+	err = h.client.Get(api.BucketsRoute, &list)
 	return
 }
 
 // Delete a bucket.
 func (h *Bucket) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.BucketRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.BucketRoute).Inject(Params{api.ID: id}))
 	return
 }
 
@@ -44,7 +44,7 @@ func (h *Bucket) Content(id uint) (b *BucketContent) {
 		api.Wildcard: "",
 		api.ID:       id,
 	}
-	path := Path(api.BucketRoot).Inject(params)
+	path := Path(api.BucketRoute).Inject(params)
 	b = &BucketContent{
 		root:   path,
 		client: h.client,

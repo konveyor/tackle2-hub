@@ -12,7 +12,7 @@ type Addon struct {
 // Get an Addon by name.
 func (h *Addon) Get(name string) (r *api.Addon, err error) {
 	r = &api.Addon{}
-	path := Path(api.AddonRoot).Inject(Params{api.Name: name})
+	path := Path(api.AddonRoute).Inject(Params{api.Name: name})
 	err = h.client.Get(path, r)
 	return
 }
@@ -20,6 +20,6 @@ func (h *Addon) Get(name string) (r *api.Addon, err error) {
 // List Addons.
 func (h *Addon) List() (list []api.Addon, err error) {
 	list = []api.Addon{}
-	err = h.client.Get(api.AddonsRoot, &list)
+	err = h.client.Get(api.AddonsRoute, &list)
 	return
 }

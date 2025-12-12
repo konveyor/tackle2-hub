@@ -884,11 +884,11 @@ func (f *Field) disposition() (d string) {
 // refreshToken refreshes the token.
 func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
 	if r.Login.Token == "" ||
-		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoot) {
+		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoute) {
 		return
 	}
 	login := &api.Login{Refresh: r.Login.Refresh}
-	err = r.Post(api.AuthRefreshRoot, login)
+	err = r.Post(api.AuthRefreshRoute, login)
 	if err == nil {
 		r.Login.Token = login.Token
 		refreshed = true

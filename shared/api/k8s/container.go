@@ -171,8 +171,8 @@ type SecurityContext struct {
 	WindowsOptions           *WindowsSecurityContextOptions `json:"windowsOptions,omitempty"`
 	RunAsUser                *int64                         `json:"runAsUser,omitempty"`
 	RunAsGroup               *int64                         `json:"runAsGroup,omitempty"`
-	RunAsNonRoot             *bool                          `json:"runAsNonRoot,omitempty"`
-	ReadOnlyRootFilesystem   *bool                          `json:"readOnlyRootFilesystem,omitempty"`
+	RunAsNonRoute            *bool                          `json:"runAsNonRoute,omitempty"`
+	ReadOnlyRouteFilesystem  *bool                          `json:"readOnlyRouteFilesystem,omitempty"`
 	AllowPrivilegeEscalation *bool                          `json:"allowPrivilegeEscalation,omitempty"`
 	ProcMount                *string                        `json:"procMount,omitempty"`
 	SeccompProfile           *SeccompProfile                `json:"seccompProfile,omitempty"`

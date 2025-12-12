@@ -12,14 +12,14 @@ type Dependency struct {
 
 // Create a Dependency.
 func (h *Dependency) Create(r *api.Dependency) (err error) {
-	err = h.client.Post(api.DependenciesRoot, &r)
+	err = h.client.Post(api.DependenciesRoute, &r)
 	return
 }
 
 // Get a Dependency by ID.
 func (h *Dependency) Get(id uint) (r *api.Dependency, err error) {
 	r = &api.Dependency{}
-	path := Path(api.DependencyRoot).Inject(Params{api.ID: id})
+	path := Path(api.DependencyRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -27,12 +27,12 @@ func (h *Dependency) Get(id uint) (r *api.Dependency, err error) {
 // List Dependencies.
 func (h *Dependency) List() (list []api.Dependency, err error) {
 	list = []api.Dependency{}
-	err = h.client.Get(api.DependenciesRoot, &list)
+	err = h.client.Get(api.DependenciesRoute, &list)
 	return
 }
 
 // Delete a Dependency.
 func (h *Dependency) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.DependencyRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.DependencyRoute).Inject(Params{api.ID: id}))
 	return
 }
