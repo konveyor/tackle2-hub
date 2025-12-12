@@ -48,298 +48,298 @@ const (
 
 // Routes - Addons
 const (
-	AddonsRoot = "/addons"
-	AddonRoot  = AddonsRoot + "/:" + Name
+	AddonsRoute = "/addons"
+	AddonRoute  = AddonsRoute + "/:" + Name
 )
 
 // Routes - Adoption Plans
 const (
-	AdoptionPlansRoot = "/reports/adoptionplan"
+	AdoptionPlansRoute = "/reports/adoptionplan"
 )
 
 // Routes - Analysis
 const (
-	AnalysesRoot          = "/analyses"
-	AnalysisRoot          = AnalysesRoot + "/:" + ID
-	AnalysisArchiveRoot   = AnalysisRoot + "/archive"
-	AnalysisInsightsRoot  = AnalysisRoot + "/insights"
-	AnalysisIncidentsRoot = AnalysesInsightRoot + "/incidents"
-	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
-	AnalysesInsightsRoot  = AnalysesRoot + "/insights"
-	AnalysesInsightRoot   = AnalysesInsightsRoot + "/:" + ID
-	AnalysesIncidentsRoot = AnalysesRoot + "/incidents"
-	AnalysesIncidentRoot  = AnalysesIncidentsRoot + "/:" + ID
+	AnalysesRoute          = "/analyses"
+	AnalysisRoute          = AnalysesRoute + "/:" + ID
+	AnalysisArchiveRoute   = AnalysisRoute + "/archive"
+	AnalysisInsightsRoute  = AnalysisRoute + "/insights"
+	AnalysisIncidentsRoute = AnalysesInsightRoute + "/incidents"
+	AnalysesDepsRoute      = AnalysesRoute + "/dependencies"
+	AnalysesInsightsRoute  = AnalysesRoute + "/insights"
+	AnalysesInsightRoute   = AnalysesInsightsRoute + "/:" + ID
+	AnalysesIncidentsRoute = AnalysesRoute + "/incidents"
+	AnalysesIncidentRoute  = AnalysesIncidentsRoute + "/:" + ID
 
-	AnalysesReportRoot             = AnalysesRoot + "/report"
-	AnalysisReportDepsRoot         = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot         = AnalysesReportRoot + "/rules"
-	AnalysisReportInsightsRoot     = AnalysesReportRoot + "/insights"
-	AnalysisReportAppsRoot         = AnalysesReportRoot + "/applications"
-	AnalysisReportInsightRoot      = AnalysisReportInsightsRoot + "/:" + ID
-	AnalysisReportInsightsAppsRoot = AnalysisReportInsightsRoot + "/applications"
-	AnalysisReportDepsAppsRoot     = AnalysisReportDepsRoot + "/applications"
-	AnalysisReportAppsInsightsRoot = AnalysisReportAppsRoot + "/:" + ID + "/insights"
-	AnalysisReportFileRoot         = AnalysisReportInsightRoot + "/files"
+	AnalysesReportRoute             = AnalysesRoute + "/report"
+	AnalysisReportDepsRoute         = AnalysesReportRoute + "/dependencies"
+	AnalysisReportRuleRoute         = AnalysesReportRoute + "/rules"
+	AnalysisReportInsightsRoute     = AnalysesReportRoute + "/insights"
+	AnalysisReportAppsRoute         = AnalysesReportRoute + "/applications"
+	AnalysisReportInsightRoute      = AnalysisReportInsightsRoute + "/:" + ID
+	AnalysisReportInsightsAppsRoute = AnalysisReportInsightsRoute + "/applications"
+	AnalysisReportDepsAppsRoute     = AnalysisReportDepsRoute + "/applications"
+	AnalysisReportAppsInsightsRoute = AnalysisReportAppsRoute + "/:" + ID + "/insights"
+	AnalysisReportFileRoute         = AnalysisReportInsightRoute + "/files"
 
-	AppAnalysesRoot         = ApplicationRoot + "/analyses"
-	AppAnalysisRoot         = ApplicationRoot + "/analysis"
-	AppAnalysisReportRoot   = AppAnalysisRoot + "/report"
-	AppAnalysisDepsRoot     = AppAnalysisRoot + "/dependencies"
-	AppAnalysisInsightsRoot = AppAnalysisRoot + "/insights"
+	AppAnalysesRoute         = ApplicationRoute + "/analyses"
+	AppAnalysisRoute         = ApplicationRoute + "/analysis"
+	AppAnalysisReportRoute   = AppAnalysisRoute + "/report"
+	AppAnalysisDepsRoute     = AppAnalysisRoute + "/dependencies"
+	AppAnalysisInsightsRoute = AppAnalysisRoute + "/insights"
 )
 
 // Routes - Analysis Profiles
 const (
-	AnalysisProfilesRoot = "/analysis/profiles"
-	AnalysisProfileRoot  = AnalysisProfilesRoot + "/:id"
+	AnalysisProfilesRoute = "/analysis/profiles"
+	AnalysisProfileRoute  = AnalysisProfilesRoute + "/:id"
 
-	AppAnalysisProfilesRoot = ApplicationRoot + "/analysis/profiles"
+	AppAnalysisProfilesRoute = ApplicationRoute + "/analysis/profiles"
 )
 
 // Routes - Applications
 const (
-	ApplicationsRoot     = "/applications"
-	ApplicationRoot      = ApplicationsRoot + "/:" + ID
-	ApplicationTagsRoot  = ApplicationRoot + "/tags"
-	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
-	ApplicationFactsRoot = ApplicationRoot + "/facts"
-	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
-	AppBucketRoot        = ApplicationRoot + "/bucket"
-	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
-	AppStakeholdersRoot  = ApplicationRoot + "/stakeholders"
-	AppAssessmentsRoot   = ApplicationRoot + "/assessments"
-	AppAssessmentRoot    = AppAssessmentsRoot + "/:" + ID2
+	ApplicationsRoute     = "/applications"
+	ApplicationRoute      = ApplicationsRoute + "/:" + ID
+	ApplicationTagsRoute  = ApplicationRoute + "/tags"
+	ApplicationTagRoute   = ApplicationTagsRoute + "/:" + ID2
+	ApplicationFactsRoute = ApplicationRoute + "/facts"
+	ApplicationFactRoute  = ApplicationFactsRoute + "/:" + Key
+	AppBucketRoute        = ApplicationRoute + "/bucket"
+	AppBucketContentRoute = AppBucketRoute + "/*" + Wildcard
+	AppStakeholdersRoute  = ApplicationRoute + "/stakeholders"
+	AppAssessmentsRoute   = ApplicationRoute + "/assessments"
+	AppAssessmentRoute    = AppAssessmentsRoute + "/:" + ID2
 )
 
 // Routes - Archetypes
 const (
-	ArchetypesRoot           = "/archetypes"
-	ArchetypeRoot            = ArchetypesRoot + "/:" + ID
-	ArchetypeAssessmentsRoot = ArchetypeRoot + "/assessments"
+	ArchetypesRoute           = "/archetypes"
+	ArchetypeRoute            = ArchetypesRoute + "/:" + ID
+	ArchetypeAssessmentsRoute = ArchetypeRoute + "/assessments"
 )
 
 // Routes - Assessments
 const (
-	AssessmentsRoot = "/assessments"
-	AssessmentRoot  = AssessmentsRoot + "/:" + ID
+	AssessmentsRoute = "/assessments"
+	AssessmentRoute  = AssessmentsRoute + "/:" + ID
 )
 
 // Routes - Auth
 const (
-	AuthRoot        = "/auth"
-	AuthLoginRoot   = AuthRoot + "/login"
-	AuthRefreshRoot = AuthRoot + "/refresh"
+	AuthRoute        = "/auth"
+	AuthLoginRoute   = AuthRoute + "/login"
+	AuthRefreshRoute = AuthRoute + "/refresh"
 )
 
 // Routes - Batch
 const (
-	BatchRoot        = "/batch"
-	BatchTicketsRoot = BatchRoot + TicketsRoot
-	BatchTagsRoot    = BatchRoot + TagsRoot
+	BatchRoute        = "/batch"
+	BatchTicketsRoute = BatchRoute + TicketsRoute
+	BatchTagsRoute    = BatchRoute + TagsRoute
 )
 
 // Routes - Buckets
 const (
-	BucketsRoot       = "/buckets"
-	BucketRoot        = BucketsRoot + "/:" + ID
-	BucketContentRoot = BucketRoot + "/*" + Wildcard
+	BucketsRoute       = "/buckets"
+	BucketRoute        = BucketsRoute + "/:" + ID
+	BucketContentRoute = BucketRoute + "/*" + Wildcard
 )
 
 // Routes - Business Services
 const (
-	BusinessServicesRoot = "/businessservices"
-	BusinessServiceRoot  = BusinessServicesRoot + "/:" + ID
+	BusinessServicesRoute = "/businessservices"
+	BusinessServiceRoute  = BusinessServicesRoute + "/:" + ID
 )
 
 // Routes - Cache
 const (
-	CacheRoot    = "/cache"
-	CacheDirRoot = CacheRoot + "/*" + Wildcard
+	CacheRoute    = "/cache"
+	CacheDirRoute = CacheRoute + "/*" + Wildcard
 )
 
 // Routes - Config Maps
 const (
-	ConfigMapsRoot   = "/configmaps"
-	ConfigMapRoot    = ConfigMapsRoot + "/:" + Name
-	ConfigMapKeyRoot = ConfigMapRoot + "/:" + Key
+	ConfigMapsRoute   = "/configmaps"
+	ConfigMapRoute    = ConfigMapsRoute + "/:" + Name
+	ConfigMapKeyRoute = ConfigMapRoute + "/:" + Key
 )
 
 // Routes - Dependencies
 const (
-	DependenciesRoot = "/dependencies"
-	DependencyRoot   = DependenciesRoot + "/:" + ID
+	DependenciesRoute = "/dependencies"
+	DependencyRoute   = DependenciesRoute + "/:" + ID
 )
 
 // Routes - Files
 const (
-	FilesRoot = "/files"
-	FileRoot  = FilesRoot + "/:" + ID
+	FilesRoute = "/files"
+	FileRoute  = FilesRoute + "/:" + ID
 )
 
 // Routes - Generators
 const (
-	GeneratorsRoot = "/generators"
-	GeneratorRoot  = GeneratorsRoot + "/:" + ID
+	GeneratorsRoute = "/generators"
+	GeneratorRoute  = GeneratorsRoute + "/:" + ID
 )
 
 // Routes - Identities
 const (
-	IdentitiesRoot = "/identities"
-	IdentityRoot   = IdentitiesRoot + "/:" + ID
+	IdentitiesRoute = "/identities"
+	IdentityRoute   = IdentitiesRoute + "/:" + ID
 
-	AppIdentitiesRoot = ApplicationRoot + "/identities"
+	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
 // Routes - Imports
 const (
-	SummariesRoot = "/importsummaries"
-	SummaryRoot   = SummariesRoot + "/:" + ID
-	UploadRoot    = SummariesRoot + "/upload"
-	DownloadRoot  = SummariesRoot + "/download"
-	ImportsRoot   = "/imports"
-	ImportRoot    = ImportsRoot + "/:" + ID
+	SummariesRoute = "/importsummaries"
+	SummaryRoute   = SummariesRoute + "/:" + ID
+	UploadRoute    = SummariesRoute + "/upload"
+	DownloadRoute  = SummariesRoute + "/download"
+	ImportsRoute   = "/imports"
+	ImportRoute    = ImportsRoute + "/:" + ID
 )
 
 // Routes - Job Functions
 const (
-	JobFunctionsRoot = "/jobfunctions"
-	JobFunctionRoot  = JobFunctionsRoot + "/:" + ID
+	JobFunctionsRoute = "/jobfunctions"
+	JobFunctionRoute  = JobFunctionsRoute + "/:" + ID
 )
 
 // Routes - Manifests
 const (
-	ManifestsRoot = "/manifests"
-	ManifestRoot  = ManifestsRoot + "/:" + ID
+	ManifestsRoute = "/manifests"
+	ManifestRoute  = ManifestsRoute + "/:" + ID
 
-	AppManifestRoot  = ApplicationRoot + "/manifest"
-	AppManifestsRoot = ApplicationRoot + "/manifests"
+	AppManifestRoute  = ApplicationRoute + "/manifest"
+	AppManifestsRoute = ApplicationRoute + "/manifests"
 )
 
 // Routes - Migration Waves
 const (
-	MigrationWavesRoot = "/migrationwaves"
-	MigrationWaveRoot  = MigrationWavesRoot + "/:" + ID
+	MigrationWavesRoute = "/migrationwaves"
+	MigrationWaveRoute  = MigrationWavesRoute + "/:" + ID
 )
 
 // Routes - Platforms
 const (
-	PlatformsRoot = "/platforms"
-	PlatformRoot  = PlatformsRoot + "/:" + ID
+	PlatformsRoute = "/platforms"
+	PlatformRoute  = PlatformsRoute + "/:" + ID
 )
 
 // Routes - Proxies
 const (
-	ProxiesRoot = "/proxies"
-	ProxyRoot   = ProxiesRoot + "/:" + ID
+	ProxiesRoute = "/proxies"
+	ProxyRoute   = ProxiesRoute + "/:" + ID
 )
 
 // Routes - Questionnaires
 const (
-	QuestionnairesRoot = "/questionnaires"
-	QuestionnaireRoot  = QuestionnairesRoot + "/:" + ID
+	QuestionnairesRoute = "/questionnaires"
+	QuestionnaireRoute  = QuestionnairesRoute + "/:" + ID
 )
 
 // Routes - Reviews
 const (
-	ReviewsRoot = "/reviews"
-	ReviewRoot  = ReviewsRoot + "/:" + ID
-	CopyRoot    = ReviewsRoot + "/copy"
+	ReviewsRoute = "/reviews"
+	ReviewRoute  = ReviewsRoute + "/:" + ID
+	CopyRoute    = ReviewsRoute + "/copy"
 )
 
 // Routes - Rule Sets
 const (
-	RuleSetsRoot = "/rulesets"
-	RuleSetRoot  = RuleSetsRoot + "/:" + ID
+	RuleSetsRoute = "/rulesets"
+	RuleSetRoute  = RuleSetsRoute + "/:" + ID
 )
 
 // Routes - Schemas
 const (
-	SchemaRoot     = "/schema"
-	SchemasRoot    = "/schemas"
-	SchemasGetRoot = SchemasRoot + "/:" + Name
-	SchemaFindRoot = SchemaRoot + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
+	SchemaRoute     = "/schema"
+	SchemasRoute    = "/schemas"
+	SchemasGetRoute = SchemasRoute + "/:" + Name
+	SchemaFindRoute = SchemaRoute + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
 )
 
 // Routes - Services
 const (
-	ServicesRoot      = "/services"
-	ServiceRoot       = ServicesRoot + "/:name"
-	ServiceNestedRoot = ServiceRoot + "/*" + Wildcard
+	ServicesRoute      = "/services"
+	ServiceRoute       = ServicesRoute + "/:name"
+	ServiceNestedRoute = ServiceRoute + "/*" + Wildcard
 )
 
 // Routes - Settings
 const (
-	SettingsRoot = "/settings"
-	SettingRoot  = SettingsRoot + "/:" + Key
+	SettingsRoute = "/settings"
+	SettingRoute  = SettingsRoute + "/:" + Key
 )
 
 // Routes - Stakeholders
 const (
-	StakeholdersRoot = "/stakeholders"
-	StakeholderRoot  = StakeholdersRoot + "/:" + ID
+	StakeholdersRoute = "/stakeholders"
+	StakeholderRoute  = StakeholdersRoute + "/:" + ID
 )
 
 // Routes - Stakeholder Groups
 const (
-	StakeholderGroupsRoot = "/stakeholdergroups"
-	StakeholderGroupRoot  = StakeholderGroupsRoot + "/:" + ID
+	StakeholderGroupsRoute = "/stakeholdergroups"
+	StakeholderGroupRoute  = StakeholderGroupsRoute + "/:" + ID
 )
 
 // Routes - Tags
 const (
-	TagsRoot = "/tags"
-	TagRoot  = TagsRoot + "/:" + ID
+	TagsRoute = "/tags"
+	TagRoute  = TagsRoute + "/:" + ID
 )
 
 // Routes - Tag Categories
 const (
-	TagCategoriesRoot   = "/tagcategories"
-	TagCategoryRoot     = TagCategoriesRoot + "/:" + ID
-	TagCategoryTagsRoot = TagCategoryRoot + "/tags"
+	TagCategoriesRoute   = "/tagcategories"
+	TagCategoryRoute     = TagCategoriesRoute + "/:" + ID
+	TagCategoryTagsRoute = TagCategoryRoute + "/tags"
 )
 
 // Routes - Targets
 const (
-	TargetsRoot = "/targets"
-	TargetRoot  = TargetsRoot + "/:" + ID
+	TargetsRoute = "/targets"
+	TargetRoute  = TargetsRoute + "/:" + ID
 )
 
 // Routes - Tasks
 const (
-	TasksRoot                = "/tasks"
-	TasksReportRoot          = TasksRoot + "/report"
-	TasksReportQueueRoot     = TasksReportRoot + "/queue"
-	TasksReportDashboardRoot = TasksReportRoot + "/dashboard"
-	TasksCancelRoot          = TasksRoot + "/cancel"
-	TaskRoot                 = TasksRoot + "/:" + ID
-	TaskReportRoot           = TaskRoot + "/report"
-	TaskAttachedRoot         = TaskRoot + "/attached"
-	TaskBucketRoot           = TaskRoot + "/bucket"
-	TaskBucketContentRoot    = TaskBucketRoot + "/*" + Wildcard
-	TaskSubmitRoot           = TaskRoot + "/submit"
-	TaskCancelRoot           = TaskRoot + "/cancel"
+	TasksRoute                = "/tasks"
+	TasksReportRoute          = TasksRoute + "/report"
+	TasksReportQueueRoute     = TasksReportRoute + "/queue"
+	TasksReportDashboardRoute = TasksReportRoute + "/dashboard"
+	TasksCancelRoute          = TasksRoute + "/cancel"
+	TaskRoute                 = TasksRoute + "/:" + ID
+	TaskReportRoute           = TaskRoute + "/report"
+	TaskAttachedRoute         = TaskRoute + "/attached"
+	TaskBucketRoute           = TaskRoute + "/bucket"
+	TaskBucketContentRoute    = TaskBucketRoute + "/*" + Wildcard
+	TaskSubmitRoute           = TaskRoute + "/submit"
+	TaskCancelRoute           = TaskRoute + "/cancel"
 )
 
 // Routes - Task Groups
 const (
-	TaskGroupsRoot             = "/taskgroups"
-	TaskGroupRoot              = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot        = TaskGroupRoot + "/bucket"
-	TaskGroupBucketContentRoot = TaskGroupBucketRoot + "/*" + Wildcard
-	TaskGroupSubmitRoot        = TaskGroupRoot + "/submit"
+	TaskGroupsRoute             = "/taskgroups"
+	TaskGroupRoute              = TaskGroupsRoute + "/:" + ID
+	TaskGroupBucketRoute        = TaskGroupRoute + "/bucket"
+	TaskGroupBucketContentRoute = TaskGroupBucketRoute + "/*" + Wildcard
+	TaskGroupSubmitRoute        = TaskGroupRoute + "/submit"
 )
 
 // Routes - Tickets
 const (
-	TicketsRoot = "/tickets"
-	TicketRoot  = TicketsRoot + "/:" + ID
+	TicketsRoute = "/tickets"
+	TicketRoute  = TicketsRoute + "/:" + ID
 )
 
 // Routes - Trackers
 const (
-	TrackersRoot             = "/trackers"
-	TrackerRoot              = "/trackers" + "/:" + ID
-	TrackerProjects          = TrackerRoot + "/projects"
-	TrackerProject           = TrackerRoot + "/projects" + "/:" + ID2
-	TrackerProjectIssueTypes = TrackerProject + "/issuetypes"
+	TrackersRoute            = "/trackers"
+	TrackerRoute             = "/trackers" + "/:" + ID
+	TrackerProjectsRoute     = TrackerRoute + "/projects"
+	TrackerProjectRoute      = TrackerRoute + "/projects" + "/:" + ID2
+	TrackerProjectIssueTypes = TrackerProjectRoute + "/issuetypes"
 )

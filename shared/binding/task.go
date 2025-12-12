@@ -11,14 +11,14 @@ type Task struct {
 
 // Create a Task.
 func (h *Task) Create(r *api.Task) (err error) {
-	err = h.client.Post(api.TasksRoot, &r)
+	err = h.client.Post(api.TasksRoute, &r)
 	return
 }
 
 // Get a Task by ID.
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
-	path := Path(api.TaskRoot).Inject(Params{api.ID: id})
+	path := Path(api.TaskRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -26,33 +26,33 @@ func (h *Task) Get(id uint) (r *api.Task, err error) {
 // List Tasks.
 func (h *Task) List() (list []api.Task, err error) {
 	list = []api.Task{}
-	err = h.client.Get(api.TasksRoot, &list)
+	err = h.client.Get(api.TasksRoute, &list)
 	return
 }
 
 // BulkCancel - Cancel tasks matched by filter.
 func (h *Task) BulkCancel(filter Filter) (err error) {
-	err = h.client.Put(api.TasksCancelRoot, 0, filter.Param())
+	err = h.client.Put(api.TasksCancelRoute, 0, filter.Param())
 	return
 }
 
 // Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
-	path := Path(api.TaskRoot).Inject(Params{api.ID: r.ID})
+	path := Path(api.TaskRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Patch a Task.
 func (h *Task) Patch(id uint, r any) (err error) {
-	path := Path(api.TaskRoot).Inject(Params{api.ID: id})
+	path := Path(api.TaskRoute).Inject(Params{api.ID: id})
 	err = h.client.Patch(path, r)
 	return
 }
 
 // Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.TaskRoot).Inject(Params{api.ID: id}))
+	err = h.client.Delete(Path(api.TaskRoute).Inject(Params{api.ID: id}))
 	return
 }
 
@@ -62,7 +62,7 @@ func (h *Task) Bucket(id uint) (b *BucketContent) {
 		api.ID:       id,
 		api.Wildcard: "",
 	}
-	path := Path(api.TaskBucketContentRoot).Inject(params)
+	path := Path(api.TaskBucketContentRoute).Inject(params)
 	b = &BucketContent{
 		root:   path,
 		client: h.client,

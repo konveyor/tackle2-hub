@@ -11,7 +11,7 @@ type Setting struct {
 
 // Get a setting by key.
 func (h *Setting) Get(key string, v any) (err error) {
-	path := Path(api.SettingRoot).Inject(Params{api.Key: key})
+	path := Path(api.SettingRoute).Inject(Params{api.Key: key})
 	err = h.client.Get(path, v)
 	return
 }
@@ -36,27 +36,27 @@ func (h *Setting) Int(key string) (n int, err error) {
 
 // Create a Setting.
 func (h *Setting) Create(r *api.Setting) (err error) {
-	err = h.client.Post(api.SettingsRoot, &r)
+	err = h.client.Post(api.SettingsRoute, &r)
 	return
 }
 
 // List Settings.
 func (h *Setting) List() (list []api.Setting, err error) {
 	list = []api.Setting{}
-	err = h.client.Get(api.SettingsRoot, &list)
+	err = h.client.Get(api.SettingsRoute, &list)
 	return
 }
 
 // Update a Setting.
 func (h *Setting) Update(r *api.Setting) (err error) {
-	path := Path(api.SettingRoot).Inject(Params{api.Key: r.Key})
+	path := Path(api.SettingRoute).Inject(Params{api.Key: r.Key})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Setting.
 func (h *Setting) Delete(key string) (err error) {
-	path := Path(api.SettingRoot).Inject(Params{api.Key: key})
+	path := Path(api.SettingRoute).Inject(Params{api.Key: key})
 	err = h.client.Delete(path)
 	return
 }

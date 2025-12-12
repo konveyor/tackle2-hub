@@ -280,7 +280,7 @@ func (h *Task) deleteReport() {
 	params := Params{
 		api.ID: h.task.ID,
 	}
-	path := Path(api.TaskReportRoot).Inject(params)
+	path := Path(api.TaskReportRoute).Inject(params)
 	err := h.richClient.Client.Delete(path)
 	if err != nil {
 		panic(err)
@@ -299,7 +299,7 @@ func (h *Task) pushReport() {
 		api.ID: h.task.ID,
 	}
 	client := h.richClient.Client
-	path := Path(api.TaskReportRoot).Inject(params)
+	path := Path(api.TaskReportRoute).Inject(params)
 	if h.report.ID == 0 {
 		err = client.Post(path, &h.report)
 	} else {

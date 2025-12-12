@@ -152,7 +152,7 @@ func (r *RichClient) Login(user, password string) (err error) {
 		User:     user,
 		Password: password,
 	}
-	err = r.Client.Post(api.AuthLoginRoot, &login)
+	err = r.Client.Post(api.AuthLoginRoute, &login)
 	if err != nil {
 		return
 	}
