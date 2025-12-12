@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -34,10 +34,10 @@ func TestApplicationFactCRUD(t *testing.T) {
 		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
 			key := api.FactKey(r.Key)
 			key.Qualify(r.Source)
-			factPath := binding.Path(api.ApplicationFactRoot).Inject(binding.Params{api.ID: application.ID, api.Key: key})
+			factPath := binding.Path(api.ApplicationFactRoute).Inject(binding.Params{api.ID: application.ID, api.Key: key})
 
 			// Create.
-			err := Client.Post(binding.Path(api.ApplicationFactsRoot).Inject(binding.Params{api.ID: application.ID}), &r)
+			err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -98,7 +98,7 @@ func TestApplicationFactsList(t *testing.T) {
 
 	// Create facts.
 	for _, r := range SampleFacts {
-		err := Client.Post(binding.Path(api.ApplicationFactsRoot).Inject(binding.Params{api.ID: application.ID}), &r)
+		err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
@@ -109,7 +109,7 @@ func TestApplicationFactsList(t *testing.T) {
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
 			got := api.Map{}
-			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api.ApplicationRoot).Inject(binding.Params{api.ID: application.ID}), pathSuffix), &got)
+			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api.ApplicationRoute).Inject(binding.Params{api.ID: application.ID}), pathSuffix), &got)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())
 			}

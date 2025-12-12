@@ -6,14 +6,11 @@ CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
-PKG = ./addon/... \
-      ./api/... \
+PKG = ./api/... \
       ./assessment/... \
       ./auth/... \
-      ./binding/... \
       ./controller/... \
       ./cmd/... \
-      ./command/... \
       ./database/... \
       ./importer/... \
       ./jsd/... \
@@ -21,14 +18,11 @@ PKG = ./addon/... \
       ./metrics/... \
       ./migration/... \
       ./model/... \
-      ./nas/... \
       ./reaper/... \
       ./scm/... \
       ./secret/... \
       ./seed/... \
       ./settings/... \
-      ./ssh/... \
-      ./tar/... \
       ./task/...  \
       ./test/...  \
       ./tracker/...
@@ -42,11 +36,11 @@ cmd: hub addon
 
 # Format the code.
 fmt: $(GOIMPORTS)
-	$(GOIMPORTS) -w $(PKGDIR)
+	$(GOIMPORTS) -w $(PKGDIR) ./shared
 
 # Run go vet against code
 vet:
-	go vet $(PKG)
+	go vet $(PKG) github.com/konveyor/tackle2-hub/shared/...
 
 # Build hub
 hub: generate fmt vet

@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid Application resources for tests and reuse.
