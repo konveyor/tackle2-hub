@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
 )
 
@@ -1284,15 +1285,15 @@ func TestQuestionnaire_Model(t *testing.T) {
 		Name:        "Test Questionnaire",
 		Description: "Test description",
 		Required:    true,
-		Sections: []Section{
+		Sections: []api.Section{
 			{Order: 1, Name: "Section 1"},
 		},
-		Thresholds: Thresholds{
+		Thresholds: api.Thresholds{
 			Red:     50,
 			Yellow:  30,
 			Unknown: 10,
 		},
-		RiskMessages: RiskMessages{
+		RiskMessages: api.RiskMessages{
 			Red:     "High risk",
 			Yellow:  "Medium risk",
 			Green:   "Low risk",
@@ -1660,8 +1661,8 @@ func TestAnalysisProfile_With(t *testing.T) {
 	g.Expect(r.Description).To(gomega.Equal("Test description"))
 	g.Expect(r.Mode.WithDeps).To(gomega.Equal(true))
 	g.Expect(r.Scope.WithKnownLibs).To(gomega.Equal(false))
-	g.Expect(r.Scope.Packages).To(gomega.Equal(model.InExList{Included: []string{"com.example"}}))
-	g.Expect(r.Rules.Labels).To(gomega.Equal(model.InExList{Included: []string{"label1"}}))
+	g.Expect(r.Scope.Packages).To(gomega.Equal(api.InExList{Included: []string{"com.example"}}))
+	g.Expect(r.Rules.Labels).To(gomega.Equal(api.InExList{Included: []string{"label1"}}))
 	g.Expect(len(r.Rules.Targets)).To(gomega.Equal(1))
 }
 
@@ -1672,15 +1673,15 @@ func TestAnalysisProfile_Model(t *testing.T) {
 	r := &AnalysisProfile{
 		Name:        "Test Profile",
 		Description: "Test description",
-		Mode: ApMode{
+		Mode: api.ApMode{
 			WithDeps: true,
 		},
-		Scope: ApScope{
+		Scope: api.ApScope{
 			WithKnownLibs: false,
-			Packages:      model.InExList{Included: []string{"com.example"}},
+			Packages:      api.InExList{Included: []string{"com.example"}},
 		},
-		Rules: ApRules{
-			Labels: model.InExList{Included: []string{"label1"}},
+		Rules: api.ApRules{
+			Labels: api.InExList{Included: []string{"label1"}},
 		},
 	}
 
@@ -1867,7 +1868,7 @@ func TestTarget_Model(t *testing.T) {
 		Provider:    "java",
 		Choice:      true,
 		Image:       Ref{ID: 100, Name: "target-image"},
-		Labels: []TargetLabel{
+		Labels: []api.TargetLabel{
 			{Name: "label1", Label: "value1"},
 		},
 	}

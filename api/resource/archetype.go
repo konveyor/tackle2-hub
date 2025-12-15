@@ -3,27 +3,21 @@ package resource
 import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // TargetProfile REST resource.
-type TargetProfile struct {
-	Resource        `yaml:",inline"`
-	Name            string `json:"name" binding:"required"`
-	Generators      []Ref  `json:"generators"`
-	AnalysisProfile *Ref   `json:"analysisProfile,omitempty" yaml:"analysisProfile,omitempty"`
-}
+type TargetProfile api.TargetProfile
 
 // With updates the resource with the model.
 func (r *TargetProfile) With(m *model.TargetProfile) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Generators = []Ref{}
 	for _, g := range m.Generators {
-		ref := Ref{}
-		ref.With(g.Generator.ID, g.Generator.Name)
-		r.Generators = append(r.Generators, ref)
+		r.Generators = append(r.Generators, Ref{ID: g.Generator.ID, Name: g.Generator.Name})
 	}
-	r.AnalysisProfile = r.refPtr(
+	r.AnalysisProfile = refPtr(
 		m.AnalysisProfileID,
 		m.AnalysisProfile)
 }
@@ -48,65 +42,43 @@ func (r *TargetProfile) Model() (m *model.TargetProfile) {
 }
 
 // Archetype REST resource.
-type Archetype struct {
-	Resource          `yaml:",inline"`
-	Name              string          `json:"name" yaml:"name"`
-	Description       string          `json:"description" yaml:"description"`
-	Comments          string          `json:"comments" yaml:"comments"`
-	Tags              []TagRef        `json:"tags" yaml:"tags"`
-	Criteria          []TagRef        `json:"criteria" yaml:"criteria"`
-	Stakeholders      []Ref           `json:"stakeholders" yaml:"stakeholders"`
-	StakeholderGroups []Ref           `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	Applications      []Ref           `json:"applications" yaml:"applications"`
-	Assessments       []Ref           `json:"assessments" yaml:"assessments"`
-	Assessed          bool            `json:"assessed"`
-	Risk              string          `json:"risk"`
-	Confidence        int             `json:"confidence"`
-	Review            *Ref            `json:"review"`
-	Profiles          []TargetProfile `json:"profiles" yaml:",omitempty"`
-}
+type Archetype api.Archetype
 
 // With updates the resource with the model.
 func (r *Archetype) With(m *model.Archetype) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Comments = m.Comments
 	r.Tags = []TagRef{}
 	for _, t := range m.Tags {
-		ref := TagRef{}
-		ref.With(t.ID, t.Name, "", false)
-		r.Tags = append(r.Tags, ref)
+		r.Tags = append(r.Tags, TagRef{ID: t.ID, Name: t.Name, Source: "", Virtual: false})
 	}
 	r.Criteria = []TagRef{}
 	for _, t := range m.CriteriaTags {
-		ref := TagRef{}
-		ref.With(t.ID, t.Name, "", false)
-		r.Criteria = append(r.Criteria, ref)
+		r.Criteria = append(r.Criteria, TagRef{ID: t.ID, Name: t.Name, Source: "", Virtual: false})
 	}
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
-		r.Stakeholders = append(r.Stakeholders, r.ref(s.ID, &s))
+		r.Stakeholders = append(r.Stakeholders, ref(s.ID, &s))
 	}
 	r.StakeholderGroups = []Ref{}
 	for _, g := range m.StakeholderGroups {
-		r.StakeholderGroups = append(r.StakeholderGroups, r.ref(g.ID, &g))
+		r.StakeholderGroups = append(r.StakeholderGroups, ref(g.ID, &g))
 	}
 	r.Assessments = []Ref{}
 	for _, a := range m.Assessments {
-		r.Assessments = append(r.Assessments, r.ref(a.ID, &a))
+		r.Assessments = append(r.Assessments, ref(a.ID, &a))
 	}
 	if m.Review != nil {
-		ref := &Ref{}
-		ref.With(m.Review.ID, "")
-		r.Review = ref
+		r.Review = &Ref{ID: m.Review.ID, Name: ""}
 	}
 	r.Risk = assessment.RiskUnassessed
-	r.Profiles = []TargetProfile{}
+	r.Profiles = []api.TargetProfile{}
 	for _, p := range m.Profiles {
 		pr := TargetProfile{}
 		pr.With(&p)
-		r.Profiles = append(r.Profiles, pr)
+		r.Profiles = append(r.Profiles, api.TargetProfile(pr))
 	}
 }
 
@@ -120,14 +92,10 @@ func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err er
 	}
 	apps, err := resolver.Applications()
 	for i := range apps {
-		ref := Ref{}
-		ref.With(apps[i].ID, apps[i].Name)
-		r.Applications = append(r.Applications, ref)
+		r.Applications = append(r.Applications, Ref{ID: apps[i].ID, Name: apps[i].Name})
 	}
 	for _, t := range resolver.AssessmentTags() {
-		ref := TagRef{}
-		ref.With(t.ID, t.Name, SourceAssessment, true)
-		r.Tags = append(r.Tags, ref)
+		r.Tags = append(r.Tags, TagRef{ID: t.ID, Name: t.Name, Source: SourceAssessment, Virtual: true})
 	}
 	return
 }
@@ -180,7 +148,8 @@ func (r *Archetype) Model() (m *model.Archetype) {
 			})
 	}
 	for _, p := range r.Profiles {
-		pm := p.Model()
+		tp := TargetProfile(p)
+		pm := tp.Model()
 		m.Profiles = append(
 			m.Profiles,
 			*pm)

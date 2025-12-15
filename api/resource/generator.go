@@ -1,27 +1,20 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Generator REST resource.
-type Generator struct {
-	Resource    `yaml:",inline"`
-	Kind        string      `json:"kind" binding:"required"`
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty" yaml:",omitempty"`
-	Repository  *Repository `json:"repository"`
-	Params      Map         `json:"params"`
-	Values      Map         `json:"values"`
-	Identity    *Ref        `json:"identity,omitempty" yaml:",omitempty"`
-	Profiles    []Ref       `json:"profiles"`
-}
+type Generator api.Generator
 
 // With updates the resource with the model.
 func (r *Generator) With(m *model.Generator) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Identity = r.refPtr(m.IdentityID, m.Identity)
+	r.Identity = refPtr(m.IdentityID, m.Identity)
 	r.Params = m.Params
 	r.Values = m.Values
 	if m.Repository != (model.Repository{}) {
@@ -30,7 +23,7 @@ func (r *Generator) With(m *model.Generator) {
 	}
 	r.Profiles = make([]Ref, 0, len(m.Profiles))
 	for _, p := range m.Profiles {
-		r.Profiles = append(r.Profiles, r.ref(p.ID, &p))
+		r.Profiles = append(r.Profiles, ref(p.ID, &p))
 	}
 }
 

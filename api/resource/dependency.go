@@ -1,19 +1,18 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Dependency REST resource.
-type Dependency struct {
-	Resource `yaml:",inline"`
-	To       Ref `json:"to"`
-	From     Ref `json:"from"`
-}
+type Dependency api.Dependency
 
 // With updates the resource using the model.
 func (r *Dependency) With(m *model.Dependency) {
-	r.Resource.With(&m.Model)
-	r.To = r.ref(m.ToID, m.To)
-	r.From = r.ref(m.FromID, m.From)
+	baseWith(&r.Resource, &m.Model)
+	r.To = ref(m.ToID, m.To)
+	r.From = ref(m.FromID, m.From)
 }
 
 // Model builds a model.Dependency.

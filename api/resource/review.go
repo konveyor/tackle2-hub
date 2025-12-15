@@ -1,29 +1,23 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Review REST resource.
-type Review struct {
-	Resource            `yaml:",inline"`
-	BusinessCriticality uint   `json:"businessCriticality" yaml:"businessCriticality"`
-	EffortEstimate      string `json:"effortEstimate" yaml:"effortEstimate"`
-	ProposedAction      string `json:"proposedAction" yaml:"proposedAction"`
-	WorkPriority        uint   `json:"workPriority" yaml:"workPriority"`
-	Comments            string `json:"comments"`
-	Application         *Ref   `json:"application,omitempty" binding:"required_without=Archetype,excluded_with=Archetype"`
-	Archetype           *Ref   `json:"archetype,omitempty" binding:"required_without=Application,excluded_with=Application"`
-}
+type Review api.Review
 
 // With updates the resource with the model.
 func (r *Review) With(m *model.Review) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.BusinessCriticality = m.BusinessCriticality
 	r.EffortEstimate = m.EffortEstimate
 	r.ProposedAction = m.ProposedAction
 	r.WorkPriority = m.WorkPriority
 	r.Comments = m.Comments
-	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	r.Archetype = r.refPtr(m.ArchetypeID, m.Archetype)
+	r.Application = refPtr(m.ApplicationID, m.Application)
+	r.Archetype = refPtr(m.ArchetypeID, m.Archetype)
 }
 
 // Model builds a model.

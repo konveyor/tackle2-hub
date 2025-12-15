@@ -1,30 +1,16 @@
 package resource
 
 import (
-	"time"
-
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Ticket API Resource
-type Ticket struct {
-	Resource    `yaml:",inline"`
-	Kind        string    `json:"kind" binding:"required"`
-	Reference   string    `json:"reference"`
-	Link        string    `json:"link"`
-	Parent      string    `json:"parent" binding:"required"`
-	Error       bool      `json:"error"`
-	Message     string    `json:"message"`
-	Status      string    `json:"status"`
-	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
-	Fields      Map       `json:"fields"`
-	Application Ref       `json:"application" binding:"required"`
-	Tracker     Ref       `json:"tracker" binding:"required"`
-}
+type Ticket api.Ticket
 
 // With updates the resource with the model.
 func (r *Ticket) With(m *model.Ticket) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
 	r.Reference = m.Reference
 	r.Parent = m.Parent
@@ -33,8 +19,8 @@ func (r *Ticket) With(m *model.Ticket) {
 	r.Message = m.Message
 	r.Status = m.Status
 	r.LastUpdated = m.LastUpdated
-	r.Application = r.ref(m.ApplicationID, m.Application)
-	r.Tracker = r.ref(m.TrackerID, m.Tracker)
+	r.Application = ref(m.ApplicationID, m.Application)
+	r.Tracker = ref(m.TrackerID, m.Tracker)
 	r.Fields = m.Fields
 }
 

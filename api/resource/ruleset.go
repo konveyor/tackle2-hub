@@ -1,43 +1,38 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // RuleSet REST resource.
-type RuleSet struct {
-	Resource    `yaml:",inline"`
-	Kind        string      `json:"kind,omitempty"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Rules       []Rule      `json:"rules"`
-	Repository  *Repository `json:"repository,omitempty"`
-	Identity    *Ref        `json:"identity,omitempty"`
-	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn"`
-}
+type RuleSet api.RuleSet
 
 // With updates the resource with the model.
 func (r *RuleSet) With(m *model.RuleSet) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Identity = r.refPtr(m.IdentityID, m.Identity)
+	r.Identity = refPtr(m.IdentityID, m.Identity)
 	if m.Repository != (model.Repository{}) {
 		repo := Repository(m.Repository)
 		r.Repository = &repo
 	}
-	r.Rules = []Rule{}
+	r.Rules = []api.Rule{}
 	for i := range m.Rules {
 		rule := Rule{}
 		rule.With(&m.Rules[i])
 		r.Rules = append(
 			r.Rules,
-			rule)
+			api.Rule(rule))
 	}
 	r.DependsOn = []Ref{}
 	for i := range m.DependsOn {
-		dep := Ref{}
-		dep.With(m.DependsOn[i].ID, m.DependsOn[i].Name)
-		r.DependsOn = append(r.DependsOn, dep)
+		r.DependsOn = append(r.DependsOn, Ref{
+			ID:   m.DependsOn[i].ID,
+			Name: m.DependsOn[i].Name,
+		})
 	}
 }
 
@@ -49,10 +44,11 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 		Description: r.Description,
 	}
 	m.ID = r.ID
-	m.IdentityID = r.idPtr(r.Identity)
+	m.IdentityID = idPtr(r.Identity)
 	m.Rules = []model.Rule{}
 	for _, rule := range r.Rules {
-		m.Rules = append(m.Rules, *rule.Model())
+		rr := Rule(rule)
+		m.Rules = append(m.Rules, *rr.Model())
 	}
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)
@@ -70,20 +66,14 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 }
 
 // Rule - REST Resource.
-type Rule struct {
-	Resource    `yaml:",inline"`
-	Name        string   `json:"name,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Labels      []string `json:"labels,omitempty"`
-	File        *Ref     `json:"file,omitempty"`
-}
+type Rule api.Rule
 
 // With updates the resource with the model.
 func (r *Rule) With(m *model.Rule) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Labels = m.Labels
-	r.File = r.refPtr(m.FileID, m.File)
+	r.File = refPtr(m.FileID, m.File)
 }
 
 // Model builds a model.
@@ -92,6 +82,6 @@ func (r *Rule) Model() (m *model.Rule) {
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Labels = r.Labels
-	m.FileID = r.idPtr(r.File)
+	m.FileID = idPtr(r.File)
 	return
 }

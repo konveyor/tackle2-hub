@@ -1,37 +1,29 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // AnalysisProfile REST resource.
-type AnalysisProfile struct {
-	Resource    `yaml:",inline"`
-	Name        string  `json:"name"`
-	Description string  `json:"description,omitempty" yaml:",omitempty"`
-	Mode        ApMode  `json:"mode"`
-	Scope       ApScope `json:"scope"`
-	Rules       ApRules `json:"rules"`
-}
+type AnalysisProfile api.AnalysisProfile
 
 // With updates the resource with the model.
 func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Mode.WithDeps = m.WithDeps
 	r.Scope.WithKnownLibs = m.WithKnownLibs
-	r.Scope.Packages = m.Packages
-	r.Rules.Labels = m.Labels
+	r.Scope.Packages = api.InExList(m.Packages)
+	r.Rules.Labels = api.InExList(m.Labels)
 	if m.Repository != (model.Repository{}) {
-		repository := Repository(m.Repository)
+		repository := api.Repository(m.Repository)
 		r.Rules.Repository = &repository
 	}
 	r.Rules.Targets = make([]Ref, len(m.Targets))
 	for i, t := range m.Targets {
-		r.Rules.Targets[i] =
-			Ref{
-				ID:   t.ID,
-				Name: t.Name,
-			}
+		r.Rules.Targets[i] = Ref{ID: t.ID, Name: t.Name}
 	}
 	r.Rules.Files = make([]Ref, len(m.Files))
 	for i, f := range m.Files {
@@ -46,8 +38,8 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	m.Description = r.Description
 	m.WithDeps = r.Mode.WithDeps
 	m.WithKnownLibs = r.Scope.WithKnownLibs
-	m.Packages = r.Scope.Packages
-	m.Labels = r.Rules.Labels
+	m.Packages = model.InExList(r.Scope.Packages)
+	m.Labels = model.InExList(r.Rules.Labels)
 	if r.Rules.Repository != nil {
 		m.Repository = model.Repository(*r.Rules.Repository)
 	}

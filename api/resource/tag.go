@@ -1,19 +1,18 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Tag REST resource.
-type Tag struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Category Ref    `json:"category" binding:"required"`
-}
+type Tag api.Tag
 
 // With updates the resource with the model.
 func (r *Tag) With(m *model.Tag) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
-	r.Category = r.ref(m.CategoryID, &m.Category)
+	r.Category = ref(m.CategoryID, &m.Category)
 }
 
 // Model builds a model.

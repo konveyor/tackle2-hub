@@ -1,23 +1,16 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Identity REST resource.
-type Identity struct {
-	Resource    `yaml:",inline"`
-	Kind        string `json:"kind" binding:"required"`
-	Default     bool   `json:"default"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	User        string `json:"user"`
-	Password    string `json:"password"`
-	Key         string `json:"key"`
-	Settings    string `json:"settings"`
-}
+type Identity api.Identity
 
 // With updates the resource with the model.
 func (r *Identity) With(m *model.Identity) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
 	r.Default = m.Default
 	r.Name = m.Name

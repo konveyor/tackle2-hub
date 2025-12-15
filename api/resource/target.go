@@ -1,42 +1,34 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Target REST resource.
-type Target struct {
-	Resource    `yaml:",inline"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Provider    string        `json:"provider,omitempty" yaml:",omitempty"`
-	Choice      bool          `json:"choice,omitempty" yaml:",omitempty"`
-	Custom      bool          `json:"custom,omitempty" yaml:",omitempty"`
-	Labels      []TargetLabel `json:"labels"`
-	Image       Ref           `json:"image"`
-	RuleSet     *RuleSet      `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
-}
-
-type TargetLabel model.TargetLabel
+type Target api.Target
 
 // With updates the resource with the model.
 func (r *Target) With(m *model.Target) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Provider = m.Provider
 	r.Choice = m.Choice
 	r.Custom = !m.Builtin()
 	if m.RuleSet != nil {
-		r.RuleSet = &RuleSet{}
-		r.RuleSet.With(m.RuleSet)
+		rs := RuleSet{}
+		rs.With(m.RuleSet)
+		r.RuleSet = (*api.RuleSet)(&rs)
 	}
 	imgRef := Ref{ID: m.ImageID}
 	if m.Image != nil {
 		imgRef.Name = m.Image.Name
 	}
 	r.Image = imgRef
-	r.Labels = []TargetLabel{}
+	r.Labels = []api.TargetLabel{}
 	for _, l := range m.Labels {
-		r.Labels = append(r.Labels, TargetLabel(l))
+		r.Labels = append(r.Labels, api.TargetLabel(l))
 	}
 }
 

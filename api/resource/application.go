@@ -6,48 +6,27 @@ import (
 	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Application REST resource.
-type Application struct {
-	Resource        `yaml:",inline"`
-	Name            string        `json:"name" binding:"required"`
-	Description     string        `json:"description"`
-	Bucket          *Ref          `json:"bucket"`
-	Repository      *Repository   `json:"repository"`
-	Assets          *Repository   `json:"assets"`
-	Binary          string        `json:"binary"`
-	Coordinates     *jsd.Document `json:"coordinates"`
-	Review          *Ref          `json:"review"`
-	Comments        string        `json:"comments"`
-	Identities      []IdentityRef `json:"identities"`
-	Tags            []TagRef      `json:"tags"`
-	BusinessService *Ref          `json:"businessService" yaml:"businessService"`
-	Owner           *Ref          `json:"owner"`
-	Contributors    []Ref         `json:"contributors"`
-	MigrationWave   *Ref          `json:"migrationWave" yaml:"migrationWave"`
-	Platform        *Ref          `json:"platform"`
-	Archetypes      []Ref         `json:"archetypes"`
-	Assessments     []Ref         `json:"assessments"`
-	Manifests       []Ref         `json:"manifests"`
-	Assessed        bool          `json:"assessed"`
-	Risk            string        `json:"risk"`
-	Confidence      int           `json:"confidence"`
-	Effort          int           `json:"effort"`
-}
+type Application api.Application
 
 // With updates the resource using the model.
 func (r *Application) With(m *model.Application, tags []AppTag, identities []IdentityRef) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
+	r.Bucket = refPtr(m.BucketID, m.Bucket)
 	r.Comments = m.Comments
 	r.Binary = m.Binary
 	if m.Coordinates != nil {
 		d := jsd.Document{}
 		d.With(m.Coordinates)
-		r.Coordinates = &d
+		r.Coordinates = &api.Document{
+			Content: api.Map(d.Content),
+			Schema:  d.Schema,
+		}
 	}
 	if m.Repository != (model.Repository{}) {
 		repo := Repository(m.Repository)
@@ -58,34 +37,40 @@ func (r *Application) With(m *model.Application, tags []AppTag, identities []Ide
 		r.Assets = &repo
 	}
 	if m.Review != nil {
-		ref := &Ref{}
-		ref.With(m.Review.ID, "")
-		r.Review = ref
+		r.Review = &Ref{
+			ID:   m.Review.ID,
+			Name: "",
+		}
 	}
-	r.BusinessService = r.refPtr(m.BusinessServiceID, m.BusinessService)
+	r.BusinessService = refPtr(m.BusinessServiceID, m.BusinessService)
 	r.Identities = identities
 	r.Tags = []TagRef{}
 	for i := range tags {
-		ref := TagRef{}
-		ref.With(tags[i].TagID, tags[i].Tag.Name, tags[i].Source, false)
-		r.Tags = append(r.Tags, ref)
+		r.Tags = append(r.Tags, TagRef{
+			ID:      tags[i].TagID,
+			Name:    tags[i].Tag.Name,
+			Source:  tags[i].Source,
+			Virtual: false,
+		})
 	}
-	r.Owner = r.refPtr(m.OwnerID, m.Owner)
+	r.Owner = refPtr(m.OwnerID, m.Owner)
 	r.Contributors = []Ref{}
 	for _, c := range m.Contributors {
-		ref := Ref{}
-		ref.With(c.ID, c.Name)
 		r.Contributors = append(
 			r.Contributors,
-			ref)
+			Ref{
+				ID:   c.ID,
+				Name: c.Name,
+			})
 	}
-	r.MigrationWave = r.refPtr(m.MigrationWaveID, m.MigrationWave)
-	r.Platform = r.refPtr(m.PlatformID, m.Platform)
+	r.MigrationWave = refPtr(m.MigrationWaveID, m.MigrationWave)
+	r.Platform = refPtr(m.PlatformID, m.Platform)
 	r.Assessments = []Ref{}
 	for _, a := range m.Assessments {
-		ref := Ref{}
-		ref.With(a.ID, "")
-		r.Assessments = append(r.Assessments, ref)
+		r.Assessments = append(r.Assessments, Ref{
+			ID:   a.ID,
+			Name: "",
+		})
 	}
 	if len(m.Analyses) > 0 {
 		sort.Slice(m.Analyses, func(i, j int) bool {
@@ -103,9 +88,12 @@ func (r *Application) With(m *model.Application, tags []AppTag, identities []Ide
 // WithVirtualTags updates the resource with tags derived from assessments.
 func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 	for _, t := range tags {
-		ref := TagRef{}
-		ref.With(t.ID, t.Name, source, true)
-		r.Tags = append(r.Tags, ref)
+		r.Tags = append(r.Tags, TagRef{
+			ID:      t.ID,
+			Name:    t.Name,
+			Source:  source,
+			Virtual: true,
+		})
 	}
 }
 
@@ -117,9 +105,10 @@ func (r *Application) WithResolver(m *model.Application, resolver *assessment.Ap
 		return
 	}
 	for _, a := range archetypes {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Archetypes = append(r.Archetypes, ref)
+		r.Archetypes = append(r.Archetypes, Ref{
+			ID:   a.ID,
+			Name: a.Name,
+		})
 	}
 	archetypeTags, err := resolver.ArchetypeTags(m)
 	if err != nil {
@@ -154,8 +143,11 @@ func (r *Application) Model() (m *model.Application) {
 	}
 	m.ID = r.ID
 	if r.Coordinates != nil {
-		d := r.Coordinates.Model()
-		m.Coordinates = d
+		d := jsd.Document{
+			Content: jsd.Map(r.Coordinates.Content),
+			Schema:  r.Coordinates.Schema,
+		}
+		m.Coordinates = d.Model()
 	}
 	if r.Repository != nil {
 		m.Repository = model.Repository(*r.Repository)
@@ -207,11 +199,7 @@ func (r *Application) Model() (m *model.Application) {
 }
 
 // Fact REST nested resource.
-type Fact struct {
-	Key    string `json:"key"`
-	Value  any    `json:"value"`
-	Source string `json:"source"`
-}
+type Fact api.Fact
 
 func (r *Fact) With(m *model.Fact) {
 	r.Key = m.Key

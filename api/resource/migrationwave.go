@@ -1,45 +1,30 @@
 package resource
 
 import (
-	"time"
-
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // MigrationWave REST resource.
-type MigrationWave struct {
-	Resource          `yaml:",inline"`
-	Name              string    `json:"name"`
-	StartDate         time.Time `json:"startDate" yaml:"startDate" binding:"required"`
-	EndDate           time.Time `json:"endDate" yaml:"endDate" binding:"required,gtfield=StartDate"`
-	Applications      []Ref     `json:"applications"`
-	Stakeholders      []Ref     `json:"stakeholders"`
-	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-}
+type MigrationWave api.MigrationWave
 
 // With updates the resource using the model.
 func (r *MigrationWave) With(m *model.MigrationWave) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.StartDate = m.StartDate
 	r.EndDate = m.EndDate
 	r.Applications = []Ref{}
 	for _, app := range m.Applications {
-		ref := Ref{}
-		ref.With(app.ID, app.Name)
-		r.Applications = append(r.Applications, ref)
+		r.Applications = append(r.Applications, Ref{ID: app.ID, Name: app.Name})
 	}
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
+		r.Stakeholders = append(r.Stakeholders, Ref{ID: s.ID, Name: s.Name})
 	}
 	r.StakeholderGroups = []Ref{}
 	for _, sg := range m.StakeholderGroups {
-		ref := Ref{}
-		ref.With(sg.ID, sg.Name)
-		r.StakeholderGroups = append(r.StakeholderGroups, ref)
+		r.StakeholderGroups = append(r.StakeholderGroups, Ref{ID: sg.ID, Name: sg.Name})
 	}
 }
 

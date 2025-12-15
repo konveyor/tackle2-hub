@@ -1,22 +1,19 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // JobFunction REST resource.
-type JobFunction struct {
-	Resource     `yaml:",inline"`
-	Name         string `json:"name" binding:"required"`
-	Stakeholders []Ref  `json:"stakeholders"`
-}
+type JobFunction api.JobFunction
 
 // With updates the resource with the model.
 func (r *JobFunction) With(m *model.JobFunction) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
+		r.Stakeholders = append(r.Stakeholders, Ref{ID: s.ID, Name: s.Name})
 	}
 }
 

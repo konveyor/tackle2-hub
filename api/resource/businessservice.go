@@ -1,21 +1,19 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // BusinessService REST resource.
-type BusinessService struct {
-	Resource    `yaml:",inline"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	Stakeholder *Ref   `json:"owner" yaml:"owner"`
-}
+type BusinessService api.BusinessService
 
 // With updates the resource with the model.
 func (r *BusinessService) With(m *model.BusinessService) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
-	r.Stakeholder = r.refPtr(m.StakeholderID, m.Stakeholder)
+	r.Stakeholder = refPtr(m.StakeholderID, m.Stakeholder)
 }
 
 // Model builds a model.

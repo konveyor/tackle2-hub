@@ -4,24 +4,16 @@ import (
 	"sort"
 
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Analysis REST resource.
-type Analysis struct {
-	Resource     `yaml:",inline"`
-	Application  Ref               `json:"application"`
-	Effort       int               `json:"effort"`
-	Commit       string            `json:"commit,omitempty" yaml:",omitempty"`
-	Archived     bool              `json:"archived,omitempty" yaml:",omitempty"`
-	Insights     []Insight         `json:"insights,omitempty" yaml:",omitempty"`
-	Dependencies []TechDependency  `json:"dependencies,omitempty" yaml:",omitempty"`
-	Summary      []ArchivedInsight `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
-}
+type Analysis api.Analysis
 
 // With updates the resource with the model.
 func (r *Analysis) With(m *model.Analysis) {
-	r.Resource.With(&m.Model)
-	r.Application = r.ref(m.ApplicationID, m.Application)
+	baseWith(&r.Resource, &m.Model)
+	r.Application = ref(m.ApplicationID, m.Application)
 	r.Effort = m.Effort
 	r.Commit = m.Commit
 	r.Archived = m.Archived
@@ -37,40 +29,27 @@ func (r *Analysis) Model() (m *model.Analysis) {
 }
 
 // Insight REST resource.
-type Insight struct {
-	Resource    `yaml:",inline"`
-	Analysis    uint       `json:"analysis"`
-	RuleSet     string     `json:"ruleset" binding:"required"`
-	Rule        string     `json:"rule" binding:"required"`
-	Name        string     `json:"name" binding:"required"`
-	Description string     `json:"description,omitempty" yaml:",omitempty"`
-	Category    string     `json:"category,omitempty" yaml:",omitempty"`
-	Effort      int        `json:"effort,omitempty" yaml:",omitempty"`
-	Incidents   []Incident `json:"incidents,omitempty" yaml:",omitempty"`
-	Links       []Link     `json:"links,omitempty" yaml:",omitempty"`
-	Facts       Map        `json:"facts,omitempty" yaml:",omitempty"`
-	Labels      []string   `json:"labels"`
-}
+type Insight api.Insight
 
 // With updates the resource with the model.
 func (r *Insight) With(m *model.Insight) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Analysis = m.AnalysisID
 	r.RuleSet = m.RuleSet
 	r.Rule = m.Rule
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Category = m.Category
-	r.Incidents = []Incident{}
+	r.Incidents = []api.Incident{}
 	for i := range m.Incidents {
 		n := Incident{}
 		n.With(&m.Incidents[i])
 		r.Incidents = append(
 			r.Incidents,
-			n)
+			api.Incident(n))
 	}
 	for _, l := range m.Links {
-		r.Links = append(r.Links, Link(l))
+		r.Links = append(r.Links, api.Link(l))
 	}
 	r.Facts = m.Facts
 	r.Labels = m.Labels
@@ -87,8 +66,9 @@ func (r *Insight) Model() (m *model.Insight) {
 	m.Category = r.Category
 	m.Incidents = []model.Incident{}
 	for i := range r.Incidents {
-		n := r.Incidents[i].Model()
-		m.Incidents = append(m.Incidents, *n)
+		n := Incident(r.Incidents[i])
+		mn := n.Model()
+		m.Incidents = append(m.Incidents, *mn)
 	}
 	for _, l := range r.Links {
 		m.Links = append(m.Links, model.Link(l))
@@ -100,20 +80,11 @@ func (r *Insight) Model() (m *model.Insight) {
 }
 
 // TechDependency REST resource.
-type TechDependency struct {
-	Resource `yaml:",inline"`
-	Analysis uint     `json:"analysis"`
-	Provider string   `json:"provider" yaml:",omitempty"`
-	Name     string   `json:"name" binding:"required"`
-	Version  string   `json:"version,omitempty" yaml:",omitempty"`
-	Indirect bool     `json:"indirect,omitempty" yaml:",omitempty"`
-	Labels   []string `json:"labels,omitempty" yaml:",omitempty"`
-	SHA      string   `json:"sha,omitempty" yaml:",omitempty"`
-}
+type TechDependency api.TechDependency
 
 // With updates the resource with the model.
 func (r *TechDependency) With(m *model.TechDependency) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Analysis = m.AnalysisID
 	r.Provider = m.Provider
 	r.Name = m.Name
@@ -137,19 +108,11 @@ func (r *TechDependency) Model() (m *model.TechDependency) {
 }
 
 // Incident REST resource.
-type Incident struct {
-	Resource `yaml:",inline"`
-	Insight  uint   `json:"insight"`
-	File     string `json:"file"`
-	Line     int    `json:"line"`
-	Message  string `json:"message"`
-	CodeSnip string `json:"codeSnip" yaml:"codeSnip"`
-	Facts    Map    `json:"facts"`
-}
+type Incident api.Incident
 
 // With updates the resource with the model.
 func (r *Incident) With(m *model.Incident) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Insight = m.InsightID
 	r.File = m.File
 	r.Line = m.Line
@@ -170,10 +133,7 @@ func (r *Incident) Model() (m *model.Incident) {
 }
 
 // Link analysis report link.
-type Link struct {
-	URL   string `json:"url"`
-	Title string `json:"title,omitempty" yaml:",omitempty"`
-}
+type Link api.Link
 
 // ArchivedInsight created when insights are archived.
-type ArchivedInsight model.ArchivedInsight
+type ArchivedInsight api.ArchivedInsight

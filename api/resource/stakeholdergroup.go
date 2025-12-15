@@ -1,32 +1,25 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // StakeholderGroup REST resource.
-type StakeholderGroup struct {
-	Resource       `yaml:",inline"`
-	Name           string `json:"name" binding:"required"`
-	Description    string `json:"description"`
-	Stakeholders   []Ref  `json:"stakeholders"`
-	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
-}
+type StakeholderGroup api.StakeholderGroup
 
 // With updates the resource with the model.
 func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Stakeholders = []Ref{}
 	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
+		r.Stakeholders = append(r.Stakeholders, Ref{ID: s.ID, Name: s.Name})
 	}
 	r.MigrationWaves = []Ref{}
 	for _, w := range m.MigrationWaves {
-		ref := Ref{}
-		ref.With(w.ID, w.Name)
-		r.MigrationWaves = append(r.MigrationWaves, ref)
+		r.MigrationWaves = append(r.MigrationWaves, Ref{ID: w.ID, Name: w.Name})
 	}
 }
 

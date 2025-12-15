@@ -1,27 +1,23 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Platform REST resource.
-type Platform struct {
-	Resource     `yaml:",inline"`
-	Kind         string `json:"kind" binding:"required"`
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	Identity     *Ref   `json:"identity,omitempty" yaml:",omitempty"`
-	Applications []Ref  `json:"applications,omitempty" yaml:",omitempty"`
-}
+type Platform api.Platform
 
 // With updates the resource with the model.
 func (r *Platform) With(m *model.Platform) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
 	r.Name = m.Name
 	r.URL = m.URL
-	r.Identity = r.refPtr(m.IdentityID, m.Identity)
+	r.Identity = refPtr(m.IdentityID, m.Identity)
 	r.Applications = make([]Ref, 0, len(m.Applications))
 	for _, a := range m.Applications {
-		r.Applications = append(r.Applications, r.ref(a.ID, &a))
+		r.Applications = append(r.Applications, ref(a.ID, &a))
 	}
 }
 

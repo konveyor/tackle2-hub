@@ -1,12 +1,12 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Setting REST resource.
-type Setting struct {
-	Key   string `json:"key"`
-	Value any    `json:"value"`
-}
+type Setting api.Setting
 
 // With updates the resource with the model.
 func (r *Setting) With(m *model.Setting) {

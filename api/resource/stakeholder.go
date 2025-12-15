@@ -1,55 +1,38 @@
 package resource
 
-import "github.com/konveyor/tackle2-hub/model"
+import (
+	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
 
 // Stakeholder REST resource.
-type Stakeholder struct {
-	Resource         `yaml:",inline"`
-	Name             string `json:"name" binding:"required"`
-	Email            string `json:"email" binding:"required"`
-	JobFunction      *Ref   `json:"jobFunction" yaml:"jobFunction"`
-	Groups           []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	BusinessServices []Ref  `json:"businessServices" yaml:"businessServices"`
-	Owns             []Ref  `json:"owns"`
-	Contributes      []Ref  `json:"contributes"`
-	MigrationWaves   []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
-}
+type Stakeholder api.Stakeholder
 
 // With updates the resource with the model.
 func (r *Stakeholder) With(m *model.Stakeholder) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.Email = m.Email
-	r.JobFunction = r.refPtr(m.JobFunctionID, m.JobFunction)
+	r.JobFunction = refPtr(m.JobFunctionID, m.JobFunction)
 	r.Groups = []Ref{}
 	for _, g := range m.Groups {
-		ref := Ref{}
-		ref.With(g.ID, g.Name)
-		r.Groups = append(r.Groups, ref)
+		r.Groups = append(r.Groups, Ref{ID: g.ID, Name: g.Name})
 	}
 	r.BusinessServices = []Ref{}
 	for _, bs := range m.BusinessServices {
-		ref := Ref{}
-		ref.With(bs.ID, bs.Name)
-		r.BusinessServices = append(r.BusinessServices, ref)
+		r.BusinessServices = append(r.BusinessServices, Ref{ID: bs.ID, Name: bs.Name})
 	}
 	r.Owns = []Ref{}
 	for _, a := range m.Owns {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Owns = append(r.Owns, ref)
+		r.Owns = append(r.Owns, Ref{ID: a.ID, Name: a.Name})
 	}
 	r.Contributes = []Ref{}
 	for _, a := range m.Contributes {
-		ref := Ref{}
-		ref.With(a.ID, a.Name)
-		r.Contributes = append(r.Contributes, ref)
+		r.Contributes = append(r.Contributes, Ref{ID: a.ID, Name: a.Name})
 	}
 	r.MigrationWaves = []Ref{}
 	for _, mw := range m.MigrationWaves {
-		ref := Ref{}
-		ref.With(mw.ID, mw.Name)
-		r.MigrationWaves = append(r.MigrationWaves, ref)
+		r.MigrationWaves = append(r.MigrationWaves, Ref{ID: mw.ID, Name: mw.Name})
 	}
 }
 

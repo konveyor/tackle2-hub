@@ -1,27 +1,16 @@
 package resource
 
 import (
-	"time"
-
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Tracker REST resource.
-type Tracker struct {
-	Resource    `yaml:",inline"`
-	Name        string    `json:"name" binding:"required"`
-	URL         string    `json:"url" binding:"required"`
-	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-onprem"`
-	Message     string    `json:"message"`
-	Connected   bool      `json:"connected"`
-	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
-	Identity    Ref       `json:"identity" binding:"required"`
-	Insecure    bool      `json:"insecure"`
-}
+type Tracker api.Tracker
 
 // With updates the resource with the model.
 func (r *Tracker) With(m *model.Tracker) {
-	r.Resource.With(&m.Model)
+	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
 	r.URL = m.URL
 	r.Kind = m.Kind
@@ -29,7 +18,7 @@ func (r *Tracker) With(m *model.Tracker) {
 	r.Connected = m.Connected
 	r.LastUpdated = m.LastUpdated
 	r.Insecure = m.Insecure
-	r.Identity = r.ref(m.IdentityID, m.Identity)
+	r.Identity = ref(m.IdentityID, m.Identity)
 }
 
 // Model builds a model.

@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"github.com/konveyor/tackle2-hub/api/jsd"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/model/reflect"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -39,98 +38,28 @@ func baseWith(r *api.Resource, m *model.Model) {
 	r.CreateTime = m.CreateTime
 }
 
-// Resource REST resource.
-type Resource api.Resource
-
-// With updates the resource with the model.
-func (r *Resource) With(m *model.Model) {
-	r.ID = m.ID
-	r.CreateUser = m.CreateUser
-	r.UpdateUser = m.UpdateUser
-	r.CreateTime = m.CreateTime
-}
-
-// ref with id and named model.
-func (r *Resource) ref(id uint, m any) (ref Ref) {
-	ref.ID = id
-	ref.Name = r.nameOf(m)
-	return
-}
-
-// refPtr with id and named model.
-func (r *Resource) refPtr(id *uint, m any) (ref *Ref) {
-	if id == nil {
-		return
-	}
-	ref = &Ref{}
-	ref.ID = *id
-	ref.Name = r.nameOf(m)
-	return
-}
-
-// idPtr extracts ref ID.
-func (r *Resource) idPtr(ref *Ref) (id *uint) {
-	if ref != nil {
-		id = &ref.ID
-	}
-	return
-}
-
-// nameOf model.
-func (r *Resource) nameOf(m any) (name string) {
-	name = reflect.NameOf(m)
-	return
-}
-
-// Ref represents a FK.
-// Contains the PK and (name) natural key.
-// The name is optional and read-only.
-type Ref struct {
-	ID   uint   `json:"id" binding:"required"`
-	Name string `json:"name,omitempty"`
-}
-
-// With id and named model.
-func (r *Ref) With(id uint, name string) {
+func ref(id uint, m any) (r Ref) {
 	r.ID = id
-	r.Name = name
+	r.Name = reflect.NameOf(m)
+	return
 }
+
+type Resource = api.Resource
+
+// Ref type alias to shared API.
+type Ref = api.Ref
 
 // Map unstructured object.
-type Map = jsd.Map
+type Map = api.Map
 
-// TagRef represents a reference to a Tag.
-// Contains the tag ID, name, tag source.
-type TagRef struct {
-	ID      uint   `json:"id" binding:"required"`
-	Name    string `json:"name"`
-	Source  string `json:"source,omitempty" yaml:"source,omitempty"`
-	Virtual bool   `json:"virtual,omitempty" yaml:"virtual,omitempty"`
-}
-
-// With id and named model.
-func (r *TagRef) With(id uint, name string, source string, virtual bool) {
-	r.ID = id
-	r.Name = name
-	r.Source = source
-	r.Virtual = virtual
-}
+// TagRef type alias to shared API.
+type TagRef = api.TagRef
 
 // Repository REST nested resource.
-type Repository struct {
-	Kind   string `json:"kind"`
-	URL    string `json:"url"`
-	Branch string `json:"branch"`
-	Tag    string `json:"tag"`
-	Path   string `json:"path"`
-}
+type Repository = api.Repository
 
-// IdentityRef represents an identity reference with role.
-type IdentityRef struct {
-	ID   uint   `json:"id" binding:"required"`
-	Role string `json:"role" binding:"required"`
-	Name string `json:"name"`
-}
+// IdentityRef type alias to shared API.
+type IdentityRef = api.IdentityRef
 
 // AppTag represents application tag mapping.
 type AppTag struct {
