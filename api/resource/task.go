@@ -197,3 +197,18 @@ func (r *TaskDashboard) With(m *model.Task) {
 		r.Errors += len(m.Report.Errors)
 	}
 }
+
+// Attachment type alias to shared API.
+type Attachment = api.Attachment
+
+// TaskError type alias to shared API.
+type TaskError = api.TaskError
+
+// TaskEvent type alias to shared API.
+type TaskEvent = api.TaskEvent
+
+// TaskPolicy type alias to shared API.
+type TaskPolicy = api.TaskPolicy
+
+// TTL type alias to shared API.
+type TTL = api.TTL

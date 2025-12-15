@@ -137,3 +137,21 @@ type Link api.Link
 
 // ArchivedInsight created when insights are archived.
 type ArchivedInsight api.ArchivedInsight
+
+// DepAppReport type alias to shared API.
+type DepAppReport = api.DepAppReport
+
+// DepReport type alias to shared API.
+type DepReport = api.DepReport
+
+// FileReport type alias to shared API.
+type FileReport = api.FileReport
+
+// InsightAppReport type alias to shared API.
+type InsightAppReport = api.InsightAppReport
+
+// InsightReport type alias to shared API.
+type InsightReport = api.InsightReport
+
+// RuleReport type alias to shared API.
+type RuleReport = api.RuleReport

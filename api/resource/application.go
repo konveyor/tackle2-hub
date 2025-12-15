@@ -214,3 +214,6 @@ func (r *Fact) Model() (m *model.Fact) {
 	m.Value = r.Value
 	return
 }
+
+// Stakeholders type alias to shared API.
+type Stakeholders = api.Stakeholders

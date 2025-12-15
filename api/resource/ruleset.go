@@ -85,3 +85,6 @@ func (r *Rule) Model() (m *model.Rule) {
 	m.FileID = idPtr(r.File)
 	return
 }
+
+// TargetLabel type alias to shared API.
+type TargetLabel = api.TargetLabel
