@@ -15,41 +15,11 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-)
-
-// Routes
-const (
-	AnalysesRoute          = "/analyses"
-	AnalysisRoute          = AnalysesRoute + "/:" + ID
-	AnalysisArchiveRoute   = AnalysisRoute + "/archive"
-	AnalysisInsightsRoute  = AnalysisRoute + "/insights"
-	AnalysisIncidentsRoute = AnalysesInsightRoute + "/incidents"
-	AnalysesDepsRoute      = AnalysesRoute + "/dependencies"
-	AnalysesInsightsRoute  = AnalysesRoute + "/insights"
-	AnalysesInsightRoute   = AnalysesInsightsRoute + "/:" + ID
-	AnalysesIncidentsRoute = AnalysesRoute + "/incidents"
-	AnalysesIncidentRoute  = AnalysesIncidentsRoute + "/:" + ID
-	//
-	AnalysesReportRoute             = AnalysesRoute + "/report"
-	AnalysisReportDepsRoute         = AnalysesReportRoute + "/dependencies"
-	AnalysisReportRuleRoute         = AnalysesReportRoute + "/rules"
-	AnalysisReportInsightsRoute     = AnalysesReportRoute + "/insights"
-	AnalysisReportAppsRoute         = AnalysesReportRoute + "/applications"
-	AnalysisReportInsightRoute      = AnalysisReportInsightsRoute + "/:" + ID
-	AnalysisReportInsightsAppsRoute = AnalysisReportInsightsRoute + "/applications"
-	AnalysisReportDepsAppsRoute     = AnalysisReportDepsRoute + "/applications"
-	AnalysisReportAppsInsightsRoute = AnalysisReportAppsRoute + "/:" + ID + "/insights"
-	AnalysisReportFileRoute         = AnalysisReportInsightRoute + "/files"
-	//
-	AppAnalysesRoute         = ApplicationRoute + "/analyses"
-	AppAnalysisRoute         = ApplicationRoute + "/analysis"
-	AppAnalysisReportRoute   = AppAnalysisRoute + "/report"
-	AppAnalysisDepsRoute     = AppAnalysisRoute + "/dependencies"
-	AppAnalysisInsightsRoute = AppAnalysisRoute + "/insights"
 )
 
 // Manifest markers.
@@ -73,33 +43,33 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	// Primary
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analyses"))
-	routeGroup.GET(AnalysisRoute, h.Get)
-	routeGroup.POST(AnalysisArchiveRoute, h.Archive)
-	routeGroup.GET(AnalysesRoute, h.List)
-	routeGroup.DELETE(AnalysisRoute, h.Delete)
-	routeGroup.GET(AnalysesDepsRoute, h.Deps)
-	routeGroup.GET(AnalysesInsightsRoute, h.Insights)
-	routeGroup.GET(AnalysesInsightRoute, h.Insight)
-	routeGroup.GET(AnalysesIncidentsRoute, h.Incidents)
-	routeGroup.GET(AnalysesIncidentRoute, h.Incident)
-	routeGroup.GET(AnalysisInsightsRoute, h.AnalysisInsights)
-	routeGroup.GET(AnalysisIncidentsRoute, h.InsightIncidents)
+	routeGroup.GET(api.AnalysisRoute, h.Get)
+	routeGroup.POST(api.AnalysisArchiveRoute, h.Archive)
+	routeGroup.GET(api.AnalysesRoute, h.List)
+	routeGroup.DELETE(api.AnalysisRoute, h.Delete)
+	routeGroup.GET(api.AnalysesDepsRoute, h.Deps)
+	routeGroup.GET(api.AnalysesInsightsRoute, h.Insights)
+	routeGroup.GET(api.AnalysesInsightRoute, h.Insight)
+	routeGroup.GET(api.AnalysesIncidentsRoute, h.Incidents)
+	routeGroup.GET(api.AnalysesIncidentRoute, h.Incident)
+	routeGroup.GET(api.AnalysisInsightsRoute, h.AnalysisInsights)
+	routeGroup.GET(api.AnalysisIncidentsRoute, h.InsightIncidents)
 	// Report
-	routeGroup.GET(AnalysisReportRuleRoute, h.RuleReports)
-	routeGroup.GET(AnalysisReportAppsInsightsRoute, h.AppInsightReports)
-	routeGroup.GET(AnalysisReportInsightsAppsRoute, h.InsightAppReports)
-	routeGroup.GET(AnalysisReportFileRoute, h.FileReports)
-	routeGroup.GET(AnalysisReportDepsRoute, h.DepReports)
-	routeGroup.GET(AnalysisReportDepsAppsRoute, h.DepAppReports)
+	routeGroup.GET(api.AnalysisReportRuleRoute, h.RuleReports)
+	routeGroup.GET(api.AnalysisReportAppsInsightsRoute, h.AppInsightReports)
+	routeGroup.GET(api.AnalysisReportInsightsAppsRoute, h.InsightAppReports)
+	routeGroup.GET(api.AnalysisReportFileRoute, h.FileReports)
+	routeGroup.GET(api.AnalysisReportDepsRoute, h.DepReports)
+	routeGroup.GET(api.AnalysisReportDepsAppsRoute, h.DepAppReports)
 	// Application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.analyses"))
-	routeGroup.POST(AppAnalysesRoute, Transaction, h.AppCreate)
-	routeGroup.GET(AppAnalysesRoute, h.AppList)
-	routeGroup.GET(AppAnalysisRoute, h.AppLatest)
-	routeGroup.GET(AppAnalysisReportRoute, h.AppLatestReport)
-	routeGroup.GET(AppAnalysisDepsRoute, h.AppDeps)
-	routeGroup.GET(AppAnalysisInsightsRoute, h.AppInsights)
+	routeGroup.POST(api.AppAnalysesRoute, Transaction, h.AppCreate)
+	routeGroup.GET(api.AppAnalysesRoute, h.AppList)
+	routeGroup.GET(api.AppAnalysisRoute, h.AppLatest)
+	routeGroup.GET(api.AppAnalysisReportRoute, h.AppLatestReport)
+	routeGroup.GET(api.AppAnalysisDepsRoute, h.AppDeps)
+	routeGroup.GET(api.AppAnalysisInsightsRoute, h.AppInsights)
 }
 
 // Get godoc

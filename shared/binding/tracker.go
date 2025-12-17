@@ -60,6 +60,6 @@ func (h *Tracker) GetProjects(id1 uint, id2 uint) (project api.Project, err erro
 // List Project Issue Types.
 func (h *Tracker) ListProjectIssueTypes(id1 uint, id2 uint) (issueType []api.IssueType, err error) {
 	issueType = []api.IssueType{}
-	err = h.client.Get(Path(api.TrackerProjectIssueTypes).Inject(Params{api.ID: id1, api.ID2: id2}), &issueType)
+	err = h.client.Get(Path(api.TrackerProjectIssueTypesRoute).Inject(Params{api.ID: id1, api.ID2: id2}), &issueType)
 	return
 }

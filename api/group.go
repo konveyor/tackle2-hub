@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	StakeholderGroupsRoute = "/stakeholdergroups"
-	StakeholderGroupRoute  = StakeholderGroupsRoute + "/:" + ID
 )
 
 // StakeholderGroupHandler handles stakeholder group routes.
@@ -23,12 +18,12 @@ type StakeholderGroupHandler struct {
 func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("stakeholdergroups"), Transaction)
-	routeGroup.GET(StakeholderGroupsRoute, h.List)
-	routeGroup.GET(StakeholderGroupsRoute+"/", h.List)
-	routeGroup.POST(StakeholderGroupsRoute, h.Create)
-	routeGroup.GET(StakeholderGroupRoute, h.Get)
-	routeGroup.PUT(StakeholderGroupRoute, h.Update)
-	routeGroup.DELETE(StakeholderGroupRoute, h.Delete)
+	routeGroup.GET(api.StakeholderGroupsRoute, h.List)
+	routeGroup.GET(api.StakeholderGroupsRoute+"/", h.List)
+	routeGroup.POST(api.StakeholderGroupsRoute, h.Create)
+	routeGroup.GET(api.StakeholderGroupRoute, h.Get)
+	routeGroup.PUT(api.StakeholderGroupRoute, h.Update)
+	routeGroup.DELETE(api.StakeholderGroupRoute, h.Delete)
 }
 
 // Get godoc

@@ -7,13 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-)
-
-// Routes
-const (
-	BatchRoute        = "/batch"
-	BatchTicketsRoute = BatchRoute + TicketsRoute
-	BatchTagsRoute    = BatchRoute + TagsRoute
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // BatchHandler handles batch resource creation routes.
@@ -24,8 +18,8 @@ type BatchHandler struct {
 // AddRoutes adds routes.
 func (h BatchHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.POST(BatchTicketsRoute, Required("tickets"), Transaction, h.TicketsCreate)
-	routeGroup.POST(BatchTagsRoute, Required("tags"), Transaction, h.TagsCreate)
+	routeGroup.POST(api.BatchTicketsRoute, Required("tickets"), Transaction, h.TicketsCreate)
+	routeGroup.POST(api.BatchTagsRoute, Required("tags"), Transaction, h.TagsCreate)
 }
 
 // TicketsCreate godoc

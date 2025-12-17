@@ -5,14 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	ReviewsRoute = "/reviews"
-	ReviewRoute  = ReviewsRoute + "/:" + ID
-	CopyRoute    = ReviewsRoute + "/copy"
 )
 
 // ReviewHandler handles review routes.
@@ -24,13 +18,13 @@ type ReviewHandler struct {
 func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("reviews"))
-	routeGroup.GET(ReviewsRoute, h.List)
-	routeGroup.GET(ReviewsRoute+"/", h.List)
-	routeGroup.POST(ReviewsRoute, h.Create)
-	routeGroup.GET(ReviewRoute, h.Get)
-	routeGroup.PUT(ReviewRoute, h.Update)
-	routeGroup.DELETE(ReviewRoute, h.Delete)
-	routeGroup.POST(CopyRoute, h.CopyReview, Transaction)
+	routeGroup.GET(api.ReviewsRoute, h.List)
+	routeGroup.GET(api.ReviewsRoute+"/", h.List)
+	routeGroup.POST(api.ReviewsRoute, h.Create)
+	routeGroup.GET(api.ReviewRoute, h.Get)
+	routeGroup.PUT(api.ReviewRoute, h.Update)
+	routeGroup.DELETE(api.ReviewRoute, h.Delete)
+	routeGroup.POST(api.CopyRoute, h.CopyReview, Transaction)
 }
 
 // Get godoc

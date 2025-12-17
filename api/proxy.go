@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	ProxiesRoute = "/proxies"
-	ProxyRoute   = ProxiesRoute + "/:" + ID
 )
 
 const (
@@ -26,12 +21,12 @@ type ProxyHandler struct {
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("proxies"))
-	routeGroup.GET(ProxiesRoute, h.List)
-	routeGroup.GET(ProxiesRoute+"/", h.List)
-	routeGroup.POST(ProxiesRoute, h.Create)
-	routeGroup.GET(ProxyRoute, h.Get)
-	routeGroup.PUT(ProxyRoute, h.Update)
-	routeGroup.DELETE(ProxyRoute, h.Delete)
+	routeGroup.GET(api.ProxiesRoute, h.List)
+	routeGroup.GET(api.ProxiesRoute+"/", h.List)
+	routeGroup.POST(api.ProxiesRoute, h.Create)
+	routeGroup.GET(api.ProxyRoute, h.Get)
+	routeGroup.PUT(api.ProxyRoute, h.Update)
+	routeGroup.DELETE(api.ProxyRoute, h.Delete)
 }
 
 // Get godoc

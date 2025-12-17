@@ -5,14 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TagCategoriesRoute   = "/tagcategories"
-	TagCategoryRoute     = TagCategoriesRoute + "/:" + ID
-	TagCategoryTagsRoute = TagCategoryRoute + "/tags"
 )
 
 // TagCategoryHandler handles the tag-type route.
@@ -24,14 +18,14 @@ type TagCategoryHandler struct {
 func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tagcategories"))
-	routeGroup.GET(TagCategoriesRoute, h.List)
-	routeGroup.GET(TagCategoriesRoute+"/", h.List)
-	routeGroup.POST(TagCategoriesRoute, h.Create)
-	routeGroup.GET(TagCategoryRoute, h.Get)
-	routeGroup.PUT(TagCategoryRoute, h.Update)
-	routeGroup.DELETE(TagCategoryRoute, h.Delete)
-	routeGroup.GET(TagCategoryTagsRoute, h.TagList)
-	routeGroup.GET(TagCategoryTagsRoute+"/", h.TagList)
+	routeGroup.GET(api.TagCategoriesRoute, h.List)
+	routeGroup.GET(api.TagCategoriesRoute+"/", h.List)
+	routeGroup.POST(api.TagCategoriesRoute, h.Create)
+	routeGroup.GET(api.TagCategoryRoute, h.Get)
+	routeGroup.PUT(api.TagCategoryRoute, h.Update)
+	routeGroup.DELETE(api.TagCategoryRoute, h.Delete)
+	routeGroup.GET(api.TagCategoryTagsRoute, h.TagList)
+	routeGroup.GET(api.TagCategoryTagsRoute+"/", h.TagList)
 }
 
 // Get godoc

@@ -6,13 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TicketsRoute = "/tickets"
-	TicketRoute  = "/tickets" + "/:" + ID
 )
 
 // Params.
@@ -29,11 +24,11 @@ type TicketHandler struct {
 func (h TicketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tickets"))
-	routeGroup.GET(TicketsRoute, h.List)
-	routeGroup.GET(TicketsRoute+"/", h.List)
-	routeGroup.POST(TicketsRoute, h.Create)
-	routeGroup.GET(TicketRoute, h.Get)
-	routeGroup.DELETE(TicketRoute, h.Delete)
+	routeGroup.GET(api.TicketsRoute, h.List)
+	routeGroup.GET(api.TicketsRoute+"/", h.List)
+	routeGroup.POST(api.TicketsRoute, h.Create)
+	routeGroup.GET(api.TicketRoute, h.Get)
+	routeGroup.DELETE(api.TicketRoute, h.Delete)
 }
 
 // Get godoc

@@ -337,9 +337,9 @@ const (
 
 // Routes - Trackers
 const (
-	TrackersRoute            = "/trackers"
-	TrackerRoute             = "/trackers" + "/:" + ID
-	TrackerProjectsRoute     = TrackerRoute + "/projects"
-	TrackerProjectRoute      = TrackerRoute + "/projects" + "/:" + ID2
-	TrackerProjectIssueTypes = TrackerProjectRoute + "/issuetypes"
+	TrackersRoute                 = "/trackers"
+	TrackerRoute                  = "/trackers" + "/:" + ID
+	TrackerProjectsRoute          = TrackerRoute + "/projects"
+	TrackerProjectRoute           = TrackerRoute + "/projects" + "/:" + ID2
+	TrackerProjectIssueTypesRoute = TrackerProjectRoute + "/issuetypes"
 )

@@ -7,15 +7,9 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	ArchetypesRoute           = "/archetypes"
-	ArchetypeRoute            = ArchetypesRoute + "/:" + ID
-	ArchetypeAssessmentsRoute = ArchetypeRoute + "/assessments"
 )
 
 // ArchetypeHandler handles Archetype resource routes.
@@ -27,16 +21,16 @@ type ArchetypeHandler struct {
 func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("archetypes"), Transaction)
-	routeGroup.GET(ArchetypesRoute, h.List)
-	routeGroup.POST(ArchetypesRoute, h.Create)
-	routeGroup.GET(ArchetypeRoute, h.Get)
-	routeGroup.PUT(ArchetypeRoute, h.Update)
-	routeGroup.DELETE(ArchetypeRoute, h.Delete)
+	routeGroup.GET(api.ArchetypesRoute, h.List)
+	routeGroup.POST(api.ArchetypesRoute, h.Create)
+	routeGroup.GET(api.ArchetypeRoute, h.Get)
+	routeGroup.PUT(api.ArchetypeRoute, h.Update)
+	routeGroup.DELETE(api.ArchetypeRoute, h.Delete)
 	// Assessments
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("archetypes.assessments"))
-	routeGroup.GET(ArchetypeAssessmentsRoute, h.AssessmentList)
-	routeGroup.POST(ArchetypeAssessmentsRoute, h.AssessmentCreate)
+	routeGroup.GET(api.ArchetypeAssessmentsRoute, h.AssessmentList)
+	routeGroup.POST(api.ArchetypeAssessmentsRoute, h.AssessmentCreate)
 }
 
 // Get godoc

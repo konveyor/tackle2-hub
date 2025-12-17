@@ -5,18 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	ConfigMapsRoute   = "/configmaps"
-	ConfigMapRoute    = ConfigMapsRoute + "/:" + Name
-	ConfigMapKeyRoute = ConfigMapRoute + "/:" + Key
 )
 
 const (
@@ -32,10 +26,10 @@ type ConfigMapHandler struct {
 func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("configmaps"))
-	routeGroup.GET(ConfigMapsRoute, h.List)
-	routeGroup.GET(ConfigMapsRoute+"/", h.List)
-	routeGroup.GET(ConfigMapRoute, h.Get)
-	routeGroup.GET(ConfigMapKeyRoute, h.Get)
+	routeGroup.GET(api.ConfigMapsRoute, h.List)
+	routeGroup.GET(api.ConfigMapsRoute+"/", h.List)
+	routeGroup.GET(api.ConfigMapRoute, h.Get)
+	routeGroup.GET(api.ConfigMapKeyRoute, h.Get)
 }
 
 // Get godoc

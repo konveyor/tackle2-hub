@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
 )
 
@@ -17,11 +18,6 @@ const (
 	EffortXL = "extra_large"
 )
 
-// Routes
-const (
-	AdoptionPlansRoute = "/reports/adoptionplan"
-)
-
 type AdoptionPlanHandler struct {
 	BaseHandler
 }
@@ -30,7 +26,7 @@ type AdoptionPlanHandler struct {
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("adoptionplans"))
-	routeGroup.POST(AdoptionPlansRoute, h.Graph)
+	routeGroup.POST(api.AdoptionPlansRoute, h.Graph)
 }
 
 // Graph godoc

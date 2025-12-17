@@ -8,20 +8,13 @@ import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm"
 )
 
 const (
 	Role = "role"
-)
-
-// Routes
-const (
-	IdentitiesRoute = "/identities"
-	IdentityRoute   = IdentitiesRoute + "/:" + ID
-	//
-	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
 // Params.
@@ -37,13 +30,13 @@ type IdentityHandler struct {
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
-	routeGroup.GET(IdentitiesRoute, h.List)
-	routeGroup.POST(IdentitiesRoute, Transaction, h.Create)
-	routeGroup.GET(IdentityRoute, h.Get)
-	routeGroup.PUT(IdentityRoute, Transaction, h.Update)
-	routeGroup.DELETE(IdentityRoute, h.Delete)
+	routeGroup.GET(api.IdentitiesRoute, h.List)
+	routeGroup.POST(api.IdentitiesRoute, Transaction, h.Create)
+	routeGroup.GET(api.IdentityRoute, h.Get)
+	routeGroup.PUT(api.IdentityRoute, Transaction, h.Update)
+	routeGroup.DELETE(api.IdentityRoute, h.Delete)
 	//
-	routeGroup.GET(AppIdentitiesRoute, h.AppList)
+	routeGroup.GET(api.AppIdentitiesRoute, h.AppList)
 }
 
 // Get godoc

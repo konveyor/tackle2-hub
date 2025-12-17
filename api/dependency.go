@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	DependenciesRoute = "/dependencies"
-	DependencyRoute   = DependenciesRoute + "/:" + ID
 )
 
 // DependencyHandler handles application dependency routes.
@@ -23,11 +18,11 @@ type DependencyHandler struct {
 func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("dependencies"))
-	routeGroup.GET(DependenciesRoute, h.List)
-	routeGroup.GET(DependenciesRoute+"/", h.List)
-	routeGroup.POST(DependenciesRoute, h.Create)
-	routeGroup.GET(DependencyRoute, h.Get)
-	routeGroup.DELETE(DependencyRoute, h.Delete)
+	routeGroup.GET(api.DependenciesRoute, h.List)
+	routeGroup.GET(api.DependenciesRoute+"/", h.List)
+	routeGroup.POST(api.DependenciesRoute, h.Create)
+	routeGroup.GET(api.DependencyRoute, h.Get)
+	routeGroup.DELETE(api.DependencyRoute, h.Delete)
 }
 
 // Get godoc

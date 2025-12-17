@@ -8,14 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	uuid2 "github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TargetsRoute = "/targets"
-	TargetRoute  = TargetsRoute + "/:" + ID
 )
 
 // TargetHandler handles Target resource routes.
@@ -26,12 +21,12 @@ type TargetHandler struct {
 func (h TargetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("targets"), Transaction)
-	routeGroup.GET(TargetsRoute, h.List)
-	routeGroup.GET(TargetsRoute+"/", h.List)
-	routeGroup.POST(TargetsRoute, h.Create)
-	routeGroup.GET(TargetRoute, h.Get)
-	routeGroup.PUT(TargetRoute, h.Update)
-	routeGroup.DELETE(TargetRoute, h.Delete)
+	routeGroup.GET(api.TargetsRoute, h.List)
+	routeGroup.GET(api.TargetsRoute+"/", h.List)
+	routeGroup.POST(api.TargetsRoute, h.Create)
+	routeGroup.GET(api.TargetRoute, h.Get)
+	routeGroup.PUT(api.TargetRoute, h.Update)
+	routeGroup.DELETE(api.TargetRoute, h.Delete)
 }
 
 // Get godoc

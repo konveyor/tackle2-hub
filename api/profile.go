@@ -14,6 +14,7 @@ import (
 	"github.com/konveyor/tackle2-hub/migration/json"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/scm"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 	"github.com/konveyor/tackle2-hub/shared/tar"
 	"gopkg.in/yaml.v2"
@@ -23,11 +24,7 @@ import (
 
 // Routes
 const (
-	AnalysisProfilesRoute = "/analysis/profiles"
-	AnalysisProfileRoute  = AnalysisProfilesRoute + "/:id"
-	AnalysisProfileBundle = AnalysisProfileRoute + "/bundle"
-	//
-	AppAnalysisProfilesRoute = ApplicationRoute + "/analysis/profiles"
+	AnalysisProfileBundle = api.AnalysisProfileRoute + "/bundle"
 )
 
 // AnalysisProfileHandler handles application Profile resource routes.
@@ -38,15 +35,15 @@ type AnalysisProfileHandler struct {
 func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analysis.profiles"))
-	routeGroup.GET(AnalysisProfileRoute, h.Get)
-	routeGroup.GET(AnalysisProfilesRoute, h.List)
-	routeGroup.GET(AnalysisProfilesRoute+"/", h.List)
+	routeGroup.GET(api.AnalysisProfileRoute, h.Get)
+	routeGroup.GET(api.AnalysisProfilesRoute, h.List)
+	routeGroup.GET(api.AnalysisProfilesRoute+"/", h.List)
 	routeGroup.GET(AnalysisProfileBundle, h.GetBundle)
-	routeGroup.POST(AnalysisProfilesRoute, h.Create, Transaction)
-	routeGroup.PUT(AnalysisProfileRoute, h.Update, Transaction)
-	routeGroup.DELETE(AnalysisProfileRoute, h.Delete, Transaction)
+	routeGroup.POST(api.AnalysisProfilesRoute, h.Create, Transaction)
+	routeGroup.PUT(api.AnalysisProfileRoute, h.Update, Transaction)
+	routeGroup.DELETE(api.AnalysisProfileRoute, h.Delete, Transaction)
 	//
-	routeGroup.GET(AppAnalysisProfilesRoute, h.AppProfileList)
+	routeGroup.GET(api.AppAnalysisProfilesRoute, h.AppProfileList)
 }
 
 // Get godoc

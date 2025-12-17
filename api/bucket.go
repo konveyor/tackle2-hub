@@ -10,15 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 	"github.com/konveyor/tackle2-hub/shared/tar"
-)
-
-// Routes
-const (
-	BucketsRoute       = "/buckets"
-	BucketRoute        = BucketsRoute + "/:" + ID
-	BucketContentRoute = BucketRoute + "/*" + Wildcard
 )
 
 // BucketHandler handles bucket routes.
@@ -30,15 +24,15 @@ type BucketHandler struct {
 func (h BucketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("buckets"))
-	routeGroup.GET(BucketsRoute, h.List)
-	routeGroup.GET(BucketsRoute+"/", h.List)
-	routeGroup.POST(BucketsRoute, h.Create)
-	routeGroup.GET(BucketRoute, h.Get)
-	routeGroup.DELETE(BucketRoute, h.Delete)
-	routeGroup.POST(BucketContentRoute, h.BucketPut)
-	routeGroup.PUT(BucketContentRoute, h.BucketPut)
-	routeGroup.GET(BucketContentRoute, h.BucketGet)
-	routeGroup.DELETE(BucketContentRoute, h.BucketDelete)
+	routeGroup.GET(api.BucketsRoute, h.List)
+	routeGroup.GET(api.BucketsRoute+"/", h.List)
+	routeGroup.POST(api.BucketsRoute, h.Create)
+	routeGroup.GET(api.BucketRoute, h.Get)
+	routeGroup.DELETE(api.BucketRoute, h.Delete)
+	routeGroup.POST(api.BucketContentRoute, h.BucketPut)
+	routeGroup.PUT(api.BucketContentRoute, h.BucketPut)
+	routeGroup.GET(api.BucketContentRoute, h.BucketGet)
+	routeGroup.DELETE(api.BucketContentRoute, h.BucketDelete)
 }
 
 // List godoc

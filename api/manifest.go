@@ -10,15 +10,7 @@ import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
-)
-
-// Routes
-const (
-	ManifestsRoute = "/manifests"
-	ManifestRoute  = ManifestsRoute + "/:" + ID
-	//
-	AppManifestRoute  = ApplicationRoute + "/manifest"
-	AppManifestsRoute = ApplicationRoute + "/manifests"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 const (
@@ -35,17 +27,17 @@ type ManifestHandler struct {
 func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("manifests"))
-	routeGroup.GET(ManifestRoute, h.Get)
-	routeGroup.GET(ManifestsRoute, h.List)
-	routeGroup.GET(ManifestsRoute+"/", h.List)
-	routeGroup.POST(ManifestsRoute, h.Create)
-	routeGroup.PUT(ManifestRoute, h.Update)
-	routeGroup.DELETE(ManifestRoute, h.Delete)
+	routeGroup.GET(api.ManifestRoute, h.Get)
+	routeGroup.GET(api.ManifestsRoute, h.List)
+	routeGroup.GET(api.ManifestsRoute+"/", h.List)
+	routeGroup.POST(api.ManifestsRoute, h.Create)
+	routeGroup.PUT(api.ManifestRoute, h.Update)
+	routeGroup.DELETE(api.ManifestRoute, h.Delete)
 	// application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.manifests"))
-	routeGroup.GET(AppManifestRoute, h.AppGet)
-	routeGroup.POST(AppManifestsRoute, h.AppCreate)
+	routeGroup.GET(api.AppManifestRoute, h.AppGet)
+	routeGroup.POST(api.AppManifestsRoute, h.AppCreate)
 }
 
 // Get godoc

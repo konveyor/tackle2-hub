@@ -6,13 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	MigrationWavesRoute = "/migrationwaves"
-	MigrationWaveRoute  = MigrationWavesRoute + "/:" + ID
 )
 
 // MigrationWaveHandler handles Migration Wave resource routes.
@@ -24,12 +19,12 @@ type MigrationWaveHandler struct {
 func (h MigrationWaveHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("migrationwaves"), Transaction)
-	routeGroup.GET(MigrationWavesRoute, h.List)
-	routeGroup.GET(MigrationWavesRoute+"/", h.List)
-	routeGroup.GET(MigrationWaveRoute, h.Get)
-	routeGroup.POST(MigrationWavesRoute, h.Create)
-	routeGroup.DELETE(MigrationWaveRoute, h.Delete)
-	routeGroup.PUT(MigrationWaveRoute, h.Update)
+	routeGroup.GET(api.MigrationWavesRoute, h.List)
+	routeGroup.GET(api.MigrationWavesRoute+"/", h.List)
+	routeGroup.GET(api.MigrationWaveRoute, h.Get)
+	routeGroup.POST(api.MigrationWavesRoute, h.Create)
+	routeGroup.DELETE(api.MigrationWaveRoute, h.Delete)
+	routeGroup.PUT(api.MigrationWaveRoute, h.Update)
 }
 
 // Get godoc

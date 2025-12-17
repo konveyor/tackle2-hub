@@ -5,19 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/jsd"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 const (
-	Domain  = "domain"
-	Variant = "variant"
-	Subject = "subject"
-)
-
-const (
-	SchemaRoute     = "/schema"
-	SchemasRoute    = "/schemas"
-	SchemasGetRoute = SchemasRoute + "/:" + Name
-	SchemaFindRoute = SchemaRoute + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
+	Domain  = api.Domain
+	Variant = api.Variant
+	Subject = api.Subject
 )
 
 // SchemaHandler providers schema (route) handler.
@@ -32,10 +26,10 @@ type SchemaHandler struct {
 // AddRoutes Adds routes.
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
-	r.GET(SchemaRoute, h.GetAPI)
-	r.GET(SchemasRoute, h.List)
-	r.GET(SchemasGetRoute, h.Get)
-	r.GET(SchemaFindRoute, h.Find)
+	r.GET(api.SchemaRoute, h.GetAPI)
+	r.GET(api.SchemasRoute, h.List)
+	r.GET(api.SchemasGetRoute, h.Get)
+	r.GET(api.SchemaFindRoute, h.Find)
 }
 
 // GetAPI godoc

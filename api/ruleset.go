@@ -6,14 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	RuleSetsRoute = "/rulesets"
-	RuleSetRoute  = RuleSetsRoute + "/:" + ID
 )
 
 // RuleSetHandler handles ruleset resource routes.
@@ -24,12 +19,12 @@ type RuleSetHandler struct {
 func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("rulesets"), Transaction)
-	routeGroup.GET(RuleSetsRoute, h.List)
-	routeGroup.GET(RuleSetsRoute+"/", h.List)
-	routeGroup.POST(RuleSetsRoute, h.Create)
-	routeGroup.GET(RuleSetRoute, h.Get)
-	routeGroup.PUT(RuleSetRoute, h.Update)
-	routeGroup.DELETE(RuleSetRoute, h.Delete)
+	routeGroup.GET(api.RuleSetsRoute, h.List)
+	routeGroup.GET(api.RuleSetsRoute+"/", h.List)
+	routeGroup.POST(api.RuleSetsRoute, h.Create)
+	routeGroup.GET(api.RuleSetRoute, h.Get)
+	routeGroup.PUT(api.RuleSetRoute, h.Update)
+	routeGroup.DELETE(api.RuleSetRoute, h.Delete)
 }
 
 // Get godoc

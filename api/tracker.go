@@ -7,17 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TrackersRoute            = "/trackers"
-	TrackerRoute             = "/trackers" + "/:" + ID
-	TrackerProjects          = TrackerRoute + "/projects"
-	TrackerProject           = TrackerRoute + "/projects" + "/:" + ID2
-	TrackerProjectIssueTypes = TrackerProject + "/issuetypes"
 )
 
 // Params
@@ -34,15 +26,15 @@ type TrackerHandler struct {
 func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("trackers"))
-	routeGroup.GET(TrackersRoute, h.List)
-	routeGroup.GET(TrackersRoute+"/", h.List)
-	routeGroup.POST(TrackersRoute, h.Create)
-	routeGroup.GET(TrackerRoute, h.Get)
-	routeGroup.PUT(TrackerRoute, h.Update)
-	routeGroup.DELETE(TrackerRoute, h.Delete)
-	routeGroup.GET(TrackerProjects, h.ProjectList)
-	routeGroup.GET(TrackerProject, h.ProjectGet)
-	routeGroup.GET(TrackerProjectIssueTypes, h.ProjectIssueTypeList)
+	routeGroup.GET(api.TrackersRoute, h.List)
+	routeGroup.GET(api.TrackersRoute+"/", h.List)
+	routeGroup.POST(api.TrackersRoute, h.Create)
+	routeGroup.GET(api.TrackerRoute, h.Get)
+	routeGroup.PUT(api.TrackerRoute, h.Update)
+	routeGroup.DELETE(api.TrackerRoute, h.Delete)
+	routeGroup.GET(api.TrackerProjectsRoute, h.ProjectList)
+	routeGroup.GET(api.TrackerProjectRoute, h.ProjectGet)
+	routeGroup.GET(api.TrackerProjectIssueTypesRoute, h.ProjectIssueTypeList)
 }
 
 // Get godoc

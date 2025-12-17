@@ -6,13 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	AssessmentsRoute = "/assessments"
-	AssessmentRoute  = AssessmentsRoute + "/:" + ID
 )
 
 // AssessmentHandler handles Assessment resource routes.
@@ -24,11 +19,11 @@ type AssessmentHandler struct {
 func (h AssessmentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("assessments"), Transaction)
-	routeGroup.GET(AssessmentsRoute, h.List)
-	routeGroup.GET(AssessmentsRoute+"/", h.List)
-	routeGroup.GET(AssessmentRoute, h.Get)
-	routeGroup.PUT(AssessmentRoute, h.Update)
-	routeGroup.DELETE(AssessmentRoute, h.Delete)
+	routeGroup.GET(api.AssessmentsRoute, h.List)
+	routeGroup.GET(api.AssessmentsRoute+"/", h.List)
+	routeGroup.GET(api.AssessmentRoute, h.Get)
+	routeGroup.PUT(api.AssessmentRoute, h.Update)
+	routeGroup.DELETE(api.AssessmentRoute, h.Delete)
 }
 
 // Get godoc

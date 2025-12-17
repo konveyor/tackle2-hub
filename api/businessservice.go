@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	BusinessServicesRoute = "/businessservices"
-	BusinessServiceRoute  = BusinessServicesRoute + "/:" + ID
 )
 
 // BusinessServiceHandler handles business-service routes.
@@ -23,12 +18,12 @@ type BusinessServiceHandler struct {
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("businessservices"))
-	routeGroup.GET(BusinessServicesRoute, h.List)
-	routeGroup.GET(BusinessServicesRoute+"/", h.List)
-	routeGroup.POST(BusinessServicesRoute, h.Create)
-	routeGroup.GET(BusinessServiceRoute, h.Get)
-	routeGroup.PUT(BusinessServiceRoute, h.Update)
-	routeGroup.DELETE(BusinessServiceRoute, h.Delete)
+	routeGroup.GET(api.BusinessServicesRoute, h.List)
+	routeGroup.GET(api.BusinessServicesRoute+"/", h.List)
+	routeGroup.POST(api.BusinessServicesRoute, h.Create)
+	routeGroup.GET(api.BusinessServiceRoute, h.Get)
+	routeGroup.PUT(api.BusinessServiceRoute, h.Update)
+	routeGroup.DELETE(api.BusinessServiceRoute, h.Delete)
 }
 
 // Get godoc

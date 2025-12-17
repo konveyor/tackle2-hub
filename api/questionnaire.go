@@ -6,13 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	QuestionnairesRoute = "/questionnaires"
-	QuestionnaireRoute  = QuestionnairesRoute + "/:" + ID
 )
 
 // QuestionnaireHandler handles Questionnaire resource routes.
@@ -24,12 +19,12 @@ type QuestionnaireHandler struct {
 func (h QuestionnaireHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("questionnaires"), Transaction)
-	routeGroup.GET(QuestionnairesRoute, h.List)
-	routeGroup.GET(QuestionnairesRoute+"/", h.List)
-	routeGroup.POST(QuestionnairesRoute, h.Create)
-	routeGroup.GET(QuestionnaireRoute, h.Get)
-	routeGroup.PUT(QuestionnaireRoute, h.Update)
-	routeGroup.DELETE(QuestionnaireRoute, h.Delete)
+	routeGroup.GET(api.QuestionnairesRoute, h.List)
+	routeGroup.GET(api.QuestionnairesRoute+"/", h.List)
+	routeGroup.POST(api.QuestionnairesRoute, h.Create)
+	routeGroup.GET(api.QuestionnaireRoute, h.Get)
+	routeGroup.PUT(api.QuestionnaireRoute, h.Update)
+	routeGroup.DELETE(api.QuestionnaireRoute, h.Delete)
 }
 
 // Get godoc

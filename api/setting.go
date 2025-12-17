@@ -7,12 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
-)
-
-// Routes
-const (
-	SettingsRoute = "/settings"
-	SettingRoute  = SettingsRoute + "/:" + Key
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // SettingHandler handles setting routes.
@@ -24,13 +19,13 @@ type SettingHandler struct {
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("settings"))
-	routeGroup.GET(SettingsRoute, h.List)
-	routeGroup.GET(SettingsRoute+"/", h.List)
-	routeGroup.GET(SettingRoute, h.Get)
-	routeGroup.POST(SettingsRoute, h.Create)
-	routeGroup.POST(SettingRoute, h.CreateByKey)
-	routeGroup.PUT(SettingRoute, h.Update)
-	routeGroup.DELETE(SettingRoute, h.Delete)
+	routeGroup.GET(api.SettingsRoute, h.List)
+	routeGroup.GET(api.SettingsRoute+"/", h.List)
+	routeGroup.GET(api.SettingRoute, h.Get)
+	routeGroup.POST(api.SettingsRoute, h.Create)
+	routeGroup.POST(api.SettingRoute, h.CreateByKey)
+	routeGroup.PUT(api.SettingRoute, h.Update)
+	routeGroup.DELETE(api.SettingRoute, h.Delete)
 }
 
 // Get godoc

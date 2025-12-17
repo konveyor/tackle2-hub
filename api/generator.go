@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	GeneratorsRoute = "/generators"
-	GeneratorRoute  = GeneratorsRoute + "/:" + ID
 )
 
 // GeneratorHandler handles application Generator resource routes.
@@ -22,12 +17,12 @@ type GeneratorHandler struct {
 func (h GeneratorHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("generators"))
-	routeGroup.GET(GeneratorRoute, h.Get)
-	routeGroup.GET(GeneratorsRoute, h.List)
-	routeGroup.GET(GeneratorsRoute+"/", h.List)
-	routeGroup.POST(GeneratorsRoute, h.Create)
-	routeGroup.PUT(GeneratorRoute, h.Update)
-	routeGroup.DELETE(GeneratorRoute, h.Delete)
+	routeGroup.GET(api.GeneratorRoute, h.Get)
+	routeGroup.GET(api.GeneratorsRoute, h.List)
+	routeGroup.GET(api.GeneratorsRoute+"/", h.List)
+	routeGroup.POST(api.GeneratorsRoute, h.Create)
+	routeGroup.PUT(api.GeneratorRoute, h.Update)
+	routeGroup.DELETE(api.GeneratorRoute, h.Delete)
 }
 
 // Get godoc

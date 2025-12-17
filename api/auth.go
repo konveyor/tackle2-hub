@@ -5,13 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/auth"
-)
-
-// Routes
-const (
-	AuthRoute        = "/auth"
-	AuthLoginRoute   = AuthRoute + "/login"
-	AuthRefreshRoute = AuthRoute + "/refresh"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // AuthHandler handles auth routes.
@@ -21,8 +15,8 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	e.POST(AuthLoginRoute, h.Login)
-	e.POST(AuthRefreshRoute, h.Refresh)
+	e.POST(api.AuthLoginRoute, h.Login)
+	e.POST(api.AuthRefreshRoute, h.Refresh)
 }
 
 // Login godoc

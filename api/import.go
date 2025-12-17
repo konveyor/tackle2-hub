@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Record types
@@ -28,16 +29,6 @@ const (
 	Completed  = "Completed"
 )
 
-// Routes
-const (
-	SummariesRoute = "/importsummaries"
-	SummaryRoute   = SummariesRoute + "/:" + ID
-	UploadRoute    = SummariesRoute + "/upload"
-	DownloadRoute  = SummariesRoute + "/download"
-	ImportsRoute   = "/imports"
-	ImportRoute    = ImportsRoute + "/:" + ID
-)
-
 // ImportHandler handles import routes.
 type ImportHandler struct {
 	BaseHandler
@@ -47,16 +38,16 @@ type ImportHandler struct {
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("imports"))
-	routeGroup.GET(SummariesRoute, h.ListSummaries)
-	routeGroup.GET(SummariesRoute+"/", h.ListSummaries)
-	routeGroup.GET(SummaryRoute, h.GetSummary)
-	routeGroup.DELETE(SummaryRoute, h.DeleteSummary)
-	routeGroup.GET(ImportsRoute, h.ListImports)
-	routeGroup.GET(ImportsRoute+"/", h.ListImports)
-	routeGroup.GET(ImportRoute, h.GetImport)
-	routeGroup.DELETE(ImportRoute, h.DeleteImport)
-	routeGroup.GET(DownloadRoute, h.DownloadCSV)
-	routeGroup.POST(UploadRoute, h.UploadCSV)
+	routeGroup.GET(api.SummariesRoute, h.ListSummaries)
+	routeGroup.GET(api.SummariesRoute+"/", h.ListSummaries)
+	routeGroup.GET(api.SummaryRoute, h.GetSummary)
+	routeGroup.DELETE(api.SummaryRoute, h.DeleteSummary)
+	routeGroup.GET(api.ImportsRoute, h.ListImports)
+	routeGroup.GET(api.ImportsRoute+"/", h.ListImports)
+	routeGroup.GET(api.ImportRoute, h.GetImport)
+	routeGroup.DELETE(api.ImportRoute, h.DeleteImport)
+	routeGroup.GET(api.DownloadRoute, h.DownloadCSV)
+	routeGroup.POST(api.UploadRoute, h.UploadCSV)
 }
 
 // GetImport godoc

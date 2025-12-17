@@ -7,19 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	TaskGroupsRoute             = "/taskgroups"
-	TaskGroupRoute              = TaskGroupsRoute + "/:" + ID
-	TaskGroupBucketRoute        = TaskGroupRoute + "/bucket"
-	TaskGroupBucketContentRoute = TaskGroupBucketRoute + "/*" + Wildcard
-	TaskGroupSubmitRoute        = TaskGroupRoute + "/submit"
 )
 
 // TaskGroupHandler handles task group routes.
@@ -31,22 +23,22 @@ type TaskGroupHandler struct {
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tasks"), Transaction)
-	routeGroup.GET(TaskGroupsRoute, h.List)
-	routeGroup.GET(TaskGroupsRoute+"/", h.List)
-	routeGroup.POST(TaskGroupsRoute, h.Create)
-	routeGroup.PUT(TaskGroupRoute, h.Update)
-	routeGroup.PATCH(TaskGroupRoute, Transaction, h.Update)
-	routeGroup.GET(TaskGroupRoute, h.Get)
-	routeGroup.PUT(TaskGroupSubmitRoute, Transaction, h.Submit)
-	routeGroup.DELETE(TaskGroupRoute, h.Delete)
+	routeGroup.GET(api.TaskGroupsRoute, h.List)
+	routeGroup.GET(api.TaskGroupsRoute+"/", h.List)
+	routeGroup.POST(api.TaskGroupsRoute, h.Create)
+	routeGroup.PUT(api.TaskGroupRoute, h.Update)
+	routeGroup.PATCH(api.TaskGroupRoute, Transaction, h.Update)
+	routeGroup.GET(api.TaskGroupRoute, h.Get)
+	routeGroup.PUT(api.TaskGroupSubmitRoute, Transaction, h.Submit)
+	routeGroup.DELETE(api.TaskGroupRoute, h.Delete)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tasks.bucket"))
-	routeGroup.GET(TaskGroupBucketRoute, h.BucketGet)
-	routeGroup.GET(TaskGroupBucketContentRoute, h.BucketGet)
-	routeGroup.POST(TaskGroupBucketContentRoute, h.BucketPut)
-	routeGroup.PUT(TaskGroupBucketContentRoute, h.BucketPut)
-	routeGroup.DELETE(TaskGroupBucketContentRoute, h.BucketDelete)
+	routeGroup.GET(api.TaskGroupBucketRoute, h.BucketGet)
+	routeGroup.GET(api.TaskGroupBucketContentRoute, h.BucketGet)
+	routeGroup.POST(api.TaskGroupBucketContentRoute, h.BucketPut)
+	routeGroup.PUT(api.TaskGroupBucketContentRoute, h.BucketPut)
+	routeGroup.DELETE(api.TaskGroupBucketContentRoute, h.BucketDelete)
 }
 
 // Get godoc

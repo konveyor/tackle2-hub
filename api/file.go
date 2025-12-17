@@ -11,12 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/model"
-)
-
-// Routes
-const (
-	FilesRoute = "/files"
-	FileRoute  = FilesRoute + "/:" + ID
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // FileHandler handles file routes.
@@ -28,13 +23,13 @@ type FileHandler struct {
 func (h FileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("files"))
-	routeGroup.GET(FilesRoute, h.List)
-	routeGroup.GET(FilesRoute+"/", h.List)
-	routeGroup.POST(FileRoute, h.Create)
-	routeGroup.PUT(FileRoute, h.Create)
-	routeGroup.PATCH(FileRoute, h.Append)
-	routeGroup.GET(FileRoute, h.Get)
-	routeGroup.DELETE(FileRoute, h.Delete)
+	routeGroup.GET(api.FilesRoute, h.List)
+	routeGroup.GET(api.FilesRoute+"/", h.List)
+	routeGroup.POST(api.FileRoute, h.Create)
+	routeGroup.PUT(api.FileRoute, h.Create)
+	routeGroup.PATCH(api.FileRoute, h.Append)
+	routeGroup.GET(api.FileRoute, h.Get)
+	routeGroup.DELETE(api.FileRoute, h.Delete)
 }
 
 // List godoc

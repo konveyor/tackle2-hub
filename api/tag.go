@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TagsRoute = "/tags"
-	TagRoute  = TagsRoute + "/:" + ID
 )
 
 // TagHandler handles tag routes.
@@ -23,12 +18,12 @@ type TagHandler struct {
 func (h TagHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tags"))
-	routeGroup.GET(TagsRoute, h.List)
-	routeGroup.GET(TagsRoute+"/", h.List)
-	routeGroup.POST(TagsRoute, h.Create)
-	routeGroup.GET(TagRoute, h.Get)
-	routeGroup.PUT(TagRoute, h.Update)
-	routeGroup.DELETE(TagRoute, h.Delete)
+	routeGroup.GET(api.TagsRoute, h.List)
+	routeGroup.GET(api.TagsRoute+"/", h.List)
+	routeGroup.POST(api.TagsRoute, h.Create)
+	routeGroup.GET(api.TagRoute, h.Get)
+	routeGroup.PUT(api.TagRoute, h.Update)
+	routeGroup.DELETE(api.TagRoute, h.Delete)
 }
 
 // Get godoc

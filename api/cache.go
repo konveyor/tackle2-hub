@@ -9,13 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
-)
-
-// Routes
-const (
-	CacheRoute    = "/cache"
-	CacheDirRoute = CacheRoute + "/*" + Wildcard
 )
 
 // CacheHandler handles cache routes.
@@ -27,9 +22,9 @@ type CacheHandler struct {
 func (h CacheHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("cache"))
-	routeGroup.GET(CacheRoute, h.Get)
-	routeGroup.GET(CacheDirRoute, h.Get)
-	routeGroup.DELETE(CacheDirRoute, h.Delete)
+	routeGroup.GET(api.CacheRoute, h.Get)
+	routeGroup.GET(api.CacheDirRoute, h.Get)
+	routeGroup.DELETE(api.CacheDirRoute, h.Delete)
 }
 
 // Get godoc

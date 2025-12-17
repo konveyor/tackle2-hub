@@ -7,15 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	AddonsRoute = "/addons"
-	AddonRoute  = AddonsRoute + "/:" + Name
 )
 
 // AddonHandler handles addon routes.
@@ -27,9 +22,9 @@ type AddonHandler struct {
 func (h AddonHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("addons"))
-	routeGroup.GET(AddonsRoute, h.List)
-	routeGroup.GET(AddonsRoute+"/", h.List)
-	routeGroup.GET(AddonRoute, h.Get)
+	routeGroup.GET(api.AddonsRoute, h.List)
+	routeGroup.GET(api.AddonsRoute+"/", h.List)
+	routeGroup.GET(api.AddonRoute, h.Get)
 }
 
 // Get godoc

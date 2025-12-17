@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	PlatformsRoute = "/platforms"
-	PlatformRoute  = PlatformsRoute + "/:" + ID
 )
 
 // PlatformHandler handles application Platform resource routes.
@@ -22,12 +17,12 @@ type PlatformHandler struct {
 func (h PlatformHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("platforms"))
-	routeGroup.GET(PlatformRoute, h.Get)
-	routeGroup.GET(PlatformsRoute, h.List)
-	routeGroup.GET(PlatformsRoute+"/", h.List)
-	routeGroup.POST(PlatformsRoute, h.Create)
-	routeGroup.PUT(PlatformRoute, h.Update)
-	routeGroup.DELETE(PlatformRoute, h.Delete)
+	routeGroup.GET(api.PlatformRoute, h.Get)
+	routeGroup.GET(api.PlatformsRoute, h.List)
+	routeGroup.GET(api.PlatformsRoute+"/", h.List)
+	routeGroup.POST(api.PlatformsRoute, h.Create)
+	routeGroup.PUT(api.PlatformRoute, h.Update)
+	routeGroup.DELETE(api.PlatformRoute, h.Delete)
 }
 
 // Get godoc

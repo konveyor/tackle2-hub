@@ -5,13 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	JobFunctionsRoute = "/jobfunctions"
-	JobFunctionRoute  = JobFunctionsRoute + "/:" + ID
 )
 
 // JobFunctionHandler handles job-function routes.
@@ -23,12 +18,12 @@ type JobFunctionHandler struct {
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("jobfunctions"))
-	routeGroup.GET(JobFunctionsRoute, h.List)
-	routeGroup.GET(JobFunctionsRoute+"/", h.List)
-	routeGroup.POST(JobFunctionsRoute, h.Create)
-	routeGroup.GET(JobFunctionRoute, h.Get)
-	routeGroup.PUT(JobFunctionRoute, h.Update)
-	routeGroup.DELETE(JobFunctionRoute, h.Delete)
+	routeGroup.GET(api.JobFunctionsRoute, h.List)
+	routeGroup.GET(api.JobFunctionsRoute+"/", h.List)
+	routeGroup.POST(api.JobFunctionsRoute, h.Create)
+	routeGroup.GET(api.JobFunctionRoute, h.Get)
+	routeGroup.PUT(api.JobFunctionRoute, h.Update)
+	routeGroup.DELETE(api.JobFunctionRoute, h.Delete)
 }
 
 // Get godoc
