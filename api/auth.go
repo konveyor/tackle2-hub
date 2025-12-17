@@ -9,9 +9,9 @@ import (
 
 // Routes
 const (
-	AuthRoot        = "/auth"
-	AuthLoginRoot   = AuthRoot + "/login"
-	AuthRefreshRoot = AuthRoot + "/refresh"
+	AuthRoute        = "/auth"
+	AuthLoginRoute   = AuthRoute + "/login"
+	AuthRefreshRoute = AuthRoute + "/refresh"
 )
 
 // AuthHandler handles auth routes.
@@ -21,8 +21,8 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	e.POST(AuthLoginRoot, h.Login)
-	e.POST(AuthRefreshRoot, h.Refresh)
+	e.POST(AuthLoginRoute, h.Login)
+	e.POST(AuthRefreshRoute, h.Refresh)
 }
 
 // Login godoc

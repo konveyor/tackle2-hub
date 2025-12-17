@@ -11,8 +11,8 @@ import (
 
 // Routes
 const (
-	SettingsRoot = "/settings"
-	SettingRoot  = SettingsRoot + "/:" + Key
+	SettingsRoute = "/settings"
+	SettingRoute  = SettingsRoute + "/:" + Key
 )
 
 // SettingHandler handles setting routes.
@@ -24,13 +24,13 @@ type SettingHandler struct {
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("settings"))
-	routeGroup.GET(SettingsRoot, h.List)
-	routeGroup.GET(SettingsRoot+"/", h.List)
-	routeGroup.GET(SettingRoot, h.Get)
-	routeGroup.POST(SettingsRoot, h.Create)
-	routeGroup.POST(SettingRoot, h.CreateByKey)
-	routeGroup.PUT(SettingRoot, h.Update)
-	routeGroup.DELETE(SettingRoot, h.Delete)
+	routeGroup.GET(SettingsRoute, h.List)
+	routeGroup.GET(SettingsRoute+"/", h.List)
+	routeGroup.GET(SettingRoute, h.Get)
+	routeGroup.POST(SettingsRoute, h.Create)
+	routeGroup.POST(SettingRoute, h.CreateByKey)
+	routeGroup.PUT(SettingRoute, h.Update)
+	routeGroup.DELETE(SettingRoute, h.Delete)
 }
 
 // Get godoc

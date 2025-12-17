@@ -19,7 +19,7 @@ const (
 
 // Routes
 const (
-	AdoptionPlansRoot = "/reports/adoptionplan"
+	AdoptionPlansRoute = "/reports/adoptionplan"
 )
 
 type AdoptionPlanHandler struct {
@@ -30,7 +30,7 @@ type AdoptionPlanHandler struct {
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("adoptionplans"))
-	routeGroup.POST(AdoptionPlansRoot, h.Graph)
+	routeGroup.POST(AdoptionPlansRoute, h.Graph)
 }
 
 // Graph godoc

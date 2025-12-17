@@ -13,10 +13,10 @@ import (
 
 // Routes
 const (
-	TrackersRoot             = "/trackers"
-	TrackerRoot              = "/trackers" + "/:" + ID
-	TrackerProjects          = TrackerRoot + "/projects"
-	TrackerProject           = TrackerRoot + "/projects" + "/:" + ID2
+	TrackersRoute            = "/trackers"
+	TrackerRoute             = "/trackers" + "/:" + ID
+	TrackerProjects          = TrackerRoute + "/projects"
+	TrackerProject           = TrackerRoute + "/projects" + "/:" + ID2
 	TrackerProjectIssueTypes = TrackerProject + "/issuetypes"
 )
 
@@ -34,12 +34,12 @@ type TrackerHandler struct {
 func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("trackers"))
-	routeGroup.GET(TrackersRoot, h.List)
-	routeGroup.GET(TrackersRoot+"/", h.List)
-	routeGroup.POST(TrackersRoot, h.Create)
-	routeGroup.GET(TrackerRoot, h.Get)
-	routeGroup.PUT(TrackerRoot, h.Update)
-	routeGroup.DELETE(TrackerRoot, h.Delete)
+	routeGroup.GET(TrackersRoute, h.List)
+	routeGroup.GET(TrackersRoute+"/", h.List)
+	routeGroup.POST(TrackersRoute, h.Create)
+	routeGroup.GET(TrackerRoute, h.Get)
+	routeGroup.PUT(TrackerRoute, h.Update)
+	routeGroup.DELETE(TrackerRoute, h.Delete)
 	routeGroup.GET(TrackerProjects, h.ProjectList)
 	routeGroup.GET(TrackerProject, h.ProjectGet)
 	routeGroup.GET(TrackerProjectIssueTypes, h.ProjectIssueTypeList)

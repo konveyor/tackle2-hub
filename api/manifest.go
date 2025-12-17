@@ -14,11 +14,11 @@ import (
 
 // Routes
 const (
-	ManifestsRoot = "/manifests"
-	ManifestRoot  = ManifestsRoot + "/:" + ID
+	ManifestsRoute = "/manifests"
+	ManifestRoute  = ManifestsRoute + "/:" + ID
 	//
-	AppManifestRoot  = ApplicationRoot + "/manifest"
-	AppManifestsRoot = ApplicationRoot + "/manifests"
+	AppManifestRoute  = ApplicationRoute + "/manifest"
+	AppManifestsRoute = ApplicationRoute + "/manifests"
 )
 
 const (
@@ -35,17 +35,17 @@ type ManifestHandler struct {
 func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("manifests"))
-	routeGroup.GET(ManifestRoot, h.Get)
-	routeGroup.GET(ManifestsRoot, h.List)
-	routeGroup.GET(ManifestsRoot+"/", h.List)
-	routeGroup.POST(ManifestsRoot, h.Create)
-	routeGroup.PUT(ManifestRoot, h.Update)
-	routeGroup.DELETE(ManifestRoot, h.Delete)
+	routeGroup.GET(ManifestRoute, h.Get)
+	routeGroup.GET(ManifestsRoute, h.List)
+	routeGroup.GET(ManifestsRoute+"/", h.List)
+	routeGroup.POST(ManifestsRoute, h.Create)
+	routeGroup.PUT(ManifestRoute, h.Update)
+	routeGroup.DELETE(ManifestRoute, h.Delete)
 	// application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.manifests"))
-	routeGroup.GET(AppManifestRoot, h.AppGet)
-	routeGroup.POST(AppManifestsRoot, h.AppCreate)
+	routeGroup.GET(AppManifestRoute, h.AppGet)
+	routeGroup.POST(AppManifestsRoute, h.AppCreate)
 }
 
 // Get godoc

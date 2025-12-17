@@ -14,8 +14,8 @@ import (
 
 // Routes
 const (
-	CacheRoot    = "/cache"
-	CacheDirRoot = CacheRoot + "/*" + Wildcard
+	CacheRoute    = "/cache"
+	CacheDirRoute = CacheRoute + "/*" + Wildcard
 )
 
 // CacheHandler handles cache routes.
@@ -27,9 +27,9 @@ type CacheHandler struct {
 func (h CacheHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("cache"))
-	routeGroup.GET(CacheRoot, h.Get)
-	routeGroup.GET(CacheDirRoot, h.Get)
-	routeGroup.DELETE(CacheDirRoot, h.Delete)
+	routeGroup.GET(CacheRoute, h.Get)
+	routeGroup.GET(CacheDirRoute, h.Get)
+	routeGroup.DELETE(CacheDirRoute, h.Delete)
 }
 
 // Get godoc

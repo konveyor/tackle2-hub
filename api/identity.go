@@ -18,10 +18,10 @@ const (
 
 // Routes
 const (
-	IdentitiesRoot = "/identities"
-	IdentityRoot   = IdentitiesRoot + "/:" + ID
+	IdentitiesRoute = "/identities"
+	IdentityRoute   = IdentitiesRoute + "/:" + ID
 	//
-	AppIdentitiesRoot = ApplicationRoot + "/identities"
+	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
 // Params.
@@ -37,13 +37,13 @@ type IdentityHandler struct {
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
-	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.POST(IdentitiesRoot, Transaction, h.Create)
-	routeGroup.GET(IdentityRoot, h.Get)
-	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
-	routeGroup.DELETE(IdentityRoot, h.Delete)
+	routeGroup.GET(IdentitiesRoute, h.List)
+	routeGroup.POST(IdentitiesRoute, Transaction, h.Create)
+	routeGroup.GET(IdentityRoute, h.Get)
+	routeGroup.PUT(IdentityRoute, Transaction, h.Update)
+	routeGroup.DELETE(IdentityRoute, h.Delete)
 	//
-	routeGroup.GET(AppIdentitiesRoot, h.AppList)
+	routeGroup.GET(AppIdentitiesRoute, h.AppList)
 }
 
 // Get godoc

@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	ProxiesRoot = "/proxies"
-	ProxyRoot   = ProxiesRoot + "/:" + ID
+	ProxiesRoute = "/proxies"
+	ProxyRoute   = ProxiesRoute + "/:" + ID
 )
 
 const (
@@ -26,12 +26,12 @@ type ProxyHandler struct {
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("proxies"))
-	routeGroup.GET(ProxiesRoot, h.List)
-	routeGroup.GET(ProxiesRoot+"/", h.List)
-	routeGroup.POST(ProxiesRoot, h.Create)
-	routeGroup.GET(ProxyRoot, h.Get)
-	routeGroup.PUT(ProxyRoot, h.Update)
-	routeGroup.DELETE(ProxyRoot, h.Delete)
+	routeGroup.GET(ProxiesRoute, h.List)
+	routeGroup.GET(ProxiesRoute+"/", h.List)
+	routeGroup.POST(ProxiesRoute, h.Create)
+	routeGroup.GET(ProxyRoute, h.Get)
+	routeGroup.PUT(ProxyRoute, h.Update)
+	routeGroup.DELETE(ProxyRoute, h.Delete)
 }
 
 // Get godoc

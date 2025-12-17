@@ -11,8 +11,8 @@ import (
 
 // Routes
 const (
-	QuestionnairesRoot = "/questionnaires"
-	QuestionnaireRoot  = QuestionnairesRoot + "/:" + ID
+	QuestionnairesRoute = "/questionnaires"
+	QuestionnaireRoute  = QuestionnairesRoute + "/:" + ID
 )
 
 // QuestionnaireHandler handles Questionnaire resource routes.
@@ -24,12 +24,12 @@ type QuestionnaireHandler struct {
 func (h QuestionnaireHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("questionnaires"), Transaction)
-	routeGroup.GET(QuestionnairesRoot, h.List)
-	routeGroup.GET(QuestionnairesRoot+"/", h.List)
-	routeGroup.POST(QuestionnairesRoot, h.Create)
-	routeGroup.GET(QuestionnaireRoot, h.Get)
-	routeGroup.PUT(QuestionnaireRoot, h.Update)
-	routeGroup.DELETE(QuestionnaireRoot, h.Delete)
+	routeGroup.GET(QuestionnairesRoute, h.List)
+	routeGroup.GET(QuestionnairesRoute+"/", h.List)
+	routeGroup.POST(QuestionnairesRoute, h.Create)
+	routeGroup.GET(QuestionnaireRoute, h.Get)
+	routeGroup.PUT(QuestionnaireRoute, h.Update)
+	routeGroup.DELETE(QuestionnaireRoute, h.Delete)
 }
 
 // Get godoc

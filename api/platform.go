@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	PlatformsRoot = "/platforms"
-	PlatformRoot  = PlatformsRoot + "/:" + ID
+	PlatformsRoute = "/platforms"
+	PlatformRoute  = PlatformsRoute + "/:" + ID
 )
 
 // PlatformHandler handles application Platform resource routes.
@@ -22,12 +22,12 @@ type PlatformHandler struct {
 func (h PlatformHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("platforms"))
-	routeGroup.GET(PlatformRoot, h.Get)
-	routeGroup.GET(PlatformsRoot, h.List)
-	routeGroup.GET(PlatformsRoot+"/", h.List)
-	routeGroup.POST(PlatformsRoot, h.Create)
-	routeGroup.PUT(PlatformRoot, h.Update)
-	routeGroup.DELETE(PlatformRoot, h.Delete)
+	routeGroup.GET(PlatformRoute, h.Get)
+	routeGroup.GET(PlatformsRoute, h.List)
+	routeGroup.GET(PlatformsRoute+"/", h.List)
+	routeGroup.POST(PlatformsRoute, h.Create)
+	routeGroup.PUT(PlatformRoute, h.Update)
+	routeGroup.DELETE(PlatformRoute, h.Delete)
 }
 
 // Get godoc

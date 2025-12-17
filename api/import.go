@@ -30,12 +30,12 @@ const (
 
 // Routes
 const (
-	SummariesRoot = "/importsummaries"
-	SummaryRoot   = SummariesRoot + "/:" + ID
-	UploadRoot    = SummariesRoot + "/upload"
-	DownloadRoot  = SummariesRoot + "/download"
-	ImportsRoot   = "/imports"
-	ImportRoot    = ImportsRoot + "/:" + ID
+	SummariesRoute = "/importsummaries"
+	SummaryRoute   = SummariesRoute + "/:" + ID
+	UploadRoute    = SummariesRoute + "/upload"
+	DownloadRoute  = SummariesRoute + "/download"
+	ImportsRoute   = "/imports"
+	ImportRoute    = ImportsRoute + "/:" + ID
 )
 
 // ImportHandler handles import routes.
@@ -47,16 +47,16 @@ type ImportHandler struct {
 func (h ImportHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("imports"))
-	routeGroup.GET(SummariesRoot, h.ListSummaries)
-	routeGroup.GET(SummariesRoot+"/", h.ListSummaries)
-	routeGroup.GET(SummaryRoot, h.GetSummary)
-	routeGroup.DELETE(SummaryRoot, h.DeleteSummary)
-	routeGroup.GET(ImportsRoot, h.ListImports)
-	routeGroup.GET(ImportsRoot+"/", h.ListImports)
-	routeGroup.GET(ImportRoot, h.GetImport)
-	routeGroup.DELETE(ImportRoot, h.DeleteImport)
-	routeGroup.GET(DownloadRoot, h.DownloadCSV)
-	routeGroup.POST(UploadRoot, h.UploadCSV)
+	routeGroup.GET(SummariesRoute, h.ListSummaries)
+	routeGroup.GET(SummariesRoute+"/", h.ListSummaries)
+	routeGroup.GET(SummaryRoute, h.GetSummary)
+	routeGroup.DELETE(SummaryRoute, h.DeleteSummary)
+	routeGroup.GET(ImportsRoute, h.ListImports)
+	routeGroup.GET(ImportsRoute+"/", h.ListImports)
+	routeGroup.GET(ImportRoute, h.GetImport)
+	routeGroup.DELETE(ImportRoute, h.DeleteImport)
+	routeGroup.GET(DownloadRoute, h.DownloadCSV)
+	routeGroup.POST(UploadRoute, h.UploadCSV)
 }
 
 // GetImport godoc

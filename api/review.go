@@ -10,9 +10,9 @@ import (
 
 // Routes
 const (
-	ReviewsRoot = "/reviews"
-	ReviewRoot  = ReviewsRoot + "/:" + ID
-	CopyRoot    = ReviewsRoot + "/copy"
+	ReviewsRoute = "/reviews"
+	ReviewRoute  = ReviewsRoute + "/:" + ID
+	CopyRoute    = ReviewsRoute + "/copy"
 )
 
 // ReviewHandler handles review routes.
@@ -24,13 +24,13 @@ type ReviewHandler struct {
 func (h ReviewHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("reviews"))
-	routeGroup.GET(ReviewsRoot, h.List)
-	routeGroup.GET(ReviewsRoot+"/", h.List)
-	routeGroup.POST(ReviewsRoot, h.Create)
-	routeGroup.GET(ReviewRoot, h.Get)
-	routeGroup.PUT(ReviewRoot, h.Update)
-	routeGroup.DELETE(ReviewRoot, h.Delete)
-	routeGroup.POST(CopyRoot, h.CopyReview, Transaction)
+	routeGroup.GET(ReviewsRoute, h.List)
+	routeGroup.GET(ReviewsRoute+"/", h.List)
+	routeGroup.POST(ReviewsRoute, h.Create)
+	routeGroup.GET(ReviewRoute, h.Get)
+	routeGroup.PUT(ReviewRoute, h.Update)
+	routeGroup.DELETE(ReviewRoute, h.Delete)
+	routeGroup.POST(CopyRoute, h.CopyReview, Transaction)
 }
 
 // Get godoc

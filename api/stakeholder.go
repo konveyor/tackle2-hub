@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	StakeholdersRoot = "/stakeholders"
-	StakeholderRoot  = StakeholdersRoot + "/:" + ID
+	StakeholdersRoute = "/stakeholders"
+	StakeholderRoute  = StakeholdersRoute + "/:" + ID
 )
 
 // StakeholderHandler handles stakeholder routes.
@@ -23,12 +23,12 @@ type StakeholderHandler struct {
 func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("stakeholders"), Transaction)
-	routeGroup.GET(StakeholdersRoot, h.List)
-	routeGroup.GET(StakeholdersRoot+"/", h.List)
-	routeGroup.POST(StakeholdersRoot, h.Create)
-	routeGroup.GET(StakeholderRoot, h.Get)
-	routeGroup.PUT(StakeholderRoot, h.Update)
-	routeGroup.DELETE(StakeholderRoot, h.Delete)
+	routeGroup.GET(StakeholdersRoute, h.List)
+	routeGroup.GET(StakeholdersRoute+"/", h.List)
+	routeGroup.POST(StakeholdersRoute, h.Create)
+	routeGroup.GET(StakeholderRoute, h.Get)
+	routeGroup.PUT(StakeholderRoute, h.Update)
+	routeGroup.DELETE(StakeholderRoute, h.Delete)
 }
 
 // Get godoc

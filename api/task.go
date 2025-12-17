@@ -21,18 +21,18 @@ import (
 
 // Routes
 const (
-	TasksRoot                = "/tasks"
-	TasksReportRoot          = TasksRoot + "/report"
-	TasksReportQueueRoot     = TasksReportRoot + "/queue"
-	TasksReportDashboardRoot = TasksReportRoot + "/dashboard"
-	TasksCancelRoot          = TasksRoot + "/cancel"
-	TaskRoot                 = TasksRoot + "/:" + ID
-	TaskReportRoot           = TaskRoot + "/report"
-	TaskAttachedRoot         = TaskRoot + "/attached"
-	TaskBucketRoot           = TaskRoot + "/bucket"
-	TaskBucketContentRoot    = TaskBucketRoot + "/*" + Wildcard
-	TaskSubmitRoot           = TaskRoot + "/submit"
-	TaskCancelRoot           = TaskRoot + "/cancel"
+	TasksRoute                = "/tasks"
+	TasksReportRoute          = TasksRoute + "/report"
+	TasksReportQueueRoute     = TasksReportRoute + "/queue"
+	TasksReportDashboardRoute = TasksReportRoute + "/dashboard"
+	TasksCancelRoute          = TasksRoute + "/cancel"
+	TaskRoute                 = TasksRoute + "/:" + ID
+	TaskReportRoute           = TaskRoute + "/report"
+	TaskAttachedRoute         = TaskRoute + "/attached"
+	TaskBucketRoute           = TaskRoute + "/bucket"
+	TaskBucketContentRoute    = TaskBucketRoute + "/*" + Wildcard
+	TaskSubmitRoute           = TaskRoute + "/submit"
+	TaskCancelRoute           = TaskRoute + "/cancel"
 )
 const (
 	Submit = "submit"
@@ -47,35 +47,35 @@ type TaskHandler struct {
 func (h TaskHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tasks"))
-	routeGroup.GET(TasksRoot, h.List)
-	routeGroup.GET(TasksRoot+"/", h.List)
-	routeGroup.POST(TasksRoot, h.Create)
-	routeGroup.GET(TaskRoot, h.Get)
-	routeGroup.PUT(TaskRoot, h.Update)
-	routeGroup.PATCH(TaskRoot, Transaction, h.Update)
-	routeGroup.DELETE(TaskRoot, h.Delete)
-	routeGroup.GET(TasksReportQueueRoot, h.Queued)
-	routeGroup.GET(TasksReportDashboardRoot, h.Dashboard)
+	routeGroup.GET(TasksRoute, h.List)
+	routeGroup.GET(TasksRoute+"/", h.List)
+	routeGroup.POST(TasksRoute, h.Create)
+	routeGroup.GET(TaskRoute, h.Get)
+	routeGroup.PUT(TaskRoute, h.Update)
+	routeGroup.PATCH(TaskRoute, Transaction, h.Update)
+	routeGroup.DELETE(TaskRoute, h.Delete)
+	routeGroup.GET(TasksReportQueueRoute, h.Queued)
+	routeGroup.GET(TasksReportDashboardRoute, h.Dashboard)
 	// Actions
-	routeGroup.PUT(TaskSubmitRoot, Transaction, h.Submit)
-	routeGroup.PUT(TaskCancelRoot, h.Cancel)
-	routeGroup.PUT(TasksCancelRoot, h.BulkCancel)
+	routeGroup.PUT(TaskSubmitRoute, Transaction, h.Submit)
+	routeGroup.PUT(TaskCancelRoute, h.Cancel)
+	routeGroup.PUT(TasksCancelRoute, h.BulkCancel)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tasks.bucket"))
-	routeGroup.GET(TaskBucketRoot, h.BucketGet)
-	routeGroup.GET(TaskBucketContentRoot, h.BucketGet)
-	routeGroup.POST(TaskBucketContentRoot, h.BucketPut)
-	routeGroup.PUT(TaskBucketContentRoot, h.BucketPut)
-	routeGroup.DELETE(TaskBucketContentRoot, h.BucketDelete)
+	routeGroup.GET(TaskBucketRoute, h.BucketGet)
+	routeGroup.GET(TaskBucketContentRoute, h.BucketGet)
+	routeGroup.POST(TaskBucketContentRoute, h.BucketPut)
+	routeGroup.PUT(TaskBucketContentRoute, h.BucketPut)
+	routeGroup.DELETE(TaskBucketContentRoute, h.BucketDelete)
 	// Report
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tasks.report"))
-	routeGroup.POST(TaskReportRoot, h.CreateReport)
-	routeGroup.PUT(TaskReportRoot, h.UpdateReport)
-	routeGroup.DELETE(TaskReportRoot, h.DeleteReport)
+	routeGroup.POST(TaskReportRoute, h.CreateReport)
+	routeGroup.PUT(TaskReportRoute, h.UpdateReport)
+	routeGroup.DELETE(TaskReportRoute, h.DeleteReport)
 	// Attached
-	routeGroup.GET(TaskAttachedRoot, h.GetAttached)
+	routeGroup.GET(TaskAttachedRoute, h.GetAttached)
 }
 
 // Get godoc

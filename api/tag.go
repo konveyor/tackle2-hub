@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	TagsRoot = "/tags"
-	TagRoot  = TagsRoot + "/:" + ID
+	TagsRoute = "/tags"
+	TagRoute  = TagsRoute + "/:" + ID
 )
 
 // TagHandler handles tag routes.
@@ -23,12 +23,12 @@ type TagHandler struct {
 func (h TagHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tags"))
-	routeGroup.GET(TagsRoot, h.List)
-	routeGroup.GET(TagsRoot+"/", h.List)
-	routeGroup.POST(TagsRoot, h.Create)
-	routeGroup.GET(TagRoot, h.Get)
-	routeGroup.PUT(TagRoot, h.Update)
-	routeGroup.DELETE(TagRoot, h.Delete)
+	routeGroup.GET(TagsRoute, h.List)
+	routeGroup.GET(TagsRoute+"/", h.List)
+	routeGroup.POST(TagsRoute, h.Create)
+	routeGroup.GET(TagRoute, h.Get)
+	routeGroup.PUT(TagRoute, h.Update)
+	routeGroup.DELETE(TagRoute, h.Delete)
 }
 
 // Get godoc

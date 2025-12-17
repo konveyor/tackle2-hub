@@ -16,9 +16,9 @@ import (
 
 // Routes
 const (
-	BucketsRoot       = "/buckets"
-	BucketRoot        = BucketsRoot + "/:" + ID
-	BucketContentRoot = BucketRoot + "/*" + Wildcard
+	BucketsRoute       = "/buckets"
+	BucketRoute        = BucketsRoute + "/:" + ID
+	BucketContentRoute = BucketRoute + "/*" + Wildcard
 )
 
 // BucketHandler handles bucket routes.
@@ -30,15 +30,15 @@ type BucketHandler struct {
 func (h BucketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("buckets"))
-	routeGroup.GET(BucketsRoot, h.List)
-	routeGroup.GET(BucketsRoot+"/", h.List)
-	routeGroup.POST(BucketsRoot, h.Create)
-	routeGroup.GET(BucketRoot, h.Get)
-	routeGroup.DELETE(BucketRoot, h.Delete)
-	routeGroup.POST(BucketContentRoot, h.BucketPut)
-	routeGroup.PUT(BucketContentRoot, h.BucketPut)
-	routeGroup.GET(BucketContentRoot, h.BucketGet)
-	routeGroup.DELETE(BucketContentRoot, h.BucketDelete)
+	routeGroup.GET(BucketsRoute, h.List)
+	routeGroup.GET(BucketsRoute+"/", h.List)
+	routeGroup.POST(BucketsRoute, h.Create)
+	routeGroup.GET(BucketRoute, h.Get)
+	routeGroup.DELETE(BucketRoute, h.Delete)
+	routeGroup.POST(BucketContentRoute, h.BucketPut)
+	routeGroup.PUT(BucketContentRoute, h.BucketPut)
+	routeGroup.GET(BucketContentRoute, h.BucketGet)
+	routeGroup.DELETE(BucketContentRoute, h.BucketDelete)
 }
 
 // List godoc

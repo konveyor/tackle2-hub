@@ -11,9 +11,9 @@ import (
 
 // Routes
 const (
-	BatchRoot        = "/batch"
-	BatchTicketsRoot = BatchRoot + TicketsRoot
-	BatchTagsRoot    = BatchRoot + TagsRoot
+	BatchRoute        = "/batch"
+	BatchTicketsRoute = BatchRoute + TicketsRoute
+	BatchTagsRoute    = BatchRoute + TagsRoute
 )
 
 // BatchHandler handles batch resource creation routes.
@@ -24,8 +24,8 @@ type BatchHandler struct {
 // AddRoutes adds routes.
 func (h BatchHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.POST(BatchTicketsRoot, Required("tickets"), Transaction, h.TicketsCreate)
-	routeGroup.POST(BatchTagsRoot, Required("tags"), Transaction, h.TagsCreate)
+	routeGroup.POST(BatchTicketsRoute, Required("tickets"), Transaction, h.TicketsCreate)
+	routeGroup.POST(BatchTagsRoute, Required("tags"), Transaction, h.TagsCreate)
 }
 
 // TicketsCreate godoc

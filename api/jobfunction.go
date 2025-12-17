@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	JobFunctionsRoot = "/jobfunctions"
-	JobFunctionRoot  = JobFunctionsRoot + "/:" + ID
+	JobFunctionsRoute = "/jobfunctions"
+	JobFunctionRoute  = JobFunctionsRoute + "/:" + ID
 )
 
 // JobFunctionHandler handles job-function routes.
@@ -23,12 +23,12 @@ type JobFunctionHandler struct {
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("jobfunctions"))
-	routeGroup.GET(JobFunctionsRoot, h.List)
-	routeGroup.GET(JobFunctionsRoot+"/", h.List)
-	routeGroup.POST(JobFunctionsRoot, h.Create)
-	routeGroup.GET(JobFunctionRoot, h.Get)
-	routeGroup.PUT(JobFunctionRoot, h.Update)
-	routeGroup.DELETE(JobFunctionRoot, h.Delete)
+	routeGroup.GET(JobFunctionsRoute, h.List)
+	routeGroup.GET(JobFunctionsRoute+"/", h.List)
+	routeGroup.POST(JobFunctionsRoute, h.Create)
+	routeGroup.GET(JobFunctionRoute, h.Get)
+	routeGroup.PUT(JobFunctionRoute, h.Update)
+	routeGroup.DELETE(JobFunctionRoute, h.Delete)
 }
 
 // Get godoc

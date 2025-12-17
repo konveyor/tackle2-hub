@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	GeneratorsRoot = "/generators"
-	GeneratorRoot  = GeneratorsRoot + "/:" + ID
+	GeneratorsRoute = "/generators"
+	GeneratorRoute  = GeneratorsRoute + "/:" + ID
 )
 
 // GeneratorHandler handles application Generator resource routes.
@@ -22,12 +22,12 @@ type GeneratorHandler struct {
 func (h GeneratorHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("generators"))
-	routeGroup.GET(GeneratorRoot, h.Get)
-	routeGroup.GET(GeneratorsRoot, h.List)
-	routeGroup.GET(GeneratorsRoot+"/", h.List)
-	routeGroup.POST(GeneratorsRoot, h.Create)
-	routeGroup.PUT(GeneratorRoot, h.Update)
-	routeGroup.DELETE(GeneratorRoot, h.Delete)
+	routeGroup.GET(GeneratorRoute, h.Get)
+	routeGroup.GET(GeneratorsRoute, h.List)
+	routeGroup.GET(GeneratorsRoute+"/", h.List)
+	routeGroup.POST(GeneratorsRoute, h.Create)
+	routeGroup.PUT(GeneratorRoute, h.Update)
+	routeGroup.DELETE(GeneratorRoute, h.Delete)
 }
 
 // Get godoc

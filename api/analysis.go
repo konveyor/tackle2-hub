@@ -23,33 +23,33 @@ import (
 
 // Routes
 const (
-	AnalysesRoot          = "/analyses"
-	AnalysisRoot          = AnalysesRoot + "/:" + ID
-	AnalysisArchiveRoot   = AnalysisRoot + "/archive"
-	AnalysisInsightsRoot  = AnalysisRoot + "/insights"
-	AnalysisIncidentsRoot = AnalysesInsightRoot + "/incidents"
-	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
-	AnalysesInsightsRoot  = AnalysesRoot + "/insights"
-	AnalysesInsightRoot   = AnalysesInsightsRoot + "/:" + ID
-	AnalysesIncidentsRoot = AnalysesRoot + "/incidents"
-	AnalysesIncidentRoot  = AnalysesIncidentsRoot + "/:" + ID
+	AnalysesRoute          = "/analyses"
+	AnalysisRoute          = AnalysesRoute + "/:" + ID
+	AnalysisArchiveRoute   = AnalysisRoute + "/archive"
+	AnalysisInsightsRoute  = AnalysisRoute + "/insights"
+	AnalysisIncidentsRoute = AnalysesInsightRoute + "/incidents"
+	AnalysesDepsRoute      = AnalysesRoute + "/dependencies"
+	AnalysesInsightsRoute  = AnalysesRoute + "/insights"
+	AnalysesInsightRoute   = AnalysesInsightsRoute + "/:" + ID
+	AnalysesIncidentsRoute = AnalysesRoute + "/incidents"
+	AnalysesIncidentRoute  = AnalysesIncidentsRoute + "/:" + ID
 	//
-	AnalysesReportRoot             = AnalysesRoot + "/report"
-	AnalysisReportDepsRoot         = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot         = AnalysesReportRoot + "/rules"
-	AnalysisReportInsightsRoot     = AnalysesReportRoot + "/insights"
-	AnalysisReportAppsRoot         = AnalysesReportRoot + "/applications"
-	AnalysisReportInsightRoot      = AnalysisReportInsightsRoot + "/:" + ID
-	AnalysisReportInsightsAppsRoot = AnalysisReportInsightsRoot + "/applications"
-	AnalysisReportDepsAppsRoot     = AnalysisReportDepsRoot + "/applications"
-	AnalysisReportAppsInsightsRoot = AnalysisReportAppsRoot + "/:" + ID + "/insights"
-	AnalysisReportFileRoot         = AnalysisReportInsightRoot + "/files"
+	AnalysesReportRoute             = AnalysesRoute + "/report"
+	AnalysisReportDepsRoute         = AnalysesReportRoute + "/dependencies"
+	AnalysisReportRuleRoute         = AnalysesReportRoute + "/rules"
+	AnalysisReportInsightsRoute     = AnalysesReportRoute + "/insights"
+	AnalysisReportAppsRoute         = AnalysesReportRoute + "/applications"
+	AnalysisReportInsightRoute      = AnalysisReportInsightsRoute + "/:" + ID
+	AnalysisReportInsightsAppsRoute = AnalysisReportInsightsRoute + "/applications"
+	AnalysisReportDepsAppsRoute     = AnalysisReportDepsRoute + "/applications"
+	AnalysisReportAppsInsightsRoute = AnalysisReportAppsRoute + "/:" + ID + "/insights"
+	AnalysisReportFileRoute         = AnalysisReportInsightRoute + "/files"
 	//
-	AppAnalysesRoot         = ApplicationRoot + "/analyses"
-	AppAnalysisRoot         = ApplicationRoot + "/analysis"
-	AppAnalysisReportRoot   = AppAnalysisRoot + "/report"
-	AppAnalysisDepsRoot     = AppAnalysisRoot + "/dependencies"
-	AppAnalysisInsightsRoot = AppAnalysisRoot + "/insights"
+	AppAnalysesRoute         = ApplicationRoute + "/analyses"
+	AppAnalysisRoute         = ApplicationRoute + "/analysis"
+	AppAnalysisReportRoute   = AppAnalysisRoute + "/report"
+	AppAnalysisDepsRoute     = AppAnalysisRoute + "/dependencies"
+	AppAnalysisInsightsRoute = AppAnalysisRoute + "/insights"
 )
 
 // Manifest markers.
@@ -73,33 +73,33 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	// Primary
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analyses"))
-	routeGroup.GET(AnalysisRoot, h.Get)
-	routeGroup.POST(AnalysisArchiveRoot, h.Archive)
-	routeGroup.GET(AnalysesRoot, h.List)
-	routeGroup.DELETE(AnalysisRoot, h.Delete)
-	routeGroup.GET(AnalysesDepsRoot, h.Deps)
-	routeGroup.GET(AnalysesInsightsRoot, h.Insights)
-	routeGroup.GET(AnalysesInsightRoot, h.Insight)
-	routeGroup.GET(AnalysesIncidentsRoot, h.Incidents)
-	routeGroup.GET(AnalysesIncidentRoot, h.Incident)
-	routeGroup.GET(AnalysisInsightsRoot, h.AnalysisInsights)
-	routeGroup.GET(AnalysisIncidentsRoot, h.InsightIncidents)
+	routeGroup.GET(AnalysisRoute, h.Get)
+	routeGroup.POST(AnalysisArchiveRoute, h.Archive)
+	routeGroup.GET(AnalysesRoute, h.List)
+	routeGroup.DELETE(AnalysisRoute, h.Delete)
+	routeGroup.GET(AnalysesDepsRoute, h.Deps)
+	routeGroup.GET(AnalysesInsightsRoute, h.Insights)
+	routeGroup.GET(AnalysesInsightRoute, h.Insight)
+	routeGroup.GET(AnalysesIncidentsRoute, h.Incidents)
+	routeGroup.GET(AnalysesIncidentRoute, h.Incident)
+	routeGroup.GET(AnalysisInsightsRoute, h.AnalysisInsights)
+	routeGroup.GET(AnalysisIncidentsRoute, h.InsightIncidents)
 	// Report
-	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportAppsInsightsRoot, h.AppInsightReports)
-	routeGroup.GET(AnalysisReportInsightsAppsRoot, h.InsightAppReports)
-	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
-	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
-	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
+	routeGroup.GET(AnalysisReportRuleRoute, h.RuleReports)
+	routeGroup.GET(AnalysisReportAppsInsightsRoute, h.AppInsightReports)
+	routeGroup.GET(AnalysisReportInsightsAppsRoute, h.InsightAppReports)
+	routeGroup.GET(AnalysisReportFileRoute, h.FileReports)
+	routeGroup.GET(AnalysisReportDepsRoute, h.DepReports)
+	routeGroup.GET(AnalysisReportDepsAppsRoute, h.DepAppReports)
 	// Application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.analyses"))
-	routeGroup.POST(AppAnalysesRoot, Transaction, h.AppCreate)
-	routeGroup.GET(AppAnalysesRoot, h.AppList)
-	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
-	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
-	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
-	routeGroup.GET(AppAnalysisInsightsRoot, h.AppInsights)
+	routeGroup.POST(AppAnalysesRoute, Transaction, h.AppCreate)
+	routeGroup.GET(AppAnalysesRoute, h.AppList)
+	routeGroup.GET(AppAnalysisRoute, h.AppLatest)
+	routeGroup.GET(AppAnalysisReportRoute, h.AppLatestReport)
+	routeGroup.GET(AppAnalysisDepsRoute, h.AppDeps)
+	routeGroup.GET(AppAnalysisInsightsRoute, h.AppInsights)
 }
 
 // Get godoc

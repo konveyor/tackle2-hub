@@ -14,10 +14,10 @@ const (
 )
 
 const (
-	SchemaRoot     = "/schema"
-	SchemasRoot    = "/schemas"
-	SchemasGetRoot = SchemasRoot + "/:" + Name
-	SchemaFindRoot = SchemaRoot + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
+	SchemaRoute     = "/schema"
+	SchemasRoute    = "/schemas"
+	SchemasGetRoute = SchemasRoute + "/:" + Name
+	SchemaFindRoute = SchemaRoute + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
 )
 
 // SchemaHandler providers schema (route) handler.
@@ -32,10 +32,10 @@ type SchemaHandler struct {
 // AddRoutes Adds routes.
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
-	r.GET(SchemaRoot, h.GetAPI)
-	r.GET(SchemasRoot, h.List)
-	r.GET(SchemasGetRoot, h.Get)
-	r.GET(SchemaFindRoot, h.Find)
+	r.GET(SchemaRoute, h.GetAPI)
+	r.GET(SchemasRoute, h.List)
+	r.GET(SchemasGetRoute, h.Get)
+	r.GET(SchemaFindRoute, h.Find)
 }
 
 // GetAPI godoc

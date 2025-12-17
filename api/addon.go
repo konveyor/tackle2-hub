@@ -14,8 +14,8 @@ import (
 
 // Routes
 const (
-	AddonsRoot = "/addons"
-	AddonRoot  = AddonsRoot + "/:" + Name
+	AddonsRoute = "/addons"
+	AddonRoute  = AddonsRoute + "/:" + Name
 )
 
 // AddonHandler handles addon routes.
@@ -27,9 +27,9 @@ type AddonHandler struct {
 func (h AddonHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("addons"))
-	routeGroup.GET(AddonsRoot, h.List)
-	routeGroup.GET(AddonsRoot+"/", h.List)
-	routeGroup.GET(AddonRoot, h.Get)
+	routeGroup.GET(AddonsRoute, h.List)
+	routeGroup.GET(AddonsRoute+"/", h.List)
+	routeGroup.GET(AddonRoute, h.Get)
 }
 
 // Get godoc

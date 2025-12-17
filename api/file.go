@@ -15,8 +15,8 @@ import (
 
 // Routes
 const (
-	FilesRoot = "/files"
-	FileRoot  = FilesRoot + "/:" + ID
+	FilesRoute = "/files"
+	FileRoute  = FilesRoute + "/:" + ID
 )
 
 // FileHandler handles file routes.
@@ -28,13 +28,13 @@ type FileHandler struct {
 func (h FileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("files"))
-	routeGroup.GET(FilesRoot, h.List)
-	routeGroup.GET(FilesRoot+"/", h.List)
-	routeGroup.POST(FileRoot, h.Create)
-	routeGroup.PUT(FileRoot, h.Create)
-	routeGroup.PATCH(FileRoot, h.Append)
-	routeGroup.GET(FileRoot, h.Get)
-	routeGroup.DELETE(FileRoot, h.Delete)
+	routeGroup.GET(FilesRoute, h.List)
+	routeGroup.GET(FilesRoute+"/", h.List)
+	routeGroup.POST(FileRoute, h.Create)
+	routeGroup.PUT(FileRoute, h.Create)
+	routeGroup.PATCH(FileRoute, h.Append)
+	routeGroup.GET(FileRoute, h.Get)
+	routeGroup.DELETE(FileRoute, h.Delete)
 }
 
 // List godoc

@@ -14,9 +14,9 @@ import (
 
 // Routes
 const (
-	ConfigMapsRoot   = "/configmaps"
-	ConfigMapRoot    = ConfigMapsRoot + "/:" + Name
-	ConfigMapKeyRoot = ConfigMapRoot + "/:" + Key
+	ConfigMapsRoute   = "/configmaps"
+	ConfigMapRoute    = ConfigMapsRoute + "/:" + Name
+	ConfigMapKeyRoute = ConfigMapRoute + "/:" + Key
 )
 
 const (
@@ -32,10 +32,10 @@ type ConfigMapHandler struct {
 func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("configmaps"))
-	routeGroup.GET(ConfigMapsRoot, h.List)
-	routeGroup.GET(ConfigMapsRoot+"/", h.List)
-	routeGroup.GET(ConfigMapRoot, h.Get)
-	routeGroup.GET(ConfigMapKeyRoot, h.Get)
+	routeGroup.GET(ConfigMapsRoute, h.List)
+	routeGroup.GET(ConfigMapsRoute+"/", h.List)
+	routeGroup.GET(ConfigMapRoute, h.Get)
+	routeGroup.GET(ConfigMapKeyRoute, h.Get)
 }
 
 // Get godoc

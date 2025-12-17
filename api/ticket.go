@@ -11,8 +11,8 @@ import (
 
 // Routes
 const (
-	TicketsRoot = "/tickets"
-	TicketRoot  = "/tickets" + "/:" + ID
+	TicketsRoute = "/tickets"
+	TicketRoute  = "/tickets" + "/:" + ID
 )
 
 // Params.
@@ -29,11 +29,11 @@ type TicketHandler struct {
 func (h TicketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tickets"))
-	routeGroup.GET(TicketsRoot, h.List)
-	routeGroup.GET(TicketsRoot+"/", h.List)
-	routeGroup.POST(TicketsRoot, h.Create)
-	routeGroup.GET(TicketRoot, h.Get)
-	routeGroup.DELETE(TicketRoot, h.Delete)
+	routeGroup.GET(TicketsRoute, h.List)
+	routeGroup.GET(TicketsRoute+"/", h.List)
+	routeGroup.POST(TicketsRoute, h.Create)
+	routeGroup.GET(TicketRoute, h.Get)
+	routeGroup.DELETE(TicketRoute, h.Delete)
 }
 
 // Get godoc

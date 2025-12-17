@@ -12,8 +12,8 @@ import (
 
 // Routes
 const (
-	RuleSetsRoot = "/rulesets"
-	RuleSetRoot  = RuleSetsRoot + "/:" + ID
+	RuleSetsRoute = "/rulesets"
+	RuleSetRoute  = RuleSetsRoute + "/:" + ID
 )
 
 // RuleSetHandler handles ruleset resource routes.
@@ -24,12 +24,12 @@ type RuleSetHandler struct {
 func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("rulesets"), Transaction)
-	routeGroup.GET(RuleSetsRoot, h.List)
-	routeGroup.GET(RuleSetsRoot+"/", h.List)
-	routeGroup.POST(RuleSetsRoot, h.Create)
-	routeGroup.GET(RuleSetRoot, h.Get)
-	routeGroup.PUT(RuleSetRoot, h.Update)
-	routeGroup.DELETE(RuleSetRoot, h.Delete)
+	routeGroup.GET(RuleSetsRoute, h.List)
+	routeGroup.GET(RuleSetsRoute+"/", h.List)
+	routeGroup.POST(RuleSetsRoute, h.Create)
+	routeGroup.GET(RuleSetRoute, h.Get)
+	routeGroup.PUT(RuleSetRoute, h.Update)
+	routeGroup.DELETE(RuleSetRoute, h.Delete)
 }
 
 // Get godoc

@@ -10,9 +10,9 @@ import (
 
 // Routes
 const (
-	TagCategoriesRoot   = "/tagcategories"
-	TagCategoryRoot     = TagCategoriesRoot + "/:" + ID
-	TagCategoryTagsRoot = TagCategoryRoot + "/tags"
+	TagCategoriesRoute   = "/tagcategories"
+	TagCategoryRoute     = TagCategoriesRoute + "/:" + ID
+	TagCategoryTagsRoute = TagCategoryRoute + "/tags"
 )
 
 // TagCategoryHandler handles the tag-type route.
@@ -24,14 +24,14 @@ type TagCategoryHandler struct {
 func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tagcategories"))
-	routeGroup.GET(TagCategoriesRoot, h.List)
-	routeGroup.GET(TagCategoriesRoot+"/", h.List)
-	routeGroup.POST(TagCategoriesRoot, h.Create)
-	routeGroup.GET(TagCategoryRoot, h.Get)
-	routeGroup.PUT(TagCategoryRoot, h.Update)
-	routeGroup.DELETE(TagCategoryRoot, h.Delete)
-	routeGroup.GET(TagCategoryTagsRoot, h.TagList)
-	routeGroup.GET(TagCategoryTagsRoot+"/", h.TagList)
+	routeGroup.GET(TagCategoriesRoute, h.List)
+	routeGroup.GET(TagCategoriesRoute+"/", h.List)
+	routeGroup.POST(TagCategoriesRoute, h.Create)
+	routeGroup.GET(TagCategoryRoute, h.Get)
+	routeGroup.PUT(TagCategoryRoute, h.Update)
+	routeGroup.DELETE(TagCategoryRoute, h.Delete)
+	routeGroup.GET(TagCategoryTagsRoute, h.TagList)
+	routeGroup.GET(TagCategoryTagsRoute+"/", h.TagList)
 }
 
 // Get godoc

@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	DependenciesRoot = "/dependencies"
-	DependencyRoot   = DependenciesRoot + "/:" + ID
+	DependenciesRoute = "/dependencies"
+	DependencyRoute   = DependenciesRoute + "/:" + ID
 )
 
 // DependencyHandler handles application dependency routes.
@@ -23,11 +23,11 @@ type DependencyHandler struct {
 func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("dependencies"))
-	routeGroup.GET(DependenciesRoot, h.List)
-	routeGroup.GET(DependenciesRoot+"/", h.List)
-	routeGroup.POST(DependenciesRoot, h.Create)
-	routeGroup.GET(DependencyRoot, h.Get)
-	routeGroup.DELETE(DependencyRoot, h.Delete)
+	routeGroup.GET(DependenciesRoute, h.List)
+	routeGroup.GET(DependenciesRoute+"/", h.List)
+	routeGroup.POST(DependenciesRoute, h.Create)
+	routeGroup.GET(DependencyRoute, h.Get)
+	routeGroup.DELETE(DependencyRoute, h.Delete)
 }
 
 // Get godoc

@@ -19,17 +19,17 @@ import (
 
 // Routes
 const (
-	ApplicationsRoot     = "/applications"
-	ApplicationRoot      = ApplicationsRoot + "/:" + ID
-	ApplicationTagsRoot  = ApplicationRoot + "/tags"
-	ApplicationTagRoot   = ApplicationTagsRoot + "/:" + ID2
-	ApplicationFactsRoot = ApplicationRoot + "/facts"
-	ApplicationFactRoot  = ApplicationFactsRoot + "/:" + Key
-	AppBucketRoot        = ApplicationRoot + "/bucket"
-	AppBucketContentRoot = AppBucketRoot + "/*" + Wildcard
-	AppStakeholdersRoot  = ApplicationRoot + "/stakeholders"
-	AppAssessmentsRoot   = ApplicationRoot + "/assessments"
-	AppAssessmentRoot    = AppAssessmentsRoot + "/:" + ID2
+	ApplicationsRoute     = "/applications"
+	ApplicationRoute      = ApplicationsRoute + "/:" + ID
+	ApplicationTagsRoute  = ApplicationRoute + "/tags"
+	ApplicationTagRoute   = ApplicationTagsRoute + "/:" + ID2
+	ApplicationFactsRoute = ApplicationRoute + "/facts"
+	ApplicationFactRoute  = ApplicationFactsRoute + "/:" + Key
+	AppBucketRoute        = ApplicationRoute + "/bucket"
+	AppBucketContentRoute = AppBucketRoute + "/*" + Wildcard
+	AppStakeholdersRoute  = ApplicationRoute + "/stakeholders"
+	AppAssessmentsRoute   = ApplicationRoute + "/assessments"
+	AppAssessmentRoute    = AppAssessmentsRoute + "/:" + ID2
 )
 
 // Params
@@ -52,48 +52,48 @@ type ApplicationHandler struct {
 func (h ApplicationHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("applications"), Transaction)
-	routeGroup.GET(ApplicationsRoot, h.List)
-	routeGroup.GET(ApplicationsRoot+"/", h.List)
-	routeGroup.POST(ApplicationsRoot, h.Create)
-	routeGroup.GET(ApplicationRoot, h.Get)
-	routeGroup.PUT(ApplicationRoot, h.Update)
-	routeGroup.DELETE(ApplicationsRoot, h.DeleteList)
-	routeGroup.DELETE(ApplicationRoot, h.Delete)
+	routeGroup.GET(ApplicationsRoute, h.List)
+	routeGroup.GET(ApplicationsRoute+"/", h.List)
+	routeGroup.POST(ApplicationsRoute, h.Create)
+	routeGroup.GET(ApplicationRoute, h.Get)
+	routeGroup.PUT(ApplicationRoute, h.Update)
+	routeGroup.DELETE(ApplicationsRoute, h.DeleteList)
+	routeGroup.DELETE(ApplicationRoute, h.Delete)
 	// Tags
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications"), Transaction)
-	routeGroup.GET(ApplicationTagsRoot, h.TagList)
-	routeGroup.GET(ApplicationTagsRoot+"/", h.TagList)
-	routeGroup.POST(ApplicationTagsRoot, h.TagAdd)
-	routeGroup.DELETE(ApplicationTagRoot, h.TagDelete)
-	routeGroup.PUT(ApplicationTagsRoot, h.TagReplace)
+	routeGroup.GET(ApplicationTagsRoute, h.TagList)
+	routeGroup.GET(ApplicationTagsRoute+"/", h.TagList)
+	routeGroup.POST(ApplicationTagsRoute, h.TagAdd)
+	routeGroup.DELETE(ApplicationTagRoute, h.TagDelete)
+	routeGroup.PUT(ApplicationTagsRoute, h.TagReplace)
 	// Facts
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.facts"), Transaction)
-	routeGroup.GET(ApplicationFactsRoot, h.FactGet)
-	routeGroup.GET(ApplicationFactsRoot+"/", h.FactGet)
-	routeGroup.POST(ApplicationFactsRoot, h.FactCreate)
-	routeGroup.GET(ApplicationFactRoot, h.FactGet)
-	routeGroup.PUT(ApplicationFactRoot, h.FactPut)
-	routeGroup.DELETE(ApplicationFactRoot, h.FactDelete)
-	routeGroup.PUT(ApplicationFactsRoot, h.FactPut)
+	routeGroup.GET(ApplicationFactsRoute, h.FactGet)
+	routeGroup.GET(ApplicationFactsRoute+"/", h.FactGet)
+	routeGroup.POST(ApplicationFactsRoute, h.FactCreate)
+	routeGroup.GET(ApplicationFactRoute, h.FactGet)
+	routeGroup.PUT(ApplicationFactRoute, h.FactPut)
+	routeGroup.DELETE(ApplicationFactRoute, h.FactDelete)
+	routeGroup.PUT(ApplicationFactsRoute, h.FactPut)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.bucket"))
-	routeGroup.GET(AppBucketRoot, h.BucketGet)
-	routeGroup.GET(AppBucketContentRoot, h.BucketGet)
-	routeGroup.POST(AppBucketContentRoot, h.BucketPut)
-	routeGroup.PUT(AppBucketContentRoot, h.BucketPut)
-	routeGroup.DELETE(AppBucketContentRoot, h.BucketDelete)
+	routeGroup.GET(AppBucketRoute, h.BucketGet)
+	routeGroup.GET(AppBucketContentRoute, h.BucketGet)
+	routeGroup.POST(AppBucketContentRoute, h.BucketPut)
+	routeGroup.PUT(AppBucketContentRoute, h.BucketPut)
+	routeGroup.DELETE(AppBucketContentRoute, h.BucketDelete)
 	// Stakeholders
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.stakeholders"), Transaction)
-	routeGroup.PUT(AppStakeholdersRoot, h.StakeholdersUpdate)
+	routeGroup.PUT(AppStakeholdersRoute, h.StakeholdersUpdate)
 	// Assessments
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.assessments"), Transaction)
-	routeGroup.GET(AppAssessmentsRoot, h.AssessmentList)
-	routeGroup.POST(AppAssessmentsRoot, h.AssessmentCreate)
+	routeGroup.GET(AppAssessmentsRoute, h.AssessmentList)
+	routeGroup.POST(AppAssessmentsRoute, h.AssessmentCreate)
 }
 
 // Get godoc

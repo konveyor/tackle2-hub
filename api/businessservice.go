@@ -10,8 +10,8 @@ import (
 
 // Routes
 const (
-	BusinessServicesRoot = "/businessservices"
-	BusinessServiceRoot  = BusinessServicesRoot + "/:" + ID
+	BusinessServicesRoute = "/businessservices"
+	BusinessServiceRoute  = BusinessServicesRoute + "/:" + ID
 )
 
 // BusinessServiceHandler handles business-service routes.
@@ -23,12 +23,12 @@ type BusinessServiceHandler struct {
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("businessservices"))
-	routeGroup.GET(BusinessServicesRoot, h.List)
-	routeGroup.GET(BusinessServicesRoot+"/", h.List)
-	routeGroup.POST(BusinessServicesRoot, h.Create)
-	routeGroup.GET(BusinessServiceRoot, h.Get)
-	routeGroup.PUT(BusinessServiceRoot, h.Update)
-	routeGroup.DELETE(BusinessServiceRoot, h.Delete)
+	routeGroup.GET(BusinessServicesRoute, h.List)
+	routeGroup.GET(BusinessServicesRoute+"/", h.List)
+	routeGroup.POST(BusinessServicesRoute, h.Create)
+	routeGroup.GET(BusinessServiceRoute, h.Get)
+	routeGroup.PUT(BusinessServiceRoute, h.Update)
+	routeGroup.DELETE(BusinessServiceRoute, h.Delete)
 }
 
 // Get godoc

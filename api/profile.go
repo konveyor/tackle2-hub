@@ -23,11 +23,11 @@ import (
 
 // Routes
 const (
-	AnalysisProfilesRoot  = "/analysis/profiles"
-	AnalysisProfileRoot   = AnalysisProfilesRoot + "/:id"
-	AnalysisProfileBundle = AnalysisProfileRoot + "/bundle"
+	AnalysisProfilesRoute = "/analysis/profiles"
+	AnalysisProfileRoute  = AnalysisProfilesRoute + "/:id"
+	AnalysisProfileBundle = AnalysisProfileRoute + "/bundle"
 	//
-	AppAnalysisProfilesRoot = ApplicationRoot + "/analysis/profiles"
+	AppAnalysisProfilesRoute = ApplicationRoute + "/analysis/profiles"
 )
 
 // AnalysisProfileHandler handles application Profile resource routes.
@@ -38,15 +38,15 @@ type AnalysisProfileHandler struct {
 func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analysis.profiles"))
-	routeGroup.GET(AnalysisProfileRoot, h.Get)
-	routeGroup.GET(AnalysisProfilesRoot, h.List)
-	routeGroup.GET(AnalysisProfilesRoot+"/", h.List)
+	routeGroup.GET(AnalysisProfileRoute, h.Get)
+	routeGroup.GET(AnalysisProfilesRoute, h.List)
+	routeGroup.GET(AnalysisProfilesRoute+"/", h.List)
 	routeGroup.GET(AnalysisProfileBundle, h.GetBundle)
-	routeGroup.POST(AnalysisProfilesRoot, h.Create, Transaction)
-	routeGroup.PUT(AnalysisProfileRoot, h.Update, Transaction)
-	routeGroup.DELETE(AnalysisProfileRoot, h.Delete, Transaction)
+	routeGroup.POST(AnalysisProfilesRoute, h.Create, Transaction)
+	routeGroup.PUT(AnalysisProfileRoute, h.Update, Transaction)
+	routeGroup.DELETE(AnalysisProfileRoute, h.Delete, Transaction)
 	//
-	routeGroup.GET(AppAnalysisProfilesRoot, h.AppProfileList)
+	routeGroup.GET(AppAnalysisProfilesRoute, h.AppProfileList)
 }
 
 // Get godoc

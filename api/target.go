@@ -14,8 +14,8 @@ import (
 
 // Routes
 const (
-	TargetsRoot = "/targets"
-	TargetRoot  = TargetsRoot + "/:" + ID
+	TargetsRoute = "/targets"
+	TargetRoute  = TargetsRoute + "/:" + ID
 )
 
 // TargetHandler handles Target resource routes.
@@ -26,12 +26,12 @@ type TargetHandler struct {
 func (h TargetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("targets"), Transaction)
-	routeGroup.GET(TargetsRoot, h.List)
-	routeGroup.GET(TargetsRoot+"/", h.List)
-	routeGroup.POST(TargetsRoot, h.Create)
-	routeGroup.GET(TargetRoot, h.Get)
-	routeGroup.PUT(TargetRoot, h.Update)
-	routeGroup.DELETE(TargetRoot, h.Delete)
+	routeGroup.GET(TargetsRoute, h.List)
+	routeGroup.GET(TargetsRoute+"/", h.List)
+	routeGroup.POST(TargetsRoute, h.Create)
+	routeGroup.GET(TargetRoute, h.Get)
+	routeGroup.PUT(TargetRoute, h.Update)
+	routeGroup.DELETE(TargetRoute, h.Delete)
 }
 
 // Get godoc

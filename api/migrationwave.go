@@ -11,8 +11,8 @@ import (
 
 // Routes
 const (
-	MigrationWavesRoot = "/migrationwaves"
-	MigrationWaveRoot  = MigrationWavesRoot + "/:" + ID
+	MigrationWavesRoute = "/migrationwaves"
+	MigrationWaveRoute  = MigrationWavesRoute + "/:" + ID
 )
 
 // MigrationWaveHandler handles Migration Wave resource routes.
@@ -24,12 +24,12 @@ type MigrationWaveHandler struct {
 func (h MigrationWaveHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("migrationwaves"), Transaction)
-	routeGroup.GET(MigrationWavesRoot, h.List)
-	routeGroup.GET(MigrationWavesRoot+"/", h.List)
-	routeGroup.GET(MigrationWaveRoot, h.Get)
-	routeGroup.POST(MigrationWavesRoot, h.Create)
-	routeGroup.DELETE(MigrationWaveRoot, h.Delete)
-	routeGroup.PUT(MigrationWaveRoot, h.Update)
+	routeGroup.GET(MigrationWavesRoute, h.List)
+	routeGroup.GET(MigrationWavesRoute+"/", h.List)
+	routeGroup.GET(MigrationWaveRoute, h.Get)
+	routeGroup.POST(MigrationWavesRoute, h.Create)
+	routeGroup.DELETE(MigrationWaveRoute, h.Delete)
+	routeGroup.PUT(MigrationWaveRoute, h.Update)
 }
 
 // Get godoc

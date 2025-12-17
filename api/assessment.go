@@ -11,8 +11,8 @@ import (
 
 // Routes
 const (
-	AssessmentsRoot = "/assessments"
-	AssessmentRoot  = AssessmentsRoot + "/:" + ID
+	AssessmentsRoute = "/assessments"
+	AssessmentRoute  = AssessmentsRoute + "/:" + ID
 )
 
 // AssessmentHandler handles Assessment resource routes.
@@ -24,11 +24,11 @@ type AssessmentHandler struct {
 func (h AssessmentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("assessments"), Transaction)
-	routeGroup.GET(AssessmentsRoot, h.List)
-	routeGroup.GET(AssessmentsRoot+"/", h.List)
-	routeGroup.GET(AssessmentRoot, h.Get)
-	routeGroup.PUT(AssessmentRoot, h.Update)
-	routeGroup.DELETE(AssessmentRoot, h.Delete)
+	routeGroup.GET(AssessmentsRoute, h.List)
+	routeGroup.GET(AssessmentsRoute+"/", h.List)
+	routeGroup.GET(AssessmentRoute, h.Get)
+	routeGroup.PUT(AssessmentRoute, h.Update)
+	routeGroup.DELETE(AssessmentRoute, h.Delete)
 }
 
 // Get godoc

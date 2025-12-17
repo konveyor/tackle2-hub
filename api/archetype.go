@@ -13,9 +13,9 @@ import (
 
 // Routes
 const (
-	ArchetypesRoot           = "/archetypes"
-	ArchetypeRoot            = ArchetypesRoot + "/:" + ID
-	ArchetypeAssessmentsRoot = ArchetypeRoot + "/assessments"
+	ArchetypesRoute           = "/archetypes"
+	ArchetypeRoute            = ArchetypesRoute + "/:" + ID
+	ArchetypeAssessmentsRoute = ArchetypeRoute + "/assessments"
 )
 
 // ArchetypeHandler handles Archetype resource routes.
@@ -27,16 +27,16 @@ type ArchetypeHandler struct {
 func (h ArchetypeHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("archetypes"), Transaction)
-	routeGroup.GET(ArchetypesRoot, h.List)
-	routeGroup.POST(ArchetypesRoot, h.Create)
-	routeGroup.GET(ArchetypeRoot, h.Get)
-	routeGroup.PUT(ArchetypeRoot, h.Update)
-	routeGroup.DELETE(ArchetypeRoot, h.Delete)
+	routeGroup.GET(ArchetypesRoute, h.List)
+	routeGroup.POST(ArchetypesRoute, h.Create)
+	routeGroup.GET(ArchetypeRoute, h.Get)
+	routeGroup.PUT(ArchetypeRoute, h.Update)
+	routeGroup.DELETE(ArchetypeRoute, h.Delete)
 	// Assessments
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("archetypes.assessments"))
-	routeGroup.GET(ArchetypeAssessmentsRoot, h.AssessmentList)
-	routeGroup.POST(ArchetypeAssessmentsRoot, h.AssessmentCreate)
+	routeGroup.GET(ArchetypeAssessmentsRoute, h.AssessmentList)
+	routeGroup.POST(ArchetypeAssessmentsRoute, h.AssessmentCreate)
 }
 
 // Get godoc
