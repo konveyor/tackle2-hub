@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -158,25 +159,4 @@ func (h TagHandler) Update(ctx *gin.Context) {
 }
 
 // Tag REST resource.
-type Tag struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Category Ref    `json:"category" binding:"required"`
-}
-
-// With updates the resource with the model.
-func (r *Tag) With(m *model.Tag) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Category = r.ref(m.CategoryID, &m.Category)
-}
-
-// Model builds a model.
-func (r *Tag) Model() (m *model.Tag) {
-	m = &model.Tag{
-		Name:       r.Name,
-		CategoryID: r.Category.ID,
-	}
-	m.ID = r.ID
-	return
-}
+type Tag = resource.Tag

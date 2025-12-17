@@ -12,6 +12,21 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
+// TTL time-to-live.
+type TTL = api.TTL
+
+// TaskPolicy scheduling policies.
+type TaskPolicy = api.TaskPolicy
+
+// TaskError used in Task.Errors.
+type TaskError = api.TaskError
+
+// TaskEvent task event.
+type TaskEvent = api.TaskEvent
+
+// Attachment file attachment.
+type Attachment = api.Attachment
+
 // Task REST resource.
 type Task api.Task
 
@@ -25,8 +40,8 @@ func (r *Task) With(m *model.Task) {
 	r.State = m.State
 	r.Locator = m.Locator
 	r.Priority = r.userPriority(m.Priority)
-	r.Policy = api.TaskPolicy(m.Policy)
-	r.TTL = api.TTL(m.TTL)
+	r.Policy = TaskPolicy(m.Policy)
+	r.TTL = TTL(m.TTL)
 	r.Data = m.Data.Any
 	r.Application = refPtr(m.ApplicationID, m.Application)
 	r.Platform = refPtr(m.PlatformID, m.Platform)
@@ -35,14 +50,14 @@ func (r *Task) With(m *model.Task) {
 	r.Retries = m.Retries
 	r.Started = m.Started
 	r.Terminated = m.Terminated
-	r.Events = make([]api.TaskEvent, 0)
-	r.Errors = make([]api.TaskError, 0)
-	r.Attached = make([]api.Attachment, 0)
+	r.Events = make([]TaskEvent, 0)
+	r.Errors = make([]TaskError, 0)
+	r.Attached = make([]Attachment, 0)
 	for _, event := range m.Events {
-		r.Events = append(r.Events, api.TaskEvent(event))
+		r.Events = append(r.Events, TaskEvent(event))
 	}
 	for _, err := range m.Errors {
-		r.Errors = append(r.Errors, api.TaskError(err))
+		r.Errors = append(r.Errors, TaskError(err))
 	}
 	if m.Report != nil {
 		report := &TaskReport{}
@@ -59,13 +74,12 @@ func (r *Task) With(m *model.Task) {
 		}
 	}
 	for _, a := range m.Attached {
-		r.Attached = append(r.Attached, api.Attachment(a))
+		r.Attached = append(r.Attached, Attachment(a))
 	}
 }
 
-// Model builds a model.
-func (r *Task) Model() (m *model.Task) {
-	m = &model.Task{}
+// Patch the specified model.
+func (r *Task) Patch(m *model.Task) {
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
@@ -79,20 +93,9 @@ func (r *Task) Model() (m *model.Task) {
 	m.Data.Any = r.Data
 	m.ApplicationID = idPtr(r.Application)
 	m.PlatformID = idPtr(r.Platform)
-	return
 }
 
-// userPriority adjust (ensures) priority is greater than 10.
-// Priority: 0-9 reserved for system tasks.
-func (r *Task) userPriority(in int) (out int) {
-	out = in
-	if out < 10 {
-		out += 10
-	}
-	return
-}
-
-// injectFiles inject attached files into the activity.
+// InjectFiles inject attached files into the activity.
 func (r *Task) InjectFiles(db *gorm.DB) (err error) {
 	sort.Slice(
 		r.Attached,
@@ -131,6 +134,16 @@ func (r *Task) InjectFiles(db *gorm.DB) (err error) {
 	return
 }
 
+// userPriority adjust (ensures) priority is greater than 10.
+// Priority: 0-9 reserved for system tasks.
+func (r *Task) userPriority(in int) (out int) {
+	out = in
+	if out < 10 {
+		out += 10
+	}
+	return
+}
+
 // TaskReport REST resource.
 type TaskReport api.TaskReport
 
@@ -143,19 +156,18 @@ func (r *TaskReport) With(m *model.TaskReport) {
 	r.TaskID = m.TaskID
 	r.Activity = m.Activity
 	r.Result = m.Result.Any
-	r.Errors = make([]api.TaskError, 0, len(m.Errors))
-	r.Attached = make([]api.Attachment, 0, len(m.Attached))
+	r.Errors = make([]TaskError, 0, len(m.Errors))
+	r.Attached = make([]Attachment, 0, len(m.Attached))
 	for _, err := range m.Errors {
-		r.Errors = append(r.Errors, api.TaskError(err))
+		r.Errors = append(r.Errors, TaskError(err))
 	}
 	for _, a := range m.Attached {
-		r.Attached = append(r.Attached, api.Attachment(a))
+		r.Attached = append(r.Attached, Attachment(a))
 	}
 }
 
-// Model builds a model.
-func (r *TaskReport) Model() (m *model.TaskReport) {
-	m = &model.TaskReport{}
+// Patch the specified model.
+func (r *TaskReport) Patch(m *model.TaskReport) {
 	m.ID = r.ID
 	m.Status = r.Status
 	m.Total = r.Total
@@ -171,16 +183,14 @@ func (r *TaskReport) Model() (m *model.TaskReport) {
 	for _, at := range r.Attached {
 		m.Attached = append(m.Attached, model.Attachment(at))
 	}
-	return
 }
 
 // TaskQueue report.
-type TaskQueue api.TaskQueue
+type TaskQueue = api.TaskQueue
 
 // TaskDashboard report.
 type TaskDashboard api.TaskDashboard
 
-// With updates the resource with the model.
 func (r *TaskDashboard) With(m *model.Task) {
 	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
@@ -197,18 +207,3 @@ func (r *TaskDashboard) With(m *model.Task) {
 		r.Errors += len(m.Report.Errors)
 	}
 }
-
-// Attachment type alias to shared API.
-type Attachment = api.Attachment
-
-// TaskError type alias to shared API.
-type TaskError = api.TaskError
-
-// TaskEvent type alias to shared API.
-type TaskEvent = api.TaskEvent
-
-// TaskPolicy type alias to shared API.
-type TaskPolicy = api.TaskPolicy
-
-// TTL type alias to shared API.
-type TTL = api.TTL

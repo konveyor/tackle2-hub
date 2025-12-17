@@ -18,3 +18,6 @@ type Login = api.Login
 
 // RestAPI type alias to shared API.
 type RestAPI = api.RestAPI
+
+// Service type alias to shared API.
+type Service = api.Service

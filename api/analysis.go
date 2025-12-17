@@ -2522,7 +2522,7 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 		tag := Tag{}
 		tag.ID = m.ID
 		tag.Name = m.Name
-		tag.Category = Ref{
+		tag.Category = resource.Ref{
 			ID:   m.Category.ID,
 			Name: m.Category.Name,
 		}

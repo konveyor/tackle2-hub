@@ -65,6 +65,17 @@ func (r *RuleSet) Model() (m *model.RuleSet) {
 	return
 }
 
+// HasRule - determine if the ruleset is referenced.
+func (r *RuleSet) HasRule(id uint) (b bool) {
+	for _, ruleset := range r.Rules {
+		if id == ruleset.ID {
+			b = true
+			break
+		}
+	}
+	return
+}
+
 // Rule - REST Resource.
 type Rule api.Rule
 

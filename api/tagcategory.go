@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -202,35 +203,4 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 }
 
 // TagCategory REST resource.
-type TagCategory struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Color    string `json:"colour" yaml:"colour"`
-	Tags     []Ref  `json:"tags"`
-	// Deprecated
-	Username string `json:"username,omitempty"` // Deprecated
-	Rank     uint   `json:"rank,omitempty"`     // Deprecated
-}
-
-// With updates the resource with the model.
-func (r *TagCategory) With(m *model.TagCategory) {
-	r.Resource.With(&m.Model)
-	r.ID = m.ID
-	r.Name = m.Name
-	r.Color = m.Color
-	for _, tag := range m.Tags {
-		ref := Ref{}
-		ref.With(tag.ID, tag.Name)
-		r.Tags = append(r.Tags, ref)
-	}
-}
-
-// Model builds a model.
-func (r *TagCategory) Model() (m *model.TagCategory) {
-	m = &model.TagCategory{
-		Name:  r.Name,
-		Color: r.Color,
-	}
-	m.ID = r.ID
-	return
-}
+type TagCategory = resource.TagCategory

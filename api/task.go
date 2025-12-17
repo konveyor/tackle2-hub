@@ -2,22 +2,17 @@ package api
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"sort"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/tar"
 	tasking "github.com/konveyor/tackle2-hub/task"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -85,7 +80,7 @@ func (h TaskHandler) Get(ctx *gin.Context) {
 	r.With(task)
 	q := ctx.Query("merged")
 	if b, _ := strconv.ParseBool(q); b {
-		err := r.injectFiles(h.DB(ctx))
+		err := r.InjectFiles(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -762,16 +757,13 @@ func (h TaskHandler) GetAttached(ctx *gin.Context) {
 }
 
 // TTL time-to-live.
-type TTL model.TTL
+type TTL = resource.TTL
 
 // TaskPolicy scheduling policies.
-type TaskPolicy model.TaskPolicy
+type TaskPolicy = model.TaskPolicy
 
 // TaskError used in Task.Errors.
-type TaskError struct {
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-}
+type TaskError = resource.TaskError
 
 // TaskEvent task event.
 type TaskEvent model.TaskEvent
@@ -780,234 +772,13 @@ type TaskEvent model.TaskEvent
 type Attachment model.Attachment
 
 // Task REST resource.
-type Task struct {
-	Resource    `yaml:",inline"`
-	Name        string       `json:"name,omitempty" yaml:",omitempty"`
-	Kind        string       `json:"kind,omitempty" yaml:",omitempty"`
-	Addon       string       `json:"addon,omitempty" yaml:",omitempty"`
-	Extensions  []string     `json:"extensions,omitempty" yaml:",omitempty"`
-	State       string       `json:"state,omitempty" yaml:",omitempty"`
-	Locator     string       `json:"locator,omitempty" yaml:",omitempty"`
-	Priority    int          `json:"priority,omitempty" yaml:",omitempty"`
-	Policy      TaskPolicy   `json:"policy,omitempty" yaml:",omitempty"`
-	TTL         TTL          `json:"ttl,omitempty" yaml:",omitempty"`
-	Data        any          `json:"data,omitempty" yaml:",omitempty"`
-	Application *Ref         `json:"application,omitempty" yaml:",omitempty"`
-	Platform    *Ref         `json:"platform,omitempty" yaml:",omitempty"`
-	Bucket      *Ref         `json:"bucket,omitempty" yaml:",omitempty"`
-	Pod         string       `json:"pod,omitempty" yaml:",omitempty"`
-	Retries     int          `json:"retries,omitempty" yaml:",omitempty"`
-	Started     *time.Time   `json:"started,omitempty" yaml:",omitempty"`
-	Terminated  *time.Time   `json:"terminated,omitempty" yaml:",omitempty"`
-	Events      []TaskEvent  `json:"events,omitempty" yaml:",omitempty"`
-	Errors      []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
-	Activity    []string     `json:"activity,omitempty" yaml:",omitempty"`
-	Attached    []Attachment `json:"attached" yaml:",omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *Task) With(m *model.Task) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Kind = m.Kind
-	r.Addon = m.Addon
-	r.Extensions = m.Extensions
-	r.State = m.State
-	r.Locator = m.Locator
-	r.Priority = r.userPriority(m.Priority)
-	r.Policy = TaskPolicy(m.Policy)
-	r.TTL = TTL(m.TTL)
-	r.Data = m.Data.Any
-	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	r.Platform = r.refPtr(m.PlatformID, m.Platform)
-	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
-	r.Pod = m.Pod
-	r.Retries = m.Retries
-	r.Started = m.Started
-	r.Terminated = m.Terminated
-	r.Events = make([]TaskEvent, 0)
-	r.Errors = make([]TaskError, 0)
-	r.Attached = make([]Attachment, 0)
-	for _, event := range m.Events {
-		r.Events = append(r.Events, TaskEvent(event))
-	}
-	for _, err := range m.Errors {
-		r.Errors = append(r.Errors, TaskError(err))
-	}
-	if m.Report != nil {
-		report := &TaskReport{}
-		report.With(m.Report)
-		r.Activity = report.Activity
-		r.Errors = append(r.Errors, report.Errors...)
-		r.Attached = append(r.Attached, report.Attached...)
-		switch r.State {
-		case tasking.Succeeded:
-			switch report.Status {
-			case tasking.Failed:
-				r.State = report.Status
-			}
-		}
-	}
-	for _, a := range m.Attached {
-		r.Attached = append(r.Attached, Attachment(a))
-	}
-}
-
-// Patch the specified model.
-func (r *Task) Patch(m *model.Task) {
-	m.ID = r.ID
-	m.Name = r.Name
-	m.Kind = r.Kind
-	m.Addon = r.Addon
-	m.Extensions = r.Extensions
-	m.State = r.State
-	m.Locator = r.Locator
-	m.Priority = r.Priority
-	m.Policy = model.TaskPolicy(r.Policy)
-	m.TTL = model.TTL(r.TTL)
-	m.Data.Any = r.Data
-	m.ApplicationID = r.idPtr(r.Application)
-	m.PlatformID = r.idPtr(r.Platform)
-}
-
-// userPriority adjust (ensures) priority is greater than 10.
-// Priority: 0-9 reserved for system tasks.
-func (r *Task) userPriority(in int) (out int) {
-	out = in
-	if out < 10 {
-		out += 10
-	}
-	return
-}
-
-// injectFiles inject attached files into the activity.
-func (r *Task) injectFiles(db *gorm.DB) (err error) {
-	sort.Slice(
-		r.Attached,
-		func(i, j int) bool {
-			return r.Attached[i].Activity > r.Attached[j].Activity
-		})
-	for _, ref := range r.Attached {
-		if ref.Activity == 0 {
-			continue
-		}
-		if ref.Activity > len(r.Activity) {
-			continue
-		}
-		m := &model.File{}
-		err = db.First(m, ref.ID).Error
-		if err != nil {
-			return
-		}
-		b, nErr := ioutil.ReadFile(m.Path)
-		if nErr != nil {
-			err = nErr
-			return
-		}
-		var content []string
-		for _, s := range strings.Split(string(b), "\n") {
-			content = append(
-				content,
-				"> "+s)
-		}
-		snipA := slices.Clone(r.Activity[:ref.Activity])
-		snipB := slices.Clone(r.Activity[ref.Activity:])
-		r.Activity = append(
-			append(snipA, content...),
-			snipB...)
-	}
-	return
-}
+type Task = resource.Task
 
 // TaskReport REST resource.
-type TaskReport struct {
-	Resource  `yaml:",inline"`
-	Status    string       `json:"status"`
-	Errors    []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
-	Total     int          `json:"total,omitempty" yaml:",omitempty"`
-	Completed int          `json:"completed,omitempty" yaml:",omitempty"`
-	Activity  []string     `json:"activity,omitempty" yaml:",omitempty"`
-	Attached  []Attachment `json:"attached,omitempty" yaml:",omitempty"`
-	Result    any          `json:"result,omitempty" yaml:",omitempty"`
-	TaskID    uint         `json:"task"`
-}
-
-// With updates the resource with the model.
-func (r *TaskReport) With(m *model.TaskReport) {
-	r.Resource.With(&m.Model)
-	r.Status = m.Status
-	r.Total = m.Total
-	r.Completed = m.Completed
-	r.TaskID = m.TaskID
-	r.Activity = m.Activity
-	r.Result = m.Result.Any
-	r.Errors = make([]TaskError, 0, len(m.Errors))
-	r.Attached = make([]Attachment, 0, len(m.Attached))
-	for _, err := range m.Errors {
-		r.Errors = append(r.Errors, TaskError(err))
-	}
-	for _, a := range m.Attached {
-		r.Attached = append(r.Attached, Attachment(a))
-	}
-}
-
-// Patch the specified model.
-func (r *TaskReport) Patch(m *model.TaskReport) {
-	m.ID = r.ID
-	m.Status = r.Status
-	m.Total = r.Total
-	m.Completed = r.Completed
-	m.Activity = r.Activity
-	m.TaskID = r.TaskID
-	m.Result.Any = r.Result
-	m.Errors = make([]model.TaskError, 0, len(r.Errors))
-	m.Attached = make([]model.Attachment, 0, len(r.Attached))
-	for _, err := range r.Errors {
-		m.Errors = append(m.Errors, model.TaskError(err))
-	}
-	for _, at := range r.Attached {
-		m.Attached = append(m.Attached, model.Attachment(at))
-	}
-}
+type TaskReport = resource.TaskReport
 
 // TaskQueue report.
-type TaskQueue struct {
-	Total        int `json:"total"`
-	Ready        int `json:"ready"`
-	Postponed    int `json:"postponed"`
-	QuotaBlocked int `json:"quotaBlocked"`
-	Pending      int `json:"pending"`
-	Running      int `json:"running"`
-}
+type TaskQueue = resource.TaskQueue
 
 // TaskDashboard report.
-type TaskDashboard struct {
-	Resource    `yaml:",inline"`
-	Name        string     `json:"name,omitempty" yaml:",omitempty"`
-	Kind        string     `json:"kind,omitempty" yaml:",omitempty"`
-	Addon       string     `json:"addon,omitempty" yaml:",omitempty"`
-	State       string     `json:"state,omitempty" yaml:",omitempty"`
-	Locator     string     `json:"locator,omitempty" yaml:",omitempty"`
-	Application *Ref       `json:"application,omitempty" yaml:",omitempty"`
-	Platform    *Ref       `json:"platform,omitempty" yaml:",omitempty"`
-	Started     *time.Time `json:"started,omitempty" yaml:",omitempty"`
-	Terminated  *time.Time `json:"terminated,omitempty" yaml:",omitempty"`
-	Errors      int        `json:"errors,omitempty" yaml:",omitempty"`
-}
-
-func (r *TaskDashboard) With(m *model.Task) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Kind = m.Kind
-	r.Addon = m.Addon
-	r.State = m.State
-	r.Locator = m.Locator
-	r.Application = r.refPtr(m.ApplicationID, m.Application)
-	r.Platform = r.refPtr(m.PlatformID, m.Platform)
-	r.Started = m.Started
-	r.Terminated = m.Terminated
-	r.Errors = len(m.Errors)
-	if m.Report != nil {
-		r.Errors += len(m.Report.Errors)
-	}
-}
+type TaskDashboard = resource.TaskDashboard

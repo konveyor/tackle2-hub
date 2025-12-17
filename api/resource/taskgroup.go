@@ -42,9 +42,8 @@ func (r *TaskGroup) With(m *model.TaskGroup) {
 	}
 }
 
-// Model builds a model.
-func (r *TaskGroup) Model() (m *model.TaskGroup) {
-	m = &model.TaskGroup{}
+// Patch the specified model.
+func (r *TaskGroup) Patch(m *model.TaskGroup) {
 	m.ID = r.ID
 	m.Name = r.Name
 	m.Kind = r.Kind
@@ -55,13 +54,13 @@ func (r *TaskGroup) Model() (m *model.TaskGroup) {
 	m.Policy = model.TaskPolicy(r.Policy)
 	m.Data.Any = r.Data
 	m.List = make([]model.Task, 0, len(r.Tasks))
-	for _, task := range r.Tasks {
-		t := Task(task)
-		tm := t.Model()
-		m.List = append(m.List, *tm)
+	for i := range r.Tasks {
+		task := Task(r.Tasks[i])
+		tm := model.Task{}
+		task.Patch(&tm)
+		m.List = append(m.List, tm)
 	}
 	if r.Bucket != nil {
 		m.BucketID = &r.Bucket.ID
 	}
-	return
 }

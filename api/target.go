@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	uuid2 "github.com/google/uuid"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
@@ -108,7 +109,7 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 		ruleset := target.RuleSet
 		uuid, _ := uuid2.NewUUID()
 		ruleset.Name = fmt.Sprintf("__Target(%s)-%s", m.Name, uuid.String())
-		err := rh.create(ctx, ruleset)
+		err := rh.create(ctx, (*RuleSet)(ruleset))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -211,7 +212,7 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 	if r.RuleSet != nil {
 		rh := RuleSetHandler{}
 		m.RuleSetID = &r.RuleSet.ID
-		err := rh.update(ctx, r.RuleSet)
+		err := rh.update(ctx, (*RuleSet)(r.RuleSet))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -229,55 +230,4 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 }
 
 // Target REST resource.
-type Target struct {
-	Resource    `yaml:",inline"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Provider    string        `json:"provider,omitempty" yaml:",omitempty"`
-	Choice      bool          `json:"choice,omitempty" yaml:",omitempty"`
-	Custom      bool          `json:"custom,omitempty" yaml:",omitempty"`
-	Labels      []TargetLabel `json:"labels"`
-	Image       Ref           `json:"image"`
-	RuleSet     *RuleSet      `json:"ruleset,omitempty" yaml:"ruleset,omitempty"`
-}
-
-type TargetLabel model.TargetLabel
-
-// With updates the resource with the model.
-func (r *Target) With(m *model.Target) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Provider = m.Provider
-	r.Choice = m.Choice
-	r.Custom = !m.Builtin()
-	if m.RuleSet != nil {
-		r.RuleSet = &RuleSet{}
-		r.RuleSet.With(m.RuleSet)
-	}
-	imgRef := Ref{ID: m.ImageID}
-	if m.Image != nil {
-		imgRef.Name = m.Image.Name
-	}
-	r.Image = imgRef
-	r.Labels = []TargetLabel{}
-	for _, l := range m.Labels {
-		r.Labels = append(r.Labels, TargetLabel(l))
-	}
-}
-
-// Model builds a model.
-func (r *Target) Model() (m *model.Target) {
-	m = &model.Target{
-		Name:        r.Name,
-		Description: r.Description,
-		Provider:    r.Provider,
-		Choice:      r.Choice,
-	}
-	m.ID = r.ID
-	m.ImageID = r.Image.ID
-	for _, l := range r.Labels {
-		m.Labels = append(m.Labels, model.TargetLabel(l))
-	}
-	return
-}
+type Target = resource.Target

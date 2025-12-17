@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -222,18 +223,4 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 }
 
 // Setting REST Resource
-type Setting struct {
-	Key   string `json:"key"`
-	Value any    `json:"value"`
-}
-
-func (r *Setting) With(m *model.Setting) {
-	r.Key = m.Key
-	r.Value = m.Value
-}
-
-func (r *Setting) Model() (m *model.Setting) {
-	m = &model.Setting{Key: r.Key}
-	m.Value = r.Value
-	return
-}
+type Setting = resource.Setting

@@ -45,9 +45,9 @@ func TestTag_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Tag{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "test-tag",
-		Category: Ref{ID: 10, Name: "test-category"},
+		Category: resource.Ref{ID: 10, Name: "test-category"},
 	}
 
 	m := r.Model()
@@ -232,24 +232,24 @@ func TestStakeholder_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Stakeholder{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "John Doe",
 		Email:       "john@example.com",
-		JobFunction: &Ref{ID: 3, Name: "Manager"},
-		Groups: []Ref{
+		JobFunction: &resource.Ref{ID: 3, Name: "Manager"},
+		Groups: []resource.Ref{
 			{ID: 1, Name: "Group1"},
 			{ID: 2, Name: "Group2"},
 		},
-		BusinessServices: []Ref{
+		BusinessServices: []resource.Ref{
 			{ID: 10, Name: "Service1"},
 		},
-		Owns: []Ref{
+		Owns: []resource.Ref{
 			{ID: 100, Name: "App1"},
 		},
-		Contributes: []Ref{
+		Contributes: []resource.Ref{
 			{ID: 200, Name: "App2"},
 		},
-		MigrationWaves: []Ref{
+		MigrationWaves: []resource.Ref{
 			{ID: 50, Name: "Wave1"},
 		},
 	}
@@ -309,10 +309,10 @@ func TestTagCategory_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &TagCategory{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "test-category",
 		Color:    "#FF0000",
-		Tags: []Ref{
+		Tags: []resource.Ref{
 			{ID: 1, Name: "tag1"},
 			{ID: 2, Name: "tag2"},
 		},
@@ -466,12 +466,12 @@ func TestProxy_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Proxy{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Enabled:  true,
 		Kind:     "https",
 		Host:     "proxy.example.com",
 		Port:     8443,
-		Identity: &Ref{ID: 5, Name: "proxy-creds"},
+		Identity: &resource.Ref{ID: 5, Name: "proxy-creds"},
 		Excluded: []string{"*.internal.com", "localhost"},
 	}
 
@@ -643,8 +643,8 @@ func TestReview_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Review{
-		Resource:    Resource{ID: 1},
-		Application: &Ref{ID: 100, Name: "test-app"},
+		Resource:    resource.Resource{ID: 1},
+		Application: &resource.Ref{ID: 100, Name: "test-app"},
 	}
 
 	m := r.Model()
@@ -745,11 +745,11 @@ func TestTracker_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Tracker{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "JIRA Tracker",
 		Kind:     "jira",
 		URL:      "https://jira.example.com",
-		Identity: Ref{ID: 5, Name: "jira-creds"},
+		Identity: resource.Ref{ID: 5, Name: "jira-creds"},
 	}
 
 	m := r.Model()
@@ -1211,7 +1211,7 @@ func TestTicket_With(t *testing.T) {
 	g.Expect(r.LastUpdated).To(gomega.Equal(now))
 	g.Expect(r.Application.ID).To(gomega.Equal(uint(100)))
 	g.Expect(r.Tracker.ID).To(gomega.Equal(uint(200)))
-	g.Expect(r.Fields).To(gomega.Equal(Map{"priority": "high"}))
+	g.Expect(r.Fields).To(gomega.Equal(resource.Map{"priority": "high"}))
 }
 
 // TestTicket_Model tests the Ticket.Model() method
@@ -1219,12 +1219,12 @@ func TestTicket_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Ticket{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Kind:        "jira",
 		Parent:      "PARENT-1",
-		Application: Ref{ID: 100, Name: "test-app"},
-		Tracker:     Ref{ID: 200, Name: "test-tracker"},
-		Fields:      Map{"priority": "high"},
+		Application: resource.Ref{ID: 100, Name: "test-app"},
+		Tracker:     resource.Ref{ID: 200, Name: "test-tracker"},
+		Fields:      resource.Map{"priority": "high"},
 	}
 
 	m := r.Model()
@@ -1662,8 +1662,8 @@ func TestAnalysisProfile_With(t *testing.T) {
 	g.Expect(r.Description).To(gomega.Equal("Test description"))
 	g.Expect(r.Mode.WithDeps).To(gomega.Equal(true))
 	g.Expect(r.Scope.WithKnownLibs).To(gomega.Equal(false))
-	g.Expect(r.Scope.Packages).To(gomega.Equal(model.InExList{Included: []string{"com.example"}}))
-	g.Expect(r.Rules.Labels).To(gomega.Equal(model.InExList{Included: []string{"label1"}}))
+	g.Expect(r.Scope.Packages).To(gomega.Equal(api.InExList{Included: []string{"com.example"}}))
+	g.Expect(r.Rules.Labels).To(gomega.Equal(api.InExList{Included: []string{"label1"}}))
 	g.Expect(len(r.Rules.Targets)).To(gomega.Equal(1))
 }
 
@@ -1674,15 +1674,15 @@ func TestAnalysisProfile_Model(t *testing.T) {
 	r := &AnalysisProfile{
 		Name:        "Test Profile",
 		Description: "Test description",
-		Mode: ApMode{
+		Mode: api.ApMode{
 			WithDeps: true,
 		},
-		Scope: ApScope{
+		Scope: api.ApScope{
 			WithKnownLibs: false,
-			Packages:      model.InExList{Included: []string{"com.example"}},
+			Packages:      api.InExList{Included: []string{"com.example"}},
 		},
-		Rules: ApRules{
-			Labels: model.InExList{Included: []string{"label1"}},
+		Rules: api.ApRules{
+			Labels: api.InExList{Included: []string{"label1"}},
 		},
 	}
 
@@ -1863,13 +1863,13 @@ func TestTarget_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Target{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "Test Target",
 		Description: "Test description",
 		Provider:    "java",
 		Choice:      true,
-		Image:       Ref{ID: 100, Name: "target-image"},
-		Labels: []TargetLabel{
+		Image:       resource.Ref{ID: 100, Name: "target-image"},
+		Labels: []resource.TargetLabel{
 			{Name: "label1", Label: "value1"},
 		},
 	}
@@ -1934,11 +1934,11 @@ func TestRuleSet_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &RuleSet{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Kind:        "custom",
 		Name:        "Test RuleSet",
 		Description: "Test description",
-		Identity:    &Ref{ID: 5, Name: "ruleset-creds"},
+		Identity:    &resource.Ref{ID: 5, Name: "ruleset-creds"},
 		Repository: &Repository{
 			Kind: "git",
 			URL:  "https://github.com/test/rules",
@@ -1989,10 +1989,10 @@ func TestRule_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Rule{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "Test Rule",
 		Labels:   []string{"label1", "label2"},
-		File:     &Ref{ID: 100, Name: "rule-file"},
+		File:     &resource.Ref{ID: 100, Name: "rule-file"},
 	}
 
 	m := r.Model()

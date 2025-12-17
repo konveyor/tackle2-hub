@@ -36,6 +36,12 @@ type ConfigMap struct {
 	Data any    `json:"data"`
 }
 
+// Service REST resource.
+type Service struct {
+	Name  string `json:"name"`
+	Route string `json:"route"`
+}
+
 // File REST resource.
 type File struct {
 	Resource   `yaml:",inline"`
