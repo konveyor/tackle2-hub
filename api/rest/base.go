@@ -44,22 +44,23 @@ func ref(id uint, m any) (r Ref) {
 	return
 }
 
+// Resource REST resource.
 type Resource = api.Resource
 
-// Ref type alias to shared API.
+// Ref REST resource.
 type Ref = api.Ref
 
-// Map unstructured object.
+// Map REST resource.
 type Map = api.Map
 
-// TagRef type alias to shared API.
+// TagRef REST resource.
 type TagRef = api.TagRef
 
-// Repository REST nested resource.
+// Repository REST resource.
 type Repository = api.Repository
 
-// IdentityRef type alias to shared API.
+// IdentityRef REST resource.
 type IdentityRef = api.IdentityRef
 
-// InExList include/exclude list.
+// InExList REST resource.
 type InExList = model.InExList

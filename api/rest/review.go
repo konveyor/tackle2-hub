@@ -38,5 +38,5 @@ func (r *Review) Model() (m *model.Review) {
 	return
 }
 
-// CopyRequest type alias to shared API.
+// CopyRequest REST resource.
 type CopyRequest = api.CopyRequest

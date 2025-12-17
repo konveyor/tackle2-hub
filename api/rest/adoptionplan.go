@@ -4,8 +4,8 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-// DependencyGraph type alias to shared API.
+// DependencyGraph REST resource.
 type DependencyGraph = api.DependencyGraph
 
-// Vertex type alias to shared API.
+// Vertex REST resource.
 type Vertex = api.Vertex

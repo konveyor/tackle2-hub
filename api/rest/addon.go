@@ -9,7 +9,7 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
-// Addon type alias to shared API.
+// Addon REST resource.
 type Addon api.Addon
 
 // With model.
@@ -28,7 +28,7 @@ func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 	}
 }
 
-// Extension type alias to shared API.
+// Extension REST resource.
 type Extension api.Extension
 
 // With model.

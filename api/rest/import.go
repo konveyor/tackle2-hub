@@ -11,7 +11,7 @@ const (
 	Completed  = "Completed"
 )
 
-// ImportSummary type alias to shared API.
+// ImportSummary REST resource.
 type ImportSummary api.ImportSummary
 
 // With updates the resource with the model.

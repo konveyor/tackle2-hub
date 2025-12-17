@@ -36,8 +36,8 @@ func (r *Tracker) Model() (m *model.Tracker) {
 	return
 }
 
-// IssueType type alias to shared API.
+// IssueType REST resource.
 type IssueType = api.IssueType
 
-// Project type alias to shared API.
+// Project REST resource.
 type Project = api.Project

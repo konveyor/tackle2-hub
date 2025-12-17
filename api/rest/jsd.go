@@ -5,10 +5,10 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-// Document type alias to shared API.
+// Document REST resource.
 type Document = api.Document
 
-// Schema type alias to shared API.
+// Schema REST resource.
 type Schema api.Schema
 
 func (r *Schema) With(m jsd.Schema) {
@@ -26,7 +26,7 @@ func (r *Schema) With(m jsd.Schema) {
 	}
 }
 
-// Version type alias to shared API.
+// Version REST resource.
 type Version api.Version
 
 func (r *Version) With(m *jsd.Version) {

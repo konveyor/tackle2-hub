@@ -1,6 +1,6 @@
 package rest
 
-// ValidationError reports validation errors.
+// ValidationError REST resource.
 type ValidationError struct {
 	Reason string
 }

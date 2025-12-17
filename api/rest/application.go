@@ -204,7 +204,7 @@ func (r *Application) Model() (m *model.Application) {
 	return
 }
 
-// Fact REST nested resource.
+// Fact REST resource.
 type Fact api.Fact
 
 func (r *Fact) With(m *model.Fact) {
@@ -221,9 +221,10 @@ func (r *Fact) Model() (m *model.Fact) {
 	return
 }
 
-// FactKey alias api.FactKey
+// FactKey REST resource.
 type FactKey = api.FactKey
 
+// TagMap REST resource.
 type TagMap map[uint][]AppTag
 
 // Set the Application.Tags.
@@ -235,7 +236,7 @@ func (r TagMap) Set(m *model.Application) {
 	}
 }
 
-// AppTag represents application tag mapping.
+// AppTag REST resource.
 type AppTag struct {
 	ApplicationID uint
 	TagID         uint
@@ -256,7 +257,7 @@ func (r *AppTag) WithRef(m *TagRef) {
 	r.Tag.ID = m.ID
 }
 
-// IdentityMap represents application/identity associations.
+// IdentityMap REST resource.
 type IdentityMap map[IdentityRef]byte
 
 // With updates the map.

@@ -76,7 +76,7 @@ func (r *RuleSet) HasRule(id uint) (b bool) {
 	return
 }
 
-// Rule - REST Resource.
+// Rule REST resource.
 type Rule api.Rule
 
 // With updates the resource with the model.
@@ -97,5 +97,5 @@ func (r *Rule) Model() (m *model.Rule) {
 	return
 }
 
-// TargetLabel type alias to shared API.
+// TargetLabel REST resource.
 type TargetLabel = api.TargetLabel

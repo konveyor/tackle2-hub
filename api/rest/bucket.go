@@ -5,7 +5,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-// Bucket type alias to shared API.
+// Bucket REST resource.
 type Bucket api.Bucket
 
 // With updates the resource with the model.

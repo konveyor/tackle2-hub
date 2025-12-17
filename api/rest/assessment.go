@@ -6,8 +6,13 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
+// Thresholds REST resource.
 type Thresholds api.Thresholds
+
+// RiskMessages REST resource.
 type RiskMessages api.RiskMessages
+
+// CategorizedTag REST resource.
 type CategorizedTag api.CategorizedTag
 
 // Assessment REST resource.
@@ -167,6 +172,7 @@ func (r *Answer) Model() (m *model.Answer) {
 	return
 }
 
+// Section REST resource.
 type Section api.Section
 
 // With updates the resource with the model.

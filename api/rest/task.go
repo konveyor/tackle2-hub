@@ -12,19 +12,19 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-// TTL time-to-live.
+// TTL REST resource.
 type TTL = api.TTL
 
-// TaskPolicy scheduling policies.
+// TaskPolicy REST resource.
 type TaskPolicy = api.TaskPolicy
 
-// TaskError used in Task.Errors.
+// TaskError REST resource.
 type TaskError = api.TaskError
 
-// TaskEvent task event.
+// TaskEvent REST resource.
 type TaskEvent = api.TaskEvent
 
-// Attachment file attachment.
+// Attachment REST resource.
 type Attachment = api.Attachment
 
 // Task REST resource.
@@ -185,10 +185,10 @@ func (r *TaskReport) Patch(m *model.TaskReport) {
 	}
 }
 
-// TaskQueue report.
+// TaskQueue REST resource.
 type TaskQueue = api.TaskQueue
 
-// TaskDashboard report.
+// TaskDashboard REST resource.
 type TaskDashboard api.TaskDashboard
 
 func (r *TaskDashboard) With(m *model.Task) {

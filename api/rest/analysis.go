@@ -132,26 +132,26 @@ func (r *Incident) Model() (m *model.Incident) {
 	return
 }
 
-// Link analysis report link.
+// Link REST resource.
 type Link = api.Link
 
-// ArchivedInsight created when insights are archived.
+// ArchivedInsight REST resource.
 type ArchivedInsight = api.ArchivedInsight
 
-// DepAppReport type alias to shared API.
+// DepAppReport REST resource.
 type DepAppReport = api.DepAppReport
 
-// DepReport type alias to shared API.
+// DepReport REST resource.
 type DepReport = api.DepReport
 
-// FileReport type alias to shared API.
+// FileReport REST resource.
 type FileReport = api.FileReport
 
-// InsightAppReport type alias to shared API.
+// InsightAppReport REST resource.
 type InsightAppReport = api.InsightAppReport
 
-// InsightReport type alias to shared API.
+// InsightReport REST resource.
 type InsightReport = api.InsightReport
 
-// RuleReport type alias to shared API.
+// RuleReport REST resource.
 type RuleReport = api.RuleReport

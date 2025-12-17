@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
+// Questionnaire REST resource.
 type Questionnaire api.Questionnaire
 
 // With updates the resource with the model.

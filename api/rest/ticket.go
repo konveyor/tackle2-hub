@@ -5,7 +5,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-// Ticket API Resource
+// Ticket REST resource.
 type Ticket api.Ticket
 
 // With updates the resource with the model.

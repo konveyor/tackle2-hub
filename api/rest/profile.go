@@ -60,18 +60,18 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	return
 }
 
-// ApMode analysis mode.
+// ApMode REST resource.
 type ApMode struct {
 	WithDeps bool `json:"withDeps" yaml:"withDeps"`
 }
 
-// ApScope analysis scope.
+// ApScope REST resource.
 type ApScope struct {
 	WithKnownLibs bool     `json:"withKnownLibs" yaml:"withKnownLibs"`
 	Packages      InExList `json:"packages,omitempty" yaml:",omitempty"`
 }
 
-// ApRules analysis rules.
+// ApRules REST resource.
 type ApRules struct {
 	Targets    []Ref       `json:"targets"`
 	Labels     InExList    `json:"labels,omitempty" yaml:",omitempty"`
