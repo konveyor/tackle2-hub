@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -62,6 +63,12 @@ var BindMIMEs = []string{api.MIMEJSON, api.MIMEYAML}
 const (
 	DirectoryExpand = api.DirectoryExpand
 )
+
+// Map REST resource.
+type Map = resource.Map
+
+// Ref REST resource reference.
+type Ref = resource.Ref
 
 // All builds all handlers.
 func All() []Handler {

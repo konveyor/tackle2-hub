@@ -665,8 +665,12 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	}
 	resources := []TagRef{}
 	for i := range list {
-		r := TagRef{}
-		r.With(list[i].Tag.ID, list[i].Tag.Name, list[i].Source, false)
+		r := TagRef{
+			ID:      list[i].Tag.ID,
+			Name:    list[i].Tag.Name,
+			Source:  list[i].Source,
+			Virtual: false,
+		}
 		resources = append(resources, r)
 	}
 
@@ -696,16 +700,24 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 				return
 			}
 			for i := range archetypeTags {
-				r := TagRef{}
-				r.With(archetypeTags[i].ID, archetypeTags[i].Name, SourceArchetype, true)
+				r := TagRef{
+					ID:      archetypeTags[i].ID,
+					Name:    archetypeTags[i].Name,
+					Source:  SourceArchetype,
+					Virtual: true,
+				}
 				resources = append(resources, r)
 			}
 		}
 		if includeAssessment {
 			assessmentTags := appResolver.AssessmentTags(app)
 			for i := range assessmentTags {
-				r := TagRef{}
-				r.With(assessmentTags[i].ID, assessmentTags[i].Name, SourceAssessment, true)
+				r := TagRef{
+					ID:      assessmentTags[i].ID,
+					Name:    assessmentTags[i].Name,
+					Source:  SourceAssessment,
+					Virtual: true,
+				}
 				resources = append(resources, r)
 			}
 		}
@@ -1455,6 +1467,8 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 	}
 	return
 }
+
+type TagRef = resource.TagRef
 
 type TagMap = resource.TagMap
 
