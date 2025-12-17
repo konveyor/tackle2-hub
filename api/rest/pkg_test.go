@@ -2678,3 +2678,337 @@ func TestExtension_With_WithProbes(t *testing.T) {
 	g.Expect(r.Container.ReadinessProbe.TCPSocket).ToNot(gomega.BeNil())
 	g.Expect(r.Container.ReadinessProbe.PeriodSeconds).To(gomega.Equal(int32(10)))
 }
+
+// TestQuestion_With tests the Question.With() method
+func TestQuestion_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Question{
+		Order:       1,
+		Text:        "What is your platform?",
+		Explanation: "Select your target platform",
+		IncludeFor: []model.CategorizedTag{
+			{Category: "Language", Tag: "Java"},
+		},
+		ExcludeFor: []model.CategorizedTag{
+			{Category: "Runtime", Tag: "Legacy"},
+		},
+		Answers: []model.Answer{
+			{Order: 1, Text: "Cloud", Risk: "green"},
+			{Order: 2, Text: "On-Premise", Risk: "yellow"},
+		},
+	}
+
+	r := &Question{}
+	r.With(m)
+
+	g.Expect(r.Order).To(gomega.Equal(uint(1)))
+	g.Expect(r.Text).To(gomega.Equal("What is your platform?"))
+	g.Expect(r.Explanation).To(gomega.Equal("Select your target platform"))
+	g.Expect(len(r.IncludeFor)).To(gomega.Equal(1))
+	g.Expect(r.IncludeFor[0].Category).To(gomega.Equal("Language"))
+	g.Expect(r.IncludeFor[0].Tag).To(gomega.Equal("Java"))
+	g.Expect(len(r.ExcludeFor)).To(gomega.Equal(1))
+	g.Expect(r.ExcludeFor[0].Category).To(gomega.Equal("Runtime"))
+	g.Expect(len(r.Answers)).To(gomega.Equal(2))
+	g.Expect(r.Answers[0].Text).To(gomega.Equal("Cloud"))
+	g.Expect(r.Answers[1].Text).To(gomega.Equal("On-Premise"))
+}
+
+// TestQuestion_Model tests the Question.Model() method
+func TestQuestion_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Question{
+		Order:       1,
+		Text:        "What is your platform?",
+		Explanation: "Select your target platform",
+		IncludeFor: []api.CategorizedTag{
+			{Category: "Language", Tag: "Java"},
+		},
+		ExcludeFor: []api.CategorizedTag{
+			{Category: "Runtime", Tag: "Legacy"},
+		},
+		Answers: []api.Answer{
+			{Order: 1, Text: "Cloud", Risk: "green"},
+			{Order: 2, Text: "On-Premise", Risk: "yellow"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.Order).To(gomega.Equal(uint(1)))
+	g.Expect(m.Text).To(gomega.Equal("What is your platform?"))
+	g.Expect(m.Explanation).To(gomega.Equal("Select your target platform"))
+	g.Expect(len(m.IncludeFor)).To(gomega.Equal(1))
+	g.Expect(m.IncludeFor[0].Category).To(gomega.Equal("Language"))
+	g.Expect(len(m.ExcludeFor)).To(gomega.Equal(1))
+	g.Expect(len(m.Answers)).To(gomega.Equal(2))
+	g.Expect(m.Answers[0].Text).To(gomega.Equal("Cloud"))
+}
+
+// TestAnswer_With tests the Answer.With() method
+func TestAnswer_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Answer{
+		Order:        1,
+		Text:         "Kubernetes",
+		Risk:         "green",
+		Rationale:    "Cloud native platform",
+		Mitigation:   "None needed",
+		Selected:     true,
+		AutoAnswered: false,
+		ApplyTags: []model.CategorizedTag{
+			{Category: "Platform", Tag: "K8s"},
+		},
+		AutoAnswerFor: []model.CategorizedTag{
+			{Category: "Container", Tag: "Docker"},
+		},
+	}
+
+	r := &Answer{}
+	r.With(m)
+
+	g.Expect(r.Order).To(gomega.Equal(uint(1)))
+	g.Expect(r.Text).To(gomega.Equal("Kubernetes"))
+	g.Expect(r.Risk).To(gomega.Equal("green"))
+	g.Expect(r.Rationale).To(gomega.Equal("Cloud native platform"))
+	g.Expect(r.Mitigation).To(gomega.Equal("None needed"))
+	g.Expect(r.Selected).To(gomega.Equal(true))
+	g.Expect(r.AutoAnswered).To(gomega.Equal(false))
+	g.Expect(len(r.ApplyTags)).To(gomega.Equal(1))
+	g.Expect(r.ApplyTags[0].Category).To(gomega.Equal("Platform"))
+	g.Expect(r.ApplyTags[0].Tag).To(gomega.Equal("K8s"))
+	g.Expect(len(r.AutoAnswerFor)).To(gomega.Equal(1))
+	g.Expect(r.AutoAnswerFor[0].Category).To(gomega.Equal("Container"))
+}
+
+// TestAnswer_Model tests the Answer.Model() method
+func TestAnswer_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Answer{
+		Order:        1,
+		Text:         "Kubernetes",
+		Risk:         "green",
+		Rationale:    "Cloud native platform",
+		Mitigation:   "None needed",
+		Selected:     true,
+		AutoAnswered: false,
+		ApplyTags: []api.CategorizedTag{
+			{Category: "Platform", Tag: "K8s"},
+		},
+		AutoAnswerFor: []api.CategorizedTag{
+			{Category: "Container", Tag: "Docker"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.Order).To(gomega.Equal(uint(1)))
+	g.Expect(m.Text).To(gomega.Equal("Kubernetes"))
+	g.Expect(m.Risk).To(gomega.Equal("green"))
+	g.Expect(m.Rationale).To(gomega.Equal("Cloud native platform"))
+	g.Expect(m.Mitigation).To(gomega.Equal("None needed"))
+	g.Expect(m.Selected).To(gomega.Equal(true))
+	g.Expect(m.AutoAnswered).To(gomega.Equal(false))
+	g.Expect(len(m.ApplyTags)).To(gomega.Equal(1))
+	g.Expect(m.ApplyTags[0].Category).To(gomega.Equal("Platform"))
+	g.Expect(len(m.AutoAnswerFor)).To(gomega.Equal(1))
+}
+
+// TestSection_With tests the Section.With() method
+func TestSection_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Section{
+		Order:   1,
+		Name:    "Application Details",
+		Comment: "Provide application information",
+		Questions: []model.Question{
+			{Order: 1, Text: "What is the application type?"},
+			{Order: 2, Text: "What framework is used?"},
+		},
+	}
+
+	r := &Section{}
+	r.With(m)
+
+	g.Expect(r.Order).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("Application Details"))
+	g.Expect(r.Comment).To(gomega.Equal("Provide application information"))
+	g.Expect(len(r.Questions)).To(gomega.Equal(2))
+	g.Expect(r.Questions[0].Order).To(gomega.Equal(uint(1)))
+	g.Expect(r.Questions[0].Text).To(gomega.Equal("What is the application type?"))
+	g.Expect(r.Questions[1].Order).To(gomega.Equal(uint(2)))
+}
+
+// TestSection_Model tests the Section.Model() method
+func TestSection_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Section{
+		Order:   1,
+		Name:    "Application Details",
+		Comment: "Provide application information",
+		Questions: []api.Question{
+			{Order: 1, Text: "What is the application type?"},
+			{Order: 2, Text: "What framework is used?"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.Order).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("Application Details"))
+	g.Expect(m.Comment).To(gomega.Equal("Provide application information"))
+	g.Expect(len(m.Questions)).To(gomega.Equal(2))
+	g.Expect(m.Questions[0].Order).To(gomega.Equal(uint(1)))
+	g.Expect(m.Questions[1].Order).To(gomega.Equal(uint(2)))
+}
+
+// TestBucket_With tests the Bucket.With() method
+func TestBucket_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	now := time.Now()
+	m := &model.Bucket{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+		},
+		Path:       "/tmp/bucket",
+		Expiration: &now,
+	}
+
+	r := &Bucket{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Path).To(gomega.Equal("/tmp/bucket"))
+	g.Expect(r.Expiration).ToNot(gomega.BeNil())
+	g.Expect(*r.Expiration).To(gomega.Equal(now))
+}
+
+// TestImportSummary_With tests the ImportSummary.With() method
+func TestImportSummary_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	now := time.Now()
+	m := &model.ImportSummary{
+		Model: model.Model{
+			ID:         1,
+			CreateTime: now,
+		},
+		Filename:       "import.csv",
+		CreateEntities: true,
+		Imports: []model.Import{
+			{Processed: true, IsValid: true},
+			{Processed: true, IsValid: true},
+			{Processed: true, IsValid: false},
+		},
+	}
+
+	r := &ImportSummary{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Filename).To(gomega.Equal("import.csv"))
+	g.Expect(r.ImportTime).To(gomega.Equal(now))
+	g.Expect(r.CreateEntities).To(gomega.Equal(true))
+	g.Expect(r.ValidCount).To(gomega.Equal(2))
+	g.Expect(r.InvalidCount).To(gomega.Equal(1))
+	g.Expect(r.ImportStatus).To(gomega.Equal("Completed"))
+}
+
+// TestImportSummary_With_InProgress tests ImportSummary.With() with in-progress status
+func TestImportSummary_With_InProgress(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.ImportSummary{
+		Model: model.Model{ID: 1},
+		Imports: []model.Import{
+			{Processed: true, IsValid: true},
+			{Processed: false, IsValid: false},
+		},
+	}
+
+	r := &ImportSummary{}
+	r.With(m)
+
+	g.Expect(r.ValidCount).To(gomega.Equal(1))
+	g.Expect(r.InvalidCount).To(gomega.Equal(0))
+	g.Expect(r.ImportStatus).To(gomega.Equal("In Progress"))
+}
+
+// TestFile_With tests the File.With() method
+func TestFile_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	now := time.Now()
+	m := &model.File{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+		},
+		Name:       "document.pdf",
+		Path:       "/files/document.pdf",
+		Encoding:   "base64",
+		Expiration: &now,
+	}
+
+	r := &File{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("document.pdf"))
+	g.Expect(r.Path).To(gomega.Equal("/files/document.pdf"))
+	g.Expect(r.Encoding).To(gomega.Equal("base64"))
+	g.Expect(r.Expiration).ToNot(gomega.BeNil())
+	g.Expect(*r.Expiration).To(gomega.Equal(now))
+}
+
+// TestFile_Model tests the File.Model() method
+func TestFile_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	now := time.Now()
+	r := &File{
+		Resource:   Resource{ID: 1},
+		Name:       "document.pdf",
+		Path:       "/files/document.pdf",
+		Encoding:   "base64",
+		Expiration: &now,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("document.pdf"))
+	g.Expect(m.Path).To(gomega.Equal("/files/document.pdf"))
+	g.Expect(m.Encoding).To(gomega.Equal("base64"))
+	g.Expect(m.Expiration).ToNot(gomega.BeNil())
+	g.Expect(*m.Expiration).To(gomega.Equal(now))
+}
+
+// TestIdentityMap_With tests the IdentityMap.With() method
+func TestIdentityMap_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	app := &Application{
+		Identities: []IdentityRef{
+			{ID: 1, Role: "source", Name: "identity1"},
+			{ID: 2, Role: "maven", Name: "identity2"},
+		},
+	}
+
+	r := make(IdentityMap)
+	r.With(app)
+
+	g.Expect(len(r)).To(gomega.Equal(2))
+	_, exists1 := r[IdentityRef{ID: 1, Role: "source", Name: "identity1"}]
+	g.Expect(exists1).To(gomega.Equal(true))
+	_, exists2 := r[IdentityRef{ID: 2, Role: "maven", Name: "identity2"}]
+	g.Expect(exists2).To(gomega.Equal(true))
+}
