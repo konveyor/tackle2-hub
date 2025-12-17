@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
@@ -1221,7 +1221,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Application = &resource.Ref{ID: id}
+	r.Application = &rest.Ref{ID: id}
 	r.Archetype = nil
 	q := &model.Questionnaire{}
 	db = h.preLoad(h.DB(ctx))
@@ -1416,16 +1416,16 @@ func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 }
 
 // Application REST resource.
-type Application = resource.Application
+type Application = rest.Application
 
 // Repository REST nested resource.
-type Repository = resource.Repository
+type Repository = rest.Repository
 
 // Fact REST nested resource.
-type Fact = resource.Fact
+type Fact = rest.Fact
 
 // IdentityRef REST resource.
-type IdentityRef = resource.IdentityRef
+type IdentityRef = rest.IdentityRef
 
 // FactKey is a fact source and fact name separated by a colon.
 //
@@ -1440,7 +1440,7 @@ type IdentityRef = resource.IdentityRef
 // all facts that belong to a source.
 //
 //	Example: 'analysis:"
-type FactKey = resource.FactKey
+type FactKey = rest.FactKey
 
 // Stakeholders REST subresource.
 type Stakeholders struct {
@@ -1468,12 +1468,12 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 	return
 }
 
-type TagRef = resource.TagRef
+type TagRef = rest.TagRef
 
-type TagMap = resource.TagMap
+type TagMap = rest.TagMap
 
 // AppTag represents application tag mapping.
-type AppTag = resource.AppTag
+type AppTag = rest.AppTag
 
 // IdentityMap represents application/identity associations.
-type IdentityMap = resource.IdentityMap
+type IdentityMap = rest.IdentityMap

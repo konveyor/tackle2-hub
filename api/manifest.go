@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
 	api "github.com/konveyor/tackle2-hub/shared/api"
@@ -287,8 +287,8 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 	if !injected {
 		return
 	}
-	var inject func(m resource.Map)
-	inject = func(m resource.Map) {
+	var inject func(m rest.Map)
+	inject = func(m rest.Map) {
 		for k, v := range m {
 			switch object := v.(type) {
 			case string:
@@ -313,7 +313,7 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 						-1)
 				}
 				m[k] = object
-			case resource.Map:
+			case rest.Map:
 				inject(object)
 			case map[string]any:
 				inject(object)
@@ -324,4 +324,4 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 }
 
 // Manifest REST resource.
-type Manifest = resource.Manifest
+type Manifest = rest.Manifest

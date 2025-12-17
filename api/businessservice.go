@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -159,4 +159,4 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 }
 
 // BusinessService REST resource.
-type BusinessService = resource.BusinessService
+type BusinessService = rest.BusinessService

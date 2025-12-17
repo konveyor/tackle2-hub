@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -135,4 +135,4 @@ func (h ConfigMapHandler) List(ctx *gin.Context) {
 }
 
 // ConfigMap configmap
-type ConfigMap = resource.ConfigMap
+type ConfigMap = rest.ConfigMap

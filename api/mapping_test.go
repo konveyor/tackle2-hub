@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
@@ -45,9 +45,9 @@ func TestTag_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Tag{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "test-tag",
-		Category: resource.Ref{ID: 10, Name: "test-category"},
+		Category: rest.Ref{ID: 10, Name: "test-category"},
 	}
 
 	m := r.Model()
@@ -92,10 +92,10 @@ func TestBusinessService_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &BusinessService{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "test-service",
 		Description: "test description",
-		Stakeholder: &resource.Ref{ID: 5, Name: "test-stakeholder"},
+		Stakeholder: &rest.Ref{ID: 5, Name: "test-stakeholder"},
 	}
 
 	m := r.Model()
@@ -112,7 +112,7 @@ func TestBusinessService_Model_NilStakeholder(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &BusinessService{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "test-service",
 		Description: "test description",
 		Stakeholder: nil,
@@ -156,9 +156,9 @@ func TestJobFunction_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &JobFunction{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "Developer",
-		Stakeholders: []resource.Ref{
+		Stakeholders: []rest.Ref{
 			{ID: 1, Name: "Alice"},
 			{ID: 2, Name: "Bob"},
 		},
@@ -232,24 +232,24 @@ func TestStakeholder_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Stakeholder{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "John Doe",
 		Email:       "john@example.com",
-		JobFunction: &resource.Ref{ID: 3, Name: "Manager"},
-		Groups: []resource.Ref{
+		JobFunction: &rest.Ref{ID: 3, Name: "Manager"},
+		Groups: []rest.Ref{
 			{ID: 1, Name: "Group1"},
 			{ID: 2, Name: "Group2"},
 		},
-		BusinessServices: []resource.Ref{
+		BusinessServices: []rest.Ref{
 			{ID: 10, Name: "Service1"},
 		},
-		Owns: []resource.Ref{
+		Owns: []rest.Ref{
 			{ID: 100, Name: "App1"},
 		},
-		Contributes: []resource.Ref{
+		Contributes: []rest.Ref{
 			{ID: 200, Name: "App2"},
 		},
-		MigrationWaves: []resource.Ref{
+		MigrationWaves: []rest.Ref{
 			{ID: 50, Name: "Wave1"},
 		},
 	}
@@ -309,10 +309,10 @@ func TestTagCategory_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &TagCategory{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "test-category",
 		Color:    "#FF0000",
-		Tags: []resource.Ref{
+		Tags: []rest.Ref{
 			{ID: 1, Name: "tag1"},
 			{ID: 2, Name: "tag2"},
 		},
@@ -369,12 +369,12 @@ func TestPlatform_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Platform{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Kind:     "kubernetes",
 		Name:     "prod-cluster",
 		URL:      "https://k8s.example.com",
-		Identity: &resource.Ref{ID: 7, Name: "k8s-creds"},
-		Applications: []resource.Ref{
+		Identity: &rest.Ref{ID: 7, Name: "k8s-creds"},
+		Applications: []rest.Ref{
 			{ID: 100, Name: "app1"},
 			{ID: 101, Name: "app2"},
 		},
@@ -395,7 +395,7 @@ func TestPlatform_Model_NilIdentity(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Platform{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Kind:     "kubernetes",
 		Name:     "prod-cluster",
 		URL:      "https://k8s.example.com",
@@ -466,12 +466,12 @@ func TestProxy_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Proxy{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Enabled:  true,
 		Kind:     "https",
 		Host:     "proxy.example.com",
 		Port:     8443,
-		Identity: &resource.Ref{ID: 5, Name: "proxy-creds"},
+		Identity: &rest.Ref{ID: 5, Name: "proxy-creds"},
 		Excluded: []string{"*.internal.com", "localhost"},
 	}
 
@@ -524,9 +524,9 @@ func TestDependency_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Dependency{
-		Resource: resource.Resource{ID: 1},
-		To:       resource.Ref{ID: 100, Name: "app-to"},
-		From:     resource.Ref{ID: 200, Name: "app-from"},
+		Resource: rest.Resource{ID: 1},
+		To:       rest.Ref{ID: 100, Name: "app-to"},
+		From:     rest.Ref{ID: 200, Name: "app-from"},
 	}
 
 	m := r.Model()
@@ -601,8 +601,8 @@ func TestAssessment_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Assessment{
-		Resource:    resource.Resource{ID: 1},
-		Application: &resource.Ref{ID: 100, Name: "test-app"},
+		Resource:    rest.Resource{ID: 1},
+		Application: &rest.Ref{ID: 100, Name: "test-app"},
 	}
 
 	m := r.Model()
@@ -643,8 +643,8 @@ func TestReview_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Review{
-		Resource:    resource.Resource{ID: 1},
-		Application: &resource.Ref{ID: 100, Name: "test-app"},
+		Resource:    rest.Resource{ID: 1},
+		Application: &rest.Ref{ID: 100, Name: "test-app"},
 	}
 
 	m := r.Model()
@@ -689,13 +689,13 @@ func TestMigrationWave_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &MigrationWave{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "Wave 1",
-		Applications: []resource.Ref{
+		Applications: []rest.Ref{
 			{ID: 100, Name: "app1"},
 			{ID: 101, Name: "app2"},
 		},
-		Stakeholders: []resource.Ref{
+		Stakeholders: []rest.Ref{
 			{ID: 1, Name: "stakeholder1"},
 		},
 	}
@@ -745,11 +745,11 @@ func TestTracker_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Tracker{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "JIRA Tracker",
 		Kind:     "jira",
 		URL:      "https://jira.example.com",
-		Identity: resource.Ref{ID: 5, Name: "jira-creds"},
+		Identity: rest.Ref{ID: 5, Name: "jira-creds"},
 	}
 
 	m := r.Model()
@@ -793,7 +793,7 @@ func TestIdentity_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Identity{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "test-identity",
 		Kind:        "basic-auth",
 		Description: "Test credentials",
@@ -958,32 +958,32 @@ func TestApplication_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Application{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "test-app",
 		Description: "Test application",
 		Comments:    "Some comments",
 		Binary:      "app.jar",
-		BusinessService: &resource.Ref{
+		BusinessService: &rest.Ref{
 			ID:   10,
 			Name: "test-service",
 		},
-		Owner: &resource.Ref{
+		Owner: &rest.Ref{
 			ID:   20,
 			Name: "owner-name",
 		},
-		Contributors: []resource.Ref{
+		Contributors: []rest.Ref{
 			{ID: 21, Name: "contributor1"},
 			{ID: 22, Name: "contributor2"},
 		},
-		MigrationWave: &resource.Ref{
+		MigrationWave: &rest.Ref{
 			ID:   30,
 			Name: "wave1",
 		},
-		Platform: &resource.Ref{
+		Platform: &rest.Ref{
 			ID:   40,
 			Name: "platform1",
 		},
-		Tags: []resource.TagRef{
+		Tags: []rest.TagRef{
 			{ID: 1, Name: "tag1"},
 			{ID: 2, Name: "tag2"},
 		},
@@ -1024,7 +1024,7 @@ func TestApplication_Model_WithRepository(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Application{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "test-app",
 		Repository: &Repository{
 			Kind:   "git",
@@ -1127,8 +1127,8 @@ func TestGenerator_With(t *testing.T) {
 	g.Expect(r.Repository).ToNot(gomega.BeNil())
 	g.Expect(r.Repository.Kind).To(gomega.Equal("git"))
 	g.Expect(r.Repository.URL).To(gomega.Equal("https://github.com/test/repo"))
-	g.Expect(r.Params).To(gomega.Equal(resource.Map{"key1": "value1"}))
-	g.Expect(r.Values).To(gomega.Equal(resource.Map{"key2": "value2"}))
+	g.Expect(r.Params).To(gomega.Equal(rest.Map{"key1": "value1"}))
+	g.Expect(r.Values).To(gomega.Equal(rest.Map{"key2": "value2"}))
 	g.Expect(len(r.Profiles)).To(gomega.Equal(2))
 	g.Expect(r.Profiles[0].ID).To(gomega.Equal(uint(10)))
 	g.Expect(r.Profiles[1].ID).To(gomega.Equal(uint(11)))
@@ -1139,17 +1139,17 @@ func TestGenerator_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Generator{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Kind:        "ansible",
 		Name:        "test-generator",
 		Description: "Test generator",
-		Identity:    &resource.Ref{ID: 5, Name: "gen-creds"},
+		Identity:    &rest.Ref{ID: 5, Name: "gen-creds"},
 		Repository: &Repository{
 			Kind: "git",
 			URL:  "https://github.com/test/repo",
 		},
-		Params: resource.Map{"key1": "value1"},
-		Values: resource.Map{"key2": "value2"},
+		Params: rest.Map{"key1": "value1"},
+		Values: rest.Map{"key2": "value2"},
 	}
 
 	m := r.Model()
@@ -1211,7 +1211,7 @@ func TestTicket_With(t *testing.T) {
 	g.Expect(r.LastUpdated).To(gomega.Equal(now))
 	g.Expect(r.Application.ID).To(gomega.Equal(uint(100)))
 	g.Expect(r.Tracker.ID).To(gomega.Equal(uint(200)))
-	g.Expect(r.Fields).To(gomega.Equal(resource.Map{"priority": "high"}))
+	g.Expect(r.Fields).To(gomega.Equal(rest.Map{"priority": "high"}))
 }
 
 // TestTicket_Model tests the Ticket.Model() method
@@ -1219,12 +1219,12 @@ func TestTicket_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Ticket{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Kind:        "jira",
 		Parent:      "PARENT-1",
-		Application: resource.Ref{ID: 100, Name: "test-app"},
-		Tracker:     resource.Ref{ID: 200, Name: "test-tracker"},
-		Fields:      resource.Map{"priority": "high"},
+		Application: rest.Ref{ID: 100, Name: "test-app"},
+		Tracker:     rest.Ref{ID: 200, Name: "test-tracker"},
+		Fields:      rest.Map{"priority": "high"},
 	}
 
 	m := r.Model()
@@ -1265,7 +1265,7 @@ func TestQuestionnaire_With(t *testing.T) {
 		},
 	}
 
-	r := &resource.Questionnaire{}
+	r := &rest.Questionnaire{}
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
@@ -1282,7 +1282,7 @@ func TestQuestionnaire_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Questionnaire{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "Test Questionnaire",
 		Description: "Test description",
 		Required:    true,
@@ -1331,8 +1331,8 @@ func TestManifest_With(t *testing.T) {
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
-	g.Expect(r.Content).To(gomega.Equal(resource.Map{"key1": "value1"}))
-	g.Expect(r.Secret).To(gomega.Equal(resource.Map{"password": "secret123"}))
+	g.Expect(r.Content).To(gomega.Equal(rest.Map{"key1": "value1"}))
+	g.Expect(r.Secret).To(gomega.Equal(rest.Map{"password": "secret123"}))
 	g.Expect(r.Application.ID).To(gomega.Equal(uint(100)))
 }
 
@@ -1341,10 +1341,10 @@ func TestManifest_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Manifest{
-		Resource:    resource.Resource{ID: 1},
-		Content:     resource.Map{"key1": "value1"},
-		Secret:      resource.Map{"password": "secret123"},
-		Application: resource.Ref{ID: 100},
+		Resource:    rest.Resource{ID: 1},
+		Content:     rest.Map{"key1": "value1"},
+		Secret:      rest.Map{"password": "secret123"},
+		Application: rest.Ref{ID: 100},
 	}
 
 	m := r.Model()
@@ -1393,14 +1393,14 @@ func TestStakeholderGroup_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &StakeholderGroup{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "Test Group",
 		Description: "Test description",
-		Stakeholders: []resource.Ref{
+		Stakeholders: []rest.Ref{
 			{ID: 10, Name: "stakeholder1"},
 			{ID: 11, Name: "stakeholder2"},
 		},
-		MigrationWaves: []resource.Ref{
+		MigrationWaves: []rest.Ref{
 			{ID: 20, Name: "wave1"},
 		},
 	}
@@ -1742,20 +1742,20 @@ func TestArchetype_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Archetype{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "Test Archetype",
 		Description: "Test description",
 		Comments:    "Some comments",
-		Tags: []resource.TagRef{
+		Tags: []rest.TagRef{
 			{ID: 10, Name: "tag1"},
 		},
-		Criteria: []resource.TagRef{
+		Criteria: []rest.TagRef{
 			{ID: 20, Name: "criteria1"},
 		},
-		Stakeholders: []resource.Ref{
+		Stakeholders: []rest.Ref{
 			{ID: 30, Name: "stakeholder1"},
 		},
-		StakeholderGroups: []resource.Ref{
+		StakeholderGroups: []rest.Ref{
 			{ID: 40, Name: "group1"},
 		},
 	}
@@ -1812,7 +1812,7 @@ func TestTargetProfile_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &TargetProfile{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "Test Target Profile",
 	}
 
@@ -1863,13 +1863,13 @@ func TestTarget_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Target{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Name:        "Test Target",
 		Description: "Test description",
 		Provider:    "java",
 		Choice:      true,
-		Image:       resource.Ref{ID: 100, Name: "target-image"},
-		Labels: []resource.TargetLabel{
+		Image:       rest.Ref{ID: 100, Name: "target-image"},
+		Labels: []rest.TargetLabel{
 			{Name: "label1", Label: "value1"},
 		},
 	}
@@ -1934,11 +1934,11 @@ func TestRuleSet_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &RuleSet{
-		Resource:    resource.Resource{ID: 1},
+		Resource:    rest.Resource{ID: 1},
 		Kind:        "custom",
 		Name:        "Test RuleSet",
 		Description: "Test description",
-		Identity:    &resource.Ref{ID: 5, Name: "ruleset-creds"},
+		Identity:    &rest.Ref{ID: 5, Name: "ruleset-creds"},
 		Repository: &Repository{
 			Kind: "git",
 			URL:  "https://github.com/test/rules",
@@ -1989,10 +1989,10 @@ func TestRule_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Rule{
-		Resource: resource.Resource{ID: 1},
+		Resource: rest.Resource{ID: 1},
 		Name:     "Test Rule",
 		Labels:   []string{"label1", "label2"},
-		File:     &resource.Ref{ID: 100, Name: "rule-file"},
+		File:     &rest.Ref{ID: 100, Name: "rule-file"},
 	}
 
 	m := r.Model()

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -161,4 +161,4 @@ func (h GeneratorHandler) Update(ctx *gin.Context) {
 }
 
 // Generator REST resource.
-type Generator = resource.Generator
+type Generator = rest.Generator

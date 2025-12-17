@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -223,4 +223,4 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 }
 
 // Setting REST Resource
-type Setting = resource.Setting
+type Setting = rest.Setting

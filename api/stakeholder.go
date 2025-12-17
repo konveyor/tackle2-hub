@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -202,4 +202,4 @@ func (h StakeholderHandler) Update(ctx *gin.Context) {
 }
 
 // Stakeholder REST resource.
-type Stakeholder = resource.Stakeholder
+type Stakeholder = rest.Stakeholder

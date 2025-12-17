@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -214,7 +214,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	}
 	m := model.ImportSummary{
 		Filename:       fileName,
-		ImportStatus:   resource.InProgress,
+		ImportStatus:   rest.InProgress,
 		Content:        buf.Bytes(),
 		CreateEntities: createEntities,
 	}
@@ -397,4 +397,4 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 type Import map[string]any
 
 // ImportSummary REST resource.
-type ImportSummary = resource.ImportSummary
+type ImportSummary = rest.ImportSummary

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	uuid2 "github.com/google/uuid"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
@@ -230,4 +230,4 @@ func (h TargetHandler) Update(ctx *gin.Context) {
 }
 
 // Target REST resource.
-type Target = resource.Target
+type Target = rest.Target

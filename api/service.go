@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
@@ -90,4 +90,4 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 }
 
 // Service REST resource.
-type Service = resource.Service
+type Service = rest.Service

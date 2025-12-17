@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/tar"
@@ -757,13 +757,13 @@ func (h TaskHandler) GetAttached(ctx *gin.Context) {
 }
 
 // TTL time-to-live.
-type TTL = resource.TTL
+type TTL = rest.TTL
 
 // TaskPolicy scheduling policies.
 type TaskPolicy = model.TaskPolicy
 
 // TaskError used in Task.Errors.
-type TaskError = resource.TaskError
+type TaskError = rest.TaskError
 
 // TaskEvent task event.
 type TaskEvent model.TaskEvent
@@ -772,13 +772,13 @@ type TaskEvent model.TaskEvent
 type Attachment model.Attachment
 
 // Task REST resource.
-type Task = resource.Task
+type Task = rest.Task
 
 // TaskReport REST resource.
-type TaskReport = resource.TaskReport
+type TaskReport = rest.TaskReport
 
 // TaskQueue report.
-type TaskQueue = resource.TaskQueue
+type TaskQueue = rest.TaskQueue
 
 // TaskDashboard report.
-type TaskDashboard = resource.TaskDashboard
+type TaskDashboard = rest.TaskDashboard

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
@@ -368,7 +368,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Archetype = &resource.Ref{ID: id}
+	r.Archetype = &rest.Ref{ID: id}
 	r.Application = nil
 	q := &model.Questionnaire{}
 	result = h.DB(ctx).First(q, r.Questionnaire.ID)
@@ -468,7 +468,7 @@ func (h ArchetypeHandler) updateGenerators(ctx *gin.Context, m *model.Archetype)
 }
 
 // TargetProfile REST resource.
-type TargetProfile = resource.TargetProfile
+type TargetProfile = rest.TargetProfile
 
 // Archetype REST resource.
-type Archetype = resource.Archetype
+type Archetype = rest.Archetype

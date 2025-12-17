@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api/filter"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -65,10 +65,10 @@ const (
 )
 
 // Map REST resource.
-type Map = resource.Map
+type Map = rest.Map
 
 // Ref REST resource reference.
-type Ref = resource.Ref
+type Ref = rest.Ref
 
 // All builds all handlers.
 func All() []Handler {

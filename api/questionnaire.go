@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -192,4 +192,4 @@ func (h QuestionnaireHandler) Update(ctx *gin.Context) {
 }
 
 // Questionnaire REST resource.
-type Questionnaire = resource.Questionnaire
+type Questionnaire = rest.Questionnaire

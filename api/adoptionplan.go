@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -104,7 +104,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 }
 
 // Vertex represents a vertex in the dependency graph.
-type Vertex = resource.Vertex
+type Vertex = rest.Vertex
 
 // NewDependencyGraph creates an empty dependency graph.
 func NewDependencyGraph() (graph DependencyGraph) {

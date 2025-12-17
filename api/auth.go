@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -81,7 +81,7 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 }
 
 // Login REST resource.
-type Login = resource.Login
+type Login = rest.Login
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

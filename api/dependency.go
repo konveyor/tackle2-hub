@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -138,4 +138,4 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 }
 
 // Dependency REST resource.
-type Dependency = resource.Dependency
+type Dependency = rest.Dependency

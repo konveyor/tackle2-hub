@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -190,4 +190,4 @@ func (h MigrationWaveHandler) Delete(ctx *gin.Context) {
 }
 
 // MigrationWave REST Resource
-type MigrationWave = resource.MigrationWave
+type MigrationWave = rest.MigrationWave

@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -302,4 +302,4 @@ func (h FileHandler) delete(ctx *gin.Context, m *model.File) (err error) {
 }
 
 // File REST resource.
-type File = resource.File
+type File = rest.File

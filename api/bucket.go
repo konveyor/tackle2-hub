@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
@@ -185,7 +185,7 @@ func (h BucketHandler) BucketDelete(ctx *gin.Context) {
 }
 
 // Bucket REST resource.
-type Bucket = resource.Bucket
+type Bucket = rest.Bucket
 
 type BucketOwner struct {
 	BaseHandler
