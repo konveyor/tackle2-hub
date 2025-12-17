@@ -9,6 +9,12 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
+// Tag Sources
+const (
+	SourceAssessment = "assessment"
+	SourceArchetype  = "archetype"
+)
+
 // Application REST resource.
 type Application api.Application
 
@@ -213,4 +219,19 @@ func (r *Fact) Model() (m *model.Fact) {
 	m.Source = r.Source
 	m.Value = r.Value
 	return
+}
+
+// AppTag represents application tag mapping.
+type AppTag struct {
+	ApplicationID uint
+	TagID         uint
+	Source        string
+	Tag           *model.Tag
+}
+
+func (r *AppTag) with(m *model.ApplicationTag) {
+	r.ApplicationID = m.ApplicationID
+	r.Source = m.Source
+	r.Tag = &m.Tag
+	r.TagID = m.TagID
 }

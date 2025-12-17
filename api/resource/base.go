@@ -61,26 +61,5 @@ type Repository = api.Repository
 // IdentityRef type alias to shared API.
 type IdentityRef = api.IdentityRef
 
-// AppTag represents application tag mapping.
-type AppTag struct {
-	ApplicationID uint
-	TagID         uint
-	Source        string
-	Tag           *model.Tag
-}
-
-func (r *AppTag) with(m *model.ApplicationTag) {
-	r.ApplicationID = m.ApplicationID
-	r.Source = m.Source
-	r.Tag = &m.Tag
-	r.TagID = m.TagID
-}
-
 // InExList include/exclude list.
 type InExList = model.InExList
-
-// Tag Sources
-const (
-	SourceAssessment = "assessment"
-	SourceArchetype  = "archetype"
-)
