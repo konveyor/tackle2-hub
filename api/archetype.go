@@ -8,7 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -368,7 +368,7 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Archetype = &Ref{ID: id}
+	r.Archetype = &resource.Ref{ID: id}
 	r.Application = nil
 	q := &model.Questionnaire{}
 	result = h.DB(ctx).First(q, r.Questionnaire.ID)

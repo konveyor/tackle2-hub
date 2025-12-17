@@ -16,7 +16,7 @@ import (
 	qf "github.com/konveyor/tackle2-hub/api/filter"
 	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

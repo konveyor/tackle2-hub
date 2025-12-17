@@ -8,13 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 const (
-	Injected = "injected"
+	Injected = api.Injected
 )
 
 var SecretRefPattern = regexp.MustCompile("\\$\\(([^)]+)\\)")
@@ -286,8 +287,8 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 	if !injected {
 		return
 	}
-	var inject func(m Map)
-	inject = func(m Map) {
+	var inject func(m resource.Map)
+	inject = func(m resource.Map) {
 		for k, v := range m {
 			switch object := v.(type) {
 			case string:
@@ -312,7 +313,7 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 						-1)
 				}
 				m[k] = object
-			case Map:
+			case resource.Map:
 				inject(object)
 			case map[string]any:
 				inject(object)
@@ -323,29 +324,4 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 }
 
 // Manifest REST resource.
-type Manifest struct {
-	Resource    `yaml:",inline"`
-	Content     Map `json:"content"`
-	Secret      Map `json:"secret,omitempty" yaml:"secret,omitempty"`
-	Application Ref `json:"application"`
-}
-
-// With updates the resource with the model.
-func (r *Manifest) With(m *model.Manifest) {
-	r.Resource.With(&m.Model)
-	r.Content = m.Content
-	r.Secret = m.Secret
-	ref := Ref{}
-	ref.With(m.ApplicationID, "")
-	r.Application = ref
-}
-
-// Model builds a model.
-func (r *Manifest) Model() (m *model.Manifest) {
-	m = &model.Manifest{}
-	m.ID = r.ID
-	m.Content = r.Content
-	m.Secret = r.Secret
-	m.ApplicationID = r.Application.ID
-	return
-}
+type Manifest = resource.Manifest

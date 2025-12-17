@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -21,12 +21,6 @@ const (
 
 const (
 	ExpectedFieldCount = 17
-)
-
-// Import Statuses
-const (
-	InProgress = "In Progress"
-	Completed  = "Completed"
 )
 
 // ImportHandler handles import routes.
@@ -220,7 +214,7 @@ func (h ImportHandler) UploadCSV(ctx *gin.Context) {
 	}
 	m := model.ImportSummary{
 		Filename:       fileName,
-		ImportStatus:   InProgress,
+		ImportStatus:   resource.InProgress,
 		Content:        buf.Bytes(),
 		CreateEntities: createEntities,
 	}
@@ -403,34 +397,4 @@ func (h ImportHandler) applicationFromRow(fileName string, row []string) (app mo
 type Import map[string]any
 
 // ImportSummary REST resource.
-type ImportSummary struct {
-	Resource       `yaml:",inline"`
-	Filename       string    `json:"filename"`
-	ImportStatus   string    `json:"importStatus" yaml:"importStatus"`
-	ImportTime     time.Time `json:"importTime" yaml:"importTime"`
-	ValidCount     int       `json:"validCount" yaml:"validCount"`
-	InvalidCount   int       `json:"invalidCount" yaml:"invalidCount"`
-	CreateEntities bool      `json:"createEntities" yaml:"createEntities"`
-}
-
-// With updates the resource with the model.
-func (r *ImportSummary) With(m *model.ImportSummary) {
-	r.Resource.With(&m.Model)
-	r.Filename = m.Filename
-	r.ImportTime = m.CreateTime
-	r.CreateEntities = m.CreateEntities
-	for _, imp := range m.Imports {
-		if imp.Processed {
-			if imp.IsValid {
-				r.ValidCount++
-			} else {
-				r.InvalidCount++
-			}
-		}
-	}
-	if len(m.Imports) == r.ValidCount+r.InvalidCount {
-		r.ImportStatus = Completed
-	} else {
-		r.ImportStatus = InProgress
-	}
-}
+type ImportSummary = resource.ImportSummary

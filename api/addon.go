@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api/resource"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )

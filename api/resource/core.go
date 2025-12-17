@@ -4,11 +4,14 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-// Bucket type alias to shared API.
-type Bucket = api.Bucket
-
 // LatestSchema type alias to shared API.
 type LatestSchema = api.LatestSchema
+
+// Cache type alias to shared API.
+type Cache = api.Cache
+
+// ConfigMap type alias to shared API.
+type ConfigMap = api.ConfigMap
 
 // Login type alias to shared API.
 type Login = api.Login

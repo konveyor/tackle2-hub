@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"os"
 	pathlib "path"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 	"github.com/konveyor/tackle2-hub/shared/tar"
 )
@@ -185,18 +185,7 @@ func (h BucketHandler) BucketDelete(ctx *gin.Context) {
 }
 
 // Bucket REST resource.
-type Bucket struct {
-	Resource   `yaml:",inline"`
-	Path       string     `json:"path"`
-	Expiration *time.Time `json:"expiration,omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *Bucket) With(m *model.Bucket) {
-	r.Resource.With(&m.Model)
-	r.Path = m.Path
-	r.Expiration = m.Expiration
-}
+type Bucket = resource.Bucket
 
 type BucketOwner struct {
 	BaseHandler

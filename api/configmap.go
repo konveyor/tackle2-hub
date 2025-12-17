@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -134,7 +135,4 @@ func (h ConfigMapHandler) List(ctx *gin.Context) {
 }
 
 // ConfigMap configmap
-type ConfigMap struct {
-	Name string `json:"name"`
-	Data any    `json:"data"`
-}
+type ConfigMap = resource.ConfigMap

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
@@ -158,29 +159,4 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 }
 
 // JobFunction REST resource.
-type JobFunction struct {
-	Resource     `yaml:",inline"`
-	Name         string `json:"name" binding:"required"`
-	Stakeholders []Ref  `json:"stakeholders"`
-}
-
-// With updates the resource with the model.
-func (r *JobFunction) With(m *model.JobFunction) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
-	}
-}
-
-// Model builds a model.
-func (r *JobFunction) Model() (m *model.JobFunction) {
-	m = &model.JobFunction{
-		Name: r.Name,
-	}
-	m.ID = r.ID
-
-	return
-}
+type JobFunction = resource.JobFunction

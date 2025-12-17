@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"os"
 	pathlib "path"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
 	api "github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -302,19 +302,4 @@ func (h FileHandler) delete(ctx *gin.Context, m *model.File) (err error) {
 }
 
 // File REST resource.
-type File struct {
-	Resource   `yaml:",inline"`
-	Name       string     `json:"name"`
-	Path       string     `json:"path"`
-	Encoding   string     `yaml:"encoding,omitempty"`
-	Expiration *time.Time `json:"expiration,omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *File) With(m *model.File) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Path = m.Path
-	r.Encoding = m.Encoding
-	r.Expiration = m.Expiration
-}
+type File = resource.File

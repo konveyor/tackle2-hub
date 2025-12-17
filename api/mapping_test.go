@@ -92,10 +92,10 @@ func TestBusinessService_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &BusinessService{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "test-service",
 		Description: "test description",
-		Stakeholder: &Ref{ID: 5, Name: "test-stakeholder"},
+		Stakeholder: &resource.Ref{ID: 5, Name: "test-stakeholder"},
 	}
 
 	m := r.Model()
@@ -112,7 +112,7 @@ func TestBusinessService_Model_NilStakeholder(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &BusinessService{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "test-service",
 		Description: "test description",
 		Stakeholder: nil,
@@ -156,9 +156,9 @@ func TestJobFunction_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &JobFunction{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "Developer",
-		Stakeholders: []Ref{
+		Stakeholders: []resource.Ref{
 			{ID: 1, Name: "Alice"},
 			{ID: 2, Name: "Bob"},
 		},
@@ -369,12 +369,12 @@ func TestPlatform_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Platform{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Kind:     "kubernetes",
 		Name:     "prod-cluster",
 		URL:      "https://k8s.example.com",
-		Identity: &Ref{ID: 7, Name: "k8s-creds"},
-		Applications: []Ref{
+		Identity: &resource.Ref{ID: 7, Name: "k8s-creds"},
+		Applications: []resource.Ref{
 			{ID: 100, Name: "app1"},
 			{ID: 101, Name: "app2"},
 		},
@@ -395,7 +395,7 @@ func TestPlatform_Model_NilIdentity(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Platform{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Kind:     "kubernetes",
 		Name:     "prod-cluster",
 		URL:      "https://k8s.example.com",
@@ -524,9 +524,9 @@ func TestDependency_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Dependency{
-		Resource: Resource{ID: 1},
-		To:       Ref{ID: 100, Name: "app-to"},
-		From:     Ref{ID: 200, Name: "app-from"},
+		Resource: resource.Resource{ID: 1},
+		To:       resource.Ref{ID: 100, Name: "app-to"},
+		From:     resource.Ref{ID: 200, Name: "app-from"},
 	}
 
 	m := r.Model()
@@ -601,8 +601,8 @@ func TestAssessment_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Assessment{
-		Resource:    Resource{ID: 1},
-		Application: &Ref{ID: 100, Name: "test-app"},
+		Resource:    resource.Resource{ID: 1},
+		Application: &resource.Ref{ID: 100, Name: "test-app"},
 	}
 
 	m := r.Model()
@@ -689,13 +689,13 @@ func TestMigrationWave_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &MigrationWave{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "Wave 1",
-		Applications: []Ref{
+		Applications: []resource.Ref{
 			{ID: 100, Name: "app1"},
 			{ID: 101, Name: "app2"},
 		},
-		Stakeholders: []Ref{
+		Stakeholders: []resource.Ref{
 			{ID: 1, Name: "stakeholder1"},
 		},
 	}
@@ -793,7 +793,7 @@ func TestIdentity_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Identity{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "test-identity",
 		Kind:        "basic-auth",
 		Description: "Test credentials",
@@ -1127,8 +1127,8 @@ func TestGenerator_With(t *testing.T) {
 	g.Expect(r.Repository).ToNot(gomega.BeNil())
 	g.Expect(r.Repository.Kind).To(gomega.Equal("git"))
 	g.Expect(r.Repository.URL).To(gomega.Equal("https://github.com/test/repo"))
-	g.Expect(r.Params).To(gomega.Equal(Map{"key1": "value1"}))
-	g.Expect(r.Values).To(gomega.Equal(Map{"key2": "value2"}))
+	g.Expect(r.Params).To(gomega.Equal(resource.Map{"key1": "value1"}))
+	g.Expect(r.Values).To(gomega.Equal(resource.Map{"key2": "value2"}))
 	g.Expect(len(r.Profiles)).To(gomega.Equal(2))
 	g.Expect(r.Profiles[0].ID).To(gomega.Equal(uint(10)))
 	g.Expect(r.Profiles[1].ID).To(gomega.Equal(uint(11)))
@@ -1139,17 +1139,17 @@ func TestGenerator_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Generator{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Kind:        "ansible",
 		Name:        "test-generator",
 		Description: "Test generator",
-		Identity:    &Ref{ID: 5, Name: "gen-creds"},
+		Identity:    &resource.Ref{ID: 5, Name: "gen-creds"},
 		Repository: &Repository{
 			Kind: "git",
 			URL:  "https://github.com/test/repo",
 		},
-		Params: Map{"key1": "value1"},
-		Values: Map{"key2": "value2"},
+		Params: resource.Map{"key1": "value1"},
+		Values: resource.Map{"key2": "value2"},
 	}
 
 	m := r.Model()
@@ -1265,7 +1265,7 @@ func TestQuestionnaire_With(t *testing.T) {
 		},
 	}
 
-	r := &Questionnaire{}
+	r := &resource.Questionnaire{}
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
@@ -1282,19 +1282,19 @@ func TestQuestionnaire_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Questionnaire{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "Test Questionnaire",
 		Description: "Test description",
 		Required:    true,
-		Sections: []Section{
+		Sections: []api.Section{
 			{Order: 1, Name: "Section 1"},
 		},
-		Thresholds: Thresholds{
+		Thresholds: api.Thresholds{
 			Red:     50,
 			Yellow:  30,
 			Unknown: 10,
 		},
-		RiskMessages: RiskMessages{
+		RiskMessages: api.RiskMessages{
 			Red:     "High risk",
 			Yellow:  "Medium risk",
 			Green:   "Low risk",
@@ -1331,8 +1331,8 @@ func TestManifest_With(t *testing.T) {
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
-	g.Expect(r.Content).To(gomega.Equal(Map{"key1": "value1"}))
-	g.Expect(r.Secret).To(gomega.Equal(Map{"password": "secret123"}))
+	g.Expect(r.Content).To(gomega.Equal(resource.Map{"key1": "value1"}))
+	g.Expect(r.Secret).To(gomega.Equal(resource.Map{"password": "secret123"}))
 	g.Expect(r.Application.ID).To(gomega.Equal(uint(100)))
 }
 
@@ -1341,10 +1341,10 @@ func TestManifest_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Manifest{
-		Resource:    Resource{ID: 1},
-		Content:     Map{"key1": "value1"},
-		Secret:      Map{"password": "secret123"},
-		Application: Ref{ID: 100},
+		Resource:    resource.Resource{ID: 1},
+		Content:     resource.Map{"key1": "value1"},
+		Secret:      resource.Map{"password": "secret123"},
+		Application: resource.Ref{ID: 100},
 	}
 
 	m := r.Model()
@@ -1393,14 +1393,14 @@ func TestStakeholderGroup_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &StakeholderGroup{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "Test Group",
 		Description: "Test description",
-		Stakeholders: []Ref{
+		Stakeholders: []resource.Ref{
 			{ID: 10, Name: "stakeholder1"},
 			{ID: 11, Name: "stakeholder2"},
 		},
-		MigrationWaves: []Ref{
+		MigrationWaves: []resource.Ref{
 			{ID: 20, Name: "wave1"},
 		},
 	}

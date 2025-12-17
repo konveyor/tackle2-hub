@@ -9,7 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/api/resource"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 )
 
@@ -136,9 +137,4 @@ func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 }
 
 // Cache REST resource.
-type Cache struct {
-	Path     string `json:"path"`
-	Capacity string `json:"capacity"`
-	Used     string `json:"used"`
-	Exists   bool   `json:"exists"`
-}
+type Cache = resource.Cache

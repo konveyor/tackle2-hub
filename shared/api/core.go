@@ -10,14 +10,30 @@ type Setting struct {
 	Value any    `json:"value"`
 }
 
+// RestAPI resource.
 type RestAPI struct {
 	Version string   `json:"version,omitempty" yaml:",omitempty"`
 	Routes  []string `json:"routes"`
 }
 
+// LatestSchema REST resource.
 type LatestSchema struct {
 	Name       string `json:"name"`
 	Definition Map    `json:"definition"`
+}
+
+// Cache REST resource.
+type Cache struct {
+	Path     string `json:"path"`
+	Capacity string `json:"capacity"`
+	Used     string `json:"used"`
+	Exists   bool   `json:"exists"`
+}
+
+// ConfigMap REST resource.
+type ConfigMap struct {
+	Name string `json:"name"`
+	Data any    `json:"data"`
 }
 
 // File REST resource.

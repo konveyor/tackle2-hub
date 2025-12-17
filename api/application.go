@@ -10,7 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/assessment"
 	"github.com/konveyor/tackle2-hub/metrics"
 	"github.com/konveyor/tackle2-hub/model"
-	api "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -1209,7 +1209,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Application = &Ref{ID: id}
+	r.Application = &resource.Ref{ID: id}
 	r.Archetype = nil
 	q := &model.Questionnaire{}
 	db = h.preLoad(h.DB(ctx))
