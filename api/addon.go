@@ -2,13 +2,12 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/resource"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	api "github.com/konveyor/tackle2-hub/shared/api"
-	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -101,44 +100,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 }
 
 // Addon REST resource.
-type Addon struct {
-	Name       string         `json:"name"`
-	Container  core.Container `json:"container"`
-	Extensions []Extension    `json:"extensions,omitempty"`
-	Metadata   any            `json:"metadata,omitempty"`
-}
-
-// With model.
-func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
-	r.Name = m.Name
-	r.Container = m.Spec.Container
-	if m.Spec.Metadata.Raw != nil {
-		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
-	}
-	for i := range extensions {
-		extension := Extension{}
-		extension.With(&extensions[i])
-		r.Extensions = append(
-			r.Extensions,
-			extension)
-	}
-}
+type Addon = resource.Addon
 
 // Extension REST resource.
-type Extension struct {
-	Name         string         `json:"name"`
-	Addon        string         `json:"addon"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Container    core.Container `json:"container"`
-	Metadata     any            `json:"metadata,omitempty"`
-}
-
-// With model.
-func (r *Extension) With(m *crd.Extension) {
-	r.Name = m.Name
-	r.Addon = m.Spec.Addon
-	r.Container = m.Spec.Container
-	if m.Spec.Metadata.Raw != nil {
-		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
-	}
-}
+type Extension = resource.Extension

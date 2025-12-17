@@ -4,7 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/api/resource"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
 )
 
@@ -956,32 +958,32 @@ func TestApplication_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Application{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "test-app",
 		Description: "Test application",
 		Comments:    "Some comments",
 		Binary:      "app.jar",
-		BusinessService: &Ref{
+		BusinessService: &resource.Ref{
 			ID:   10,
 			Name: "test-service",
 		},
-		Owner: &Ref{
+		Owner: &resource.Ref{
 			ID:   20,
 			Name: "owner-name",
 		},
-		Contributors: []Ref{
+		Contributors: []resource.Ref{
 			{ID: 21, Name: "contributor1"},
 			{ID: 22, Name: "contributor2"},
 		},
-		MigrationWave: &Ref{
+		MigrationWave: &resource.Ref{
 			ID:   30,
 			Name: "wave1",
 		},
-		Platform: &Ref{
+		Platform: &resource.Ref{
 			ID:   40,
 			Name: "platform1",
 		},
-		Tags: []TagRef{
+		Tags: []resource.TagRef{
 			{ID: 1, Name: "tag1"},
 			{ID: 2, Name: "tag2"},
 		},
@@ -1022,7 +1024,7 @@ func TestApplication_Model_WithRepository(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Application{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "test-app",
 		Repository: &Repository{
 			Kind:   "git",
@@ -1510,7 +1512,7 @@ func TestInsight_Model(t *testing.T) {
 		Name:        "Test Insight",
 		Description: "Test description",
 		Category:    "potential",
-		Facts:       Map{"key": "value"},
+		Facts:       api.Map{"key": "value"},
 		Labels:      []string{"label1"},
 		Effort:      5,
 	}
@@ -1604,7 +1606,7 @@ func TestIncident_With(t *testing.T) {
 	g.Expect(r.Line).To(gomega.Equal(42))
 	g.Expect(r.Message).To(gomega.Equal("Potential issue"))
 	g.Expect(r.CodeSnip).To(gomega.Equal("public void test() {}"))
-	g.Expect(r.Facts).To(gomega.Equal(Map{"severity": "high"}))
+	g.Expect(r.Facts).To(gomega.Equal(api.Map{"severity": "high"}))
 }
 
 // TestIncident_Model tests the Incident.Model() method
@@ -1616,7 +1618,7 @@ func TestIncident_Model(t *testing.T) {
 		Line:     42,
 		Message:  "Potential issue",
 		CodeSnip: "public void test() {}",
-		Facts:    Map{"severity": "high"},
+		Facts:    api.Map{"severity": "high"},
 	}
 
 	m := r.Model()
@@ -1740,20 +1742,20 @@ func TestArchetype_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Archetype{
-		Resource:    Resource{ID: 1},
+		Resource:    resource.Resource{ID: 1},
 		Name:        "Test Archetype",
 		Description: "Test description",
 		Comments:    "Some comments",
-		Tags: []TagRef{
+		Tags: []resource.TagRef{
 			{ID: 10, Name: "tag1"},
 		},
-		Criteria: []TagRef{
+		Criteria: []resource.TagRef{
 			{ID: 20, Name: "criteria1"},
 		},
-		Stakeholders: []Ref{
+		Stakeholders: []resource.Ref{
 			{ID: 30, Name: "stakeholder1"},
 		},
-		StakeholderGroups: []Ref{
+		StakeholderGroups: []resource.Ref{
 			{ID: 40, Name: "group1"},
 		},
 	}
@@ -1810,7 +1812,7 @@ func TestTargetProfile_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &TargetProfile{
-		Resource: Resource{ID: 1},
+		Resource: resource.Resource{ID: 1},
 		Name:     "Test Target Profile",
 	}
 

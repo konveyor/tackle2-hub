@@ -1,12 +1,18 @@
 package resource
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // TestTag_With tests the Tag.With() method
@@ -2001,4 +2007,674 @@ func TestRule_Model(t *testing.T) {
 	g.Expect(len(m.Labels)).To(gomega.Equal(2))
 	g.Expect(m.FileID).ToNot(gomega.BeNil())
 	g.Expect(*m.FileID).To(gomega.Equal(uint(100)))
+}
+
+// TestConvertContainer tests the convertContainer function
+func TestConvertContainer(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	pullPolicy := core.PullAlways
+	termMsgPolicy := core.TerminationMessageReadFile
+
+	src := core.Container{
+		Name:                     "test-container",
+		Image:                    "test-image:latest",
+		Command:                  []string{"/bin/sh"},
+		Args:                     []string{"-c", "echo hello"},
+		WorkingDir:               "/app",
+		TerminationMessagePath:   "/dev/termination-log",
+		TerminationMessagePolicy: termMsgPolicy,
+		ImagePullPolicy:          pullPolicy,
+		Stdin:                    true,
+		StdinOnce:                false,
+		TTY:                      true,
+		Ports: []core.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      core.ProtocolTCP,
+			},
+		},
+		Env: []core.EnvVar{
+			{
+				Name:  "ENV_VAR",
+				Value: "value",
+			},
+		},
+		Resources: core.ResourceRequirements{
+			Limits: core.ResourceList{
+				core.ResourceCPU:    resource.MustParse("100m"),
+				core.ResourceMemory: resource.MustParse("256Mi"),
+			},
+			Requests: core.ResourceList{
+				core.ResourceCPU:    resource.MustParse("50m"),
+				core.ResourceMemory: resource.MustParse("128Mi"),
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(dst.Name).To(gomega.Equal("test-container"))
+	g.Expect(dst.Image).To(gomega.Equal("test-image:latest"))
+	g.Expect(dst.Command).To(gomega.Equal([]string{"/bin/sh"}))
+	g.Expect(dst.Args).To(gomega.Equal([]string{"-c", "echo hello"}))
+	g.Expect(dst.WorkingDir).To(gomega.Equal("/app"))
+	g.Expect(dst.TerminationMessagePath).To(gomega.Equal("/dev/termination-log"))
+	g.Expect(dst.TerminationMessagePolicy).To(gomega.Equal("File"))
+	g.Expect(dst.ImagePullPolicy).To(gomega.Equal("Always"))
+	g.Expect(dst.Stdin).To(gomega.Equal(true))
+	g.Expect(dst.StdinOnce).To(gomega.Equal(false))
+	g.Expect(dst.TTY).To(gomega.Equal(true))
+	g.Expect(len(dst.Ports)).To(gomega.Equal(1))
+	g.Expect(dst.Ports[0].Name).To(gomega.Equal("http"))
+	g.Expect(dst.Ports[0].ContainerPort).To(gomega.Equal(int32(8080)))
+	g.Expect(dst.Ports[0].Protocol).To(gomega.Equal("TCP"))
+	g.Expect(len(dst.Env)).To(gomega.Equal(1))
+	g.Expect(dst.Env[0].Name).To(gomega.Equal("ENV_VAR"))
+	g.Expect(dst.Env[0].Value).To(gomega.Equal("value"))
+	g.Expect(dst.Resources.Limits["cpu"]).To(gomega.Equal("100m"))
+	g.Expect(dst.Resources.Limits["memory"]).To(gomega.Equal("256Mi"))
+	g.Expect(dst.Resources.Requests["cpu"]).To(gomega.Equal("50m"))
+	g.Expect(dst.Resources.Requests["memory"]).To(gomega.Equal("128Mi"))
+}
+
+// TestConvertContainer_WithEnvFrom tests convertContainer with EnvFrom
+func TestConvertContainer_WithEnvFrom(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := core.Container{
+		Name: "test",
+		EnvFrom: []core.EnvFromSource{
+			{
+				Prefix: "TEST_",
+				ConfigMapRef: &core.ConfigMapEnvSource{
+					LocalObjectReference: core.LocalObjectReference{Name: "config-map"},
+				},
+			},
+			{
+				SecretRef: &core.SecretEnvSource{
+					LocalObjectReference: core.LocalObjectReference{Name: "secret"},
+				},
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(len(dst.EnvFrom)).To(gomega.Equal(2))
+	g.Expect(dst.EnvFrom[0].Prefix).To(gomega.Equal("TEST_"))
+	g.Expect(dst.EnvFrom[0].ConfigMapRef).ToNot(gomega.BeNil())
+	g.Expect(dst.EnvFrom[0].ConfigMapRef.LocalObjectReference.Name).To(gomega.Equal("config-map"))
+	g.Expect(dst.EnvFrom[1].SecretRef).ToNot(gomega.BeNil())
+	g.Expect(dst.EnvFrom[1].SecretRef.LocalObjectReference.Name).To(gomega.Equal("secret"))
+}
+
+// TestConvertContainer_WithEnvValueFrom tests convertContainer with Env ValueFrom
+func TestConvertContainer_WithEnvValueFrom(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := core.Container{
+		Name: "test",
+		Env: []core.EnvVar{
+			{
+				Name: "FIELD_REF",
+				ValueFrom: &core.EnvVarSource{
+					FieldRef: &core.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
+			{
+				Name: "CONFIG_KEY",
+				ValueFrom: &core.EnvVarSource{
+					ConfigMapKeyRef: &core.ConfigMapKeySelector{
+						LocalObjectReference: core.LocalObjectReference{Name: "config"},
+						Key:                  "key1",
+					},
+				},
+			},
+			{
+				Name: "SECRET_KEY",
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						LocalObjectReference: core.LocalObjectReference{Name: "secret"},
+						Key:                  "password",
+					},
+				},
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(len(dst.Env)).To(gomega.Equal(3))
+	g.Expect(dst.Env[0].ValueFrom).ToNot(gomega.BeNil())
+	g.Expect(dst.Env[0].ValueFrom.FieldRef).ToNot(gomega.BeNil())
+	g.Expect(dst.Env[0].ValueFrom.FieldRef.FieldPath).To(gomega.Equal("metadata.name"))
+	g.Expect(dst.Env[1].ValueFrom.ConfigMapKeyRef).ToNot(gomega.BeNil())
+	g.Expect(dst.Env[1].ValueFrom.ConfigMapKeyRef.Key).To(gomega.Equal("key1"))
+	g.Expect(dst.Env[2].ValueFrom.SecretKeyRef).ToNot(gomega.BeNil())
+	g.Expect(dst.Env[2].ValueFrom.SecretKeyRef.Key).To(gomega.Equal("password"))
+}
+
+// TestConvertContainer_WithVolumeMounts tests convertContainer with VolumeMounts
+func TestConvertContainer_WithVolumeMounts(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	mountProp := core.MountPropagationBidirectional
+	src := core.Container{
+		Name: "test",
+		VolumeMounts: []core.VolumeMount{
+			{
+				Name:             "data",
+				MountPath:        "/data",
+				SubPath:          "subdir",
+				ReadOnly:         true,
+				MountPropagation: &mountProp,
+			},
+		},
+		VolumeDevices: []core.VolumeDevice{
+			{
+				Name:       "device1",
+				DevicePath: "/dev/device1",
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(len(dst.VolumeMounts)).To(gomega.Equal(1))
+	g.Expect(dst.VolumeMounts[0].Name).To(gomega.Equal("data"))
+	g.Expect(dst.VolumeMounts[0].MountPath).To(gomega.Equal("/data"))
+	g.Expect(dst.VolumeMounts[0].SubPath).To(gomega.Equal("subdir"))
+	g.Expect(dst.VolumeMounts[0].ReadOnly).To(gomega.Equal(true))
+	g.Expect(dst.VolumeMounts[0].MountPropagation).ToNot(gomega.BeNil())
+	g.Expect(*dst.VolumeMounts[0].MountPropagation).To(gomega.Equal("Bidirectional"))
+	g.Expect(len(dst.VolumeDevices)).To(gomega.Equal(1))
+	g.Expect(dst.VolumeDevices[0].Name).To(gomega.Equal("device1"))
+}
+
+// TestConvertProbe tests the convertProbe function
+func TestConvertProbe(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.Probe{
+		ProbeHandler: core.ProbeHandler{
+			Exec: &core.ExecAction{
+				Command: []string{"cat", "/tmp/health"},
+			},
+		},
+		InitialDelaySeconds: 10,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       30,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+
+	dst := convertProbe(src)
+
+	g.Expect(dst).ToNot(gomega.BeNil())
+	g.Expect(dst.Exec).ToNot(gomega.BeNil())
+	g.Expect(dst.Exec.Command).To(gomega.Equal([]string{"cat", "/tmp/health"}))
+	g.Expect(dst.InitialDelaySeconds).To(gomega.Equal(int32(10)))
+	g.Expect(dst.TimeoutSeconds).To(gomega.Equal(int32(5)))
+	g.Expect(dst.PeriodSeconds).To(gomega.Equal(int32(30)))
+	g.Expect(dst.SuccessThreshold).To(gomega.Equal(int32(1)))
+	g.Expect(dst.FailureThreshold).To(gomega.Equal(int32(3)))
+}
+
+// TestConvertProbe_HTTPGet tests convertProbe with HTTPGet
+func TestConvertProbe_HTTPGet(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.Probe{
+		ProbeHandler: core.ProbeHandler{
+			HTTPGet: &core.HTTPGetAction{
+				Path:   "/health",
+				Port:   intstr.FromInt(8080),
+				Host:   "localhost",
+				Scheme: core.URISchemeHTTPS,
+				HTTPHeaders: []core.HTTPHeader{
+					{Name: "X-Custom-Header", Value: "test"},
+				},
+			},
+		},
+	}
+
+	dst := convertProbe(src)
+
+	g.Expect(dst.HTTPGet).ToNot(gomega.BeNil())
+	g.Expect(dst.HTTPGet.Path).To(gomega.Equal("/health"))
+	g.Expect(dst.HTTPGet.Port).To(gomega.Equal(int32(8080)))
+	g.Expect(dst.HTTPGet.Host).To(gomega.Equal("localhost"))
+	g.Expect(dst.HTTPGet.Scheme).To(gomega.Equal("HTTPS"))
+	g.Expect(len(dst.HTTPGet.HTTPHeaders)).To(gomega.Equal(1))
+	g.Expect(dst.HTTPGet.HTTPHeaders[0].Name).To(gomega.Equal("X-Custom-Header"))
+	g.Expect(dst.HTTPGet.HTTPHeaders[0].Value).To(gomega.Equal("test"))
+}
+
+// TestConvertProbe_TCPSocket tests convertProbe with TCPSocket
+func TestConvertProbe_TCPSocket(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.Probe{
+		ProbeHandler: core.ProbeHandler{
+			TCPSocket: &core.TCPSocketAction{
+				Port: intstr.FromInt(3306),
+				Host: "db.example.com",
+			},
+		},
+	}
+
+	dst := convertProbe(src)
+
+	g.Expect(dst.TCPSocket).ToNot(gomega.BeNil())
+	g.Expect(dst.TCPSocket.Port).To(gomega.Equal(int32(3306)))
+	g.Expect(dst.TCPSocket.Host).To(gomega.Equal("db.example.com"))
+}
+
+// TestConvertProbe_GRPC tests convertProbe with GRPC
+func TestConvertProbe_GRPC(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	service := "my-service"
+	src := &core.Probe{
+		ProbeHandler: core.ProbeHandler{
+			GRPC: &core.GRPCAction{
+				Port:    9090,
+				Service: &service,
+			},
+		},
+	}
+
+	dst := convertProbe(src)
+
+	g.Expect(dst.GRPC).ToNot(gomega.BeNil())
+	g.Expect(dst.GRPC.Port).To(gomega.Equal(int32(9090)))
+	g.Expect(dst.GRPC.Service).ToNot(gomega.BeNil())
+	g.Expect(*dst.GRPC.Service).To(gomega.Equal("my-service"))
+}
+
+// TestConvertContainer_WithProbes tests convertContainer with all probes
+func TestConvertContainer_WithProbes(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := core.Container{
+		Name: "test",
+		LivenessProbe: &core.Probe{
+			ProbeHandler: core.ProbeHandler{
+				Exec: &core.ExecAction{Command: []string{"liveness"}},
+			},
+		},
+		ReadinessProbe: &core.Probe{
+			ProbeHandler: core.ProbeHandler{
+				HTTPGet: &core.HTTPGetAction{
+					Path: "/ready",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
+		StartupProbe: &core.Probe{
+			ProbeHandler: core.ProbeHandler{
+				TCPSocket: &core.TCPSocketAction{
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(dst.LivenessProbe).ToNot(gomega.BeNil())
+	g.Expect(dst.LivenessProbe.Exec).ToNot(gomega.BeNil())
+	g.Expect(dst.ReadinessProbe).ToNot(gomega.BeNil())
+	g.Expect(dst.ReadinessProbe.HTTPGet).ToNot(gomega.BeNil())
+	g.Expect(dst.StartupProbe).ToNot(gomega.BeNil())
+	g.Expect(dst.StartupProbe.TCPSocket).ToNot(gomega.BeNil())
+}
+
+// TestConvertLifecycleHandler tests the convertLifecycleHandler function
+func TestConvertLifecycleHandler(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.LifecycleHandler{
+		Exec: &core.ExecAction{
+			Command: []string{"/bin/sh", "-c", "cleanup.sh"},
+		},
+	}
+
+	dst := convertLifecycleHandler(src)
+
+	g.Expect(dst).ToNot(gomega.BeNil())
+	g.Expect(dst.Exec).ToNot(gomega.BeNil())
+	g.Expect(dst.Exec.Command).To(gomega.Equal([]string{"/bin/sh", "-c", "cleanup.sh"}))
+}
+
+// TestConvertLifecycleHandler_HTTPGet tests convertLifecycleHandler with HTTPGet
+func TestConvertLifecycleHandler_HTTPGet(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.LifecycleHandler{
+		HTTPGet: &core.HTTPGetAction{
+			Path: "/shutdown",
+			Port: intstr.FromInt(8080),
+		},
+	}
+
+	dst := convertLifecycleHandler(src)
+
+	g.Expect(dst.HTTPGet).ToNot(gomega.BeNil())
+	g.Expect(dst.HTTPGet.Path).To(gomega.Equal("/shutdown"))
+	g.Expect(dst.HTTPGet.Port).To(gomega.Equal(int32(8080)))
+}
+
+// TestConvertContainer_WithLifecycle tests convertContainer with Lifecycle
+func TestConvertContainer_WithLifecycle(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := core.Container{
+		Name: "test",
+		Lifecycle: &core.Lifecycle{
+			PostStart: &core.LifecycleHandler{
+				Exec: &core.ExecAction{Command: []string{"poststart.sh"}},
+			},
+			PreStop: &core.LifecycleHandler{
+				HTTPGet: &core.HTTPGetAction{
+					Path: "/prestop",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(dst.Lifecycle).ToNot(gomega.BeNil())
+	g.Expect(dst.Lifecycle.PostStart).ToNot(gomega.BeNil())
+	g.Expect(dst.Lifecycle.PostStart.Exec).ToNot(gomega.BeNil())
+	g.Expect(dst.Lifecycle.PreStop).ToNot(gomega.BeNil())
+	g.Expect(dst.Lifecycle.PreStop.HTTPGet).ToNot(gomega.BeNil())
+}
+
+// TestConvertSecurityContext tests the convertSecurityContext function
+func TestConvertSecurityContext(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	privileged := true
+	runAsUser := int64(1000)
+	runAsGroup := int64(2000)
+	runAsNonRoot := true
+	readOnlyRootFS := true
+	allowPrivEsc := false
+
+	src := &core.SecurityContext{
+		Privileged:               &privileged,
+		RunAsUser:                &runAsUser,
+		RunAsGroup:               &runAsGroup,
+		RunAsNonRoot:             &runAsNonRoot,
+		ReadOnlyRootFilesystem:   &readOnlyRootFS,
+		AllowPrivilegeEscalation: &allowPrivEsc,
+		Capabilities: &core.Capabilities{
+			Add:  []core.Capability{"NET_ADMIN", "SYS_TIME"},
+			Drop: []core.Capability{"ALL"},
+		},
+	}
+
+	dst := convertSecurityContext(src)
+
+	g.Expect(dst).ToNot(gomega.BeNil())
+	g.Expect(dst.Privileged).ToNot(gomega.BeNil())
+	g.Expect(*dst.Privileged).To(gomega.Equal(true))
+	g.Expect(dst.RunAsUser).ToNot(gomega.BeNil())
+	g.Expect(*dst.RunAsUser).To(gomega.Equal(int64(1000)))
+	g.Expect(dst.RunAsGroup).ToNot(gomega.BeNil())
+	g.Expect(*dst.RunAsGroup).To(gomega.Equal(int64(2000)))
+	g.Expect(dst.RunAsNonRoute).ToNot(gomega.BeNil())
+	g.Expect(*dst.RunAsNonRoute).To(gomega.Equal(true))
+	g.Expect(dst.ReadOnlyRouteFilesystem).ToNot(gomega.BeNil())
+	g.Expect(*dst.ReadOnlyRouteFilesystem).To(gomega.Equal(true))
+	g.Expect(dst.AllowPrivilegeEscalation).ToNot(gomega.BeNil())
+	g.Expect(*dst.AllowPrivilegeEscalation).To(gomega.Equal(false))
+	g.Expect(dst.Capabilities).ToNot(gomega.BeNil())
+	g.Expect(len(dst.Capabilities.Add)).To(gomega.Equal(2))
+	g.Expect(dst.Capabilities.Add[0]).To(gomega.Equal("NET_ADMIN"))
+	g.Expect(dst.Capabilities.Add[1]).To(gomega.Equal("SYS_TIME"))
+	g.Expect(len(dst.Capabilities.Drop)).To(gomega.Equal(1))
+	g.Expect(dst.Capabilities.Drop[0]).To(gomega.Equal("ALL"))
+}
+
+// TestConvertSecurityContext_WithSELinux tests convertSecurityContext with SELinux
+func TestConvertSecurityContext_WithSELinux(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	src := &core.SecurityContext{
+		SELinuxOptions: &core.SELinuxOptions{
+			User:  "user1",
+			Role:  "role1",
+			Type:  "type1",
+			Level: "s0:c123,c456",
+		},
+	}
+
+	dst := convertSecurityContext(src)
+
+	g.Expect(dst.SELinuxOptions).ToNot(gomega.BeNil())
+	g.Expect(dst.SELinuxOptions.User).To(gomega.Equal("user1"))
+	g.Expect(dst.SELinuxOptions.Role).To(gomega.Equal("role1"))
+	g.Expect(dst.SELinuxOptions.Type).To(gomega.Equal("type1"))
+	g.Expect(dst.SELinuxOptions.Level).To(gomega.Equal("s0:c123,c456"))
+}
+
+// TestConvertSecurityContext_WithSeccomp tests convertSecurityContext with Seccomp
+func TestConvertSecurityContext_WithSeccomp(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	localhostProfile := "my-profile.json"
+	src := &core.SecurityContext{
+		SeccompProfile: &core.SeccompProfile{
+			Type:             core.SeccompProfileTypeLocalhost,
+			LocalhostProfile: &localhostProfile,
+		},
+	}
+
+	dst := convertSecurityContext(src)
+
+	g.Expect(dst.SeccompProfile).ToNot(gomega.BeNil())
+	g.Expect(dst.SeccompProfile.Type).To(gomega.Equal("Localhost"))
+	g.Expect(dst.SeccompProfile.LocalhostProfile).ToNot(gomega.BeNil())
+	g.Expect(*dst.SeccompProfile.LocalhostProfile).To(gomega.Equal("my-profile.json"))
+}
+
+// TestConvertContainer_WithSecurityContext tests convertContainer with SecurityContext
+func TestConvertContainer_WithSecurityContext(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	privileged := false
+	src := core.Container{
+		Name: "test",
+		SecurityContext: &core.SecurityContext{
+			Privileged: &privileged,
+		},
+	}
+
+	dst := convertContainer(src)
+
+	g.Expect(dst.SecurityContext).ToNot(gomega.BeNil())
+	g.Expect(dst.SecurityContext.Privileged).ToNot(gomega.BeNil())
+	g.Expect(*dst.SecurityContext.Privileged).To(gomega.Equal(false))
+}
+
+// TestAddon_With tests the Addon.With() method
+func TestAddon_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	metadata := map[string]interface{}{
+		"key1": "value1",
+		"key2": 42,
+	}
+	metadataJSON, _ := json.Marshal(metadata)
+
+	addon := &crd.Addon{
+		Spec: crd.AddonSpec{
+			Container: core.Container{
+				Name:    "addon-container",
+				Image:   "addon-image:v1.0",
+				Command: []string{"/bin/addon"},
+				Args:    []string{"--verbose"},
+			},
+			Metadata: runtime.RawExtension{
+				Raw: metadataJSON,
+			},
+		},
+	}
+	addon.Name = "test-addon"
+
+	ext1 := crd.Extension{
+		Spec: crd.ExtensionSpec{
+			Addon: "test-addon",
+			Container: core.Container{
+				Name:  "ext1",
+				Image: "ext1-image:v1.0",
+			},
+		},
+	}
+	ext1.Name = "extension-1"
+
+	r := &Addon{}
+	r.With(addon, ext1)
+
+	g.Expect(r.Name).To(gomega.Equal("test-addon"))
+	g.Expect(r.Container.Name).To(gomega.Equal("addon-container"))
+	g.Expect(r.Container.Image).To(gomega.Equal("addon-image:v1.0"))
+	g.Expect(r.Container.Command).To(gomega.Equal([]string{"/bin/addon"}))
+	g.Expect(r.Container.Args).To(gomega.Equal([]string{"--verbose"}))
+	g.Expect(len(r.Extensions)).To(gomega.Equal(1))
+	g.Expect(r.Extensions[0].Name).To(gomega.Equal("extension-1"))
+	g.Expect(r.Extensions[0].Addon).To(gomega.Equal("test-addon"))
+}
+
+// TestAddon_With_WithComplexContainer tests Addon.With() with complex container
+func TestAddon_With_WithComplexContainer(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	addon := &crd.Addon{
+		Spec: crd.AddonSpec{
+			Container: core.Container{
+				Name:  "complex-addon",
+				Image: "addon:latest",
+				Ports: []core.ContainerPort{
+					{
+						Name:          "metrics",
+						ContainerPort: 9090,
+						Protocol:      core.ProtocolTCP,
+					},
+				},
+				Env: []core.EnvVar{
+					{Name: "LOG_LEVEL", Value: "debug"},
+				},
+				Resources: core.ResourceRequirements{
+					Limits: core.ResourceList{
+						core.ResourceMemory: resource.MustParse("512Mi"),
+					},
+					Requests: core.ResourceList{
+						core.ResourceMemory: resource.MustParse("256Mi"),
+					},
+				},
+			},
+		},
+	}
+	addon.Name = "complex-addon"
+
+	r := &Addon{}
+	r.With(addon)
+
+	g.Expect(r.Name).To(gomega.Equal("complex-addon"))
+	g.Expect(r.Container.Name).To(gomega.Equal("complex-addon"))
+	g.Expect(len(r.Container.Ports)).To(gomega.Equal(1))
+	g.Expect(r.Container.Ports[0].Name).To(gomega.Equal("metrics"))
+	g.Expect(r.Container.Ports[0].ContainerPort).To(gomega.Equal(int32(9090)))
+	g.Expect(len(r.Container.Env)).To(gomega.Equal(1))
+	g.Expect(r.Container.Env[0].Name).To(gomega.Equal("LOG_LEVEL"))
+	g.Expect(r.Container.Env[0].Value).To(gomega.Equal("debug"))
+	g.Expect(r.Container.Resources.Limits["memory"]).To(gomega.Equal("512Mi"))
+	g.Expect(r.Container.Resources.Requests["memory"]).To(gomega.Equal("256Mi"))
+}
+
+// TestExtension_With tests the Extension.With() method
+func TestExtension_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	metadata := map[string]interface{}{
+		"priority": "high",
+	}
+	metadataJSON, _ := json.Marshal(metadata)
+
+	ext := &crd.Extension{
+		Spec: crd.ExtensionSpec{
+			Addon: "parent-addon",
+			Container: core.Container{
+				Name:    "extension-container",
+				Image:   "extension:v2.0",
+				Command: []string{"/bin/extension"},
+			},
+			Metadata: runtime.RawExtension{
+				Raw: metadataJSON,
+			},
+		},
+	}
+	ext.Name = "test-extension"
+
+	r := &Extension{}
+	r.With(ext)
+
+	g.Expect(r.Name).To(gomega.Equal("test-extension"))
+	g.Expect(r.Addon).To(gomega.Equal("parent-addon"))
+	g.Expect(r.Container.Name).To(gomega.Equal("extension-container"))
+	g.Expect(r.Container.Image).To(gomega.Equal("extension:v2.0"))
+	g.Expect(r.Container.Command).To(gomega.Equal([]string{"/bin/extension"}))
+}
+
+// TestExtension_With_WithProbes tests Extension.With() with container probes
+func TestExtension_With_WithProbes(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	ext := &crd.Extension{
+		Spec: crd.ExtensionSpec{
+			Addon: "parent",
+			Container: core.Container{
+				Name:  "ext-with-probes",
+				Image: "extension:latest",
+				LivenessProbe: &core.Probe{
+					ProbeHandler: core.ProbeHandler{
+						HTTPGet: &core.HTTPGetAction{
+							Path: "/healthz",
+							Port: intstr.FromInt(8080),
+						},
+					},
+					InitialDelaySeconds: 30,
+				},
+				ReadinessProbe: &core.Probe{
+					ProbeHandler: core.ProbeHandler{
+						TCPSocket: &core.TCPSocketAction{
+							Port: intstr.FromInt(8080),
+						},
+					},
+					PeriodSeconds: 10,
+				},
+			},
+		},
+	}
+	ext.Name = "probe-extension"
+
+	r := &Extension{}
+	r.With(ext)
+
+	g.Expect(r.Container.LivenessProbe).ToNot(gomega.BeNil())
+	g.Expect(r.Container.LivenessProbe.HTTPGet).ToNot(gomega.BeNil())
+	g.Expect(r.Container.LivenessProbe.HTTPGet.Path).To(gomega.Equal("/healthz"))
+	g.Expect(r.Container.LivenessProbe.InitialDelaySeconds).To(gomega.Equal(int32(30)))
+	g.Expect(r.Container.ReadinessProbe).ToNot(gomega.BeNil())
+	g.Expect(r.Container.ReadinessProbe.TCPSocket).ToNot(gomega.BeNil())
+	g.Expect(r.Container.ReadinessProbe.PeriodSeconds).To(gomega.Equal(int32(10)))
 }

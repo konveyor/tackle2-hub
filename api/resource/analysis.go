@@ -133,10 +133,10 @@ func (r *Incident) Model() (m *model.Incident) {
 }
 
 // Link analysis report link.
-type Link api.Link
+type Link = api.Link
 
 // ArchivedInsight created when insights are archived.
-type ArchivedInsight api.ArchivedInsight
+type ArchivedInsight = api.ArchivedInsight
 
 // DepAppReport type alias to shared API.
 type DepAppReport = api.DepAppReport

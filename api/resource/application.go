@@ -221,6 +221,20 @@ func (r *Fact) Model() (m *model.Fact) {
 	return
 }
 
+// FactKey alias api.FactKey
+type FactKey = api.FactKey
+
+type TagMap map[uint][]AppTag
+
+// Set the Application.Tags.
+func (r TagMap) Set(m *model.Application) {
+	tags := r[m.ID]
+	m.Tags = make([]model.Tag, 0, len(tags))
+	for _, ref := range tags {
+		m.Tags = append(m.Tags, *ref.Tag)
+	}
+}
+
 // AppTag represents application tag mapping.
 type AppTag struct {
 	ApplicationID uint
@@ -234,4 +248,28 @@ func (r *AppTag) with(m *model.ApplicationTag) {
 	r.Source = m.Source
 	r.Tag = &m.Tag
 	r.TagID = m.TagID
+}
+
+func (r *AppTag) WithRef(m *TagRef) {
+	r.Source = m.Source
+	r.Tag = &model.Tag{}
+	r.Tag.ID = m.ID
+}
+
+// IdentityMap represents application/identity associations.
+type IdentityMap map[IdentityRef]byte
+
+// With updates the map.
+func (r IdentityMap) With(a *Application) {
+	for _, ref := range a.Identities {
+		r[ref] = 0
+	}
+}
+
+// List returns a list of refs.
+func (r IdentityMap) List() (refs []IdentityRef) {
+	for ref, _ := range r {
+		refs = append(refs, ref)
+	}
+	return
 }
