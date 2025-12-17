@@ -68,18 +68,13 @@ func (r FactKey) Name() (name string) {
 	return
 }
 
-// Stakeholders REST subresource.
-type Stakeholders struct {
-	Owner        *Ref  `json:"owner"`
-	Contributors []Ref `json:"contributors"`
-}
-
-// AppTag is a lightweight representation of ApplicationTag model.
-type AppTag struct {
-	ApplicationID uint
-	TagID         uint
-	Source        string
-	Tag           any
+// TagRef represents a reference to a Tag.
+// Contains the tag ID, name, tag source.
+type TagRef struct {
+	ID      uint   `json:"id" binding:"required"`
+	Name    string `json:"name"`
+	Source  string `json:"source,omitempty" yaml:"source,omitempty"`
+	Virtual bool   `json:"virtual,omitempty" yaml:"virtual,omitempty"`
 }
 
 // IdentityRef application identity ref.

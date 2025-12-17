@@ -34,12 +34,3 @@ func (m *Map) As(object any) (err error) {
 	err = json.Unmarshal(b, object)
 	return
 }
-
-// TagRef represents a reference to a Tag.
-// Contains the tag ID, name, tag source.
-type TagRef struct {
-	ID      uint   `json:"id" binding:"required"`
-	Name    string `json:"name"`
-	Source  string `json:"source,omitempty" yaml:"source,omitempty"`
-	Virtual bool   `json:"virtual,omitempty" yaml:"virtual,omitempty"`
-}
