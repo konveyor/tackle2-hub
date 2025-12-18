@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/api/jsd"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -3186,4 +3187,110 @@ func TestIdentityMap_With(t *testing.T) {
 	g.Expect(exists1).To(gomega.Equal(true))
 	_, exists2 := r[IdentityRef{ID: 2, Role: "maven", Name: "identity2"}]
 	g.Expect(exists2).To(gomega.Equal(true))
+}
+
+// Application coordinates: model -> rest -> model round-trip.
+func TestApplication_Coordinates_RoundTrip(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	// Build model with coordinates (model.Document via jsd helper).
+	d := jsd.Document{Content: jsd.Map{"lang": "go"}, Schema: "http://schema/v1"}
+	m := &model.Application{
+		Model: model.Model{ID: 1},
+		Name:  "app",
+	}
+	m.Coordinates = d.Model()
+
+	// model -> rest
+	r := &Application{}
+	r.With(m, nil, nil)
+
+	g.Expect(r.Coordinates).ToNot(gomega.BeNil())
+	g.Expect(r.Coordinates.Schema).To(gomega.Equal("http://schema/v1"))
+	g.Expect(r.Coordinates.Content["lang"]).To(gomega.Equal("go"))
+
+	// rest -> model
+	m2 := r.Model()
+	g.Expect(m2.Coordinates).ToNot(gomega.BeNil())
+
+	// Normalize back to jsd to check equality
+	var round jsd.Document
+	round.With(m2.Coordinates)
+	g.Expect(round.Schema).To(gomega.Equal("http://schema/v1"))
+	g.Expect(round.Content["lang"]).To(gomega.Equal("go"))
+}
+
+// AppTag helpers: WithRef and with()
+func TestAppTag_WithRef_and_with(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	// WithRef should set Tag.ID and Source.
+	ref := TagRef{ID: 42, Name: "tag42", Source: "manual"}
+	at := &AppTag{}
+	at.WithRef(&ref)
+	g.Expect(at.Tag).ToNot(gomega.BeNil())
+	g.Expect(at.Tag.ID).To(gomega.Equal(uint(42)))
+	g.Expect(at.Source).To(gomega.Equal("manual"))
+
+	// with() should copy TagID and Tag.
+	mt := &model.ApplicationTag{
+		ApplicationID: 7,
+		TagID:         99,
+		Source:        "auto",
+		Tag:           model.Tag{Model: model.Model{ID: 99}, Name: "t99"},
+	}
+	at2 := &AppTag{}
+	at2.with(mt)
+	g.Expect(at2.ApplicationID).To(gomega.Equal(uint(7)))
+	g.Expect(at2.TagID).To(gomega.Equal(uint(99)))
+	g.Expect(at2.Tag).ToNot(gomega.BeNil())
+	g.Expect(at2.Tag.ID).To(gomega.Equal(uint(99)))
+	g.Expect(at2.Source).To(gomega.Equal("auto"))
+}
+
+// Task minimal: With/Patch and userPriority behavior.
+func TestTask_With_and_Patch_and_userPriority(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	m := &model.Task{
+		Model:    model.Model{ID: 1},
+		Name:     "t",
+		Kind:     "k",
+		Addon:    "a",
+		State:    "queued",
+		Priority: 5, // userPriority should elevate when projected to rest
+	}
+	r := &Task{}
+	r.With(m)
+
+	g.Expect(r.Name).To(gomega.Equal("t"))
+	g.Expect(r.Kind).To(gomega.Equal("k"))
+	g.Expect(r.Addon).To(gomega.Equal("a"))
+	g.Expect(r.Priority).To(gomega.Equal(15)) // elevated
+
+	// Patch back
+	m2 := &model.Task{}
+	r.Patch(m2)
+	g.Expect(m2.Name).To(gomega.Equal("t"))
+	g.Expect(m2.Kind).To(gomega.Equal("k"))
+	g.Expect(m2.Addon).To(gomega.Equal("a"))
+	g.Expect(m2.Priority).To(gomega.Equal(15))
+}
+
+// FactKey: Qualify/Source/Name semantics.
+func TestFactKey_Semantics(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	var k FactKey = "languages"
+	k.Qualify("analysis")
+	g.Expect(string(k)).To(gomega.Equal("analysis:languages"))
+
+	source := k.Source()
+	name := k.Name()
+	g.Expect(source).To(gomega.Equal("analysis"))
+	g.Expect(name).To(gomega.Equal("languages"))
+
+	var onlySource FactKey = "analysis:"
+	g.Expect(onlySource.Source()).To(gomega.Equal("analysis"))
+	g.Expect(onlySource.Name()).To(gomega.Equal(""))
 }
