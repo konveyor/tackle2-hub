@@ -23,11 +23,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// Routes
-const (
-	AnalysisProfileBundle = api.AnalysisProfileRoute + "/bundle"
-)
-
 // AnalysisProfileHandler handles application Profile resource routes.
 type AnalysisProfileHandler struct {
 	BaseHandler
@@ -39,7 +34,7 @@ func (h AnalysisProfileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AnalysisProfileRoute, h.Get)
 	routeGroup.GET(api.AnalysisProfilesRoute, h.List)
 	routeGroup.GET(api.AnalysisProfilesRoute+"/", h.List)
-	routeGroup.GET(AnalysisProfileBundle, h.GetBundle)
+	routeGroup.GET(api.AnalysisProfileBundle, h.GetBundle)
 	routeGroup.POST(api.AnalysisProfilesRoute, h.Create, Transaction)
 	routeGroup.PUT(api.AnalysisProfileRoute, h.Update, Transaction)
 	routeGroup.DELETE(api.AnalysisProfileRoute, h.Delete, Transaction)

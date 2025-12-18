@@ -1,4 +1,4 @@
-package analysisprofile
+package profile
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/binding"

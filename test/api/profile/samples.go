@@ -1,4 +1,4 @@
-package analysisprofile
+package profile
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -28,7 +28,8 @@ var (
 				{ID: 400},
 			},
 			Repository: &api.Repository{
-				URL: "https://github.com/konveyor/testapp",
+				URL:  "https://github.com/konveyor/rulesets.git",
+				Path: "default/generated/camel3",
 			},
 		}}
 )

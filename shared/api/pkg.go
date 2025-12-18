@@ -92,6 +92,7 @@ const (
 const (
 	AnalysisProfilesRoute = "/analysis/profiles"
 	AnalysisProfileRoute  = AnalysisProfilesRoute + "/:id"
+	AnalysisProfileBundle = AnalysisProfileRoute + "/bundle"
 
 	AppAnalysisProfilesRoute = ApplicationRoute + "/analysis/profiles"
 )
