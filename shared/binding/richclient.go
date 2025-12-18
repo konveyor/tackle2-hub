@@ -11,6 +11,9 @@ var (
 
 // The RichClient provides API integration.
 type RichClient struct {
+	// Client
+	Client *Client
+	// API namespaces.
 	Addon            Addon
 	AnalysisProfile  AnalysisProfile
 	Application      Application
@@ -40,18 +43,11 @@ type RichClient struct {
 	Task             Task
 	Ticket           Ticket
 	Tracker          Tracker
-	// REST client.
-	Client *Client
 }
 
 // New builds a new RichClient object.
 func New(baseURL string) (r *RichClient) {
-	//
-	// Build REST client.
 	client := NewClient(baseURL)
-
-	//
-	// Build RichClient.
 	r = &RichClient{
 		Addon: Addon{
 			client: client,
@@ -142,7 +138,6 @@ func New(baseURL string) (r *RichClient) {
 		},
 		Client: client,
 	}
-
 	return
 }
 
