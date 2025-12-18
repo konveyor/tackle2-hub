@@ -279,6 +279,25 @@ func TestStakeholder_Model(t *testing.T) {
 	g.Expect(m.MigrationWaves[0].ID).To(gomega.Equal(uint(50)))
 }
 
+// TestStakeholder_Model_NilJobFunction tests Stakeholder.Model() with nil job function
+func TestStakeholder_Model_NilJobFunction(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Stakeholder{
+		Resource:    Resource{ID: 1},
+		Name:        "John Doe",
+		Email:       "john@example.com",
+		JobFunction: nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("John Doe"))
+	g.Expect(m.Email).To(gomega.Equal("john@example.com"))
+	g.Expect(m.JobFunctionID).To(gomega.BeNil())
+}
+
 // TestTagCategory_With tests the TagCategory.With() method
 func TestTagCategory_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -493,6 +512,26 @@ func TestProxy_Model(t *testing.T) {
 	g.Expect(m.Excluded[0]).To(gomega.Equal("*.internal.com"))
 }
 
+// TestProxy_Model_NilIdentity tests Proxy.Model() with nil identity
+func TestProxy_Model_NilIdentity(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Proxy{
+		Resource: Resource{ID: 1},
+		Enabled:  true,
+		Kind:     "http",
+		Host:     "proxy.example.com",
+		Port:     8080,
+		Identity: nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Enabled).To(gomega.Equal(true))
+	g.Expect(m.IdentityID).To(gomega.BeNil())
+}
+
 // TestDependency_With tests the Dependency.With() method
 func TestDependency_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -617,6 +656,23 @@ func TestAssessment_Model(t *testing.T) {
 	g.Expect(*m.ApplicationID).To(gomega.Equal(uint(100)))
 }
 
+// TestAssessment_Model_NilPointers tests Assessment.Model() with nil pointer fields
+func TestAssessment_Model_NilPointers(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Assessment{
+		Resource:    Resource{ID: 1},
+		Application: nil,
+		Archetype:   nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.ApplicationID).To(gomega.BeNil())
+	g.Expect(m.ArchetypeID).To(gomega.BeNil())
+}
+
 // TestReview_With tests the Review.With() method
 func TestReview_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -657,6 +713,23 @@ func TestReview_Model(t *testing.T) {
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.ApplicationID).ToNot(gomega.BeNil())
 	g.Expect(*m.ApplicationID).To(gomega.Equal(uint(100)))
+}
+
+// TestReview_Model_NilPointers tests Review.Model() with nil pointer fields
+func TestReview_Model_NilPointers(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Review{
+		Resource:    Resource{ID: 1},
+		Application: nil,
+		Archetype:   nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.ApplicationID).To(gomega.BeNil())
+	g.Expect(m.ArchetypeID).To(gomega.BeNil())
 }
 
 // TestMigrationWave_With tests the MigrationWave.With() method
@@ -1055,6 +1128,31 @@ func TestApplication_Model_WithRepository(t *testing.T) {
 	g.Expect(m.Assets.Path).To(gomega.Equal("/assets"))
 }
 
+// TestApplication_Model_NilPointers tests Application.Model() with nil pointer fields
+func TestApplication_Model_NilPointers(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Application{
+		Resource:        Resource{ID: 1},
+		Name:            "test-app",
+		Repository:      nil,
+		Assets:          nil,
+		BusinessService: nil,
+		Owner:           nil,
+		MigrationWave:   nil,
+		Platform:        nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("test-app"))
+	g.Expect(m.BusinessServiceID).To(gomega.BeNil())
+	g.Expect(m.OwnerID).To(gomega.BeNil())
+	g.Expect(m.MigrationWaveID).To(gomega.BeNil())
+	g.Expect(m.PlatformID).To(gomega.BeNil())
+}
+
 // TestFact_With tests the Fact.With() method
 func TestFact_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -1169,6 +1267,27 @@ func TestGenerator_Model(t *testing.T) {
 	g.Expect(m.Repository.URL).To(gomega.Equal("https://github.com/test/repo"))
 	g.Expect(m.Params["key1"]).To(gomega.Equal("value1"))
 	g.Expect(m.Values["key2"]).To(gomega.Equal("value2"))
+}
+
+// TestGenerator_Model_NilPointers tests Generator.Model() with nil pointer fields
+func TestGenerator_Model_NilPointers(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Generator{
+		Resource:    Resource{ID: 1},
+		Kind:        "ansible",
+		Name:        "test-generator",
+		Description: "Test generator",
+		Identity:    nil,
+		Repository:  nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Kind).To(gomega.Equal("ansible"))
+	g.Expect(m.Name).To(gomega.Equal("test-generator"))
+	g.Expect(m.IdentityID).To(gomega.BeNil())
 }
 
 // TestTicket_With tests the Ticket.With() method
@@ -1775,6 +1894,7 @@ func TestArchetype_Model(t *testing.T) {
 	g.Expect(m.Tags[0].ID).To(gomega.Equal(uint(10)))
 }
 
+
 // TestTargetProfile_With tests the TargetProfile.With() method
 func TestTargetProfile_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -1825,6 +1945,23 @@ func TestTargetProfile_Model(t *testing.T) {
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Name).To(gomega.Equal("Test Target Profile"))
+}
+
+// TestTargetProfile_Model_NilAnalysisProfile tests TargetProfile.Model() with nil analysis profile
+func TestTargetProfile_Model_NilAnalysisProfile(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &TargetProfile{
+		Resource:        Resource{ID: 1},
+		Name:            "Test Target Profile",
+		AnalysisProfile: nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("Test Target Profile"))
+	g.Expect(m.AnalysisProfileID).To(gomega.BeNil())
 }
 
 // TestTarget_With tests the Target.With() method
@@ -1960,6 +2097,27 @@ func TestRuleSet_Model(t *testing.T) {
 	g.Expect(*m.IdentityID).To(gomega.Equal(uint(5)))
 }
 
+// TestRuleSet_Model_NilPointers tests RuleSet.Model() with nil pointer fields
+func TestRuleSet_Model_NilPointers(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &RuleSet{
+		Resource:    Resource{ID: 1},
+		Kind:        "custom",
+		Name:        "Test RuleSet",
+		Description: "Test description",
+		Identity:    nil,
+		Repository:  nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Kind).To(gomega.Equal("custom"))
+	g.Expect(m.Name).To(gomega.Equal("Test RuleSet"))
+	g.Expect(m.IdentityID).To(gomega.BeNil())
+}
+
 // TestRule_With tests the Rule.With() method
 func TestRule_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -2007,6 +2165,24 @@ func TestRule_Model(t *testing.T) {
 	g.Expect(len(m.Labels)).To(gomega.Equal(2))
 	g.Expect(m.FileID).ToNot(gomega.BeNil())
 	g.Expect(*m.FileID).To(gomega.Equal(uint(100)))
+}
+
+// TestRule_Model_NilFile tests Rule.Model() with nil file
+func TestRule_Model_NilFile(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Rule{
+		Resource: Resource{ID: 1},
+		Name:     "Test Rule",
+		Labels:   []string{"label1"},
+		File:     nil,
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("Test Rule"))
+	g.Expect(m.FileID).To(gomega.BeNil())
 }
 
 // TestConvertContainer tests the convertContainer function
