@@ -1,8 +1,41 @@
 package api
 
 import (
+	"encoding/json"
 	"time"
+
+	"github.com/konveyor/tackle2-hub/shared/api/k8s"
 )
+
+// Resource base REST resource.
+type Resource struct {
+	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
+	CreateUser string    `json:"createUser" yaml:"createUser,omitempty"`
+	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
+	CreateTime time.Time `json:"createTime" yaml:"createTime,omitempty"`
+}
+
+// Ref represents a FK.
+// Contains the PK and (name) natural key.
+// The name is optional and read-only.
+type Ref struct {
+	ID   uint   `json:"id" binding:"required"`
+	Name string `json:"name,omitempty"`
+}
+
+// Map unstructured object.
+type Map map[string]any
+
+// As convert the content into the object.
+// The object must be a pointer.
+func (m *Map) As(object any) (err error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(b, object)
+	return
+}
 
 // Setting REST Resource
 type Setting struct {
@@ -98,4 +131,21 @@ type Login struct {
 	Token    string `json:"token"`
 	Refresh  string `json:"refresh"`
 	Expiry   int    `json:"expiry"`
+}
+
+// Addon REST resource.
+type Addon struct {
+	Name       string        `json:"name"`
+	Container  k8s.Container `json:"container"`
+	Extensions []Extension   `json:"extensions,omitempty"`
+	Metadata   any           `json:"metadata,omitempty"`
+}
+
+// Extension REST resource.
+type Extension struct {
+	Name         string        `json:"name"`
+	Addon        string        `json:"addon"`
+	Capabilities []string      `json:"capabilities,omitempty"`
+	Container    k8s.Container `json:"container"`
+	Metadata     any           `json:"metadata,omitempty"`
 }

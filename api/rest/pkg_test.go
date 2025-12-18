@@ -1894,7 +1894,6 @@ func TestArchetype_Model(t *testing.T) {
 	g.Expect(m.Tags[0].ID).To(gomega.Equal(uint(10)))
 }
 
-
 // TestTargetProfile_With tests the TargetProfile.With() method
 func TestTargetProfile_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
