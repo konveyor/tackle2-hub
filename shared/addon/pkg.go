@@ -17,7 +17,7 @@ var (
 
 func init() {
 	command.New = addonCmd.New
-	command.Log = command.Log.WithSink(sink.New(true))
+	command.Log = command.Log.WithSink(sink.New(false))
 	scm.Log = scm.Log.WithSink(sink.New(true))
 	ssh.Log = ssh.Log.WithSink(sink.New(true))
 }

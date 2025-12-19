@@ -105,12 +105,16 @@ func (r *Command) String() (s string) {
 		r.Path,
 		strings.Join(r.Options, " "),
 	}
-	if r.Error != nil {
+	if r.Error == nil {
+		parts = append(parts, "\nSUCCEEDED")
+	} else {
 		parts = append(parts, "\nFAILED:", r.Error.Error())
 	}
-	output := r.Output()
-	if len(output) > 0 {
-		parts = append(parts, "\noutput:\n", string(output))
+	if Log.V(2).Enabled() {
+		output := r.Output()
+		if len(output) > 0 {
+			parts = append(parts, "\noutput:\n", string(output))
+		}
 	}
 	s = strings.Join(parts, " ")
 	return
