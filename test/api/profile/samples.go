@@ -24,9 +24,6 @@ var (
 				Included: []string{"rA", "rB"},
 				Excluded: []string{"rC", "rD"},
 			},
-			Files: []api.Ref{
-				{ID: 400},
-			},
 			Repository: &api.Repository{
 				URL:  "https://github.com/konveyor/rulesets.git",
 				Path: "default/generated/camel3",

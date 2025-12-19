@@ -61,7 +61,19 @@ func TestAnalysisProfileGetBundle(t *testing.T) {
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 
-	err := AnalysisProfile.Create(&r)
+	f, err := RichClient.File.Touch("Test")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	r.Rules.Files = append(r.Rules.Files, api.Ref{ID: f.ID})
+	defer func() {
+		_ = RichClient.File.Delete(f.ID)
+	}()
+	err = RichClient.File.Patch(f.ID, []byte("Testing."))
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	err = AnalysisProfile.Create(&r)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
