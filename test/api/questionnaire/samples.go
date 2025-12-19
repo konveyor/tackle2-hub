@@ -1,8 +1,7 @@
 package questionnaire
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid resources for tests and reuse.
@@ -26,12 +25,12 @@ var (
 			{
 				Order: 1,
 				Name:  "Section 1",
-				Questions: []model.Question{
+				Questions: []api.Question{
 					{
 						Order:       1,
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
-						Answers: []model.Answer{
+						Answers: []api.Answer{
 							{
 								Order: 1,
 								Text:  "Red",

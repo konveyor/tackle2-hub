@@ -5,20 +5,14 @@ import (
 	"net/http"
 	"os"
 	pathlib "path"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/nas"
-	"github.com/konveyor/tackle2-hub/tar"
-)
-
-// Routes
-const (
-	BucketsRoot       = "/buckets"
-	BucketRoot        = BucketsRoot + "/:" + ID
-	BucketContentRoot = BucketRoot + "/*" + Wildcard
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/nas"
+	"github.com/konveyor/tackle2-hub/shared/tar"
 )
 
 // BucketHandler handles bucket routes.
@@ -30,15 +24,15 @@ type BucketHandler struct {
 func (h BucketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("buckets"))
-	routeGroup.GET(BucketsRoot, h.List)
-	routeGroup.GET(BucketsRoot+"/", h.List)
-	routeGroup.POST(BucketsRoot, h.Create)
-	routeGroup.GET(BucketRoot, h.Get)
-	routeGroup.DELETE(BucketRoot, h.Delete)
-	routeGroup.POST(BucketContentRoot, h.BucketPut)
-	routeGroup.PUT(BucketContentRoot, h.BucketPut)
-	routeGroup.GET(BucketContentRoot, h.BucketGet)
-	routeGroup.DELETE(BucketContentRoot, h.BucketDelete)
+	routeGroup.GET(api.BucketsRoute, h.List)
+	routeGroup.GET(api.BucketsRoute+"/", h.List)
+	routeGroup.POST(api.BucketsRoute, h.Create)
+	routeGroup.GET(api.BucketRoute, h.Get)
+	routeGroup.DELETE(api.BucketRoute, h.Delete)
+	routeGroup.POST(api.BucketContentRoute, h.BucketPut)
+	routeGroup.PUT(api.BucketContentRoute, h.BucketPut)
+	routeGroup.GET(api.BucketContentRoute, h.BucketGet)
+	routeGroup.DELETE(api.BucketContentRoute, h.BucketDelete)
 }
 
 // List godoc
@@ -191,18 +185,7 @@ func (h BucketHandler) BucketDelete(ctx *gin.Context) {
 }
 
 // Bucket REST resource.
-type Bucket struct {
-	Resource   `yaml:",inline"`
-	Path       string     `json:"path"`
-	Expiration *time.Time `json:"expiration,omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *Bucket) With(m *model.Bucket) {
-	r.Resource.With(&m.Model)
-	r.Path = m.Path
-	r.Expiration = m.Expiration
-}
+type Bucket = rest.Bucket
 
 type BucketOwner struct {
 	BaseHandler

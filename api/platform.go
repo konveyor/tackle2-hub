@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	PlatformsRoot = "/platforms"
-	PlatformRoot  = PlatformsRoot + "/:" + ID
 )
 
 // PlatformHandler handles application Platform resource routes.
@@ -22,12 +18,12 @@ type PlatformHandler struct {
 func (h PlatformHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("platforms"))
-	routeGroup.GET(PlatformRoot, h.Get)
-	routeGroup.GET(PlatformsRoot, h.List)
-	routeGroup.GET(PlatformsRoot+"/", h.List)
-	routeGroup.POST(PlatformsRoot, h.Create)
-	routeGroup.PUT(PlatformRoot, h.Update)
-	routeGroup.DELETE(PlatformRoot, h.Delete)
+	routeGroup.GET(api.PlatformRoute, h.Get)
+	routeGroup.GET(api.PlatformsRoute, h.List)
+	routeGroup.GET(api.PlatformsRoute+"/", h.List)
+	routeGroup.POST(api.PlatformsRoute, h.Create)
+	routeGroup.PUT(api.PlatformRoute, h.Update)
+	routeGroup.DELETE(api.PlatformRoute, h.Delete)
 }
 
 // Get godoc
@@ -165,37 +161,4 @@ func (h PlatformHandler) Update(ctx *gin.Context) {
 }
 
 // Platform REST resource.
-type Platform struct {
-	Resource     `yaml:",inline"`
-	Kind         string `json:"kind" binding:"required"`
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	Identity     *Ref   `json:"identity,omitempty" yaml:",omitempty"`
-	Applications []Ref  `json:"applications,omitempty" yaml:",omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *Platform) With(m *model.Platform) {
-	r.Resource.With(&m.Model)
-	r.Kind = m.Kind
-	r.Name = m.Name
-	r.URL = m.URL
-	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	r.Applications = make([]Ref, 0, len(m.Applications))
-	for _, a := range m.Applications {
-		r.Applications = append(r.Applications, r.ref(a.ID, &a))
-	}
-}
-
-// Model builds a model.
-func (r *Platform) Model() (m *model.Platform) {
-	m = &model.Platform{}
-	m.ID = r.ID
-	m.Kind = r.Kind
-	m.Name = r.Name
-	m.URL = r.URL
-	if r.Identity != nil {
-		m.IdentityID = &r.Identity.ID
-	}
-	return
-}
+type Platform = rest.Platform

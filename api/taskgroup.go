@@ -5,21 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	tasking "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm/clause"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	TaskGroupsRoot             = "/taskgroups"
-	TaskGroupRoot              = TaskGroupsRoot + "/:" + ID
-	TaskGroupBucketRoot        = TaskGroupRoot + "/bucket"
-	TaskGroupBucketContentRoot = TaskGroupBucketRoot + "/*" + Wildcard
-	TaskGroupSubmitRoot        = TaskGroupRoot + "/submit"
 )
 
 // TaskGroupHandler handles task group routes.
@@ -31,22 +24,22 @@ type TaskGroupHandler struct {
 func (h TaskGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tasks"), Transaction)
-	routeGroup.GET(TaskGroupsRoot, h.List)
-	routeGroup.GET(TaskGroupsRoot+"/", h.List)
-	routeGroup.POST(TaskGroupsRoot, h.Create)
-	routeGroup.PUT(TaskGroupRoot, h.Update)
-	routeGroup.PATCH(TaskGroupRoot, Transaction, h.Update)
-	routeGroup.GET(TaskGroupRoot, h.Get)
-	routeGroup.PUT(TaskGroupSubmitRoot, Transaction, h.Submit)
-	routeGroup.DELETE(TaskGroupRoot, h.Delete)
+	routeGroup.GET(api.TaskGroupsRoute, h.List)
+	routeGroup.GET(api.TaskGroupsRoute+"/", h.List)
+	routeGroup.POST(api.TaskGroupsRoute, h.Create)
+	routeGroup.PUT(api.TaskGroupRoute, h.Update)
+	routeGroup.PATCH(api.TaskGroupRoute, Transaction, h.Update)
+	routeGroup.GET(api.TaskGroupRoute, h.Get)
+	routeGroup.PUT(api.TaskGroupSubmitRoute, Transaction, h.Submit)
+	routeGroup.DELETE(api.TaskGroupRoute, h.Delete)
 	// Bucket
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tasks.bucket"))
-	routeGroup.GET(TaskGroupBucketRoot, h.BucketGet)
-	routeGroup.GET(TaskGroupBucketContentRoot, h.BucketGet)
-	routeGroup.POST(TaskGroupBucketContentRoot, h.BucketPut)
-	routeGroup.PUT(TaskGroupBucketContentRoot, h.BucketPut)
-	routeGroup.DELETE(TaskGroupBucketContentRoot, h.BucketDelete)
+	routeGroup.GET(api.TaskGroupBucketRoute, h.BucketGet)
+	routeGroup.GET(api.TaskGroupBucketContentRoute, h.BucketGet)
+	routeGroup.POST(api.TaskGroupBucketContentRoute, h.BucketPut)
+	routeGroup.PUT(api.TaskGroupBucketContentRoute, h.BucketPut)
+	routeGroup.DELETE(api.TaskGroupBucketContentRoute, h.BucketDelete)
 }
 
 // Get godoc
@@ -427,71 +420,4 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 }
 
 // TaskGroup REST resource.
-type TaskGroup struct {
-	Resource   `yaml:",inline"`
-	Name       string     `json:"name"`
-	Kind       string     `json:"kind,omitempty" yaml:",omitempty"`
-	Addon      string     `json:"addon,omitempty" yaml:",omitempty"`
-	Extensions []string   `json:"extensions,omitempty" yaml:",omitempty"`
-	State      string     `json:"state"`
-	Priority   int        `json:"priority,omitempty" yaml:",omitempty"`
-	Policy     TaskPolicy `json:"policy,omitempty" yaml:",omitempty"`
-	Data       any        `json:"data" swaggertype:"object" binding:"required"`
-	Bucket     *Ref       `json:"bucket,omitempty"`
-	Tasks      []Task     `json:"tasks"`
-}
-
-// With updates the resource with the model.
-func (r *TaskGroup) With(m *model.TaskGroup) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Kind = m.Kind
-	r.Addon = m.Addon
-	r.Extensions = m.Extensions
-	r.State = m.State
-	r.Priority = m.Priority
-	r.Policy = TaskPolicy(m.Policy)
-	r.Data = m.Data.Any
-	r.Bucket = r.refPtr(m.BucketID, m.Bucket)
-	r.Tasks = []Task{}
-	switch m.State {
-	case "", tasking.Created:
-		for _, task := range m.List {
-			member := Task{}
-			member.With(&task)
-			r.Tasks = append(
-				r.Tasks,
-				member)
-		}
-	default:
-		for _, task := range m.Tasks {
-			member := Task{}
-			member.With(&task)
-			r.Tasks = append(
-				r.Tasks,
-				member)
-		}
-	}
-}
-
-// Patch the specified model.
-func (r *TaskGroup) Patch(m *model.TaskGroup) {
-	m.ID = r.ID
-	m.Name = r.Name
-	m.Kind = r.Kind
-	m.Addon = r.Addon
-	m.Extensions = r.Extensions
-	m.State = r.State
-	m.Priority = r.Priority
-	m.Policy = model.TaskPolicy(r.Policy)
-	m.Data.Any = r.Data
-	m.List = make([]model.Task, 0, len(r.Tasks))
-	for _, task := range r.Tasks {
-		tm := model.Task{}
-		task.Patch(&tm)
-		m.List = append(m.List, tm)
-	}
-	if r.Bucket != nil {
-		m.BucketID = &r.Bucket.ID
-	}
-}
+type TaskGroup = rest.TaskGroup

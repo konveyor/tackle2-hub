@@ -616,11 +616,11 @@ func (r *Task) containers(
 			},
 			core.VolumeMount{
 				Name:      Shared,
-				MountPath: Settings.Shared.Path,
+				MountPath: Settings.Addon.SharedDir,
 			},
 			core.VolumeMount{
 				Name:      Cache,
-				MountPath: Settings.Cache.Path,
+				MountPath: Settings.Addon.CacheDir,
 			})
 		container.Env = append(
 			container.Env,
@@ -629,12 +629,12 @@ func (r *Task) containers(
 				Value: Settings.Addon.HomeDir,
 			},
 			core.EnvVar{
-				Name:  settings.EnvSharedPath,
-				Value: Settings.Shared.Path,
+				Name:  settings.EnvSharedDir,
+				Value: Settings.Addon.SharedDir,
 			},
 			core.EnvVar{
-				Name:  settings.EnvCachePath,
-				Value: Settings.Cache.Path,
+				Name:  settings.EnvCacheDir,
+				Value: Settings.Addon.CacheDir,
 			},
 			core.EnvVar{
 				Name:  settings.EnvHubBaseURL,

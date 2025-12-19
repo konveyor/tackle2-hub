@@ -4,15 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TagCategoriesRoot   = "/tagcategories"
-	TagCategoryRoot     = TagCategoriesRoot + "/:" + ID
-	TagCategoryTagsRoot = TagCategoryRoot + "/tags"
 )
 
 // TagCategoryHandler handles the tag-type route.
@@ -24,14 +19,14 @@ type TagCategoryHandler struct {
 func (h TagCategoryHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tagcategories"))
-	routeGroup.GET(TagCategoriesRoot, h.List)
-	routeGroup.GET(TagCategoriesRoot+"/", h.List)
-	routeGroup.POST(TagCategoriesRoot, h.Create)
-	routeGroup.GET(TagCategoryRoot, h.Get)
-	routeGroup.PUT(TagCategoryRoot, h.Update)
-	routeGroup.DELETE(TagCategoryRoot, h.Delete)
-	routeGroup.GET(TagCategoryTagsRoot, h.TagList)
-	routeGroup.GET(TagCategoryTagsRoot+"/", h.TagList)
+	routeGroup.GET(api.TagCategoriesRoute, h.List)
+	routeGroup.GET(api.TagCategoriesRoute+"/", h.List)
+	routeGroup.POST(api.TagCategoriesRoute, h.Create)
+	routeGroup.GET(api.TagCategoryRoute, h.Get)
+	routeGroup.PUT(api.TagCategoryRoute, h.Update)
+	routeGroup.DELETE(api.TagCategoryRoute, h.Delete)
+	routeGroup.GET(api.TagCategoryTagsRoute, h.TagList)
+	routeGroup.GET(api.TagCategoryTagsRoute+"/", h.TagList)
 }
 
 // Get godoc
@@ -208,35 +203,4 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 }
 
 // TagCategory REST resource.
-type TagCategory struct {
-	Resource `yaml:",inline"`
-	Name     string `json:"name" binding:"required"`
-	Color    string `json:"colour" yaml:"colour"`
-	Tags     []Ref  `json:"tags"`
-	// Deprecated
-	Username string `json:"username,omitempty"` // Deprecated
-	Rank     uint   `json:"rank,omitempty"`     // Deprecated
-}
-
-// With updates the resource with the model.
-func (r *TagCategory) With(m *model.TagCategory) {
-	r.Resource.With(&m.Model)
-	r.ID = m.ID
-	r.Name = m.Name
-	r.Color = m.Color
-	for _, tag := range m.Tags {
-		ref := Ref{}
-		ref.With(tag.ID, tag.Name)
-		r.Tags = append(r.Tags, ref)
-	}
-}
-
-// Model builds a model.
-func (r *TagCategory) Model() (m *model.TagCategory) {
-	m = &model.TagCategory{
-		Name:  r.Name,
-		Color: r.Color,
-	}
-	m.ID = r.ID
-	return
-}
+type TagCategory = rest.TagCategory

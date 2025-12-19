@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	DependenciesRoot = "/dependencies"
-	DependencyRoot   = DependenciesRoot + "/:" + ID
 )
 
 // DependencyHandler handles application dependency routes.
@@ -23,11 +19,11 @@ type DependencyHandler struct {
 func (h DependencyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("dependencies"))
-	routeGroup.GET(DependenciesRoot, h.List)
-	routeGroup.GET(DependenciesRoot+"/", h.List)
-	routeGroup.POST(DependenciesRoot, h.Create)
-	routeGroup.GET(DependencyRoot, h.Get)
-	routeGroup.DELETE(DependencyRoot, h.Delete)
+	routeGroup.GET(api.DependenciesRoute, h.List)
+	routeGroup.GET(api.DependenciesRoute+"/", h.List)
+	routeGroup.POST(api.DependenciesRoute, h.Create)
+	routeGroup.GET(api.DependencyRoute, h.Get)
+	routeGroup.DELETE(api.DependencyRoute, h.Delete)
 }
 
 // Get godoc
@@ -142,24 +138,4 @@ func (h DependencyHandler) Delete(ctx *gin.Context) {
 }
 
 // Dependency REST resource.
-type Dependency struct {
-	Resource `yaml:",inline"`
-	To       Ref `json:"to"`
-	From     Ref `json:"from"`
-}
-
-// With updates the resource using the model.
-func (r *Dependency) With(m *model.Dependency) {
-	r.Resource.With(&m.Model)
-	r.To = r.ref(m.ToID, m.To)
-	r.From = r.ref(m.FromID, m.From)
-}
-
-// Model builds a model.Dependency.
-func (r *Dependency) Model() (m *model.Dependency) {
-	m = &model.Dependency{
-		ToID:   r.To.ID,
-		FromID: r.From.ID,
-	}
-	return
-}
+type Dependency = rest.Dependency

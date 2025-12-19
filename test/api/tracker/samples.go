@@ -3,7 +3,7 @@ package tracker
 import (
 	"time"
 
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 var Samples = []api.Tracker{

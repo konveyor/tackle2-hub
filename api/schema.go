@@ -4,20 +4,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/jsd"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 const (
-	Domain  = "domain"
-	Variant = "variant"
-	Subject = "subject"
-)
-
-const (
-	SchemaRoot     = "/schema"
-	SchemasRoot    = "/schemas"
-	SchemasGetRoot = SchemasRoot + "/:" + Name
-	SchemaFindRoot = SchemaRoot + "/jsd/:" + Domain + "/:" + Variant + "/:" + Subject
+	Domain  = api.Domain
+	Variant = api.Variant
+	Subject = api.Subject
 )
 
 // SchemaHandler providers schema (route) handler.
@@ -32,10 +27,10 @@ type SchemaHandler struct {
 // AddRoutes Adds routes.
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
-	r.GET(SchemaRoot, h.GetAPI)
-	r.GET(SchemasRoot, h.List)
-	r.GET(SchemasGetRoot, h.Get)
-	r.GET(SchemaFindRoot, h.Find)
+	r.GET(api.SchemaRoute, h.GetAPI)
+	r.GET(api.SchemasRoute, h.List)
+	r.GET(api.SchemasGetRoute, h.Get)
+	r.GET(api.SchemaFindRoute, h.Find)
 }
 
 // GetAPI godoc
@@ -73,7 +68,8 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r := Schema(s)
+	r := Schema{}
+	r.With(s)
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -93,7 +89,9 @@ func (h *SchemaHandler) List(ctx *gin.Context) {
 	}
 	r := make([]Schema, len(list))
 	for i := range list {
-		r[i] = Schema(list[i])
+		s := Schema{}
+		s.With(list[i])
+		r[i] = s
 	}
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -124,20 +122,17 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 	}
 	v := s.Versions.Latest()
 	r := LatestSchema{
-		Definition: Map(v.Definition),
+		Definition: rest.Map(v.Definition),
 		Name:       s.Name,
 	}
 	h.Respond(ctx, http.StatusOK, r)
 }
 
-type RestAPI struct {
-	Version string   `json:"version,omitempty" yaml:",omitempty"`
-	Routes  []string `json:"routes"`
-}
+// RestAPI resource.
+type RestAPI = rest.RestAPI
 
-type Schema jsd.Schema
+// Schema REST resource.
+type Schema = rest.Schema
 
-type LatestSchema struct {
-	Name       string `json:"name"`
-	Definition Map    `json:"definition"`
-}
+// LatestSchema REST resource.
+type LatestSchema = rest.LatestSchema

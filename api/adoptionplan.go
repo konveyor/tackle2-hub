@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
 )
 
@@ -17,11 +19,6 @@ const (
 	EffortXL = "extra_large"
 )
 
-// Routes
-const (
-	AdoptionPlansRoot = "/reports/adoptionplan"
-)
-
 type AdoptionPlanHandler struct {
 	BaseHandler
 }
@@ -30,7 +27,7 @@ type AdoptionPlanHandler struct {
 func (h AdoptionPlanHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("adoptionplans"))
-	routeGroup.POST(AdoptionPlansRoot, h.Graph)
+	routeGroup.POST(api.AdoptionPlansRoute, h.Graph)
 }
 
 // Graph godoc
@@ -107,15 +104,7 @@ func (h AdoptionPlanHandler) Graph(ctx *gin.Context) {
 }
 
 // Vertex represents a vertex in the dependency graph.
-type Vertex struct {
-	ID             uint   `json:"applicationId" yaml:"applicationId"`
-	Name           string `json:"applicationName" yaml:"applicationName"`
-	Decision       string `json:"decision"`
-	EffortEstimate string `json:"effortEstimate" yaml:"effortEstimate"`
-	Effort         int    `json:"effort"`
-	PositionY      int    `json:"positionY" yaml:"positionY"`
-	PositionX      int    `json:"positionX" yaml:"positionX"`
-}
+type Vertex = rest.Vertex
 
 // NewDependencyGraph creates an empty dependency graph.
 func NewDependencyGraph() (graph DependencyGraph) {

@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	StakeholderGroupsRoot = "/stakeholdergroups"
-	StakeholderGroupRoot  = StakeholderGroupsRoot + "/:" + ID
 )
 
 // StakeholderGroupHandler handles stakeholder group routes.
@@ -23,12 +19,12 @@ type StakeholderGroupHandler struct {
 func (h StakeholderGroupHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("stakeholdergroups"), Transaction)
-	routeGroup.GET(StakeholderGroupsRoot, h.List)
-	routeGroup.GET(StakeholderGroupsRoot+"/", h.List)
-	routeGroup.POST(StakeholderGroupsRoot, h.Create)
-	routeGroup.GET(StakeholderGroupRoot, h.Get)
-	routeGroup.PUT(StakeholderGroupRoot, h.Update)
-	routeGroup.DELETE(StakeholderGroupRoot, h.Delete)
+	routeGroup.GET(api.StakeholderGroupsRoute, h.List)
+	routeGroup.GET(api.StakeholderGroupsRoute+"/", h.List)
+	routeGroup.POST(api.StakeholderGroupsRoute, h.Create)
+	routeGroup.GET(api.StakeholderGroupRoute, h.Get)
+	routeGroup.PUT(api.StakeholderGroupRoute, h.Update)
+	routeGroup.DELETE(api.StakeholderGroupRoute, h.Delete)
 }
 
 // Get godoc
@@ -185,45 +181,4 @@ func (h StakeholderGroupHandler) Update(ctx *gin.Context) {
 }
 
 // StakeholderGroup REST resource.
-type StakeholderGroup struct {
-	Resource       `yaml:",inline"`
-	Name           string `json:"name" binding:"required"`
-	Description    string `json:"description"`
-	Stakeholders   []Ref  `json:"stakeholders"`
-	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
-}
-
-// With updates the resource with the model.
-func (r *StakeholderGroup) With(m *model.StakeholderGroup) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Stakeholders = []Ref{}
-	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
-	}
-	r.MigrationWaves = []Ref{}
-	for _, w := range m.MigrationWaves {
-		ref := Ref{}
-		ref.With(w.ID, w.Name)
-		r.MigrationWaves = append(r.MigrationWaves, ref)
-	}
-}
-
-// Model builds a model.
-func (r *StakeholderGroup) Model() (m *model.StakeholderGroup) {
-	m = &model.StakeholderGroup{
-		Name:        r.Name,
-		Description: r.Description,
-	}
-	m.ID = r.ID
-	for _, s := range r.Stakeholders {
-		m.Stakeholders = append(m.Stakeholders, model.Stakeholder{Model: model.Model{ID: s.ID}})
-	}
-	for _, w := range r.MigrationWaves {
-		m.MigrationWaves = append(m.MigrationWaves, model.MigrationWave{Model: model.Model{ID: w.ID}})
-	}
-	return
-}
+type StakeholderGroup = rest.StakeholderGroup

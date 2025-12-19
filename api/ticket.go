@@ -2,17 +2,12 @@ package api
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TicketsRoot = "/tickets"
-	TicketRoot  = "/tickets" + "/:" + ID
 )
 
 // Params.
@@ -29,11 +24,11 @@ type TicketHandler struct {
 func (h TicketHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("tickets"))
-	routeGroup.GET(TicketsRoot, h.List)
-	routeGroup.GET(TicketsRoot+"/", h.List)
-	routeGroup.POST(TicketsRoot, h.Create)
-	routeGroup.GET(TicketRoot, h.Get)
-	routeGroup.DELETE(TicketRoot, h.Delete)
+	routeGroup.GET(api.TicketsRoute, h.List)
+	routeGroup.GET(api.TicketsRoute+"/", h.List)
+	routeGroup.POST(api.TicketsRoute, h.Create)
+	routeGroup.GET(api.TicketRoute, h.Get)
+	routeGroup.DELETE(api.TicketRoute, h.Delete)
 }
 
 // Get godoc
@@ -145,47 +140,4 @@ func (h TicketHandler) Delete(ctx *gin.Context) {
 }
 
 // Ticket API Resource
-type Ticket struct {
-	Resource    `yaml:",inline"`
-	Kind        string    `json:"kind" binding:"required"`
-	Reference   string    `json:"reference"`
-	Link        string    `json:"link"`
-	Parent      string    `json:"parent" binding:"required"`
-	Error       bool      `json:"error"`
-	Message     string    `json:"message"`
-	Status      string    `json:"status"`
-	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
-	Fields      Map       `json:"fields"`
-	Application Ref       `json:"application" binding:"required"`
-	Tracker     Ref       `json:"tracker" binding:"required"`
-}
-
-// With updates the resource with the model.
-func (r *Ticket) With(m *model.Ticket) {
-	r.Resource.With(&m.Model)
-	r.Kind = m.Kind
-	r.Reference = m.Reference
-	r.Parent = m.Parent
-	r.Link = m.Link
-	r.Error = m.Error
-	r.Message = m.Message
-	r.Status = m.Status
-	r.LastUpdated = m.LastUpdated
-	r.Application = r.ref(m.ApplicationID, m.Application)
-	r.Tracker = r.ref(m.TrackerID, m.Tracker)
-	r.Fields = m.Fields
-}
-
-// Model builds a model.
-func (r *Ticket) Model() (m *model.Ticket) {
-	m = &model.Ticket{
-		Kind:          r.Kind,
-		Parent:        r.Parent,
-		ApplicationID: r.Application.ID,
-		TrackerID:     r.Tracker.ID,
-	}
-	m.Fields = r.Fields
-	m.ID = r.ID
-
-	return
-}
+type Ticket = rest.Ticket

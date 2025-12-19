@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	BusinessServicesRoot = "/businessservices"
-	BusinessServiceRoot  = BusinessServicesRoot + "/:" + ID
 )
 
 // BusinessServiceHandler handles business-service routes.
@@ -23,12 +19,12 @@ type BusinessServiceHandler struct {
 func (h BusinessServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("businessservices"))
-	routeGroup.GET(BusinessServicesRoot, h.List)
-	routeGroup.GET(BusinessServicesRoot+"/", h.List)
-	routeGroup.POST(BusinessServicesRoot, h.Create)
-	routeGroup.GET(BusinessServiceRoot, h.Get)
-	routeGroup.PUT(BusinessServiceRoot, h.Update)
-	routeGroup.DELETE(BusinessServiceRoot, h.Delete)
+	routeGroup.GET(api.BusinessServicesRoute, h.List)
+	routeGroup.GET(api.BusinessServicesRoute+"/", h.List)
+	routeGroup.POST(api.BusinessServicesRoute, h.Create)
+	routeGroup.GET(api.BusinessServiceRoute, h.Get)
+	routeGroup.PUT(api.BusinessServiceRoute, h.Update)
+	routeGroup.DELETE(api.BusinessServiceRoute, h.Delete)
 }
 
 // Get godoc
@@ -163,30 +159,4 @@ func (h BusinessServiceHandler) Update(ctx *gin.Context) {
 }
 
 // BusinessService REST resource.
-type BusinessService struct {
-	Resource    `yaml:",inline"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	Stakeholder *Ref   `json:"owner" yaml:"owner"`
-}
-
-// With updates the resource with the model.
-func (r *BusinessService) With(m *model.BusinessService) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Stakeholder = r.refPtr(m.StakeholderID, m.Stakeholder)
-}
-
-// Model builds a model.
-func (r *BusinessService) Model() (m *model.BusinessService) {
-	m = &model.BusinessService{
-		Name:        r.Name,
-		Description: r.Description,
-	}
-	m.ID = r.ID
-	if r.Stakeholder != nil {
-		m.StakeholderID = &r.Stakeholder.ID
-	}
-	return
-}
+type BusinessService = rest.BusinessService

@@ -3,21 +3,13 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	TrackersRoot             = "/trackers"
-	TrackerRoot              = "/trackers" + "/:" + ID
-	TrackerProjects          = TrackerRoot + "/projects"
-	TrackerProject           = TrackerRoot + "/projects" + "/:" + ID2
-	TrackerProjectIssueTypes = TrackerProject + "/issuetypes"
 )
 
 // Params
@@ -34,15 +26,15 @@ type TrackerHandler struct {
 func (h TrackerHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("trackers"))
-	routeGroup.GET(TrackersRoot, h.List)
-	routeGroup.GET(TrackersRoot+"/", h.List)
-	routeGroup.POST(TrackersRoot, h.Create)
-	routeGroup.GET(TrackerRoot, h.Get)
-	routeGroup.PUT(TrackerRoot, h.Update)
-	routeGroup.DELETE(TrackerRoot, h.Delete)
-	routeGroup.GET(TrackerProjects, h.ProjectList)
-	routeGroup.GET(TrackerProject, h.ProjectGet)
-	routeGroup.GET(TrackerProjectIssueTypes, h.ProjectIssueTypeList)
+	routeGroup.GET(api.TrackersRoute, h.List)
+	routeGroup.GET(api.TrackersRoute+"/", h.List)
+	routeGroup.POST(api.TrackersRoute, h.Create)
+	routeGroup.GET(api.TrackerRoute, h.Get)
+	routeGroup.PUT(api.TrackerRoute, h.Update)
+	routeGroup.DELETE(api.TrackerRoute, h.Delete)
+	routeGroup.GET(api.TrackerProjectsRoute, h.ProjectList)
+	routeGroup.GET(api.TrackerProjectRoute, h.ProjectGet)
+	routeGroup.GET(api.TrackerProjectIssueTypesRoute, h.ProjectIssueTypeList)
 }
 
 // Get godoc
@@ -223,8 +215,7 @@ func (h TrackerHandler) ProjectList(ctx *gin.Context) {
 
 	resources := []Project{}
 	for i := range projects {
-		r := Project{}
-		r.With(&projects[i])
+		r := Project(projects[i])
 		resources = append(resources, r)
 	}
 	h.Respond(ctx, http.StatusOK, resources)
@@ -263,9 +254,8 @@ func (h TrackerHandler) ProjectGet(ctx *gin.Context) {
 		return
 	}
 
-	resource := Project{}
-	resource.With(&project)
-	h.Respond(ctx, http.StatusOK, resource)
+	r := Project(project)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // ProjectIssueTypeList godoc
@@ -303,74 +293,17 @@ func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
 
 	resources := []IssueType{}
 	for i := range issueTypes {
-		r := IssueType{}
-		r.With(&issueTypes[i])
+		r := IssueType(issueTypes[i])
 		resources = append(resources, r)
 	}
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
 // Tracker API Resource
-type Tracker struct {
-	Resource    `yaml:",inline"`
-	Name        string    `json:"name" binding:"required"`
-	URL         string    `json:"url" binding:"required"`
-	Kind        string    `json:"kind" binding:"required,oneof=jira-cloud jira-onprem"`
-	Message     string    `json:"message"`
-	Connected   bool      `json:"connected"`
-	LastUpdated time.Time `json:"lastUpdated" yaml:"lastUpdated"`
-	Identity    Ref       `json:"identity" binding:"required"`
-	Insecure    bool      `json:"insecure"`
-}
-
-// With updates the resource with the model.
-func (r *Tracker) With(m *model.Tracker) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.URL = m.URL
-	r.Kind = m.Kind
-	r.Message = m.Message
-	r.Connected = m.Connected
-	r.LastUpdated = m.LastUpdated
-	r.Insecure = m.Insecure
-	r.Identity = r.ref(m.IdentityID, m.Identity)
-}
-
-// Model builds a model.
-func (r *Tracker) Model() (m *model.Tracker) {
-	m = &model.Tracker{
-		Name:       r.Name,
-		URL:        r.URL,
-		Kind:       r.Kind,
-		Insecure:   r.Insecure,
-		IdentityID: r.Identity.ID,
-	}
-
-	m.ID = r.ID
-
-	return
-}
+type Tracker = rest.Tracker
 
 // Project API Resource
-type Project struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// With updates the resource with the model.
-func (r *Project) With(i *tracker.Project) {
-	r.ID = i.ID
-	r.Name = i.Name
-}
+type Project = rest.Project
 
 // IssueType API Resource
-type IssueType struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// With updates the resource with the model.
-func (r *IssueType) With(i *tracker.IssueType) {
-	r.ID = i.ID
-	r.Name = i.Name
-}
+type IssueType = rest.IssueType

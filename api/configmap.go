@@ -5,18 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	ConfigMapsRoot   = "/configmaps"
-	ConfigMapRoot    = ConfigMapsRoot + "/:" + Name
-	ConfigMapKeyRoot = ConfigMapRoot + "/:" + Key
 )
 
 const (
@@ -32,10 +27,10 @@ type ConfigMapHandler struct {
 func (h ConfigMapHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("configmaps"))
-	routeGroup.GET(ConfigMapsRoot, h.List)
-	routeGroup.GET(ConfigMapsRoot+"/", h.List)
-	routeGroup.GET(ConfigMapRoot, h.Get)
-	routeGroup.GET(ConfigMapKeyRoot, h.Get)
+	routeGroup.GET(api.ConfigMapsRoute, h.List)
+	routeGroup.GET(api.ConfigMapsRoute+"/", h.List)
+	routeGroup.GET(api.ConfigMapRoute, h.Get)
+	routeGroup.GET(api.ConfigMapKeyRoute, h.Get)
 }
 
 // Get godoc
@@ -140,7 +135,4 @@ func (h ConfigMapHandler) List(ctx *gin.Context) {
 }
 
 // ConfigMap configmap
-type ConfigMap struct {
-	Name string `json:"name"`
-	Data any    `json:"data"`
-}
+type ConfigMap = rest.ConfigMap

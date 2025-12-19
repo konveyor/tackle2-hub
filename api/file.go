@@ -6,17 +6,12 @@ import (
 	"net/http"
 	"os"
 	pathlib "path"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
-)
-
-// Routes
-const (
-	FilesRoot = "/files"
-	FileRoot  = FilesRoot + "/:" + ID
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // FileHandler handles file routes.
@@ -28,13 +23,13 @@ type FileHandler struct {
 func (h FileHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("files"))
-	routeGroup.GET(FilesRoot, h.List)
-	routeGroup.GET(FilesRoot+"/", h.List)
-	routeGroup.POST(FileRoot, h.Create)
-	routeGroup.PUT(FileRoot, h.Create)
-	routeGroup.PATCH(FileRoot, h.Append)
-	routeGroup.GET(FileRoot, h.Get)
-	routeGroup.DELETE(FileRoot, h.Delete)
+	routeGroup.GET(api.FilesRoute, h.List)
+	routeGroup.GET(api.FilesRoute+"/", h.List)
+	routeGroup.POST(api.FileRoute, h.Create)
+	routeGroup.PUT(api.FileRoute, h.Create)
+	routeGroup.PATCH(api.FileRoute, h.Append)
+	routeGroup.GET(api.FileRoute, h.Get)
+	routeGroup.DELETE(api.FileRoute, h.Delete)
 }
 
 // List godoc
@@ -307,19 +302,4 @@ func (h FileHandler) delete(ctx *gin.Context, m *model.File) (err error) {
 }
 
 // File REST resource.
-type File struct {
-	Resource   `yaml:",inline"`
-	Name       string     `json:"name"`
-	Path       string     `json:"path"`
-	Encoding   string     `yaml:"encoding,omitempty"`
-	Expiration *time.Time `json:"expiration,omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *File) With(m *model.File) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	r.Path = m.Path
-	r.Encoding = m.Encoding
-	r.Expiration = m.Expiration
-}
+type File = rest.File

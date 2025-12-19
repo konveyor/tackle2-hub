@@ -4,14 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/auth"
-)
-
-// Routes
-const (
-	AuthRoot        = "/auth"
-	AuthLoginRoot   = AuthRoot + "/login"
-	AuthRefreshRoot = AuthRoot + "/refresh"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // AuthHandler handles auth routes.
@@ -21,8 +16,8 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	e.POST(AuthLoginRoot, h.Login)
-	e.POST(AuthRefreshRoot, h.Refresh)
+	e.POST(api.AuthLoginRoute, h.Login)
+	e.POST(api.AuthRefreshRoute, h.Refresh)
 }
 
 // Login godoc
@@ -86,13 +81,7 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 }
 
 // Login REST resource.
-type Login struct {
-	User     string `json:"user"`
-	Password string `json:"password,omitempty"`
-	Token    string `json:"token"`
-	Refresh  string `json:"refresh"`
-	Expiry   int    `json:"expiry"`
-}
+type Login = rest.Login
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

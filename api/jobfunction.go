@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	JobFunctionsRoot = "/jobfunctions"
-	JobFunctionRoot  = JobFunctionsRoot + "/:" + ID
 )
 
 // JobFunctionHandler handles job-function routes.
@@ -23,12 +19,12 @@ type JobFunctionHandler struct {
 func (h JobFunctionHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("jobfunctions"))
-	routeGroup.GET(JobFunctionsRoot, h.List)
-	routeGroup.GET(JobFunctionsRoot+"/", h.List)
-	routeGroup.POST(JobFunctionsRoot, h.Create)
-	routeGroup.GET(JobFunctionRoot, h.Get)
-	routeGroup.PUT(JobFunctionRoot, h.Update)
-	routeGroup.DELETE(JobFunctionRoot, h.Delete)
+	routeGroup.GET(api.JobFunctionsRoute, h.List)
+	routeGroup.GET(api.JobFunctionsRoute+"/", h.List)
+	routeGroup.POST(api.JobFunctionsRoute, h.Create)
+	routeGroup.GET(api.JobFunctionRoute, h.Get)
+	routeGroup.PUT(api.JobFunctionRoute, h.Update)
+	routeGroup.DELETE(api.JobFunctionRoute, h.Delete)
 }
 
 // Get godoc
@@ -163,29 +159,4 @@ func (h JobFunctionHandler) Update(ctx *gin.Context) {
 }
 
 // JobFunction REST resource.
-type JobFunction struct {
-	Resource     `yaml:",inline"`
-	Name         string `json:"name" binding:"required"`
-	Stakeholders []Ref  `json:"stakeholders"`
-}
-
-// With updates the resource with the model.
-func (r *JobFunction) With(m *model.JobFunction) {
-	r.Resource.With(&m.Model)
-	r.Name = m.Name
-	for _, s := range m.Stakeholders {
-		ref := Ref{}
-		ref.With(s.ID, s.Name)
-		r.Stakeholders = append(r.Stakeholders, ref)
-	}
-}
-
-// Model builds a model.
-func (r *JobFunction) Model() (m *model.JobFunction) {
-	m = &model.JobFunction{
-		Name: r.Name,
-	}
-	m.ID = r.ID
-
-	return
-}
+type JobFunction = rest.JobFunction

@@ -2,20 +2,14 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	crd "github.com/konveyor/tackle2-hub/k8s/api/tackle/v1alpha1"
-	core "k8s.io/api/core/v1"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// Routes
-const (
-	AddonsRoot = "/addons"
-	AddonRoot  = AddonsRoot + "/:" + Name
 )
 
 // AddonHandler handles addon routes.
@@ -27,9 +21,9 @@ type AddonHandler struct {
 func (h AddonHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("addons"))
-	routeGroup.GET(AddonsRoot, h.List)
-	routeGroup.GET(AddonsRoot+"/", h.List)
-	routeGroup.GET(AddonRoot, h.Get)
+	routeGroup.GET(api.AddonsRoute, h.List)
+	routeGroup.GET(api.AddonsRoute+"/", h.List)
+	routeGroup.GET(api.AddonRoute, h.Get)
 }
 
 // Get godoc
@@ -106,44 +100,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 }
 
 // Addon REST resource.
-type Addon struct {
-	Name       string         `json:"name"`
-	Container  core.Container `json:"container"`
-	Extensions []Extension    `json:"extensions,omitempty"`
-	Metadata   any            `json:"metadata,omitempty"`
-}
-
-// With model.
-func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
-	r.Name = m.Name
-	r.Container = m.Spec.Container
-	if m.Spec.Metadata.Raw != nil {
-		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
-	}
-	for i := range extensions {
-		extension := Extension{}
-		extension.With(&extensions[i])
-		r.Extensions = append(
-			r.Extensions,
-			extension)
-	}
-}
+type Addon = rest.Addon
 
 // Extension REST resource.
-type Extension struct {
-	Name         string         `json:"name"`
-	Addon        string         `json:"addon"`
-	Capabilities []string       `json:"capabilities,omitempty"`
-	Container    core.Container `json:"container"`
-	Metadata     any            `json:"metadata,omitempty"`
-}
-
-// With model.
-func (r *Extension) With(m *crd.Extension) {
-	r.Name = m.Name
-	r.Addon = m.Spec.Addon
-	r.Container = m.Spec.Container
-	if m.Spec.Metadata.Raw != nil {
-		_ = json.Unmarshal(m.Spec.Metadata.Raw, &r.Metadata)
-	}
-}
+type Extension = rest.Extension

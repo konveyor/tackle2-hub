@@ -6,22 +6,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/trigger"
 	"gorm.io/gorm"
 )
 
 const (
 	Role = "role"
-)
-
-// Routes
-const (
-	IdentitiesRoot = "/identities"
-	IdentityRoot   = IdentitiesRoot + "/:" + ID
-	//
-	AppIdentitiesRoot = ApplicationRoot + "/identities"
 )
 
 // Params.
@@ -37,13 +31,13 @@ type IdentityHandler struct {
 func (h IdentityHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("identities"))
-	routeGroup.GET(IdentitiesRoot, h.List)
-	routeGroup.POST(IdentitiesRoot, Transaction, h.Create)
-	routeGroup.GET(IdentityRoot, h.Get)
-	routeGroup.PUT(IdentityRoot, Transaction, h.Update)
-	routeGroup.DELETE(IdentityRoot, h.Delete)
+	routeGroup.GET(api.IdentitiesRoute, h.List)
+	routeGroup.POST(api.IdentitiesRoute, Transaction, h.Create)
+	routeGroup.GET(api.IdentityRoute, h.Get)
+	routeGroup.PUT(api.IdentityRoute, Transaction, h.Update)
+	routeGroup.DELETE(api.IdentityRoute, h.Delete)
 	//
-	routeGroup.GET(AppIdentitiesRoot, h.AppList)
+	routeGroup.GET(api.AppIdentitiesRoute, h.AppList)
 }
 
 // Get godoc
@@ -367,44 +361,4 @@ func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err
 }
 
 // Identity REST resource.
-type Identity struct {
-	Resource    `yaml:",inline"`
-	Kind        string `json:"kind" binding:"required"`
-	Default     bool   `json:"default"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	User        string `json:"user"`
-	Password    string `json:"password"`
-	Key         string `json:"key"`
-	Settings    string `json:"settings"`
-}
-
-// With updates the resource with the model.
-func (r *Identity) With(m *model.Identity) {
-	r.Resource.With(&m.Model)
-	r.Kind = m.Kind
-	r.Default = m.Default
-	r.Name = m.Name
-	r.Description = m.Description
-	r.User = m.User
-	r.Password = m.Password
-	r.Key = m.Key
-	r.Settings = m.Settings
-}
-
-// Model builds a model.
-func (r *Identity) Model() (m *model.Identity) {
-	m = &model.Identity{
-		Kind:        r.Kind,
-		Default:     r.Default,
-		Name:        r.Name,
-		Description: r.Description,
-		User:        r.User,
-		Password:    r.Password,
-		Key:         r.Key,
-		Settings:    r.Settings,
-	}
-	m.ID = r.ID
-
-	return
-}
+type Identity = rest.Identity

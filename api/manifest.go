@@ -8,21 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
 	"github.com/konveyor/tackle2-hub/secret"
-)
-
-// Routes
-const (
-	ManifestsRoot = "/manifests"
-	ManifestRoot  = ManifestsRoot + "/:" + ID
-	//
-	AppManifestRoot  = ApplicationRoot + "/manifest"
-	AppManifestsRoot = ApplicationRoot + "/manifests"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 const (
-	Injected = "injected"
+	Injected = api.Injected
 )
 
 var SecretRefPattern = regexp.MustCompile("\\$\\(([^)]+)\\)")
@@ -35,17 +28,17 @@ type ManifestHandler struct {
 func (h ManifestHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("manifests"))
-	routeGroup.GET(ManifestRoot, h.Get)
-	routeGroup.GET(ManifestsRoot, h.List)
-	routeGroup.GET(ManifestsRoot+"/", h.List)
-	routeGroup.POST(ManifestsRoot, h.Create)
-	routeGroup.PUT(ManifestRoot, h.Update)
-	routeGroup.DELETE(ManifestRoot, h.Delete)
+	routeGroup.GET(api.ManifestRoute, h.Get)
+	routeGroup.GET(api.ManifestsRoute, h.List)
+	routeGroup.GET(api.ManifestsRoute+"/", h.List)
+	routeGroup.POST(api.ManifestsRoute, h.Create)
+	routeGroup.PUT(api.ManifestRoute, h.Update)
+	routeGroup.DELETE(api.ManifestRoute, h.Delete)
 	// application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.manifests"))
-	routeGroup.GET(AppManifestRoot, h.AppGet)
-	routeGroup.POST(AppManifestsRoot, h.AppCreate)
+	routeGroup.GET(api.AppManifestRoute, h.AppGet)
+	routeGroup.POST(api.AppManifestsRoute, h.AppCreate)
 }
 
 // Get godoc
@@ -294,8 +287,8 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 	if !injected {
 		return
 	}
-	var inject func(m Map)
-	inject = func(m Map) {
+	var inject func(m rest.Map)
+	inject = func(m rest.Map) {
 		for k, v := range m {
 			switch object := v.(type) {
 			case string:
@@ -320,7 +313,7 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 						-1)
 				}
 				m[k] = object
-			case Map:
+			case rest.Map:
 				inject(object)
 			case map[string]any:
 				inject(object)
@@ -331,29 +324,4 @@ func (h *ManifestHandler) inject(ctx *gin.Context, r *Manifest) {
 }
 
 // Manifest REST resource.
-type Manifest struct {
-	Resource    `yaml:",inline"`
-	Content     Map `json:"content"`
-	Secret      Map `json:"secret,omitempty" yaml:"secret,omitempty"`
-	Application Ref `json:"application"`
-}
-
-// With updates the resource with the model.
-func (r *Manifest) With(m *model.Manifest) {
-	r.Resource.With(&m.Model)
-	r.Content = m.Content
-	r.Secret = m.Secret
-	ref := Ref{}
-	ref.With(m.ApplicationID, "")
-	r.Application = ref
-}
-
-// Model builds a model.
-func (r *Manifest) Model() (m *model.Manifest) {
-	m = &model.Manifest{}
-	m.ID = r.ID
-	m.Content = r.Content
-	m.Secret = r.Secret
-	m.ApplicationID = r.Application.ID
-	return
-}
+type Manifest = rest.Manifest

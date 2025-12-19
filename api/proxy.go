@@ -4,14 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
-)
-
-// Routes
-const (
-	ProxiesRoot = "/proxies"
-	ProxyRoot   = ProxiesRoot + "/:" + ID
 )
 
 const (
@@ -26,12 +22,12 @@ type ProxyHandler struct {
 func (h ProxyHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("proxies"))
-	routeGroup.GET(ProxiesRoot, h.List)
-	routeGroup.GET(ProxiesRoot+"/", h.List)
-	routeGroup.POST(ProxiesRoot, h.Create)
-	routeGroup.GET(ProxyRoot, h.Get)
-	routeGroup.PUT(ProxyRoot, h.Update)
-	routeGroup.DELETE(ProxyRoot, h.Delete)
+	routeGroup.GET(api.ProxiesRoute, h.List)
+	routeGroup.GET(api.ProxiesRoute+"/", h.List)
+	routeGroup.POST(api.ProxiesRoute, h.Create)
+	routeGroup.GET(api.ProxyRoute, h.Get)
+	routeGroup.PUT(api.ProxyRoute, h.Update)
+	routeGroup.DELETE(api.ProxyRoute, h.Delete)
 }
 
 // Get godoc
@@ -170,41 +166,4 @@ func (h ProxyHandler) Update(ctx *gin.Context) {
 }
 
 // Proxy REST resource.
-type Proxy struct {
-	Resource `yaml:",inline"`
-	Enabled  bool     `json:"enabled"`
-	Kind     string   `json:"kind" binding:"oneof=http https"`
-	Host     string   `json:"host"`
-	Port     int      `json:"port"`
-	Excluded []string `json:"excluded"`
-	Identity *Ref     `json:"identity"`
-}
-
-// With updates the resource with the model.
-func (r *Proxy) With(m *model.Proxy) {
-	r.Resource.With(&m.Model)
-	r.Enabled = m.Enabled
-	r.Kind = m.Kind
-	r.Host = m.Host
-	r.Port = m.Port
-	r.Identity = r.refPtr(m.IdentityID, m.Identity)
-	r.Excluded = m.Excluded
-	if r.Excluded == nil {
-		r.Excluded = []string{}
-	}
-}
-
-// Model builds a model.
-func (r *Proxy) Model() (m *model.Proxy) {
-	m = &model.Proxy{
-		Enabled: r.Enabled,
-		Kind:    r.Kind,
-		Host:    r.Host,
-		Port:    r.Port,
-	}
-	m.ID = r.ID
-	m.IdentityID = r.idPtr(r.Identity)
-	m.Excluded = r.Excluded
-
-	return
-}
+type Proxy = rest.Proxy

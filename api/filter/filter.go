@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	api "github.com/konveyor/tackle2-hub/shared/api/filter"
 	"gorm.io/gorm"
 )
 
 const (
-	QueryParam = "filter"
+	QueryParam = api.Filter
 )
 
 // New filter.

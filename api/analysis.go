@@ -14,42 +14,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	qf "github.com/konveyor/tackle2-hub/api/filter"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/tar"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-)
-
-// Routes
-const (
-	AnalysesRoot          = "/analyses"
-	AnalysisRoot          = AnalysesRoot + "/:" + ID
-	AnalysisArchiveRoot   = AnalysisRoot + "/archive"
-	AnalysisInsightsRoot  = AnalysisRoot + "/insights"
-	AnalysisIncidentsRoot = AnalysesInsightRoot + "/incidents"
-	AnalysesDepsRoot      = AnalysesRoot + "/dependencies"
-	AnalysesInsightsRoot  = AnalysesRoot + "/insights"
-	AnalysesInsightRoot   = AnalysesInsightsRoot + "/:" + ID
-	AnalysesIncidentsRoot = AnalysesRoot + "/incidents"
-	AnalysesIncidentRoot  = AnalysesIncidentsRoot + "/:" + ID
-	//
-	AnalysesReportRoot             = AnalysesRoot + "/report"
-	AnalysisReportDepsRoot         = AnalysesReportRoot + "/dependencies"
-	AnalysisReportRuleRoot         = AnalysesReportRoot + "/rules"
-	AnalysisReportInsightsRoot     = AnalysesReportRoot + "/insights"
-	AnalysisReportAppsRoot         = AnalysesReportRoot + "/applications"
-	AnalysisReportInsightRoot      = AnalysisReportInsightsRoot + "/:" + ID
-	AnalysisReportInsightsAppsRoot = AnalysisReportInsightsRoot + "/applications"
-	AnalysisReportDepsAppsRoot     = AnalysisReportDepsRoot + "/applications"
-	AnalysisReportAppsInsightsRoot = AnalysisReportAppsRoot + "/:" + ID + "/insights"
-	AnalysisReportFileRoot         = AnalysisReportInsightRoot + "/files"
-	//
-	AppAnalysesRoot         = ApplicationRoot + "/analyses"
-	AppAnalysisRoot         = ApplicationRoot + "/analysis"
-	AppAnalysisReportRoot   = AppAnalysisRoot + "/report"
-	AppAnalysisDepsRoot     = AppAnalysisRoot + "/dependencies"
-	AppAnalysisInsightsRoot = AppAnalysisRoot + "/insights"
 )
 
 // Manifest markers.
@@ -73,33 +44,33 @@ func (h AnalysisHandler) AddRoutes(e *gin.Engine) {
 	// Primary
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("analyses"))
-	routeGroup.GET(AnalysisRoot, h.Get)
-	routeGroup.POST(AnalysisArchiveRoot, h.Archive)
-	routeGroup.GET(AnalysesRoot, h.List)
-	routeGroup.DELETE(AnalysisRoot, h.Delete)
-	routeGroup.GET(AnalysesDepsRoot, h.Deps)
-	routeGroup.GET(AnalysesInsightsRoot, h.Insights)
-	routeGroup.GET(AnalysesInsightRoot, h.Insight)
-	routeGroup.GET(AnalysesIncidentsRoot, h.Incidents)
-	routeGroup.GET(AnalysesIncidentRoot, h.Incident)
-	routeGroup.GET(AnalysisInsightsRoot, h.AnalysisInsights)
-	routeGroup.GET(AnalysisIncidentsRoot, h.InsightIncidents)
+	routeGroup.GET(api.AnalysisRoute, h.Get)
+	routeGroup.POST(api.AnalysisArchiveRoute, h.Archive)
+	routeGroup.GET(api.AnalysesRoute, h.List)
+	routeGroup.DELETE(api.AnalysisRoute, h.Delete)
+	routeGroup.GET(api.AnalysesDepsRoute, h.Deps)
+	routeGroup.GET(api.AnalysesInsightsRoute, h.Insights)
+	routeGroup.GET(api.AnalysesInsightRoute, h.Insight)
+	routeGroup.GET(api.AnalysesIncidentsRoute, h.Incidents)
+	routeGroup.GET(api.AnalysesIncidentRoute, h.Incident)
+	routeGroup.GET(api.AnalysisInsightsRoute, h.AnalysisInsights)
+	routeGroup.GET(api.AnalysisIncidentsRoute, h.InsightIncidents)
 	// Report
-	routeGroup.GET(AnalysisReportRuleRoot, h.RuleReports)
-	routeGroup.GET(AnalysisReportAppsInsightsRoot, h.AppInsightReports)
-	routeGroup.GET(AnalysisReportInsightsAppsRoot, h.InsightAppReports)
-	routeGroup.GET(AnalysisReportFileRoot, h.FileReports)
-	routeGroup.GET(AnalysisReportDepsRoot, h.DepReports)
-	routeGroup.GET(AnalysisReportDepsAppsRoot, h.DepAppReports)
+	routeGroup.GET(api.AnalysisReportRuleRoute, h.RuleReports)
+	routeGroup.GET(api.AnalysisReportAppsInsightsRoute, h.AppInsightReports)
+	routeGroup.GET(api.AnalysisReportInsightsAppsRoute, h.InsightAppReports)
+	routeGroup.GET(api.AnalysisReportFileRoute, h.FileReports)
+	routeGroup.GET(api.AnalysisReportDepsRoute, h.DepReports)
+	routeGroup.GET(api.AnalysisReportDepsAppsRoute, h.DepAppReports)
 	// Application
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("applications.analyses"))
-	routeGroup.POST(AppAnalysesRoot, Transaction, h.AppCreate)
-	routeGroup.GET(AppAnalysesRoot, h.AppList)
-	routeGroup.GET(AppAnalysisRoot, h.AppLatest)
-	routeGroup.GET(AppAnalysisReportRoot, h.AppLatestReport)
-	routeGroup.GET(AppAnalysisDepsRoot, h.AppDeps)
-	routeGroup.GET(AppAnalysisInsightsRoot, h.AppInsights)
+	routeGroup.POST(api.AppAnalysesRoute, Transaction, h.AppCreate)
+	routeGroup.GET(api.AppAnalysesRoute, h.AppList)
+	routeGroup.GET(api.AppAnalysisRoute, h.AppLatest)
+	routeGroup.GET(api.AppAnalysisReportRoute, h.AppLatestReport)
+	routeGroup.GET(api.AppAnalysisDepsRoute, h.AppDeps)
+	routeGroup.GET(api.AppAnalysisInsightsRoute, h.AppInsights)
 }
 
 // Get godoc
@@ -2121,256 +2092,40 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 }
 
 // Analysis REST resource.
-type Analysis struct {
-	Resource     `yaml:",inline"`
-	Application  Ref               `json:"application"`
-	Effort       int               `json:"effort"`
-	Commit       string            `json:"commit,omitempty" yaml:",omitempty"`
-	Archived     bool              `json:"archived,omitempty" yaml:",omitempty"`
-	Insights     []Insight         `json:"insights,omitempty" yaml:",omitempty"`
-	Dependencies []TechDependency  `json:"dependencies,omitempty" yaml:",omitempty"`
-	Summary      []ArchivedInsight `json:"summary,omitempty" yaml:",omitempty" swaggertype:"object"`
-}
-
-// With updates the resource with the model.
-func (r *Analysis) With(m *model.Analysis) {
-	r.Resource.With(&m.Model)
-	r.Application = r.ref(m.ApplicationID, m.Application)
-	r.Effort = m.Effort
-	r.Commit = m.Commit
-	r.Archived = m.Archived
-}
-
-// Model builds a model.
-func (r *Analysis) Model() (m *model.Analysis) {
-	m = &model.Analysis{}
-	m.Effort = r.Effort
-	m.Commit = r.Commit
-	m.Insights = []model.Insight{}
-	return
-}
+type Analysis = rest.Analysis
 
 // Insight REST resource.
-type Insight struct {
-	Resource    `yaml:",inline"`
-	Analysis    uint       `json:"analysis"`
-	RuleSet     string     `json:"ruleset" binding:"required"`
-	Rule        string     `json:"rule" binding:"required"`
-	Name        string     `json:"name" binding:"required"`
-	Description string     `json:"description,omitempty" yaml:",omitempty"`
-	Category    string     `json:"category,omitempty" yaml:",omitempty"`
-	Effort      int        `json:"effort,omitempty" yaml:",omitempty"`
-	Incidents   []Incident `json:"incidents,omitempty" yaml:",omitempty"`
-	Links       []Link     `json:"links,omitempty" yaml:",omitempty"`
-	Facts       Map        `json:"facts,omitempty" yaml:",omitempty"`
-	Labels      []string   `json:"labels"`
-}
-
-// With updates the resource with the model.
-func (r *Insight) With(m *model.Insight) {
-	r.Resource.With(&m.Model)
-	r.Analysis = m.AnalysisID
-	r.RuleSet = m.RuleSet
-	r.Rule = m.Rule
-	r.Name = m.Name
-	r.Description = m.Description
-	r.Category = m.Category
-	r.Incidents = []Incident{}
-	for i := range m.Incidents {
-		n := Incident{}
-		n.With(&m.Incidents[i])
-		r.Incidents = append(
-			r.Incidents,
-			n)
-	}
-	for _, l := range m.Links {
-		r.Links = append(r.Links, Link(l))
-	}
-	r.Facts = m.Facts
-	r.Labels = m.Labels
-	r.Effort = m.Effort
-}
-
-// Model builds a model.
-func (r *Insight) Model() (m *model.Insight) {
-	m = &model.Insight{}
-	m.RuleSet = r.RuleSet
-	m.Rule = r.Rule
-	m.Name = r.Name
-	m.Description = r.Description
-	m.Category = r.Category
-	m.Incidents = []model.Incident{}
-	for i := range r.Incidents {
-		n := r.Incidents[i].Model()
-		m.Incidents = append(
-			m.Incidents,
-			*n)
-	}
-	for _, l := range r.Links {
-		m.Links = append(m.Links, model.Link(l))
-	}
-	m.Facts = r.Facts
-	m.Labels = r.Labels
-	m.Effort = r.Effort
-	return
-}
+type Insight = rest.Insight
 
 // TechDependency REST resource.
-type TechDependency struct {
-	Resource `yaml:",inline"`
-	Analysis uint     `json:"analysis"`
-	Provider string   `json:"provider" yaml:",omitempty"`
-	Name     string   `json:"name" binding:"required"`
-	Version  string   `json:"version,omitempty" yaml:",omitempty"`
-	Indirect bool     `json:"indirect,omitempty" yaml:",omitempty"`
-	Labels   []string `json:"labels,omitempty" yaml:",omitempty"`
-	SHA      string   `json:"sha,omitempty" yaml:",omitempty"`
-}
-
-// With updates the resource with the model.
-func (r *TechDependency) With(m *model.TechDependency) {
-	r.Resource.With(&m.Model)
-	r.Analysis = m.AnalysisID
-	r.Provider = m.Provider
-	r.Name = m.Name
-	r.Version = m.Version
-	r.Indirect = m.Indirect
-	r.SHA = m.SHA
-	r.Labels = m.Labels
-}
-
-// Model builds a model.
-func (r *TechDependency) Model() (m *model.TechDependency) {
-	sort.Strings(r.Labels)
-	m = &model.TechDependency{}
-	m.Name = r.Name
-	m.Version = r.Version
-	m.Provider = r.Provider
-	m.Indirect = r.Indirect
-	m.Labels = r.Labels
-	m.SHA = r.SHA
-	return
-}
+type TechDependency = rest.TechDependency
 
 // Incident REST resource.
-type Incident struct {
-	Resource `yaml:",inline"`
-	Insight  uint   `json:"insight"`
-	File     string `json:"file"`
-	Line     int    `json:"line"`
-	Message  string `json:"message"`
-	CodeSnip string `json:"codeSnip" yaml:"codeSnip"`
-	Facts    Map    `json:"facts"`
-}
-
-// With updates the resource with the model.
-func (r *Incident) With(m *model.Incident) {
-	r.Resource.With(&m.Model)
-	r.Insight = m.InsightID
-	r.File = m.File
-	r.Line = m.Line
-	r.Message = m.Message
-	r.CodeSnip = m.CodeSnip
-	r.Facts = m.Facts
-}
-
-// Model builds a model.
-func (r *Incident) Model() (m *model.Incident) {
-	m = &model.Incident{}
-	m.File = r.File
-	m.Line = r.Line
-	m.Message = r.Message
-	m.CodeSnip = r.CodeSnip
-	m.Facts = r.Facts
-	return
-}
+type Incident = rest.Incident
 
 // Link analysis report link.
-type Link struct {
-	URL   string `json:"url"`
-	Title string `json:"title,omitempty" yaml:",omitempty"`
-}
+type Link = rest.Link
 
 // ArchivedInsight created when insights are archived.
-type ArchivedInsight model.ArchivedInsight
+type ArchivedInsight rest.ArchivedInsight
 
 // RuleReport REST resource.
-type RuleReport struct {
-	RuleSet      string   `json:"ruleset"`
-	Rule         string   `json:"rule"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Category     string   `json:"category"`
-	Effort       int      `json:"effort"`
-	Labels       []string `json:"labels"`
-	Links        []Link   `json:"links"`
-	Applications int      `json:"applications"`
-}
+type RuleReport = rest.RuleReport
 
 // InsightReport REST resource.
-type InsightReport struct {
-	ID          uint     `json:"id"`
-	RuleSet     string   `json:"ruleset"`
-	Rule        string   `json:"rule"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Category    string   `json:"category"`
-	Effort      int      `json:"effort"`
-	Labels      []string `json:"labels"`
-	Links       []Link   `json:"links"`
-	Files       int      `json:"files"`
-}
+type InsightReport = rest.InsightReport
 
 // InsightAppReport REST resource.
-type InsightAppReport struct {
-	ID              uint   `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	BusinessService string `json:"businessService"`
-	Effort          int    `json:"effort"`
-	Incidents       int    `json:"incidents"`
-	Files           int    `json:"files"`
-	Insight         struct {
-		ID          uint   `json:"id"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		RuleSet     string `json:"ruleset"`
-		Rule        string `json:"rule"`
-	} `json:"insight"`
-}
+type InsightAppReport = rest.InsightAppReport
 
 // FileReport REST resource.
-type FileReport struct {
-	InsightID uint   `json:"insightId" yaml:"insightId"`
-	File      string `json:"file"`
-	Incidents int    `json:"incidents"`
-	Effort    int    `json:"effort"`
-}
+type FileReport = rest.FileReport
 
 // DepReport REST resource.
-type DepReport struct {
-	Provider     string   `json:"provider"`
-	Name         string   `json:"name"`
-	Labels       []string `json:"labels"`
-	Applications int      `json:"applications"`
-}
+type DepReport = rest.DepReport
 
 // DepAppReport REST resource.
-type DepAppReport struct {
-	ID              uint   `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	BusinessService string `json:"businessService"`
-	Dependency      struct {
-		ID       uint     `json:"id"`
-		Provider string   `json:"provider"`
-		Name     string   `json:"name"`
-		Version  string   `json:"version"`
-		SHA      string   `json:"sha"`
-		Indirect bool     `json:"indirect"`
-		Labels   []string `json:"labels"`
-	} `json:"dependency"`
-}
+type DepAppReport = rest.DepAppReport
 
 // InsightWriter used to create a file containing insights.
 type InsightWriter struct {
@@ -2767,7 +2522,7 @@ func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 		tag := Tag{}
 		tag.ID = m.ID
 		tag.Name = m.Name
-		tag.Category = Ref{
+		tag.Category = rest.Ref{
 			ID:   m.Category.ID,
 			Name: m.Category.Name,
 		}

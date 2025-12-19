@@ -9,13 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/nas"
-)
-
-// Routes
-const (
-	CacheRoot    = "/cache"
-	CacheDirRoot = CacheRoot + "/*" + Wildcard
+	"github.com/konveyor/tackle2-hub/api/rest"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/nas"
 )
 
 // CacheHandler handles cache routes.
@@ -27,9 +23,9 @@ type CacheHandler struct {
 func (h CacheHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("cache"))
-	routeGroup.GET(CacheRoot, h.Get)
-	routeGroup.GET(CacheDirRoot, h.Get)
-	routeGroup.DELETE(CacheDirRoot, h.Delete)
+	routeGroup.GET(api.CacheRoute, h.Get)
+	routeGroup.GET(api.CacheDirRoute, h.Get)
+	routeGroup.DELETE(api.CacheDirRoute, h.Delete)
 }
 
 // Get godoc
@@ -69,7 +65,7 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 		return
 	}
 	path := pathlib.Join(
-		Settings.Cache.Path,
+		Settings.Addon.CacheDir,
 		dir)
 	_, err := os.Stat(path)
 	if err != nil {
@@ -93,13 +89,13 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 	cache = &Cache{}
 	cache.Path = pathlib.Join(
-		Settings.Cache.Path,
+		Settings.Addon.CacheDir,
 		dir)
-	_, err = os.Stat(Settings.Cache.Path)
+	_, err = os.Stat(Settings.Addon.CacheDir)
 	if err != nil {
 		return
 	}
-	cmd := exec.Command("/usr/bin/df", "-h", Settings.Cache.Path)
+	cmd := exec.Command("/usr/bin/df", "-h", Settings.Addon.CacheDir)
 	stdout, err := cmd.Output()
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -141,9 +137,4 @@ func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 }
 
 // Cache REST resource.
-type Cache struct {
-	Path     string `json:"path"`
-	Capacity string `json:"capacity"`
-	Used     string `json:"used"`
-	Exists   bool   `json:"exists"`
-}
+type Cache = rest.Cache

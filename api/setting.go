@@ -6,13 +6,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api/rest"
 	"github.com/konveyor/tackle2-hub/model"
-)
-
-// Routes
-const (
-	SettingsRoot = "/settings"
-	SettingRoot  = SettingsRoot + "/:" + Key
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // SettingHandler handles setting routes.
@@ -24,13 +20,13 @@ type SettingHandler struct {
 func (h SettingHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("settings"))
-	routeGroup.GET(SettingsRoot, h.List)
-	routeGroup.GET(SettingsRoot+"/", h.List)
-	routeGroup.GET(SettingRoot, h.Get)
-	routeGroup.POST(SettingsRoot, h.Create)
-	routeGroup.POST(SettingRoot, h.CreateByKey)
-	routeGroup.PUT(SettingRoot, h.Update)
-	routeGroup.DELETE(SettingRoot, h.Delete)
+	routeGroup.GET(api.SettingsRoute, h.List)
+	routeGroup.GET(api.SettingsRoute+"/", h.List)
+	routeGroup.GET(api.SettingRoute, h.Get)
+	routeGroup.POST(api.SettingsRoute, h.Create)
+	routeGroup.POST(api.SettingRoute, h.CreateByKey)
+	routeGroup.PUT(api.SettingRoute, h.Update)
+	routeGroup.DELETE(api.SettingRoute, h.Delete)
 }
 
 // Get godoc
@@ -227,18 +223,4 @@ func (h SettingHandler) Delete(ctx *gin.Context) {
 }
 
 // Setting REST Resource
-type Setting struct {
-	Key   string `json:"key"`
-	Value any    `json:"value"`
-}
-
-func (r *Setting) With(m *model.Setting) {
-	r.Key = m.Key
-	r.Value = m.Value
-}
-
-func (r *Setting) Model() (m *model.Setting) {
-	m = &model.Setting{Key: r.Key}
-	m.Value = r.Value
-	return
-}
+type Setting = rest.Setting

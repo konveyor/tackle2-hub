@@ -8,13 +8,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-)
-
-// Routes
-const (
-	ServicesRoot      = "/services"
-	ServiceRoot       = ServicesRoot + "/:name"
-	ServiceNestedRoot = ServiceRoot + "/*" + Wildcard
+	"github.com/konveyor/tackle2-hub/api/rest"
+	api "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // serviceRoutes name to route map.
@@ -29,9 +24,9 @@ type ServiceHandler struct {
 
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
-	e.GET(ServicesRoot, h.List)
-	e.Any(ServiceRoot, h.Required, h.Forward)
-	e.Any(ServiceNestedRoot, h.Required, h.Forward)
+	e.GET(api.ServicesRoute, h.List)
+	e.Any(api.ServiceRoute, h.Required, h.Forward)
+	e.Any(api.ServiceNestedRoute, h.Required, h.Forward)
 }
 
 // List godoc
@@ -95,7 +90,4 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 }
 
 // Service REST resource.
-type Service struct {
-	Name  string `json:"name"`
-	Route string `json:"route"`
-}
+type Service = rest.Service

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/test/api/analysisprofile"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/test/api/profile"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -31,7 +31,7 @@ func TestArchetypeCRUD(t *testing.T) {
 				_ = RichClient.Generator.Delete(genD.ID)
 			}()
 			// analysis profile.
-			ap1 := &analysisprofile.Base
+			ap1 := &profile.Base
 			err := RichClient.AnalysisProfile.Create(ap1)
 			assert.Must(t, err)
 			defer func() {
