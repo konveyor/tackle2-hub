@@ -9,25 +9,25 @@ import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/auth"
-	"github.com/konveyor/tackle2-hub/controller"
-	"github.com/konveyor/tackle2-hub/database"
-	"github.com/konveyor/tackle2-hub/heap"
-	"github.com/konveyor/tackle2-hub/importer"
-	"github.com/konveyor/tackle2-hub/k8s"
-	crd "github.com/konveyor/tackle2-hub/k8s/api"
-	"github.com/konveyor/tackle2-hub/metrics"
-	"github.com/konveyor/tackle2-hub/migration"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/reaper"
-	"github.com/konveyor/tackle2-hub/seed"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/internal/api"
+	auth2 "github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/controller"
+	database2 "github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/heap"
+	"github.com/konveyor/tackle2-hub/internal/importer"
+	"github.com/konveyor/tackle2-hub/internal/k8s"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api"
+	"github.com/konveyor/tackle2-hub/internal/metrics"
+	migration2 "github.com/konveyor/tackle2-hub/internal/migration"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/reaper"
+	"github.com/konveyor/tackle2-hub/internal/seed"
+	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/internal/tracker"
 	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/konveyor/tackle2-hub/shared/ssh"
-	"github.com/konveyor/tackle2-hub/task"
-	"github.com/konveyor/tackle2-hub/tracker"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -47,7 +47,7 @@ func init() {
 
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
-	err = migration.Migrate(migration.All())
+	err = migration2.Migrate(migration2.All())
 	if err != nil {
 		return
 	}
@@ -55,11 +55,11 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	db, err = database.Open(true)
+	db, err = database2.Open(true)
 	if err != nil {
 		return
 	}
-	err = database.PK.Load(db, model.ALL)
+	err = database2.PK.Load(db, model.ALL)
 	if err != nil {
 		return
 	}
@@ -145,7 +145,7 @@ func main() {
 		return
 	}
 	// Document migration.
-	jsdMigrator := migration.DocumentMigrator{
+	jsdMigrator := migration2.DocumentMigrator{
 		DB:     db,
 		Client: client,
 	}
@@ -156,7 +156,7 @@ func main() {
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
-		r := auth.NewReconciler(
+		r := auth2.NewReconciler(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 			settings.Settings.Auth.Keycloak.ClientID,
@@ -169,8 +169,8 @@ func main() {
 		if err != nil {
 			return
 		}
-		auth.Hub = &auth.Builtin{}
-		auth.Remote = auth.NewKeycloak(
+		auth2.Hub = &auth2.Builtin{}
+		auth2.Remote = auth2.NewKeycloak(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 		)

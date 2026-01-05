@@ -6,26 +6,8 @@ CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
-PKG = ./api/... \
-      ./assessment/... \
-      ./auth/... \
-      ./controller/... \
-      ./cmd/... \
-      ./database/... \
-      ./importer/... \
-      ./jsd/... \
-      ./k8s/... \
-      ./metrics/... \
-      ./migration/... \
-      ./model/... \
-      ./reaper/... \
-      ./scm/... \
-      ./secret/... \
-      ./seed/... \
-      ./settings/... \
-      ./task/...  \
-      ./test/...  \
-      ./tracker/...
+PKG = ./internal/... \
+      ./cmd/...
 
 PKGDIR = $(subst /...,,$(PKG))
 
@@ -71,11 +53,11 @@ run-addon:
 manifests: $(CONTROLLERGEN)
 	$(CONTROLLERGEN) $(CRD_OPTIONS) \
 		crd rbac:roleName=manager-role \
-		paths="./..." output:crd:artifacts:config=generated/crd/bases output:crd:dir=generated/crd
+		paths="./..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
 
 # Generate code
 generate: $(CONTROLLERGEN)
-	$(CONTROLLERGEN) object:headerFile="./generated/boilerplate" paths="./..."
+	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./..."
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
