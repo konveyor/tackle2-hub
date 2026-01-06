@@ -27,7 +27,7 @@ func (h *Task) Load() {
 			panic(err)
 		}
 	}()
-	h.task, err = h.richClient.Task.Get(uint(Settings.Addon.Task))
+	h.task, err = h.richClient.Task.Get(uint(Settings.Task))
 	return
 }
 

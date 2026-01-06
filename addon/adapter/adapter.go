@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	Settings = &settings.Settings
+	Settings = &settings.Settings.Addon
 	Wrap     = liberr.Wrap
 	Log      = logr.New("addon", 0)
 )
