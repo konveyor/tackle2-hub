@@ -3,8 +3,8 @@ package rest
 import (
 	"fmt"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Questionnaire REST resource.

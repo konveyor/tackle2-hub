@@ -1,25 +1,25 @@
 package importcsv
 
 import (
-	"github.com/konveyor/tackle2-hub/shared/api"
+	api2 "github.com/konveyor/tackle2-hub/api"
 )
 
 type TestCase struct {
 	FileName             string
-	ExpectedApplications []api.Application
-	ExpectedDependencies []api.Dependency
+	ExpectedApplications []api2.Application
+	ExpectedDependencies []api2.Dependency
 }
 
 var (
 	TestCases = []TestCase{
 		{
 			FileName: "template_application_import.csv",
-			ExpectedApplications: []api.Application{
+			ExpectedApplications: []api2.Application{
 				{
 					Name:        "Customers",
 					Description: "Legacy Customers management service",
-					Bucket:      &api.Ref{},
-					Repository: &api.Repository{
+					Bucket:      &api2.Ref{},
+					Repository: &api2.Repository{
 						Kind:   "git",
 						URL:    "https://git-acme.local/customers.git",
 						Branch: "",
@@ -27,7 +27,7 @@ var (
 						Path:   "",
 					},
 					Binary: "corp.acme.demo:customers-tomcat:0.0.1-SNAPSHOT:war",
-					Tags: []api.TagRef{
+					Tags: []api2.TagRef{
 						{
 							Name:   "Oracle",
 							Source: "",
@@ -45,18 +45,18 @@ var (
 							Source: "",
 						},
 					},
-					BusinessService: &api.Ref{
+					BusinessService: &api2.Ref{
 						Name: "Retail",
 					},
-					Owner: &api.Ref{
+					Owner: &api2.Ref{
 						Name: "John Doe",
 					},
 				},
 				{
 					Name:        "Inventory",
 					Description: "Inventory service",
-					Bucket:      &api.Ref{},
-					Repository: &api.Repository{
+					Bucket:      &api2.Ref{},
+					Repository: &api2.Repository{
 						Kind:   "git",
 						URL:    "https://git-acme.local/inventory.git",
 						Branch: "",
@@ -64,7 +64,7 @@ var (
 						Path:   "",
 					},
 					Binary: "corp.acme.demo:inventory:0.1.1-SNAPSHOT:war",
-					Tags: []api.TagRef{
+					Tags: []api2.TagRef{
 						{
 							Name:   "PostgreSQL",
 							Source: "",
@@ -82,10 +82,10 @@ var (
 							Source: "",
 						},
 					},
-					BusinessService: &api.Ref{
+					BusinessService: &api2.Ref{
 						Name: "Retail",
 					},
-					Contributors: []api.Ref{
+					Contributors: []api2.Ref{
 						{
 							Name: "John Doe",
 						},
@@ -97,8 +97,8 @@ var (
 				{
 					Name:        "Gateway",
 					Description: "API Gateway",
-					Bucket:      &api.Ref{},
-					Repository: &api.Repository{
+					Bucket:      &api2.Ref{},
+					Repository: &api2.Repository{
 						Kind:   "git",
 						URL:    "https://git-acme.local/gateway.git",
 						Branch: "",
@@ -106,7 +106,7 @@ var (
 						Path:   "",
 					},
 					Binary: "corp.acme.demo:gateway:0.1.1-SNAPSHOT:war",
-					Tags: []api.TagRef{
+					Tags: []api2.TagRef{
 						{
 							Name:   "Java",
 							Source: "",
@@ -120,13 +120,13 @@ var (
 							Source: "",
 						},
 					},
-					BusinessService: &api.Ref{
+					BusinessService: &api2.Ref{
 						Name: "Retail",
 					},
-					Owner: &api.Ref{
+					Owner: &api2.Ref{
 						Name: "John Doe",
 					},
-					Contributors: []api.Ref{
+					Contributors: []api2.Ref{
 						{
 							Name: "John Doe",
 						},
@@ -136,20 +136,20 @@ var (
 					},
 				},
 			},
-			ExpectedDependencies: []api.Dependency{
+			ExpectedDependencies: []api2.Dependency{
 				{
-					To: api.Ref{
+					To: api2.Ref{
 						Name: "Inventory",
 					},
-					From: api.Ref{
+					From: api2.Ref{
 						Name: "Gateway",
 					},
 				},
 				{
-					To: api.Ref{
+					To: api2.Ref{
 						Name: "Customers",
 					},
-					From: api.Ref{
+					From: api2.Ref{
 						Name: "Gateway",
 					},
 				},

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/api"
 	assert2 "github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 func TestMigrationWaveCRUD(t *testing.T) {

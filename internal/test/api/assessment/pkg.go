@@ -1,13 +1,13 @@
 package assessment
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient *binding.RichClient
-	Assessment binding.Assessment
+	RichClient *binding2.RichClient
+	Assessment binding2.Assessment
 )
 
 func init() {

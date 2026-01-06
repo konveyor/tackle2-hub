@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // LatestSchema REST resource.

@@ -1,7 +1,7 @@
 package tagcategory
 
 import (
-	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // Set of valid TagCategories resources for tests and reuse.

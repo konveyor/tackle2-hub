@@ -1,38 +1,38 @@
 package target
 
 import (
-	"github.com/konveyor/tackle2-hub/shared/api"
+	api2 "github.com/konveyor/tackle2-hub/api"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	Minimal = api.Target{
+	Minimal = api2.Target{
 		Name: "Minimal no ruleset",
-		Image: api.Ref{
+		Image: api2.Ref{
 			Name: "./data/image.svg",
 		},
 	}
 
-	Hazelcast = api.Target{
+	Hazelcast = api2.Target{
 		Name: "Hazelcast",
-		Image: api.Ref{
+		Image: api2.Ref{
 			Name: "./data/image.svg",
 		},
 		Description: "Hazelcast Java distributed session store.",
-		RuleSet: &api.RuleSet{
-			Rules: []api.Rule{
+		RuleSet: &api2.RuleSet{
+			Rules: []api2.Rule{
 				{
-					File: &api.Ref{
+					File: &api2.Ref{
 						Name: "./data/rules.yaml",
 					},
 				},
 				{
-					File: &api.Ref{
+					File: &api2.Ref{
 						Name: "./data/rules.yaml",
 					},
 				},
 			},
 		},
 	}
-	Samples = []api.Target{Minimal, Hazelcast}
+	Samples = []api2.Target{Minimal, Hazelcast}
 )

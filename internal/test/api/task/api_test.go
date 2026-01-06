@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding/filter"
 	assert2 "github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/binding"
-	"github.com/konveyor/tackle2-hub/shared/binding/filter"
 )
 
 func TestTaskCRUD(t *testing.T) {

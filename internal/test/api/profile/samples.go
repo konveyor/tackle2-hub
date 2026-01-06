@@ -1,30 +1,30 @@
 package profile
 
 import (
-	"github.com/konveyor/tackle2-hub/shared/api"
+	api2 "github.com/konveyor/tackle2-hub/api"
 )
 
 var (
-	Base = api.AnalysisProfile{
+	Base = api2.AnalysisProfile{
 		Name:        "Test",
 		Description: "This is a test analysis profile",
-		Mode:        api.ApMode{WithDeps: true},
-		Scope: api.ApScope{
+		Mode:        api2.ApMode{WithDeps: true},
+		Scope: api2.ApScope{
 			WithKnownLibs: true,
-			Packages: api.InExList{
+			Packages: api2.InExList{
 				Included: []string{"pA", "pB"},
 				Excluded: []string{"pC", "pD"},
 			},
 		},
-		Rules: api.ApRules{
-			Targets: []api.Ref{
+		Rules: api2.ApRules{
+			Targets: []api2.Ref{
 				{ID: 2, Name: "Containerization"},
 			},
-			Labels: api.InExList{
+			Labels: api2.InExList{
 				Included: []string{"rA", "rB"},
 				Excluded: []string{"rC", "rD"},
 			},
-			Repository: &api.Repository{
+			Repository: &api2.Repository{
 				URL:  "https://github.com/konveyor/rulesets.git",
 				Path: "default/generated/camel3",
 			},

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	api2 "github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
 )
 
@@ -1286,15 +1286,15 @@ func TestQuestionnaire_Model(t *testing.T) {
 		Name:        "Test Questionnaire",
 		Description: "Test description",
 		Required:    true,
-		Sections: []api.Section{
+		Sections: []api2.Section{
 			{Order: 1, Name: "Section 1"},
 		},
-		Thresholds: api.Thresholds{
+		Thresholds: api2.Thresholds{
 			Red:     50,
 			Yellow:  30,
 			Unknown: 10,
 		},
-		RiskMessages: api.RiskMessages{
+		RiskMessages: api2.RiskMessages{
 			Red:     "High risk",
 			Yellow:  "Medium risk",
 			Green:   "Low risk",
@@ -1512,7 +1512,7 @@ func TestInsight_Model(t *testing.T) {
 		Name:        "Test Insight",
 		Description: "Test description",
 		Category:    "potential",
-		Facts:       api.Map{"key": "value"},
+		Facts:       api2.Map{"key": "value"},
 		Labels:      []string{"label1"},
 		Effort:      5,
 	}
@@ -1606,7 +1606,7 @@ func TestIncident_With(t *testing.T) {
 	g.Expect(r.Line).To(gomega.Equal(42))
 	g.Expect(r.Message).To(gomega.Equal("Potential issue"))
 	g.Expect(r.CodeSnip).To(gomega.Equal("public void test() {}"))
-	g.Expect(r.Facts).To(gomega.Equal(api.Map{"severity": "high"}))
+	g.Expect(r.Facts).To(gomega.Equal(api2.Map{"severity": "high"}))
 }
 
 // TestIncident_Model tests the Incident.Model() method
@@ -1618,7 +1618,7 @@ func TestIncident_Model(t *testing.T) {
 		Line:     42,
 		Message:  "Potential issue",
 		CodeSnip: "public void test() {}",
-		Facts:    api.Map{"severity": "high"},
+		Facts:    api2.Map{"severity": "high"},
 	}
 
 	m := r.Model()
@@ -1662,8 +1662,8 @@ func TestAnalysisProfile_With(t *testing.T) {
 	g.Expect(r.Description).To(gomega.Equal("Test description"))
 	g.Expect(r.Mode.WithDeps).To(gomega.Equal(true))
 	g.Expect(r.Scope.WithKnownLibs).To(gomega.Equal(false))
-	g.Expect(r.Scope.Packages).To(gomega.Equal(api.InExList{Included: []string{"com.example"}}))
-	g.Expect(r.Rules.Labels).To(gomega.Equal(api.InExList{Included: []string{"label1"}}))
+	g.Expect(r.Scope.Packages).To(gomega.Equal(api2.InExList{Included: []string{"com.example"}}))
+	g.Expect(r.Rules.Labels).To(gomega.Equal(api2.InExList{Included: []string{"label1"}}))
 	g.Expect(len(r.Rules.Targets)).To(gomega.Equal(1))
 }
 
@@ -1674,15 +1674,15 @@ func TestAnalysisProfile_Model(t *testing.T) {
 	r := &AnalysisProfile{
 		Name:        "Test Profile",
 		Description: "Test description",
-		Mode: api.ApMode{
+		Mode: api2.ApMode{
 			WithDeps: true,
 		},
-		Scope: api.ApScope{
+		Scope: api2.ApScope{
 			WithKnownLibs: false,
-			Packages:      api.InExList{Included: []string{"com.example"}},
+			Packages:      api2.InExList{Included: []string{"com.example"}},
 		},
-		Rules: api.ApRules{
-			Labels: api.InExList{Included: []string{"label1"}},
+		Rules: api2.ApRules{
+			Labels: api2.InExList{Included: []string{"label1"}},
 		},
 	}
 

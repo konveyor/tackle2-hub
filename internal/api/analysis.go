@@ -13,11 +13,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
 	model2 "github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/tar"
+	tar2 "github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
@@ -2357,11 +2357,11 @@ func (r *ReportWriter) Write(id uint) {
 	defer func() {
 		_ = os.Remove(path)
 	}()
-	tarWriter := tar.NewWriter(r.ctx.Writer)
+	tarWriter := tar2.NewWriter(r.ctx.Writer)
 	defer func() {
 		tarWriter.Close()
 	}()
-	filter := tar.NewFilter(reportDir)
+	filter := tar2.NewFilter(reportDir)
 	filter.Exclude("output.js")
 	tarWriter.Filter = filter
 	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)

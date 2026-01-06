@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	api2 "github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/nas"
+	"github.com/konveyor/tackle2-hub/nas"
 )
 
 func TestAnalysisProfileCRUD(t *testing.T) {
-	var r api.AnalysisProfile
+	var r api2.AnalysisProfile
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 
@@ -57,7 +57,7 @@ func TestAnalysisProfileCRUD(t *testing.T) {
 }
 
 func TestAnalysisProfileGetBundle(t *testing.T) {
-	var r api.AnalysisProfile
+	var r api2.AnalysisProfile
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 
@@ -65,7 +65,7 @@ func TestAnalysisProfileGetBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	r.Rules.Files = append(r.Rules.Files, api.Ref{ID: f.ID})
+	r.Rules.Files = append(r.Rules.Files, api2.Ref{ID: f.ID})
 	defer func() {
 		_ = RichClient.File.Delete(f.ID)
 	}()

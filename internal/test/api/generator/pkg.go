@@ -1,13 +1,13 @@
 package manifest
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient *binding.RichClient
-	Generator  binding.Generator
+	RichClient *binding2.RichClient
+	Generator  binding2.Generator
 )
 
 func init() {

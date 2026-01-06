@@ -1,14 +1,14 @@
 package bucket
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient *binding.RichClient
-	Client     *binding.Client
-	Bucket     binding.Bucket
+	RichClient *binding2.RichClient
+	Client     *binding2.Client
+	Bucket     binding2.Bucket
 )
 
 func init() {

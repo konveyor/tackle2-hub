@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"k8s.io/utils/strings/slices"
 )

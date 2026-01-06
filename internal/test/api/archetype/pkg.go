@@ -1,13 +1,13 @@
 package archetype
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient *binding.RichClient
-	Archetype  binding.Archetype
+	RichClient *binding2.RichClient
+	Archetype  binding2.Archetype
 )
 
 func init() {

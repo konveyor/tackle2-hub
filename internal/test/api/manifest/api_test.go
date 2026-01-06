@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"testing"
 
+	api2 "github.com/konveyor/tackle2-hub/api"
 	assert2 "github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 func TestManifestCRUD(t *testing.T) {
-	var r api.Manifest
+	var r api2.Manifest
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 	// application
-	application := &api.Application{Name: t.Name()}
+	application := &api2.Application{Name: t.Name()}
 	err := RichClient.Application.Create(application)
 	assert2.Must(t, err)
 	defer func() {

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/test/api/questionnaire"
 	assert2 "github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 func TestAssessmentCRUD(t *testing.T) {

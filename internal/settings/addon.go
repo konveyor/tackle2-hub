@@ -1,7 +1,7 @@
 package settings
 
 import (
-	shared "github.com/konveyor/tackle2-hub/shared/settings"
+	shared "github.com/konveyor/tackle2-hub/settings"
 )
 
 const (

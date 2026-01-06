@@ -3,14 +3,14 @@ package identity
 import (
 	"testing"
 
+	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 func TestFindIdentity(t *testing.T) {
 	// Setup.
-	direct := &api.Identity{
+	direct := &api2.Identity{
 		Name: "direct",
 		Kind: "Test",
 	}
@@ -19,7 +19,7 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(direct.ID)
 	}()
-	direct2 := &api.Identity{
+	direct2 := &api2.Identity{
 		Name: "direct2",
 		Kind: "Other",
 	}
@@ -28,9 +28,9 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(direct2.ID)
 	}()
-	application := &api.Application{
+	application := &api2.Application{
 		Name:       t.Name(),
-		Identities: []api.IdentityRef{{ID: direct.ID}},
+		Identities: []api2.IdentityRef{{ID: direct.ID}},
 	}
 	err = RichClient.Application.Create(application)
 	assert.Must(t, err)

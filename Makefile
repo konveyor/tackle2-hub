@@ -18,11 +18,11 @@ cmd: hub addon
 
 # Format the code.
 fmt: $(GOIMPORTS)
-	$(GOIMPORTS) -w $(PKGDIR) ./shared
+	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
 vet:
-	go vet $(PKG) github.com/konveyor/tackle2-hub/shared/...
+	go vet $(PKG)
 
 # Build hub
 hub: generate fmt vet

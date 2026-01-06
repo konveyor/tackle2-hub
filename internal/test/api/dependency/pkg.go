@@ -1,14 +1,14 @@
 package dependency
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient  *binding.RichClient
-	Dependency  binding.Dependency
-	Application binding.Application
+	RichClient  *binding2.RichClient
+	Dependency  binding2.Dependency
+	Application binding2.Application
 )
 
 func init() {

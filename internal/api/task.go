@@ -6,12 +6,12 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	task2 "github.com/konveyor/tackle2-hub/internal/task"
-	api "github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/tar"
+	"github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm/clause"
 )
 

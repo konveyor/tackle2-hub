@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
 	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

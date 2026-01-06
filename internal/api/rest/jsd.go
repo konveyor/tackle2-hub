@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/jsd"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Document REST resource.

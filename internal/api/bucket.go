@@ -8,11 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/nas"
-	"github.com/konveyor/tackle2-hub/shared/tar"
+	"github.com/konveyor/tackle2-hub/nas"
+	tar2 "github.com/konveyor/tackle2-hub/tar"
 )
 
 // BucketHandler handles bucket routes.
@@ -215,7 +215,7 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		return
 	}
 	if st.IsDir() {
-		filter := tar.NewFilter(path)
+		filter := tar2.NewFilter(path)
 		filter.Include(ctx.Query(Filter))
 		if h.Accepted(ctx, binding.MIMEHTML) {
 			h.getFile(ctx, m)
@@ -289,14 +289,14 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	if err != nil {
 		return
 	}
-	tarReader := tar.NewReader()
+	tarReader := tar2.NewReader()
 	err = tarReader.Extract(output, fileReader)
 	return
 }
 
 // getDir reads a directory from the bucket.
-func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter tar.Filter) {
-	tarWriter := tar.NewWriter(ctx.Writer)
+func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter tar2.Filter) {
+	tarWriter := tar2.NewWriter(ctx.Writer)
 	tarWriter.Filter = filter
 	defer func() {
 		tarWriter.Close()

@@ -1,9 +1,9 @@
 package rest
 
 import (
+	"github.com/konveyor/tackle2-hub/api"
 	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // TargetProfile REST resource.

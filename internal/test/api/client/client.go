@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/settings"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 	"k8s.io/utils/env"
 )
 

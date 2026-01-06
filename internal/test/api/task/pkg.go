@@ -1,13 +1,13 @@
 package task
 
 import (
+	binding2 "github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/internal/test/api/client"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 )
 
 var (
-	RichClient *binding.RichClient
-	Task       binding.Task
+	RichClient *binding2.RichClient
+	Task       binding2.Task
 )
 
 func init() {

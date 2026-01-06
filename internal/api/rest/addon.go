@@ -3,9 +3,9 @@ package rest
 import (
 	"encoding/json"
 
+	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api/k8s"
 	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/api/k8s"
 	core "k8s.io/api/core/v1"
 )
 

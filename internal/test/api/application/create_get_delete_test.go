@@ -3,8 +3,8 @@ package application
 import (
 	"testing"
 
+	api2 "github.com/konveyor/tackle2-hub/api"
 	assert2 "github.com/konveyor/tackle2-hub/internal/test/assert"
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 func TestApplicationCreateGetDelete(t *testing.T) {
@@ -12,7 +12,7 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
 			// Identities.
-			direct := &api.Identity{
+			direct := &api2.Identity{
 				Name: "direct",
 				Kind: "Test",
 			}
@@ -21,7 +21,7 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			defer func() {
 				_ = RichClient.Identity.Delete(direct.ID)
 			}()
-			direct2 := &api.Identity{
+			direct2 := &api2.Identity{
 				Name: "direct2",
 				Kind: "Other",
 			}
@@ -32,8 +32,8 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			}()
 			r.Identities = append(
 				r.Identities,
-				api.IdentityRef{ID: direct.ID, Role: "A"},
-				api.IdentityRef{ID: direct2.ID, Role: "B"})
+				api2.IdentityRef{ID: direct.ID, Role: "A"},
+				api2.IdentityRef{ID: direct2.ID, Role: "B"})
 
 			// Create
 			assert2.Should(t, Application.Create(&r))
@@ -52,7 +52,7 @@ func TestApplicationCreateGetDelete(t *testing.T) {
 			assert2.Should(t, err)
 
 			// Assert the list response.
-			foundR := api.Application{}
+			foundR := api2.Application{}
 			for _, listR := range gotList {
 				if listR.Name == r.Name && listR.ID == r.ID {
 					foundR = listR
@@ -82,7 +82,7 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 	assert2.Should(t, Application.Create(&r))
 
 	// Prepare Application with duplicate Name.
-	dup := &api.Application{
+	dup := &api2.Application{
 		Name: r.Name,
 	}
 
@@ -101,7 +101,7 @@ func TestApplicationNotCreateDuplicates(t *testing.T) {
 
 func TestApplicationNotCreateWithoutName(t *testing.T) {
 	// Prepare Application without Name.
-	r := &api.Application{
+	r := &api2.Application{
 		Name: "",
 	}
 

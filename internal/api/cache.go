@@ -9,9 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
-	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/nas"
+	"github.com/konveyor/tackle2-hub/nas"
 )
 
 // CacheHandler handles cache routes.

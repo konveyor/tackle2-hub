@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	api "github.com/konveyor/tackle2-hub/shared/api/filter"
+	api "github.com/konveyor/tackle2-hub/api/filter"
 	"gorm.io/gorm"
 )
 
