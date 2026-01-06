@@ -10,7 +10,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

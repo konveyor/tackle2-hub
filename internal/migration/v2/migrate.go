@@ -4,7 +4,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	model2 "github.com/konveyor/tackle2-hub/internal/migration/v2/model"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
 

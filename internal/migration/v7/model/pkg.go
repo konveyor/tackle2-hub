@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 // JSON field (data) type.

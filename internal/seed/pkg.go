@@ -7,7 +7,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/database"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	libseed "github.com/konveyor/tackle2-seed/pkg"
 	"gorm.io/gorm"
 )

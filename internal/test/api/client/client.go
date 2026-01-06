@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/konveyor/tackle2-hub/binding"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"k8s.io/utils/env"
 )
 

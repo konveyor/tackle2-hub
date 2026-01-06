@@ -16,7 +16,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/rest"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (

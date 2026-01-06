@@ -11,9 +11,9 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/internal/settings"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
 	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

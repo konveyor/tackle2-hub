@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	model2 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
 

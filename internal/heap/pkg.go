@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 )
 
 var (

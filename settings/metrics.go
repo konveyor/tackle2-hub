@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/konveyor/tackle2-hub/env"
 )
 
 // Environment variables.
@@ -23,7 +25,7 @@ type Metrics struct {
 // Load settings.
 func (r *Metrics) Load() error {
 	// Enabled
-	r.Enabled = getEnvBool(MetricsEnabled, true)
+	r.Enabled = env.GetBool(MetricsEnabled, true)
 	// Port
 	if s, found := os.LookupEnv(MetricsPort); found {
 		r.Port, _ = strconv.Atoi(s)

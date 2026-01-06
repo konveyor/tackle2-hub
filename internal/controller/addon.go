@@ -7,7 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

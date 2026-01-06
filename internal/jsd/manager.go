@@ -7,7 +7,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/internal/settings"
+	"github.com/konveyor/tackle2-hub/settings"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )

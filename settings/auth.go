@@ -2,6 +2,8 @@ package settings
 
 import (
 	"os"
+
+	"github.com/konveyor/tackle2-hub/env"
 )
 
 // Environment variables
@@ -50,7 +52,7 @@ type Auth struct {
 
 func (r *Auth) Load() (err error) {
 	var found bool
-	r.Required = getEnvBool(EnvAuthRequired, false)
+	r.Required = env.GetBool(EnvAuthRequired, false)
 	if !r.Required {
 		return
 	}
@@ -86,7 +88,7 @@ func (r *Auth) Load() (err error) {
 	if !found {
 		r.Keycloak.Admin.Realm = "master"
 	}
-	r.Keycloak.RequirePasswordUpdate = getEnvBool(EnvKeycloakReqPassUpdate, true)
+	r.Keycloak.RequirePasswordUpdate = env.GetBool(EnvKeycloakReqPassUpdate, true)
 	r.Token.Key, found = os.LookupEnv(EnvBuiltinTokenKey)
 	if !found {
 		r.Token.Key = "konveyor"
