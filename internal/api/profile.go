@@ -12,10 +12,10 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
+	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/migration/json"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	scm2 "github.com/konveyor/tackle2-hub/internal/scm"
+	"github.com/konveyor/tackle2-hub/internal/scm"
 	"github.com/konveyor/tackle2-hub/nas"
 	"github.com/konveyor/tackle2-hub/tar"
 	"gopkg.in/yaml.v2"
@@ -243,13 +243,13 @@ func (h AnalysisProfileHandler) AppProfileList(ctx *gin.Context) {
 		return
 	}
 	// Resolve archetypes and profiles.
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	var ids []uint
-	app := assessment2.Application{}
+	app := assessment.Application{}
 	app.With(application)
 	archetypes, err := memberResolver.Archetypes(app)
 	if err != nil {
@@ -478,12 +478,12 @@ func (b *ApBundle) addRepository(rootDir string, repository *model.Repository) (
 	if repository.URL == "" {
 		return
 	}
-	remote := scm2.Remote{
+	remote := scm.Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
 		Branch: repository.Branch,
 	}
-	mirror := scm2.GetMirror(b.db, remote)
+	mirror := scm.GetMirror(b.db, remote)
 	err = mirror.CopyTo(repository.Path, rootDir)
 	if err != nil {
 		return

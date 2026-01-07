@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	uuid2 "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -107,7 +107,7 @@ func (h TargetHandler) Create(ctx *gin.Context) {
 	if target.RuleSet != nil {
 		rh := RuleSetHandler{}
 		ruleset := target.RuleSet
-		uuid, _ := uuid2.NewUUID()
+		uuid, _ := uuid.NewUUID()
 		ruleset.Name = fmt.Sprintf("__Target(%s)-%s", m.Name, uuid.String())
 		err := rh.create(ctx, (*RuleSet)(ruleset))
 		if err != nil {

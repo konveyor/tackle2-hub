@@ -19,7 +19,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/binding/filter"
-	tar2 "github.com/konveyor/tackle2-hub/tar"
+	"github.com/konveyor/tackle2-hub/tar"
 )
 
 const (
@@ -645,14 +645,14 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 
 // getDir downloads and expands a directory.
 func (r *Client) getDir(body io.Reader, output string) (err error) {
-	tarReader := tar2.NewReader()
+	tarReader := tar.NewReader()
 	err = tarReader.Extract(output, body)
 	return
 }
 
 // putDir archive and uploads a directory.
 func (r *Client) putDir(writer io.Writer, input string) (err error) {
-	tarWriter := tar2.NewWriter(writer)
+	tarWriter := tar.NewWriter(writer)
 	defer tarWriter.Close()
 	err = tarWriter.AddDir(input)
 	return

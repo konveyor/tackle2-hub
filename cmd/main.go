@@ -11,15 +11,15 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/internal/api"
-	auth2 "github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/controller"
-	database2 "github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/heap"
 	"github.com/konveyor/tackle2-hub/internal/importer"
 	"github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
-	migration2 "github.com/konveyor/tackle2-hub/internal/migration"
+	"github.com/konveyor/tackle2-hub/internal/migration"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/reaper"
 	"github.com/konveyor/tackle2-hub/internal/seed"
@@ -47,7 +47,7 @@ func init() {
 
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {
-	err = migration2.Migrate(migration2.All())
+	err = migration.Migrate(migration.All())
 	if err != nil {
 		return
 	}
@@ -55,11 +55,11 @@ func Setup() (db *gorm.DB, err error) {
 	if err != nil {
 		return
 	}
-	db, err = database2.Open(true)
+	db, err = database.Open(true)
 	if err != nil {
 		return
 	}
-	err = database2.PK.Load(db, model.ALL)
+	err = database.PK.Load(db, model.ALL)
 	if err != nil {
 		return
 	}
@@ -145,7 +145,7 @@ func main() {
 		return
 	}
 	// Document migration.
-	jsdMigrator := migration2.DocumentMigrator{
+	jsdMigrator := migration.DocumentMigrator{
 		DB:     db,
 		Client: client,
 	}
@@ -156,7 +156,7 @@ func main() {
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
-		r := auth2.NewReconciler(
+		r := auth.NewReconciler(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 			settings.Settings.Auth.Keycloak.ClientID,
@@ -169,8 +169,8 @@ func main() {
 		if err != nil {
 			return
 		}
-		auth2.Hub = &auth2.Builtin{}
-		auth2.Remote = auth2.NewKeycloak(
+		auth.Hub = &auth.Builtin{}
+		auth.Remote = auth.NewKeycloak(
 			settings.Settings.Auth.Keycloak.Host,
 			settings.Settings.Auth.Keycloak.Realm,
 		)

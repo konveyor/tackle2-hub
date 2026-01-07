@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/internal/model"
-	task2 "github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/internal/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,25 +44,25 @@ type TaskReaper struct {
 //	- Pod is deleted after the defined period.
 func (r *TaskReaper) Run() {
 	Log.V(1).Info("Reaping tasks.")
-	list := []task2.Task{}
+	list := []task.Task{}
 	result := r.DB.Find(
 		&list,
 		"state IN ? and reaped = 0",
 		[]string{
-			task2.Created,
-			task2.Ready,
-			task2.Pending,
-			task2.QuotaBlocked,
-			task2.Running,
-			task2.Succeeded,
-			task2.Failed,
-			task2.Canceled,
+			task.Created,
+			task.Ready,
+			task.Pending,
+			task.QuotaBlocked,
+			task.Running,
+			task.Succeeded,
+			task.Failed,
+			task.Canceled,
 		})
 	Log.Error(result.Error, "")
 	if result.Error != nil {
 		return
 	}
-	pipelineSet := task2.PipelineSet{}
+	pipelineSet := task.PipelineSet{}
 	err := pipelineSet.Load(r.DB)
 	if err != nil {
 		Log.Error(err, "")
@@ -71,7 +71,7 @@ func (r *TaskReaper) Run() {
 	for i := range list {
 		m := &list[i]
 		switch m.State {
-		case task2.Created:
+		case task.Created:
 			mark := m.CreateTime
 			if m.TTL.Created > 0 {
 				d := time.Duration(m.TTL.Created) * Unit
@@ -88,9 +88,9 @@ func (r *TaskReaper) Run() {
 					}
 				}
 			}
-		case task2.Ready,
-			task2.Pending,
-			task2.QuotaBlocked:
+		case task.Ready,
+			task.Pending,
+			task.QuotaBlocked:
 			mark := m.CreateTime
 			if m.TTL.Pending > 0 {
 				d := time.Duration(m.TTL.Pending) * Unit
@@ -98,7 +98,7 @@ func (r *TaskReaper) Run() {
 					r.delete(m)
 				}
 			}
-		case task2.Running:
+		case task.Running:
 			mark := m.CreateTime
 			if m.Terminated != nil {
 				mark = *m.Started
@@ -109,7 +109,7 @@ func (r *TaskReaper) Run() {
 					r.delete(m)
 				}
 			}
-		case task2.Succeeded:
+		case task.Succeeded:
 			mark := m.CreateTime
 			if m.Terminated != nil {
 				mark = *m.Terminated
@@ -125,7 +125,7 @@ func (r *TaskReaper) Run() {
 					r.release(m)
 				}
 			}
-		case task2.Failed:
+		case task.Failed:
 			mark := m.CreateTime
 			if m.Terminated != nil {
 				mark = *m.Terminated
@@ -146,7 +146,7 @@ func (r *TaskReaper) Run() {
 }
 
 // release bucket and file resources.
-func (r *TaskReaper) release(m *task2.Task) {
+func (r *TaskReaper) release(m *task.Task) {
 	nChanged := 0
 	if !m.Reaped {
 		m.Reaped = true
@@ -162,7 +162,7 @@ func (r *TaskReaper) release(m *task2.Task) {
 		nChanged++
 	}
 	if nChanged > 0 {
-		m.Event(task2.Released)
+		m.Event(task.Released)
 		err := r.DB.Save(m).Error
 		if err != nil {
 			Log.Error(err, "")
@@ -172,7 +172,7 @@ func (r *TaskReaper) release(m *task2.Task) {
 }
 
 // podDelete deletes the task pod.
-func (r *TaskReaper) podDelete(m *task2.Task) {
+func (r *TaskReaper) podDelete(m *task.Task) {
 	if m.Pod == "" {
 		return
 	}
@@ -188,7 +188,7 @@ func (r *TaskReaper) podDelete(m *task2.Task) {
 }
 
 // delete task.
-func (r *TaskReaper) delete(m *task2.Task) {
+func (r *TaskReaper) delete(m *task.Task) {
 	err := m.Delete(r.Client)
 	if err != nil {
 		Log.Error(err, "")
@@ -229,14 +229,14 @@ func (r *GroupReaper) Run() {
 	for i := range list {
 		m := &list[i]
 		switch m.State {
-		case task2.Created:
+		case task.Created:
 			mark := m.CreateTime
 			d := time.Duration(
 				Settings.Hub.Task.Reaper.Created) * Unit
 			if time.Since(mark) > d {
 				r.delete(m)
 			}
-		case task2.Ready:
+		case task.Ready:
 			mark := m.CreateTime
 			if time.Since(mark) > time.Hour {
 				r.release(m)

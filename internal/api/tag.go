@@ -45,9 +45,9 @@ func (h TagHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	resource := Tag{}
-	resource.With(m)
-	h.Respond(ctx, http.StatusOK, resource)
+	r := Tag{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc

@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
-	auth2 "github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
@@ -668,9 +668,9 @@ func (r *Task) propagateEnv(addon, extension *core.Container) {
 // secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret) {
 	user := "addon:" + r.Addon
-	token, _ := auth2.Hub.NewToken(
+	token, _ := auth.Hub.NewToken(
 		user,
-		auth2.AddonRole,
+		auth.AddonRole,
 		jwt.MapClaims{
 			"task": r.ID,
 		})

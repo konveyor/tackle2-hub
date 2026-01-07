@@ -17,7 +17,7 @@ import (
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	model2 "github.com/konveyor/tackle2-hub/internal/model"
-	tar2 "github.com/konveyor/tackle2-hub/tar"
+	"github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
@@ -2357,11 +2357,11 @@ func (r *ReportWriter) Write(id uint) {
 	defer func() {
 		_ = os.Remove(path)
 	}()
-	tarWriter := tar2.NewWriter(r.ctx.Writer)
+	tarWriter := tar.NewWriter(r.ctx.Writer)
 	defer func() {
 		tarWriter.Close()
 	}()
-	filter := tar2.NewFilter(reportDir)
+	filter := tar.NewFilter(reportDir)
 	filter.Exclude("output.js")
 	tarWriter.Filter = filter
 	err = tarWriter.AssertDir(Settings.Analysis.ReportPath)

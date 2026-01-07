@@ -10,7 +10,7 @@ import (
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	task2 "github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm/clause"
 )
@@ -137,11 +137,11 @@ func (h TaskHandler) List(ctx *gin.Context) {
 			case "queued":
 				values = append(
 					values,
-					qf.Token{Kind: qf.STRING, Value: task2.Ready},
-					qf.Token{Kind: qf.STRING, Value: task2.Postponed},
-					qf.Token{Kind: qf.STRING, Value: task2.Pending},
-					qf.Token{Kind: qf.STRING, Value: task2.QuotaBlocked},
-					qf.Token{Kind: qf.STRING, Value: task2.Running})
+					qf.Token{Kind: qf.STRING, Value: task.Ready},
+					qf.Token{Kind: qf.STRING, Value: task.Postponed},
+					qf.Token{Kind: qf.STRING, Value: task.Pending},
+					qf.Token{Kind: qf.STRING, Value: task.QuotaBlocked},
+					qf.Token{Kind: qf.STRING, Value: task.Running})
 			default:
 				values = append(values, v)
 			}
@@ -240,11 +240,11 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 	db = db.Select("State", "COUNT(*) Count")
 	db = db.Where(
 		"State", []string{
-			task2.Ready,
-			task2.Postponed,
-			task2.Pending,
-			task2.QuotaBlocked,
-			task2.Running,
+			task.Ready,
+			task.Postponed,
+			task.Pending,
+			task.QuotaBlocked,
+			task.Running,
 		})
 	db = db.Group("State")
 	var list []M
@@ -256,15 +256,15 @@ func (h TaskHandler) Queued(ctx *gin.Context) {
 	for _, q := range list {
 		r.Total += q.Count
 		switch q.State {
-		case task2.Ready:
+		case task.Ready:
 			r.Ready = q.Count
-		case task2.Postponed:
+		case task.Postponed:
 			r.Postponed = q.Count
-		case task2.Pending:
+		case task.Pending:
 			r.Pending = q.Count
-		case task2.QuotaBlocked:
+		case task.QuotaBlocked:
 			r.QuotaBlocked = q.Count
-		case task2.Running:
+		case task.Running:
 			r.Running = q.Count
 		}
 	}
@@ -378,7 +378,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 	m := &model.Task{}
 	r.Patch(m)
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
-	task := task2.NewTask(m)
+	task := task.NewTask(m)
 	err = rtx.TaskManager.Create(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -437,13 +437,13 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		return
 	}
 	if _, found := ctx.Get(Submit); found {
-		r.State = task2.Ready
+		r.State = task.Ready
 	}
 	r.Patch(m)
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	rtx := RichContext(ctx)
-	task := task2.NewTask(m)
+	task := task.NewTask(m)
 	err = rtx.TaskManager.Update(h.DB(ctx), task)
 	if err != nil {
 		_ = ctx.Error(err)

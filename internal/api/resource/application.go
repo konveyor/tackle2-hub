@@ -5,7 +5,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/jsd"
-	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
+	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/model"
 )
 
@@ -88,7 +88,7 @@ func (r *Application) With(m *model.Application, tags []AppTag, identities []Ide
 	for _, mf := range m.Manifest {
 		r.Manifests = append(r.Manifests, Ref{ID: mf.ID})
 	}
-	r.Risk = assessment2.RiskUnassessed
+	r.Risk = assessment.RiskUnassessed
 }
 
 // WithVirtualTags updates the resource with tags derived from assessments.
@@ -105,7 +105,7 @@ func (r *Application) WithVirtualTags(tags []model.Tag, source string) {
 
 // WithResolver uses an ApplicationResolver to update the resource with
 // values derived from the application's assessments and archetypes.
-func (r *Application) WithResolver(m *model.Application, resolver *assessment2.ApplicationResolver) (err error) {
+func (r *Application) WithResolver(m *model.Application, resolver *assessment.ApplicationResolver) (err error) {
 	archetypes, err := resolver.Archetypes(m)
 	if err != nil {
 		return

@@ -45,9 +45,9 @@ func (h StakeholderHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	resource := Stakeholder{}
-	resource.With(m)
-	h.Respond(ctx, http.StatusOK, resource)
+	r := Stakeholder{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
 }
 
 // List godoc

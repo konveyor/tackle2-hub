@@ -5,7 +5,6 @@ import (
 	"fmt"
 	urllib "net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -294,7 +293,7 @@ func (r *Git) defaultBranch() (name string, err error) {
 		return
 	}
 	name = string(cmd.Output())
-	name = path.Base(name)
+	name = filepath.Base(name)
 	name = strings.TrimSpace(name)
 	return
 }

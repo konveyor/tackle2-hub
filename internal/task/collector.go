@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	liberr "github.com/jortel/go-utils/error"
-	k8s2 "github.com/konveyor/tackle2-hub/internal/k8s"
+	"github.com/konveyor/tackle2-hub/internal/k8s"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
@@ -109,7 +109,7 @@ func (r *LogCollector) request(ctx context.Context) (reader io.ReadCloser, err e
 		Container: r.Container.Name,
 		Follow:    true,
 	}
-	clientSet, err := k8s2.NewClientSet()
+	clientSet, err := k8s.NewClientSet()
 	if err != nil {
 		return
 	}

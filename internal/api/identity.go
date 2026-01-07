@@ -10,7 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
+	"github.com/konveyor/tackle2-hub/internal/trigger"
 	"gorm.io/gorm"
 )
 
@@ -223,8 +223,8 @@ func (h IdentityHandler) Create(ctx *gin.Context) {
 	r.With(m)
 
 	rtx := RichContext(ctx)
-	tr := trigger2.Identity{
-		Trigger: trigger2.Trigger{
+	tr := trigger.Identity{
+		Trigger: trigger.Trigger{
 			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
@@ -311,8 +311,8 @@ func (h IdentityHandler) Update(ctx *gin.Context) {
 	}
 
 	rtx := RichContext(ctx)
-	tr := trigger2.Identity{
-		Trigger: trigger2.Trigger{
+	tr := trigger.Identity{
+		Trigger: trigger.Trigger{
 			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,

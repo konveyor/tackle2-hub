@@ -8,10 +8,10 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
+	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
+	"github.com/konveyor/tackle2-hub/internal/trigger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -108,22 +108,22 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 		return
 	}
 
-	questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	appResolver := assessment2.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 
 	r := Application{}
 	tags := tagMap[m.ID]
@@ -150,22 +150,22 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []api.Application
 // @router /applications [get]
 func (h ApplicationHandler) List(ctx *gin.Context) {
-	questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	appResolver := assessment2.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 
 	tagMap, err := h.tagMap(ctx, nil)
 	if err != nil {
@@ -392,22 +392,22 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	appResolver := assessment2.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 
 	r.With(m, appTags, idMap.List())
 	err = r.WithResolver(m, appResolver)
@@ -417,8 +417,8 @@ func (h ApplicationHandler) Create(ctx *gin.Context) {
 	}
 
 	rtx := RichContext(ctx)
-	tr := trigger2.Application{
-		Trigger: trigger2.Trigger{
+	tr := trigger.Application{
+		Trigger: trigger.Trigger{
 			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
@@ -539,8 +539,8 @@ func (h ApplicationHandler) Update(ctx *gin.Context) {
 	}
 
 	rtx := RichContext(ctx)
-	tr := trigger2.Application{
-		Trigger: trigger2.Trigger{
+	tr := trigger.Application{
+		Trigger: trigger.Trigger{
 			User:        rtx.User,
 			TaskManager: rtx.TaskManager,
 			Client:      rtx.Client,
@@ -677,22 +677,22 @@ func (h ApplicationHandler) TagList(ctx *gin.Context) {
 	includeAssessment := !found || source == SourceAssessment
 	includeArchetype := !found || source == SourceArchetype
 	if includeAssessment || includeArchetype {
-		questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+		questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+		memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+		tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
-		appResolver := assessment2.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+		appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 		if includeArchetype {
 			archetypeTags, err := appResolver.ArchetypeTags(app)
 			if err != nil {
@@ -1157,22 +1157,22 @@ func (h ApplicationHandler) AssessmentList(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	appResolver := assessment2.NewApplicationResolver(tagResolver, memberResolver, questResolver)
+	appResolver := assessment.NewApplicationResolver(tagResolver, memberResolver, questResolver)
 	archetypes, err := appResolver.Archetypes(m)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1239,12 +1239,12 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 	newAssessment := false
 	if len(m.Sections) == 0 {
 		m.Sections = q.Sections
-		resolver, rErr := assessment2.NewTagResolver(h.DB(ctx))
+		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
 		if rErr != nil {
 			_ = ctx.Error(rErr)
 			return
 		}
-		assessment2.PrepareForApplication(resolver, application, m)
+		assessment.PrepareForApplication(resolver, application, m)
 		newAssessment = true
 	}
 	result = h.DB(ctx).Omit(clause.Associations).Create(m)

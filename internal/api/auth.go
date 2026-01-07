@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	auth2 "github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 )
 
 // AuthHandler handles auth routes.
@@ -34,7 +34,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	token, err := auth2.Remote.Login(r.User, r.Password)
+	token, err := auth.Remote.Login(r.User, r.Password)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -64,7 +64,7 @@ func (h AuthHandler) Refresh(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	token, err := auth2.Remote.Refresh(r.Refresh)
+	token, err := auth.Remote.Refresh(r.Refresh)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -89,7 +89,7 @@ func Required(scope string) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		rtx := RichContext(ctx)
 		token := ctx.GetHeader(Authorization)
-		request := &auth2.Request{
+		request := &auth.Request{
 			Token:  token,
 			Scope:  scope,
 			Method: ctx.Request.Method,

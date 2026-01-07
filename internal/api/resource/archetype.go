@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/konveyor/tackle2-hub/api"
-	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
+	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/model"
 )
 
@@ -73,7 +73,7 @@ func (r *Archetype) With(m *model.Archetype) {
 	if m.Review != nil {
 		r.Review = &Ref{ID: m.Review.ID, Name: ""}
 	}
-	r.Risk = assessment2.RiskUnassessed
+	r.Risk = assessment.RiskUnassessed
 	r.Profiles = []api.TargetProfile{}
 	for _, p := range m.Profiles {
 		pr := TargetProfile{}
@@ -84,7 +84,7 @@ func (r *Archetype) With(m *model.Archetype) {
 
 // WithResolver uses an ArchetypeResolver to update the resource with
 // values derived from the archetype's assessments.
-func (r *Archetype) WithResolver(resolver *assessment2.ArchetypeResolver) (err error) {
+func (r *Archetype) WithResolver(resolver *assessment.ArchetypeResolver) (err error) {
 	r.Assessed = resolver.Assessed()
 	if r.Assessed {
 		r.Risk = resolver.Risk()

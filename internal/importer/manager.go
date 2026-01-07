@@ -12,7 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
-	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
+	"github.com/konveyor/tackle2-hub/internal/trigger"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -343,8 +343,8 @@ func (m *Manager) createApplication(imp *model.Import) (ok bool) {
 		return
 	}
 	// best effort
-	tr := trigger2.Application{
-		Trigger: trigger2.Trigger{
+	tr := trigger.Application{
+		Trigger: trigger.Trigger{
 			TaskManager: m.TaskManager,
 			Client:      m.Client,
 			DB:          m.DB,

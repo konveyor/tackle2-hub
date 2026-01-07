@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
+	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
@@ -57,21 +57,21 @@ func (h ArchetypeHandler) Get(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	memberResolver, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	memberResolver, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	questResolver, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questResolver, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tagResolver, err := assessment2.NewTagResolver(h.DB(ctx))
+	tagResolver, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-	resolver := assessment2.NewArchetypeResolver(m, tagResolver, memberResolver, questResolver)
+	resolver := assessment.NewArchetypeResolver(m, tagResolver, memberResolver, questResolver)
 	r := Archetype{}
 	r.With(m)
 	err = r.WithResolver(resolver)
@@ -103,16 +103,16 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	questionnaires, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	tags, err := assessment2.NewTagResolver(h.DB(ctx))
+	tags, err := assessment.NewTagResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 	}
-	membership, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	membership, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -120,7 +120,7 @@ func (h ArchetypeHandler) List(ctx *gin.Context) {
 	resources := []Archetype{}
 	for i := range list {
 		m := &list[i]
-		resolver := assessment2.NewArchetypeResolver(m, tags, membership, questionnaires)
+		resolver := assessment.NewArchetypeResolver(m, tags, membership, questionnaires)
 		r := Archetype{}
 		r.With(m)
 		err = r.WithResolver(resolver)
@@ -201,17 +201,17 @@ func (h ArchetypeHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(result.Error)
 	}
 
-	membership, err := assessment2.NewMembershipResolver(h.DB(ctx))
+	membership, err := assessment.NewMembershipResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	questionnaires, err := assessment2.NewQuestionnaireResolver(h.DB(ctx))
+	questionnaires, err := assessment.NewQuestionnaireResolver(h.DB(ctx))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	resolver := assessment2.NewArchetypeResolver(m, nil, membership, questionnaires)
+	resolver := assessment.NewArchetypeResolver(m, nil, membership, questionnaires)
 	r.With(m)
 	err = r.WithResolver(resolver)
 	if err != nil {
@@ -385,12 +385,12 @@ func (h ArchetypeHandler) AssessmentCreate(ctx *gin.Context) {
 	newAssessment := false
 	if len(m.Sections) == 0 {
 		m.Sections = q.Sections
-		resolver, rErr := assessment2.NewTagResolver(h.DB(ctx))
+		resolver, rErr := assessment.NewTagResolver(h.DB(ctx))
 		if rErr != nil {
 			_ = ctx.Error(rErr)
 			return
 		}
-		assessment2.PrepareForArchetype(resolver, archetype, m)
+		assessment.PrepareForArchetype(resolver, archetype, m)
 		newAssessment = true
 	}
 	result = h.DB(ctx).Omit(clause.Associations).Create(m)
