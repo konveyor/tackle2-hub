@@ -9,7 +9,6 @@ import (
 	"path"
 	"regexp"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
 	"github.com/konveyor/tackle2-hub/settings"
+	taskapi "github.com/konveyor/tackle2-hub/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	core "k8s.io/api/core/v1"
@@ -42,39 +42,39 @@ import (
 // - Postponed
 // - QuotaBlocked
 const (
-	Created      = "Created"
-	Ready        = "Ready"
-	Postponed    = "Postponed"
-	QuotaBlocked = "QuotaBlocked"
-	Pending      = "Pending"
-	Running      = "Running"
-	Succeeded    = "Succeeded"
-	Failed       = "Failed"
-	Canceled     = "Canceled"
+	Created      = taskapi.Created
+	Ready        = taskapi.Ready
+	Postponed    = taskapi.Postponed
+	QuotaBlocked = taskapi.QuotaBlocked
+	Pending      = taskapi.Pending
+	Running      = taskapi.Running
+	Succeeded    = taskapi.Succeeded
+	Failed       = taskapi.Failed
+	Canceled     = taskapi.Canceled
 )
 
 // Events
 const (
-	AddonSelected    = "AddonSelected"
-	ExtSelected      = "ExtensionSelected"
-	ImageError       = "ImageError"
-	PodNotFound      = "PodNotFound"
-	PodCreated       = "PodCreated"
-	PodPending       = "PodPending"
-	PodUnschedulable = "PodUnschedulable"
-	PodRunning       = "PodRunning"
-	PodSucceeded     = "PodSucceeded"
-	PodFailed        = "PodFailed"
-	PodDeleted       = "PodDeleted"
-	Escalated        = "Escalated"
-	Released         = "Released"
-	ContainerKilled  = "ContainerKilled"
+	AddonSelected    = taskapi.AddonSelected
+	ExtSelected      = taskapi.ExtSelected
+	ImageError       = taskapi.ImageError
+	PodNotFound      = taskapi.PodNotFound
+	PodCreated       = taskapi.PodCreated
+	PodPending       = taskapi.PodPending
+	PodUnschedulable = taskapi.PodUnschedulable
+	PodRunning       = taskapi.PodRunning
+	PodSucceeded     = taskapi.PodSucceeded
+	PodFailed        = taskapi.PodFailed
+	PodDeleted       = taskapi.PodDeleted
+	Escalated        = taskapi.Escalated
+	Released         = taskapi.Released
+	ContainerKilled  = taskapi.ContainerKilled
 )
 
 // Mode
 const (
-	Batch    = "Batch"
-	Pipeline = "Pipeline"
+	Batch    = taskapi.Batch
+	Pipeline = taskapi.Pipeline
 )
 
 // k8s labels.
@@ -1668,14 +1668,7 @@ func (k *Cluster) getQuotas() (err error) {
 // ExtEnv returns an environment variable named namespaced to an extension.
 // Format: _EXT_<extension_<var>.
 func ExtEnv(extension string, envar string) (s string) {
-	s = strings.Join(
-		[]string{
-			"_EXT",
-			strings.ToUpper(extension),
-			envar,
-		},
-		"_")
-	return
+	return taskapi.ExtEnv(extension, envar)
 }
 
 // PipelineSet is a set of TaskGroup ids for ALL groups of mode=Pipeline.
