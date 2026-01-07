@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm/clause"
 )
@@ -204,7 +204,7 @@ func (h ReviewHandler) CopyReview(ctx *gin.Context) {
 }
 
 // Review REST resource.
-type Review = rest.Review
+type Review = resource.Review
 
 // CopyRequest REST resource.
 type CopyRequest struct {

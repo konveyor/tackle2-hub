@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
@@ -100,7 +100,7 @@ func (h AddonHandler) List(ctx *gin.Context) {
 }
 
 // Addon REST resource.
-type Addon = rest.Addon
+type Addon = resource.Addon
 
 // Extension REST resource.
-type Extension = rest.Extension
+type Extension = resource.Extension

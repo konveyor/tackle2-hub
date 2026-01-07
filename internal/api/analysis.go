@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	model2 "github.com/konveyor/tackle2-hub/internal/model"
 	tar2 "github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm"
@@ -2092,40 +2092,40 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 }
 
 // Analysis REST resource.
-type Analysis = rest.Analysis
+type Analysis = resource.Analysis
 
 // Insight REST resource.
-type Insight = rest.Insight
+type Insight = resource.Insight
 
 // TechDependency REST resource.
-type TechDependency = rest.TechDependency
+type TechDependency = resource.TechDependency
 
 // Incident REST resource.
-type Incident = rest.Incident
+type Incident = resource.Incident
 
 // Link analysis report link.
-type Link = rest.Link
+type Link = resource.Link
 
 // ArchivedInsight created when insights are archived.
-type ArchivedInsight rest.ArchivedInsight
+type ArchivedInsight resource.ArchivedInsight
 
 // RuleReport REST resource.
-type RuleReport = rest.RuleReport
+type RuleReport = resource.RuleReport
 
 // InsightReport REST resource.
-type InsightReport = rest.InsightReport
+type InsightReport = resource.InsightReport
 
 // InsightAppReport REST resource.
-type InsightAppReport = rest.InsightAppReport
+type InsightAppReport = resource.InsightAppReport
 
 // FileReport REST resource.
-type FileReport = rest.FileReport
+type FileReport = resource.FileReport
 
 // DepReport REST resource.
-type DepReport = rest.DepReport
+type DepReport = resource.DepReport
 
 // DepAppReport REST resource.
-type DepAppReport = rest.DepAppReport
+type DepAppReport = resource.DepAppReport
 
 // InsightWriter used to create a file containing insights.
 type InsightWriter struct {
@@ -2522,7 +2522,7 @@ func (r *ReportWriter) addTags(m *model2.Analysis) (err error) {
 		tag := Tag{}
 		tag.ID = m.ID
 		tag.Name = m.Name
-		tag.Category = rest.Ref{
+		tag.Category = resource.Ref{
 			ID:   m.Category.ID,
 			Name: m.Category.Name,
 		}

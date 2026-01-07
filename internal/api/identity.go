@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	trigger2 "github.com/konveyor/tackle2-hub/internal/trigger"
@@ -361,4 +361,4 @@ func (h IdentityHandler) getDefault(ctx *gin.Context, kind string) (id uint, err
 }
 
 // Identity REST resource.
-type Identity = rest.Identity
+type Identity = resource.Identity

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	jsd2 "github.com/konveyor/tackle2-hub/internal/jsd"
 )
 
@@ -122,17 +122,17 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 	}
 	v := s.Versions.Latest()
 	r := LatestSchema{
-		Definition: rest.Map(v.Definition),
+		Definition: resource.Map(v.Definition),
 		Name:       s.Name,
 	}
 	h.Respond(ctx, http.StatusOK, r)
 }
 
 // RestAPI resource.
-type RestAPI = rest.RestAPI
+type RestAPI = resource.RestAPI
 
 // Schema REST resource.
-type Schema = rest.Schema
+type Schema = resource.Schema
 
 // LatestSchema REST resource.
-type LatestSchema = rest.LatestSchema
+type LatestSchema = resource.LatestSchema

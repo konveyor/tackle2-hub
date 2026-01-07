@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/migration/json"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -285,7 +285,7 @@ func (h AnalysisProfileHandler) AppProfileList(ctx *gin.Context) {
 }
 
 // AnalysisProfile REST resource.
-type AnalysisProfile = rest.AnalysisProfile
+type AnalysisProfile = resource.AnalysisProfile
 
 // ApBundle defines and builds the application bundle.
 type ApBundle struct {

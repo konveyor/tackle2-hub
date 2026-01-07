@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	assessment2 "github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -1221,7 +1221,7 @@ func (h ApplicationHandler) AssessmentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Application = &rest.Ref{ID: id}
+	r.Application = &resource.Ref{ID: id}
 	r.Archetype = nil
 	q := &model.Questionnaire{}
 	db = h.preLoad(h.DB(ctx))
@@ -1416,16 +1416,16 @@ func (h *ApplicationHandler) appIds(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 }
 
 // Application REST resource.
-type Application = rest.Application
+type Application = resource.Application
 
 // Repository REST nested resource.
-type Repository = rest.Repository
+type Repository = resource.Repository
 
 // Fact REST nested resource.
-type Fact = rest.Fact
+type Fact = resource.Fact
 
 // IdentityRef REST resource.
-type IdentityRef = rest.IdentityRef
+type IdentityRef = resource.IdentityRef
 
 // FactKey is a fact source and fact name separated by a colon.
 //
@@ -1440,7 +1440,7 @@ type IdentityRef = rest.IdentityRef
 // all facts that belong to a source.
 //
 //	Example: 'analysis:"
-type FactKey = rest.FactKey
+type FactKey = resource.FactKey
 
 // Stakeholders REST subresource.
 type Stakeholders struct {
@@ -1468,12 +1468,14 @@ func (r *Stakeholders) contributors() (contributors []model.Stakeholder) {
 	return
 }
 
-type TagRef = rest.TagRef
+// TagRef tag reference.
+type TagRef = resource.TagRef
 
-type TagMap = rest.TagMap
+// TagMap contains a map of tags by id.
+type TagMap = resource.TagMap
 
 // AppTag represents application tag mapping.
-type AppTag = rest.AppTag
+type AppTag = resource.AppTag
 
 // IdentityMap represents application/identity associations.
-type IdentityMap = rest.IdentityMap
+type IdentityMap = resource.IdentityMap

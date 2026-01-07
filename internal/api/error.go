@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/api/sort"
 	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -110,7 +110,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		rtx := RichContext(ctx)
 		if errors.Is(err, &BadRequestError{}) ||
-			errors.Is(err, &rest.ValidationError{}) ||
+			errors.Is(err, &resource.ValidationError{}) ||
 			errors.Is(err, &filter.Error{}) ||
 			errors.Is(err, &sort.SortError{}) ||
 			errors.Is(err, validator.ValidationErrors{}) {

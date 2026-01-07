@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	model2 "github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -290,7 +290,7 @@ func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 }
 
 // RuleSet REST resource.
-type RuleSet = rest.RuleSet
+type RuleSet = resource.RuleSet
 
 // Rule - REST Resource.
-type Rule = rest.Rule
+type Rule = resource.Rule

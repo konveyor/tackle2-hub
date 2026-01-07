@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/tracker"
 	"gorm.io/gorm/clause"
@@ -300,10 +300,10 @@ func (h TrackerHandler) ProjectIssueTypeList(ctx *gin.Context) {
 }
 
 // Tracker API Resource
-type Tracker = rest.Tracker
+type Tracker = resource.Tracker
 
 // Project API Resource
-type Project = rest.Project
+type Project = resource.Project
 
 // IssueType API Resource
-type IssueType = rest.IssueType
+type IssueType = resource.IssueType

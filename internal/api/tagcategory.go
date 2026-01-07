@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm/clause"
 )
@@ -203,4 +203,4 @@ func (h TagCategoryHandler) TagList(ctx *gin.Context) {
 }
 
 // TagCategory REST resource.
-type TagCategory = rest.TagCategory
+type TagCategory = resource.TagCategory

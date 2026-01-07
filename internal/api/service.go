@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 )
 
 // serviceRoutes name to route map.
@@ -90,4 +90,4 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 }
 
 // Service REST resource.
-type Service = rest.Service
+type Service = resource.Service

@@ -20,7 +20,7 @@ import (
 const IssueTypeEpic = "Epic"
 
 const (
-	JiraEndpointBase    = "rest/api/2"
+	JiraEndpointBase    = "resource/api/2"
 	JiraEndpointProject = JiraEndpointBase + "/project"
 	JiraEndpointIssue   = JiraEndpointBase + "/issue"
 	JiraEndpointSearch  = JiraEndpointBase + "/search"

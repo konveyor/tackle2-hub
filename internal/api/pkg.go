@@ -15,7 +15,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/filter"
-	"github.com/konveyor/tackle2-hub/internal/api/rest"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/settings"
 )
 
@@ -65,10 +65,10 @@ const (
 )
 
 // Map REST resource.
-type Map = rest.Map
+type Map = resource.Map
 
 // Ref REST resource reference.
-type Ref = rest.Ref
+type Ref = resource.Ref
 
 // All builds all handlers.
 func All() []Handler {
