@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestGeneratorCRUD(t *testing.T) {
-	var r api2.Generator
+	var r api.Generator
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 	// identity
-	identity := &api2.Identity{
+	identity := &api.Identity{
 		Name: t.Name(),
 		Kind: t.Name(),
 	}
@@ -24,7 +24,7 @@ func TestGeneratorCRUD(t *testing.T) {
 	}()
 
 	// Create.
-	r.Identity = &api2.Ref{
+	r.Identity = &api.Ref{
 		ID:   identity.ID,
 		Name: identity.Name,
 	}

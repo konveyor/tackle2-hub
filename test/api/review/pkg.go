@@ -1,14 +1,14 @@
 package review
 
 import (
-	binding2 "github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding2.RichClient
-	Review      binding2.Review
-	Application binding2.Application
+	RichClient  *binding.RichClient
+	Review      binding.Review
+	Application binding.Application
 )
 
 func init() {

@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // Stakeholder API.
@@ -10,35 +10,35 @@ type Stakeholder struct {
 }
 
 // Create a Stakeholder.
-func (h *Stakeholder) Create(r *api2.Stakeholder) (err error) {
-	err = h.client.Post(api2.StakeholdersRoute, &r)
+func (h *Stakeholder) Create(r *api.Stakeholder) (err error) {
+	err = h.client.Post(api.StakeholdersRoute, &r)
 	return
 }
 
 // Get a Stakeholder by ID.
-func (h *Stakeholder) Get(id uint) (r *api2.Stakeholder, err error) {
-	r = &api2.Stakeholder{}
-	path := Path(api2.StakeholderRoute).Inject(Params{api2.ID: id})
+func (h *Stakeholder) Get(id uint) (r *api.Stakeholder, err error) {
+	r = &api.Stakeholder{}
+	path := Path(api.StakeholderRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List Stakeholders.
-func (h *Stakeholder) List() (list []api2.Stakeholder, err error) {
-	list = []api2.Stakeholder{}
-	err = h.client.Get(api2.StakeholdersRoute, &list)
+func (h *Stakeholder) List() (list []api.Stakeholder, err error) {
+	list = []api.Stakeholder{}
+	err = h.client.Get(api.StakeholdersRoute, &list)
 	return
 }
 
 // Update a Stakeholder.
-func (h *Stakeholder) Update(r *api2.Stakeholder) (err error) {
-	path := Path(api2.StakeholderRoute).Inject(Params{api2.ID: r.ID})
+func (h *Stakeholder) Update(r *api.Stakeholder) (err error) {
+	path := Path(api.StakeholderRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Stakeholder.
 func (h *Stakeholder) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.StakeholderRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.StakeholderRoute).Inject(Params{api.ID: id}))
 	return
 }

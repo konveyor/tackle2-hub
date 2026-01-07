@@ -1,23 +1,23 @@
 package manifest
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	Base = api2.Generator{
+	Base = api.Generator{
 		Kind:        "base",
 		Name:        "Test",
 		Description: "This is a test",
-		Repository: &api2.Repository{
+		Repository: &api.Repository{
 			URL: "https://github.com/konveyor/tackle2-hub",
 		},
-		Params: api2.Map{
+		Params: api.Map{
 			"p1": "v1",
 			"p2": "v2",
 		},
-		Values: api2.Map{
+		Values: api.Map{
 			"p1": "v1",
 			"p2": "v2",
 		},

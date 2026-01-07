@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // Review API.
@@ -10,45 +10,45 @@ type Review struct {
 }
 
 // Create a Review.
-func (h *Review) Create(r *api2.Review) (err error) {
-	err = h.client.Post(api2.ReviewsRoute, &r)
+func (h *Review) Create(r *api.Review) (err error) {
+	err = h.client.Post(api.ReviewsRoute, &r)
 	return
 }
 
 // Get a Review by ID.
-func (h *Review) Get(id uint) (r *api2.Review, err error) {
-	r = &api2.Review{}
-	path := Path(api2.ReviewRoute).Inject(Params{api2.ID: id})
+func (h *Review) Get(id uint) (r *api.Review, err error) {
+	r = &api.Review{}
+	path := Path(api.ReviewRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List Reviews.
-func (h *Review) List() (list []api2.Review, err error) {
-	list = []api2.Review{}
-	err = h.client.Get(api2.ReviewsRoute, &list)
+func (h *Review) List() (list []api.Review, err error) {
+	list = []api.Review{}
+	err = h.client.Get(api.ReviewsRoute, &list)
 	return
 }
 
 // Update a Review.
-func (h *Review) Update(r *api2.Review) (err error) {
-	path := Path(api2.ReviewRoute).Inject(Params{api2.ID: r.ID})
+func (h *Review) Update(r *api.Review) (err error) {
+	path := Path(api.ReviewRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Review.
 func (h *Review) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.ReviewRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.ReviewRoute).Inject(Params{api.ID: id}))
 	return
 }
 
 // Copy a Review.
 func (h *Review) Copy(reviewID uint, appID uint) (err error) {
-	copyRequest := api2.CopyRequest{
+	copyRequest := api.CopyRequest{
 		SourceReview:       reviewID,
 		TargetApplications: []uint{appID},
 	}
-	err = h.client.Post(api2.CopyRoute, copyRequest)
+	err = h.client.Post(api.CopyRoute, copyRequest)
 	return
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -16,11 +16,11 @@ func TestDependencyCRUD(t *testing.T) {
 			assert.Must(t, Application.Create(&sample.ApplicationTo))
 
 			// Create.
-			dependency := api2.Dependency{
-				From: api2.Ref{
+			dependency := api.Dependency{
+				From: api.Ref{
 					ID: sample.ApplicationFrom.ID,
 				},
-				To: api2.Ref{
+				To: api.Ref{
 					ID: sample.ApplicationTo.ID,
 				},
 			}
@@ -53,7 +53,7 @@ func TestDependencyCRUD(t *testing.T) {
 func TestDependencyList(t *testing.T) {
 
 	// an array of created dependencies to track them later
-	createdDependencies := []api2.Dependency{}
+	createdDependencies := []api.Dependency{}
 
 	for _, r := range Samples {
 
@@ -62,11 +62,11 @@ func TestDependencyList(t *testing.T) {
 		assert.Must(t, Application.Create(&r.ApplicationTo))
 
 		// Create dependencies.
-		dependency := api2.Dependency{
-			From: api2.Ref{
+		dependency := api.Dependency{
+			From: api.Ref{
 				ID: r.ApplicationFrom.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.ApplicationTo.ID,
 			},
 		}
@@ -109,32 +109,32 @@ func TestReverseDependency(t *testing.T) {
 		assert.Must(t, Application.Create(&r.Application2))
 		assert.Must(t, Application.Create(&r.Application3))
 
-		firstDependencyPass := api2.Dependency{
-			From: api2.Ref{
+		firstDependencyPass := api.Dependency{
+			From: api.Ref{
 				ID: r.Application1.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application2.ID,
 			},
 		}
 		assert.Should(t, Dependency.Create(&firstDependencyPass))
 
-		secondDependencyPass := api2.Dependency{
-			From: api2.Ref{
+		secondDependencyPass := api.Dependency{
+			From: api.Ref{
 				ID: r.Application2.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application3.ID,
 			},
 		}
 		assert.Should(t, Dependency.Create(&secondDependencyPass))
 
 		// Indirect Reverse dependency should fail.
-		indirectReverseDependencyFail := api2.Dependency{
-			From: api2.Ref{
+		indirectReverseDependencyFail := api.Dependency{
+			From: api.Ref{
 				ID: r.Application3.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application1.ID,
 			},
 		}
@@ -143,22 +143,22 @@ func TestReverseDependency(t *testing.T) {
 			t.Error("Indirect Reverse dependency not allowed")
 		}
 
-		thirdDependencyPass := api2.Dependency{
-			From: api2.Ref{
+		thirdDependencyPass := api.Dependency{
+			From: api.Ref{
 				ID: r.Application1.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application3.ID,
 			},
 		}
 		assert.Should(t, Dependency.Create(&thirdDependencyPass))
 
 		// Direct Reverse dependency should fail.
-		DirectReverseDependencyFail := api2.Dependency{
-			From: api2.Ref{
+		DirectReverseDependencyFail := api.Dependency{
+			From: api.Ref{
 				ID: r.Application2.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application1.ID,
 			},
 		}
@@ -168,11 +168,11 @@ func TestReverseDependency(t *testing.T) {
 		}
 
 		// Direct Reverse dependency should fail.
-		anotherDirectReverseDependencyFail := api2.Dependency{
-			From: api2.Ref{
+		anotherDirectReverseDependencyFail := api.Dependency{
+			From: api.Ref{
 				ID: r.Application3.ID,
 			},
-			To: api2.Ref{
+			To: api.Ref{
 				ID: r.Application2.ID,
 			},
 		}

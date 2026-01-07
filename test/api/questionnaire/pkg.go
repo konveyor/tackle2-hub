@@ -1,13 +1,13 @@
 package questionnaire
 
 import (
-	binding2 "github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient    *binding2.RichClient
-	Questionnaire binding2.Questionnaire
+	RichClient    *binding.RichClient
+	Questionnaire binding.Questionnaire
 )
 
 func init() {

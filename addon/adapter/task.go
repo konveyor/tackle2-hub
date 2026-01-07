@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"strings"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
-	binding2 "github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/task"
 )
 
 // Task API.
 type Task struct {
-	richClient *binding2.RichClient
+	richClient *binding.RichClient
 	// Task
-	task *api2.Task
+	task *api.Task
 	// Task report.
-	report api2.TaskReport
+	report api.TaskReport
 }
 
 // Load a task by ID.
@@ -32,7 +32,7 @@ func (h *Task) Load() {
 }
 
 // Application returns the application associated with the task.
-func (h *Task) Application() (r *api2.Application, err error) {
+func (h *Task) Application() (r *api.Application, err error) {
 	ref := h.task.Application
 	if ref == nil {
 		err = Wrap(&NotFound{
@@ -46,7 +46,7 @@ func (h *Task) Application() (r *api2.Application, err error) {
 }
 
 // Platform returns the platform associated with the task.
-func (h *Task) Platform() (r *api2.Platform, err error) {
+func (h *Task) Platform() (r *api.Platform, err error) {
 	ref := h.task.Platform
 	if ref == nil {
 		err = Wrap(&NotFound{
@@ -62,7 +62,7 @@ func (h *Task) Platform() (r *api2.Platform, err error) {
 // Addon returns the addon associated with the task.
 // The extensions are filtered to include those specified in the task.
 // inject: perform injection.
-func (h *Task) Addon(inject bool) (r *api2.Addon, err error) {
+func (h *Task) Addon(inject bool) (r *api.Addon, err error) {
 	name := h.task.Addon
 	if name == "" {
 		err = Wrap(&NotFound{
@@ -80,7 +80,7 @@ func (h *Task) Addon(inject bool) (r *api2.Addon, err error) {
 	for _, name := range h.task.Extensions {
 		included[name] = 0
 	}
-	var extensions []api2.Extension
+	var extensions []api.Extension
 	for i := range r.Extensions {
 		extension := r.Extensions[i]
 		if _, found := included[extension.Name]; found {
@@ -138,7 +138,7 @@ func (h *Task) Succeeded() {
 func (h *Task) Failed(reason string, v ...any) {
 	h.report.Status = task.Failed
 	reason = fmt.Sprintf(reason, v...)
-	h.Error(api2.TaskError{
+	h.Error(api.TaskError{
 		Severity:    "Error",
 		Description: reason,
 	})
@@ -151,14 +151,14 @@ func (h *Task) Failed(reason string, v ...any) {
 
 // Errorf report addon error.
 func (h *Task) Errorf(severity, description string, v ...any) {
-	h.Error(api2.TaskError{
+	h.Error(api.TaskError{
 		Severity:    severity,
 		Description: fmt.Sprintf(description, v...),
 	})
 }
 
 // Error report addon error.
-func (h *Task) Error(error ...api2.TaskError) {
+func (h *Task) Error(error ...api.TaskError) {
 	for i := range error {
 		h.report.Errors = append(
 			h.report.Errors,
@@ -197,7 +197,7 @@ func (h *Task) Activity(entry string, v ...any) {
 
 // Attach ensures the file is attached to the report
 // associated with the last entry in the activity.
-func (h *Task) Attach(f *api2.File) {
+func (h *Task) Attach(f *api.File) {
 	index := len(h.report.Activity)
 	h.AttachAt(f, index)
 	return
@@ -206,7 +206,7 @@ func (h *Task) Attach(f *api2.File) {
 // AttachAt ensures the file is attached to
 // the report indexed to the activity.
 // The activity is a 1-based index. Zero(0) means NOT associated.
-func (h *Task) AttachAt(f *api2.File, activity int) {
+func (h *Task) AttachAt(f *api.File, activity int) {
 	for _, ref := range h.report.Attached {
 		if ref.ID == f.ID {
 			return
@@ -222,7 +222,7 @@ func (h *Task) AttachAt(f *api2.File, activity int) {
 		activity)
 	h.report.Attached = append(
 		h.report.Attached,
-		api2.Attachment{
+		api.Attachment{
 			Activity: activity,
 			ID:       f.ID,
 			Name:     f.Name,
@@ -262,13 +262,13 @@ func (h *Task) Completed(n int) {
 }
 
 // Bucket returns the bucket API.
-func (h *Task) Bucket() (b *binding2.BucketContent) {
+func (h *Task) Bucket() (b *binding.BucketContent) {
 	b = h.richClient.Task.Bucket(h.task.ID)
 	return
 }
 
 // Result report addon result.
-func (h *Task) Result(object api2.Map) {
+func (h *Task) Result(object api.Map) {
 	h.report.Result = object
 	h.pushReport()
 	Log.Info("Addon reported: result.")
@@ -278,9 +278,9 @@ func (h *Task) Result(object api2.Map) {
 // deleteReport deletes the task report.
 func (h *Task) deleteReport() {
 	params := Params{
-		api2.ID: h.task.ID,
+		api.ID: h.task.ID,
 	}
-	path := Path(api2.TaskReportRoute).Inject(params)
+	path := Path(api.TaskReportRoute).Inject(params)
 	err := h.richClient.Client.Delete(path)
 	if err != nil {
 		panic(err)
@@ -296,10 +296,10 @@ func (h *Task) pushReport() {
 		}
 	}()
 	params := Params{
-		api2.ID: h.task.ID,
+		api.ID: h.task.ID,
 	}
 	client := h.richClient.Client
-	path := Path(api2.TaskReportRoute).Inject(params)
+	path := Path(api.TaskReportRoute).Inject(params)
 	if h.report.ID == 0 {
 		err = client.Post(path, &h.report)
 	} else {

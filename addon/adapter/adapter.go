@@ -11,7 +11,7 @@ import (
 	logapi "github.com/go-logr/logr"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	binding2 "github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/settings"
 	"github.com/konveyor/tackle2-hub/task"
 	"golang.org/x/sys/unix"
@@ -32,35 +32,35 @@ func init() {
 }
 
 // Client
-type Client = binding2.Client
-type Params = binding2.Params
-type Param = binding2.Param
-type Path = binding2.Path
+type Client = binding.Client
+type Params = binding.Params
+type Param = binding.Param
+type Path = binding.Path
 
 // Errors
-type RestError = binding2.RestError
-type Conflict = binding2.Conflict
-type NotFound = binding2.NotFound
+type RestError = binding.RestError
+type Conflict = binding.Conflict
+type NotFound = binding.NotFound
 
 // Handlers
-type Application = binding2.Application
-type Bucket = binding2.Bucket
-type BucketContent = binding2.BucketContent
-type File = binding2.File
-type Identity = binding2.Identity
-type Manifest = binding2.Manifest
-type Platform = binding2.Platform
-type Proxy = binding2.Proxy
-type RuleSet = binding2.RuleSet
-type Schema = binding2.Schema
-type Setting = binding2.Setting
-type Tag = binding2.Tag
-type TagCategory = binding2.TagCategory
-type Archetype = binding2.Archetype
-type Generator = binding2.Generator
+type Application = binding.Application
+type Bucket = binding.Bucket
+type BucketContent = binding.BucketContent
+type File = binding.File
+type Identity = binding.Identity
+type Manifest = binding.Manifest
+type Platform = binding.Platform
+type Proxy = binding.Proxy
+type RuleSet = binding.RuleSet
+type Schema = binding.Schema
+type Setting = binding.Setting
+type Tag = binding.Tag
+type TagCategory = binding.TagCategory
+type Archetype = binding.Archetype
+type Generator = binding.Generator
 
 // Filter
-type Filter = binding2.Filter
+type Filter = binding.Filter
 
 // The Adapter provides hub/addon integration.
 type Adapter struct {
@@ -148,7 +148,7 @@ func (h *Adapter) Run(addon func() error) {
 
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
-	richClient := binding2.New(Settings.Hub.URL)
+	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Login.Token = Settings.Hub.Token
 	adapter = &Adapter{
 		client: richClient.Client,

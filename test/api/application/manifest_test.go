@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/manifest"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestAppManifestGet(t *testing.T) {
-	var r api2.Manifest
+	var r api.Manifest
 	b, _ := json.Marshal(manifest.Base)
 	_ = json.Unmarshal(b, &r)
 	// application
-	application := &api2.Application{Name: t.Name()}
+	application := &api.Application{Name: t.Name()}
 	err := RichClient.Application.Create(application)
 	assert.Should(t, err)
 	defer func() {

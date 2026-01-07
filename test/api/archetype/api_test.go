@@ -4,23 +4,23 @@ import (
 	"encoding/json"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/api/profile"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestArchetypeCRUD(t *testing.T) {
 	for i := range Samples {
-		var r api2.Archetype
+		var r api.Archetype
 		b, _ := json.Marshal(Samples[i])
 		_ = json.Unmarshal(b, &r)
 		t.Run(r.Name, func(t *testing.T) {
 			// generator
-			genA := &api2.Generator{Name: "genA", Kind: "helm"}
-			genB := &api2.Generator{Name: "genB", Kind: "helm"}
-			genC := &api2.Generator{Name: "genC", Kind: "helm"}
-			genD := &api2.Generator{Name: "genD", Kind: "helm"}
-			for _, g := range []*api2.Generator{genA, genB, genC, genD} {
+			genA := &api.Generator{Name: "genA", Kind: "helm"}
+			genB := &api.Generator{Name: "genB", Kind: "helm"}
+			genC := &api.Generator{Name: "genC", Kind: "helm"}
+			genD := &api.Generator{Name: "genD", Kind: "helm"}
+			for _, g := range []*api.Generator{genA, genB, genC, genD} {
 				err := RichClient.Generator.Create(g)
 				assert.Must(t, err)
 			}
@@ -40,13 +40,13 @@ func TestArchetypeCRUD(t *testing.T) {
 			// Create.
 			for i := range r.Profiles {
 				p := &r.Profiles[i]
-				p.AnalysisProfile = &api2.Ref{
+				p.AnalysisProfile = &api.Ref{
 					ID:   ap1.ID,
 					Name: ap1.Name,
 				}
 				p.Generators = append(
 					p.Generators,
-					api2.Ref{ID: genA.ID, Name: genA.Name})
+					api.Ref{ID: genA.ID, Name: genA.Name})
 			}
 			err = Archetype.Create(&r)
 			if err != nil {
@@ -69,9 +69,9 @@ func TestArchetypeCRUD(t *testing.T) {
 			r.Name += "-Updated"
 			r.Profiles = append(
 				r.Profiles,
-				api2.TargetProfile{
+				api.TargetProfile{
 					Name: "Added",
-					Generators: []api2.Ref{
+					Generators: []api.Ref{
 						{
 							ID:   genD.ID,
 							Name: genD.Name,
@@ -97,8 +97,8 @@ func TestArchetypeCRUD(t *testing.T) {
 				p := &r.Profiles[i]
 				p.Generators = append(
 					p.Generators,
-					api2.Ref{ID: genC.ID, Name: genC.Name},
-					api2.Ref{ID: genB.ID, Name: genB.Name},
+					api.Ref{ID: genC.ID, Name: genC.Name},
+					api.Ref{ID: genB.ID, Name: genB.Name},
 				)
 			}
 			err = Archetype.Update(&r)

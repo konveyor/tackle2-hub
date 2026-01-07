@@ -17,7 +17,7 @@ import (
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/binding/filter"
 	tar2 "github.com/konveyor/tackle2-hub/tar"
 )
@@ -83,7 +83,7 @@ type Client struct {
 	// baseURL for the nub.
 	BaseURL string
 	// login API resource.
-	Login api2.Login
+	Login api.Login
 	// Retry limit.
 	Retry int
 	// Error
@@ -103,7 +103,7 @@ func (r *Client) Get(path string, object any, params ...Param) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -162,7 +162,7 @@ func (r *Client) Post(path string, object any) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		return
 	}
 	response, err := r.send(request)
@@ -213,7 +213,7 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -272,7 +272,7 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 			Body:   io.NopCloser(reader),
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -324,7 +324,7 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 			Method: http.MethodDelete,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
+		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
 			for _, p := range params {
@@ -361,7 +361,7 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(source),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEOCTETSTREAM)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
 	response, err := r.send(request)
@@ -376,7 +376,7 @@ func (r *Client) BucketGet(source, destination string) (err error) {
 	case http.StatusNoContent:
 		// Empty.
 	case http.StatusOK:
-		if response.Header.Get(api2.Directory) == api2.DirectoryExpand {
+		if response.Header.Get(api.Directory) == api.DirectoryExpand {
 			err = r.getDir(response.Body, destination)
 		} else {
 			err = r.getFile(response.Body, source, destination)
@@ -403,10 +403,10 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 			URL:    r.join(destination),
 		}
 		mp := multipart.NewWriter(pw)
-		request.Header.Set(api2.Accept, api2.MIMEOCTETSTREAM)
-		request.Header.Add(api2.ContentType, mp.FormDataContentType())
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		if isDir {
-			request.Header.Set(api2.Directory, api2.DirectoryExpand)
+			request.Header.Set(api.Directory, api.DirectoryExpand)
 		}
 		go func() {
 			var err error
@@ -418,7 +418,7 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 					_ = pw.Close()
 				}
 			}()
-			part, nErr := mp.CreateFormFile(api2.FileField, pathlib.Base(source))
+			part, nErr := mp.CreateFormFile(api.FileField, pathlib.Base(source))
 			if nErr != nil {
 				err = nErr
 				return
@@ -455,7 +455,7 @@ func (r *Client) FileGet(path, destination string) (err error) {
 			Method: http.MethodGet,
 			URL:    r.join(path),
 		}
-		request.Header.Set(api2.Accept, api2.MIMEOCTETSTREAM)
+		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
 	}
 	response, err := r.send(request)
@@ -490,7 +490,7 @@ func (r *Client) FilePostEncoded(path, source string, object any, encoding strin
 	if source == "" {
 		fields := []Field{
 			{
-				Name:     api2.FileField,
+				Name:     api.FileField,
 				Reader:   bytes.NewReader([]byte{}),
 				Encoding: encoding,
 			},
@@ -509,7 +509,7 @@ func (r *Client) FilePostEncoded(path, source string, object any, encoding strin
 	}
 	fields := []Field{
 		{
-			Name:     api2.FileField,
+			Name:     api.FileField,
 			Path:     source,
 			Encoding: encoding,
 		},
@@ -531,7 +531,7 @@ func (r *Client) FilePutEncoded(path, source string, object any, encoding string
 	if source == "" {
 		fields := []Field{
 			{
-				Name:     api2.FileField,
+				Name:     api.FileField,
 				Reader:   bytes.NewReader([]byte{}),
 				Encoding: encoding,
 			},
@@ -550,7 +550,7 @@ func (r *Client) FilePutEncoded(path, source string, object any, encoding string
 	}
 	fields := []Field{
 		{
-			Name:     api2.FileField,
+			Name:     api.FileField,
 			Path:     source,
 			Encoding: encoding,
 		},
@@ -564,7 +564,7 @@ func (r *Client) FilePutEncoded(path, source string, object any, encoding string
 func (r *Client) FilePatch(path string, buffer []byte) (err error) {
 	fields := []Field{
 		{
-			Name:   api2.FileField,
+			Name:   api.FileField,
 			Reader: bytes.NewReader(buffer),
 		},
 	}
@@ -583,8 +583,8 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 			URL:    r.join(path),
 		}
 		mp := multipart.NewWriter(pw)
-		request.Header.Set(api2.Accept, api2.MIMEJSON)
-		request.Header.Add(api2.ContentType, mp.FormDataContentType())
+		request.Header.Set(api.Accept, api.MIMEJSON)
+		request.Header.Add(api.ContentType, mp.FormDataContentType())
 		go func() {
 			var err error
 			defer func() {
@@ -732,7 +732,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api2.Authorization, "Bearer "+r.Login.Token)
+		request.Header.Set(api.Authorization, "Bearer "+r.Login.Token)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -866,9 +866,9 @@ func (f *Field) encoding() (mt string) {
 	}
 	switch pathlib.Ext(f.Path) {
 	case ".json":
-		mt = api2.MIMEJSON
+		mt = api.MIMEJSON
 	case ".yaml":
-		mt = api2.MIMEYAML
+		mt = api.MIMEYAML
 	default:
 		mt = "application/octet-stream"
 	}
@@ -884,11 +884,11 @@ func (f *Field) disposition() (d string) {
 // refreshToken refreshes the token.
 func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
 	if r.Login.Token == "" ||
-		strings.HasSuffix(request.URL.Path, api2.AuthRefreshRoute) {
+		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoute) {
 		return
 	}
-	login := &api2.Login{Refresh: r.Login.Refresh}
-	err = r.Post(api2.AuthRefreshRoute, login)
+	login := &api.Login{Refresh: r.Login.Refresh}
+	err = r.Post(api.AuthRefreshRoute, login)
 	if err == nil {
 		r.Login.Token = login.Token
 		refreshed = true

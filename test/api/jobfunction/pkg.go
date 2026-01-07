@@ -1,13 +1,13 @@
 package jobfunction
 
 import (
-	binding2 "github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding2.RichClient
-	JobFunction binding2.JobFunction
+	RichClient  *binding.RichClient
+	JobFunction binding.JobFunction
 )
 
 func init() {

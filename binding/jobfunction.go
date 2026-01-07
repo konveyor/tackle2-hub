@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 )
 
 // JobFunction API.
@@ -10,35 +10,35 @@ type JobFunction struct {
 }
 
 // Create a JobFunction.
-func (h *JobFunction) Create(r *api2.JobFunction) (err error) {
-	err = h.client.Post(api2.JobFunctionsRoute, &r)
+func (h *JobFunction) Create(r *api.JobFunction) (err error) {
+	err = h.client.Post(api.JobFunctionsRoute, &r)
 	return
 }
 
 // Get a JobFunction by ID.
-func (h *JobFunction) Get(id uint) (r *api2.JobFunction, err error) {
-	r = &api2.JobFunction{}
-	path := Path(api2.JobFunctionRoute).Inject(Params{api2.ID: id})
+func (h *JobFunction) Get(id uint) (r *api.JobFunction, err error) {
+	r = &api.JobFunction{}
+	path := Path(api.JobFunctionRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List JobFunctions.
-func (h *JobFunction) List() (list []api2.JobFunction, err error) {
-	list = []api2.JobFunction{}
-	err = h.client.Get(api2.JobFunctionsRoute, &list)
+func (h *JobFunction) List() (list []api.JobFunction, err error) {
+	list = []api.JobFunction{}
+	err = h.client.Get(api.JobFunctionsRoute, &list)
 	return
 }
 
 // Update a JobFunction.
-func (h *JobFunction) Update(r *api2.JobFunction) (err error) {
-	path := Path(api2.JobFunctionRoute).Inject(Params{api2.ID: r.ID})
+func (h *JobFunction) Update(r *api.JobFunction) (err error) {
+	path := Path(api.JobFunctionRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a JobFunction.
 func (h *JobFunction) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.JobFunctionRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.JobFunctionRoute).Inject(Params{api.ID: id}))
 	return
 }

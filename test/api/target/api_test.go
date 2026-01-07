@@ -3,14 +3,14 @@ package target
 import (
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestTargetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
-			var files []*api2.File
+			var files []*api.File
 			defer func() {
 				for _, f := range files {
 					_ = RichClient.File.Delete(f.ID)
@@ -23,13 +23,13 @@ func TestTargetCRUD(t *testing.T) {
 			r.Image.ID = file.ID
 			// RuleSet
 			if r.RuleSet != nil {
-				rules := []api2.Rule{}
+				rules := []api.Rule{}
 				for _, rule := range r.RuleSet.Rules {
 					file, err := RichClient.File.Put(rule.File.Name)
 					assert.Should(t, err)
 					files = append(files, file)
-					rules = append(rules, api2.Rule{
-						File: &api2.Ref{
+					rules = append(rules, api.Rule{
+						File: &api.Ref{
 							ID: file.ID,
 						},
 					})
@@ -61,9 +61,9 @@ func TestTargetCRUD(t *testing.T) {
 				files = append(files, file)
 				r.RuleSet.Rules = append(
 					r.RuleSet.Rules,
-					api2.Rule{
+					api.Rule{
 						Name: "Added",
-						File: &api2.Ref{
+						File: &api.Ref{
 							ID: file.ID,
 						},
 					})
