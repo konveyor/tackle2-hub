@@ -170,7 +170,6 @@ func New() (adapter *Adapter) {
 		RuleSet:     richClient.RuleSet,
 		Generator:   richClient.Generator,
 		Archetype:   richClient.Archetype,
-		SCM:         SCM{},
 	}
 
 	Log.Info("Addon (adapter) created.")

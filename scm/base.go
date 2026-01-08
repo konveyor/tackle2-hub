@@ -10,6 +10,12 @@ import (
 	"github.com/konveyor/tackle2-hub/nas"
 )
 
+var Home = ""
+
+func init() {
+	Home, _ = os.Getwd()
+}
+
 // Base SCM.
 type Base struct {
 	Home    string
