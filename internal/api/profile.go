@@ -131,7 +131,7 @@ func (h AnalysisProfileHandler) List(ctx *gin.Context) {
 // @tags Profiles
 // @accept json
 // @produce json
-// @success 201 {object} Profile
+// @success 201 {object} AnalysisProfile
 // @router /analysis/profiles [post]
 // @param Profile body AnalysisProfile true "Profile data"
 func (h AnalysisProfileHandler) Create(ctx *gin.Context) {

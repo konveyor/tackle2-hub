@@ -1,22 +1,187 @@
 consumes:
 - application/json
 definitions:
-  api.Addon:
+  api.Answer:
+    properties:
+      applyTags:
+        items:
+          $ref: '#/definitions/api.CategorizedTag'
+        type: array
+      autoAnswerFor:
+        items:
+          $ref: '#/definitions/api.CategorizedTag'
+        type: array
+      autoAnswered:
+        type: boolean
+      mitigation:
+        type: string
+      order:
+        type: integer
+      rationale:
+        type: string
+      risk:
+        enum:
+        - red
+        - yellow
+        - green
+        - unknown
+        type: string
+      selected:
+        type: boolean
+      text:
+        type: string
+    type: object
+  api.ApMode:
+    properties:
+      withDeps:
+        type: boolean
+    type: object
+  api.ApRules:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        type: array
+      labels:
+        $ref: '#/definitions/api.InExList'
+      repository:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+      targets:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        type: array
+    type: object
+  api.ApScope:
+    properties:
+      packages:
+        $ref: '#/definitions/api.InExList'
+      withKnownLibs:
+        type: boolean
+    type: object
+  api.CategorizedTag:
+    properties:
+      category:
+        type: string
+      tag:
+        type: string
+    type: object
+  api.Document:
+    properties:
+      content:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      schema:
+        type: string
+    required:
+    - content
+    type: object
+  api.InExList:
+    properties:
+      excluded:
+        items:
+          type: string
+        type: array
+      included:
+        items:
+          type: string
+        type: array
+    type: object
+  api.Question:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/api.Answer'
+        minItems: 1
+        type: array
+      excludeFor:
+        items:
+          $ref: '#/definitions/api.CategorizedTag'
+        type: array
+      explanation:
+        type: string
+      includeFor:
+        items:
+          $ref: '#/definitions/api.CategorizedTag'
+        type: array
+      order:
+        type: integer
+      text:
+        type: string
+    type: object
+  api.RiskMessages:
+    properties:
+      green:
+        type: string
+      red:
+        type: string
+      unknown:
+        type: string
+      yellow:
+        type: string
+    type: object
+  api.Section:
+    properties:
+      comment:
+        type: string
+      name:
+        type: string
+      order:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/api.Question'
+        minItems: 1
+        type: array
+    type: object
+  api.Stakeholders:
+    properties:
+      contributors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref'
+        type: array
+      owner:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref'
+    type: object
+  api.TargetLabel:
+    properties:
+      label:
+        type: string
+      name:
+        type: string
+    type: object
+  api.Thresholds:
+    properties:
+      red:
+        type: integer
+      unknown:
+        type: integer
+      yellow:
+        type: integer
+    type: object
+  api.Version:
+    properties:
+      definition:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      id:
+        type: integer
+      migration:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_api.Addon:
     properties:
       container:
-        $ref: '#/definitions/v1.Container'
+        $ref: '#/definitions/k8s.Container'
       extensions:
         items:
-          $ref: '#/definitions/api.Extension'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Extension'
         type: array
       metadata: {}
       name:
         type: string
     type: object
-  api.Analysis:
+  github_com_konveyor_tackle2-hub_api.Analysis:
     properties:
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       archived:
         type: boolean
       commit:
@@ -27,7 +192,7 @@ definitions:
         type: string
       dependencies:
         items:
-          $ref: '#/definitions/api.TechDependency'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
         type: array
       effort:
         type: integer
@@ -35,43 +200,43 @@ definitions:
         type: integer
       insights:
         items:
-          $ref: '#/definitions/api.Insight'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
         type: array
       summary:
         type: object
       updateUser:
         type: string
     type: object
-  api.Application:
+  github_com_konveyor_tackle2-hub_api.Application:
     properties:
       archetypes:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       assessed:
         type: boolean
       assessments:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       assets:
-        $ref: '#/definitions/api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
       binary:
         type: string
       bucket:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       businessService:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       comments:
         type: string
       confidence:
         type: integer
       contributors:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       coordinates:
-        $ref: '#/definitions/jsd.Document'
+        $ref: '#/definitions/api.Document'
       createTime:
         type: string
       createUser:
@@ -84,42 +249,46 @@ definitions:
         type: integer
       identities:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.IdentityRef'
+        type: array
+      manifests:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       migrationWave:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       name:
         type: string
       owner:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       platform:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       repository:
-        $ref: '#/definitions/api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
       review:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       risk:
         type: string
       tags:
         items:
-          $ref: '#/definitions/api.TagRef'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
         type: array
       updateUser:
         type: string
     required:
     - name
     type: object
-  api.Archetype:
+  github_com_konveyor_tackle2-hub_api.Archetype:
     properties:
       applications:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       assessed:
         type: boolean
       assessments:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       comments:
         type: string
@@ -131,7 +300,7 @@ definitions:
         type: string
       criteria:
         items:
-          $ref: '#/definitions/api.TagRef'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
         type: array
       description:
         type: string
@@ -141,33 +310,33 @@ definitions:
         type: string
       profiles:
         items:
-          $ref: '#/definitions/api.TargetProfile'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TargetProfile'
         type: array
       review:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       risk:
         type: string
       stakeholderGroups:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       stakeholders:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       tags:
         items:
-          $ref: '#/definitions/api.TagRef'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
         type: array
       updateUser:
         type: string
     type: object
-  api.Assessment:
+  github_com_konveyor_tackle2-hub_api.Assessment:
     properties:
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       archetype:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       confidence:
         type: integer
       createTime:
@@ -177,11 +346,10 @@ definitions:
       id:
         type: integer
       questionnaire:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       required:
         type: boolean
       risk:
-        description: read only
         type: string
       riskMessages:
         $ref: '#/definitions/api.RiskMessages'
@@ -191,11 +359,11 @@ definitions:
         type: array
       stakeholderGroups:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       stakeholders:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       status:
         type: string
@@ -206,7 +374,7 @@ definitions:
     required:
     - questionnaire
     type: object
-  api.Attachment:
+  github_com_konveyor_tackle2-hub_api.Attachment:
     properties:
       activity:
         type: integer
@@ -217,7 +385,7 @@ definitions:
     required:
     - id
     type: object
-  api.Bucket:
+  github_com_konveyor_tackle2-hub_api.Bucket:
     properties:
       createTime:
         type: string
@@ -232,7 +400,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.BusinessService:
+  github_com_konveyor_tackle2-hub_api.BusinessService:
     properties:
       createTime:
         type: string
@@ -245,13 +413,13 @@ definitions:
       name:
         type: string
       owner:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       updateUser:
         type: string
     required:
     - name
     type: object
-  api.Cache:
+  github_com_konveyor_tackle2-hub_api.Cache:
     properties:
       capacity:
         type: string
@@ -262,7 +430,13 @@ definitions:
       used:
         type: string
     type: object
-  api.CopyRequest:
+  github_com_konveyor_tackle2-hub_api.ConfigMap:
+    properties:
+      data: {}
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_api.CopyRequest:
     properties:
       sourceReview:
         type: integer
@@ -274,7 +448,7 @@ definitions:
     - sourceReview
     - targetApplications
     type: object
-  api.DepAppReport:
+  github_com_konveyor_tackle2-hub_api.DepAppReport:
     properties:
       businessService:
         type: string
@@ -304,22 +478,22 @@ definitions:
       name:
         type: string
     type: object
-  api.Dependency:
+  github_com_konveyor_tackle2-hub_api.Dependency:
     properties:
       createTime:
         type: string
       createUser:
         type: string
       from:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       id:
         type: integer
       to:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       updateUser:
         type: string
     type: object
-  api.Extension:
+  github_com_konveyor_tackle2-hub_api.Extension:
     properties:
       addon:
         type: string
@@ -328,12 +502,12 @@ definitions:
           type: string
         type: array
       container:
-        $ref: '#/definitions/v1.Container'
+        $ref: '#/definitions/k8s.Container'
       metadata: {}
       name:
         type: string
     type: object
-  api.Fact:
+  github_com_konveyor_tackle2-hub_api.Fact:
     properties:
       key:
         type: string
@@ -341,7 +515,7 @@ definitions:
         type: string
       value: {}
     type: object
-  api.File:
+  github_com_konveyor_tackle2-hub_api.File:
     properties:
       createTime:
         type: string
@@ -360,7 +534,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.FileReport:
+  github_com_konveyor_tackle2-hub_api.FileReport:
     properties:
       effort:
         type: integer
@@ -371,71 +545,22 @@ definitions:
       insightId:
         type: integer
     type: object
-  api.Generator:
+  github_com_konveyor_tackle2-hub_api.IdentityRef:
     properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
       id:
         type: integer
-      identity:
-        $ref: '#/definitions/api.Ref'
-      kind:
-        type: string
       name:
         type: string
-      params:
-        $ref: '#/definitions/api.Map'
-      profiles:
-        items:
-          $ref: '#/definitions/api.Ref'
-        type: array
-      repository:
-        $ref: '#/definitions/api.Repository'
-      updateUser:
-        type: string
-      values:
-        $ref: '#/definitions/api.Map'
-    required:
-    - kind
-    type: object
-  api.Identity:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      default:
-        type: boolean
-      description:
-        type: string
-      id:
-        type: integer
-      key:
-        type: string
-      kind:
-        type: string
-      name:
-        type: string
-      password:
-        type: string
-      settings:
-        type: string
-      updateUser:
-        type: string
-      user:
+      role:
         type: string
     required:
-    - kind
-    - name
+    - id
+    - role
     type: object
-  api.Import:
+  github_com_konveyor_tackle2-hub_api.Import:
     additionalProperties: {}
     type: object
-  api.ImportSummary:
+  github_com_konveyor_tackle2-hub_api.ImportSummary:
     properties:
       createEntities:
         type: boolean
@@ -458,7 +583,7 @@ definitions:
       validCount:
         type: integer
     type: object
-  api.Incident:
+  github_com_konveyor_tackle2-hub_api.Incident:
     properties:
       codeSnip:
         type: string
@@ -467,7 +592,7 @@ definitions:
       createUser:
         type: string
       facts:
-        $ref: '#/definitions/api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
       file:
         type: string
       id:
@@ -481,7 +606,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.Insight:
+  github_com_konveyor_tackle2-hub_api.Insight:
     properties:
       analysis:
         type: integer
@@ -496,12 +621,12 @@ definitions:
       effort:
         type: integer
       facts:
-        $ref: '#/definitions/api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
       id:
         type: integer
       incidents:
         items:
-          $ref: '#/definitions/api.Incident'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
         type: array
       labels:
         items:
@@ -509,7 +634,7 @@ definitions:
         type: array
       links:
         items:
-          $ref: '#/definitions/api.Link'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
         type: array
       name:
         type: string
@@ -524,7 +649,7 @@ definitions:
     - rule
     - ruleset
     type: object
-  api.InsightAppReport:
+  github_com_konveyor_tackle2-hub_api.InsightAppReport:
     properties:
       businessService:
         type: string
@@ -554,7 +679,7 @@ definitions:
       name:
         type: string
     type: object
-  api.InsightReport:
+  github_com_konveyor_tackle2-hub_api.InsightReport:
     properties:
       category:
         type: string
@@ -572,7 +697,7 @@ definitions:
         type: array
       links:
         items:
-          $ref: '#/definitions/api.Link'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
         type: array
       name:
         type: string
@@ -581,14 +706,14 @@ definitions:
       ruleset:
         type: string
     type: object
-  api.IssueType:
+  github_com_konveyor_tackle2-hub_api.IssueType:
     properties:
       id:
         type: string
       name:
         type: string
     type: object
-  api.JobFunction:
+  github_com_konveyor_tackle2-hub_api.JobFunction:
     properties:
       createTime:
         type: string
@@ -600,28 +725,21 @@ definitions:
         type: string
       stakeholders:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       updateUser:
         type: string
     required:
     - name
     type: object
-  api.LatestSchema:
-    properties:
-      definition:
-        $ref: '#/definitions/api.Map'
-      name:
-        type: string
-    type: object
-  api.Link:
+  github_com_konveyor_tackle2-hub_api.Link:
     properties:
       title:
         type: string
       url:
         type: string
     type: object
-  api.Login:
+  github_com_konveyor_tackle2-hub_api.Login:
     properties:
       expiry:
         type: integer
@@ -634,31 +752,14 @@ definitions:
       user:
         type: string
     type: object
-  api.Manifest:
-    properties:
-      application:
-        $ref: '#/definitions/api.Ref'
-      content:
-        $ref: '#/definitions/api.Map'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      secret:
-        $ref: '#/definitions/api.Map'
-      updateUser:
-        type: string
-    type: object
-  api.Map:
+  github_com_konveyor_tackle2-hub_api.Map:
     additionalProperties: {}
     type: object
-  api.MigrationWave:
+  github_com_konveyor_tackle2-hub_api.MigrationWave:
     properties:
       applications:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       createTime:
         type: string
@@ -672,11 +773,11 @@ definitions:
         type: string
       stakeholderGroups:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       stakeholders:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       startDate:
         type: string
@@ -686,67 +787,14 @@ definitions:
     - endDate
     - startDate
     type: object
-  api.Platform:
-    properties:
-      applications:
-        items:
-          $ref: '#/definitions/api.Ref'
-        type: array
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      identity:
-        $ref: '#/definitions/api.Ref'
-      kind:
-        type: string
-      name:
-        type: string
-      updateUser:
-        type: string
-      url:
-        type: string
-    required:
-    - kind
-    type: object
-  api.Project:
+  github_com_konveyor_tackle2-hub_api.Project:
     properties:
       id:
         type: string
       name:
         type: string
     type: object
-  api.Proxy:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      enabled:
-        type: boolean
-      excluded:
-        items:
-          type: string
-        type: array
-      host:
-        type: string
-      id:
-        type: integer
-      identity:
-        $ref: '#/definitions/api.Ref'
-      kind:
-        enum:
-        - http
-        - https
-        type: string
-      port:
-        type: integer
-      updateUser:
-        type: string
-    type: object
-  api.Questionnaire:
+  github_com_konveyor_tackle2-hub_api.Questionnaire:
     properties:
       builtin:
         type: boolean
@@ -779,7 +827,7 @@ definitions:
     - sections
     - thresholds
     type: object
-  api.Ref:
+  github_com_konveyor_tackle2-hub_api.Ref:
     properties:
       id:
         type: integer
@@ -788,7 +836,7 @@ definitions:
     required:
     - id
     type: object
-  api.Repository:
+  github_com_konveyor_tackle2-hub_api.Repository:
     properties:
       branch:
         type: string
@@ -801,21 +849,12 @@ definitions:
       url:
         type: string
     type: object
-  api.RestAPI:
-    properties:
-      routes:
-        items:
-          type: string
-        type: array
-      version:
-        type: string
-    type: object
-  api.Review:
+  github_com_konveyor_tackle2-hub_api.Review:
     properties:
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       archetype:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       businessCriticality:
         type: integer
       comments:
@@ -835,18 +874,7 @@ definitions:
       workPriority:
         type: integer
     type: object
-  api.RiskMessages:
-    properties:
-      green:
-        type: string
-      red:
-        type: string
-      unknown:
-        type: string
-      yellow:
-        type: string
-    type: object
-  api.Rule:
+  github_com_konveyor_tackle2-hub_api.Rule:
     properties:
       createTime:
         type: string
@@ -855,7 +883,7 @@ definitions:
       description:
         type: string
       file:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       id:
         type: integer
       labels:
@@ -867,7 +895,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.RuleReport:
+  github_com_konveyor_tackle2-hub_api.RuleReport:
     properties:
       applications:
         type: integer
@@ -883,7 +911,7 @@ definitions:
         type: array
       links:
         items:
-          $ref: '#/definitions/api.Link'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
         type: array
       name:
         type: string
@@ -892,7 +920,7 @@ definitions:
       ruleset:
         type: string
     type: object
-  api.RuleSet:
+  github_com_konveyor_tackle2-hub_api.RuleSet:
     properties:
       createTime:
         type: string
@@ -900,78 +928,49 @@ definitions:
         type: string
       dependsOn:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       description:
         type: string
       id:
         type: integer
       identity:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       kind:
         type: string
       name:
         type: string
       repository:
-        $ref: '#/definitions/api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
       rules:
         items:
-          $ref: '#/definitions/api.Rule'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Rule'
         type: array
       updateUser:
         type: string
     type: object
-  api.Schema:
-    properties:
-      domain:
-        type: string
-      name:
-        type: string
-      subject:
-        type: string
-      variant:
-        type: string
-      versions:
-        items:
-          $ref: '#/definitions/jsd.Version'
-        type: array
-    type: object
-  api.Section:
-    properties:
-      comment:
-        type: string
-      name:
-        type: string
-      order:
-        type: integer
-      questions:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Question'
-        minItems: 1
-        type: array
-    type: object
-  api.Service:
+  github_com_konveyor_tackle2-hub_api.Service:
     properties:
       name:
         type: string
       route:
         type: string
     type: object
-  api.Setting:
+  github_com_konveyor_tackle2-hub_api.Setting:
     properties:
       key:
         type: string
       value: {}
     type: object
-  api.Stakeholder:
+  github_com_konveyor_tackle2-hub_api.Stakeholder:
     properties:
       businessServices:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       contributes:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       createTime:
         type: string
@@ -982,20 +981,20 @@ definitions:
       id:
         type: integer
       jobFunction:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       migrationWaves:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       name:
         type: string
       owns:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       stakeholderGroups:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       updateUser:
         type: string
@@ -1003,7 +1002,7 @@ definitions:
     - email
     - name
     type: object
-  api.StakeholderGroup:
+  github_com_konveyor_tackle2-hub_api.StakeholderGroup:
     properties:
       createTime:
         type: string
@@ -1015,29 +1014,20 @@ definitions:
         type: integer
       migrationWaves:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       name:
         type: string
       stakeholders:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       updateUser:
         type: string
     required:
     - name
     type: object
-  api.Stakeholders:
-    properties:
-      contributors:
-        items:
-          $ref: '#/definitions/api.Ref'
-        type: array
-      owner:
-        $ref: '#/definitions/api.Ref'
-    type: object
-  api.TTL:
+  github_com_konveyor_tackle2-hub_api.TTL:
     properties:
       created:
         type: integer
@@ -1050,10 +1040,10 @@ definitions:
       succeeded:
         type: integer
     type: object
-  api.Tag:
+  github_com_konveyor_tackle2-hub_api.Tag:
     properties:
       category:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1068,7 +1058,7 @@ definitions:
     - category
     - name
     type: object
-  api.TagCategory:
+  github_com_konveyor_tackle2-hub_api.TagCategory:
     properties:
       colour:
         type: string
@@ -1085,7 +1075,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       updateUser:
         type: string
@@ -1095,7 +1085,7 @@ definitions:
     required:
     - name
     type: object
-  api.TagRef:
+  github_com_konveyor_tackle2-hub_api.TagRef:
     properties:
       id:
         type: integer
@@ -1108,51 +1098,17 @@ definitions:
     required:
     - id
     type: object
-  api.Target:
+  github_com_konveyor_tackle2-hub_api.TargetProfile:
     properties:
-      choice:
-        type: boolean
-      createTime:
-        type: string
-      createUser:
-        type: string
-      custom:
-        type: boolean
-      description:
-        type: string
-      id:
-        type: integer
-      image:
-        $ref: '#/definitions/api.Ref'
-      labels:
-        items:
-          $ref: '#/definitions/api.TargetLabel'
-        type: array
-      name:
-        type: string
-      provider:
-        type: string
-      ruleset:
-        $ref: '#/definitions/api.RuleSet'
-      updateUser:
-        type: string
-    type: object
-  api.TargetLabel:
-    properties:
-      label:
-        type: string
-      name:
-        type: string
-    type: object
-  api.TargetProfile:
-    properties:
+      analysisProfile:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
         type: string
       generators:
         items:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
         type: array
       id:
         type: integer
@@ -1163,7 +1119,7 @@ definitions:
     required:
     - name
     type: object
-  api.Task:
+  github_com_konveyor_tackle2-hub_api.Task:
     properties:
       activity:
         items:
@@ -1172,13 +1128,13 @@ definitions:
       addon:
         type: string
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       attached:
         items:
-          $ref: '#/definitions/api.Attachment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
         type: array
       bucket:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1186,11 +1142,11 @@ definitions:
       data: {}
       errors:
         items:
-          $ref: '#/definitions/api.TaskError'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
         type: array
       events:
         items:
-          $ref: '#/definitions/api.TaskEvent'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent'
         type: array
       extensions:
         items:
@@ -1205,11 +1161,11 @@ definitions:
       name:
         type: string
       platform:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       pod:
         type: string
       policy:
-        $ref: '#/definitions/api.TaskPolicy'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
       priority:
         type: integer
       retries:
@@ -1221,16 +1177,16 @@ definitions:
       terminated:
         type: string
       ttl:
-        $ref: '#/definitions/api.TTL'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TTL'
       updateUser:
         type: string
     type: object
-  api.TaskDashboard:
+  github_com_konveyor_tackle2-hub_api.TaskDashboard:
     properties:
       addon:
         type: string
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1245,6 +1201,8 @@ definitions:
         type: string
       name:
         type: string
+      platform:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       started:
         type: string
       state:
@@ -1254,14 +1212,14 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.TaskError:
+  github_com_konveyor_tackle2-hub_api.TaskError:
     properties:
       description:
         type: string
       severity:
         type: string
     type: object
-  api.TaskEvent:
+  github_com_konveyor_tackle2-hub_api.TaskEvent:
     properties:
       count:
         type: integer
@@ -1272,12 +1230,12 @@ definitions:
       reason:
         type: string
     type: object
-  api.TaskGroup:
+  github_com_konveyor_tackle2-hub_api.TaskGroup:
     properties:
       addon:
         type: string
       bucket:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1295,21 +1253,21 @@ definitions:
       name:
         type: string
       policy:
-        $ref: '#/definitions/api.TaskPolicy'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
       priority:
         type: integer
       state:
         type: string
       tasks:
         items:
-          $ref: '#/definitions/api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
         type: array
       updateUser:
         type: string
     required:
     - data
     type: object
-  api.TaskPolicy:
+  github_com_konveyor_tackle2-hub_api.TaskPolicy:
     properties:
       isolated:
         type: boolean
@@ -1318,7 +1276,7 @@ definitions:
       preemptExempt:
         type: boolean
     type: object
-  api.TaskQueue:
+  github_com_konveyor_tackle2-hub_api.TaskQueue:
     properties:
       pending:
         type: integer
@@ -1333,7 +1291,7 @@ definitions:
       total:
         type: integer
     type: object
-  api.TaskReport:
+  github_com_konveyor_tackle2-hub_api.TaskReport:
     properties:
       activity:
         items:
@@ -1341,7 +1299,7 @@ definitions:
         type: array
       attached:
         items:
-          $ref: '#/definitions/api.Attachment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
         type: array
       completed:
         type: integer
@@ -1351,7 +1309,7 @@ definitions:
         type: string
       errors:
         items:
-          $ref: '#/definitions/api.TaskError'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
         type: array
       id:
         type: integer
@@ -1365,7 +1323,7 @@ definitions:
       updateUser:
         type: string
     type: object
-  api.TechDependency:
+  github_com_konveyor_tackle2-hub_api.TechDependency:
     properties:
       analysis:
         type: integer
@@ -1394,19 +1352,10 @@ definitions:
     required:
     - name
     type: object
-  api.Thresholds:
-    properties:
-      red:
-        type: integer
-      unknown:
-        type: integer
-      yellow:
-        type: integer
-    type: object
-  api.Ticket:
+  github_com_konveyor_tackle2-hub_api.Ticket:
     properties:
       application:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1414,7 +1363,7 @@ definitions:
       error:
         type: boolean
       fields:
-        $ref: '#/definitions/api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
       id:
         type: integer
       kind:
@@ -1432,7 +1381,7 @@ definitions:
       status:
         type: string
       tracker:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       updateUser:
         type: string
     required:
@@ -1441,7 +1390,7 @@ definitions:
     - parent
     - tracker
     type: object
-  api.Tracker:
+  github_com_konveyor_tackle2-hub_api.Tracker:
     properties:
       connected:
         type: boolean
@@ -1452,7 +1401,7 @@ definitions:
       id:
         type: integer
       identity:
-        $ref: '#/definitions/api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       insecure:
         type: boolean
       kind:
@@ -1476,7 +1425,7 @@ definitions:
     - name
     - url
     type: object
-  api.Vertex:
+  github_com_konveyor_tackle2-hub_api.Vertex:
     properties:
       applicationId:
         type: integer
@@ -1493,1099 +1442,742 @@ definitions:
       positionY:
         type: integer
     type: object
-  github_com_konveyor_tackle2-hub_api_jsd.Map:
-    additionalProperties: {}
-    type: object
-  github_com_konveyor_tackle2-hub_jsd.Map:
-    additionalProperties: {}
-    type: object
-  github_com_konveyor_tackle2-hub_migration_v18_model.Answer:
+  github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile:
     properties:
-      applyTags:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
-        type: array
-      autoAnswerFor:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
-        type: array
-      autoAnswered:
-        type: boolean
-      mitigation:
+      createTime:
         type: string
-      order:
-        type: integer
-      rationale:
+      createUser:
         type: string
-      risk:
-        enum:
-        - red
-        - yellow
-        - green
-        - unknown
+      description:
         type: string
-      selected:
-        type: boolean
-      text:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag:
-    properties:
-      category:
-        type: string
-      tag:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_migration_v18_model.Question:
-    properties:
-      answers:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Answer'
-        minItems: 1
-        type: array
-      excludeFor:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
-        type: array
-      explanation:
-        type: string
-      includeFor:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag'
-        type: array
-      order:
-        type: integer
-      text:
-        type: string
-    type: object
-  intstr.IntOrString:
-    properties:
-      intVal:
-        type: integer
-      strVal:
-        type: string
-      type:
-        $ref: '#/definitions/intstr.Type'
-    type: object
-  intstr.Type:
-    enum:
-    - 0
-    - 1
-    type: integer
-    x-enum-comments:
-      Int: The IntOrString holds an int.
-      String: The IntOrString holds a string.
-    x-enum-varnames:
-    - Int
-    - String
-  jsd.Document:
-    properties:
-      content:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api_jsd.Map'
-      schema:
-        type: string
-    required:
-    - content
-    type: object
-  jsd.Version:
-    properties:
-      definition:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_jsd.Map'
       id:
         type: integer
-      migration:
+      mode:
+        $ref: '#/definitions/api.ApMode'
+      name:
+        type: string
+      rules:
+        $ref: '#/definitions/api.ApRules'
+      scope:
+        $ref: '#/definitions/api.ApScope'
+      updateUser:
         type: string
     type: object
-  resource.Quantity:
+  github_com_konveyor_tackle2-hub_internal_api.Dependency:
     properties:
-      Format:
-        enum:
-        - DecimalExponent
-        - BinarySI
-        - DecimalSI
+      createTime:
         type: string
-        x-enum-comments:
-          BinarySI: e.g., 12Mi (12 * 2^20)
-          DecimalExponent: e.g., 12e6
-          DecimalSI: e.g., 12M  (12 * 10^6)
-        x-enum-varnames:
-        - DecimalExponent
-        - BinarySI
-        - DecimalSI
+      createUser:
+        type: string
+      from:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      id:
+        type: integer
+      to:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      updateUser:
+        type: string
     type: object
-  v1.Capabilities:
+  github_com_konveyor_tackle2-hub_internal_api.Generator:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      params:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      profiles:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        type: array
+      repository:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+      updateUser:
+        type: string
+      values:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+    required:
+    - kind
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Identity:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      default:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      key:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      settings:
+        type: string
+      updateUser:
+        type: string
+      user:
+        type: string
+    required:
+    - kind
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.LatestSchema:
+    properties:
+      definition:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Manifest:
+    properties:
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      content:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      secret:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Platform:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      updateUser:
+        type: string
+      url:
+        type: string
+    required:
+    - kind
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Proxy:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      enabled:
+        type: boolean
+      excluded:
+        items:
+          type: string
+        type: array
+      host:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      kind:
+        enum:
+        - http
+        - https
+        type: string
+      port:
+        type: integer
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Ref:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - id
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.RestAPI:
+    properties:
+      routes:
+        items:
+          type: string
+        type: array
+      version:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.RuleSet:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      dependsOn:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        type: array
+      description:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      repository:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+      rules:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Rule'
+        type: array
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Schema:
+    properties:
+      domain:
+        type: string
+      name:
+        type: string
+      subject:
+        type: string
+      variant:
+        type: string
+      versions:
+        items:
+          $ref: '#/definitions/api.Version'
+        type: array
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Tag:
+    properties:
+      category:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - category
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.TagRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+      virtual:
+        type: boolean
+    required:
+    - id
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Target:
+    properties:
+      choice:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      custom:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      labels:
+        items:
+          $ref: '#/definitions/api.TargetLabel'
+        type: array
+      name:
+        type: string
+      provider:
+        type: string
+      ruleset:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.RuleSet'
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.Task:
+    properties:
+      activity:
+        items:
+          type: string
+        type: array
+      addon:
+        type: string
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      attached:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
+        type: array
+      bucket:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data: {}
+      errors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
+        type: array
+      events:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent'
+        type: array
+      extensions:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      kind:
+        type: string
+      locator:
+        type: string
+      name:
+        type: string
+      platform:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      pod:
+        type: string
+      policy:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
+      priority:
+        type: integer
+      retries:
+        type: integer
+      started:
+        type: string
+      state:
+        type: string
+      terminated:
+        type: string
+      ttl:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TTL'
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.TaskGroup:
+    properties:
+      addon:
+        type: string
+      bucket:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data:
+        type: object
+      extensions:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      kind:
+        type: string
+      name:
+        type: string
+      policy:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
+      priority:
+        type: integer
+      state:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
+        type: array
+      updateUser:
+        type: string
+    required:
+    - data
+    type: object
+  k8s.Capabilities:
     properties:
       add:
-        description: |-
-          Added capabilities
-          +optional
         items:
           type: string
         type: array
       drop:
-        description: |-
-          Removed capabilities
-          +optional
         items:
           type: string
         type: array
     type: object
-  v1.ConfigMapEnvSource:
+  k8s.ConfigMapEnvSource:
     properties:
-      name:
-        description: |-
-          Name of the referent.
-          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-          TODO: Add other useful fields. apiVersion, kind, uid?
-          +optional
-        type: string
+      localObjectReference:
+        $ref: '#/definitions/k8s.LocalObjectReference'
       optional:
-        description: |-
-          Specify whether the ConfigMap must be defined
-          +optional
         type: boolean
     type: object
-  v1.ConfigMapKeySelector:
+  k8s.ConfigMapKeySelector:
     properties:
       key:
-        description: The key to select.
         type: string
-      name:
-        description: |-
-          Name of the referent.
-          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-          TODO: Add other useful fields. apiVersion, kind, uid?
-          +optional
-        type: string
+      localObjectReference:
+        $ref: '#/definitions/k8s.LocalObjectReference'
       optional:
-        description: |-
-          Specify whether the ConfigMap or its key must be defined
-          +optional
         type: boolean
     type: object
-  v1.Container:
+  k8s.Container:
     properties:
       args:
-        description: |-
-          Arguments to the entrypoint.
-          The container image's CMD is used if this is not provided.
-          Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-          cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
-          to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
-          produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
-          of whether the variable exists or not. Cannot be updated.
-          More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
-          +optional
         items:
           type: string
         type: array
       command:
-        description: |-
-          Entrypoint array. Not executed within a shell.
-          The container image's ENTRYPOINT is used if this is not provided.
-          Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-          cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
-          to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
-          produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
-          of whether the variable exists or not. Cannot be updated.
-          More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
-          +optional
         items:
           type: string
         type: array
       env:
-        description: |-
-          List of environment variables to set in the container.
-          Cannot be updated.
-          +optional
-          +patchMergeKey=name
-          +patchStrategy=merge
         items:
-          $ref: '#/definitions/v1.EnvVar'
+          $ref: '#/definitions/k8s.EnvVar'
         type: array
       envFrom:
-        description: |-
-          List of sources to populate environment variables in the container.
-          The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-          will be reported as an event when the container is starting. When a key exists in multiple
-          sources, the value associated with the last source will take precedence.
-          Values defined by an Env with a duplicate key will take precedence.
-          Cannot be updated.
-          +optional
         items:
-          $ref: '#/definitions/v1.EnvFromSource'
+          $ref: '#/definitions/k8s.EnvFromSource'
         type: array
       image:
-        description: |-
-          Container image name.
-          More info: https://kubernetes.io/docs/concepts/containers/images
-          This field is optional to allow higher level config management to default or override
-          container images in workload controllers like Deployments and StatefulSets.
-          +optional
         type: string
       imagePullPolicy:
-        allOf:
-        - $ref: '#/definitions/v1.PullPolicy'
-        description: |-
-          Image pull policy.
-          One of Always, Never, IfNotPresent.
-          Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
-          Cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-          +optional
+        type: string
       lifecycle:
-        allOf:
-        - $ref: '#/definitions/v1.Lifecycle'
-        description: |-
-          Actions that the management system should take in response to container lifecycle events.
-          Cannot be updated.
-          +optional
+        $ref: '#/definitions/k8s.Lifecycle'
       livenessProbe:
-        allOf:
-        - $ref: '#/definitions/v1.Probe'
-        description: |-
-          Periodic probe of container liveness.
-          Container will be restarted if the probe fails.
-          Cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-          +optional
+        $ref: '#/definitions/k8s.Probe'
       name:
-        description: |-
-          Name of the container specified as a DNS_LABEL.
-          Each container in a pod must have a unique name (DNS_LABEL).
-          Cannot be updated.
         type: string
       ports:
-        description: |-
-          List of ports to expose from the container. Not specifying a port here
-          DOES NOT prevent that port from being exposed. Any port which is
-          listening on the default "0.0.0.0" address inside a container will be
-          accessible from the network.
-          Modifying this array with strategic merge patch may corrupt the data.
-          For more information See https://github.com/kubernetes/kubernetes/issues/108255.
-          Cannot be updated.
-          +optional
-          +patchMergeKey=containerPort
-          +patchStrategy=merge
-          +listType=map
-          +listMapKey=containerPort
-          +listMapKey=protocol
         items:
-          $ref: '#/definitions/v1.ContainerPort'
+          $ref: '#/definitions/k8s.ContainerPort'
         type: array
       readinessProbe:
-        allOf:
-        - $ref: '#/definitions/v1.Probe'
-        description: |-
-          Periodic probe of container service readiness.
-          Container will be removed from service endpoints if the probe fails.
-          Cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-          +optional
+        $ref: '#/definitions/k8s.Probe'
       resources:
-        allOf:
-        - $ref: '#/definitions/v1.ResourceRequirements'
-        description: |-
-          Compute Resources required by this container.
-          Cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-          +optional
+        $ref: '#/definitions/k8s.ResourceRequirements'
       securityContext:
-        allOf:
-        - $ref: '#/definitions/v1.SecurityContext'
-        description: |-
-          SecurityContext defines the security options the container should be run with.
-          If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
-          More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-          +optional
+        $ref: '#/definitions/k8s.SecurityContext'
       startupProbe:
-        allOf:
-        - $ref: '#/definitions/v1.Probe'
-        description: |-
-          StartupProbe indicates that the Pod has successfully initialized.
-          If specified, no other probes are executed until this completes successfully.
-          If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
-          This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
-          when it might take a long time to load data or warm a cache, than during steady-state operation.
-          This cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-          +optional
+        $ref: '#/definitions/k8s.Probe'
       stdin:
-        description: |-
-          Whether this container should allocate a buffer for stdin in the container runtime. If this
-          is not set, reads from stdin in the container will always result in EOF.
-          Default is false.
-          +optional
         type: boolean
       stdinOnce:
-        description: |-
-          Whether the container runtime should close the stdin channel after it has been opened by
-          a single attach. When stdin is true the stdin stream will remain open across multiple attach
-          sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
-          first client attaches to stdin, and then remains open and accepts data until the client disconnects,
-          at which time stdin is closed and remains closed until the container is restarted. If this
-          flag is false, a container processes that reads from stdin will never receive an EOF.
-          Default is false
-          +optional
         type: boolean
       terminationMessagePath:
-        description: |-
-          Optional: Path at which the file to which the container's termination message
-          will be written is mounted into the container's filesystem.
-          Message written is intended to be brief final status, such as an assertion failure message.
-          Will be truncated by the node if greater than 4096 bytes. The total message length across
-          all containers will be limited to 12kb.
-          Defaults to /dev/termination-log.
-          Cannot be updated.
-          +optional
         type: string
       terminationMessagePolicy:
-        allOf:
-        - $ref: '#/definitions/v1.TerminationMessagePolicy'
-        description: |-
-          Indicate how the termination message should be populated. File will use the contents of
-          terminationMessagePath to populate the container status message on both success and failure.
-          FallbackToLogsOnError will use the last chunk of container log output if the termination
-          message file is empty and the container exited with an error.
-          The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
-          Defaults to File.
-          Cannot be updated.
-          +optional
+        type: string
       tty:
-        description: |-
-          Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.
-          Default is false.
-          +optional
         type: boolean
       volumeDevices:
-        description: |-
-          volumeDevices is the list of block devices to be used by the container.
-          +patchMergeKey=devicePath
-          +patchStrategy=merge
-          +optional
         items:
-          $ref: '#/definitions/v1.VolumeDevice'
+          $ref: '#/definitions/k8s.VolumeDevice'
         type: array
       volumeMounts:
-        description: |-
-          Pod volumes to mount into the container's filesystem.
-          Cannot be updated.
-          +optional
-          +patchMergeKey=mountPath
-          +patchStrategy=merge
         items:
-          $ref: '#/definitions/v1.VolumeMount'
+          $ref: '#/definitions/k8s.VolumeMount'
         type: array
       workingDir:
-        description: |-
-          Container's working directory.
-          If not specified, the container runtime's default will be used, which
-          might be configured in the container image.
-          Cannot be updated.
-          +optional
         type: string
     type: object
-  v1.ContainerPort:
+  k8s.ContainerPort:
     properties:
       containerPort:
-        description: |-
-          Number of port to expose on the pod's IP address.
-          This must be a valid port number, 0 < x < 65536.
         type: integer
       hostIP:
-        description: |-
-          What host IP to bind the external port to.
-          +optional
         type: string
       hostPort:
-        description: |-
-          Number of port to expose on the host.
-          If specified, this must be a valid port number, 0 < x < 65536.
-          If HostNetwork is specified, this must match ContainerPort.
-          Most containers do not need this.
-          +optional
         type: integer
       name:
-        description: |-
-          If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
-          named port in a pod must have a unique name. Name for the port that can be
-          referred to by services.
-          +optional
         type: string
       protocol:
-        allOf:
-        - $ref: '#/definitions/v1.Protocol'
-        description: |-
-          Protocol for port. Must be UDP, TCP, or SCTP.
-          Defaults to "TCP".
-          +optional
-          +default="TCP"
+        description: Default "TCP"
+        type: string
     type: object
-  v1.EnvFromSource:
+  k8s.EnvFromSource:
     properties:
       configMapRef:
-        allOf:
-        - $ref: '#/definitions/v1.ConfigMapEnvSource'
-        description: |-
-          The ConfigMap to select from
-          +optional
+        $ref: '#/definitions/k8s.ConfigMapEnvSource'
       prefix:
-        description: |-
-          An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
-          +optional
         type: string
       secretRef:
-        allOf:
-        - $ref: '#/definitions/v1.SecretEnvSource'
-        description: |-
-          The Secret to select from
-          +optional
+        $ref: '#/definitions/k8s.SecretEnvSource'
     type: object
-  v1.EnvVar:
+  k8s.EnvVar:
     properties:
       name:
-        description: Name of the environment variable. Must be a C_IDENTIFIER.
         type: string
       value:
-        description: |-
-          Variable references $(VAR_NAME) are expanded
-          using the previously defined environment variables in the container and
-          any service environment variables. If a variable cannot be resolved,
-          the reference in the input string will be unchanged. Double $$ are reduced
-          to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-          "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-          Escaped references will never be expanded, regardless of whether the variable
-          exists or not.
-          Defaults to "".
-          +optional
         type: string
       valueFrom:
-        allOf:
-        - $ref: '#/definitions/v1.EnvVarSource'
-        description: |-
-          Source for the environment variable's value. Cannot be used if value is not empty.
-          +optional
+        $ref: '#/definitions/k8s.EnvVarSource'
     type: object
-  v1.EnvVarSource:
+  k8s.EnvVarSource:
     properties:
       configMapKeyRef:
-        allOf:
-        - $ref: '#/definitions/v1.ConfigMapKeySelector'
-        description: |-
-          Selects a key of a ConfigMap.
-          +optional
+        $ref: '#/definitions/k8s.ConfigMapKeySelector'
       fieldRef:
-        allOf:
-        - $ref: '#/definitions/v1.ObjectFieldSelector'
-        description: |-
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
-          +optional
+        $ref: '#/definitions/k8s.ObjectFieldSelector'
       resourceFieldRef:
-        allOf:
-        - $ref: '#/definitions/v1.ResourceFieldSelector'
-        description: |-
-          Selects a resource of the container: only resources limits and requests
-          (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
-          +optional
+        $ref: '#/definitions/k8s.ResourceFieldSelector'
       secretKeyRef:
-        allOf:
-        - $ref: '#/definitions/v1.SecretKeySelector'
-        description: |-
-          Selects a key of a secret in the pod's namespace
-          +optional
+        $ref: '#/definitions/k8s.SecretKeySelector'
     type: object
-  v1.ExecAction:
+  k8s.ExecAction:
     properties:
       command:
-        description: |-
-          Command is the command line to execute inside the container, the working directory for the
-          command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
-          not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
-          a shell, you need to explicitly call out to that shell.
-          Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
-          +optional
         items:
           type: string
         type: array
     type: object
-  v1.GRPCAction:
+  k8s.GRPCAction:
     properties:
       port:
-        description: Port number of the gRPC service. Number must be in the range
-          1 to 65535.
         type: integer
       service:
-        description: |-
-          Service is the name of the service to place in the gRPC HealthCheckRequest
-          (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
-          If this is not specified, the default behavior is defined by gRPC.
-          +optional
-          +default=""
         type: string
     type: object
-  v1.HTTPGetAction:
+  k8s.HTTPGetAction:
     properties:
       host:
-        description: |-
-          Host name to connect to, defaults to the pod IP. You probably want to set
-          "Host" in httpHeaders instead.
-          +optional
         type: string
       httpHeaders:
-        description: |-
-          Custom headers to set in the request. HTTP allows repeated headers.
-          +optional
         items:
-          $ref: '#/definitions/v1.HTTPHeader'
+          $ref: '#/definitions/k8s.HTTPHeader'
         type: array
       path:
-        description: |-
-          Path to access on the HTTP server.
-          +optional
         type: string
       port:
-        allOf:
-        - $ref: '#/definitions/intstr.IntOrString'
-        description: |-
-          Name or number of the port to access on the container.
-          Number must be in the range 1 to 65535.
-          Name must be an IANA_SVC_NAME.
+        type: integer
       scheme:
-        allOf:
-        - $ref: '#/definitions/v1.URIScheme'
-        description: |-
-          Scheme to use for connecting to the host.
-          Defaults to HTTP.
-          +optional
+        type: string
     type: object
-  v1.HTTPHeader:
+  k8s.HTTPHeader:
     properties:
       name:
-        description: The header field name
         type: string
       value:
-        description: The header field value
         type: string
     type: object
-  v1.Lifecycle:
+  k8s.Lifecycle:
     properties:
       postStart:
-        allOf:
-        - $ref: '#/definitions/v1.LifecycleHandler'
-        description: |-
-          PostStart is called immediately after a container is created. If the handler fails,
-          the container is terminated and restarted according to its restart policy.
-          Other management of the container blocks until the hook completes.
-          More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
-          +optional
+        $ref: '#/definitions/k8s.LifecycleHandler'
       preStop:
-        allOf:
-        - $ref: '#/definitions/v1.LifecycleHandler'
-        description: |-
-          PreStop is called immediately before a container is terminated due to an
-          API request or management event such as liveness/startup probe failure,
-          preemption, resource contention, etc. The handler is not called if the
-          container crashes or exits. The Pod's termination grace period countdown begins before the
-          PreStop hook is executed. Regardless of the outcome of the handler, the
-          container will eventually terminate within the Pod's termination grace
-          period (unless delayed by finalizers). Other management of the container blocks until the hook completes
-          or until the termination grace period is reached.
-          More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
-          +optional
+        $ref: '#/definitions/k8s.LifecycleHandler'
     type: object
-  v1.LifecycleHandler:
+  k8s.LifecycleHandler:
     properties:
       exec:
-        allOf:
-        - $ref: '#/definitions/v1.ExecAction'
-        description: |-
-          Exec specifies the action to take.
-          +optional
+        $ref: '#/definitions/k8s.ExecAction'
       httpGet:
-        allOf:
-        - $ref: '#/definitions/v1.HTTPGetAction'
-        description: |-
-          HTTPGet specifies the http request to perform.
-          +optional
+        $ref: '#/definitions/k8s.HTTPGetAction'
       tcpSocket:
-        allOf:
-        - $ref: '#/definitions/v1.TCPSocketAction'
-        description: |-
-          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-          for the backward compatibility. There are no validation of this field and
-          lifecycle hooks will fail in runtime when tcp handler is specified.
-          +optional
+        $ref: '#/definitions/k8s.TCPSocketAction'
     type: object
-  v1.MountPropagationMode:
-    enum:
-    - None
-    - HostToContainer
-    - Bidirectional
-    type: string
-    x-enum-varnames:
-    - MountPropagationNone
-    - MountPropagationHostToContainer
-    - MountPropagationBidirectional
-  v1.ObjectFieldSelector:
+  k8s.LocalObjectReference:
+    properties:
+      name:
+        type: string
+    type: object
+  k8s.ObjectFieldSelector:
     properties:
       apiVersion:
-        description: |-
-          Version of the schema the FieldPath is written in terms of, defaults to "v1".
-          +optional
+        description: default "v1"
         type: string
       fieldPath:
-        description: Path of the field to select in the specified API version.
         type: string
     type: object
-  v1.Probe:
+  k8s.Probe:
     properties:
       exec:
         allOf:
-        - $ref: '#/definitions/v1.ExecAction'
-        description: |-
-          Exec specifies the action to take.
-          +optional
+        - $ref: '#/definitions/k8s.ExecAction'
+        description: ProbeHandler fields inlined for direct compilation without embedding.
       failureThreshold:
-        description: |-
-          Minimum consecutive failures for the probe to be considered failed after having succeeded.
-          Defaults to 3. Minimum value is 1.
-          +optional
         type: integer
       grpc:
-        allOf:
-        - $ref: '#/definitions/v1.GRPCAction'
-        description: |-
-          GRPC specifies an action involving a GRPC port.
-          This is a beta field and requires enabling GRPCContainerProbe feature gate.
-          +featureGate=GRPCContainerProbe
-          +optional
+        $ref: '#/definitions/k8s.GRPCAction'
       httpGet:
-        allOf:
-        - $ref: '#/definitions/v1.HTTPGetAction'
-        description: |-
-          HTTPGet specifies the http request to perform.
-          +optional
+        $ref: '#/definitions/k8s.HTTPGetAction'
       initialDelaySeconds:
-        description: |-
-          Number of seconds after the container has started before liveness probes are initiated.
-          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-          +optional
         type: integer
       periodSeconds:
-        description: |-
-          How often (in seconds) to perform the probe.
-          Default to 10 seconds. Minimum value is 1.
-          +optional
         type: integer
       successThreshold:
-        description: |-
-          Minimum consecutive successes for the probe to be considered successful after having failed.
-          Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
-          +optional
         type: integer
       tcpSocket:
-        allOf:
-        - $ref: '#/definitions/v1.TCPSocketAction'
-        description: |-
-          TCPSocket specifies an action involving a TCP port.
-          +optional
+        $ref: '#/definitions/k8s.TCPSocketAction'
       terminationGracePeriodSeconds:
-        description: |-
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
-          The grace period is the duration in seconds after the processes running in the pod are sent
-          a termination signal and the time when the processes are forcibly halted with a kill signal.
-          Set this value longer than the expected cleanup time for your process.
-          If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
-          value overrides the value provided by the pod spec.
-          Value must be non-negative integer. The value zero indicates stop immediately via
-          the kill signal (no opportunity to shut down).
-          This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
-          Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
-          +optional
         type: integer
       timeoutSeconds:
-        description: |-
-          Number of seconds after which the probe times out.
-          Defaults to 1 second. Minimum value is 1.
-          More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-          +optional
         type: integer
     type: object
-  v1.ProcMountType:
-    enum:
-    - Default
-    - Unmasked
-    type: string
-    x-enum-varnames:
-    - DefaultProcMount
-    - UnmaskedProcMount
-  v1.Protocol:
-    enum:
-    - TCP
-    - UDP
-    - SCTP
-    type: string
-    x-enum-varnames:
-    - ProtocolTCP
-    - ProtocolUDP
-    - ProtocolSCTP
-  v1.PullPolicy:
-    enum:
-    - Always
-    - Never
-    - IfNotPresent
-    type: string
-    x-enum-varnames:
-    - PullAlways
-    - PullNever
-    - PullIfNotPresent
-  v1.ResourceFieldSelector:
+  k8s.ResourceFieldSelector:
     properties:
       containerName:
-        description: |-
-          Container name: required for volumes, optional for env vars
-          +optional
         type: string
       divisor:
-        allOf:
-        - $ref: '#/definitions/resource.Quantity'
-        description: |-
-          Specifies the output format of the exposed resources, defaults to "1"
-          +optional
+        description: Quantity as string
+        type: string
       resource:
-        description: 'Required: resource to select'
         type: string
     type: object
-  v1.ResourceList:
-    additionalProperties:
-      $ref: '#/definitions/resource.Quantity'
-    type: object
-  v1.ResourceRequirements:
+  k8s.ResourceRequirements:
     properties:
       limits:
-        allOf:
-        - $ref: '#/definitions/v1.ResourceList'
-        description: |-
-          Limits describes the maximum amount of compute resources allowed.
-          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-          +optional
+        additionalProperties:
+          type: string
+        description: e.g. "100m", "500Mi" as string
+        type: object
       requests:
-        allOf:
-        - $ref: '#/definitions/v1.ResourceList'
-        description: |-
-          Requests describes the minimum amount of compute resources required.
-          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-          otherwise to an implementation-defined value.
-          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-          +optional
+        additionalProperties:
+          type: string
+        description: e.g. "100m", "500Mi" as string
+        type: object
     type: object
-  v1.SELinuxOptions:
+  k8s.SELinuxOptions:
     properties:
       level:
-        description: |-
-          Level is SELinux level label that applies to the container.
-          +optional
         type: string
       role:
-        description: |-
-          Role is a SELinux role label that applies to the container.
-          +optional
         type: string
       type:
-        description: |-
-          Type is a SELinux type label that applies to the container.
-          +optional
         type: string
       user:
-        description: |-
-          User is a SELinux user label that applies to the container.
-          +optional
         type: string
     type: object
-  v1.SeccompProfile:
+  k8s.SeccompProfile:
     properties:
       localhostProfile:
-        description: |-
-          localhostProfile indicates a profile defined in a file on the node should be used.
-          The profile must be preconfigured on the node to work.
-          Must be a descending path, relative to the kubelet's configured seccomp profile location.
-          Must only be set if type is "Localhost".
-          +optional
         type: string
       type:
-        allOf:
-        - $ref: '#/definitions/v1.SeccompProfileType'
-        description: |-
-          type indicates which kind of seccomp profile will be applied.
-          Valid options are:
-
-          Localhost - a profile defined in a file on the node should be used.
-          RuntimeDefault - the container runtime default profile should be used.
-          Unconfined - no profile should be applied.
-          +unionDiscriminator
-    type: object
-  v1.SeccompProfileType:
-    enum:
-    - Unconfined
-    - RuntimeDefault
-    - Localhost
-    type: string
-    x-enum-varnames:
-    - SeccompProfileTypeUnconfined
-    - SeccompProfileTypeRuntimeDefault
-    - SeccompProfileTypeLocalhost
-  v1.SecretEnvSource:
-    properties:
-      name:
-        description: |-
-          Name of the referent.
-          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-          TODO: Add other useful fields. apiVersion, kind, uid?
-          +optional
         type: string
+    type: object
+  k8s.SecretEnvSource:
+    properties:
+      localObjectReference:
+        $ref: '#/definitions/k8s.LocalObjectReference'
       optional:
-        description: |-
-          Specify whether the Secret must be defined
-          +optional
         type: boolean
     type: object
-  v1.SecretKeySelector:
+  k8s.SecretKeySelector:
     properties:
       key:
-        description: The key of the secret to select from.  Must be a valid secret
-          key.
         type: string
-      name:
-        description: |-
-          Name of the referent.
-          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-          TODO: Add other useful fields. apiVersion, kind, uid?
-          +optional
-        type: string
+      localObjectReference:
+        $ref: '#/definitions/k8s.LocalObjectReference'
       optional:
-        description: |-
-          Specify whether the Secret or its key must be defined
-          +optional
         type: boolean
     type: object
-  v1.SecurityContext:
+  k8s.SecurityContext:
     properties:
       allowPrivilegeEscalation:
-        description: |-
-          AllowPrivilegeEscalation controls whether a process can gain more
-          privileges than its parent process. This bool directly controls if
-          the no_new_privs flag will be set on the container process.
-          AllowPrivilegeEscalation is true always when the container is:
-          1) run as Privileged
-          2) has CAP_SYS_ADMIN
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
         type: boolean
       capabilities:
-        allOf:
-        - $ref: '#/definitions/v1.Capabilities'
-        description: |-
-          The capabilities to add/drop when running containers.
-          Defaults to the default set of capabilities granted by the container runtime.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
+        $ref: '#/definitions/k8s.Capabilities'
       privileged:
-        description: |-
-          Run container in privileged mode.
-          Processes in privileged containers are essentially equivalent to root on the host.
-          Defaults to false.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
         type: boolean
       procMount:
-        allOf:
-        - $ref: '#/definitions/v1.ProcMountType'
-        description: |-
-          procMount denotes the type of proc mount to use for the containers.
-          The default is DefaultProcMount which uses the container runtime defaults for
-          readonly paths and masked paths.
-          This requires the ProcMountType feature flag to be enabled.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
-      readOnlyRootFilesystem:
-        description: |-
-          Whether this container has a read-only root filesystem.
-          Default is false.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
+        type: string
+      readOnlyRouteFilesystem:
         type: boolean
       runAsGroup:
-        description: |-
-          The GID to run the entrypoint of the container process.
-          Uses runtime default if unset.
-          May also be set in PodSecurityContext.  If set in both SecurityContext and
-          PodSecurityContext, the value specified in SecurityContext takes precedence.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
         type: integer
-      runAsNonRoot:
-        description: |-
-          Indicates that the container must run as a non-root user.
-          If true, the Kubelet will validate the image at runtime to ensure that it
-          does not run as UID 0 (root) and fail to start the container if it does.
-          If unset or false, no such validation will be performed.
-          May also be set in PodSecurityContext.  If set in both SecurityContext and
-          PodSecurityContext, the value specified in SecurityContext takes precedence.
-          +optional
+      runAsNonRoute:
         type: boolean
       runAsUser:
-        description: |-
-          The UID to run the entrypoint of the container process.
-          Defaults to user specified in image metadata if unspecified.
-          May also be set in PodSecurityContext.  If set in both SecurityContext and
-          PodSecurityContext, the value specified in SecurityContext takes precedence.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
         type: integer
       seLinuxOptions:
-        allOf:
-        - $ref: '#/definitions/v1.SELinuxOptions'
-        description: |-
-          The SELinux context to be applied to the container.
-          If unspecified, the container runtime will allocate a random SELinux context for each
-          container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
-          PodSecurityContext, the value specified in SecurityContext takes precedence.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
+        $ref: '#/definitions/k8s.SELinuxOptions'
       seccompProfile:
-        allOf:
-        - $ref: '#/definitions/v1.SeccompProfile'
-        description: |-
-          The seccomp options to use by this container. If seccomp options are
-          provided at both the pod & container level, the container options
-          override the pod options.
-          Note that this field cannot be set when spec.os.name is windows.
-          +optional
+        $ref: '#/definitions/k8s.SeccompProfile'
       windowsOptions:
-        allOf:
-        - $ref: '#/definitions/v1.WindowsSecurityContextOptions'
-        description: |-
-          The Windows specific settings applied to all containers.
-          If unspecified, the options from the PodSecurityContext will be used.
-          If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
-          Note that this field cannot be set when spec.os.name is linux.
-          +optional
+        $ref: '#/definitions/k8s.WindowsSecurityContextOptions'
     type: object
-  v1.TCPSocketAction:
+  k8s.TCPSocketAction:
     properties:
       host:
-        description: |-
-          Optional: Host name to connect to, defaults to the pod IP.
-          +optional
         type: string
       port:
-        allOf:
-        - $ref: '#/definitions/intstr.IntOrString'
-        description: |-
-          Number or name of the port to access on the container.
-          Number must be in the range 1 to 65535.
-          Name must be an IANA_SVC_NAME.
+        type: integer
     type: object
-  v1.TerminationMessagePolicy:
-    enum:
-    - File
-    - FallbackToLogsOnError
-    type: string
-    x-enum-varnames:
-    - TerminationMessageReadFile
-    - TerminationMessageFallbackToLogsOnError
-  v1.URIScheme:
-    enum:
-    - HTTP
-    - HTTPS
-    type: string
-    x-enum-varnames:
-    - URISchemeHTTP
-    - URISchemeHTTPS
-  v1.VolumeDevice:
+  k8s.VolumeDevice:
     properties:
       devicePath:
-        description: devicePath is the path inside of the container that the device
-          will be mapped to.
         type: string
       name:
-        description: name must match the name of a persistentVolumeClaim in the pod
         type: string
     type: object
-  v1.VolumeMount:
+  k8s.VolumeMount:
     properties:
       mountPath:
-        description: |-
-          Path within the container at which the volume should be mounted.  Must
-          not contain ':'.
         type: string
       mountPropagation:
-        allOf:
-        - $ref: '#/definitions/v1.MountPropagationMode'
-        description: |-
-          mountPropagation determines how mounts are propagated from the host
-          to container and the other way around.
-          When not set, MountPropagationNone is used.
-          This field is beta in 1.10.
-          +optional
+        type: string
       name:
-        description: This must match the Name of a Volume.
         type: string
       readOnly:
-        description: |-
-          Mounted read-only if true, read-write otherwise (false or unspecified).
-          Defaults to false.
-          +optional
         type: boolean
       subPath:
-        description: |-
-          Path within the volume from which the container's volume should be mounted.
-          Defaults to "" (volume's root).
-          +optional
         type: string
       subPathExpr:
-        description: |-
-          Expanded path within the volume from which the container's volume should be mounted.
-          Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
-          Defaults to "" (volume's root).
-          SubPathExpr and SubPath are mutually exclusive.
-          +optional
         type: string
     type: object
-  v1.WindowsSecurityContextOptions:
+  k8s.WindowsSecurityContextOptions:
     properties:
       gmsaCredentialSpec:
-        description: |-
-          GMSACredentialSpec is where the GMSA admission webhook
-          (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
-          GMSA credential spec named by the GMSACredentialSpecName field.
-          +optional
         type: string
       gmsaCredentialSpecName:
-        description: |-
-          GMSACredentialSpecName is the name of the GMSA credential spec to use.
-          +optional
         type: string
       hostProcess:
-        description: |-
-          HostProcess determines if a container should be run as a 'Host Process' container.
-          This field is alpha-level and will only be honored by components that enable the
-          WindowsHostProcessContainers feature flag. Setting this field without the feature
-          flag will result in errors when validating the Pod. All of a Pod's containers must
-          have the same effective HostProcess value (it is not allowed to have a mix of HostProcess
-          containers and non-HostProcess containers).  In addition, if HostProcess is true
-          then HostNetwork must also be set to true.
-          +optional
         type: boolean
       runAsUserName:
-        description: |-
-          The UserName in Windows to run the entrypoint of the container process.
-          Defaults to the user specified in image metadata if unspecified.
-          May also be set in PodSecurityContext. If set in both SecurityContext and
-          PodSecurityContext, the value specified in SecurityContext takes precedence.
-          +optional
         type: string
     type: object
 info:
@@ -2606,7 +2198,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Addon'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Addon'
             type: array
       summary: List all addons.
       tags:
@@ -2626,7 +2218,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Addon'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Addon'
       summary: Get an addon by name.
       tags:
       - addons
@@ -2650,7 +2242,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Vertex'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Vertex'
             type: array
       summary: Generate an application dependency graph arranged in topological order.
       tags:
@@ -2667,7 +2259,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Analysis'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
             type: array
       summary: List analyses.
       tags:
@@ -2701,7 +2293,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
       summary: Get an analysis (report) by ID.
       tags:
       - analyses
@@ -2745,7 +2337,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
             type: array
       summary: List analysis dependencies.
       tags:
@@ -2774,7 +2366,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
             type: array
       summary: List insights for an analysis.
       tags:
@@ -2806,7 +2398,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
             type: array
       summary: List dependency reports.
       tags:
@@ -2825,7 +2417,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Incident'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
             type: array
       summary: List all incidents.
       tags:
@@ -2845,7 +2437,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Incident'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
       summary: Get an incident.
       tags:
       - incident
@@ -2870,7 +2462,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
             type: array
       summary: List all insights.
       tags:
@@ -2890,7 +2482,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Insight'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
       summary: Get an insight.
       tags:
       - insight
@@ -2913,7 +2505,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Incident'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
             type: array
       summary: List incidents for an insight.
       tags:
@@ -2958,7 +2550,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.DepAppReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.DepAppReport'
             type: array
       summary: List application reports.
       tags:
@@ -2992,7 +2584,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.InsightReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.InsightReport'
             type: array
       summary: List application insight reports.
       tags:
@@ -3022,7 +2614,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.FileReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.FileReport'
             type: array
       summary: List incident file reports.
       tags:
@@ -3056,11 +2648,121 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.RuleReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.RuleReport'
             type: array
       summary: List rule reports.
       tags:
       - rulereports
+  /analysis/profiles:
+    get:
+      description: List all Profiles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+            type: array
+      summary: List all Profiles.
+      tags:
+      - Profiles
+    post:
+      consumes:
+      - application/json
+      description: Create a Profile.
+      parameters:
+      - description: Profile data
+        in: body
+        name: Profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+      summary: Create a Profile.
+      tags:
+      - Profiles
+  /analysis/profiles/{id}:
+    delete:
+      description: Delete a Profile.
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a Profile.
+      tags:
+      - Profiles
+    get:
+      description: Get a Profile by ID.
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+      summary: Get a Profile by ID.
+      tags:
+      - Profiles
+    put:
+      consumes:
+      - application/json
+      description: Update a Profile.
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Profile data
+        in: body
+        name: Profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a Profile.
+      tags:
+      - AnalysisProfiles
+  /analysis/profiles/{id}/bundle:
+    get:
+      description: Get a Profile bundle by ID.
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/gzip
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get a Profile bundle by ID.
+      tags:
+      - ProfileBundles
   /application/{id}/analyses:
     post:
       description: |-
@@ -3092,7 +2794,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
       summary: Create an analysis.
       tags:
       - analyses
@@ -3119,7 +2821,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
             type: array
       summary: List application dependencies.
       tags:
@@ -3148,7 +2850,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
             type: array
       summary: List application insights.
       tags:
@@ -3172,7 +2874,13 @@ paths:
       tags:
       - applications
     get:
-      description: List all applications.
+      description: |-
+        List all applications.
+        filters:
+        - name
+        - platform.id
+        - repository.url
+        - repository.path
       produces:
       - application/json
       responses:
@@ -3180,7 +2888,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Application'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
             type: array
       summary: List all applications.
       tags:
@@ -3195,14 +2903,14 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/api.Application'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Application'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
       summary: Create an application.
       tags:
       - applications
@@ -3235,7 +2943,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Application'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
       summary: Get an application by ID.
       tags:
       - applications
@@ -3254,7 +2962,7 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/api.Application'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
       responses:
         "204":
           description: No Content
@@ -3276,10 +2984,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
       summary: Get the latest analysis.
       tags:
       - analyses
+  /applications/{id}/analysis/profiles:
+    get:
+      description: List analysis profiles mapped to an application through archetypes.
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile'
+            type: array
+      summary: List analysis profiles.
+      tags:
+      - AnalysisProfiles
   /applications/{id}/analysis/report:
     get:
       description: Get the latest analysis (static) report.
@@ -3312,7 +3041,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
             type: array
       summary: List the assessments of an Application and any it inherits from its
         archetypes.
@@ -3333,14 +3062,14 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       summary: Create an application assessment.
       tags:
       - applications
@@ -3432,7 +3161,7 @@ paths:
         name: fact
         required: true
         schema:
-          $ref: '#/definitions/api.Fact'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Fact'
       produces:
       - application/json
       responses:
@@ -3541,7 +3270,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Map'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
       summary: List facts.
       tags:
       - applications
@@ -3565,27 +3294,26 @@ paths:
         name: factmap
         required: true
         schema:
-          $ref: '#/definitions/api.Map'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
       responses:
         "204":
           description: No Content
       summary: Replace all facts from a source.
       tags:
       - applications
-  /applications/{id}/identities/{kind}:
+  /applications/{id}/identities:
     get:
-      description: List application identities.
+      description: |-
+        List application identities.
+        Filter by:
+        - role - applied to direct.
+        - kind - applied to indirect.
       parameters:
       - description: Application ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Identity kind
-        in: path
-        name: kind
-        required: true
-        type: string
       - description: Decrypt fields
         in: query
         name: decrypted
@@ -3597,7 +3325,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Identity'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
             type: array
       summary: List application identities.
       tags:
@@ -3625,7 +3353,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Manifest'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       summary: Get the latest application Manifest.
       tags:
       - manifests
@@ -3645,14 +3373,14 @@ paths:
         name: manifest
         required: true
         schema:
-          $ref: '#/definitions/api.Manifest'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Manifest'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       summary: Create a manifest.
       tags:
       - manifests
@@ -3693,7 +3421,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Ref'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
             type: array
       summary: List tag references.
       tags:
@@ -3718,7 +3446,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/api.TagRef'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.TagRef'
           type: array
       responses:
         "204":
@@ -3736,7 +3464,7 @@ paths:
         name: tag
         required: true
         schema:
-          $ref: '#/definitions/api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref'
       - description: Application ID
         in: path
         name: id
@@ -3748,7 +3476,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Ref'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
       summary: Add tag association.
       tags:
       - applications
@@ -3782,7 +3510,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Archetype'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
             type: array
       summary: List all archetypes.
       tags:
@@ -3797,14 +3525,14 @@ paths:
         name: archetype
         required: true
         schema:
-          $ref: '#/definitions/api.Archetype'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Archetype'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
       summary: Create an archetype.
       tags:
       - archetypes
@@ -3837,7 +3565,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Archetype'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
       summary: Get an archetype by ID.
       tags:
       - archetypes
@@ -3856,7 +3584,7 @@ paths:
         name: archetype
         required: true
         schema:
-          $ref: '#/definitions/api.Archetype'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
       responses:
         "204":
           description: No Content
@@ -3877,7 +3605,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
             type: array
       summary: List the assessments of an archetype.
       tags:
@@ -3892,7 +3620,7 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       - description: Archetype ID
         in: path
         name: id
@@ -3904,7 +3632,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       summary: Create an archetype assessment.
       tags:
       - archetypes
@@ -3918,7 +3646,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
             type: array
       summary: List all assessments.
       tags:
@@ -3952,7 +3680,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       summary: Get an assessment by ID.
       tags:
       - questionnaires
@@ -3971,7 +3699,7 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
       responses:
         "204":
           description: No Content
@@ -3987,7 +3715,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Login'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Login'
       summary: Login and obtain a bearer token.
       tags:
       - auth
@@ -4000,7 +3728,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Login'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Login'
       summary: Refresh bearer token.
       tags:
       - auth
@@ -4014,7 +3742,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
           type: array
       produces:
       - application/json
@@ -4023,7 +3751,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
             type: array
       summary: Batch-create Tags.
       tags:
@@ -4039,7 +3767,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
           type: array
       produces:
       - application/json
@@ -4048,7 +3776,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Ticket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
             type: array
       summary: Batch-create Tickets.
       tags:
@@ -4064,7 +3792,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Bucket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
             type: array
       summary: List all buckets.
       tags:
@@ -4085,7 +3813,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Bucket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
       summary: Create a bucket.
       tags:
       - buckets
@@ -4122,7 +3850,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Bucket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
       summary: Get a bucket by ID.
       tags:
       - buckets
@@ -4209,7 +3937,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
       summary: List all business services.
       tags:
       - businessservices
@@ -4223,14 +3951,14 @@ paths:
         name: business_service
         required: true
         schema:
-          $ref: '#/definitions/api.BusinessService'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
       summary: Create a business service.
       tags:
       - businessservices
@@ -4263,7 +3991,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
       summary: Get a business service by ID.
       tags:
       - businessservices
@@ -4282,7 +4010,7 @@ paths:
         name: business_service
         required: true
         schema:
-          $ref: '#/definitions/api.BusinessService'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
       responses:
         "204":
           description: No Content
@@ -4315,10 +4043,49 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Cache'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Cache'
       summary: Get the cache.
       tags:
       - cache
+  /configmaps:
+    get:
+      description: List all configmap names.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ConfigMap'
+            type: array
+      summary: List all configmap names.
+      tags:
+      - ConfigMaps
+  /configmaps/{name}:
+    get:
+      description: Get a configmap by name and key.
+      parameters:
+      - description: Name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get a configmap by name and key.
+      tags:
+      - ConfigMaps
   /dependencies:
     get:
       description: List all dependencies.
@@ -4329,7 +4096,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Dependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
             type: array
       summary: List all dependencies.
       tags:
@@ -4344,14 +4111,14 @@ paths:
         name: applications_dependency
         required: true
         schema:
-          $ref: '#/definitions/api.Dependency'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Dependency'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Dependency'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
       summary: Create a dependency.
       tags:
       - dependencies
@@ -4386,7 +4153,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Dependency'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
       summary: Get a dependency by ID.
       tags:
       - dependencies
@@ -4400,7 +4167,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.File'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
             type: array
       summary: List all files.
       tags:
@@ -4421,7 +4188,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.File'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
       summary: Create a file.
       tags:
       - file
@@ -4455,7 +4222,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.File'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
       summary: Get a file by ID.
       tags:
       - file
@@ -4487,7 +4254,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Generator'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator'
             type: array
       summary: List all generators.
       tags:
@@ -4502,14 +4269,14 @@ paths:
         name: generator
         required: true
         schema:
-          $ref: '#/definitions/api.Generator'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Generator'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator'
       summary: Create a generator.
       tags:
       - generators
@@ -4542,7 +4309,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Generator'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator'
       summary: Get a Generator by ID.
       tags:
       - generators
@@ -4561,7 +4328,7 @@ paths:
         name: generator
         required: true
         schema:
-          $ref: '#/definitions/api.Generator'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator'
       responses:
         "204":
           description: No Content
@@ -4588,7 +4355,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Identity'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
             type: array
       summary: List all identities.
       tags:
@@ -4603,14 +4370,14 @@ paths:
         name: identity
         required: true
         schema:
-          $ref: '#/definitions/api.Identity'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Identity'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
       summary: Create an identity.
       tags:
       - identities
@@ -4647,7 +4414,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Identity'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
       summary: Get an identity by ID.
       tags:
       - identities
@@ -4666,7 +4433,7 @@ paths:
         name: identity
         required: true
         schema:
-          $ref: '#/definitions/api.Identity'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity'
       responses:
         "204":
           description: No Content
@@ -4683,7 +4450,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Import'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Import'
             type: array
       summary: List imports.
       tags:
@@ -4717,7 +4484,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Import'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Import'
       summary: Get an import by ID.
       tags:
       - imports
@@ -4731,7 +4498,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.ImportSummary'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
             type: array
       summary: List import summaries.
       tags:
@@ -4765,7 +4532,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.ImportSummary'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
       summary: Get an import summary by ID.
       tags:
       - imports
@@ -4797,7 +4564,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.ImportSummary'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
       summary: Upload a CSV containing applications and dependencies to import.
       tags:
       - imports
@@ -4811,7 +4578,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.JobFunction'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
             type: array
       summary: List all job functions.
       tags:
@@ -4826,14 +4593,14 @@ paths:
         name: job_function
         required: true
         schema:
-          $ref: '#/definitions/api.JobFunction'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.JobFunction'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
       summary: Create a job function.
       tags:
       - jobfunctions
@@ -4866,7 +4633,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.JobFunction'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
       summary: Get a job function by ID.
       tags:
       - jobfunctions
@@ -4885,7 +4652,7 @@ paths:
         name: job_function
         required: true
         schema:
-          $ref: '#/definitions/api.JobFunction'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
       responses:
         "204":
           description: No Content
@@ -4914,7 +4681,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Manifest'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
             type: array
       summary: List all manifests.
       tags:
@@ -4929,14 +4696,14 @@ paths:
         name: manifest
         required: true
         schema:
-          $ref: '#/definitions/api.Manifest'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Manifest'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       summary: Create a manifest.
       tags:
       - manifests
@@ -4977,7 +4744,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Manifest'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       summary: Get a Manifest by ID.
       tags:
       - manifests
@@ -4996,7 +4763,7 @@ paths:
         name: manifest
         required: true
         schema:
-          $ref: '#/definitions/api.Manifest'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest'
       responses:
         "204":
           description: No Content
@@ -5027,7 +4794,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.MigrationWave'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
             type: array
       summary: List all migration waves.
       tags:
@@ -5042,14 +4809,14 @@ paths:
         name: migrationwave
         required: true
         schema:
-          $ref: '#/definitions/api.MigrationWave'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.MigrationWave'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
       summary: Create a migration wave.
       tags:
       - migrationwaves
@@ -5082,7 +4849,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.MigrationWave'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
       summary: Get a migration wave by ID.
       tags:
       - migrationwaves
@@ -5101,7 +4868,7 @@ paths:
         name: migrationWave
         required: true
         schema:
-          $ref: '#/definitions/api.MigrationWave'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
       responses:
         "204":
           description: No Content
@@ -5118,7 +4885,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Platform'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform'
             type: array
       summary: List all platforms.
       tags:
@@ -5133,14 +4900,14 @@ paths:
         name: platform
         required: true
         schema:
-          $ref: '#/definitions/api.Platform'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Platform'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform'
       summary: Create a platform.
       tags:
       - platforms
@@ -5173,7 +4940,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Platform'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform'
       summary: Get a Platform by ID.
       tags:
       - platforms
@@ -5192,7 +4959,7 @@ paths:
         name: platform
         required: true
         schema:
-          $ref: '#/definitions/api.Platform'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform'
       responses:
         "204":
           description: No Content
@@ -5209,7 +4976,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Proxy'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy'
             type: array
       summary: List all proxies.
       tags:
@@ -5224,14 +4991,14 @@ paths:
         name: proxy
         required: true
         schema:
-          $ref: '#/definitions/api.Proxy'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Proxy'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy'
       summary: Create an proxy.
       tags:
       - proxies
@@ -5264,7 +5031,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Proxy'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy'
       summary: Get an proxy by ID.
       tags:
       - proxies
@@ -5283,7 +5050,7 @@ paths:
         name: proxy
         required: true
         schema:
-          $ref: '#/definitions/api.Proxy'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy'
       responses:
         "204":
           description: No Content
@@ -5300,7 +5067,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Questionnaire'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
             type: array
       summary: List all questionnaires.
       tags:
@@ -5315,14 +5082,14 @@ paths:
         name: questionnaire
         required: true
         schema:
-          $ref: '#/definitions/api.Questionnaire'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Questionnaire'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
       summary: Create a questionnaire.
       tags:
       - questionnaires
@@ -5355,7 +5122,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Questionnaire'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
       summary: Get a questionnaire by ID.
       tags:
       - questionnaires
@@ -5377,7 +5144,7 @@ paths:
         name: questionnaire
         required: true
         schema:
-          $ref: '#/definitions/api.Questionnaire'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
       responses:
         "204":
           description: No Content
@@ -5394,7 +5161,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Review'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
             type: array
       summary: List all reviews.
       tags:
@@ -5409,14 +5176,14 @@ paths:
         name: review
         required: true
         schema:
-          $ref: '#/definitions/api.Review'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Review'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
       summary: Create a review.
       tags:
       - reviews
@@ -5449,7 +5216,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Review'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
       summary: Get a review by ID.
       tags:
       - reviews
@@ -5468,7 +5235,7 @@ paths:
         name: review
         required: true
         schema:
-          $ref: '#/definitions/api.Review'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
       responses:
         "204":
           description: No Content
@@ -5486,7 +5253,7 @@ paths:
         name: copy_request
         required: true
         schema:
-          $ref: '#/definitions/api.CopyRequest'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.CopyRequest'
       responses:
         "204":
           description: No Content
@@ -5507,7 +5274,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.RuleSet'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet'
             type: array
       summary: List all bindings.
       tags:
@@ -5522,14 +5289,14 @@ paths:
         name: ruleBundle
         required: true
         schema:
-          $ref: '#/definitions/api.RuleSet'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.RuleSet'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet'
       summary: Create a ruleset.
       tags:
       - rulesets
@@ -5562,7 +5329,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.RuleSet'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet'
       summary: Get a RuleSet by ID.
       tags:
       - rulesets
@@ -5581,7 +5348,7 @@ paths:
         name: ruleBundle
         required: true
         schema:
-          $ref: '#/definitions/api.RuleSet'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet'
       responses:
         "204":
           description: No Content
@@ -5597,7 +5364,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.RestAPI'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.RestAPI'
       summary: Get the API routes.
       tags:
       - schema
@@ -5626,7 +5393,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.LatestSchema'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.LatestSchema'
       summary: Find a schema.
       tags:
       - schema
@@ -5640,7 +5407,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Schema'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Schema'
             type: array
       summary: List schemas.
       tags:
@@ -5660,7 +5427,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Schema'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Schema'
       summary: Find a schema.
       tags:
       - schemas
@@ -5673,7 +5440,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Service'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Service'
       summary: List named service routes.
       tags:
       - services
@@ -5687,7 +5454,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Setting'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
             type: array
       summary: List all settings.
       tags:
@@ -5702,14 +5469,14 @@ paths:
         name: setting
         required: true
         schema:
-          $ref: '#/definitions/api.Setting'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Setting'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
       summary: Create a setting.
       tags:
       - settings
@@ -5742,7 +5509,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Setting'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
       summary: Get a setting by its key.
       tags:
       - settings
@@ -5761,7 +5528,7 @@ paths:
         name: setting
         required: true
         schema:
-          $ref: '#/definitions/api.Setting'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
       responses:
         "201":
           description: Created
@@ -5796,7 +5563,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.StakeholderGroup'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
             type: array
       summary: List all stakeholder groups.
       tags:
@@ -5811,14 +5578,14 @@ paths:
         name: stakeholder_group
         required: true
         schema:
-          $ref: '#/definitions/api.StakeholderGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.StakeholderGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
       summary: Create a stakeholder group.
       tags:
       - stakeholdergroups
@@ -5851,7 +5618,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StakeholderGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
       summary: Get a stakeholder group by ID.
       tags:
       - stakeholdergroups
@@ -5870,7 +5637,7 @@ paths:
         name: stakeholder_group
         required: true
         schema:
-          $ref: '#/definitions/api.StakeholderGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
       responses:
         "204":
           description: No Content
@@ -5887,7 +5654,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Stakeholder'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
             type: array
       summary: List all stakeholders.
       tags:
@@ -5902,14 +5669,14 @@ paths:
         name: stakeholder
         required: true
         schema:
-          $ref: '#/definitions/api.Stakeholder'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Stakeholder'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
       summary: Create a stakeholder.
       tags:
       - stakeholders
@@ -5942,7 +5709,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Stakeholder'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
       summary: Get a stakeholder by ID.
       tags:
       - stakeholders
@@ -5961,7 +5728,7 @@ paths:
         name: stakeholder
         required: true
         schema:
-          $ref: '#/definitions/api.Stakeholder'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
       responses:
         "204":
           description: No Content
@@ -5983,7 +5750,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TagCategory'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
             type: array
       summary: List all tag categories.
       tags:
@@ -5998,14 +5765,14 @@ paths:
         name: tag_type
         required: true
         schema:
-          $ref: '#/definitions/api.TagCategory'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.TagCategory'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
       summary: Create a tag category.
       tags:
       - tagcategories
@@ -6038,7 +5805,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.TagCategory'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
       summary: Get a tag category by ID.
       tags:
       - tagcategories
@@ -6057,7 +5824,7 @@ paths:
         name: tag_type
         required: true
         schema:
-          $ref: '#/definitions/api.TagCategory'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
       responses:
         "204":
           description: No Content
@@ -6084,7 +5851,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
             type: array
       summary: List the tags in the tag category.
       tags:
@@ -6099,7 +5866,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
             type: array
       summary: List all tags.
       tags:
@@ -6114,14 +5881,14 @@ paths:
         name: tag
         required: true
         schema:
-          $ref: '#/definitions/api.Tag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Tag'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
       summary: Create a tag.
       tags:
       - tags
@@ -6154,7 +5921,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
       summary: Get a tag by ID.
       tags:
       - tags
@@ -6173,7 +5940,7 @@ paths:
         name: tag
         required: true
         schema:
-          $ref: '#/definitions/api.Tag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
       responses:
         "204":
           description: No Content
@@ -6190,7 +5957,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Target'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target'
             type: array
       summary: List all targets.
       tags:
@@ -6205,14 +5972,14 @@ paths:
         name: target
         required: true
         schema:
-          $ref: '#/definitions/api.Target'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Target'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target'
       summary: Create a target.
       tags:
       - targets
@@ -6245,7 +6012,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Target'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target'
       summary: Get a Target by ID.
       tags:
       - targets
@@ -6264,7 +6031,7 @@ paths:
         name: target
         required: true
         schema:
-          $ref: '#/definitions/api.Target'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target'
       responses:
         "204":
           description: No Content
@@ -6281,7 +6048,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TaskGroup'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
             type: array
       summary: List all task groups.
       tags:
@@ -6296,14 +6063,14 @@ paths:
         name: taskgroup
         required: true
         schema:
-          $ref: '#/definitions/api.TaskGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.TaskGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
       summary: Create a task group.
       tags:
       - taskgroups
@@ -6336,7 +6103,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.TaskGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
       summary: Get a task group by ID.
       tags:
       - taskgroups
@@ -6355,7 +6122,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.TaskGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.TaskGroup'
       responses:
         "204":
           description: No Content
@@ -6449,7 +6216,7 @@ paths:
         in: body
         name: taskgroup
         schema:
-          $ref: '#/definitions/api.TaskGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.TaskGroup'
       responses:
         "204":
           description: No Content
@@ -6478,7 +6245,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.TaskDashboard'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskDashboard'
             type: array
       summary: List all task dashboard resources.
       tags:
@@ -6493,14 +6260,14 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Task'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
       summary: Create a task.
       tags:
       - tasks
@@ -6533,7 +6300,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Task'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
       summary: Get a task by ID.
       tags:
       - tasks
@@ -6552,7 +6319,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task'
       responses:
         "200":
           description: OK
@@ -6699,14 +6466,14 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.TaskReport'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.TaskReport'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
       summary: Create a task report.
       tags:
       - tasks
@@ -6725,7 +6492,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.TaskReport'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
       produces:
       - application/json
       responses:
@@ -6749,7 +6516,7 @@ paths:
         in: body
         name: task
         schema:
-          $ref: '#/definitions/api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task'
       responses:
         "200":
           description: OK
@@ -6794,7 +6561,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Ticket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
             type: array
       summary: List all tickets.
       tags:
@@ -6809,14 +6576,14 @@ paths:
         name: ticket
         required: true
         schema:
-          $ref: '#/definitions/api.Ticket'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
       summary: Create a ticket.
       tags:
       - tickets
@@ -6849,7 +6616,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
       summary: Get a ticket by ID.
       tags:
       - tickets
@@ -6863,7 +6630,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Tracker'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
             type: array
       summary: List all trackers.
       tags:
@@ -6878,14 +6645,14 @@ paths:
         name: tracker
         required: true
         schema:
-          $ref: '#/definitions/api.Tracker'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.Tracker'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
       summary: Create a tracker.
       tags:
       - trackers
@@ -6918,7 +6685,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Tracker'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
       summary: Get a tracker by ID.
       tags:
       - trackers
@@ -6937,7 +6704,7 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/api.Tracker'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
       responses:
         "204":
           description: No Content
@@ -6960,7 +6727,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.Project'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Project'
             type: array
       summary: List a tracker's projects.
       tags:
@@ -6985,7 +6752,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Project'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Project'
       summary: Get a tracker project by ID.
       tags:
       - trackers
@@ -7010,7 +6777,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.IssueType'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.IssueType'
             type: array
       summary: List a tracker project's issue types.
       tags:

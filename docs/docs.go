@@ -41,7 +41,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Addon"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Addon"
                             }
                         }
                     }
@@ -71,7 +71,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Addon"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Addon"
                         }
                     }
                 }
@@ -107,7 +107,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Vertex"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Vertex"
                             }
                         }
                     }
@@ -130,7 +130,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Analysis"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
                             }
                         }
                     }
@@ -153,7 +153,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
                             }
                         }
                     }
@@ -176,7 +176,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Incident"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
                             }
                         }
                     }
@@ -206,7 +206,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Incident"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
                         }
                     }
                 }
@@ -228,7 +228,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
                             }
                         }
                     }
@@ -258,7 +258,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Insight"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
                         }
                     }
                 }
@@ -289,7 +289,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Incident"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
                             }
                         }
                     }
@@ -312,7 +312,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.DepAppReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.DepAppReport"
                             }
                         }
                     }
@@ -344,7 +344,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.InsightReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.InsightReport"
                             }
                         }
                     }
@@ -376,7 +376,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.FileReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.FileReport"
                             }
                         }
                     }
@@ -399,7 +399,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.RuleReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.RuleReport"
                             }
                         }
                     }
@@ -429,7 +429,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
                         }
                     }
                 }
@@ -507,7 +507,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
                             }
                         }
                     }
@@ -539,8 +539,175 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/analysis/profiles": {
+            "get": {
+                "description": "List all Profiles.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "List all Profiles.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Profile.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Create a Profile.",
+                "parameters": [
+                    {
+                        "description": "Profile data",
+                        "name": "Profile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                        }
+                    }
+                }
+            }
+        },
+        "/analysis/profiles/{id}": {
+            "get": {
+                "description": "Get a Profile by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Get a Profile by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profile ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Profile.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AnalysisProfiles"
+                ],
+                "summary": "Update a Profile.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profile ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Profile data",
+                        "name": "Profile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Profile.",
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Delete a Profile.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profile ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/analysis/profiles/{id}/bundle": {
+            "get": {
+                "description": "Get a Profile bundle by ID.",
+                "produces": [
+                    "application/gzip"
+                ],
+                "tags": [
+                    "ProfileBundles"
+                ],
+                "summary": "Get a Profile bundle by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Profile ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     }
                 }
@@ -569,7 +736,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
                         }
                     }
                 }
@@ -600,7 +767,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
                             }
                         }
                     }
@@ -632,7 +799,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
                             }
                         }
                     }
@@ -641,7 +808,7 @@ const docTemplate = `{
         },
         "/applications": {
             "get": {
-                "description": "List all applications.",
+                "description": "List all applications.\nfilters:\n- name\n- platform.id\n- repository.url\n- repository.path",
                 "produces": [
                     "application/json"
                 ],
@@ -655,7 +822,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Application"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
                             }
                         }
                     }
@@ -680,7 +847,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
                         }
                     }
                 ],
@@ -688,7 +855,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
                         }
                     }
                 }
@@ -743,7 +910,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
                         }
                     }
                 }
@@ -771,7 +938,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
                         }
                     }
                 ],
@@ -826,7 +993,39 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/analysis/profiles": {
+            "get": {
+                "description": "List analysis profiles mapped to an application through archetypes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AnalysisProfiles"
+                ],
+                "summary": "List analysis profiles.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                            }
                         }
                     }
                 }
@@ -880,7 +1079,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                             }
                         }
                     }
@@ -912,7 +1111,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     }
                 ],
@@ -920,7 +1119,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     }
                 }
@@ -1054,7 +1253,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Fact"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Fact"
                         }
                     }
                 ],
@@ -1202,7 +1401,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Map"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
                         }
                     }
                 }
@@ -1234,7 +1433,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Map"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
                         }
                     }
                 ],
@@ -1245,9 +1444,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}/identities/{kind}": {
+        "/applications/{id}/identities": {
             "get": {
-                "description": "List application identities.",
+                "description": "List application identities.\nFilter by:\n- role - applied to direct.\n- kind - applied to indirect.",
                 "produces": [
                     "application/json"
                 ],
@@ -1264,13 +1463,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Identity kind",
-                        "name": "kind",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
                         "type": "boolean",
                         "description": "Decrypt fields",
                         "name": "decrypted",
@@ -1283,7 +1475,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Identity"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                             }
                         }
                     }
@@ -1325,7 +1517,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 }
@@ -1358,7 +1550,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 ],
@@ -1366,7 +1558,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 }
@@ -1429,7 +1621,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Ref"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                             }
                         }
                     }
@@ -1454,7 +1646,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Ref"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref"
                         }
                     },
                     {
@@ -1469,7 +1661,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Ref"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                         }
                     }
                 }
@@ -1505,7 +1697,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TagRef"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.TagRef"
                             }
                         }
                     }
@@ -1563,7 +1755,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Archetype"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
                             }
                         }
                     }
@@ -1588,7 +1780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
                         }
                     }
                 ],
@@ -1596,7 +1788,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
                         }
                     }
                 }
@@ -1625,7 +1817,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
                         }
                     }
                 }
@@ -1653,7 +1845,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
                         }
                     }
                 ],
@@ -1707,7 +1899,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                             }
                         }
                     }
@@ -1732,7 +1924,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     },
                     {
@@ -1747,7 +1939,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     }
                 }
@@ -1769,7 +1961,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                             }
                         }
                     }
@@ -1799,7 +1991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     }
                 }
@@ -1827,7 +2019,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
                         }
                     }
                 ],
@@ -1873,7 +2065,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Login"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Login"
                         }
                     }
                 }
@@ -1893,7 +2085,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Login"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Login"
                         }
                     }
                 }
@@ -1919,7 +2111,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                             }
                         }
                     }
@@ -1930,7 +2122,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                             }
                         }
                     }
@@ -1957,7 +2149,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                             }
                         }
                     }
@@ -1968,7 +2160,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                             }
                         }
                     }
@@ -1991,7 +2183,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Bucket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
                             }
                         }
                     }
@@ -2022,7 +2214,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Bucket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
                         }
                     }
                 }
@@ -2051,7 +2243,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Bucket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
                         }
                     }
                 }
@@ -2193,7 +2385,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
                         }
                     }
                 }
@@ -2217,7 +2409,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
                         }
                     }
                 ],
@@ -2225,7 +2417,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
                         }
                     }
                 }
@@ -2254,7 +2446,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
                         }
                     }
                 }
@@ -2282,7 +2474,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
                         }
                     }
                 ],
@@ -2354,7 +2546,66 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Cache"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Cache"
+                        }
+                    }
+                }
+            }
+        },
+        "/configmaps": {
+            "get": {
+                "description": "List all configmap names.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ConfigMaps"
+                ],
+                "summary": "List all configmap names.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ConfigMap"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/configmaps/{name}": {
+            "get": {
+                "description": "Get a configmap by name and key.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ConfigMaps"
+                ],
+                "summary": "Get a configmap by name and key.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -2376,7 +2627,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Dependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
                             }
                         }
                     }
@@ -2401,7 +2652,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Dependency"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Dependency"
                         }
                     }
                 ],
@@ -2409,7 +2660,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Dependency"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
                         }
                     }
                 }
@@ -2438,7 +2689,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Dependency"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
                         }
                     }
                 }
@@ -2484,7 +2735,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.File"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
                             }
                         }
                     }
@@ -2515,7 +2766,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.File"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
                         }
                     }
                 }
@@ -2544,7 +2795,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.File"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
                         }
                     }
                 }
@@ -2614,7 +2865,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Generator"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator"
                             }
                         }
                     }
@@ -2639,7 +2890,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Generator"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator"
                         }
                     }
                 ],
@@ -2647,7 +2898,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Generator"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator"
                         }
                     }
                 }
@@ -2676,7 +2927,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Generator"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator"
                         }
                     }
                 }
@@ -2704,7 +2955,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Generator"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Generator"
                         }
                     }
                 ],
@@ -2760,7 +3011,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Identity"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                             }
                         }
                     }
@@ -2785,7 +3036,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Identity"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                         }
                     }
                 ],
@@ -2793,7 +3044,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Identity"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                         }
                     }
                 }
@@ -2828,7 +3079,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Identity"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                         }
                     }
                 }
@@ -2856,7 +3107,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Identity"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Identity"
                         }
                     }
                 ],
@@ -2904,7 +3155,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Import"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Import"
                             }
                         }
                     }
@@ -2934,7 +3185,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Import"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Import"
                         }
                     }
                 }
@@ -2977,7 +3228,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.ImportSummary"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
                             }
                         }
                     }
@@ -3027,7 +3278,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.ImportSummary"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
                         }
                     }
                 }
@@ -3056,7 +3307,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.ImportSummary"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
                         }
                     }
                 }
@@ -3099,7 +3350,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.JobFunction"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
                             }
                         }
                     }
@@ -3124,7 +3375,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
                         }
                     }
                 ],
@@ -3132,7 +3383,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
                         }
                     }
                 }
@@ -3161,7 +3412,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
                         }
                     }
                 }
@@ -3189,7 +3440,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
                         }
                     }
                 ],
@@ -3251,7 +3502,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Manifest"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                             }
                         }
                     }
@@ -3276,7 +3527,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 ],
@@ -3284,7 +3535,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 }
@@ -3325,7 +3576,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 }
@@ -3353,7 +3604,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Manifest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                         }
                     }
                 ],
@@ -3418,7 +3669,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.MigrationWave"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
                             }
                         }
                     }
@@ -3443,7 +3694,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
                         }
                     }
                 ],
@@ -3451,7 +3702,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
                         }
                     }
                 }
@@ -3480,7 +3731,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
                         }
                     }
                 }
@@ -3508,7 +3759,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
                         }
                     }
                 ],
@@ -3556,7 +3807,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Platform"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform"
                             }
                         }
                     }
@@ -3581,7 +3832,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Platform"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform"
                         }
                     }
                 ],
@@ -3589,7 +3840,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Platform"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform"
                         }
                     }
                 }
@@ -3618,7 +3869,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Platform"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform"
                         }
                     }
                 }
@@ -3646,7 +3897,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Platform"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Platform"
                         }
                     }
                 ],
@@ -3694,7 +3945,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Proxy"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                             }
                         }
                     }
@@ -3719,7 +3970,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Proxy"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                         }
                     }
                 ],
@@ -3727,7 +3978,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Proxy"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                         }
                     }
                 }
@@ -3756,7 +4007,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Proxy"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                         }
                     }
                 }
@@ -3784,7 +4035,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Proxy"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                         }
                     }
                 ],
@@ -3832,7 +4083,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Questionnaire"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
                             }
                         }
                     }
@@ -3857,7 +4108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
                         }
                     }
                 ],
@@ -3865,7 +4116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
                         }
                     }
                 }
@@ -3894,7 +4145,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
                         }
                     }
                 }
@@ -3922,7 +4173,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
                         }
                     }
                 ],
@@ -3970,7 +4221,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Review"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
                             }
                         }
                     }
@@ -3995,7 +4246,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
                         }
                     }
                 ],
@@ -4003,7 +4254,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
                         }
                     }
                 }
@@ -4026,7 +4277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CopyRequest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.CopyRequest"
                         }
                     }
                 ],
@@ -4060,7 +4311,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
                         }
                     }
                 }
@@ -4088,7 +4339,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
                         }
                     }
                 ],
@@ -4136,7 +4387,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.RuleSet"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                             }
                         }
                     }
@@ -4161,7 +4412,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.RuleSet"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                         }
                     }
                 ],
@@ -4169,7 +4420,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.RuleSet"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                         }
                     }
                 }
@@ -4198,7 +4449,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.RuleSet"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                         }
                     }
                 }
@@ -4226,7 +4477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.RuleSet"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                         }
                     }
                 ],
@@ -4272,7 +4523,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.RestAPI"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.RestAPI"
                         }
                     }
                 }
@@ -4315,7 +4566,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LatestSchema"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.LatestSchema"
                         }
                     }
                 }
@@ -4337,7 +4588,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Schema"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Schema"
                             }
                         }
                     }
@@ -4367,7 +4618,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Schema"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Schema"
                         }
                     }
                 }
@@ -4387,7 +4638,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Service"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Service"
                         }
                     }
                 }
@@ -4409,7 +4660,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Setting"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
                             }
                         }
                     }
@@ -4434,7 +4685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
                         }
                     }
                 ],
@@ -4442,7 +4693,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
                         }
                     }
                 }
@@ -4471,7 +4722,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
                         }
                     }
                 }
@@ -4526,7 +4777,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
                         }
                     }
                 ],
@@ -4574,7 +4825,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.StakeholderGroup"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                             }
                         }
                     }
@@ -4599,7 +4850,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                         }
                     }
                 ],
@@ -4607,7 +4858,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                         }
                     }
                 }
@@ -4636,7 +4887,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                         }
                     }
                 }
@@ -4664,7 +4915,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                         }
                     }
                 ],
@@ -4712,7 +4963,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Stakeholder"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
                             }
                         }
                     }
@@ -4737,7 +4988,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
                         }
                     }
                 ],
@@ -4745,7 +4996,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
                         }
                     }
                 }
@@ -4774,7 +5025,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
                         }
                     }
                 }
@@ -4802,7 +5053,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
                         }
                     }
                 ],
@@ -4858,7 +5109,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TagCategory"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
                             }
                         }
                     }
@@ -4883,7 +5134,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
                         }
                     }
                 ],
@@ -4891,7 +5142,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
                         }
                     }
                 }
@@ -4920,7 +5171,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
                         }
                     }
                 }
@@ -4948,7 +5199,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
                         }
                     }
                 ],
@@ -5011,7 +5262,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                             }
                         }
                     }
@@ -5034,7 +5285,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                             }
                         }
                     }
@@ -5059,7 +5310,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Tag"
                         }
                     }
                 ],
@@ -5067,7 +5318,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                         }
                     }
                 }
@@ -5096,7 +5347,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                         }
                     }
                 }
@@ -5124,7 +5375,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
                         }
                     }
                 ],
@@ -5172,7 +5423,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Target"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target"
                             }
                         }
                     }
@@ -5197,7 +5448,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Target"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target"
                         }
                     }
                 ],
@@ -5205,7 +5456,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Target"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target"
                         }
                     }
                 }
@@ -5234,7 +5485,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Target"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target"
                         }
                     }
                 }
@@ -5262,7 +5513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Target"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Target"
                         }
                     }
                 ],
@@ -5310,7 +5561,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TaskGroup"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
                             }
                         }
                     }
@@ -5335,7 +5586,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
                         }
                     }
                 ],
@@ -5343,7 +5594,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
                         }
                     }
                 }
@@ -5372,7 +5623,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
                         }
                     }
                 }
@@ -5400,7 +5651,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.TaskGroup"
                         }
                     }
                 ],
@@ -5556,7 +5807,7 @@ const docTemplate = `{
                         "name": "taskgroup",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.TaskGroup"
                         }
                     }
                 ],
@@ -5583,7 +5834,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.TaskDashboard"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskDashboard"
                             }
                         }
                     }
@@ -5608,7 +5859,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
                         }
                     }
                 ],
@@ -5616,7 +5867,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
                         }
                     }
                 }
@@ -5673,7 +5924,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
                         }
                     }
                 }
@@ -5701,7 +5952,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task"
                         }
                     }
                 ],
@@ -5910,7 +6161,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
                         }
                     }
                 ],
@@ -5946,7 +6197,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
                         }
                     }
                 ],
@@ -5954,7 +6205,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
                         }
                     }
                 }
@@ -6010,7 +6261,7 @@ const docTemplate = `{
                         "name": "task",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task"
                         }
                     }
                 ],
@@ -6037,7 +6288,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                             }
                         }
                     }
@@ -6062,7 +6313,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                         }
                     }
                 ],
@@ -6070,7 +6321,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                         }
                     }
                 }
@@ -6099,7 +6350,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
                         }
                     }
                 }
@@ -6142,7 +6393,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Tracker"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
                             }
                         }
                     }
@@ -6167,7 +6418,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
                         }
                     }
                 ],
@@ -6175,7 +6426,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
                         }
                     }
                 }
@@ -6204,7 +6455,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
                         }
                     }
                 }
@@ -6232,7 +6483,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
                         }
                     }
                 ],
@@ -6289,7 +6540,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.Project"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Project"
                             }
                         }
                     }
@@ -6326,7 +6577,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.Project"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Project"
                         }
                     }
                 }
@@ -6364,7 +6615,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.IssueType"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.IssueType"
                             }
                         }
                     }
@@ -6373,16 +6624,268 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.Addon": {
+        "api.Answer": {
+            "type": "object",
+            "properties": {
+                "applyTags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CategorizedTag"
+                    }
+                },
+                "autoAnswerFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CategorizedTag"
+                    }
+                },
+                "autoAnswered": {
+                    "type": "boolean"
+                },
+                "mitigation": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "rationale": {
+                    "type": "string"
+                },
+                "risk": {
+                    "type": "string",
+                    "enum": [
+                        "red",
+                        "yellow",
+                        "green",
+                        "unknown"
+                    ]
+                },
+                "selected": {
+                    "type": "boolean"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ApMode": {
+            "type": "object",
+            "properties": {
+                "withDeps": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.ApRules": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    }
+                },
+                "labels": {
+                    "$ref": "#/definitions/api.InExList"
+                },
+                "repository": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                },
+                "targets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    }
+                }
+            }
+        },
+        "api.ApScope": {
+            "type": "object",
+            "properties": {
+                "packages": {
+                    "$ref": "#/definitions/api.InExList"
+                },
+                "withKnownLibs": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.CategorizedTag": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Document": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InExList": {
+            "type": "object",
+            "properties": {
+                "excluded": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "included": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.Question": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/api.Answer"
+                    }
+                },
+                "excludeFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CategorizedTag"
+                    }
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "includeFor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CategorizedTag"
+                    }
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RiskMessages": {
+            "type": "object",
+            "properties": {
+                "green": {
+                    "type": "string"
+                },
+                "red": {
+                    "type": "string"
+                },
+                "unknown": {
+                    "type": "string"
+                },
+                "yellow": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Section": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "questions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/api.Question"
+                    }
+                }
+            }
+        },
+        "api.Stakeholders": {
+            "type": "object",
+            "properties": {
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref"
+                    }
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref"
+                }
+            }
+        },
+        "api.TargetLabel": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.Thresholds": {
+            "type": "object",
+            "properties": {
+                "red": {
+                    "type": "integer"
+                },
+                "unknown": {
+                    "type": "integer"
+                },
+                "yellow": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.Version": {
+            "type": "object",
+            "properties": {
+                "definition": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "migration": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_api.Addon": {
             "type": "object",
             "properties": {
                 "container": {
-                    "$ref": "#/definitions/v1.Container"
+                    "$ref": "#/definitions/k8s.Container"
                 },
                 "extensions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Extension"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Extension"
                     }
                 },
                 "metadata": {},
@@ -6391,11 +6894,11 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Analysis": {
+        "github_com_konveyor_tackle2-hub_api.Analysis": {
             "type": "object",
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "archived": {
                     "type": "boolean"
@@ -6412,7 +6915,7 @@ const docTemplate = `{
                 "dependencies": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TechDependency"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
                     }
                 },
                 "effort": {
@@ -6424,7 +6927,7 @@ const docTemplate = `{
                 "insights": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Insight"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
                     }
                 },
                 "summary": {
@@ -6435,7 +6938,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Application": {
+        "github_com_konveyor_tackle2-hub_api.Application": {
             "type": "object",
             "required": [
                 "name"
@@ -6444,7 +6947,7 @@ const docTemplate = `{
                 "archetypes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "assessed": {
@@ -6453,20 +6956,20 @@ const docTemplate = `{
                 "assessments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "assets": {
-                    "$ref": "#/definitions/api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
                 },
                 "binary": {
                     "type": "string"
                 },
                 "bucket": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "businessService": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "comments": {
                     "type": "string"
@@ -6477,11 +6980,11 @@ const docTemplate = `{
                 "contributors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "coordinates": {
-                    "$ref": "#/definitions/jsd.Document"
+                    "$ref": "#/definitions/api.Document"
                 },
                 "createTime": {
                     "type": "string"
@@ -6501,26 +7004,32 @@ const docTemplate = `{
                 "identities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.IdentityRef"
+                    }
+                },
+                "manifests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "migrationWave": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "name": {
                     "type": "string"
                 },
                 "owner": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "platform": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "repository": {
-                    "$ref": "#/definitions/api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
                 },
                 "review": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "risk": {
                     "type": "string"
@@ -6528,7 +7037,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TagRef"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
                     }
                 },
                 "updateUser": {
@@ -6536,13 +7045,13 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Archetype": {
+        "github_com_konveyor_tackle2-hub_api.Archetype": {
             "type": "object",
             "properties": {
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "assessed": {
@@ -6551,7 +7060,7 @@ const docTemplate = `{
                 "assessments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "comments": {
@@ -6569,7 +7078,7 @@ const docTemplate = `{
                 "criteria": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TagRef"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
                     }
                 },
                 "description": {
@@ -6584,11 +7093,11 @@ const docTemplate = `{
                 "profiles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TargetProfile"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TargetProfile"
                     }
                 },
                 "review": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "risk": {
                     "type": "string"
@@ -6596,19 +7105,19 @@ const docTemplate = `{
                 "stakeholderGroups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TagRef"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
                     }
                 },
                 "updateUser": {
@@ -6616,17 +7125,17 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Assessment": {
+        "github_com_konveyor_tackle2-hub_api.Assessment": {
             "type": "object",
             "required": [
                 "questionnaire"
             ],
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "archetype": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "confidence": {
                     "type": "integer"
@@ -6641,13 +7150,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "questionnaire": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "required": {
                     "type": "boolean"
                 },
                 "risk": {
-                    "description": "read only",
                     "type": "string"
                 },
                 "riskMessages": {
@@ -6662,13 +7170,13 @@ const docTemplate = `{
                 "stakeholderGroups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "status": {
@@ -6682,7 +7190,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Attachment": {
+        "github_com_konveyor_tackle2-hub_api.Attachment": {
             "type": "object",
             "required": [
                 "id"
@@ -6699,7 +7207,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Bucket": {
+        "github_com_konveyor_tackle2-hub_api.Bucket": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -6722,7 +7230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.BusinessService": {
+        "github_com_konveyor_tackle2-hub_api.BusinessService": {
             "type": "object",
             "required": [
                 "name"
@@ -6744,14 +7252,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "api.Cache": {
+        "github_com_konveyor_tackle2-hub_api.Cache": {
             "type": "object",
             "properties": {
                 "capacity": {
@@ -6768,7 +7276,16 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CopyRequest": {
+        "github_com_konveyor_tackle2-hub_api.ConfigMap": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_api.CopyRequest": {
             "type": "object",
             "required": [
                 "sourceReview",
@@ -6786,7 +7303,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.DepAppReport": {
+        "github_com_konveyor_tackle2-hub_api.DepAppReport": {
             "type": "object",
             "properties": {
                 "businessService": {
@@ -6832,7 +7349,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Dependency": {
+        "github_com_konveyor_tackle2-hub_api.Dependency": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -6842,20 +7359,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "from": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "to": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "api.Extension": {
+        "github_com_konveyor_tackle2-hub_api.Extension": {
             "type": "object",
             "properties": {
                 "addon": {
@@ -6868,7 +7385,7 @@ const docTemplate = `{
                     }
                 },
                 "container": {
-                    "$ref": "#/definitions/v1.Container"
+                    "$ref": "#/definitions/k8s.Container"
                 },
                 "metadata": {},
                 "name": {
@@ -6876,7 +7393,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Fact": {
+        "github_com_konveyor_tackle2-hub_api.Fact": {
             "type": "object",
             "properties": {
                 "key": {
@@ -6888,7 +7405,7 @@ const docTemplate = `{
                 "value": {}
             }
         },
-        "api.File": {
+        "github_com_konveyor_tackle2-hub_api.File": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -6917,7 +7434,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.FileReport": {
+        "github_com_konveyor_tackle2-hub_api.FileReport": {
             "type": "object",
             "properties": {
                 "effort": {
@@ -6934,103 +7451,29 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Generator": {
+        "github_com_konveyor_tackle2-hub_api.IdentityRef": {
             "type": "object",
             "required": [
-                "kind"
+                "id",
+                "role"
             ],
             "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
-                },
-                "identity": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "kind": {
-                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "params": {
-                    "$ref": "#/definitions/api.Map"
-                },
-                "profiles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.Ref"
-                    }
-                },
-                "repository": {
-                    "$ref": "#/definitions/api.Repository"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "values": {
-                    "$ref": "#/definitions/api.Map"
-                }
-            }
-        },
-        "api.Identity": {
-            "type": "object",
-            "required": [
-                "kind",
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "default": {
-                    "type": "boolean"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "settings": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "user": {
+                "role": {
                     "type": "string"
                 }
             }
         },
-        "api.Import": {
+        "github_com_konveyor_tackle2-hub_api.Import": {
             "type": "object",
             "additionalProperties": {}
         },
-        "api.ImportSummary": {
+        "github_com_konveyor_tackle2-hub_api.ImportSummary": {
             "type": "object",
             "properties": {
                 "createEntities": {
@@ -7065,7 +7508,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Incident": {
+        "github_com_konveyor_tackle2-hub_api.Incident": {
             "type": "object",
             "properties": {
                 "codeSnip": {
@@ -7078,7 +7521,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "facts": {
-                    "$ref": "#/definitions/api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
                 },
                 "file": {
                     "type": "string"
@@ -7100,7 +7543,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Insight": {
+        "github_com_konveyor_tackle2-hub_api.Insight": {
             "type": "object",
             "required": [
                 "name",
@@ -7127,7 +7570,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "facts": {
-                    "$ref": "#/definitions/api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
                 },
                 "id": {
                     "type": "integer"
@@ -7135,7 +7578,7 @@ const docTemplate = `{
                 "incidents": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Incident"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
                     }
                 },
                 "labels": {
@@ -7147,7 +7590,7 @@ const docTemplate = `{
                 "links": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Link"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
                     }
                 },
                 "name": {
@@ -7164,7 +7607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.InsightAppReport": {
+        "github_com_konveyor_tackle2-hub_api.InsightAppReport": {
             "type": "object",
             "properties": {
                 "businessService": {
@@ -7210,7 +7653,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.InsightReport": {
+        "github_com_konveyor_tackle2-hub_api.InsightReport": {
             "type": "object",
             "properties": {
                 "category": {
@@ -7237,7 +7680,7 @@ const docTemplate = `{
                 "links": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Link"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
                     }
                 },
                 "name": {
@@ -7251,7 +7694,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.IssueType": {
+        "github_com_konveyor_tackle2-hub_api.IssueType": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7262,7 +7705,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.JobFunction": {
+        "github_com_konveyor_tackle2-hub_api.JobFunction": {
             "type": "object",
             "required": [
                 "name"
@@ -7283,7 +7726,7 @@ const docTemplate = `{
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "updateUser": {
@@ -7291,18 +7734,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.LatestSchema": {
-            "type": "object",
-            "properties": {
-                "definition": {
-                    "$ref": "#/definitions/api.Map"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Link": {
+        "github_com_konveyor_tackle2-hub_api.Link": {
             "type": "object",
             "properties": {
                 "title": {
@@ -7313,7 +7745,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Login": {
+        "github_com_konveyor_tackle2-hub_api.Login": {
             "type": "object",
             "properties": {
                 "expiry": {
@@ -7333,37 +7765,11 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Manifest": {
-            "type": "object",
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "content": {
-                    "$ref": "#/definitions/api.Map"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "secret": {
-                    "$ref": "#/definitions/api.Map"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Map": {
+        "github_com_konveyor_tackle2-hub_api.Map": {
             "type": "object",
             "additionalProperties": {}
         },
-        "api.MigrationWave": {
+        "github_com_konveyor_tackle2-hub_api.MigrationWave": {
             "type": "object",
             "required": [
                 "endDate",
@@ -7373,7 +7779,7 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "createTime": {
@@ -7394,13 +7800,13 @@ const docTemplate = `{
                 "stakeholderGroups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "startDate": {
@@ -7411,45 +7817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Platform": {
-            "type": "object",
-            "required": [
-                "kind"
-            ],
-            "properties": {
-                "applications": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.Ref"
-                    }
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identity": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Project": {
+        "github_com_konveyor_tackle2-hub_api.Project": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7460,49 +7828,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Proxy": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "excluded": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "host": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identity": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "kind": {
-                    "type": "string",
-                    "enum": [
-                        "http",
-                        "https"
-                    ]
-                },
-                "port": {
-                    "type": "integer"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Questionnaire": {
+        "github_com_konveyor_tackle2-hub_api.Questionnaire": {
             "type": "object",
             "required": [
                 "name",
@@ -7550,7 +7876,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Ref": {
+        "github_com_konveyor_tackle2-hub_api.Ref": {
             "type": "object",
             "required": [
                 "id"
@@ -7564,7 +7890,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Repository": {
+        "github_com_konveyor_tackle2-hub_api.Repository": {
             "type": "object",
             "properties": {
                 "branch": {
@@ -7584,28 +7910,14 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RestAPI": {
-            "type": "object",
-            "properties": {
-                "routes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Review": {
+        "github_com_konveyor_tackle2-hub_api.Review": {
             "type": "object",
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "archetype": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "businessCriticality": {
                     "type": "integer"
@@ -7636,24 +7948,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RiskMessages": {
-            "type": "object",
-            "properties": {
-                "green": {
-                    "type": "string"
-                },
-                "red": {
-                    "type": "string"
-                },
-                "unknown": {
-                    "type": "string"
-                },
-                "yellow": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.Rule": {
+        "github_com_konveyor_tackle2-hub_api.Rule": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -7666,7 +7961,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "file": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "id": {
                     "type": "integer"
@@ -7685,7 +7980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RuleReport": {
+        "github_com_konveyor_tackle2-hub_api.RuleReport": {
             "type": "object",
             "properties": {
                 "applications": {
@@ -7709,7 +8004,7 @@ const docTemplate = `{
                 "links": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Link"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
                     }
                 },
                 "name": {
@@ -7723,7 +8018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RuleSet": {
+        "github_com_konveyor_tackle2-hub_api.RuleSet": {
             "type": "object",
             "properties": {
                 "createTime": {
@@ -7735,7 +8030,7 @@ const docTemplate = `{
                 "dependsOn": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "description": {
@@ -7745,7 +8040,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "kind": {
                     "type": "string"
@@ -7754,12 +8049,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "repository": {
-                    "$ref": "#/definitions/api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
                 },
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Rule"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Rule"
                     }
                 },
                 "updateUser": {
@@ -7767,51 +8062,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Schema": {
-            "type": "object",
-            "properties": {
-                "domain": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "subject": {
-                    "type": "string"
-                },
-                "variant": {
-                    "type": "string"
-                },
-                "versions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/jsd.Version"
-                    }
-                }
-            }
-        },
-        "api.Section": {
-            "type": "object",
-            "properties": {
-                "comment": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "order": {
-                    "type": "integer"
-                },
-                "questions": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Question"
-                    }
-                }
-            }
-        },
-        "api.Service": {
+        "github_com_konveyor_tackle2-hub_api.Service": {
             "type": "object",
             "properties": {
                 "name": {
@@ -7822,7 +8073,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Setting": {
+        "github_com_konveyor_tackle2-hub_api.Setting": {
             "type": "object",
             "properties": {
                 "key": {
@@ -7831,7 +8082,7 @@ const docTemplate = `{
                 "value": {}
             }
         },
-        "api.Stakeholder": {
+        "github_com_konveyor_tackle2-hub_api.Stakeholder": {
             "type": "object",
             "required": [
                 "email",
@@ -7841,13 +8092,13 @@ const docTemplate = `{
                 "businessServices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "contributes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "createTime": {
@@ -7863,12 +8114,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "jobFunction": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "migrationWaves": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "name": {
@@ -7877,13 +8128,13 @@ const docTemplate = `{
                 "owns": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "stakeholderGroups": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "updateUser": {
@@ -7891,7 +8142,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StakeholderGroup": {
+        "github_com_konveyor_tackle2-hub_api.StakeholderGroup": {
             "type": "object",
             "required": [
                 "name"
@@ -7912,7 +8163,7 @@ const docTemplate = `{
                 "migrationWaves": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "name": {
@@ -7921,7 +8172,7 @@ const docTemplate = `{
                 "stakeholders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "updateUser": {
@@ -7929,21 +8180,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Stakeholders": {
-            "type": "object",
-            "properties": {
-                "contributors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.Ref"
-                    }
-                },
-                "owner": {
-                    "$ref": "#/definitions/api.Ref"
-                }
-            }
-        },
-        "api.TTL": {
+        "github_com_konveyor_tackle2-hub_api.TTL": {
             "type": "object",
             "properties": {
                 "created": {
@@ -7963,7 +8200,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Tag": {
+        "github_com_konveyor_tackle2-hub_api.Tag": {
             "type": "object",
             "required": [
                 "category",
@@ -7971,7 +8208,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -7990,7 +8227,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TagCategory": {
+        "github_com_konveyor_tackle2-hub_api.TagCategory": {
             "type": "object",
             "required": [
                 "name"
@@ -8018,7 +8255,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "updateUser": {
@@ -8030,7 +8267,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TagRef": {
+        "github_com_konveyor_tackle2-hub_api.TagRef": {
             "type": "object",
             "required": [
                 "id"
@@ -8050,67 +8287,15 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Target": {
-            "type": "object",
-            "properties": {
-                "choice": {
-                    "type": "boolean"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "custom": {
-                    "type": "boolean"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "image": {
-                    "$ref": "#/definitions/api.Ref"
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.TargetLabel"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "ruleset": {
-                    "$ref": "#/definitions/api.RuleSet"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.TargetLabel": {
-            "type": "object",
-            "properties": {
-                "label": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.TargetProfile": {
+        "github_com_konveyor_tackle2-hub_api.TargetProfile": {
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
+                "analysisProfile": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
                 "createTime": {
                     "type": "string"
                 },
@@ -8120,7 +8305,7 @@ const docTemplate = `{
                 "generators": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                     }
                 },
                 "id": {
@@ -8134,7 +8319,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Task": {
+        "github_com_konveyor_tackle2-hub_api.Task": {
             "type": "object",
             "properties": {
                 "activity": {
@@ -8147,16 +8332,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "attached": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Attachment"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
                     }
                 },
                 "bucket": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -8168,13 +8353,13 @@ const docTemplate = `{
                 "errors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TaskError"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
                     }
                 },
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TaskEvent"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent"
                     }
                 },
                 "extensions": {
@@ -8196,13 +8381,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "platform": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "pod": {
                     "type": "string"
                 },
                 "policy": {
-                    "$ref": "#/definitions/api.TaskPolicy"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
                 },
                 "priority": {
                     "type": "integer"
@@ -8220,21 +8405,21 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ttl": {
-                    "$ref": "#/definitions/api.TTL"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TTL"
                 },
                 "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "api.TaskDashboard": {
+        "github_com_konveyor_tackle2-hub_api.TaskDashboard": {
             "type": "object",
             "properties": {
                 "addon": {
                     "type": "string"
                 },
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -8257,6 +8442,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "platform": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
                 "started": {
                     "type": "string"
                 },
@@ -8271,7 +8459,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TaskError": {
+        "github_com_konveyor_tackle2-hub_api.TaskError": {
             "type": "object",
             "properties": {
                 "description": {
@@ -8282,7 +8470,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TaskEvent": {
+        "github_com_konveyor_tackle2-hub_api.TaskEvent": {
             "type": "object",
             "properties": {
                 "count": {
@@ -8299,7 +8487,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TaskGroup": {
+        "github_com_konveyor_tackle2-hub_api.TaskGroup": {
             "type": "object",
             "required": [
                 "data"
@@ -8309,7 +8497,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bucket": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -8336,7 +8524,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "policy": {
-                    "$ref": "#/definitions/api.TaskPolicy"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
                 },
                 "priority": {
                     "type": "integer"
@@ -8347,7 +8535,7 @@ const docTemplate = `{
                 "tasks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Task"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
                     }
                 },
                 "updateUser": {
@@ -8355,15 +8543,21 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TaskPolicy": {
+        "github_com_konveyor_tackle2-hub_api.TaskPolicy": {
             "type": "object",
             "properties": {
                 "isolated": {
                     "type": "boolean"
                 },
+                "preemptEnabled": {
+                    "type": "boolean"
+                },
+                "preemptExempt": {
+                    "type": "boolean"
+                }
             }
         },
-        "api.TaskQueue": {
+        "github_com_konveyor_tackle2-hub_api.TaskQueue": {
             "type": "object",
             "properties": {
                 "pending": {
@@ -8386,7 +8580,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TaskReport": {
+        "github_com_konveyor_tackle2-hub_api.TaskReport": {
             "type": "object",
             "properties": {
                 "activity": {
@@ -8398,7 +8592,7 @@ const docTemplate = `{
                 "attached": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Attachment"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
                     }
                 },
                 "completed": {
@@ -8413,7 +8607,7 @@ const docTemplate = `{
                 "errors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TaskError"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
                     }
                 },
                 "id": {
@@ -8434,7 +8628,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TechDependency": {
+        "github_com_konveyor_tackle2-hub_api.TechDependency": {
             "type": "object",
             "required": [
                 "name"
@@ -8478,21 +8672,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Thresholds": {
-            "type": "object",
-            "properties": {
-                "red": {
-                    "type": "integer"
-                },
-                "unknown": {
-                    "type": "integer"
-                },
-                "yellow": {
-                    "type": "integer"
-                }
-            }
-        },
-        "api.Ticket": {
+        "github_com_konveyor_tackle2-hub_api.Ticket": {
             "type": "object",
             "required": [
                 "application",
@@ -8502,7 +8682,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -8514,7 +8694,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "fields": {
-                    "$ref": "#/definitions/api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
                 },
                 "id": {
                     "type": "integer"
@@ -8541,14 +8721,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tracker": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "api.Tracker": {
+        "github_com_konveyor_tackle2-hub_api.Tracker": {
             "type": "object",
             "required": [
                 "identity",
@@ -8570,7 +8750,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
                 },
                 "insecure": {
                     "type": "boolean"
@@ -8599,7 +8779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Vertex": {
+        "github_com_konveyor_tackle2-hub_api.Vertex": {
             "type": "object",
             "properties": {
                 "applicationId": {
@@ -8625,194 +8805,615 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_konveyor_tackle2-hub_api_jsd.Map": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "github_com_konveyor_tackle2-hub_jsd.Map": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "github_com_konveyor_tackle2-hub_migration_v18_model.Answer": {
+        "github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile": {
             "type": "object",
             "properties": {
-                "applyTags": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-                    }
-                },
-                "autoAnswerFor": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-                    }
-                },
-                "autoAnswered": {
-                    "type": "boolean"
-                },
-                "mitigation": {
+                "createTime": {
                     "type": "string"
                 },
-                "order": {
-                    "type": "integer"
-                },
-                "rationale": {
+                "createUser": {
                     "type": "string"
                 },
-                "risk": {
-                    "type": "string",
-                    "enum": [
-                        "red",
-                        "yellow",
-                        "green",
-                        "unknown"
-                    ]
-                },
-                "selected": {
-                    "type": "boolean"
-                },
-                "text": {
+                "description": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "tag": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_migration_v18_model.Question": {
-            "type": "object",
-            "properties": {
-                "answers": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.Answer"
-                    }
-                },
-                "excludeFor": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-                    }
-                },
-                "explanation": {
-                    "type": "string"
-                },
-                "includeFor": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-                    }
-                },
-                "order": {
-                    "type": "integer"
-                },
-                "text": {
-                    "type": "string"
-                }
-            }
-        },
-        "intstr.IntOrString": {
-            "type": "object",
-            "properties": {
-                "intVal": {
-                    "type": "integer"
-                },
-                "strVal": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/intstr.Type"
-                }
-            }
-        },
-        "intstr.Type": {
-            "type": "integer",
-            "enum": [
-                0,
-                1
-            ],
-            "x-enum-comments": {
-                "Int": "The IntOrString holds an int.",
-                "String": "The IntOrString holds a string."
-            },
-            "x-enum-varnames": [
-                "Int",
-                "String"
-            ]
-        },
-        "jsd.Document": {
-            "type": "object",
-            "required": [
-                "content"
-            ],
-            "properties": {
-                "content": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api_jsd.Map"
-                },
-                "schema": {
-                    "type": "string"
-                }
-            }
-        },
-        "jsd.Version": {
-            "type": "object",
-            "properties": {
-                "definition": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_jsd.Map"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "migration": {
+                "mode": {
+                    "$ref": "#/definitions/api.ApMode"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rules": {
+                    "$ref": "#/definitions/api.ApRules"
+                },
+                "scope": {
+                    "$ref": "#/definitions/api.ApScope"
+                },
+                "updateUser": {
                     "type": "string"
                 }
             }
         },
-        "resource.Quantity": {
+        "github_com_konveyor_tackle2-hub_internal_api.Dependency": {
             "type": "object",
             "properties": {
-                "Format": {
-                    "type": "string",
-                    "enum": [
-                        "DecimalExponent",
-                        "BinarySI",
-                        "DecimalSI"
-                    ],
-                    "x-enum-comments": {
-                        "BinarySI": "e.g., 12Mi (12 * 2^20)",
-                        "DecimalExponent": "e.g., 12e6",
-                        "DecimalSI": "e.g., 12M  (12 * 10^6)"
-                    },
-                    "x-enum-varnames": [
-                        "DecimalExponent",
-                        "BinarySI",
-                        "DecimalSI"
-                    ]
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "from": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "to": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "updateUser": {
+                    "type": "string"
                 }
             }
         },
-        "v1.Capabilities": {
+        "github_com_konveyor_tackle2-hub_internal_api.Generator": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "profiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    }
+                },
+                "repository": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "values": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Identity": {
+            "type": "object",
+            "required": [
+                "kind",
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "settings": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.LatestSchema": {
+            "type": "object",
+            "properties": {
+                "definition": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Manifest": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "content": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "secret": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Platform": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    }
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Proxy": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "excluded": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "host": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "http",
+                        "https"
+                    ]
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Ref": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.RestAPI": {
+            "type": "object",
+            "properties": {
+                "routes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.RuleSet": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "repository": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Rule"
+                    }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Schema": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "variant": {
+                    "type": "string"
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Version"
+                    }
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Tag": {
+            "type": "object",
+            "required": [
+                "category",
+                "name"
+            ],
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.TagRef": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "virtual": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Target": {
+            "type": "object",
+            "properties": {
+                "choice": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "custom": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TargetLabel"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.RuleSet"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.Task": {
+            "type": "object",
+            "properties": {
+                "activity": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "addon": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "attached": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
+                    }
+                },
+                "bucket": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "data": {},
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
+                    }
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent"
+                    }
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "locator": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "pod": {
+                    "type": "string"
+                },
+                "policy": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "retries": {
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "terminated": {
+                    "type": "string"
+                },
+                "ttl": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TTL"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.TaskGroup": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "policy": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
+                    }
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "k8s.Capabilities": {
             "type": "object",
             "properties": {
                 "add": {
-                    "description": "Added capabilities\n+optional",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "drop": {
-                    "description": "Removed capabilities\n+optional",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -8820,299 +9421,193 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.ConfigMapEnvSource": {
+        "k8s.ConfigMapEnvSource": {
             "type": "object",
             "properties": {
-                "name": {
-                    "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
-                    "type": "string"
+                "localObjectReference": {
+                    "$ref": "#/definitions/k8s.LocalObjectReference"
                 },
                 "optional": {
-                    "description": "Specify whether the ConfigMap must be defined\n+optional",
                     "type": "boolean"
                 }
             }
         },
-        "v1.ConfigMapKeySelector": {
+        "k8s.ConfigMapKeySelector": {
             "type": "object",
             "properties": {
                 "key": {
-                    "description": "The key to select.",
                     "type": "string"
                 },
-                "name": {
-                    "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
-                    "type": "string"
+                "localObjectReference": {
+                    "$ref": "#/definitions/k8s.LocalObjectReference"
                 },
                 "optional": {
-                    "description": "Specify whether the ConfigMap or its key must be defined\n+optional",
                     "type": "boolean"
                 }
             }
         },
-        "v1.Container": {
+        "k8s.Container": {
             "type": "object",
             "properties": {
                 "args": {
-                    "description": "Arguments to the entrypoint.\nThe container image's CMD is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "command": {
-                    "description": "Entrypoint array. Not executed within a shell.\nThe container image's ENTRYPOINT is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "env": {
-                    "description": "List of environment variables to set in the container.\nCannot be updated.\n+optional\n+patchMergeKey=name\n+patchStrategy=merge",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.EnvVar"
+                        "$ref": "#/definitions/k8s.EnvVar"
                     }
                 },
                 "envFrom": {
-                    "description": "List of sources to populate environment variables in the container.\nThe keys defined within a source must be a C_IDENTIFIER. All invalid keys\nwill be reported as an event when the container is starting. When a key exists in multiple\nsources, the value associated with the last source will take precedence.\nValues defined by an Env with a duplicate key will take precedence.\nCannot be updated.\n+optional",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.EnvFromSource"
+                        "$ref": "#/definitions/k8s.EnvFromSource"
                     }
                 },
                 "image": {
-                    "description": "Container image name.\nMore info: https://kubernetes.io/docs/concepts/containers/images\nThis field is optional to allow higher level config management to default or override\ncontainer images in workload controllers like Deployments and StatefulSets.\n+optional",
                     "type": "string"
                 },
                 "imagePullPolicy": {
-                    "description": "Image pull policy.\nOne of Always, Never, IfNotPresent.\nDefaults to Always if :latest tag is specified, or IfNotPresent otherwise.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/containers/images#updating-images\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.PullPolicy"
-                        }
-                    ]
+                    "type": "string"
                 },
                 "lifecycle": {
-                    "description": "Actions that the management system should take in response to container lifecycle events.\nCannot be updated.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Lifecycle"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.Lifecycle"
                 },
                 "livenessProbe": {
-                    "description": "Periodic probe of container liveness.\nContainer will be restarted if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Probe"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.Probe"
                 },
                 "name": {
-                    "description": "Name of the container specified as a DNS_LABEL.\nEach container in a pod must have a unique name (DNS_LABEL).\nCannot be updated.",
                     "type": "string"
                 },
                 "ports": {
-                    "description": "List of ports to expose from the container. Not specifying a port here\nDOES NOT prevent that port from being exposed. Any port which is\nlistening on the default \"0.0.0.0\" address inside a container will be\naccessible from the network.\nModifying this array with strategic merge patch may corrupt the data.\nFor more information See https://github.com/kubernetes/kubernetes/issues/108255.\nCannot be updated.\n+optional\n+patchMergeKey=containerPort\n+patchStrategy=merge\n+listType=map\n+listMapKey=containerPort\n+listMapKey=protocol",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.ContainerPort"
+                        "$ref": "#/definitions/k8s.ContainerPort"
                     }
                 },
                 "readinessProbe": {
-                    "description": "Periodic probe of container service readiness.\nContainer will be removed from service endpoints if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Probe"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.Probe"
                 },
                 "resources": {
-                    "description": "Compute Resources required by this container.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ResourceRequirements"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ResourceRequirements"
                 },
                 "securityContext": {
-                    "description": "SecurityContext defines the security options the container should be run with.\nIf set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.\nMore info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SecurityContext"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.SecurityContext"
                 },
                 "startupProbe": {
-                    "description": "StartupProbe indicates that the Pod has successfully initialized.\nIf specified, no other probes are executed until this completes successfully.\nIf this probe fails, the Pod will be restarted, just as if the livenessProbe failed.\nThis can be used to provide different probe parameters at the beginning of a Pod's lifecycle,\nwhen it might take a long time to load data or warm a cache, than during steady-state operation.\nThis cannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Probe"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.Probe"
                 },
                 "stdin": {
-                    "description": "Whether this container should allocate a buffer for stdin in the container runtime. If this\nis not set, reads from stdin in the container will always result in EOF.\nDefault is false.\n+optional",
                     "type": "boolean"
                 },
                 "stdinOnce": {
-                    "description": "Whether the container runtime should close the stdin channel after it has been opened by\na single attach. When stdin is true the stdin stream will remain open across multiple attach\nsessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the\nfirst client attaches to stdin, and then remains open and accepts data until the client disconnects,\nat which time stdin is closed and remains closed until the container is restarted. If this\nflag is false, a container processes that reads from stdin will never receive an EOF.\nDefault is false\n+optional",
                     "type": "boolean"
                 },
                 "terminationMessagePath": {
-                    "description": "Optional: Path at which the file to which the container's termination message\nwill be written is mounted into the container's filesystem.\nMessage written is intended to be brief final status, such as an assertion failure message.\nWill be truncated by the node if greater than 4096 bytes. The total message length across\nall containers will be limited to 12kb.\nDefaults to /dev/termination-log.\nCannot be updated.\n+optional",
                     "type": "string"
                 },
                 "terminationMessagePolicy": {
-                    "description": "Indicate how the termination message should be populated. File will use the contents of\nterminationMessagePath to populate the container status message on both success and failure.\nFallbackToLogsOnError will use the last chunk of container log output if the termination\nmessage file is empty and the container exited with an error.\nThe log output is limited to 2048 bytes or 80 lines, whichever is smaller.\nDefaults to File.\nCannot be updated.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.TerminationMessagePolicy"
-                        }
-                    ]
+                    "type": "string"
                 },
                 "tty": {
-                    "description": "Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.\nDefault is false.\n+optional",
                     "type": "boolean"
                 },
                 "volumeDevices": {
-                    "description": "volumeDevices is the list of block devices to be used by the container.\n+patchMergeKey=devicePath\n+patchStrategy=merge\n+optional",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.VolumeDevice"
+                        "$ref": "#/definitions/k8s.VolumeDevice"
                     }
                 },
                 "volumeMounts": {
-                    "description": "Pod volumes to mount into the container's filesystem.\nCannot be updated.\n+optional\n+patchMergeKey=mountPath\n+patchStrategy=merge",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.VolumeMount"
+                        "$ref": "#/definitions/k8s.VolumeMount"
                     }
                 },
                 "workingDir": {
-                    "description": "Container's working directory.\nIf not specified, the container runtime's default will be used, which\nmight be configured in the container image.\nCannot be updated.\n+optional",
                     "type": "string"
                 }
             }
         },
-        "v1.ContainerPort": {
+        "k8s.ContainerPort": {
             "type": "object",
             "properties": {
                 "containerPort": {
-                    "description": "Number of port to expose on the pod's IP address.\nThis must be a valid port number, 0 \u003c x \u003c 65536.",
                     "type": "integer"
                 },
                 "hostIP": {
-                    "description": "What host IP to bind the external port to.\n+optional",
                     "type": "string"
                 },
                 "hostPort": {
-                    "description": "Number of port to expose on the host.\nIf specified, this must be a valid port number, 0 \u003c x \u003c 65536.\nIf HostNetwork is specified, this must match ContainerPort.\nMost containers do not need this.\n+optional",
                     "type": "integer"
                 },
                 "name": {
-                    "description": "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each\nnamed port in a pod must have a unique name. Name for the port that can be\nreferred to by services.\n+optional",
                     "type": "string"
                 },
                 "protocol": {
-                    "description": "Protocol for port. Must be UDP, TCP, or SCTP.\nDefaults to \"TCP\".\n+optional\n+default=\"TCP\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Protocol"
-                        }
-                    ]
+                    "description": "Default \"TCP\"",
+                    "type": "string"
                 }
             }
         },
-        "v1.EnvFromSource": {
+        "k8s.EnvFromSource": {
             "type": "object",
             "properties": {
                 "configMapRef": {
-                    "description": "The ConfigMap to select from\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ConfigMapEnvSource"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ConfigMapEnvSource"
                 },
                 "prefix": {
-                    "description": "An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.\n+optional",
                     "type": "string"
                 },
                 "secretRef": {
-                    "description": "The Secret to select from\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SecretEnvSource"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.SecretEnvSource"
                 }
             }
         },
-        "v1.EnvVar": {
+        "k8s.EnvVar": {
             "type": "object",
             "properties": {
                 "name": {
-                    "description": "Name of the environment variable. Must be a C_IDENTIFIER.",
                     "type": "string"
                 },
                 "value": {
-                    "description": "Variable references $(VAR_NAME) are expanded\nusing the previously defined environment variables in the container and\nany service environment variables. If a variable cannot be resolved,\nthe reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.\n\"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\".\nEscaped references will never be expanded, regardless of whether the variable\nexists or not.\nDefaults to \"\".\n+optional",
                     "type": "string"
                 },
                 "valueFrom": {
-                    "description": "Source for the environment variable's value. Cannot be used if value is not empty.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.EnvVarSource"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.EnvVarSource"
                 }
             }
         },
-        "v1.EnvVarSource": {
+        "k8s.EnvVarSource": {
             "type": "object",
             "properties": {
                 "configMapKeyRef": {
-                    "description": "Selects a key of a ConfigMap.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ConfigMapKeySelector"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ConfigMapKeySelector"
                 },
                 "fieldRef": {
-                    "description": "Selects a field of the pod: supports metadata.name, metadata.namespace, ` + "`" + `metadata.labels['\u003cKEY\u003e']` + "`" + `, ` + "`" + `metadata.annotations['\u003cKEY\u003e']` + "`" + `,\nspec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ObjectFieldSelector"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ObjectFieldSelector"
                 },
                 "resourceFieldRef": {
-                    "description": "Selects a resource of the container: only resources limits and requests\n(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ResourceFieldSelector"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ResourceFieldSelector"
                 },
                 "secretKeyRef": {
-                    "description": "Selects a key of a secret in the pod's namespace\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SecretKeySelector"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.SecretKeySelector"
                 }
             }
         },
-        "v1.ExecAction": {
+        "k8s.ExecAction": {
             "type": "object",
             "properties": {
                 "command": {
-                    "description": "Command is the command line to execute inside the container, the working directory for the\ncommand  is root ('/') in the container's filesystem. The command is simply exec'd, it is\nnot run inside a shell, so traditional shell instructions ('|', etc) won't work. To use\na shell, you need to explicitly call out to that shell.\nExit status of 0 is treated as live/healthy and non-zero is unhealthy.\n+optional",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -9120,542 +9615,319 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.GRPCAction": {
+        "k8s.GRPCAction": {
             "type": "object",
             "properties": {
                 "port": {
-                    "description": "Port number of the gRPC service. Number must be in the range 1 to 65535.",
                     "type": "integer"
                 },
                 "service": {
-                    "description": "Service is the name of the service to place in the gRPC HealthCheckRequest\n(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).\n\nIf this is not specified, the default behavior is defined by gRPC.\n+optional\n+default=\"\"",
                     "type": "string"
                 }
             }
         },
-        "v1.HTTPGetAction": {
+        "k8s.HTTPGetAction": {
             "type": "object",
             "properties": {
                 "host": {
-                    "description": "Host name to connect to, defaults to the pod IP. You probably want to set\n\"Host\" in httpHeaders instead.\n+optional",
                     "type": "string"
                 },
                 "httpHeaders": {
-                    "description": "Custom headers to set in the request. HTTP allows repeated headers.\n+optional",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.HTTPHeader"
+                        "$ref": "#/definitions/k8s.HTTPHeader"
                     }
                 },
                 "path": {
-                    "description": "Path to access on the HTTP server.\n+optional",
                     "type": "string"
                 },
                 "port": {
-                    "description": "Name or number of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/intstr.IntOrString"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "scheme": {
-                    "description": "Scheme to use for connecting to the host.\nDefaults to HTTP.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.URIScheme"
-                        }
-                    ]
+                    "type": "string"
                 }
             }
         },
-        "v1.HTTPHeader": {
+        "k8s.HTTPHeader": {
             "type": "object",
             "properties": {
                 "name": {
-                    "description": "The header field name",
                     "type": "string"
                 },
                 "value": {
-                    "description": "The header field value",
                     "type": "string"
                 }
             }
         },
-        "v1.Lifecycle": {
+        "k8s.Lifecycle": {
             "type": "object",
             "properties": {
                 "postStart": {
-                    "description": "PostStart is called immediately after a container is created. If the handler fails,\nthe container is terminated and restarted according to its restart policy.\nOther management of the container blocks until the hook completes.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.LifecycleHandler"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.LifecycleHandler"
                 },
                 "preStop": {
-                    "description": "PreStop is called immediately before a container is terminated due to an\nAPI request or management event such as liveness/startup probe failure,\npreemption, resource contention, etc. The handler is not called if the\ncontainer crashes or exits. The Pod's termination grace period countdown begins before the\nPreStop hook is executed. Regardless of the outcome of the handler, the\ncontainer will eventually terminate within the Pod's termination grace\nperiod (unless delayed by finalizers). Other management of the container blocks until the hook completes\nor until the termination grace period is reached.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.LifecycleHandler"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.LifecycleHandler"
                 }
             }
         },
-        "v1.LifecycleHandler": {
+        "k8s.LifecycleHandler": {
             "type": "object",
             "properties": {
                 "exec": {
-                    "description": "Exec specifies the action to take.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ExecAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.ExecAction"
                 },
                 "httpGet": {
-                    "description": "HTTPGet specifies the http request to perform.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.HTTPGetAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.HTTPGetAction"
                 },
                 "tcpSocket": {
-                    "description": "Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept\nfor the backward compatibility. There are no validation of this field and\nlifecycle hooks will fail in runtime when tcp handler is specified.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.TCPSocketAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.TCPSocketAction"
                 }
             }
         },
-        "v1.MountPropagationMode": {
-            "type": "string",
-            "enum": [
-                "None",
-                "HostToContainer",
-                "Bidirectional"
-            ],
-            "x-enum-varnames": [
-                "MountPropagationNone",
-                "MountPropagationHostToContainer",
-                "MountPropagationBidirectional"
-            ]
+        "k8s.LocalObjectReference": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
         },
-        "v1.ObjectFieldSelector": {
+        "k8s.ObjectFieldSelector": {
             "type": "object",
             "properties": {
                 "apiVersion": {
-                    "description": "Version of the schema the FieldPath is written in terms of, defaults to \"v1\".\n+optional",
+                    "description": "default \"v1\"",
                     "type": "string"
                 },
                 "fieldPath": {
-                    "description": "Path of the field to select in the specified API version.",
                     "type": "string"
                 }
             }
         },
-        "v1.Probe": {
+        "k8s.Probe": {
             "type": "object",
             "properties": {
                 "exec": {
-                    "description": "Exec specifies the action to take.\n+optional",
+                    "description": "ProbeHandler fields inlined for direct compilation without embedding.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/v1.ExecAction"
+                            "$ref": "#/definitions/k8s.ExecAction"
                         }
                     ]
                 },
                 "failureThreshold": {
-                    "description": "Minimum consecutive failures for the probe to be considered failed after having succeeded.\nDefaults to 3. Minimum value is 1.\n+optional",
                     "type": "integer"
                 },
                 "grpc": {
-                    "description": "GRPC specifies an action involving a GRPC port.\nThis is a beta field and requires enabling GRPCContainerProbe feature gate.\n+featureGate=GRPCContainerProbe\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.GRPCAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.GRPCAction"
                 },
                 "httpGet": {
-                    "description": "HTTPGet specifies the http request to perform.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.HTTPGetAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.HTTPGetAction"
                 },
                 "initialDelaySeconds": {
-                    "description": "Number of seconds after the container has started before liveness probes are initiated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
                     "type": "integer"
                 },
                 "periodSeconds": {
-                    "description": "How often (in seconds) to perform the probe.\nDefault to 10 seconds. Minimum value is 1.\n+optional",
                     "type": "integer"
                 },
                 "successThreshold": {
-                    "description": "Minimum consecutive successes for the probe to be considered successful after having failed.\nDefaults to 1. Must be 1 for liveness and startup. Minimum value is 1.\n+optional",
                     "type": "integer"
                 },
                 "tcpSocket": {
-                    "description": "TCPSocket specifies an action involving a TCP port.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.TCPSocketAction"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.TCPSocketAction"
                 },
                 "terminationGracePeriodSeconds": {
-                    "description": "Optional duration in seconds the pod needs to terminate gracefully upon probe failure.\nThe grace period is the duration in seconds after the processes running in the pod are sent\na termination signal and the time when the processes are forcibly halted with a kill signal.\nSet this value longer than the expected cleanup time for your process.\nIf this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this\nvalue overrides the value provided by the pod spec.\nValue must be non-negative integer. The value zero indicates stop immediately via\nthe kill signal (no opportunity to shut down).\nThis is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.\nMinimum value is 1. spec.terminationGracePeriodSeconds is used if unset.\n+optional",
                     "type": "integer"
                 },
                 "timeoutSeconds": {
-                    "description": "Number of seconds after which the probe times out.\nDefaults to 1 second. Minimum value is 1.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
                     "type": "integer"
                 }
             }
         },
-        "v1.ProcMountType": {
-            "type": "string",
-            "enum": [
-                "Default",
-                "Unmasked"
-            ],
-            "x-enum-varnames": [
-                "DefaultProcMount",
-                "UnmaskedProcMount"
-            ]
-        },
-        "v1.Protocol": {
-            "type": "string",
-            "enum": [
-                "TCP",
-                "UDP",
-                "SCTP"
-            ],
-            "x-enum-varnames": [
-                "ProtocolTCP",
-                "ProtocolUDP",
-                "ProtocolSCTP"
-            ]
-        },
-        "v1.PullPolicy": {
-            "type": "string",
-            "enum": [
-                "Always",
-                "Never",
-                "IfNotPresent"
-            ],
-            "x-enum-varnames": [
-                "PullAlways",
-                "PullNever",
-                "PullIfNotPresent"
-            ]
-        },
-        "v1.ResourceFieldSelector": {
+        "k8s.ResourceFieldSelector": {
             "type": "object",
             "properties": {
                 "containerName": {
-                    "description": "Container name: required for volumes, optional for env vars\n+optional",
                     "type": "string"
                 },
                 "divisor": {
-                    "description": "Specifies the output format of the exposed resources, defaults to \"1\"\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/resource.Quantity"
-                        }
-                    ]
+                    "description": "Quantity as string",
+                    "type": "string"
                 },
                 "resource": {
-                    "description": "Required: resource to select",
                     "type": "string"
                 }
             }
         },
-        "v1.ResourceList": {
-            "type": "object",
-            "additionalProperties": {
-                "$ref": "#/definitions/resource.Quantity"
-            }
-        },
-        "v1.ResourceRequirements": {
+        "k8s.ResourceRequirements": {
             "type": "object",
             "properties": {
                 "limits": {
-                    "description": "Limits describes the maximum amount of compute resources allowed.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ResourceList"
-                        }
-                    ]
+                    "description": "e.g. \"100m\", \"500Mi\" as string",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "requests": {
-                    "description": "Requests describes the minimum amount of compute resources required.\nIf Requests is omitted for a container, it defaults to Limits if that is explicitly specified,\notherwise to an implementation-defined value.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ResourceList"
-                        }
-                    ]
+                    "description": "e.g. \"100m\", \"500Mi\" as string",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },
-        "v1.SELinuxOptions": {
+        "k8s.SELinuxOptions": {
             "type": "object",
             "properties": {
                 "level": {
-                    "description": "Level is SELinux level label that applies to the container.\n+optional",
                     "type": "string"
                 },
                 "role": {
-                    "description": "Role is a SELinux role label that applies to the container.\n+optional",
                     "type": "string"
                 },
                 "type": {
-                    "description": "Type is a SELinux type label that applies to the container.\n+optional",
                     "type": "string"
                 },
                 "user": {
-                    "description": "User is a SELinux user label that applies to the container.\n+optional",
                     "type": "string"
                 }
             }
         },
-        "v1.SeccompProfile": {
+        "k8s.SeccompProfile": {
             "type": "object",
             "properties": {
                 "localhostProfile": {
-                    "description": "localhostProfile indicates a profile defined in a file on the node should be used.\nThe profile must be preconfigured on the node to work.\nMust be a descending path, relative to the kubelet's configured seccomp profile location.\nMust only be set if type is \"Localhost\".\n+optional",
                     "type": "string"
                 },
                 "type": {
-                    "description": "type indicates which kind of seccomp profile will be applied.\nValid options are:\n\nLocalhost - a profile defined in a file on the node should be used.\nRuntimeDefault - the container runtime default profile should be used.\nUnconfined - no profile should be applied.\n+unionDiscriminator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SeccompProfileType"
-                        }
-                    ]
+                    "type": "string"
                 }
             }
         },
-        "v1.SeccompProfileType": {
-            "type": "string",
-            "enum": [
-                "Unconfined",
-                "RuntimeDefault",
-                "Localhost"
-            ],
-            "x-enum-varnames": [
-                "SeccompProfileTypeUnconfined",
-                "SeccompProfileTypeRuntimeDefault",
-                "SeccompProfileTypeLocalhost"
-            ]
-        },
-        "v1.SecretEnvSource": {
+        "k8s.SecretEnvSource": {
             "type": "object",
             "properties": {
-                "name": {
-                    "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
-                    "type": "string"
+                "localObjectReference": {
+                    "$ref": "#/definitions/k8s.LocalObjectReference"
                 },
                 "optional": {
-                    "description": "Specify whether the Secret must be defined\n+optional",
                     "type": "boolean"
                 }
             }
         },
-        "v1.SecretKeySelector": {
+        "k8s.SecretKeySelector": {
             "type": "object",
             "properties": {
                 "key": {
-                    "description": "The key of the secret to select from.  Must be a valid secret key.",
                     "type": "string"
                 },
-                "name": {
-                    "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
-                    "type": "string"
+                "localObjectReference": {
+                    "$ref": "#/definitions/k8s.LocalObjectReference"
                 },
                 "optional": {
-                    "description": "Specify whether the Secret or its key must be defined\n+optional",
                     "type": "boolean"
                 }
             }
         },
-        "v1.SecurityContext": {
+        "k8s.SecurityContext": {
             "type": "object",
             "properties": {
                 "allowPrivilegeEscalation": {
-                    "description": "AllowPrivilegeEscalation controls whether a process can gain more\nprivileges than its parent process. This bool directly controls if\nthe no_new_privs flag will be set on the container process.\nAllowPrivilegeEscalation is true always when the container is:\n1) run as Privileged\n2) has CAP_SYS_ADMIN\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
                     "type": "boolean"
                 },
                 "capabilities": {
-                    "description": "The capabilities to add/drop when running containers.\nDefaults to the default set of capabilities granted by the container runtime.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Capabilities"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.Capabilities"
                 },
                 "privileged": {
-                    "description": "Run container in privileged mode.\nProcesses in privileged containers are essentially equivalent to root on the host.\nDefaults to false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
                     "type": "boolean"
                 },
                 "procMount": {
-                    "description": "procMount denotes the type of proc mount to use for the containers.\nThe default is DefaultProcMount which uses the container runtime defaults for\nreadonly paths and masked paths.\nThis requires the ProcMountType feature flag to be enabled.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.ProcMountType"
-                        }
-                    ]
+                    "type": "string"
                 },
-                "readOnlyRootFilesystem": {
-                    "description": "Whether this container has a read-only root filesystem.\nDefault is false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
+                "readOnlyRouteFilesystem": {
                     "type": "boolean"
                 },
                 "runAsGroup": {
-                    "description": "The GID to run the entrypoint of the container process.\nUses runtime default if unset.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
                     "type": "integer"
                 },
-                "runAsNonRoot": {
-                    "description": "Indicates that the container must run as a non-root user.\nIf true, the Kubelet will validate the image at runtime to ensure that it\ndoes not run as UID 0 (root) and fail to start the container if it does.\nIf unset or false, no such validation will be performed.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional",
+                "runAsNonRoute": {
                     "type": "boolean"
                 },
                 "runAsUser": {
-                    "description": "The UID to run the entrypoint of the container process.\nDefaults to user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
                     "type": "integer"
                 },
                 "seLinuxOptions": {
-                    "description": "The SELinux context to be applied to the container.\nIf unspecified, the container runtime will allocate a random SELinux context for each\ncontainer.  May also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SELinuxOptions"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.SELinuxOptions"
                 },
                 "seccompProfile": {
-                    "description": "The seccomp options to use by this container. If seccomp options are\nprovided at both the pod \u0026 container level, the container options\noverride the pod options.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.SeccompProfile"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.SeccompProfile"
                 },
                 "windowsOptions": {
-                    "description": "The Windows specific settings applied to all containers.\nIf unspecified, the options from the PodSecurityContext will be used.\nIf set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is linux.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.WindowsSecurityContextOptions"
-                        }
-                    ]
+                    "$ref": "#/definitions/k8s.WindowsSecurityContextOptions"
                 }
             }
         },
-        "v1.TCPSocketAction": {
+        "k8s.TCPSocketAction": {
             "type": "object",
             "properties": {
                 "host": {
-                    "description": "Optional: Host name to connect to, defaults to the pod IP.\n+optional",
                     "type": "string"
                 },
                 "port": {
-                    "description": "Number or name of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/intstr.IntOrString"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },
-        "v1.TerminationMessagePolicy": {
-            "type": "string",
-            "enum": [
-                "File",
-                "FallbackToLogsOnError"
-            ],
-            "x-enum-varnames": [
-                "TerminationMessageReadFile",
-                "TerminationMessageFallbackToLogsOnError"
-            ]
-        },
-        "v1.URIScheme": {
-            "type": "string",
-            "enum": [
-                "HTTP",
-                "HTTPS"
-            ],
-            "x-enum-varnames": [
-                "URISchemeHTTP",
-                "URISchemeHTTPS"
-            ]
-        },
-        "v1.VolumeDevice": {
+        "k8s.VolumeDevice": {
             "type": "object",
             "properties": {
                 "devicePath": {
-                    "description": "devicePath is the path inside of the container that the device will be mapped to.",
                     "type": "string"
                 },
                 "name": {
-                    "description": "name must match the name of a persistentVolumeClaim in the pod",
                     "type": "string"
                 }
             }
         },
-        "v1.VolumeMount": {
+        "k8s.VolumeMount": {
             "type": "object",
             "properties": {
                 "mountPath": {
-                    "description": "Path within the container at which the volume should be mounted.  Must\nnot contain ':'.",
                     "type": "string"
                 },
                 "mountPropagation": {
-                    "description": "mountPropagation determines how mounts are propagated from the host\nto container and the other way around.\nWhen not set, MountPropagationNone is used.\nThis field is beta in 1.10.\n+optional",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.MountPropagationMode"
-                        }
-                    ]
+                    "type": "string"
                 },
                 "name": {
-                    "description": "This must match the Name of a Volume.",
                     "type": "string"
                 },
                 "readOnly": {
-                    "description": "Mounted read-only if true, read-write otherwise (false or unspecified).\nDefaults to false.\n+optional",
                     "type": "boolean"
                 },
                 "subPath": {
-                    "description": "Path within the volume from which the container's volume should be mounted.\nDefaults to \"\" (volume's root).\n+optional",
                     "type": "string"
                 },
                 "subPathExpr": {
-                    "description": "Expanded path within the volume from which the container's volume should be mounted.\nBehaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.\nDefaults to \"\" (volume's root).\nSubPathExpr and SubPath are mutually exclusive.\n+optional",
                     "type": "string"
                 }
             }
         },
-        "v1.WindowsSecurityContextOptions": {
+        "k8s.WindowsSecurityContextOptions": {
             "type": "object",
             "properties": {
                 "gmsaCredentialSpec": {
-                    "description": "GMSACredentialSpec is where the GMSA admission webhook\n(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the\nGMSA credential spec named by the GMSACredentialSpecName field.\n+optional",
                     "type": "string"
                 },
                 "gmsaCredentialSpecName": {
-                    "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use.\n+optional",
                     "type": "string"
                 },
                 "hostProcess": {
-                    "description": "HostProcess determines if a container should be run as a 'Host Process' container.\nThis field is alpha-level and will only be honored by components that enable the\nWindowsHostProcessContainers feature flag. Setting this field without the feature\nflag will result in errors when validating the Pod. All of a Pod's containers must\nhave the same effective HostProcess value (it is not allowed to have a mix of HostProcess\ncontainers and non-HostProcess containers).  In addition, if HostProcess is true\nthen HostNetwork must also be set to true.\n+optional",
                     "type": "boolean"
                 },
                 "runAsUserName": {
-                    "description": "The UserName in Windows to run the entrypoint of the container process.\nDefaults to the user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext. If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional",
                     "type": "string"
                 }
             }

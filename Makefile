@@ -79,7 +79,7 @@ docs: docs-html docs-openapi3 docs-binding
 
 # Build Swagger API spec into ./docs directory
 docs-swagger: $(GOSWAG)
-	$(GOSWAG) init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir api,assessment
+	$(GOSWAG) init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir internal/api,internal/assessment
 
 # Build OpenAPI 3.0 docs
 docs-openapi3: docs-swagger
