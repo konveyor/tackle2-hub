@@ -1,0 +1,50 @@
+name: Enforce No External Imports from internal/ (changed files only)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-internal-imports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for accurate changed-files detection
+
+      - name: Get changed Go files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.go
+
+      - name: Fail on forbidden imports from internal/ in changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking changed .go files for forbidden imports from internal/..."
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+
+          FOUND=false
+          for file in $CHANGED_FILES; do
+            # Skip files inside internal/ or cmd/ (allowed to import internal)
+            if [[ "$file" == internal/* ]] || [[ "$file" == cmd/* ]]; then
+              continue
+            fi
+
+            # Check if the file contains an import from internal/
+            if grep -q '"github.com/konveyor/tackle2-hub/internal/' "$file"; then
+              echo "::error file=$file::Forbidden import from 'internal/' found in changed file"
+              grep --color=always '"github.com/konveyor/tackle2-hub/internal/' "$file" || true
+              FOUND=true
+            fi
+          done
+
+          if [ "$FOUND" = true ]; then
+            echo "ERROR: Forbidden internal/ imports detected in changed files outside internal/ and cmd/."
+            echo "Imports from internal/ are only allowed in cmd/ and internal/ directories."
+            exit 1
+          else
+            echo "No forbidden internal/ imports found in changed files. Good!"
+          fi
