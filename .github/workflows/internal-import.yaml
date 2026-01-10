@@ -1,9 +1,9 @@
-name: Internal Import Rules
+name: Import Rules
 on:
   pull_request:
     branches: [main]
 jobs:
-  check-internal-imports:
+  check-imports:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,7 +16,7 @@ jobs:
         with:
           files: |
             **/*.go
-      - name: Check for forbidden internal/ imports
+      - name: Check Imports
         if: steps.changed-files.outputs.any_changed == 'true'
         env:
           CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -26,6 +26,11 @@ jobs:
           PATTERN='"github.com/konveyor/tackle2-hub/internal/'
           found=false
           set -euo pipefail
+          echo ""
+          echo "RULE: import from internal/* not permitted outside of:"
+          echo "  - cmd/*"
+          echo "  - internal/*"
+          echo ""
           for file in $CHANGED_FILES; do
               # allowed
               case "$file" in
@@ -34,17 +39,14 @@ jobs:
                       ;;
               esac
               if grep -qF "$PATTERN" "$file"; then
-                  echo "::error file=$file::Forbidden import from 'internal/' found."
-                  # Show matched lines.
+                  echo "::error file=$file::Forbidden import found."
                   grep --color=always -F "$PATTERN" "$file" || true
                   found=true
               fi
           done
           if [[ "$found" == true ]]; then
               echo
-              echo "ERROR: Forbidden internal/ imports detected outside internal/ and cmd/."
-              echo "→ Imports matching $PATTERN allowed in cmd/ and internal/."
-              echo "Fix this before merging."
+              echo "::error Rule violations detected."
               exit 1
           fi
-          echo "✓ No violations detected."
+          echo "✓ No rule violations detected."
