@@ -2,7 +2,7 @@ package command
 
 import "fmt"
 
-// Options are CLI options.
+// Options command parameters.
 type Options []string
 
 // Add option.

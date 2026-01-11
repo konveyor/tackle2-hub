@@ -2,11 +2,11 @@ package scm
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/konveyor/tackle2-hub/addon/adapter"
 	"github.com/konveyor/tackle2-hub/api"
-	scm2 "github.com/konveyor/tackle2-hub/scm"
+	"github.com/konveyor/tackle2-hub/scm"
 )
 
 var (
@@ -18,16 +18,24 @@ func init() {
 	Dir, _ = os.Getwd()
 }
 
+type SCM = scm.SCM
+type Remote = scm.Remote
+type Identity = scm.Identity
+type Proxy = scm.Proxy
+type ProxyMap = scm.ProxyMap
+type Git = scm.Git
+type Subversion = scm.Subversion
+
 // New SCM repository factory.
-func New(destDir string, repository api.Repository, identity *api.Identity) (r scm2.SCM, err error) {
-	remote := scm2.Remote{
+func New(destDir string, repository api.Repository, identity *api.Identity) (r SCM, err error) {
+	remote := Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
 		Branch: repository.Branch,
 		Path:   repository.Path,
 	}
 	if identity != nil {
-		remote.Identity = &scm2.Identity{
+		remote.Identity = &Identity{
 			ID:       identity.ID,
 			Name:     identity.Name,
 			User:     identity.User,
@@ -41,10 +49,10 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 		if err != nil {
 			return
 		}
-		svn := &scm2.Subversion{}
+		svn := &Subversion{}
 		svn.Remote = remote
 		svn.Path = destDir
-		svn.Home = path.Join(Dir, ".svn", svn.Id())
+		svn.Home = filepath.Join(Dir, ".svn", svn.Id())
 		svn.Proxies, err = proxyMap()
 		if err != nil {
 			return
@@ -55,10 +63,10 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 		if err != nil {
 			return
 		}
-		git := &scm2.Git{}
+		git := &Git{}
 		git.Remote = remote
 		git.Path = destDir
-		git.Home = path.Join(Dir, ".git", git.Id())
+		git.Home = filepath.Join(Dir, ".git", git.Id())
 		git.Proxies, err = proxyMap()
 		if err != nil {
 			return
@@ -70,8 +78,8 @@ func New(destDir string, repository api.Repository, identity *api.Identity) (r s
 }
 
 // proxyMap returns a map of proxies.
-func proxyMap() (pm scm2.ProxyMap, err error) {
-	pm = make(scm2.ProxyMap)
+func proxyMap() (pm ProxyMap, err error) {
+	pm = make(ProxyMap)
 	list, err := addon.Proxy.List()
 	if err != nil {
 		return
@@ -80,7 +88,7 @@ func proxyMap() (pm scm2.ProxyMap, err error) {
 		if !p.Enabled {
 			continue
 		}
-		proxy := scm2.Proxy{
+		proxy := Proxy{
 			ID:       p.ID,
 			Kind:     p.Kind,
 			Host:     p.Host,
@@ -93,7 +101,7 @@ func proxyMap() (pm scm2.ProxyMap, err error) {
 			if err != nil {
 				return
 			}
-			proxy.Identity = &scm2.Identity{
+			proxy.Identity = &Identity{
 				ID:       identity.ID,
 				Name:     identity.Name,
 				User:     identity.User,

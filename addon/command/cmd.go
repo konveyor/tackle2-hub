@@ -1,7 +1,7 @@
 package command
 
 import (
-	"path"
+	"path/filepath"
 
 	"github.com/konveyor/tackle2-hub/addon/adapter"
 	"github.com/konveyor/tackle2-hub/command"
@@ -11,6 +11,8 @@ var (
 	addon = adapter.Addon
 )
 
+type Options = command.Options
+
 // New returns a command.
 func New(p string) (cmd *command.Command) {
 	cmd = &command.Command{Path: p}
@@ -19,7 +21,7 @@ func New(p string) (cmd *command.Command) {
 	writer.reporter = reporter
 	cmd.Begin = func() (err error) {
 		cmd.Writer = writer
-		output := path.Base(cmd.Path) + ".output"
+		output := filepath.Base(cmd.Path) + ".output"
 		reporter.file, err = addon.File.Touch(output)
 		if err != nil {
 			return
