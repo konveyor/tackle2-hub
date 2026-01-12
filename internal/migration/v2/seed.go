@@ -2,15 +2,15 @@ package v2
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v3/model"
 	"gorm.io/gorm"
 )
 
-type JSON = model2.JSON
+type JSON = model.JSON
 
 // Seed the database with models.
 func seed(db *gorm.DB) (err error) {
-	settings := []model2.Setting{
+	settings := []model.Setting{
 		{Key: "git.insecure.enabled", Value: JSON("false")},
 		{Key: "svn.insecure.enabled", Value: JSON("false")},
 		{Key: "mvn.insecure.enabled", Value: JSON("false")},
@@ -21,7 +21,7 @@ func seed(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	proxies := []model2.Proxy{
+	proxies := []model.Proxy{
 		{Kind: "http", Host: "", Port: 0},
 		{Kind: "https", Host: "", Port: 0},
 	}

@@ -2,7 +2,7 @@ package v9
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v9/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v9/model"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +11,7 @@ type Migration struct{}
 func (r Migration) Apply(db *gorm.DB) (err error) {
 
 	type Review struct {
-		model2.Review
+		model.Review
 		ArchetypeID *uint
 	}
 
@@ -26,5 +26,5 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }

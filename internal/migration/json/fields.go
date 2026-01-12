@@ -1,7 +1,7 @@
 package json
 
 import (
-	jsd2 "github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"gopkg.in/yaml.v2"
 )
 
@@ -34,7 +34,7 @@ func (d *Data) Merge(other Data) (merged bool) {
 		return
 	}
 	d.Any = d.merge(a, b)
-	d.Any = jsd2.JsonSafe(d.Any)
+	d.Any = jsd.JsonSafe(d.Any)
 	merged = true
 	return
 }
@@ -96,7 +96,7 @@ type Document struct {
 }
 
 // Validate the content with the schema.
-func (d *Document) Validate(m *jsd2.Manager) (err error) {
+func (d *Document) Validate(m *jsd.Manager) (err error) {
 	schema, err := m.Get(d.Schema)
 	if err != nil {
 		return

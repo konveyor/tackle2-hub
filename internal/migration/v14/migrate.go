@@ -3,7 +3,7 @@ package v14
 import (
 	"strings"
 
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v14/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v14/model"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +29,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 // coordinates have the mvn:// prefix added in 0.5.
 func (r Migration) mavenPrefix(db *gorm.DB) (err error) {
 	prefix := "mvn://"
-	var list []*model2.Application
+	var list []*model.Application
 	err = db.Find(&list).Error
 	if err != nil {
 		return
@@ -52,7 +52,7 @@ func (r Migration) mavenPrefix(db *gorm.DB) (err error) {
 // installed by the operator.
 func (r Migration) taskKind(db *gorm.DB) (err error) {
 	kind := "analyzer"
-	var list []*model2.Task
+	var list []*model.Task
 	err = db.Find(&list).Error
 	if err != nil {
 		return
@@ -70,5 +70,5 @@ func (r Migration) taskKind(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }

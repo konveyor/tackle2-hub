@@ -2,7 +2,7 @@ package v16
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v16/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v16/model"
 	"gorm.io/gorm"
 )
 
@@ -22,17 +22,17 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 // Username: never used.
 func (r Migration) dropColumns(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.DropColumn(&model2.TagCategory{}, "Rank")
+	err = migrator.DropColumn(&model.TagCategory{}, "Rank")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = migrator.DropColumn(&model2.TagCategory{}, "Username")
+	err = migrator.DropColumn(&model.TagCategory{}, "Username")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = migrator.DropColumn(&model2.Tag{}, "Username")
+	err = migrator.DropColumn(&model.Tag{}, "Username")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -41,5 +41,5 @@ func (r Migration) dropColumns(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }

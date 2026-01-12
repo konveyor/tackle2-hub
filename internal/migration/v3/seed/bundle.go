@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"os"
 
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v3/model"
 	"gorm.io/gorm"
 )
 
 // RuleBundle seed object.
 type RuleBundle struct {
-	model2.RuleBundle
+	model.RuleBundle
 	image    string
 	excluded bool
 }
 
 // Create resources and files.
 func (r *RuleBundle) Create(db *gorm.DB) {
-	r.Image = &model2.File{Name: "file.svg"}
+	r.Image = &model.File{Name: "file.svg"}
 	err := db.Create(r.Image).Error
 	if err != nil {
 		return

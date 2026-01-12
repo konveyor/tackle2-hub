@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	liberr "github.com/jortel/go-utils/error"
-	jsd2 "github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/migration/json"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
@@ -19,14 +19,14 @@ import (
 type DocumentMigrator struct {
 	DB       *gorm.DB
 	Client   client.Client
-	manager  *jsd2.Manager
+	manager  *jsd.Manager
 	versions map[string]Setting
 }
 
 // Migrate `Document` fields as needed.
 func (dm *DocumentMigrator) Migrate(models []any) (err error) {
 	dm.versions = make(map[string]Setting)
-	dm.manager = jsd2.New(dm.Client)
+	dm.manager = jsd.New(dm.Client)
 	err = dm.manager.Load()
 	if err != nil {
 		return

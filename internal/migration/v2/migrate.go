@@ -3,7 +3,7 @@ package v2
 import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v2/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v2/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
@@ -23,13 +23,13 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	}
 	constraint := "fk_BusinessService_Applications"
 	log.V(4).Info("Dropping constraint.", "constraint", constraint)
-	err = db.Migrator().DropConstraint(&model2.Application{}, constraint)
+	err = db.Migrator().DropConstraint(&model.Application{}, constraint)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	log.V(4).Info("Creating constraint.", "constraint", constraint)
-	err = db.Migrator().CreateConstraint(&model2.Application{}, constraint)
+	err = db.Migrator().CreateConstraint(&model.Application{}, constraint)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -39,5 +39,5 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }

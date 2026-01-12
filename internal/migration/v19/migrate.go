@@ -2,7 +2,7 @@ package v19
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v19/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v19/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -19,7 +19,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 // This is more complicated than you would think.
@@ -31,16 +31,16 @@ func (r Migration) Models() []any {
 // - drop M_ constraints.
 func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	if !migrator.HasTable(&model2.ApplicationIdentity{}) {
+	if !migrator.HasTable(&model.ApplicationIdentity{}) {
 		return
 	}
-	if migrator.HasColumn(&model2.ApplicationIdentity{}, "Role") {
+	if migrator.HasColumn(&model.ApplicationIdentity{}, "Role") {
 		return
 	}
 	//
 	// migrated
 	type M struct {
-		model2.ApplicationIdentity
+		model.ApplicationIdentity
 	}
 	err = db.AutoMigrate(&M{})
 	if err != nil {
@@ -74,7 +74,7 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 	}
 	//
 	// clean up.
-	err = migrator.DropTable(&model2.ApplicationIdentity{})
+	err = migrator.DropTable(&model.ApplicationIdentity{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -84,19 +84,19 @@ func (r Migration) migrateIdentities(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = migrator.DropConstraint(&model2.ApplicationIdentity{}, "fk_M_Application")
+	err = migrator.DropConstraint(&model.ApplicationIdentity{}, "fk_M_Application")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = migrator.DropConstraint(&model2.ApplicationIdentity{}, "fk_M_Identity")
+	err = migrator.DropConstraint(&model.ApplicationIdentity{}, "fk_M_Identity")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	//
 	// kind=asset no longer used.
-	err = db.Model(&model2.Identity{}).
+	err = db.Model(&model.Identity{}).
 		Where("kind", "asset").
 		Update("kind", "source").Error
 	if err != nil {

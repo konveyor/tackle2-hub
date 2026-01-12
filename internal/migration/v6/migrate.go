@@ -3,7 +3,7 @@ package v6
 import (
 	"encoding/json"
 
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v6/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v6/model"
 	"gorm.io/gorm"
 )
 
@@ -11,11 +11,11 @@ type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	m := db.Migrator()
-	err = m.DropIndex(model2.TechDependency{}, "depA")
+	err = m.DropIndex(model.TechDependency{}, "depA")
 	if err != nil {
 		return
 	}
-	err = m.DropIndex(model2.Issue{}, "issueA")
+	err = m.DropIndex(model.Issue{}, "issueA")
 	if err != nil {
 		return
 	}
@@ -35,12 +35,12 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 func (r Migration) taskError(db *gorm.DB) (err error) {
 	type Task struct {
-		model2.Task
+		model.Task
 		Error string
 	}
 	var list []Task
@@ -54,7 +54,7 @@ func (r Migration) taskError(db *gorm.DB) (err error) {
 			continue
 		}
 		m.Errors, _ = json.Marshal(
-			[]model2.TaskError{
+			[]model.TaskError{
 				{
 					Severity:    "Error",
 					Description: m.Error,
@@ -62,13 +62,13 @@ func (r Migration) taskError(db *gorm.DB) (err error) {
 			})
 	}
 	m := db.Migrator()
-	err = m.DropColumn(&model2.Task{}, "Error")
+	err = m.DropColumn(&model.Task{}, "Error")
 	return
 }
 
 func (r Migration) taskReportError(db *gorm.DB) (err error) {
 	type TaskReport struct {
-		model2.TaskReport
+		model.TaskReport
 		Error string
 	}
 	var list []TaskReport
@@ -82,7 +82,7 @@ func (r Migration) taskReportError(db *gorm.DB) (err error) {
 			continue
 		}
 		m.Errors, _ = json.Marshal(
-			[]model2.TaskError{
+			[]model.TaskError{
 				{
 					Severity:    "Error",
 					Description: m.Error,
@@ -90,6 +90,6 @@ func (r Migration) taskReportError(db *gorm.DB) (err error) {
 			})
 	}
 	m := db.Migrator()
-	err = m.DropColumn(&model2.TaskReport{}, "Error")
+	err = m.DropColumn(&model.TaskReport{}, "Error")
 	return
 }

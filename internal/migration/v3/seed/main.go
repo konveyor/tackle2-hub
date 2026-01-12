@@ -3,7 +3,7 @@ package seed
 import (
 	"encoding/json"
 
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v3/model"
 	"github.com/konveyor/tackle2-hub/settings"
 	"gorm.io/gorm"
 )
@@ -116,7 +116,7 @@ const imgVirt = `
 
 // Seed the database with models.
 func Seed(db *gorm.DB) {
-	settings := []model2.Setting{
+	settings := []model.Setting{
 		{Key: "review.assessment.required", Value: []byte("true")},
 		{Key: "download.html.enabled", Value: []byte("false")},
 		{Key: "download.csv.enabled", Value: []byte("false")},
@@ -126,12 +126,12 @@ func Seed(db *gorm.DB) {
 	var Bundles = []RuleBundle{
 		{
 			image: imgEAP,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Kind: "category",
 				Name: "Application server migration to",
 				Description: "Upgrade to the latest Release of JBoss EAP or migrate your applications" +
 					" to JBoss EAP from other Enterprise Application Server (e.g. Oracle WebLogic Server).",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:        "JBoss EAP 8",
 						Description: "JBoss EAP 8",
@@ -147,11 +147,11 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgCloud,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name: "Containerization",
 				Description: "A comprehensive set of cloud and container readiness rules to" +
 					" assess applications for suitability for deployment on Kubernetes.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Containerization",
 						Metadata: Target("cloud-readiness"),
@@ -161,10 +161,10 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMigration,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name:        "Quarkus",
 				Description: "Rules to support the migration of Spring Boot applications to Quarkus.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Quarkus",
 						Metadata: Target("quarkus"),
@@ -174,10 +174,10 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMug,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name:        "OracleJDK to OpenJDK",
 				Description: "Rules to support the migration to OpenJDK from OracleJDK.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "OpenJDK",
 						Metadata: Target("openjdk"),
@@ -187,11 +187,11 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMug,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Kind:        "category",
 				Name:        "OpenJDK",
 				Description: "Rules to support upgrading the version of OpenJDK. Migrate to OpenJDK 11 or OpenJDK 17.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:        "OpenJDK 11",
 						Description: "OpenJDK 11",
@@ -207,10 +207,10 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgServer,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name:        "Linux",
 				Description: "Ensure there are no Microsoft Windows paths hard coded into your applications.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Linux",
 						Metadata: Target("linux"),
@@ -220,13 +220,13 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMigration,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name: "Jakarta EE 9",
 				Description: "A collection of rules to support migrating applications from" +
 					" Java EE 8 to Jakarta EE 9. The rules cover project dependencies, package" +
 					" renaming, updating XML Schema namespaces, the renaming of application" +
 					" configuration properties and bootstraping files.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Jakarta",
 						Metadata: Target("jakarta-ee"),
@@ -236,11 +236,11 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMigration,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name: "Spring Boot on Red Hat Runtimes",
 				Description: "A set of rules for assessing the compatibility of applications" +
 					" against the versions of Spring Boot libraries supported by Red Hat Runtimes.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Spring Boot",
 						Metadata: Target("rhr"),
@@ -250,11 +250,11 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMigration,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name: "Open Liberty",
 				Description: "A comprehensive set of rules for migrating traditional WebSphere" +
 					" applications to Open Liberty.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Open Liberty",
 						Metadata: Target("openliberty"),
@@ -264,10 +264,10 @@ func Seed(db *gorm.DB) {
 		},
 		{
 			image: imgMultiply,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name:        "Camel",
 				Description: "A comprehensive set of rules for migration from Apache Camel 2 to Apache Camel 3.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:     "Camel",
 						Metadata: Target("camel"),
@@ -278,11 +278,11 @@ func Seed(db *gorm.DB) {
 		{
 			image:    imgVirt,
 			excluded: Settings.Product,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Kind:        "category",
 				Name:        "Azure",
 				Description: "Upgrade your Java application so it can be deployed on Azure App Service.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:        "Azure App Service",
 						Description: "Azure App Service",
@@ -299,10 +299,10 @@ func Seed(db *gorm.DB) {
 		{
 			image:    imgVirt,
 			excluded: !Settings.Product,
-			RuleBundle: model2.RuleBundle{
+			RuleBundle: model.RuleBundle{
 				Name:        "Azure",
 				Description: "Upgrade your Java application so it can be deployed on Azure App Service.",
-				RuleSets: []model2.RuleSet{
+				RuleSets: []model.RuleSet{
 					{
 						Name:        "Azure App Service",
 						Description: "Azure App Service",
@@ -319,12 +319,12 @@ func Seed(db *gorm.DB) {
 			order = append(order, b.ID)
 		}
 	}
-	setting := &model2.Setting{Key: "ui.bundle.order"}
+	setting := &model.Setting{Key: "ui.bundle.order"}
 	setting.Value, _ = json.Marshal(order)
 	_ = db.Create(setting)
 
-	var categories = []model2.TagCategory{
-		{Name: "3rd party", Rank: 17, Color: "#2B9AF3", Tags: []model2.Tag{
+	var categories = []model.TagCategory{
+		{Name: "3rd party", Rank: 17, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "Apache Aries"},
 			{Name: "Apache Geronimo"},
 			{Name: "Apache Hadoop"},
@@ -345,7 +345,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Tomcat"},
 			{Name: "Weka"}},
 		},
-		{Name: "Bean", Rank: 26, Color: "#EC7A08", Tags: []model2.Tag{
+		{Name: "Bean", Rank: 26, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "EJB XML"},
 			{Name: "Entity Bean"},
 			{Name: "JBoss EJB XML"},
@@ -357,11 +357,11 @@ func Seed(db *gorm.DB) {
 			{Name: "WebSphere EJB"},
 			{Name: "WebSphere EJB Ext"}},
 		},
-		{Name: "Binding", Rank: 27, Color: "#EC7A08", Tags: []model2.Tag{
+		{Name: "Binding", Rank: 27, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "Java EE JAXB"},
 			{Name: "JSON-B"}},
 		},
-		{Name: "Caching", Rank: 18, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Caching", Rank: 18, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "Apache Commons JCS"},
 			{Name: "Apache Ignite"},
 			{Name: "Cache API"},
@@ -379,12 +379,12 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Boot Cache"},
 			{Name: "Swarmcache"}},
 		},
-		{Name: "Clustering", Rank: 39, Color: "#40199A", Tags: []model2.Tag{{Name: "Web Session"}}},
-		{Name: "Configuration Management", Rank: 35, Color: "#2B9AF3", Tags: []model2.Tag{
+		{Name: "Clustering", Rank: 39, Color: "#40199A", Tags: []model.Tag{{Name: "Web Session"}}},
+		{Name: "Configuration Management", Rank: 35, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "Spring Cloud Config"},
 			{Name: "Spring Properties"}},
 		},
-		{Name: "Database Driver", Rank: 16, Color: "#009596", Tags: []model2.Tag{
+		{Name: "Database Driver", Rank: 16, Color: "#009596", Tags: []model.Tag{
 			{Name: "Apache Accumulo Client"},
 			{Name: "Apache HBase Client"},
 			{Name: "Axion Driver"},
@@ -401,16 +401,16 @@ func Seed(db *gorm.DB) {
 			{Name: "PostgreSQL Driver"},
 			{Name: "SQLite Driver"}},
 		},
-		{Name: "Database", Rank: 31, Color: "#009596", Tags: []model2.Tag{
+		{Name: "Database", Rank: 31, Color: "#009596", Tags: []model.Tag{
 			{Name: "JDBC"},
 			{Name: "JDBC datasources"},
 			{Name: "JDBC XA datasources"}},
 		},
-		{Name: "HTTP", Rank: 29, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "HTTP", Rank: 29, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JAX-WS"},
 			{Name: "Servlet"},
 			{Name: "Web Services Metadata"}}},
-		{Name: "Integration", Rank: 9, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Integration", Rank: 9, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "3scale"},
 			{Name: "Apache Camel"},
 			{Name: "Apache Synapse"},
@@ -429,7 +429,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Teiid"},
 			{Name: "WSO2"}},
 		},
-		{Name: "Inversion of Control", Rank: 11, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Inversion of Control", Rank: 11, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "Airframe"},
 			{Name: "AOP Alliance"},
 			{Name: "AspectJ"},
@@ -464,7 +464,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Weld"},
 			{Name: "Winter"}},
 		},
-		{Name: "Logging", Rank: 12, Color: "#6EC664", Tags: []model2.Tag{
+		{Name: "Logging", Rank: 12, Color: "#6EC664", Tags: []model.Tag{
 			{Name: "Airlift Log manager"},
 			{Name: "Apache Flume"},
 			{Name: "Avalon Logkit"},
@@ -495,7 +495,7 @@ func Seed(db *gorm.DB) {
 			{Name: "tinylog"},
 			{Name: "Twitter Util Logging"}},
 		},
-		{Name: "MVC", Rank: 15, Color: "#40199A", Tags: []model2.Tag{
+		{Name: "MVC", Rank: 15, Color: "#40199A", Tags: []model.Tag{
 			{Name: "Anakia"},
 			{Name: "AngularFaces"},
 			{Name: "ANTLR StringTemplate"},
@@ -547,18 +547,18 @@ func Seed(db *gorm.DB) {
 			{Name: "Webmarco"},
 			{Name: "Wicket"}},
 		},
-		{Name: "Markup", Rank: 23, Color: "#F4C145", Tags: []model2.Tag{
+		{Name: "Markup", Rank: 23, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "CSS"},
 			{Name: "HTML"},
 			{Name: "Javascript"},
 			{Name: "Spring Boot Flo"}},
 		},
-		{Name: "Messaging", Rank: 32, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Messaging", Rank: 32, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JMS Connection factory"},
 			{Name: "JMS Queue"},
 			{Name: "JMS Topic"}},
 		},
-		{Name: "Object Mapping", Rank: 24, Color: "#EC7A08", Tags: []model2.Tag{
+		{Name: "Object Mapping", Rank: 24, Color: "#EC7A08", Tags: []model.Tag{
 			{Name: "EclipseLink"},
 			{Name: "Hibernate"},
 			{Name: "Hibernate Cfg"},
@@ -567,12 +567,12 @@ func Seed(db *gorm.DB) {
 			{Name: "Morphia"},
 			{Name: "Spring Data"}},
 		},
-		{Name: "Observability", Rank: 34, Color: "#6EC664", Tags: []model2.Tag{
+		{Name: "Observability", Rank: 34, Color: "#6EC664", Tags: []model.Tag{
 			{Name: "Spring Boot Actuator"},
 			{Name: "Spring JMX"},
 			{Name: "Zipkin"}},
 		},
-		{Name: "Other", Rank: 8, Color: "#2B9AF3", Tags: []model2.Tag{
+		{Name: "Other", Rank: 8, Color: "#2B9AF3", Tags: []model.Tag{
 			{Name: "0MQ Client"},
 			{Name: "ActiveMQ library"},
 			{Name: "Amazon SQS Cient"},
@@ -598,14 +598,14 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Messaging Client"},
 			{Name: "Zbus Client"}},
 		},
-		{Name: "Persistence", Rank: 33, Color: "#009596", Tags: []model2.Tag{
+		{Name: "Persistence", Rank: 33, Color: "#009596", Tags: []model.Tag{
 			{Name: "JPA entities"},
 			{Name: "JPA named queries"},
 			{Name: "JPA XML"},
 			{Name: "Persistence units"},
 			{Name: "Spring Data JPA"}},
 		},
-		{Name: "Processing", Rank: 25, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Processing", Rank: 25, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "EJB Timer"},
 			{Name: "Eureka"},
 			{Name: "Feign"},
@@ -617,10 +617,10 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Batch"},
 			{Name: "Spring Scheduled"}},
 		},
-		{Name: "REST", Rank: 28, Color: "#F032E6", Tags: []model2.Tag{{Name: "JAX-RS"},
+		{Name: "REST", Rank: 28, Color: "#F032E6", Tags: []model.Tag{{Name: "JAX-RS"},
 			{Name: "Jersey"},
 			{Name: "Unirest"}}},
-		{Name: "Rich", Rank: 19, Color: "#BFEF45", Tags: []model2.Tag{
+		{Name: "Rich", Rank: 19, Color: "#BFEF45", Tags: []model.Tag{
 			{Name: "Applet"},
 			{Name: "EclipseRCP"},
 			{Name: "FormLayoutMaker"},
@@ -632,7 +632,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Standard Widget Tookit (SWT)"},
 			{Name: "Swing"}},
 		},
-		{Name: "Rules and Processes", Rank: 22, Color: "#F4C145", Tags: []model2.Tag{
+		{Name: "Rules and Processes", Rank: 22, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "Blaze"},
 			{Name: "Camunda"},
 			{Name: "Drools"},
@@ -642,7 +642,7 @@ func Seed(db *gorm.DB) {
 			{Name: "MRules"},
 			{Name: "Pega"}},
 		},
-		{Name: "Security", Rank: 10, Color: "#D95F55", Tags: []model2.Tag{
+		{Name: "Security", Rank: 10, Color: "#D95F55", Tags: []model.Tag{
 			{Name: "Acegi Security"},
 			{Name: "AcrIS Security"},
 			{Name: "Apache Commons Validator"},
@@ -671,8 +671,8 @@ func Seed(db *gorm.DB) {
 			{Name: "WSS4J"},
 			{Name: "XACML"}},
 		},
-		{Name: "Serverless / FAAS", Rank: 36, Color: "#40199A", Tags: []model2.Tag{{Name: "Spring Cloud Function"}}},
-		{Name: "Test", Rank: 14, Color: "#F4C145", Tags: []model2.Tag{
+		{Name: "Serverless / FAAS", Rank: 36, Color: "#40199A", Tags: []model.Tag{{Name: "Spring Cloud Function"}}},
+		{Name: "Test", Rank: 14, Color: "#F4C145", Tags: []model.Tag{
 			{Name: "Akka Testkit"},
 			{Name: "Arquillian"},
 			{Name: "Catus"},
@@ -711,7 +711,7 @@ func Seed(db *gorm.DB) {
 			{Name: "Unitils"},
 			{Name: "XMLUnit"}},
 		},
-		{Name: "Transaction", Rank: 13, Color: "#40199A", Tags: []model2.Tag{
+		{Name: "Transaction", Rank: 13, Color: "#40199A", Tags: []model.Tag{
 			{Name: "AKKA JTA"},
 			{Name: "Apache Meecrowave JTA"},
 			{Name: "Apache Sirona JTA"},
@@ -734,9 +734,9 @@ func Seed(db *gorm.DB) {
 			{Name: "Spring Transactions"},
 			{Name: "WF Core JTA"}},
 		},
-		{Name: "Utilities", Rank: 37, Color: "#2B9AF3", Tags: []model2.Tag{{Name: "Spring Shell"}}},
-		{Name: "Validation", Rank: 21, Color: "#EC7A08", Tags: []model2.Tag{{Name: "Bean Validation"}}},
-		{Name: "Web Service", Rank: 20, Color: "#40199A", Tags: []model2.Tag{
+		{Name: "Utilities", Rank: 37, Color: "#2B9AF3", Tags: []model.Tag{{Name: "Spring Shell"}}},
+		{Name: "Validation", Rank: 21, Color: "#EC7A08", Tags: []model.Tag{{Name: "Bean Validation"}}},
+		{Name: "Web Service", Rank: 20, Color: "#40199A", Tags: []model.Tag{
 			{Name: "Axis"},
 			{Name: "Axis2"},
 			{Name: "CXF"},
@@ -746,7 +746,7 @@ func Seed(db *gorm.DB) {
 			{Name: "WSDL"},
 			{Name: "XFire"}},
 		},
-		{Name: "Web", Rank: 30, Color: "#F032E6", Tags: []model2.Tag{
+		{Name: "Web", Rank: 30, Color: "#F032E6", Tags: []model.Tag{
 			{Name: "JBoss Web XML"},
 			{Name: "JSF Page"},
 			{Name: "JSP Page"},
@@ -761,7 +761,7 @@ func Seed(db *gorm.DB) {
 	}
 
 	for i := range categories {
-		category := &model2.TagCategory{}
+		category := &model.TagCategory{}
 		result := db.First(category, "name = ?", categories[i].Name)
 		// category doesn't already exist, so create the category and tags all at once.
 		if result.RowsAffected == 0 {
