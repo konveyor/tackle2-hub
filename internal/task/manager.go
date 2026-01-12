@@ -16,7 +16,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	k8s2 "github.com/konveyor/tackle2-hub/internal/k8s"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
@@ -518,7 +518,7 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 		return
 	}
 	mark := time.Now()
-	var addon *v1alpha1.Addon
+	var addon *crd.Addon
 	for _, task := range list {
 		addon, err = m.selectAddon(task)
 		if err == nil {
@@ -539,7 +539,7 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 }
 
 // selectAddon select an addon when not specified.
-func (m *Manager) selectAddon(task *Task) (addon *v1alpha1.Addon, err error) {
+func (m *Manager) selectAddon(task *Task) (addon *crd.Addon, err error) {
 	if task.Addon != "" {
 		found := false
 		addon, found = m.cluster.Addon(task.Addon)
@@ -554,7 +554,7 @@ func (m *Manager) selectAddon(task *Task) (addon *v1alpha1.Addon, err error) {
 		return
 	}
 	matched := false
-	var selected *v1alpha1.Addon
+	var selected *crd.Addon
 	selector := NewSelector(m.DB, task)
 	for _, addon = range m.cluster.Addons() {
 		matched, err = task.matchTask(addon, kind)
@@ -590,7 +590,7 @@ func (m *Manager) selectAddon(task *Task) (addon *v1alpha1.Addon, err error) {
 }
 
 // selectExtensions select extensions when not specified.
-func (m *Manager) selectExtensions(task *Task, addon *v1alpha1.Addon) (err error) {
+func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 	if len(task.Extensions) > 0 {
 		return
 	}
@@ -1344,10 +1344,10 @@ func (p *Priority) unique(in []*Task) (out []*Task) {
 type Cluster struct {
 	k8s.Client
 	mutex      sync.RWMutex
-	tackle     *v1alpha1.Tackle
-	addons     map[string]*v1alpha1.Addon
-	extensions map[string]*v1alpha1.Extension
-	tasks      map[string]*v1alpha1.Task
+	tackle     *crd.Tackle
+	addons     map[string]*crd.Addon
+	extensions map[string]*crd.Extension
+	tasks      map[string]*crd.Task
 	quotas     map[string]*core.ResourceQuota
 	pods       struct {
 		other map[string]*core.Pod
@@ -1360,10 +1360,10 @@ func (k *Cluster) Refresh() (err error) {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 	if !Settings.Hub.Task.Enabled {
-		k.tackle = &v1alpha1.Tackle{}
-		k.addons = make(map[string]*v1alpha1.Addon)
-		k.extensions = make(map[string]*v1alpha1.Extension)
-		k.tasks = make(map[string]*v1alpha1.Task)
+		k.tackle = &crd.Tackle{}
+		k.addons = make(map[string]*crd.Addon)
+		k.extensions = make(map[string]*crd.Extension)
+		k.tasks = make(map[string]*crd.Task)
 		k.pods.other = make(map[string]*core.Pod)
 		k.pods.tasks = make(map[string]*core.Pod)
 		k.quotas = make(map[string]*core.ResourceQuota)
@@ -1397,7 +1397,7 @@ func (k *Cluster) Refresh() (err error) {
 }
 
 // Tackle returns the tackle resource.
-func (k *Cluster) Tackle() (r *v1alpha1.Tackle) {
+func (k *Cluster) Tackle() (r *crd.Tackle) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	r = k.tackle
@@ -1405,7 +1405,7 @@ func (k *Cluster) Tackle() (r *v1alpha1.Tackle) {
 }
 
 // Addon returns an addon my name.
-func (k *Cluster) Addon(name string) (r *v1alpha1.Addon, found bool) {
+func (k *Cluster) Addon(name string) (r *crd.Addon, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	r, found = k.addons[name]
@@ -1413,7 +1413,7 @@ func (k *Cluster) Addon(name string) (r *v1alpha1.Addon, found bool) {
 }
 
 // Addons returns an addon my name.
-func (k *Cluster) Addons() (list []*v1alpha1.Addon) {
+func (k *Cluster) Addons() (list []*crd.Addon) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	for _, r := range k.addons {
@@ -1423,7 +1423,7 @@ func (k *Cluster) Addons() (list []*v1alpha1.Addon) {
 }
 
 // Extension returns an extension by name.
-func (k *Cluster) Extension(name string) (r *v1alpha1.Extension, found bool) {
+func (k *Cluster) Extension(name string) (r *crd.Extension, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	r, found = k.extensions[name]
@@ -1431,7 +1431,7 @@ func (k *Cluster) Extension(name string) (r *v1alpha1.Extension, found bool) {
 }
 
 // Extensions returns an extension my name.
-func (k *Cluster) Extensions() (list []*v1alpha1.Extension) {
+func (k *Cluster) Extensions() (list []*crd.Extension) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	for _, r := range k.extensions {
@@ -1441,7 +1441,7 @@ func (k *Cluster) Extensions() (list []*v1alpha1.Extension) {
 }
 
 // FindExtensions returns extensions by name.
-func (k *Cluster) FindExtensions(names []string) (list []*v1alpha1.Extension, err error) {
+func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err error) {
 	for _, name := range names {
 		r, found := k.extensions[name]
 		if !found {
@@ -1454,7 +1454,7 @@ func (k *Cluster) FindExtensions(names []string) (list []*v1alpha1.Extension, er
 }
 
 // Task returns a task by name.
-func (k *Cluster) Task(name string) (r *v1alpha1.Task, found bool) {
+func (k *Cluster) Task(name string) (r *crd.Task, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
 	r, found = k.tasks[name]
@@ -1530,7 +1530,7 @@ func (k *Cluster) PodQuota() (quota int, found bool) {
 // getTackle
 func (k *Cluster) getTackle() (err error) {
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
-	list := v1alpha1.TackleList{}
+	list := crd.TackleList{}
 	err = k.List(
 		context.TODO(),
 		&list,
@@ -1550,9 +1550,9 @@ func (k *Cluster) getTackle() (err error) {
 
 // getAddons
 func (k *Cluster) getAddons() (err error) {
-	k.addons = make(map[string]*v1alpha1.Addon)
+	k.addons = make(map[string]*crd.Addon)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
-	list := v1alpha1.AddonList{}
+	list := crd.AddonList{}
 	err = k.List(
 		context.TODO(),
 		&list,
@@ -1577,9 +1577,9 @@ func (k *Cluster) getAddons() (err error) {
 
 // getExtensions
 func (k *Cluster) getExtensions() (err error) {
-	k.extensions = make(map[string]*v1alpha1.Extension)
+	k.extensions = make(map[string]*crd.Extension)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
-	list := v1alpha1.ExtensionList{}
+	list := crd.ExtensionList{}
 	err = k.List(
 		context.TODO(),
 		&list,
@@ -1597,9 +1597,9 @@ func (k *Cluster) getExtensions() (err error) {
 
 // getTasks kinds.
 func (k *Cluster) getTasks() (err error) {
-	k.tasks = make(map[string]*v1alpha1.Task)
+	k.tasks = make(map[string]*crd.Task)
 	options := &k8s.ListOptions{Namespace: Settings.Namespace}
-	list := v1alpha1.TaskList{}
+	list := crd.TaskList{}
 	err = k.List(
 		context.TODO(),
 		&list,
