@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	jsd2 "github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/internal/jsd"
 )
 
 const (
@@ -62,7 +62,7 @@ func (h *SchemaHandler) GetAPI(ctx *gin.Context) {
 // @param name path string true "Schema name"
 func (h *SchemaHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
-	m := jsd2.Manager{Client: h.Client(ctx)}
+	m := jsd.Manager{Client: h.Client(ctx)}
 	s, err := m.Get(name)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -81,7 +81,7 @@ func (h *SchemaHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []Schema
 // @router /schemas [get]
 func (h *SchemaHandler) List(ctx *gin.Context) {
-	m := jsd2.Manager{Client: h.Client(ctx)}
+	m := jsd.Manager{Client: h.Client(ctx)}
 	list, err := m.List()
 	if err != nil {
 		_ = ctx.Error(err)
@@ -110,14 +110,14 @@ func (h *SchemaHandler) Find(ctx *gin.Context) {
 	domain := ctx.Param(Domain)
 	variant := ctx.Param(Variant)
 	subject := ctx.Param(Subject)
-	m := jsd2.Manager{Client: h.Client(ctx)}
+	m := jsd.Manager{Client: h.Client(ctx)}
 	s, err := m.Find(domain, variant, subject)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	if len(s.Versions) == 0 {
-		_ = ctx.Error(&jsd2.NotFound{})
+		_ = ctx.Error(&jsd.NotFound{})
 		return
 	}
 	v := s.Versions.Latest()

@@ -16,7 +16,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	model2 "github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/tar"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -117,20 +117,20 @@ func (h AnalysisHandler) List(ctx *gin.Context) {
 	filter = filter.Renamed("id", "analysis\\.id")
 	// sort.
 	sort := Sort{}
-	err = sort.With(ctx, &model2.Analysis{})
+	err = sort.With(ctx, &model.Analysis{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db := h.DB(ctx)
-	db = db.Model(&model2.Analysis{})
+	db = db.Model(&model.Analysis{})
 	db = db.Joins("Application")
 	db = db.Omit("Summary")
 	db = filter.Where(db)
 	db = sort.Sorted(db)
-	var list []model2.Analysis
-	var m model2.Analysis
+	var list []model.Analysis
+	var m model.Analysis
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -166,7 +166,7 @@ func (h AnalysisHandler) List(ctx *gin.Context) {
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model2.Analysis{}
+	m := &model.Analysis{}
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
 	err := db.Last(&m).Error
@@ -197,7 +197,7 @@ func (h AnalysisHandler) AppLatest(ctx *gin.Context) {
 // @param id path int true "Analysis ID"
 func (h AnalysisHandler) Archive(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model2.Analysis{}
+	m := &model.Analysis{}
 	db := h.DB(ctx).Select(ID)
 	err := db.First(m, id).Error
 	if err != nil {
@@ -223,7 +223,7 @@ func (h AnalysisHandler) Archive(ctx *gin.Context) {
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppLatestReport(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model2.Analysis{}
+	m := &model.Analysis{}
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
 	err := db.Last(&m).Error
@@ -247,7 +247,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	resources := []Analysis{}
 	// Sort
 	sort := Sort{}
-	err := sort.With(ctx, &model2.Insight{})
+	err := sort.With(ctx, &model.Insight{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -255,13 +255,13 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 	// Find.
 	id := h.pk(ctx)
 	db := h.DB(ctx)
-	db = db.Model(&model2.Analysis{})
+	db = db.Model(&model.Analysis{})
 	db = db.Where("ApplicationID = ?", id)
 	db = db.Joins("Application")
 	db = db.Omit("Summary")
 	db = sort.Sorted(db)
-	var list []model2.Analysis
-	var m model2.Analysis
+	var list []model.Analysis
+	var m model.Analysis
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -312,7 +312,7 @@ func (h AnalysisHandler) AppList(ctx *gin.Context) {
 // @param id path int true "Application ID"
 func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	result := h.DB(ctx).First(&model2.Application{}, id)
+	result := h.DB(ctx).First(&model.Application{}, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
@@ -492,7 +492,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 // @param id path int true "Analysis ID"
 func (h AnalysisHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &model2.Analysis{}
+	r := &model.Analysis{}
 	result := h.DB(ctx).First(r, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -525,7 +525,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 	resources := []TechDependency{}
 	// Latest
 	id := h.pk(ctx)
-	analysis := &model2.Analysis{}
+	analysis := &model.Analysis{}
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID = ?", id)
 	result := db.Last(analysis)
@@ -546,19 +546,19 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 		return
 	}
 	sort := Sort{}
-	err = sort.With(ctx, &model2.TechDependency{})
+	err = sort.With(ctx, &model.TechDependency{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db = h.DB(ctx)
-	db = db.Model(&model2.TechDependency{})
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID = ?", analysis.ID)
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
-	var list []model2.TechDependency
-	var m model2.TechDependency
+	var list []model.TechDependency
+	var m model.TechDependency
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -606,7 +606,7 @@ func (h AnalysisHandler) AppDeps(ctx *gin.Context) {
 func (h AnalysisHandler) AppInsights(ctx *gin.Context) {
 	// Latest
 	id := h.pk(ctx)
-	analysis := &model2.Analysis{}
+	analysis := &model.Analysis{}
 	db := h.DB(ctx).Where("ApplicationID = ?", id)
 	result := db.Last(analysis)
 	if result.Error != nil {
@@ -760,7 +760,7 @@ func (h AnalysisHandler) AnalysisInsights(ctx *gin.Context) {
 // @param id path int true "Insight ID"
 func (h AnalysisHandler) Insight(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model2.Insight{}
+	m := &model.Insight{}
 	db := h.DB(ctx)
 	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
@@ -798,18 +798,18 @@ func (h AnalysisHandler) Incidents(ctx *gin.Context) {
 	filter = filter.Renamed("insight.id", "insightid")
 	// Sort
 	sort := Sort{}
-	err = sort.With(ctx, &model2.Incident{})
+	err = sort.With(ctx, &model.Incident{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db := h.DB(ctx)
-	db = db.Model(&model2.Incident{})
+	db = db.Model(&model.Incident{})
 	db = filter.Where(db)
 	db = sort.Sorted(db)
-	var list []model2.Incident
-	var m model2.Incident
+	var list []model.Incident
+	var m model.Incident
 	cursor := Cursor{}
 	defer func() {
 		cursor.Close()
@@ -865,19 +865,19 @@ func (h AnalysisHandler) InsightIncidents(ctx *gin.Context) {
 	}
 	// Sort
 	sort := Sort{}
-	err = sort.With(ctx, &model2.Incident{})
+	err = sort.With(ctx, &model.Incident{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db := h.DB(ctx)
-	db = db.Model(&model2.Incident{})
+	db = db.Model(&model.Incident{})
 	db = db.Where("InsightID", insightId)
 	db = filter.Where(db)
 	db = sort.Sorted(db)
-	var list []model2.Incident
-	var m model2.Incident
+	var list []model.Incident
+	var m model.Incident
 	cursor := Cursor{}
 	defer func() {
 		cursor.Close()
@@ -920,7 +920,7 @@ func (h AnalysisHandler) InsightIncidents(ctx *gin.Context) {
 // @param id path int true "Insight ID"
 func (h AnalysisHandler) Incident(ctx *gin.Context) {
 	id := h.pk(ctx)
-	m := &model2.Incident{}
+	m := &model.Incident{}
 	db := h.DB(ctx)
 	err := db.First(m, id).Error
 	if err != nil {
@@ -961,7 +961,7 @@ func (h AnalysisHandler) Incident(ctx *gin.Context) {
 func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 	resources := []*RuleReport{}
 	type M struct {
-		model2.Insight
+		model.Insight
 		Applications int
 	}
 	// Filter
@@ -1080,17 +1080,17 @@ func (h AnalysisHandler) RuleReports(ctx *gin.Context) {
 func (h AnalysisHandler) AppInsightReports(ctx *gin.Context) {
 	resources := []*InsightReport{}
 	type M struct {
-		model2.Insight
+		model.Insight
 		Files int
 	}
 	id := h.pk(ctx)
-	err := h.DB(ctx).First(&model2.Application{}, id).Error
+	err := h.DB(ctx).First(&model.Application{}, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Latest
-	analysis := &model2.Analysis{}
+	analysis := &model.Analysis{}
 	db := h.DB(ctx).Where("ApplicationID", id)
 	err = db.Last(analysis).Error
 	if err != nil {
@@ -1373,7 +1373,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	}
 	// Insight
 	insightId := h.pk(ctx)
-	insight := &model2.Insight{}
+	insight := &model.Insight{}
 	result := h.DB(ctx).First(insight, insightId)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
@@ -1399,7 +1399,7 @@ func (h AnalysisHandler) FileReports(ctx *gin.Context) {
 	}
 	// Inner Query
 	q := h.DB(ctx)
-	q = q.Model(&model2.Incident{})
+	q = q.Model(&model.Incident{})
 	q = q.Select(
 		"InsightId",
 		"File",
@@ -1487,19 +1487,19 @@ func (h AnalysisHandler) Deps(ctx *gin.Context) {
 	}
 	// Sort
 	sort := Sort{}
-	err = sort.With(ctx, &model2.TechDependency{})
+	err = sort.With(ctx, &model.TechDependency{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db := h.DB(ctx)
-	db = db.Model(&model2.TechDependency{})
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID IN (?)", h.analysesIDs(ctx, filter))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
-	var list []model2.TechDependency
-	var m model2.TechDependency
+	var list []model.TechDependency
+	var m model.TechDependency
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -1561,19 +1561,19 @@ func (h AnalysisHandler) AnalysisDeps(ctx *gin.Context) {
 	}
 	// Sort
 	sort := Sort{}
-	err = sort.With(ctx, &model2.TechDependency{})
+	err = sort.With(ctx, &model.TechDependency{})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	// Find
 	db := h.DB(ctx)
-	db = db.Model(&model2.TechDependency{})
+	db = db.Model(&model.TechDependency{})
 	db = db.Where("AnalysisID = ?", h.pk(ctx))
 	db = db.Where("ID IN (?)", h.depIDs(ctx, filter))
 	db = sort.Sorted(db)
-	var list []model2.TechDependency
-	var m model2.TechDependency
+	var list []model.TechDependency
+	var m model.TechDependency
 	page := Page{}
 	page.With(ctx)
 	cursor := Cursor{}
@@ -1629,7 +1629,7 @@ func (h AnalysisHandler) AnalysisDeps(ctx *gin.Context) {
 func (h AnalysisHandler) DepReports(ctx *gin.Context) {
 	resources := []DepReport{}
 	type M struct {
-		model2.TechDependency
+		model.TechDependency
 		Applications int
 	}
 	// Filter
@@ -1764,7 +1764,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 		Version         string
 		SHA             string
 		Indirect        bool
-		Labels          model2.JSON
+		Labels          model.JSON
 	}
 	// Filter
 	filter, err := qf.New(ctx,
@@ -1877,7 +1877,7 @@ func (h AnalysisHandler) DepAppReports(ctx *gin.Context) {
 // - tag.id
 func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.Application{})
+	q = q.Model(&model.Application{})
 	q = q.Select("ID")
 	appFilter := f.Resource("application")
 	q = appFilter.Where(q)
@@ -1888,16 +1888,16 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 			for _, f = range f.Expand() {
 				f = f.As("TagID")
 				iq := h.DB(ctx)
-				iq = iq.Model(&model2.ApplicationTag{})
+				iq = iq.Model(&model.ApplicationTag{})
 				iq = iq.Select("applicationID ID")
 				iq = f.Where(q)
 				qs = append(qs, iq)
 			}
-			q = q.Where("ID IN (?)", model2.Intersect(qs...))
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("TagID")
 			iq := h.DB(ctx)
-			iq = iq.Model(&model2.ApplicationTag{})
+			iq = iq.Model(&model.ApplicationTag{})
 			iq = iq.Select("ApplicationID ID")
 			iq = f.Where(iq)
 			q = q.Where("ID IN (?)", iq)
@@ -1906,7 +1906,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	bsFilter := f.Resource("businessService")
 	if !bsFilter.Empty() {
 		iq := h.DB(ctx)
-		iq = iq.Model(&model2.BusinessService{})
+		iq = iq.Model(&model.BusinessService{})
 		iq = iq.Select("ID")
 		iq = bsFilter.Where(iq)
 		q = q.Where("BusinessServiceID IN (?)", iq)
@@ -1918,7 +1918,7 @@ func (h *AnalysisHandler) appIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 // analysisIDs provides analysis IDs.
 func (h *AnalysisHandler) analysesIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.Analysis{})
+	q = q.Model(&model.Analysis{})
 	q = q.Select("ID")
 	q = q.Where("ApplicationID IN (?)", h.appIDs(ctx, f))
 	q = q.Group("ApplicationID")
@@ -1928,7 +1928,7 @@ func (h *AnalysisHandler) analysesIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 // analysisIDs provides LATEST analysis IDs.
 func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.Analysis{})
+	q = q.Model(&model.Analysis{})
 	q = q.Select("MAX(ID)")
 	q = q.Where("ApplicationID IN (?)", h.appIDs(ctx, f))
 	q = q.Group("ApplicationID")
@@ -1941,7 +1941,7 @@ func (h *AnalysisHandler) analysisIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB
 //	insight.*
 func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.Insight{})
+	q = q.Model(&model.Insight{})
 	q = q.Select("ID")
 	q = f.Where(q, "-Labels")
 	filter := f
@@ -1957,7 +1957,7 @@ func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB)
 				iq = f.Where(iq)
 				qs = append(qs, iq)
 			}
-			q = q.Where("ID IN (?)", model2.Intersect(qs...))
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("json_each.value")
 			iq := h.DB(ctx)
@@ -1977,7 +1977,7 @@ func (h *AnalysisHandler) insightIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB)
 //	techDeps.*
 func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.TechDependency{})
+	q = q.Model(&model.TechDependency{})
 	q = q.Select("ID")
 	q = f.Where(q, "-Labels")
 	filter := f
@@ -1993,7 +1993,7 @@ func (h *AnalysisHandler) depIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 				iq = f.Where(iq)
 				qs = append(qs, iq)
 			}
-			q = q.Where("ID IN (?)", model2.Intersect(qs...))
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("json_each.value")
 			iq := h.DB(ctx)
@@ -2039,7 +2039,7 @@ func (h *AnalysisHandler) archiveByApp(ctx *gin.Context) (err error) {
 // - Delete insights.
 // - Delete dependencies.
 func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
-	var unarchived []model2.Analysis
+	var unarchived []model.Analysis
 	q = q.Where("Archived", false)
 	err = q.Find(&unarchived).Error
 	if err != nil {
@@ -2060,7 +2060,7 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		db = db.Where("n.InsightID = i.ID")
 		db = db.Where("i.AnalysisID", m.ID)
 		db = db.Group("i.ID")
-		summary := []model2.ArchivedInsight{}
+		summary := []model.ArchivedInsight{}
 		err = db.Scan(&summary).Error
 		if err != nil {
 			return
@@ -2076,13 +2076,13 @@ func (h *AnalysisHandler) archive(ctx *gin.Context, q *gorm.DB) (err error) {
 		}
 		db = h.DB(ctx)
 		db = db.Where("AnalysisID", m.ID)
-		err = db.Delete(&model2.Insight{}).Error
+		err = db.Delete(&model.Insight{}).Error
 		if err != nil {
 			return
 		}
 		db = h.DB(ctx)
 		db = db.Where("AnalysisID", m.ID)
-		err = db.Delete(&model2.TechDependency{}).Error
+		err = db.Delete(&model.TechDependency{}).Error
 		if err != nil {
 			return
 		}
@@ -2174,7 +2174,7 @@ func (r *InsightWriter) Write(id uint, filter qf.Filter, output io.Writer) (coun
 	page := Page{}
 	page.With(r.ctx)
 	sort := Sort{}
-	err = sort.With(r.ctx, &model2.Insight{})
+	err = sort.With(r.ctx, &model.Insight{})
 	if err != nil {
 		return
 	}
@@ -2190,7 +2190,7 @@ func (r *InsightWriter) Write(id uint, filter qf.Filter, output io.Writer) (coun
 		db = db.Limit(batch)
 		db = db.Offset(b)
 		db = sort.Sorted(db)
-		var insights []model2.Insight
+		var insights []model.Insight
 		err = db.Find(&insights).Error
 		if err != nil {
 			return
@@ -2250,7 +2250,7 @@ func (r *AnalysisWriter) Create(id uint) (path string, err error) {
 
 // Write the analysis file.
 func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
-	m := &model2.Analysis{}
+	m := &model.Analysis{}
 	db := r.db()
 	err = db.First(m, id).Error
 	if err != nil {
@@ -2278,7 +2278,7 @@ func (r *AnalysisWriter) Write(id uint, output io.Writer) (err error) {
 }
 
 // addInsights writes insights (effort = 0).
-func (r *AnalysisWriter) addInsights(m *model2.Analysis) (err error) {
+func (r *AnalysisWriter) addInsights(m *model.Analysis) (err error) {
 	r.field("insights")
 	r.beginList()
 	batch := 10
@@ -2288,7 +2288,7 @@ func (r *AnalysisWriter) addInsights(m *model2.Analysis) (err error) {
 		db = db.Limit(batch)
 		db = db.Offset(b)
 		db = db.Where("AnalysisID", m.ID)
-		var insights []model2.Insight
+		var insights []model.Insight
 		err = db.Find(&insights).Error
 		if err != nil {
 			return
@@ -2307,7 +2307,7 @@ func (r *AnalysisWriter) addInsights(m *model2.Analysis) (err error) {
 }
 
 // addDeps writes dependencies.
-func (r *AnalysisWriter) addDeps(m *model2.Analysis) (err error) {
+func (r *AnalysisWriter) addDeps(m *model.Analysis) (err error) {
 	r.field("dependencies")
 	r.beginList()
 	batch := 100
@@ -2315,7 +2315,7 @@ func (r *AnalysisWriter) addDeps(m *model2.Analysis) (err error) {
 		db := r.db()
 		db = db.Limit(batch)
 		db = db.Offset(b)
-		var deps []model2.TechDependency
+		var deps []model.TechDependency
 		err = db.Find(&deps, "AnalysisID", m.ID).Error
 		if err != nil {
 			return
@@ -2382,7 +2382,7 @@ func (r *ReportWriter) Write(id uint) {
 
 // buildOutput creates the report output.js file.
 func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
-	m := &model2.Analysis{}
+	m := &model.Analysis{}
 	db := r.db()
 	db = db.Preload("Application")
 	db = db.Preload("Application.Tags")
@@ -2427,7 +2427,7 @@ func (r *ReportWriter) buildOutput(id uint) (path string, err error) {
 }
 
 // addIssues writes issues (effort > 0).
-func (r *ReportWriter) addIssues(m *model2.Analysis) (err error) {
+func (r *ReportWriter) addIssues(m *model.Analysis) (err error) {
 	r.field("issues")
 	r.beginList()
 	batch := 10
@@ -2438,7 +2438,7 @@ func (r *ReportWriter) addIssues(m *model2.Analysis) (err error) {
 		db = db.Offset(b)
 		db = db.Where("AnalysisID", m.ID)
 		db = db.Where("effort > 0")
-		var insights []model2.Insight
+		var insights []model.Insight
 		err = db.Find(&insights).Error
 		if err != nil {
 			return
@@ -2457,7 +2457,7 @@ func (r *ReportWriter) addIssues(m *model2.Analysis) (err error) {
 }
 
 // addInsights writes insights (effort = 0).
-func (r *ReportWriter) addInsights(m *model2.Analysis) (err error) {
+func (r *ReportWriter) addInsights(m *model.Analysis) (err error) {
 	r.field("insights")
 	r.beginList()
 	batch := 10
@@ -2468,7 +2468,7 @@ func (r *ReportWriter) addInsights(m *model2.Analysis) (err error) {
 		db = db.Offset(b)
 		db = db.Where("AnalysisID", m.ID)
 		db = db.Where("effort == 0")
-		var insights []model2.Insight
+		var insights []model.Insight
 		err = db.Find(&insights).Error
 		if err != nil {
 			return
@@ -2487,7 +2487,7 @@ func (r *ReportWriter) addInsights(m *model2.Analysis) (err error) {
 }
 
 // addDeps writes dependencies.
-func (r *ReportWriter) addDeps(m *model2.Analysis) (err error) {
+func (r *ReportWriter) addDeps(m *model.Analysis) (err error) {
 	r.field("dependencies")
 	r.beginList()
 	batch := 100
@@ -2495,7 +2495,7 @@ func (r *ReportWriter) addDeps(m *model2.Analysis) (err error) {
 		db := r.db()
 		db = db.Limit(batch)
 		db = db.Offset(b)
-		var deps []model2.TechDependency
+		var deps []model.TechDependency
 		err = db.Find(&deps, "AnalysisID", m.ID).Error
 		if err != nil {
 			return
@@ -2514,7 +2514,7 @@ func (r *ReportWriter) addDeps(m *model2.Analysis) (err error) {
 }
 
 // addTags writes tags.
-func (r *ReportWriter) addTags(m *model2.Analysis) (err error) {
+func (r *ReportWriter) addTags(m *model.Analysis) (err error) {
 	r.field("tags")
 	r.beginList()
 	for i := range m.Application.Tags {

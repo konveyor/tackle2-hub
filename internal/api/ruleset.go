@@ -7,7 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/api"
 	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	model2 "github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -38,7 +38,7 @@ func (h RuleSetHandler) AddRoutes(e *gin.Engine) {
 // @param id path int true "RuleSet ID"
 func (h RuleSetHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
-	ruleset := &model2.RuleSet{}
+	ruleset := &model.RuleSet{}
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
@@ -65,7 +65,7 @@ func (h RuleSetHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []RuleSet
 // @router /rulesets [get]
 func (h RuleSetHandler) List(ctx *gin.Context) {
-	var list []model2.RuleSet
+	var list []model.RuleSet
 	db := h.preLoad(
 		h.DB(ctx),
 		clause.Associations,
@@ -167,7 +167,7 @@ func (h RuleSetHandler) Update(ctx *gin.Context) {
 
 func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) {
 	q = h.DB(ctx)
-	q = q.Model(&model2.RuleSet{})
+	q = q.Model(&model.RuleSet{})
 	q = q.Select("ID")
 	q = f.Where(q, "-Labels")
 	filter := f
@@ -182,7 +182,7 @@ func (h *RuleSetHandler) ruleSetIDs(ctx *gin.Context, f qf.Filter) (q *gorm.DB) 
 				iq = iq.Select("m.RuleSetID")
 				qs = append(qs, iq)
 			}
-			q = q.Where("ID IN (?)", model2.Intersect(qs...))
+			q = q.Where("ID IN (?)", model.Intersect(qs...))
 		} else {
 			f = f.As("json_each.value")
 			iq := h.DB(ctx)
@@ -217,7 +217,7 @@ func (h *RuleSetHandler) create(ctx *gin.Context, r *RuleSet) (err error) {
 
 // update the ruleset.
 func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
-	m := &model2.RuleSet{}
+	m := &model.RuleSet{}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	err = db.First(m, r.ID).Error
 	if err != nil {
@@ -273,7 +273,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 
 // delete the ruleset.
 func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
-	ruleset := &model2.RuleSet{}
+	ruleset := &model.RuleSet{}
 	err = h.DB(ctx).First(ruleset, id).Error
 	if err != nil {
 		return

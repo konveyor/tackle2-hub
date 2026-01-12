@@ -3,7 +3,7 @@ package jsd
 import (
 	"reflect"
 
-	jsd2 "github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/settings"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -13,14 +13,14 @@ var Settings = &settings.Settings
 // New validator.
 func New(client client.Client) (v *Validator) {
 	v = &Validator{
-		manager: jsd2.New(client),
+		manager: jsd.New(client),
 	}
 	return
 }
 
 // Validator jsd validator.
 type Validator struct {
-	manager *jsd2.Manager
+	manager *jsd.Manager
 }
 
 // Validate validates the specified document based on schema.
