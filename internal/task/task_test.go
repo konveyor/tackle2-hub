@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/onsi/gomega"
 )
@@ -16,19 +16,19 @@ func TestPriorityEscalate(t *testing.T) {
 	appId := uint(1)
 	appOther := uint(2)
 
-	kinds := make(map[string]*v1alpha1.Task)
+	kinds := make(map[string]*crd.Task)
 	ready := []*Task{}
 
-	a := v1alpha1.Task{}
+	a := crd.Task{}
 	a.Name = "a"
 	kinds[a.Name] = &a
 
-	b := v1alpha1.Task{}
+	b := crd.Task{}
 	b.Name = "b"
 	b.Spec.Dependencies = []string{"a"}
 	kinds[b.Name] = &b
 
-	c := v1alpha1.Task{}
+	c := crd.Task{}
 	c.Name = "c"
 	c.Spec.Dependencies = []string{"b"}
 	kinds[c.Name] = &c
@@ -86,19 +86,19 @@ func TestPriorityGraph(t *testing.T) {
 	appId := uint(1)
 	platformId := uint(2)
 
-	kinds := make(map[string]*v1alpha1.Task)
+	kinds := make(map[string]*crd.Task)
 	ready := []*Task{}
 
-	a := v1alpha1.Task{}
+	a := crd.Task{}
 	a.Name = "a"
 	kinds[a.Name] = &a
 
-	b := v1alpha1.Task{}
+	b := crd.Task{}
 	b.Name = "b"
 	b.Spec.Dependencies = []string{"a"}
 	kinds[b.Name] = &b
 
-	c := v1alpha1.Task{}
+	c := crd.Task{}
 	c.Name = "c"
 	c.Spec.Dependencies = []string{"b"}
 	kinds[c.Name] = &c
@@ -180,12 +180,12 @@ func TestPriorityGraph(t *testing.T) {
 func TestAddonRegex(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	m := Task{}
-	addonA := &v1alpha1.Addon{}
+	addonA := &crd.Addon{}
 	addonA.Name = "A"
-	addonB := &v1alpha1.Addon{}
+	addonB := &crd.Addon{}
 	addonB.Name = "B"
 	// direct.
-	ext := &v1alpha1.Extension{}
+	ext := &crd.Extension{}
 	ext.Name = "Test"
 	ext.Spec.Addon = "A"
 	matched, err := m.matchAddon(ext, addonA)
@@ -366,9 +366,9 @@ func TestRuleDeps(t *testing.T) {
 
 	rule := RuleDeps{}
 	rule.cluster = &Cluster{}
-	rule.cluster.tasks = make(map[string]*v1alpha1.Task)
-	rule.cluster.tasks["B"] = &v1alpha1.Task{
-		Spec: v1alpha1.TaskSpec{
+	rule.cluster.tasks = make(map[string]*crd.Task)
+	rule.cluster.tasks["B"] = &crd.Task{
+		Spec: crd.TaskSpec{
 			Dependencies: []string{"A"},
 		}}
 

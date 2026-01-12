@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/task"
 	"gorm.io/gorm/clause"
@@ -352,7 +352,7 @@ func (h TaskGroupHandler) BucketDelete(ctx *gin.Context) {
 func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) {
 	client := h.Client(ctx)
 	if r.Addon != "" {
-		addon := &v1alpha1.Addon{}
+		addon := &crd.Addon{}
 		name := r.Addon
 		err = client.Get(
 			context.TODO(),
@@ -371,7 +371,7 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 		}
 	}
 	for _, name := range r.Extensions {
-		ext := &v1alpha1.Extension{}
+		ext := &crd.Extension{}
 		err = client.Get(
 			context.TODO(),
 			k8sclient.ObjectKey{
@@ -389,7 +389,7 @@ func (h *TaskGroupHandler) findRefs(ctx *gin.Context, r *TaskGroup) (err error) 
 		}
 	}
 	if r.Kind != "" {
-		kind := &v1alpha1.Task{}
+		kind := &crd.Task{}
 		name := r.Kind
 		err = client.Get(
 			context.TODO(),

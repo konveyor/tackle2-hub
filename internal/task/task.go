@@ -13,7 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/auth"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
 	"github.com/konveyor/tackle2-hub/internal/ptr"
@@ -461,7 +461,7 @@ func (r *Task) podFailed(pod *core.Pod, client k8s.Client) {
 // (ref) matches the task name.
 // The `ref` is matched as a REGEX when it contains
 // characters other than: [0-9A-Za-z_].
-func (r *Task) matchTask(addon *v1alpha1.Addon, task *v1alpha1.Task) (matched bool, err error) {
+func (r *Task) matchTask(addon *crd.Addon, task *crd.Task) (matched bool, err error) {
 	ref := strings.TrimSpace(addon.Spec.Task)
 	p := IsRegex
 	if p.MatchString(ref) {
@@ -484,7 +484,7 @@ func (r *Task) matchTask(addon *v1alpha1.Addon, task *v1alpha1.Task) (matched bo
 // (ref) matches the addon name.
 // The `ref` is matched as a REGEX when it contains
 // characters other than: [0-9A-Za-z_].
-func (r *Task) matchAddon(extension *v1alpha1.Extension, addon *v1alpha1.Addon) (matched bool, err error) {
+func (r *Task) matchAddon(extension *crd.Extension, addon *crd.Addon) (matched bool, err error) {
 	ref := strings.TrimSpace(extension.Spec.Addon)
 	p := IsRegex
 	if p.MatchString(ref) {
@@ -505,9 +505,9 @@ func (r *Task) matchAddon(extension *v1alpha1.Extension, addon *v1alpha1.Addon) 
 
 // pod build the pod.
 func (r *Task) pod(
-	addon *v1alpha1.Addon,
-	extensions []*v1alpha1.Extension,
-	owner *v1alpha1.Tackle,
+	addon *crd.Addon,
+	extensions []*crd.Extension,
+	owner *crd.Tackle,
 	secret *core.Secret) (pod core.Pod) {
 	//
 	pod = core.Pod{
@@ -531,8 +531,8 @@ func (r *Task) pod(
 
 // specification builds a Pod specification.
 func (r *Task) specification(
-	addon *v1alpha1.Addon,
-	extensions []*v1alpha1.Extension,
+	addon *crd.Addon,
+	extensions []*crd.Extension,
 	secret *core.Secret) (specification core.PodSpec) {
 	addonDir := core.Volume{
 		Name: Addon,
@@ -578,8 +578,8 @@ func (r *Task) specification(
 
 // container builds the pod containers.
 func (r *Task) containers(
-	addon *v1alpha1.Addon,
-	extensions []*v1alpha1.Extension,
+	addon *crd.Addon,
+	extensions []*crd.Extension,
 	secret *core.Secret) (init []core.Container, plain []core.Container) {
 	token := &core.EnvVarSource{
 		SecretKeyRef: &core.SecretKeySelector{

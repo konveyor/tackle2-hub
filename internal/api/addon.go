@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,7 +36,7 @@ func (h AddonHandler) AddRoutes(e *gin.Engine) {
 // @param name path string true "Addon name"
 func (h AddonHandler) Get(ctx *gin.Context) {
 	name := ctx.Param(Name)
-	addon := &v1alpha1.Addon{}
+	addon := &crd.Addon{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
 		k8s.ObjectKey{
@@ -53,7 +53,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 			return
 		}
 	}
-	extensions := &v1alpha1.ExtensionList{}
+	extensions := &crd.ExtensionList{}
 	err = h.Client(ctx).List(
 		context.TODO(),
 		extensions,
@@ -78,7 +78,7 @@ func (h AddonHandler) Get(ctx *gin.Context) {
 // @success 200 {object} []api.Addon
 // @router /addons [get]
 func (h AddonHandler) List(ctx *gin.Context) {
-	list := &v1alpha1.AddonList{}
+	list := &crd.AddonList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,

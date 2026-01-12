@@ -7,7 +7,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/jsd"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -2691,8 +2691,8 @@ func TestAddon_With(t *testing.T) {
 	}
 	metadataJSON, _ := json.Marshal(metadata)
 
-	addon := &v1alpha1.Addon{
-		Spec: v1alpha1.AddonSpec{
+	addon := &crd.Addon{
+		Spec: crd.AddonSpec{
 			Container: core.Container{
 				Name:    "addon-container",
 				Image:   "addon-image:v1.0",
@@ -2706,8 +2706,8 @@ func TestAddon_With(t *testing.T) {
 	}
 	addon.Name = "test-addon"
 
-	ext1 := v1alpha1.Extension{
-		Spec: v1alpha1.ExtensionSpec{
+	ext1 := crd.Extension{
+		Spec: crd.ExtensionSpec{
 			Addon: "test-addon",
 			Container: core.Container{
 				Name:  "ext1",
@@ -2734,8 +2734,8 @@ func TestAddon_With(t *testing.T) {
 func TestAddon_With_WithComplexContainer(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	addon := &v1alpha1.Addon{
-		Spec: v1alpha1.AddonSpec{
+	addon := &crd.Addon{
+		Spec: crd.AddonSpec{
 			Container: core.Container{
 				Name:  "complex-addon",
 				Image: "addon:latest",
@@ -2786,8 +2786,8 @@ func TestExtension_With(t *testing.T) {
 	}
 	metadataJSON, _ := json.Marshal(metadata)
 
-	ext := &v1alpha1.Extension{
-		Spec: v1alpha1.ExtensionSpec{
+	ext := &crd.Extension{
+		Spec: crd.ExtensionSpec{
 			Addon: "parent-addon",
 			Container: core.Container{
 				Name:    "extension-container",
@@ -2815,8 +2815,8 @@ func TestExtension_With(t *testing.T) {
 func TestExtension_With_WithProbes(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	ext := &v1alpha1.Extension{
-		Spec: v1alpha1.ExtensionSpec{
+	ext := &crd.Extension{
+		Spec: crd.ExtensionSpec{
 			Addon: "parent",
 			Container: core.Container{
 				Name:  "ext-with-probes",

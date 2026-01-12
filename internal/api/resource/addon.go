@@ -5,7 +5,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/api/k8s"
-	"github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	core "k8s.io/api/core/v1"
 )
 
@@ -13,7 +13,7 @@ import (
 type Addon api.Addon
 
 // With model.
-func (r *Addon) With(m *v1alpha1.Addon, extensions ...v1alpha1.Extension) {
+func (r *Addon) With(m *crd.Addon, extensions ...crd.Extension) {
 	r.Name = m.Name
 	r.Container = convertContainer(m.Spec.Container)
 	if m.Spec.Metadata.Raw != nil {
@@ -32,7 +32,7 @@ func (r *Addon) With(m *v1alpha1.Addon, extensions ...v1alpha1.Extension) {
 type Extension api.Extension
 
 // With model.
-func (r *Extension) With(m *v1alpha1.Extension) {
+func (r *Extension) With(m *crd.Extension) {
 	r.Name = m.Name
 	r.Addon = m.Spec.Addon
 	r.Container = convertContainer(m.Spec.Container)
