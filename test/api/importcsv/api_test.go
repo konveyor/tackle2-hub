@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
@@ -17,19 +17,19 @@ func TestImportCSV(t *testing.T) {
 		t.Run(r.FileName, func(t *testing.T) {
 
 			// Upload CSV.
-			inputData := api2.ImportSummary{}
-			assert.Must(t, Client.FilePost(api2.UploadRoute, r.FileName, &inputData))
+			inputData := api.ImportSummary{}
+			assert.Must(t, Client.FilePost(api.UploadRoute, r.FileName, &inputData))
 
 			// Inject import summary id into Summary root
-			pathForImportSummary := binding.Path(api2.SummaryRoute).Inject(binding.Params{api2.ID: inputData.ID})
+			pathForImportSummary := binding.Path(api.SummaryRoute).Inject(binding.Params{api.ID: inputData.ID})
 
 			// Since uploading the CSV happens asynchronously we need to wait for the upload to check Applications and Dependencies.
 			time.Sleep(time.Second)
 
-			var outputImportSummaries []api2.ImportSummary
-			outputMatchingSummary := api2.ImportSummary{}
+			var outputImportSummaries []api.ImportSummary
+			outputMatchingSummary := api.ImportSummary{}
 			for {
-				assert.Should(t, Client.Get(api2.SummariesRoute, &outputImportSummaries))
+				assert.Should(t, Client.Get(api.SummariesRoute, &outputImportSummaries))
 				for _, gotImport := range outputImportSummaries {
 					if uint(gotImport.ID) == inputData.ID {
 						outputMatchingSummary = gotImport
@@ -114,12 +114,12 @@ func TestImportCSV(t *testing.T) {
 			}
 
 			// Get summaries of the Input ID.
-			outputImportSummary := api2.ImportSummary{}
+			outputImportSummary := api.ImportSummary{}
 			assert.Should(t, Client.Get(pathForImportSummary, &outputImportSummary))
 
 			// Get all imports.
-			var outputImports []api2.Import
-			assert.Should(t, Client.Get(api2.ImportsRoute, &outputImports))
+			var outputImports []api.Import
+			assert.Should(t, Client.Get(api.ImportsRoute, &outputImports))
 
 			// Check for number of imports.
 			if len(outputImports) != len(r.ExpectedApplications)+len(r.ExpectedDependencies) {
@@ -156,7 +156,7 @@ func TestImportCSV(t *testing.T) {
 
 			// Download the csv.
 			pathToGotCSV := "downloadcsv.csv"
-			assert.Should(t, Client.FileGet(api2.DownloadRoute, pathToGotCSV))
+			assert.Should(t, Client.FileGet(api.DownloadRoute, pathToGotCSV))
 
 			// Read the got CSV file.
 			gotCSV, err := ioutil.ReadFile(pathToGotCSV)

@@ -1,17 +1,17 @@
 package review
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
-var Samples = []api2.Review{
+var Samples = []api.Review{
 	{
 		BusinessCriticality: 1,
 		EffortEstimate:      "min",
 		ProposedAction:      "run",
 		WorkPriority:        1,
 		Comments:            "nil",
-		Application: &api2.Ref{
+		Application: &api.Ref{
 			Name: "Sample Review 1",
 		},
 	},
@@ -21,7 +21,7 @@ var Samples = []api2.Review{
 		ProposedAction:      "stop",
 		WorkPriority:        2,
 		Comments:            "nil",
-		Application: &api2.Ref{
+		Application: &api.Ref{
 			Name: "Sample Review 2",
 		},
 	},

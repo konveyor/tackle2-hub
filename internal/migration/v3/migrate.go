@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	liberr "github.com/jortel/go-utils/error"
-	model3 "github.com/konveyor/tackle2-hub/internal/migration/v2/model"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
+	v2 "github.com/konveyor/tackle2-hub/internal/migration/v2/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v3/model"
 	"github.com/konveyor/tackle2-hub/internal/migration/v3/seed"
 	"gorm.io/gorm"
 )
@@ -15,17 +15,17 @@ type Migration struct{}
 func (r Migration) Apply(db *gorm.DB) (err error) {
 	//
 	// Tags/Categories.
-	err = db.Migrator().RenameTable(model3.TagType{}, model2.TagCategory{})
+	err = db.Migrator().RenameTable(v2.TagType{}, model.TagCategory{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().RenameColumn(model2.Tag{}, "TagTypeID", "CategoryID")
+	err = db.Migrator().RenameColumn(model.Tag{}, "TagTypeID", "CategoryID")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().RenameColumn(model2.ImportTag{}, "TagType", "Category")
+	err = db.Migrator().RenameColumn(model.ImportTag{}, "TagType", "Category")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -50,7 +50,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().CreateTable(model2.ApplicationTag{})
+	err = db.Migrator().CreateTable(model.ApplicationTag{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -80,7 +80,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 // factMigration migrates Application.Facts.
@@ -89,13 +89,13 @@ func (r Migration) Models() []any {
 // migration both require the v2 model.
 func (r Migration) factMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	list := []model3.Application{}
+	list := []v2.Application{}
 	result := db.Find(&list)
 	if result.Error != nil {
 		err = liberr.Wrap(result.Error)
 		return
 	}
-	err = migrator.AutoMigrate(&model2.Fact{})
+	err = migrator.AutoMigrate(&model.Fact{})
 	if err != nil {
 		return
 	}
@@ -104,7 +104,7 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 		_ = json.Unmarshal(m.Facts, &d)
 		for k, v := range d {
 			jv, _ := json.Marshal(v)
-			fact := &model2.Fact{}
+			fact := &model.Fact{}
 			fact.ApplicationID = m.ID
 			fact.Key = k
 			fact.Value = jv
@@ -115,7 +115,7 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 			}
 		}
 	}
-	err = migrator.DropColumn(&model3.Application{}, "Facts")
+	err = migrator.DropColumn(&v2.Application{}, "Facts")
 	if err != nil {
 		err = liberr.Wrap(result.Error)
 		return
@@ -126,7 +126,7 @@ func (r Migration) factMigration(db *gorm.DB) (err error) {
 // bucketMigration migrates buckets.
 func (r Migration) bucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.AutoMigrate(&model2.Bucket{})
+	err = migrator.AutoMigrate(&model.Bucket{})
 	if err != nil {
 		return
 	}
@@ -152,11 +152,11 @@ func (r Migration) bucketMigration(db *gorm.DB) (err error) {
 // The Application.Bucket becomes virtual.
 func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.AutoMigrate(&model2.Application{})
+	err = migrator.AutoMigrate(&model.Application{})
 	if err != nil {
 		return
 	}
-	list := []model3.Application{}
+	list := []v2.Application{}
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -166,14 +166,14 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 		if m.Bucket == "" {
 			continue
 		}
-		bucket := &model2.Bucket{}
+		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		db := db.Model(&model2.Application{})
+		db := db.Model(&model.Application{})
 		db = db.Where("ID = ?", m.ID)
 		result := db.Update("BucketID", &bucket.ID)
 		if result.Error != nil {
@@ -181,7 +181,7 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	err = migrator.DropColumn(&model3.Application{}, "Bucket")
+	err = migrator.DropColumn(&v2.Application{}, "Bucket")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -196,11 +196,11 @@ func (r Migration) appBucketMigration(db *gorm.DB) (err error) {
 // The Task.Bucket becomes virtual.
 func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.AutoMigrate(&model2.Task{})
+	err = migrator.AutoMigrate(&model.Task{})
 	if err != nil {
 		return
 	}
-	list := []model3.Task{}
+	list := []v2.Task{}
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -210,14 +210,14 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 		if m.Bucket == "" {
 			continue
 		}
-		bucket := &model2.Bucket{}
+		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		db := db.Model(&model2.Task{})
+		db := db.Model(&model.Task{})
 		db = db.Where("ID = ?", m.ID)
 		result := db.Update("BucketID", &bucket.ID)
 		if result.Error != nil {
@@ -225,7 +225,7 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	err = migrator.DropColumn(&model3.Task{}, "Bucket")
+	err = migrator.DropColumn(&v2.Task{}, "Bucket")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -240,11 +240,11 @@ func (r Migration) taskBucketMigration(db *gorm.DB) (err error) {
 // The TaskGroup.Bucket becomes virtual.
 func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
 	migrator := db.Migrator()
-	err = migrator.AutoMigrate(&model2.TaskGroup{})
+	err = migrator.AutoMigrate(&model.TaskGroup{})
 	if err != nil {
 		return
 	}
-	list := []model3.TaskGroup{}
+	list := []v2.TaskGroup{}
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -254,14 +254,14 @@ func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
 		if m.Bucket == "" {
 			continue
 		}
-		bucket := &model2.Bucket{}
+		bucket := &model.Bucket{}
 		bucket.Path = m.Bucket
 		err = db.Create(bucket).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
-		db := db.Model(&model2.TaskGroup{})
+		db := db.Model(&model.TaskGroup{})
 		db = db.Where("ID = ?", m.ID)
 		result := db.Update("BucketID", &bucket.ID)
 		if result.Error != nil {
@@ -269,7 +269,7 @@ func (r Migration) taskGroupBucketMigration(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	err = migrator.DropColumn(&model3.TaskGroup{}, "Bucket")
+	err = migrator.DropColumn(&v2.TaskGroup{}, "Bucket")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

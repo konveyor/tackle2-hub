@@ -4,23 +4,23 @@ import (
 	"encoding/json"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestPlatformCRUD(t *testing.T) {
-	var r api2.Platform
+	var r api.Platform
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 	// application
-	application := &api2.Application{Name: t.Name()}
+	application := &api.Application{Name: t.Name()}
 	err := RichClient.Application.Create(application)
 	assert.Must(t, err)
 	defer func() {
 		_ = RichClient.Application.Delete(application.ID)
 	}()
 	// identity
-	identity := &api2.Identity{
+	identity := &api.Identity{
 		Name: t.Name(),
 		Kind: t.Name(),
 	}
@@ -31,7 +31,7 @@ func TestPlatformCRUD(t *testing.T) {
 	}()
 
 	// Create.
-	r.Identity = &api2.Ref{
+	r.Identity = &api.Ref{
 		ID:   identity.ID,
 		Name: identity.Name,
 	}

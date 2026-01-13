@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Dependency API.
@@ -11,28 +11,28 @@ type Dependency struct {
 }
 
 // Create a Dependency.
-func (h *Dependency) Create(r *api2.Dependency) (err error) {
-	err = h.client.Post(api2.DependenciesRoute, &r)
+func (h *Dependency) Create(r *api.Dependency) (err error) {
+	err = h.client.Post(api.DependenciesRoute, &r)
 	return
 }
 
 // Get a Dependency by ID.
-func (h *Dependency) Get(id uint) (r *api2.Dependency, err error) {
-	r = &api2.Dependency{}
-	path := Path(api2.DependencyRoute).Inject(Params{api2.ID: id})
+func (h *Dependency) Get(id uint) (r *api.Dependency, err error) {
+	r = &api.Dependency{}
+	path := Path(api.DependencyRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List Dependencies.
-func (h *Dependency) List() (list []api2.Dependency, err error) {
-	list = []api2.Dependency{}
-	err = h.client.Get(api2.DependenciesRoute, &list)
+func (h *Dependency) List() (list []api.Dependency, err error) {
+	list = []api.Dependency{}
+	err = h.client.Get(api.DependenciesRoute, &list)
 	return
 }
 
 // Delete a Dependency.
 func (h *Dependency) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.DependencyRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.DependencyRoute).Inject(Params{api.ID: id}))
 	return
 }

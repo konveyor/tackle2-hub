@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Setting API.
@@ -11,7 +11,7 @@ type Setting struct {
 
 // Get a setting by key.
 func (h *Setting) Get(key string, v any) (err error) {
-	path := Path(api2.SettingRoute).Inject(Params{api2.Key: key})
+	path := Path(api.SettingRoute).Inject(Params{api.Key: key})
 	err = h.client.Get(path, v)
 	return
 }
@@ -35,28 +35,28 @@ func (h *Setting) Int(key string) (n int, err error) {
 }
 
 // Create a Setting.
-func (h *Setting) Create(r *api2.Setting) (err error) {
-	err = h.client.Post(api2.SettingsRoute, &r)
+func (h *Setting) Create(r *api.Setting) (err error) {
+	err = h.client.Post(api.SettingsRoute, &r)
 	return
 }
 
 // List Settings.
-func (h *Setting) List() (list []api2.Setting, err error) {
-	list = []api2.Setting{}
-	err = h.client.Get(api2.SettingsRoute, &list)
+func (h *Setting) List() (list []api.Setting, err error) {
+	list = []api.Setting{}
+	err = h.client.Get(api.SettingsRoute, &list)
 	return
 }
 
 // Update a Setting.
-func (h *Setting) Update(r *api2.Setting) (err error) {
-	path := Path(api2.SettingRoute).Inject(Params{api2.Key: r.Key})
+func (h *Setting) Update(r *api.Setting) (err error) {
+	path := Path(api.SettingRoute).Inject(Params{api.Key: r.Key})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Setting.
 func (h *Setting) Delete(key string) (err error) {
-	path := Path(api2.SettingRoute).Inject(Params{api2.Key: key})
+	path := Path(api.SettingRoute).Inject(Params{api.Key: key})
 	err = h.client.Delete(path)
 	return
 }

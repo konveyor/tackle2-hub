@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Archetype API.
@@ -10,35 +10,35 @@ type Archetype struct {
 }
 
 // Create a Archetype.
-func (h *Archetype) Create(r *api2.Archetype) (err error) {
-	err = h.client.Post(api2.ArchetypesRoute, &r)
+func (h *Archetype) Create(r *api.Archetype) (err error) {
+	err = h.client.Post(api.ArchetypesRoute, &r)
 	return
 }
 
 // Get a Archetype by ID.
-func (h *Archetype) Get(id uint) (r *api2.Archetype, err error) {
-	r = &api2.Archetype{}
-	path := Path(api2.ArchetypeRoute).Inject(Params{api2.ID: id})
+func (h *Archetype) Get(id uint) (r *api.Archetype, err error) {
+	r = &api.Archetype{}
+	path := Path(api.ArchetypeRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List Archetypes.
-func (h *Archetype) List() (list []api2.Archetype, err error) {
-	list = []api2.Archetype{}
-	err = h.client.Get(api2.ArchetypesRoute, &list)
+func (h *Archetype) List() (list []api.Archetype, err error) {
+	list = []api.Archetype{}
+	err = h.client.Get(api.ArchetypesRoute, &list)
 	return
 }
 
 // Update a Archetype.
-func (h *Archetype) Update(r *api2.Archetype) (err error) {
-	path := Path(api2.ArchetypeRoute).Inject(Params{api2.ID: r.ID})
+func (h *Archetype) Update(r *api.Archetype) (err error) {
+	path := Path(api.ArchetypeRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Archetype.
 func (h *Archetype) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.ArchetypeRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.ArchetypeRoute).Inject(Params{api.ID: id}))
 	return
 }

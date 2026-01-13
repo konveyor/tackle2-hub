@@ -3,7 +3,7 @@ package v17
 import (
 	liberr "github.com/jortel/go-utils/error"
 	v16 "github.com/konveyor/tackle2-hub/internal/migration/v16/model"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v17/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v17/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 // updateEncryption re-encrypts identities.
@@ -42,7 +42,7 @@ func (r Migration) updateEncryption(db *gorm.DB) (err error) {
 		if err != nil {
 			return
 		}
-		updated := &model2.Identity{
+		updated := &model.Identity{
 			Password: m.Password,
 			Key:      m.Key,
 			Settings: m.Settings,

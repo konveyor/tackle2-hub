@@ -1,15 +1,15 @@
 package task
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	Windup = api2.Task{
+	Windup = api.Task{
 		Name:  "Test",
 		Addon: "analyzer",
-		Data:  api2.Map{},
+		Data:  api.Map{},
 	}
-	Samples = []api2.Task{Windup}
+	Samples = []api.Task{Windup}
 )

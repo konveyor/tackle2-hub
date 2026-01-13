@@ -3,7 +3,7 @@ package binding
 import (
 	pathlib "path"
 
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Bucket API.
@@ -12,39 +12,39 @@ type Bucket struct {
 }
 
 // Create a Bucket.
-func (h *Bucket) Create(r *api2.Bucket) (err error) {
-	err = h.client.Post(api2.BucketsRoute, &r)
+func (h *Bucket) Create(r *api.Bucket) (err error) {
+	err = h.client.Post(api.BucketsRoute, &r)
 	return
 }
 
 // Get a bucket.
-func (h *Bucket) Get(id uint) (r *api2.Bucket, err error) {
-	r = &api2.Bucket{}
-	path := Path(api2.BucketRoute).Inject(Params{api2.ID: id})
+func (h *Bucket) Get(id uint) (r *api.Bucket, err error) {
+	r = &api.Bucket{}
+	path := Path(api.BucketRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List buckets.
-func (h *Bucket) List() (list []api2.Bucket, err error) {
-	list = []api2.Bucket{}
-	err = h.client.Get(api2.BucketsRoute, &list)
+func (h *Bucket) List() (list []api.Bucket, err error) {
+	list = []api.Bucket{}
+	err = h.client.Get(api.BucketsRoute, &list)
 	return
 }
 
 // Delete a bucket.
 func (h *Bucket) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api2.BucketRoute).Inject(Params{api2.ID: id}))
+	err = h.client.Delete(Path(api.BucketRoute).Inject(Params{api.ID: id}))
 	return
 }
 
 // Content returns content API.
 func (h *Bucket) Content(id uint) (b *BucketContent) {
 	params := Params{
-		api2.Wildcard: "",
-		api2.ID:       id,
+		api.Wildcard: "",
+		api.ID:       id,
 	}
-	path := Path(api2.BucketRoute).Inject(params)
+	path := Path(api.BucketRoute).Inject(params)
 	b = &BucketContent{
 		root:   path,
 		client: h.client,

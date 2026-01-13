@@ -5,14 +5,14 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	v7 "github.com/konveyor/tackle2-hub/internal/migration/v7/model"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v8/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v8/model"
 	"gorm.io/gorm"
 )
 
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
-	result := db.Model(model2.Setting{}).Where("key = ?", "ui.ruleset.order").Update("key", "ui.target.order")
+	result := db.Model(model.Setting{}).Where("key = ?", "ui.ruleset.order").Update("key", "ui.target.order")
 	if result.Error != nil {
 		err = liberr.Wrap(err)
 		return
@@ -32,7 +32,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 	}
 
 	for _, rs := range oldCustomRuleSets {
-		target := model2.Target{
+		target := model.Target{
 			Name:        rs.Name,
 			Description: rs.Description,
 			RuleSetID:   &rs.ID,
@@ -65,17 +65,17 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	err = db.Migrator().DropConstraint(&model2.RuleSet{}, "fk_RuleSet_Image")
+	err = db.Migrator().DropConstraint(&model.RuleSet{}, "fk_RuleSet_Image")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().DropColumn(&model2.RuleSet{}, "ImageID")
+	err = db.Migrator().DropColumn(&model.RuleSet{}, "ImageID")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().DropColumn(&model2.RuleSet{}, "Custom")
+	err = db.Migrator().DropColumn(&model.RuleSet{}, "Custom")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -85,5 +85,5 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }

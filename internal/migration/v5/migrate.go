@@ -7,7 +7,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	v3 "github.com/konveyor/tackle2-hub/internal/migration/v3/model"
 	v4 "github.com/konveyor/tackle2-hub/internal/migration/v4/model"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v5/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v5/model"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +19,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.Migrator().CreateTable(model2.Fact{})
+	err = db.Migrator().CreateTable(model.Fact{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -59,18 +59,18 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 // RuleBundles renamed: RuleSet
 // RuleSet renamed: Rule
 func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
-	err = db.Migrator().RenameTable(&model2.RuleSet{}, "RuleSet__old")
+	err = db.Migrator().RenameTable(&model.RuleSet{}, "RuleSet__old")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = db.AutoMigrate(&model2.RuleSet{}, &model2.Rule{})
+	err = db.AutoMigrate(&model.RuleSet{}, &model.Rule{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -104,7 +104,7 @@ func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
 				}
 			}
 		}
-		rule := &model2.Rule{}
+		rule := &model.Rule{}
 		rule.ID = r.ID
 		rule.RuleSetID = r.RuleBundleID
 		rule.Labels, _ = json.Marshal(labels)
@@ -130,7 +130,7 @@ func (r Migration) migrateRuleBundles(db *gorm.DB) (err error) {
 
 // updateBundleSeed updates the description for Open Liberty.
 func (r Migration) updateBundleSeed(db *gorm.DB) (err error) {
-	db = db.Model(&model2.RuleSet{})
+	db = db.Model(&model.RuleSet{})
 	db = db.Where("Name", "Open Liberty")
 	err = db.Update(
 		"Description",

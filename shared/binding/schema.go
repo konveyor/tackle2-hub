@@ -1,7 +1,7 @@
 package binding
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Schema API.
@@ -10,22 +10,22 @@ type Schema struct {
 }
 
 // Get returns a schema by name.
-func (h *Schema) Get(name string) (r *api2.Schema, err error) {
-	r = &api2.Schema{}
-	path := Path(api2.SchemasGetRoute).Inject(Params{api2.Name: name})
+func (h *Schema) Get(name string) (r *api.Schema, err error) {
+	r = &api.Schema{}
+	path := Path(api.SchemasGetRoute).Inject(Params{api.Name: name})
 	err = h.client.Get(path, r)
 	return
 }
 
 // Find returns a schema by domain, variant, subject.
-func (h *Schema) Find(domain, variant, subject string) (r *api2.LatestSchema, err error) {
-	r = &api2.LatestSchema{}
+func (h *Schema) Find(domain, variant, subject string) (r *api.LatestSchema, err error) {
+	r = &api.LatestSchema{}
 	params := Params{
-		api2.Domain:  domain,
-		api2.Variant: variant,
-		api2.Subject: subject,
+		api.Domain:  domain,
+		api.Variant: variant,
+		api.Subject: subject,
 	}
-	path := Path(api2.SchemaFindRoute).Inject(params)
+	path := Path(api.SchemaFindRoute).Inject(params)
 	err = h.client.Get(path, r)
 	return
 }

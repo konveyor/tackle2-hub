@@ -1,32 +1,32 @@
 package manifest
 
 import (
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	Base = api2.Manifest{
-		Content: api2.Map{
+	Base = api.Manifest{
+		Content: api.Map{
 			"name": "Test",
 			"key":  "$(key)",
-			"database": api2.Map{
+			"database": api.Map{
 				"url":      "db.com",
 				"user":     "$(user)",
 				"password": "$(password)",
 			},
 			"description": "Connect using $(user) and $(password)",
 		},
-		Secret: api2.Map{
+		Secret: api.Map{
 			"key":      "ABCDEF",
 			"user":     "Elmer",
 			"password": "1234",
 		},
 	}
-	InjectedContent = api2.Map{
+	InjectedContent = api.Map{
 		"name": "Test",
 		"key":  "ABCDEF",
-		"database": api2.Map{
+		"database": api.Map{
 			"url":      "db.com",
 			"user":     "Elmer",
 			"password": "1234",

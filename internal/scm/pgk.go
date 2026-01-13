@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/konveyor/tackle2-hub/internal/model"
-	scm2 "github.com/konveyor/tackle2-hub/shared/scm"
+	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -18,11 +18,11 @@ func init() {
 	Home, _ = os.Getwd()
 }
 
-type SCM = scm2.SCM
-type Remote = scm2.Remote
-type Identity = scm2.Identity
-type Proxy = scm2.Proxy
-type ProxyMap = scm2.ProxyMap
+type SCM = scm.SCM
+type Remote = scm.Remote
+type Identity = scm.Identity
+type Proxy = scm.Proxy
+type ProxyMap = scm.ProxyMap
 
 // New SCM repository factory.
 func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
@@ -37,7 +37,7 @@ func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
 		if err != nil {
 			return
 		}
-		svn := &scm2.Subversion{}
+		svn := &scm.Subversion{}
 		svn.Remote = remote
 		svn.Path = destDir
 		svn.Home = filepath.Join(Home, ".svn", svn.Id())
@@ -56,7 +56,7 @@ func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {
 		if err != nil {
 			return
 		}
-		git := &scm2.Git{}
+		git := &scm.Git{}
 		git.Remote = remote
 		git.Path = destDir
 		git.Home = filepath.Join(Home, ".git", git.Id())

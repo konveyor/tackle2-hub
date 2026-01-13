@@ -1,13 +1,13 @@
 package profile
 
 import (
-	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient      *binding2.RichClient
-	AnalysisProfile binding2.AnalysisProfile
+	RichClient      *binding.RichClient
+	AnalysisProfile binding.AnalysisProfile
 )
 
 func init() {

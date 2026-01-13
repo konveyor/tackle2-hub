@@ -2,7 +2,7 @@ package v18
 
 import (
 	v17 "github.com/konveyor/tackle2-hub/internal/migration/v17/model"
-	model2 "github.com/konveyor/tackle2-hub/internal/migration/v18/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v18/model"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +18,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 }
 
 func (r Migration) Models() []any {
-	return model2.All()
+	return model.All()
 }
 
 func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
@@ -31,7 +31,7 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = migrator.RenameTable(&v17.Issue{}, model2.Insight{})
+	err = migrator.RenameTable(&v17.Issue{}, model.Insight{})
 	if err != nil {
 		return
 	}
@@ -44,7 +44,7 @@ func (r Migration) renameIssueToInsight(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	err = migrator.AutoMigrate(&model2.Incident{})
+	err = migrator.AutoMigrate(&model.Incident{})
 	if err != nil {
 		return
 	}

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
-var SampleFacts = []*api2.Fact{
+var SampleFacts = []*api.Fact{
 	{
 		Key:    "pet",
 		Value:  "{\"kind\":\"dog\",\"Age\":4}",
@@ -32,12 +32,12 @@ func TestApplicationFactCRUD(t *testing.T) {
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
 		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
-			key := api2.FactKey(r.Key)
+			key := api.FactKey(r.Key)
 			key.Qualify(r.Source)
-			factPath := binding.Path(api2.ApplicationFactRoute).Inject(binding.Params{api2.ID: application.ID, api2.Key: key})
+			factPath := binding.Path(api.ApplicationFactRoute).Inject(binding.Params{api.ID: application.ID, api.Key: key})
 
 			// Create.
-			err := Client.Post(binding.Path(api2.ApplicationFactsRoute).Inject(binding.Params{api2.ID: application.ID}), &r)
+			err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -54,7 +54,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 			//}
 
 			// Update.
-			updated := api2.Fact{
+			updated := api.Fact{
 				Value: fmt.Sprintf("{\"%s\":\"%s\"}", r.Key, "updated"),
 			}
 			err = Client.Put(factPath, updated.Value)
@@ -98,7 +98,7 @@ func TestApplicationFactsList(t *testing.T) {
 
 	// Create facts.
 	for _, r := range SampleFacts {
-		err := Client.Post(binding.Path(api2.ApplicationFactsRoute).Inject(binding.Params{api2.ID: application.ID}), &r)
+		err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
@@ -108,8 +108,8 @@ func TestApplicationFactsList(t *testing.T) {
 	factsPathSuffix := []string{"facts/test:", "facts/test:/"}
 	for _, pathSuffix := range factsPathSuffix {
 		t.Run(fmt.Sprintf("Fact list application %s with %s", application.Name, pathSuffix), func(t *testing.T) {
-			got := api2.Map{}
-			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api2.ApplicationRoute).Inject(binding.Params{api2.ID: application.ID}), pathSuffix), &got)
+			got := api.Map{}
+			err := Client.Get(fmt.Sprintf("%s/%s", binding.Path(api.ApplicationRoute).Inject(binding.Params{api.ID: application.ID}), pathSuffix), &got)
 			if err != nil {
 				t.Errorf("Get list error: %v", err.Error())
 			}

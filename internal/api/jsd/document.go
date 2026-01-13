@@ -2,21 +2,21 @@ package jsd
 
 import (
 	"github.com/konveyor/tackle2-hub/internal/jsd"
-	json2 "github.com/konveyor/tackle2-hub/internal/migration/json"
+	"github.com/konveyor/tackle2-hub/internal/migration/json"
 	"github.com/konveyor/tackle2-hub/internal/model"
 )
 
 // Map unstructured object.
-type Map json2.Map
+type Map json.Map
 
 // As convert the content into the object.
 // The object must be a pointer.
 func (m *Map) As(object any) (err error) {
-	b, err := json2.Marshal(m)
+	b, err := json.Marshal(m)
 	if err != nil {
 		return
 	}
-	err = json2.Unmarshal(b, object)
+	err = json.Unmarshal(b, object)
 	return
 }
 

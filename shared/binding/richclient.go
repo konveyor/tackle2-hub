@@ -2,7 +2,7 @@ package binding
 
 import (
 	"github.com/jortel/go-utils/logr"
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 var (
@@ -143,11 +143,11 @@ func New(baseURL string) (r *RichClient) {
 
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
-	login := api2.Login{
+	login := api.Login{
 		User:     user,
 		Password: password,
 	}
-	err = r.Client.Post(api2.AuthLoginRoute, &login)
+	err = r.Client.Post(api.AuthLoginRoute, &login)
 	if err != nil {
 		return
 	}

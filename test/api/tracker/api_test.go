@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -12,7 +12,7 @@ func TestTrackerCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run("Tracker "+r.Kind+" CRUD", func(t *testing.T) {
 			// Create a sample identity for the tracker.
-			identity := api2.Identity{
+			identity := api.Identity{
 				Kind: r.Kind,
 				Name: r.Identity.Name,
 			}
@@ -58,7 +58,7 @@ func TestTrackerCRUD(t *testing.T) {
 
 		t.Run("Tracker "+r.Kind+" Project", func(t *testing.T) {
 			// Create a sample identity for the tracker.
-			identity := api2.Identity{
+			identity := api.Identity{
 				Kind: r.Kind,
 				Name: r.Identity.Name,
 			}
@@ -123,10 +123,10 @@ func TestTrackerCRUD(t *testing.T) {
 }
 
 func TestTrackerList(t *testing.T) {
-	createdTrackers := []api2.Tracker{}
+	createdTrackers := []api.Tracker{}
 
 	for _, r := range Samples {
-		identity := api2.Identity{
+		identity := api.Identity{
 			Kind: r.Kind,
 			Name: r.Identity.Name,
 		}
@@ -164,7 +164,7 @@ func TestTrackerList(t *testing.T) {
 	}
 }
 
-func AssertEqualTrackers(t *testing.T, got *api2.Tracker, expected api2.Tracker) {
+func AssertEqualTrackers(t *testing.T, got *api.Tracker, expected api.Tracker) {
 	if got.Name != expected.Name {
 		t.Errorf("Different Tracker Name Got %v, expected %v", got.Name, expected.Name)
 	}
