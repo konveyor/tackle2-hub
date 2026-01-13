@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
 var (

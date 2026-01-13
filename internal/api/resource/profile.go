@@ -1,12 +1,12 @@
 package resource
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // AnalysisProfile REST resource.
-type AnalysisProfile api.AnalysisProfile
+type AnalysisProfile api2.AnalysisProfile
 
 // With updates the resource with the model.
 func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
@@ -15,10 +15,10 @@ func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
 	r.Description = m.Description
 	r.Mode.WithDeps = m.WithDeps
 	r.Scope.WithKnownLibs = m.WithKnownLibs
-	r.Scope.Packages = api.InExList(m.Packages)
-	r.Rules.Labels = api.InExList(m.Labels)
+	r.Scope.Packages = api2.InExList(m.Packages)
+	r.Rules.Labels = api2.InExList(m.Labels)
 	if m.Repository != (model.Repository{}) {
-		repository := api.Repository(m.Repository)
+		repository := api2.Repository(m.Repository)
 		r.Rules.Repository = &repository
 	}
 	r.Rules.Targets = make([]Ref, len(m.Targets))

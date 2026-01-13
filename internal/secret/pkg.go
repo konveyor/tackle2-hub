@@ -1,7 +1,7 @@
 package secret
 
 import (
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
 var Settings = &settings.Settings.Encryption

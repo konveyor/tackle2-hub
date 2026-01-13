@@ -1,13 +1,13 @@
 package ruleset
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient *binding.RichClient
-	RuleSet    binding.RuleSet
+	RichClient *binding2.RichClient
+	RuleSet    binding2.RuleSet
 )
 
 func init() {

@@ -1,16 +1,16 @@
 package migrationwave
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient       *binding.RichClient
-	MigrationWave    binding.MigrationWave
-	Application      binding.Application
-	Stakeholder      binding.Stakeholder
-	StakeholderGroup binding.StakeholderGroup
+	RichClient       *binding2.RichClient
+	MigrationWave    binding2.MigrationWave
+	Application      binding2.Application
+	Stakeholder      binding2.Stakeholder
+	StakeholderGroup binding2.StakeholderGroup
 )
 
 func init() {

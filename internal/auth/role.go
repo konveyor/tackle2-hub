@@ -5,7 +5,7 @@ import (
 	"os"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gopkg.in/yaml.v2"
 )
 

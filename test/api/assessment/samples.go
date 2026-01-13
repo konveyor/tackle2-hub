@@ -1,31 +1,31 @@
 package assessment
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/api/application"
 	"github.com/konveyor/tackle2-hub/test/api/questionnaire"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	ApplicationAssessment1 = api.Assessment{
+	ApplicationAssessment1 = api2.Assessment{
 		// Ref resource are created by the test.
-		Application: &api.Ref{
+		Application: &api2.Ref{
 			Name: application.Minimal.Name,
 		},
-		Questionnaire: api.Ref{
+		Questionnaire: api2.Ref{
 			Name: questionnaire.Questionnaire1.Name,
 		},
-		Sections: []api.Section{
+		Sections: []api2.Section{
 			{
 				Order: 1,
 				Name:  "Section 1",
-				Questions: []api.Question{
+				Questions: []api2.Question{
 					{
 						Order:       1,
 						Text:        "What is your favorite color?",
 						Explanation: "Please tell us your favorite color.",
-						Answers: []api.Answer{
+						Answers: []api2.Answer{
 							{
 								Order: 1,
 								Text:  "Red",
@@ -48,5 +48,5 @@ var (
 			},
 		},
 	}
-	Samples = []api.Assessment{ApplicationAssessment1}
+	Samples = []api2.Assessment{ApplicationAssessment1}
 )

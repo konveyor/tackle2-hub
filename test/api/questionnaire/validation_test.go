@@ -3,7 +3,7 @@ package questionnaire
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // TestQuestionnaireValidation tests all validation rules in api.Questionnaire.Validate()

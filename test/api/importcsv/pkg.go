@@ -1,16 +1,16 @@
 package importcsv
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding.RichClient
-	Client      *binding.Client
-	Application binding.Application
-	Dependency  binding.Dependency
-	Stakeholder binding.Stakeholder
+	RichClient  *binding2.RichClient
+	Client      *binding2.Client
+	Application binding2.Application
+	Dependency  binding2.Dependency
+	Stakeholder binding2.Stakeholder
 )
 
 func init() {

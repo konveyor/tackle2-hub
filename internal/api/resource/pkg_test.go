@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/jsd"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1411,15 +1411,15 @@ func TestQuestionnaire_Model(t *testing.T) {
 		Name:        "Test Questionnaire",
 		Description: "Test description",
 		Required:    true,
-		Sections: []api.Section{
+		Sections: []api2.Section{
 			{Order: 1, Name: "Section 1"},
 		},
-		Thresholds: api.Thresholds{
+		Thresholds: api2.Thresholds{
 			Red:     50,
 			Yellow:  30,
 			Unknown: 10,
 		},
-		RiskMessages: api.RiskMessages{
+		RiskMessages: api2.RiskMessages{
 			Red:     "High risk",
 			Yellow:  "Medium risk",
 			Green:   "Low risk",
@@ -1787,8 +1787,8 @@ func TestAnalysisProfile_With(t *testing.T) {
 	g.Expect(r.Description).To(gomega.Equal("Test description"))
 	g.Expect(r.Mode.WithDeps).To(gomega.Equal(true))
 	g.Expect(r.Scope.WithKnownLibs).To(gomega.Equal(false))
-	g.Expect(r.Scope.Packages).To(gomega.Equal(api.InExList{Included: []string{"com.example"}}))
-	g.Expect(r.Rules.Labels).To(gomega.Equal(api.InExList{Included: []string{"label1"}}))
+	g.Expect(r.Scope.Packages).To(gomega.Equal(api2.InExList{Included: []string{"com.example"}}))
+	g.Expect(r.Rules.Labels).To(gomega.Equal(api2.InExList{Included: []string{"label1"}}))
 	g.Expect(len(r.Rules.Targets)).To(gomega.Equal(1))
 }
 
@@ -1799,15 +1799,15 @@ func TestAnalysisProfile_Model(t *testing.T) {
 	r := &AnalysisProfile{
 		Name:        "Test Profile",
 		Description: "Test description",
-		Mode: api.ApMode{
+		Mode: api2.ApMode{
 			WithDeps: true,
 		},
-		Scope: api.ApScope{
+		Scope: api2.ApScope{
 			WithKnownLibs: false,
-			Packages:      api.InExList{Included: []string{"com.example"}},
+			Packages:      api2.InExList{Included: []string{"com.example"}},
 		},
-		Rules: api.ApRules{
-			Labels: api.InExList{Included: []string{"label1"}},
+		Rules: api2.ApRules{
+			Labels: api2.InExList{Included: []string{"label1"}},
 		},
 	}
 
@@ -2011,7 +2011,7 @@ func TestTarget_Model(t *testing.T) {
 		Provider:    "java",
 		Choice:      true,
 		Image:       Ref{ID: 100, Name: "target-image"},
-		Labels: []api.TargetLabel{
+		Labels: []api2.TargetLabel{
 			{Name: "label1", Label: "value1"},
 		},
 	}
@@ -2899,13 +2899,13 @@ func TestQuestion_Model(t *testing.T) {
 		Order:       1,
 		Text:        "What is your platform?",
 		Explanation: "Select your target platform",
-		IncludeFor: []api.CategorizedTag{
+		IncludeFor: []api2.CategorizedTag{
 			{Category: "Language", Tag: "Java"},
 		},
-		ExcludeFor: []api.CategorizedTag{
+		ExcludeFor: []api2.CategorizedTag{
 			{Category: "Runtime", Tag: "Legacy"},
 		},
-		Answers: []api.Answer{
+		Answers: []api2.Answer{
 			{Order: 1, Text: "Cloud", Risk: "green"},
 			{Order: 2, Text: "On-Premise", Risk: "yellow"},
 		},
@@ -2972,10 +2972,10 @@ func TestAnswer_Model(t *testing.T) {
 		Mitigation:   "None needed",
 		Selected:     true,
 		AutoAnswered: false,
-		ApplyTags: []api.CategorizedTag{
+		ApplyTags: []api2.CategorizedTag{
 			{Category: "Platform", Tag: "K8s"},
 		},
-		AutoAnswerFor: []api.CategorizedTag{
+		AutoAnswerFor: []api2.CategorizedTag{
 			{Category: "Container", Tag: "Docker"},
 		},
 	}
@@ -3028,7 +3028,7 @@ func TestSection_Model(t *testing.T) {
 		Order:   1,
 		Name:    "Application Details",
 		Comment: "Provide application information",
-		Questions: []api.Question{
+		Questions: []api2.Question{
 			{Order: 1, Text: "What is the application type?"},
 			{Order: 2, Text: "What framework is used?"},
 		},

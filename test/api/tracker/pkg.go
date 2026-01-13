@@ -1,14 +1,14 @@
 package tracker
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient *binding.RichClient
-	Tracker    binding.Tracker
-	Identity   binding.Identity
+	RichClient *binding2.RichClient
+	Tracker    binding2.Tracker
+	Identity   binding2.Identity
 )
 
 func init() {

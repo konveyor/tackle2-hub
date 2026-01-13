@@ -3,27 +3,27 @@ package ruleset
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestRuleSetCRUD(t *testing.T) {
 	for _, r := range Samples {
 		t.Run(r.Name, func(t *testing.T) {
-			var files []*api.File
+			var files []*api2.File
 			defer func() {
 				for _, f := range files {
 					_ = RichClient.File.Delete(f.ID)
 				}
 			}()
 			// Prepare rules files.
-			rules := []api.Rule{}
+			rules := []api2.Rule{}
 			for _, rule := range r.Rules {
 				ruleFile, err := RichClient.File.Put(rule.File.Name)
 				assert.Should(t, err)
 				files = append(files, ruleFile)
-				rules = append(rules, api.Rule{
-					File: &api.Ref{
+				rules = append(rules, api2.Rule{
+					File: &api2.Ref{
 						ID: ruleFile.ID,
 					},
 				})
@@ -53,9 +53,9 @@ func TestRuleSetCRUD(t *testing.T) {
 			files = append(files, file)
 			r.Rules = append(
 				r.Rules,
-				api.Rule{
+				api2.Rule{
 					Name: "Added",
-					File: &api.Ref{
+					File: &api2.Ref{
 						ID: file.ID,
 					},
 				})

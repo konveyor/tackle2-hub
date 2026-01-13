@@ -1,13 +1,13 @@
 package tagcategory
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding.RichClient
-	TagCategory binding.TagCategory
+	RichClient  *binding2.RichClient
+	TagCategory binding2.TagCategory
 )
 
 func init() {

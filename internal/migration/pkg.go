@@ -22,7 +22,7 @@ import (
 	v7 "github.com/konveyor/tackle2-hub/internal/migration/v7"
 	v8 "github.com/konveyor/tackle2-hub/internal/migration/v8"
 	v9 "github.com/konveyor/tackle2-hub/internal/migration/v9"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
 )
 

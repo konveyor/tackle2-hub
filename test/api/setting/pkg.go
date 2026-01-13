@@ -1,13 +1,13 @@
 package setting
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient *binding.RichClient
-	Setting    binding.Setting
+	RichClient *binding2.RichClient
+	Setting    binding2.Setting
 )
 
 func init() {

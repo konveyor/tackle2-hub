@@ -11,7 +11,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/shared/nas"
 	"gorm.io/gorm"
 )
 

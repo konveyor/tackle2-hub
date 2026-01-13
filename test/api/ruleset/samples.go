@@ -1,31 +1,31 @@
 package ruleset
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Set of valid resources for tests and reuse.
 var (
-	Minimal = api.RuleSet{
+	Minimal = api2.RuleSet{
 		Name:  "Minimal no rules",
-		Rules: []api.Rule{},
+		Rules: []api2.Rule{},
 	}
 
-	Hazelcast = api.RuleSet{
+	Hazelcast = api2.RuleSet{
 		Name:        "Hazelcast",
 		Description: "Hazelcast Java distributed session store ruleset.",
-		Rules: []api.Rule{
+		Rules: []api2.Rule{
 			{
-				File: &api.Ref{
+				File: &api2.Ref{
 					Name: "./data/rules.yaml",
 				},
 			},
 			{
-				File: &api.Ref{
+				File: &api2.Ref{
 					Name: "./data/rules.yaml",
 				},
 			},
 		},
 	}
-	Samples = []api.RuleSet{Minimal, Hazelcast}
+	Samples = []api2.RuleSet{Minimal, Hazelcast}
 )

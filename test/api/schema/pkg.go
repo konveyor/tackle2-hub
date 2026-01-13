@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 

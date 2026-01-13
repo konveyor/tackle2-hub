@@ -3,10 +3,10 @@ package resource
 import (
 	"sort"
 
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/jsd"
 	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Tag Sources
@@ -16,7 +16,7 @@ const (
 )
 
 // Application REST resource.
-type Application api.Application
+type Application api2.Application
 
 // With updates the resource using the model.
 func (r *Application) With(m *model.Application, tags []AppTag, identities []IdentityRef) {
@@ -29,8 +29,8 @@ func (r *Application) With(m *model.Application, tags []AppTag, identities []Ide
 	if m.Coordinates != nil {
 		d := jsd.Document{}
 		d.With(m.Coordinates)
-		r.Coordinates = &api.Document{
-			Content: api.Map(d.Content),
+		r.Coordinates = &api2.Document{
+			Content: api2.Map(d.Content),
 			Schema:  d.Schema,
 		}
 	}
@@ -205,7 +205,7 @@ func (r *Application) Model() (m *model.Application) {
 }
 
 // Fact REST resource.
-type Fact api.Fact
+type Fact api2.Fact
 
 func (r *Fact) With(m *model.Fact) {
 	r.Key = m.Key
@@ -222,7 +222,7 @@ func (r *Fact) Model() (m *model.Fact) {
 }
 
 // FactKey REST resource.
-type FactKey = api.FactKey
+type FactKey = api2.FactKey
 
 // TagMap REST resource.
 type TagMap map[uint][]AppTag

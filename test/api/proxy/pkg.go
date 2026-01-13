@@ -1,13 +1,13 @@
 package proxy
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient *binding.RichClient
-	Proxy      binding.Proxy
+	RichClient *binding2.RichClient
+	Proxy      binding2.Proxy
 )
 
 func init() {

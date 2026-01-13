@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/konveyor/tackle2-hub/internal/jsd"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

@@ -1,16 +1,16 @@
 package ticket
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding.RichClient
-	Ticket      binding.Ticket
-	Tracker     binding.Tracker
-	Identity    binding.Identity
-	Application binding.Application
+	RichClient  *binding2.RichClient
+	Ticket      binding2.Ticket
+	Tracker     binding2.Tracker
+	Identity    binding2.Identity
+	Application binding2.Application
 )
 
 func init() {

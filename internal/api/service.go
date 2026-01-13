@@ -8,8 +8,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // serviceRoutes name to route map.

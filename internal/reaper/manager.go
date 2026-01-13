@@ -7,7 +7,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/heap"
 	"github.com/konveyor/tackle2-hub/internal/task"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )

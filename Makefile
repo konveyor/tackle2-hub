@@ -7,6 +7,7 @@ IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
 PKG = ./internal/... \
+      ./shared/... \
       ./cmd/...
 
 PKGDIR = $(subst /...,,$(PKG))
@@ -14,7 +15,7 @@ PKGDIR = $(subst /...,,$(PKG))
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 
 # Build ALL commands.
-cmd: hub addon
+cmd: hub shared/addon
 
 # Format the code.
 fmt: $(GOIMPORTS)

@@ -3,13 +3,13 @@ package application
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
 func TestFindIdentity(t *testing.T) {
 	// Setup.
-	direct := &api.Identity{
+	direct := &api2.Identity{
 		Name: "direct",
 		Kind: "Test",
 	}
@@ -18,7 +18,7 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(direct.ID)
 	}()
-	direct2 := &api.Identity{
+	direct2 := &api2.Identity{
 		Name: "direct2",
 		Kind: "Other",
 	}
@@ -27,7 +27,7 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(direct2.ID)
 	}()
-	indirect := &api.Identity{
+	indirect := &api2.Identity{
 		Name:    "indirect",
 		Kind:    "Other",
 		Default: true,
@@ -37,7 +37,7 @@ func TestFindIdentity(t *testing.T) {
 	defer func() {
 		_ = RichClient.Identity.Delete(indirect.ID)
 	}()
-	indirect2 := &api.Identity{
+	indirect2 := &api2.Identity{
 		Kind:    "Test",
 		Name:    "indirect-shadowed",
 		Default: true,
@@ -49,9 +49,9 @@ func TestFindIdentity(t *testing.T) {
 	}()
 	role := "source"
 	role2 := "asset"
-	application := &api.Application{
+	application := &api2.Application{
 		Name: t.Name(),
-		Identities: []api.IdentityRef{
+		Identities: []api2.IdentityRef{
 			{ID: direct.ID, Role: role},
 			{ID: direct2.ID, Role: role2},
 		},

@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // DependencyGraph REST resource.

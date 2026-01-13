@@ -13,10 +13,10 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
-	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
 var (

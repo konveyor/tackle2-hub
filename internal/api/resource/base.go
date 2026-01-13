@@ -1,9 +1,9 @@
 package resource
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 )
 
 func newRef(id uint, name string) (r model.Ref) {
@@ -31,7 +31,7 @@ func idPtr(ref *Ref) (id *uint) {
 	return
 }
 
-func baseWith(r *api.Resource, m *model.Model) {
+func baseWith(r *api2.Resource, m *model.Model) {
 	r.ID = m.ID
 	r.CreateUser = m.CreateUser
 	r.UpdateUser = m.UpdateUser
@@ -45,22 +45,22 @@ func ref(id uint, m any) (r Ref) {
 }
 
 // Resource REST resource.
-type Resource = api.Resource
+type Resource = api2.Resource
 
 // Ref REST resource.
-type Ref = api.Ref
+type Ref = api2.Ref
 
 // Map REST resource.
-type Map = api.Map
+type Map = api2.Map
 
 // TagRef REST resource.
-type TagRef = api.TagRef
+type TagRef = api2.TagRef
 
 // Repository REST resource.
-type Repository = api.Repository
+type Repository = api2.Repository
 
 // IdentityRef REST resource.
-type IdentityRef = api.IdentityRef
+type IdentityRef = api2.IdentityRef
 
 // InExList REST resource.
 type InExList = model.InExList

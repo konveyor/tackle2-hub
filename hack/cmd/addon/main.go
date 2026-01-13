@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	hub "github.com/konveyor/tackle2-hub/addon"
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/nas"
+	hub "github.com/konveyor/tackle2-hub/shared/addon"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/nas"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -76,7 +76,7 @@ func main() {
 		//
 		// Replace facts.
 		err = facts.Replace(
-			api.Map{
+			api2.Map{
 				"Listed": true,
 				"Color":  "blue",
 				"Length": 100,
@@ -101,7 +101,7 @@ func main() {
 }
 
 // listDir builds and populates the bucket.
-func listDir(d *Data, application *api.Application, paths []string) (err error) {
+func listDir(d *Data, application *api2.Application, paths []string) (err error) {
 	//
 	// Task update: Update the task with total number of
 	// items to be processed by the addon.
@@ -298,12 +298,12 @@ func playWithFiles() (err error) {
 
 // addTags ensure tags created and associated with application.
 // Ensure tag exists and associated with the application.
-func addTags(application *api.Application, source string, names ...string) (err error) {
+func addTags(application *api2.Application, source string, names ...string) (err error) {
 	addon.Activity("Adding tags: %v", names)
 	var wanted []uint
 	//
 	// Ensure type exists.
-	tp := &api.TagCategory{
+	tp := &api2.TagCategory{
 		Name:  "DIRECTORY",
 		Color: "#2b9af3",
 	}
@@ -332,12 +332,12 @@ func addTags(application *api.Application, source string, names ...string) (err 
 
 // replaceTags replaces current set of tags for the source with a new set.
 // Ensures desired tags exist before replacing.
-func replaceTags(application *api.Application, source string, names ...string) (err error) {
+func replaceTags(application *api2.Application, source string, names ...string) (err error) {
 	addon.Activity("Replacing tags: %v", names)
 	var wanted []uint
 	//
 	// Ensure type exists.
-	tp := &api.TagCategory{
+	tp := &api2.TagCategory{
 		Name:  "DIRECTORY",
 		Color: "#2b9af3",
 	}
@@ -365,9 +365,9 @@ func replaceTags(application *api.Application, source string, names ...string) (
 
 func ensureTags(category uint, names ...string) (ids []uint, err error) {
 	for _, name := range names {
-		tag := &api.Tag{
+		tag := &api2.Tag{
 			Name: name,
-			Category: api.Ref{
+			Category: api2.Ref{
 				ID: category,
 			}}
 		err = addon.Tag.Ensure(tag)

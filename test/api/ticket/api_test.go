@@ -3,7 +3,7 @@ package ticket
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
+	api2 "github.com/konveyor/tackle2-hub/shared/api"
 	TrackerSamples "github.com/konveyor/tackle2-hub/test/api/tracker"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
@@ -13,17 +13,17 @@ func TestTicketCRUD(t *testing.T) {
 		t.Run("Ticket "+r.Kind+" CRUD", func(t *testing.T) {
 
 			// Create a sample Application for the ticket.
-			app := api.Application{
+			app := api2.Application{
 				Name: r.Application.Name,
 			}
 			assert.Must(t, Application.Create(&app))
 			r.Application.ID = app.ID
 
-			createdIdentities := []api.Identity{}
-			createdTrackers := []api.Tracker{}
+			createdIdentities := []api2.Identity{}
+			createdTrackers := []api2.Tracker{}
 			for _, tracker := range TrackerSamples.Samples {
 				// Create a sample identity for the tracker
-				identity := api.Identity{
+				identity := api2.Identity{
 					Name: tracker.Identity.Name,
 					Kind: tracker.Kind,
 				}
@@ -70,19 +70,19 @@ func TestTicketCRUD(t *testing.T) {
 func TestTicketList(t *testing.T) {
 	for _, r := range Samples {
 
-		createdTickets := []api.Ticket{}
+		createdTickets := []api2.Ticket{}
 		// Create a sample Application for the ticket.
-		app := api.Application{
+		app := api2.Application{
 			Name: r.Application.Name,
 		}
 		assert.Must(t, Application.Create(&app))
 		r.Application.ID = app.ID
 
-		createdIdentities := []api.Identity{}
-		createdTrackers := []api.Tracker{}
+		createdIdentities := []api2.Identity{}
+		createdTrackers := []api2.Tracker{}
 		for _, tracker := range TrackerSamples.Samples {
 			// Create a sample identity for the tracker
-			identity := api.Identity{
+			identity := api2.Identity{
 				Name: tracker.Identity.Name,
 				Kind: tracker.Kind,
 			}
@@ -132,7 +132,7 @@ func TestTicketList(t *testing.T) {
 	}
 }
 
-func AssertEqualTickets(t *testing.T, got *api.Ticket, expected api.Ticket) {
+func AssertEqualTickets(t *testing.T, got *api2.Ticket, expected api2.Ticket) {
 	if got.Kind != expected.Kind {
 		t.Errorf("Different Kind Got %v, expected %v", got.Kind, expected.Kind)
 	}

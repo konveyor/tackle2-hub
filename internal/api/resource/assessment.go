@@ -1,9 +1,9 @@
 package resource
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/internal/assessment"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // Thresholds REST resource.

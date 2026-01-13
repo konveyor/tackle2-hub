@@ -1,13 +1,13 @@
 package stakeholder
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	binding2 "github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
-	RichClient  *binding.RichClient
-	Stakeholder binding.Stakeholder
+	RichClient  *binding2.RichClient
+	Stakeholder binding2.Stakeholder
 )
 
 func init() {
