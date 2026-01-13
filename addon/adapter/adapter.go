@@ -42,11 +42,14 @@ type RestError = binding.RestError
 type Conflict = binding.Conflict
 type NotFound = binding.NotFound
 
-// Handlers
+// API namespaces.
+type AnalysisProfile = binding.AnalysisProfile
 type Application = binding.Application
+type Archetype = binding.Archetype
 type Bucket = binding.Bucket
 type BucketContent = binding.BucketContent
 type File = binding.File
+type Generator = binding.Generator
 type Identity = binding.Identity
 type Manifest = binding.Manifest
 type Platform = binding.Platform
@@ -56,8 +59,6 @@ type Schema = binding.Schema
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
-type Archetype = binding.Archetype
-type Generator = binding.Generator
 
 // Filter
 type Filter = binding.Filter
@@ -68,14 +69,21 @@ type Adapter struct {
 	Task
 	// Log API.
 	Log logapi.Logger
+	// Client binding client.
+	Client *binding.RichClient
 	// Wrap error API.
 	Wrap func(error, ...any) error
-	// Settings API.
-	Setting Setting
-	// Schema API
-	Schema Schema
+	//
+	// AnalysisProfile API.
+	AnalysisProfile AnalysisProfile
 	// Application API.
 	Application Application
+	// Archetype
+	Archetype Archetype
+	// File API.
+	File File
+	// Generator API.
+	Generator Generator
 	// Identity API.
 	Identity Identity
 	// Manifest
@@ -84,22 +92,16 @@ type Adapter struct {
 	Platform Platform
 	// Proxy API.
 	Proxy Proxy
+	// RuleSet API
+	RuleSet RuleSet
+	// Schema API
+	Schema Schema
+	// Settings API.
+	Setting Setting
 	// TagCategory API.
 	TagCategory TagCategory
 	// Tag API.
 	Tag Tag
-	// File API.
-	File File
-	// RuleSet API
-	RuleSet RuleSet
-	// Generator API.
-	Generator Generator
-	// Archetype
-	Archetype Archetype
-	// SCM
-	SCM SCM
-	// client A REST client.
-	client *Client
 }
 
 // Run addon.
@@ -151,25 +153,27 @@ func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Login.Token = Settings.Hub.Token
 	adapter = &Adapter{
-		client: richClient.Client,
+		Client: richClient,
 		Task: Task{
 			richClient: richClient,
 		},
-		Log:         Log,
-		Wrap:        Wrap,
-		Setting:     richClient.Setting,
-		Schema:      richClient.Schema,
-		Application: richClient.Application,
-		Identity:    richClient.Identity,
-		Manifest:    richClient.Manifest,
-		Platform:    richClient.Platform,
-		Proxy:       richClient.Proxy,
-		TagCategory: richClient.TagCategory,
-		Tag:         richClient.Tag,
-		File:        richClient.File,
-		RuleSet:     richClient.RuleSet,
-		Generator:   richClient.Generator,
-		Archetype:   richClient.Archetype,
+		Log:  Log,
+		Wrap: Wrap,
+		//
+		AnalysisProfile: richClient.AnalysisProfile,
+		Application:     richClient.Application,
+		Archetype:       richClient.Archetype,
+		File:            richClient.File,
+		Generator:       richClient.Generator,
+		Identity:        richClient.Identity,
+		Manifest:        richClient.Manifest,
+		Platform:        richClient.Platform,
+		Proxy:           richClient.Proxy,
+		RuleSet:         richClient.RuleSet,
+		Schema:          richClient.Schema,
+		Setting:         richClient.Setting,
+		Tag:             richClient.Tag,
+		TagCategory:     richClient.TagCategory,
 	}
 
 	Log.Info("Addon (adapter) created.")
