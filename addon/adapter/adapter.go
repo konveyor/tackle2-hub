@@ -59,6 +59,7 @@ type Schema = binding.Schema
 type Setting = binding.Setting
 type Tag = binding.Tag
 type TagCategory = binding.TagCategory
+type Target = binding.Target
 
 // Filter
 type Filter = binding.Filter
@@ -102,6 +103,8 @@ type Adapter struct {
 	TagCategory TagCategory
 	// Tag API.
 	Tag Tag
+	// Target API
+	Target Target
 }
 
 // Run addon.
@@ -174,6 +177,7 @@ func New() (adapter *Adapter) {
 		Setting:         richClient.Setting,
 		Tag:             richClient.Tag,
 		TagCategory:     richClient.TagCategory,
+		Target:          richClient.Target,
 	}
 
 	Log.Info("Addon (adapter) created.")
