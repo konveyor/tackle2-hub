@@ -3,7 +3,7 @@ package command
 import (
 	"time"
 
-	"github.com/konveyor/tackle2-hub/command"
+	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 type Buffer = command.Buffer

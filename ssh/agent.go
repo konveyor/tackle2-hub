@@ -12,8 +12,8 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/nas"
+	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 var (

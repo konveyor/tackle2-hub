@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/command"
+	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 // Verbosity.

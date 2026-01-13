@@ -9,7 +9,7 @@ import (
 	"os"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/command"
+	"github.com/konveyor/tackle2-hub/shared/command"
 )
 
 // CpDir copies (recursively) the directory.

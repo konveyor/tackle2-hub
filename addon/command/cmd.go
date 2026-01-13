@@ -4,18 +4,18 @@ import (
 	"path/filepath"
 
 	"github.com/konveyor/tackle2-hub/addon/adapter"
-	"github.com/konveyor/tackle2-hub/command"
+	command2 "github.com/konveyor/tackle2-hub/shared/command"
 )
 
 var (
 	addon = adapter.Addon
 )
 
-type Options = command.Options
+type Options = command2.Options
 
 // New returns a command.
-func New(p string) (cmd *command.Command) {
-	cmd = &command.Command{Path: p}
+func New(p string) (cmd *command2.Command) {
+	cmd = &command2.Command{Path: p}
 	reporter := &Reporter{}
 	writer := &Writer{}
 	writer.reporter = reporter

@@ -4,9 +4,9 @@ import (
 	"github.com/konveyor/tackle2-hub/addon/adapter"
 	addonCmd "github.com/konveyor/tackle2-hub/addon/command"
 	"github.com/konveyor/tackle2-hub/addon/sink"
-	"github.com/konveyor/tackle2-hub/command"
 	"github.com/konveyor/tackle2-hub/scm"
 	"github.com/konveyor/tackle2-hub/settings"
+	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/konveyor/tackle2-hub/ssh"
 )
 
