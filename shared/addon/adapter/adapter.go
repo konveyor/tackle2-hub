@@ -33,6 +33,7 @@ func init() {
 
 // Client
 type Client = binding.Client
+type RichClient = binding.RichClient
 type Params = binding.Params
 type Param = binding.Param
 type Path = binding.Path
@@ -70,8 +71,6 @@ type Adapter struct {
 	Task
 	// Log API.
 	Log logapi.Logger
-	// Client binding client.
-	Client *binding.RichClient
 	// Wrap error API.
 	Wrap func(error, ...any) error
 	//
@@ -151,12 +150,19 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
+// Client returns a configured rich-client.
+func (h *Adapter) Client() (client *RichClient) {
+	client = &RichClient{}
+	client.Client.Login = h.Task.richClient.Client.Login
+	client.Client.Retry = h.Task.richClient.Client.Retry
+	return
+}
+
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Login.Token = Settings.Hub.Token
 	adapter = &Adapter{
-		Client: richClient,
 		Task: Task{
 			richClient: richClient,
 		},
