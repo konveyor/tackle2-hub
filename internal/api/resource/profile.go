@@ -21,9 +21,20 @@ func (r *AnalysisProfile) With(m *model.AnalysisProfile) {
 		repository := api.Repository(m.Repository)
 		r.Rules.Repository = &repository
 	}
-	r.Rules.Targets = make([]Ref, len(m.Targets))
+	if m.Identity != nil {
+		r.Rules.Identity = refPtr(m.IdentityID, m.Identity)
+	}
+	mp := make(map[uint]string)
+	for _, ref := range m.Selections {
+		mp[ref.ID] = ref.Label
+	}
+	r.Rules.Targets = make([]api.ApTargetRef, len(m.Targets))
 	for i, t := range m.Targets {
-		r.Rules.Targets[i] = Ref{ID: t.ID, Name: t.Name}
+		r.Rules.Targets[i] = api.ApTargetRef{
+			ID:        t.ID,
+			Name:      t.Name,
+			Selection: mp[t.ID],
+		}
 	}
 	r.Rules.Files = make([]Ref, len(m.Files))
 	for i, f := range m.Files {
@@ -43,14 +54,26 @@ func (r *AnalysisProfile) Model() (m *model.AnalysisProfile) {
 	if r.Rules.Repository != nil {
 		m.Repository = model.Repository(*r.Rules.Repository)
 	}
+	m.Selections = make([]model.TargetSelection, 0)
 	m.Targets = make([]model.Target, len(r.Rules.Targets))
 	for i, t := range r.Rules.Targets {
+		if t.Selection != "" {
+			m.Selections = append(
+				m.Selections,
+				model.TargetSelection{
+					ID:    t.ID,
+					Label: t.Selection,
+				})
+		}
 		m.Targets[i] =
 			model.Target{
 				Model: model.Model{
 					ID: t.ID,
 				},
 			}
+	}
+	if r.Rules.Identity != nil {
+		m.IdentityID = &r.Rules.Identity.ID
 	}
 	m.Files = make([]model.Ref, len(r.Rules.Files))
 	for i, f := range r.Rules.Files {

@@ -201,11 +201,12 @@ type Identity struct {
 	Default      bool
 	Description  string
 	User         string
-	Password     string        `secret:""`
-	Key          string        `secret:""`
-	Settings     string        `secret:""`
-	Proxies      []Proxy       `gorm:"constraint:OnDelete:SET NULL"`
-	Applications []Application `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
+	Password     string            `secret:""`
+	Key          string            `secret:""`
+	Settings     string            `secret:""`
+	Proxies      []Proxy           `gorm:"constraint:OnDelete:SET NULL"`
+	Applications []Application     `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
+	Profiles     []AnalysisProfile `gorm:"constraint:OnDelete:SET NULL"`
 }
 
 //

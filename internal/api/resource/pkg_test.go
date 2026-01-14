@@ -1759,6 +1759,10 @@ func TestIncident_Model(t *testing.T) {
 func TestAnalysisProfile_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
+	identity := model.Identity{}
+	identity.ID = 44
+	identity.Name = "Test"
+
 	m := &model.AnalysisProfile{
 		Model: model.Model{
 			ID:         1,
@@ -1774,8 +1778,14 @@ func TestAnalysisProfile_With(t *testing.T) {
 			Kind: "git",
 			URL:  "https://github.com/test/rules",
 		},
+		IdentityID: &identity.ID,
+		Identity:   &identity,
 		Targets: []model.Target{
-			{Model: model.Model{ID: 10}, Name: "target1"},
+			{Model: model.Model{ID: 1}, Name: "target1"},
+			{Model: model.Model{ID: 2}, Name: "target2"},
+		},
+		Selections: []model.TargetSelection{
+			{ID: 1, Label: "xx"},
 		},
 	}
 
@@ -1789,7 +1799,9 @@ func TestAnalysisProfile_With(t *testing.T) {
 	g.Expect(r.Scope.WithKnownLibs).To(gomega.Equal(false))
 	g.Expect(r.Scope.Packages).To(gomega.Equal(api.InExList{Included: []string{"com.example"}}))
 	g.Expect(r.Rules.Labels).To(gomega.Equal(api.InExList{Included: []string{"label1"}}))
-	g.Expect(len(r.Rules.Targets)).To(gomega.Equal(1))
+	g.Expect(r.Rules.Targets).To(gomega.Equal(
+		[]api.ApTargetRef{{ID: 1, Name: "target1", Selection: "xx"}, {ID: 2, Name: "target2"}}))
+	g.Expect(r.Rules.Identity).To(gomega.Equal(&api.Ref{ID: identity.ID, Name: identity.Name}))
 }
 
 // TestAnalysisProfile_Model tests the AnalysisProfile.Model() method
@@ -1807,18 +1819,26 @@ func TestAnalysisProfile_Model(t *testing.T) {
 			Packages:      api.InExList{Included: []string{"com.example"}},
 		},
 		Rules: api.ApRules{
-			Labels: api.InExList{Included: []string{"label1"}},
+			Targets: []api.ApTargetRef{
+				{ID: 1, Selection: "Label1"},
+				{ID: 2},
+			},
+			Labels:   api.InExList{Included: []string{"label1"}},
+			Identity: &Ref{ID: 2},
 		},
 	}
 
 	m := r.Model()
 
+	uint2 := uint(2)
 	g.Expect(m.Name).To(gomega.Equal("Test Profile"))
 	g.Expect(m.Description).To(gomega.Equal("Test description"))
 	g.Expect(m.WithDeps).To(gomega.Equal(true))
 	g.Expect(m.WithKnownLibs).To(gomega.Equal(false))
 	g.Expect(m.Packages).To(gomega.Equal(model.InExList{Included: []string{"com.example"}}))
 	g.Expect(m.Labels).To(gomega.Equal(model.InExList{Included: []string{"label1"}}))
+	g.Expect(m.IdentityID).To(gomega.Equal(&uint2))
+	g.Expect(m.Selections).To(gomega.Equal([]model.TargetSelection{{ID: uint(1), Label: "Label1"}}))
 }
 
 // TestArchetype_With tests the Archetype.With() method

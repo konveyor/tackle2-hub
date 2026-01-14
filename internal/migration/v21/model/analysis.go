@@ -148,11 +148,14 @@ type AnalysisProfile struct {
 	Description   string
 	WithDeps      bool
 	WithKnownLibs bool
-	Packages      InExList   `gorm:"type:json;serializer:json"`
-	Labels        InExList   `gorm:"type:json;serializer:json"`
-	Files         []json.Ref `gorm:"type:json;serializer:json" ref:"[]file"`
-	Repository    Repository `gorm:"type:json;serializer:json"`
-	Targets       []Target   `gorm:"many2many:analysisProfileTargets;constraint:OnDelete:CASCADE"`
+	Packages      InExList          `gorm:"type:json;serializer:json"`
+	Labels        InExList          `gorm:"type:json;serializer:json"`
+	Files         []json.Ref        `gorm:"type:json;serializer:json" ref:"[]file"`
+	Repository    Repository        `gorm:"type:json;serializer:json"`
+	Selections    []TargetSelection `gorm:"type:json;serializer:json"`
+	Targets       []Target          `gorm:"many2many:analysisProfileTargets;constraint:OnDelete:CASCADE"`
+	IdentityID    *uint             `gorm:"index"`
+	Identity      *Identity
 }
 
 //
@@ -186,4 +189,10 @@ type TargetLabel struct {
 type InExList struct {
 	Included []string `json:"included"`
 	Excluded []string `json:"excluded"`
+}
+
+// TargetSelection selection.
+type TargetSelection struct {
+	ID    uint   `json:"id"`
+	Label string `json:"label"`
 }
