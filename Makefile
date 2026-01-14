@@ -6,39 +6,16 @@ CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
 
-PKG = ./addon/... \
-      ./api/... \
-      ./assessment/... \
-      ./auth/... \
-      ./binding/... \
-      ./controller/... \
-      ./cmd/... \
-      ./command/... \
-      ./database/... \
-      ./importer/... \
-      ./jsd/... \
-      ./k8s/... \
-      ./metrics/... \
-      ./migration/... \
-      ./model/... \
-      ./nas/... \
-      ./reaper/... \
-      ./scm/... \
-      ./secret/... \
-      ./seed/... \
-      ./settings/... \
-      ./ssh/... \
-      ./tar/... \
-      ./task/...  \
-      ./test/...  \
-      ./tracker/...
+PKG = ./internal/... \
+      ./shared/... \
+      ./cmd/...
 
 PKGDIR = $(subst /...,,$(PKG))
 
 BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 
 # Build ALL commands.
-cmd: hub addon
+cmd: hub shared/addon
 
 # Format the code.
 fmt: $(GOIMPORTS)
@@ -77,11 +54,11 @@ run-addon:
 manifests: $(CONTROLLERGEN)
 	$(CONTROLLERGEN) $(CRD_OPTIONS) \
 		crd rbac:roleName=manager-role \
-		paths="./..." output:crd:artifacts:config=generated/crd/bases output:crd:dir=generated/crd
+		paths="./..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
 
 # Generate code
 generate: $(CONTROLLERGEN)
-	$(CONTROLLERGEN) object:headerFile="./generated/boilerplate" paths="./..."
+	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./..."
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
@@ -103,7 +80,7 @@ docs: docs-html docs-openapi3 docs-binding
 
 # Build Swagger API spec into ./docs directory
 docs-swagger: $(GOSWAG)
-	$(GOSWAG) init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir api,assessment
+	$(GOSWAG) init --parseDependency --parseInternal --parseDepth 1 -g pkg.go --dir internal/api,internal/assessment
 
 # Build OpenAPI 3.0 docs
 docs-openapi3: docs-swagger

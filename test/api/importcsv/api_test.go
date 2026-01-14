@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 
@@ -18,10 +18,10 @@ func TestImportCSV(t *testing.T) {
 
 			// Upload CSV.
 			inputData := api.ImportSummary{}
-			assert.Must(t, Client.FilePost(api.UploadRoot, r.FileName, &inputData))
+			assert.Must(t, Client.FilePost(api.UploadRoute, r.FileName, &inputData))
 
 			// Inject import summary id into Summary root
-			pathForImportSummary := binding.Path(api.SummaryRoot).Inject(binding.Params{api.ID: inputData.ID})
+			pathForImportSummary := binding.Path(api.SummaryRoute).Inject(binding.Params{api.ID: inputData.ID})
 
 			// Since uploading the CSV happens asynchronously we need to wait for the upload to check Applications and Dependencies.
 			time.Sleep(time.Second)
@@ -29,7 +29,7 @@ func TestImportCSV(t *testing.T) {
 			var outputImportSummaries []api.ImportSummary
 			outputMatchingSummary := api.ImportSummary{}
 			for {
-				assert.Should(t, Client.Get(api.SummariesRoot, &outputImportSummaries))
+				assert.Should(t, Client.Get(api.SummariesRoute, &outputImportSummaries))
 				for _, gotImport := range outputImportSummaries {
 					if uint(gotImport.ID) == inputData.ID {
 						outputMatchingSummary = gotImport
@@ -119,7 +119,7 @@ func TestImportCSV(t *testing.T) {
 
 			// Get all imports.
 			var outputImports []api.Import
-			assert.Should(t, Client.Get(api.ImportsRoot, &outputImports))
+			assert.Should(t, Client.Get(api.ImportsRoute, &outputImports))
 
 			// Check for number of imports.
 			if len(outputImports) != len(r.ExpectedApplications)+len(r.ExpectedDependencies) {
@@ -156,7 +156,7 @@ func TestImportCSV(t *testing.T) {
 
 			// Download the csv.
 			pathToGotCSV := "downloadcsv.csv"
-			assert.Should(t, Client.FileGet(api.DownloadRoot, pathToGotCSV))
+			assert.Should(t, Client.FileGet(api.DownloadRoute, pathToGotCSV))
 
 			// Read the got CSV file.
 			gotCSV, err := ioutil.ReadFile(pathToGotCSV)

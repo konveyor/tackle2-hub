@@ -1,6 +1,6 @@
 module github.com/konveyor/tackle2-hub
 
-go 1.21
+go 1.22.0
 
 require (
 	github.com/Nerzal/gocloak/v13 v13.9.0
@@ -12,6 +12,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.6.0
 	github.com/jortel/go-utils v0.1.5
+	github.com/konveyor/tackle2-hub/shared v0.0.0
 	github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/mikefarah/yq/v4 v4.44.1
@@ -19,7 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.15.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/swaggo/swag v1.16.1
-	golang.org/x/sys v0.19.0
+	golang.org/x/sys v0.23.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/sqlite v1.5.2
@@ -31,6 +32,8 @@ require (
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.1
 )
+
+replace github.com/konveyor/tackle2-hub/shared => ./shared
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

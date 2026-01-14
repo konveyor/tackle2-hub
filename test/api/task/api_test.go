@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/binding"
-	"github.com/konveyor/tackle2-hub/binding/filter"
+	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/filter"
 	"github.com/konveyor/tackle2-hub/test/assert"
 )
 

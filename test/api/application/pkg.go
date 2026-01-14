@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/konveyor/tackle2-hub/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 

@@ -3,8 +3,7 @@ package questionnaire
 import (
 	"testing"
 
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 // TestQuestionnaireValidation tests all validation rules in api.Questionnaire.Validate()
@@ -18,12 +17,12 @@ func TestQuestionnaireValidation(t *testing.T) {
 			{
 				Order: 1,
 				Name:  "Application Technologies",
-				Questions: []model.Question{
+				Questions: []api.Question{
 					{
 						Order:       1,
 						Text:        "What is the main technology in your application?",
 						Explanation: "Identify the main framework or technology used.",
-						Answers: []model.Answer{
+						Answers: []api.Answer{
 							{
 								Order: 1,
 								Text:  "Quarkus",
@@ -45,7 +44,7 @@ func TestQuestionnaireValidation(t *testing.T) {
 						Order:       2,
 						Text:        "Does your application use a microservices architecture?",
 						Explanation: "Assess if the application is built using microservices.",
-						Answers: []model.Answer{
+						Answers: []api.Answer{
 							{
 								Order: 1,
 								Text:  "Yes",
@@ -68,12 +67,12 @@ func TestQuestionnaireValidation(t *testing.T) {
 			{
 				Order: 2,
 				Name:  "Data Storage",
-				Questions: []model.Question{
+				Questions: []api.Question{
 					{
 						Order:       1,
 						Text:        "Is your application's data storage cloud-optimized?",
 						Explanation: "Evaluate if the data storage solution is optimized for cloud.",
-						Answers: []model.Answer{
+						Answers: []api.Answer{
 							{
 								Order: 1,
 								Text:  "Cloud-Native Storage Solution",
@@ -126,11 +125,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 								},
 							},
@@ -139,11 +138,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1, // Duplicate order
 						Name:  "Section 2",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 								},
 							},
@@ -163,7 +162,7 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order:     1,
 						Name:      "Empty Section",
-						Questions: []model.Question{}, // No questions
+						Questions: []api.Question{}, // No questions
 					},
 				}
 				return q
@@ -179,18 +178,18 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 								},
 							},
 							{
 								Order: 1, // Duplicate order
 								Text:  "Question 2",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 								},
 							},
@@ -210,11 +209,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "", // Empty text
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 								},
 							},
@@ -234,11 +233,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order:   1,
 								Text:    "Question with no answers",
-								Answers: []model.Answer{}, // No answers
+								Answers: []api.Answer{}, // No answers
 							},
 						},
 					},
@@ -256,11 +255,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "green"},
 									{Order: 1, Text: "Answer 2", Risk: "yellow"}, // Duplicate order
 								},
@@ -281,11 +280,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "", Risk: "green"}, // Empty text
 								},
 							},
@@ -305,11 +304,11 @@ func TestQuestionnaireValidation(t *testing.T) {
 					{
 						Order: 1,
 						Name:  "Section 1",
-						Questions: []model.Question{
+						Questions: []api.Question{
 							{
 								Order: 1,
 								Text:  "Question 1",
-								Answers: []model.Answer{
+								Answers: []api.Answer{
 									{Order: 1, Text: "Answer 1", Risk: "invalid"}, // Invalid risk
 								},
 							},

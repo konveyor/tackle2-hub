@@ -4,8 +4,8 @@ package addon // import "github.com/konveyor/tackle2-hub/addon"
 CONSTANTS
 
 const (
-	EnvSharedDir = settings.EnvSharedPath
-	EnvCacheDir  = settings.EnvCachePath
+	EnvSharedDir = settings.EnvSharedDir
+	EnvCacheDir  = settings.EnvCacheDir
 	EnvToken     = settings.EnvHubToken
 	EnvTask      = settings.EnvTask
 )
@@ -15,193 +15,56 @@ const (
 VARIABLES
 
 var (
-	Settings = &settings.Settings
-	Wrap     = liberr.Wrap
-	Log      = logr.WithName("addon")
-)
-var (
-	EnvRegex = regexp.MustCompile(`(\$\()([^)]+)(\))`)
+	Addon = adapter.Addon
+	Log   = adapter.Log
 )
 
 TYPES
 
-type Adapter struct {
-	// Task API.
-	Task
-	// Log API.
-	Log logapi.Logger
-	// Settings API.
-	Setting Setting
-	// Schema API
-	Schema Schema
-	// Application API.
-	Application Application
-	// Identity API.
-	Identity Identity
-	// Manifest
-	Manifest Manifest
-	// Platform
-	Platform Platform
-	// Proxy API.
-	Proxy Proxy
-	// TagCategory API.
-	TagCategory TagCategory
-	// Tag API.
-	Tag Tag
-	// File API.
-	File File
-	// RuleSet API
-	RuleSet RuleSet
-	// Generator API.
-	Generator Generator
-	// Archetype
-	Archetype Archetype
+type Application = adapter.Application
+    Handlers
 
-	// Has unexported fields.
-}
-    The Adapter provides hub/addon integration.
+type Archetype = adapter.Archetype
 
-var Addon *Adapter
-    Addon An addon adapter configured for a task execution.
+type Bucket = adapter.Bucket
 
-func (h *Adapter) Run(addon func() error)
-    Run addon. Reports:
-      - Started
-      - Succeeded
-      - Failed (when addon returns error).
+type BucketContent = adapter.BucketContent
 
-type Application = binding.Application
-    Handler
-
-type Archetype = binding.Archetype
-
-type Bucket = binding.Bucket
-
-type BucketContent = binding.BucketContent
-
-type Client = binding.Client
+type Client = adapter.Client
     Client
 
-type Conflict = binding.Conflict
+type Conflict = adapter.Conflict
 
-type EnvInjector struct {
-	// Has unexported fields.
-}
-    EnvInjector inject key into extension metadata.
+type File = adapter.File
 
-func (r *EnvInjector) Inject(extension *api.Extension)
-    Inject inject into extension metadata.
+type Generator = adapter.Generator
 
-type File = binding.File
+type Identity = adapter.Identity
 
-type Filter = binding.Filter
-    Filter
+type Manifest = adapter.Manifest
 
-type Generator = binding.Generator
+type NotFound = adapter.NotFound
 
-type Identity = binding.Identity
+type Param = adapter.Param
 
-type Manifest = binding.Manifest
+type Params = adapter.Params
 
-type NotFound = binding.NotFound
+type Path = adapter.Path
 
-type Param = binding.Param
+type Platform = adapter.Platform
 
-type Params = binding.Params
+type Proxy = adapter.Proxy
 
-type Path = binding.Path
+type ResetError = adapter.RestError
+    Errors
 
-type Platform = binding.Platform
+type RuleSet = adapter.RuleSet
 
-type Proxy = binding.Proxy
+type Schema = adapter.Schema
 
-type ResetError = binding.RestError
-    Error
+type Setting = adapter.Setting
 
-type RuleSet = binding.RuleSet
+type Tag = adapter.Tag
 
-type Schema = binding.Schema
-
-type Setting = binding.Setting
-
-type SoftError struct {
-	Reason string
-}
-    SoftError A "soft" anticipated error. Deprecated:
-
-func (e *SoftError) Error() (s string)
-
-func (e *SoftError) Is(err error) (matched bool)
-
-func (e *SoftError) Soft() *SoftError
-
-type Tag = binding.Tag
-
-type TagCategory = binding.TagCategory
-
-type Task struct {
-	// Has unexported fields.
-}
-    Task API.
-
-func (h *Task) Activity(entry string, v ...any)
-    Activity report addon activity. The description can be a printf style
-    format.
-
-func (h *Task) Addon(inject bool) (r *api.Addon, err error)
-    Addon returns the addon associated with the task. The extensions are
-    filtered to include those specified in the task. inject: perform injection.
-
-func (h *Task) Application() (r *api.Application, err error)
-    Application returns the application associated with the task.
-
-func (h *Task) Attach(f *api.File)
-    Attach ensures the file is attached to the report associated with the last
-    entry in the activity.
-
-func (h *Task) AttachAt(f *api.File, activity int)
-    AttachAt ensures the file is attached to the report indexed to the activity.
-    The activity is a 1-based index. Zero(0) means NOT associated.
-
-func (h *Task) Bucket() (b *binding.BucketContent)
-    Bucket returns the bucket API.
-
-func (h *Task) Completed(n int)
-    Completed report addon completed (N) items.
-
-func (h *Task) Data() (d any)
-    Data returns the addon data.
-
-func (h *Task) DataWith(object any) (err error)
-    DataWith populates the addon data object.
-
-func (h *Task) Error(error ...api.TaskError)
-    Error report addon error.
-
-func (h *Task) Errorf(severity, description string, v ...any)
-    Errorf report addon error.
-
-func (h *Task) Failed(reason string, v ...any)
-    Failed report addon failed. The reason can be a printf style format.
-
-func (h *Task) Increment()
-    Increment report addon completed (+1) items.
-
-func (h *Task) Load()
-    Load a task by ID.
-
-func (h *Task) Platform() (r *api.Platform, err error)
-    Platform returns the platform associated with the task.
-
-func (h *Task) Result(object api.Map)
-    Result report addon result.
-
-func (h *Task) Started()
-    Started report addon started.
-
-func (h *Task) Succeeded()
-    Succeeded report addon succeeded.
-
-func (h *Task) Total(n int)
-    Total report addon total items.
+type TagCategory = adapter.TagCategory
 

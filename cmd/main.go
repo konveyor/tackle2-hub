@@ -9,22 +9,25 @@ import (
 	"github.com/gin-gonic/gin"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/auth"
-	"github.com/konveyor/tackle2-hub/controller"
-	"github.com/konveyor/tackle2-hub/database"
-	"github.com/konveyor/tackle2-hub/heap"
-	"github.com/konveyor/tackle2-hub/importer"
-	"github.com/konveyor/tackle2-hub/k8s"
-	crd "github.com/konveyor/tackle2-hub/k8s/api"
-	"github.com/konveyor/tackle2-hub/metrics"
-	"github.com/konveyor/tackle2-hub/migration"
-	"github.com/konveyor/tackle2-hub/model"
-	"github.com/konveyor/tackle2-hub/reaper"
-	"github.com/konveyor/tackle2-hub/seed"
-	"github.com/konveyor/tackle2-hub/settings"
-	"github.com/konveyor/tackle2-hub/task"
-	"github.com/konveyor/tackle2-hub/tracker"
+	"github.com/konveyor/tackle2-hub/internal/api"
+	"github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/controller"
+	"github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/heap"
+	"github.com/konveyor/tackle2-hub/internal/importer"
+	"github.com/konveyor/tackle2-hub/internal/k8s"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api"
+	"github.com/konveyor/tackle2-hub/internal/metrics"
+	"github.com/konveyor/tackle2-hub/internal/migration"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/reaper"
+	"github.com/konveyor/tackle2-hub/internal/seed"
+	"github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/internal/tracker"
+	"github.com/konveyor/tackle2-hub/shared/command"
+	"github.com/konveyor/tackle2-hub/shared/scm"
+	"github.com/konveyor/tackle2-hub/shared/settings"
+	"github.com/konveyor/tackle2-hub/shared/ssh"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -35,6 +38,12 @@ var (
 	Settings = &settings.Settings
 	Log      = logr.New("hub", 0)
 )
+
+func init() {
+	command.Log = logr.New("command", Settings.Log.Command)
+	scm.Log = logr.New("scm", Settings.Log.SCM)
+	ssh.Log = logr.New("ssh", Settings.Log.SSH)
+}
 
 // Setup the DB and models.
 func Setup() (db *gorm.DB, err error) {

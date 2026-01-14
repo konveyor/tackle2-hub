@@ -30,7 +30,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Addon"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Addon"
                   }
                 }
               }
@@ -63,7 +63,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Addon"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Addon"
                 }
               }
             }
@@ -100,7 +100,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Vertex"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Vertex"
                   }
                 }
               }
@@ -125,7 +125,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Analysis"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Analysis"
                   }
                 }
               }
@@ -149,7 +149,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TechDependency"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TechDependency"
                   }
                 }
               }
@@ -173,7 +173,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Incident"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Incident"
                   }
                 }
               }
@@ -206,7 +206,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Incident"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Incident"
                 }
               }
             }
@@ -229,7 +229,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Insight"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Insight"
                   }
                 }
               }
@@ -262,7 +262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Insight"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Insight"
                 }
               }
             }
@@ -296,7 +296,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Incident"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Incident"
                   }
                 }
               }
@@ -320,7 +320,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.DepAppReport"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.DepAppReport"
                   }
                 }
               }
@@ -355,7 +355,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.InsightReport"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.InsightReport"
                   }
                 }
               }
@@ -390,7 +390,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.FileReport"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.FileReport"
                   }
                 }
               }
@@ -414,7 +414,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.RuleReport"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.RuleReport"
                   }
                 }
               }
@@ -447,7 +447,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Analysis"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Analysis"
                 }
               }
             }
@@ -531,7 +531,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TechDependency"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TechDependency"
                   }
                 }
               }
@@ -566,8 +566,188 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Insight"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Insight"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analysis/profiles": {
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "List all Profiles.",
+        "description": "List all Profiles.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Create a Profile.",
+        "description": "Create a Profile.",
+        "requestBody": {
+          "description": "Profile data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                }
+              }
+            }
+          }
+        },
+        "x-codegen-request-body-name": "Profile"
+      }
+    },
+    "/analysis/profiles/{id}": {
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Get a Profile by ID.",
+        "description": "Get a Profile by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Profile ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AnalysisProfiles"
+        ],
+        "summary": "Update a Profile.",
+        "description": "Update a Profile.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Profile ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Profile data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        },
+        "x-codegen-request-body-name": "Profile"
+      },
+      "delete": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Delete a Profile.",
+        "description": "Delete a Profile.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Profile ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {}
+          }
+        }
+      }
+    },
+    "/analysis/profiles/{id}/bundle": {
+      "get": {
+        "tags": [
+          "ProfileBundles"
+        ],
+        "summary": "Get a Profile bundle by ID.",
+        "description": "Get a Profile bundle by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Profile ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -599,7 +779,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Analysis"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Analysis"
                 }
               }
             }
@@ -633,7 +813,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TechDependency"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TechDependency"
                   }
                 }
               }
@@ -668,7 +848,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Insight"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Insight"
                   }
                 }
               }
@@ -683,7 +863,7 @@
           "applications"
         ],
         "summary": "List all applications.",
-        "description": "List all applications.",
+        "description": "List all applications.\nfilters:\n- name\n- platform.id\n- repository.url\n- repository.path",
         "responses": {
           "200": {
             "description": "OK",
@@ -692,7 +872,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Application"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Application"
                   }
                 }
               }
@@ -711,7 +891,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Application"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Application"
               }
             }
           },
@@ -723,7 +903,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Application"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Application"
                 }
               }
             }
@@ -784,7 +964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Application"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Application"
                 }
               }
             }
@@ -813,7 +993,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Application"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Application"
               }
             }
           },
@@ -876,7 +1056,42 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Analysis"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Analysis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/{id}/analysis/profiles": {
+      "get": {
+        "tags": [
+          "AnalysisProfiles"
+        ],
+        "summary": "List analysis profiles.",
+        "description": "List analysis profiles mapped to an application through archetypes.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Application ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile"
+                  }
                 }
               }
             }
@@ -936,7 +1151,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Assessment"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                   }
                 }
               }
@@ -966,7 +1181,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Assessment"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
               }
             }
           },
@@ -978,7 +1193,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Assessment"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                 }
               }
             }
@@ -1119,7 +1334,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Fact"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Fact"
               }
             }
           },
@@ -1286,7 +1501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Map"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
                 }
               }
             }
@@ -1324,7 +1539,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Map"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
               }
             }
           },
@@ -1339,13 +1554,13 @@
         "x-codegen-request-body-name": "factmap"
       }
     },
-    "/applications/{id}/identities/{kind}": {
+    "/applications/{id}/identities": {
       "get": {
         "tags": [
           "identities"
         ],
         "summary": "List application identities.",
-        "description": "List application identities.",
+        "description": "List application identities.\nFilter by:\n- role - applied to direct.\n- kind - applied to indirect.",
         "parameters": [
           {
             "name": "id",
@@ -1354,15 +1569,6 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
-          },
-          {
-            "name": "kind",
-            "in": "path",
-            "description": "Identity kind",
-            "required": true,
-            "schema": {
-              "type": "string"
             }
           },
           {
@@ -1382,7 +1588,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Identity"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
                   }
                 }
               }
@@ -1431,7 +1637,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Manifest"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                 }
               }
             }
@@ -1462,7 +1668,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Manifest"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
               }
             }
           },
@@ -1474,7 +1680,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Manifest"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                 }
               }
             }
@@ -1547,7 +1753,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Ref"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
                   }
                 }
               }
@@ -1577,7 +1783,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Ref"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Ref"
               }
             }
           },
@@ -1589,7 +1795,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Ref"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
                 }
               }
             }
@@ -1629,7 +1835,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/api.TagRef"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.TagRef"
                 }
               }
             }
@@ -1695,7 +1901,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Archetype"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Archetype"
                   }
                 }
               }
@@ -1714,7 +1920,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Archetype"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Archetype"
               }
             }
           },
@@ -1726,7 +1932,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Archetype"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Archetype"
                 }
               }
             }
@@ -1759,7 +1965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Archetype"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Archetype"
                 }
               }
             }
@@ -1788,7 +1994,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Archetype"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Archetype"
               }
             }
           },
@@ -1853,7 +2059,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Assessment"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                   }
                 }
               }
@@ -1883,7 +2089,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Assessment"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
               }
             }
           },
@@ -1895,7 +2101,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Assessment"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                 }
               }
             }
@@ -1919,7 +2125,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Assessment"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                   }
                 }
               }
@@ -1952,7 +2158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Assessment"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
                 }
               }
             }
@@ -1981,7 +2187,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Assessment"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Assessment"
               }
             }
           },
@@ -2033,7 +2239,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Login"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Login"
                 }
               }
             }
@@ -2054,7 +2260,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Login"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Login"
                 }
               }
             }
@@ -2077,7 +2283,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/api.Tag"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                 }
               }
             }
@@ -2092,7 +2298,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Tag"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                   }
                 }
               }
@@ -2117,7 +2323,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/api.Ticket"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
                 }
               }
             }
@@ -2132,7 +2338,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Ticket"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
                   }
                 }
               }
@@ -2157,7 +2363,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Bucket"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Bucket"
                   }
                 }
               }
@@ -2188,7 +2394,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Bucket"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Bucket"
                 }
               }
             }
@@ -2220,7 +2426,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Bucket"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Bucket"
                 }
               }
             }
@@ -2374,7 +2580,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.BusinessService"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.BusinessService"
                 }
               }
             }
@@ -2392,7 +2598,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.BusinessService"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.BusinessService"
               }
             }
           },
@@ -2404,7 +2610,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.BusinessService"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.BusinessService"
                 }
               }
             }
@@ -2437,7 +2643,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.BusinessService"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.BusinessService"
                 }
               }
             }
@@ -2466,7 +2672,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.BusinessService"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.BusinessService"
               }
             }
           },
@@ -2544,7 +2750,72 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Cache"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Cache"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configmaps": {
+      "get": {
+        "tags": [
+          "ConfigMaps"
+        ],
+        "summary": "List all configmap names.",
+        "description": "List all configmap names.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.ConfigMap"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configmaps/{name}": {
+      "get": {
+        "tags": [
+          "ConfigMaps"
+        ],
+        "summary": "Get a configmap by name and key.",
+        "description": "Get a configmap by name and key.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "description": "Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2567,7 +2838,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Dependency"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Dependency"
                   }
                 }
               }
@@ -2586,7 +2857,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Dependency"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Dependency"
               }
             }
           },
@@ -2598,7 +2869,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Dependency"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Dependency"
                 }
               }
             }
@@ -2631,7 +2902,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Dependency"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Dependency"
                 }
               }
             }
@@ -2678,7 +2949,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.File"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.File"
                   }
                 }
               }
@@ -2709,7 +2980,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.File"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.File"
                 }
               }
             }
@@ -2741,7 +3012,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.File"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.File"
                 }
               }
             }
@@ -2812,7 +3083,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Generator"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Generator"
                   }
                 }
               }
@@ -2831,7 +3102,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Generator"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Generator"
               }
             }
           },
@@ -2843,7 +3114,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Generator"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Generator"
                 }
               }
             }
@@ -2876,7 +3147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Generator"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Generator"
                 }
               }
             }
@@ -2905,7 +3176,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Generator"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Generator"
               }
             }
           },
@@ -2969,7 +3240,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Identity"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
                   }
                 }
               }
@@ -2988,7 +3259,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Identity"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
               }
             }
           },
@@ -3000,7 +3271,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Identity"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
                 }
               }
             }
@@ -3041,7 +3312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Identity"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
                 }
               }
             }
@@ -3070,7 +3341,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Identity"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Identity"
               }
             }
           },
@@ -3124,7 +3395,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Import"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Import"
                   }
                 }
               }
@@ -3157,7 +3428,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Import"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Import"
                 }
               }
             }
@@ -3204,7 +3475,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.ImportSummary"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.ImportSummary"
                   }
                 }
               }
@@ -3259,7 +3530,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.ImportSummary"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.ImportSummary"
                 }
               }
             }
@@ -3291,7 +3562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.ImportSummary"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.ImportSummary"
                 }
               }
             }
@@ -3338,7 +3609,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.JobFunction"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.JobFunction"
                   }
                 }
               }
@@ -3357,7 +3628,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.JobFunction"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.JobFunction"
               }
             }
           },
@@ -3369,7 +3640,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.JobFunction"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.JobFunction"
                 }
               }
             }
@@ -3402,7 +3673,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.JobFunction"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.JobFunction"
                 }
               }
             }
@@ -3431,7 +3702,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.JobFunction"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.JobFunction"
               }
             }
           },
@@ -3503,7 +3774,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Manifest"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                   }
                 }
               }
@@ -3522,7 +3793,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Manifest"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
               }
             }
           },
@@ -3534,7 +3805,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Manifest"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                 }
               }
             }
@@ -3583,7 +3854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Manifest"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
                 }
               }
             }
@@ -3612,7 +3883,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Manifest"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Manifest"
               }
             }
           },
@@ -3681,7 +3952,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.MigrationWave"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.MigrationWave"
                   }
                 }
               }
@@ -3700,7 +3971,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.MigrationWave"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.MigrationWave"
               }
             }
           },
@@ -3712,7 +3983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.MigrationWave"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.MigrationWave"
                 }
               }
             }
@@ -3745,7 +4016,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.MigrationWave"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.MigrationWave"
                 }
               }
             }
@@ -3774,7 +4045,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.MigrationWave"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.MigrationWave"
               }
             }
           },
@@ -3828,7 +4099,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Platform"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Platform"
                   }
                 }
               }
@@ -3847,7 +4118,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Platform"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Platform"
               }
             }
           },
@@ -3859,7 +4130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Platform"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Platform"
                 }
               }
             }
@@ -3892,7 +4163,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Platform"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Platform"
                 }
               }
             }
@@ -3921,7 +4192,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Platform"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Platform"
               }
             }
           },
@@ -3975,7 +4246,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Proxy"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                   }
                 }
               }
@@ -3994,7 +4265,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Proxy"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Proxy"
               }
             }
           },
@@ -4006,7 +4277,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Proxy"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                 }
               }
             }
@@ -4039,7 +4310,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Proxy"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Proxy"
                 }
               }
             }
@@ -4068,7 +4339,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Proxy"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Proxy"
               }
             }
           },
@@ -4122,7 +4393,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Questionnaire"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Questionnaire"
                   }
                 }
               }
@@ -4141,7 +4412,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Questionnaire"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Questionnaire"
               }
             }
           },
@@ -4153,7 +4424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Questionnaire"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Questionnaire"
                 }
               }
             }
@@ -4186,7 +4457,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Questionnaire"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Questionnaire"
                 }
               }
             }
@@ -4215,7 +4486,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Questionnaire"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Questionnaire"
               }
             }
           },
@@ -4269,7 +4540,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Review"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Review"
                   }
                 }
               }
@@ -4288,7 +4559,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Review"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Review"
               }
             }
           },
@@ -4300,7 +4571,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Review"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Review"
                 }
               }
             }
@@ -4321,7 +4592,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.CopyRequest"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.CopyRequest"
               }
             }
           },
@@ -4360,7 +4631,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Review"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Review"
                 }
               }
             }
@@ -4389,7 +4660,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Review"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Review"
               }
             }
           },
@@ -4443,7 +4714,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.RuleSet"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                   }
                 }
               }
@@ -4462,7 +4733,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.RuleSet"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
               }
             }
           },
@@ -4474,7 +4745,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.RuleSet"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                 }
               }
             }
@@ -4507,7 +4778,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.RuleSet"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
                 }
               }
             }
@@ -4536,7 +4807,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.RuleSet"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RuleSet"
               }
             }
           },
@@ -4588,7 +4859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.RestAPI"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.RestAPI"
                 }
               }
             }
@@ -4638,7 +4909,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.LatestSchema"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.LatestSchema"
                 }
               }
             }
@@ -4661,7 +4932,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Schema"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Schema"
                   }
                 }
               }
@@ -4694,7 +4965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Schema"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Schema"
                 }
               }
             }
@@ -4715,7 +4986,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Service"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Service"
                 }
               }
             }
@@ -4738,7 +5009,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Setting"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Setting"
                   }
                 }
               }
@@ -4757,7 +5028,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Setting"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Setting"
               }
             }
           },
@@ -4769,7 +5040,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Setting"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Setting"
                 }
               }
             }
@@ -4802,7 +5073,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Setting"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Setting"
                 }
               }
             }
@@ -4855,7 +5126,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Setting"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Setting"
               }
             }
           },
@@ -4909,7 +5180,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.StakeholderGroup"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                   }
                 }
               }
@@ -4928,7 +5199,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.StakeholderGroup"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
               }
             }
           },
@@ -4940,7 +5211,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.StakeholderGroup"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                 }
               }
             }
@@ -4973,7 +5244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.StakeholderGroup"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
                 }
               }
             }
@@ -5002,7 +5273,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.StakeholderGroup"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
               }
             }
           },
@@ -5056,7 +5327,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Stakeholder"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Stakeholder"
                   }
                 }
               }
@@ -5075,7 +5346,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Stakeholder"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Stakeholder"
               }
             }
           },
@@ -5087,7 +5358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Stakeholder"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Stakeholder"
                 }
               }
             }
@@ -5120,7 +5391,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Stakeholder"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Stakeholder"
                 }
               }
             }
@@ -5149,7 +5420,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Stakeholder"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Stakeholder"
               }
             }
           },
@@ -5213,7 +5484,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TagCategory"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagCategory"
                   }
                 }
               }
@@ -5232,7 +5503,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TagCategory"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagCategory"
               }
             }
           },
@@ -5244,7 +5515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.TagCategory"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagCategory"
                 }
               }
             }
@@ -5277,7 +5548,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.TagCategory"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagCategory"
                 }
               }
             }
@@ -5306,7 +5577,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TagCategory"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagCategory"
               }
             }
           },
@@ -5379,7 +5650,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Tag"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                   }
                 }
               }
@@ -5403,7 +5674,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Tag"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                   }
                 }
               }
@@ -5422,7 +5693,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Tag"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Tag"
               }
             }
           },
@@ -5434,7 +5705,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Tag"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                 }
               }
             }
@@ -5467,7 +5738,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Tag"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
                 }
               }
             }
@@ -5496,7 +5767,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Tag"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tag"
               }
             }
           },
@@ -5550,7 +5821,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Target"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Target"
                   }
                 }
               }
@@ -5569,7 +5840,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Target"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Target"
               }
             }
           },
@@ -5581,7 +5852,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Target"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Target"
                 }
               }
             }
@@ -5614,7 +5885,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Target"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Target"
                 }
               }
             }
@@ -5643,7 +5914,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Target"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Target"
               }
             }
           },
@@ -5697,7 +5968,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TaskGroup"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskGroup"
                   }
                 }
               }
@@ -5716,7 +5987,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TaskGroup"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskGroup"
               }
             }
           },
@@ -5728,7 +5999,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.TaskGroup"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskGroup"
                 }
               }
             }
@@ -5761,7 +6032,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.TaskGroup"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskGroup"
                 }
               }
             }
@@ -5790,7 +6061,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TaskGroup"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.TaskGroup"
               }
             }
           },
@@ -5961,7 +6232,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TaskGroup"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.TaskGroup"
               }
             }
           },
@@ -5991,7 +6262,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.TaskDashboard"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskDashboard"
                   }
                 }
               }
@@ -6010,7 +6281,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Task"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Task"
               }
             }
           },
@@ -6022,7 +6293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Task"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Task"
                 }
               }
             }
@@ -6085,7 +6356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Task"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Task"
                 }
               }
             }
@@ -6114,7 +6385,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Task"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Task"
               }
             }
           },
@@ -6337,7 +6608,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TaskReport"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskReport"
               }
             }
           },
@@ -6373,7 +6644,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.TaskReport"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskReport"
               }
             }
           },
@@ -6385,7 +6656,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.TaskReport"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskReport"
                 }
               }
             }
@@ -6441,7 +6712,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Task"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Task"
               }
             }
           },
@@ -6471,7 +6742,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Ticket"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
                   }
                 }
               }
@@ -6490,7 +6761,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Ticket"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
               }
             }
           },
@@ -6502,7 +6773,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Ticket"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
                 }
               }
             }
@@ -6535,7 +6806,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Ticket"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ticket"
                 }
               }
             }
@@ -6582,7 +6853,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Tracker"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tracker"
                   }
                 }
               }
@@ -6601,7 +6872,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Tracker"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tracker"
               }
             }
           },
@@ -6613,7 +6884,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Tracker"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tracker"
                 }
               }
             }
@@ -6646,7 +6917,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Tracker"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tracker"
                 }
               }
             }
@@ -6675,7 +6946,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/api.Tracker"
+                "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Tracker"
               }
             }
           },
@@ -6740,7 +7011,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.Project"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Project"
                   }
                 }
               }
@@ -6782,7 +7053,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api.Project"
+                  "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Project"
                 }
               }
             }
@@ -6825,7 +7096,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/api.IssueType"
+                    "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.IssueType"
                   }
                 }
               }
@@ -6837,16 +7108,268 @@
   },
   "components": {
     "schemas": {
-      "api.Addon": {
+      "api.Answer": {
+        "type": "object",
+        "properties": {
+          "applyTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.CategorizedTag"
+            }
+          },
+          "autoAnswerFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.CategorizedTag"
+            }
+          },
+          "autoAnswered": {
+            "type": "boolean"
+          },
+          "mitigation": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "red",
+              "yellow",
+              "green",
+              "unknown"
+            ]
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "api.ApMode": {
+        "type": "object",
+        "properties": {
+          "withDeps": {
+            "type": "boolean"
+          }
+        }
+      },
+      "api.ApRules": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+            }
+          },
+          "labels": {
+            "$ref": "#/components/schemas/api.InExList"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+            }
+          }
+        }
+      },
+      "api.ApScope": {
+        "type": "object",
+        "properties": {
+          "packages": {
+            "$ref": "#/components/schemas/api.InExList"
+          },
+          "withKnownLibs": {
+            "type": "boolean"
+          }
+        }
+      },
+      "api.CategorizedTag": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Document": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "schema": {
+            "type": "string"
+          }
+        }
+      },
+      "api.InExList": {
+        "type": "object",
+        "properties": {
+          "excluded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "included": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "api.Question": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Answer"
+            }
+          },
+          "excludeFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.CategorizedTag"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "includeFor": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.CategorizedTag"
+            }
+          },
+          "order": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "api.RiskMessages": {
+        "type": "object",
+        "properties": {
+          "green": {
+            "type": "string"
+          },
+          "red": {
+            "type": "string"
+          },
+          "unknown": {
+            "type": "string"
+          },
+          "yellow": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Section": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "questions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Question"
+            }
+          }
+        }
+      },
+      "api.Stakeholders": {
+        "type": "object",
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Ref"
+            }
+          },
+          "owner": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_internal_api.Ref"
+          }
+        }
+      },
+      "api.TargetLabel": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "api.Thresholds": {
+        "type": "object",
+        "properties": {
+          "red": {
+            "type": "integer"
+          },
+          "unknown": {
+            "type": "integer"
+          },
+          "yellow": {
+            "type": "integer"
+          }
+        }
+      },
+      "api.Version": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "migration": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_api.Addon": {
         "type": "object",
         "properties": {
           "container": {
-            "$ref": "#/components/schemas/v1.Container"
+            "$ref": "#/components/schemas/k8s.Container"
           },
           "extensions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Extension"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Extension"
             }
           },
           "metadata": {
@@ -6857,11 +7380,11 @@
           }
         }
       },
-      "api.Analysis": {
+      "github_com_konveyor_tackle2-hub_api.Analysis": {
         "type": "object",
         "properties": {
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "archived": {
             "type": "boolean"
@@ -6878,7 +7401,7 @@
           "dependencies": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TechDependency"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TechDependency"
             }
           },
           "effort": {
@@ -6890,7 +7413,7 @@
           "insights": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Insight"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Insight"
             }
           },
           "summary": {
@@ -6902,7 +7425,7 @@
           }
         }
       },
-      "api.Application": {
+      "github_com_konveyor_tackle2-hub_api.Application": {
         "required": [
           "name"
         ],
@@ -6911,7 +7434,7 @@
           "archetypes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "assessed": {
@@ -6920,20 +7443,20 @@
           "assessments": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "assets": {
-            "$ref": "#/components/schemas/api.Repository"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
           },
           "binary": {
             "type": "string"
           },
           "bucket": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "businessService": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "comments": {
             "type": "string"
@@ -6944,11 +7467,11 @@
           "contributors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "coordinates": {
-            "$ref": "#/components/schemas/jsd.Document"
+            "$ref": "#/components/schemas/api.Document"
           },
           "createTime": {
             "type": "string"
@@ -6968,26 +7491,32 @@
           "identities": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.IdentityRef"
+            }
+          },
+          "manifests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "migrationWave": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "name": {
             "type": "string"
           },
           "owner": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "platform": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "repository": {
-            "$ref": "#/components/schemas/api.Repository"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
           },
           "review": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "risk": {
             "type": "string"
@@ -6995,7 +7524,7 @@
           "tags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TagRef"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagRef"
             }
           },
           "updateUser": {
@@ -7003,13 +7532,13 @@
           }
         }
       },
-      "api.Archetype": {
+      "github_com_konveyor_tackle2-hub_api.Archetype": {
         "type": "object",
         "properties": {
           "applications": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "assessed": {
@@ -7018,7 +7547,7 @@
           "assessments": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "comments": {
@@ -7036,7 +7565,7 @@
           "criteria": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TagRef"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagRef"
             }
           },
           "description": {
@@ -7051,11 +7580,11 @@
           "profiles": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TargetProfile"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TargetProfile"
             }
           },
           "review": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "risk": {
             "type": "string"
@@ -7063,19 +7592,19 @@
           "stakeholderGroups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "stakeholders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "tags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TagRef"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TagRef"
             }
           },
           "updateUser": {
@@ -7083,17 +7612,17 @@
           }
         }
       },
-      "api.Assessment": {
+      "github_com_konveyor_tackle2-hub_api.Assessment": {
         "required": [
           "questionnaire"
         ],
         "type": "object",
         "properties": {
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "archetype": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "confidence": {
             "type": "integer"
@@ -7108,14 +7637,13 @@
             "type": "integer"
           },
           "questionnaire": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "required": {
             "type": "boolean"
           },
           "risk": {
-            "type": "string",
-            "description": "read only"
+            "type": "string"
           },
           "riskMessages": {
             "$ref": "#/components/schemas/api.RiskMessages"
@@ -7129,13 +7657,13 @@
           "stakeholderGroups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "stakeholders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "status": {
@@ -7149,7 +7677,7 @@
           }
         }
       },
-      "api.Attachment": {
+      "github_com_konveyor_tackle2-hub_api.Attachment": {
         "required": [
           "id"
         ],
@@ -7166,7 +7694,7 @@
           }
         }
       },
-      "api.Bucket": {
+      "github_com_konveyor_tackle2-hub_api.Bucket": {
         "type": "object",
         "properties": {
           "createTime": {
@@ -7189,7 +7717,7 @@
           }
         }
       },
-      "api.BusinessService": {
+      "github_com_konveyor_tackle2-hub_api.BusinessService": {
         "required": [
           "name"
         ],
@@ -7211,14 +7739,14 @@
             "type": "string"
           },
           "owner": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "updateUser": {
             "type": "string"
           }
         }
       },
-      "api.Cache": {
+      "github_com_konveyor_tackle2-hub_api.Cache": {
         "type": "object",
         "properties": {
           "capacity": {
@@ -7235,7 +7763,18 @@
           }
         }
       },
-      "api.CopyRequest": {
+      "github_com_konveyor_tackle2-hub_api.ConfigMap": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_api.CopyRequest": {
         "required": [
           "sourceReview",
           "targetApplications"
@@ -7253,7 +7792,7 @@
           }
         }
       },
-      "api.DepAppReport": {
+      "github_com_konveyor_tackle2-hub_api.DepAppReport": {
         "type": "object",
         "properties": {
           "businessService": {
@@ -7299,7 +7838,7 @@
           }
         }
       },
-      "api.Dependency": {
+      "github_com_konveyor_tackle2-hub_api.Dependency": {
         "type": "object",
         "properties": {
           "createTime": {
@@ -7309,20 +7848,20 @@
             "type": "string"
           },
           "from": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "id": {
             "type": "integer"
           },
           "to": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "updateUser": {
             "type": "string"
           }
         }
       },
-      "api.Extension": {
+      "github_com_konveyor_tackle2-hub_api.Extension": {
         "type": "object",
         "properties": {
           "addon": {
@@ -7335,7 +7874,7 @@
             }
           },
           "container": {
-            "$ref": "#/components/schemas/v1.Container"
+            "$ref": "#/components/schemas/k8s.Container"
           },
           "metadata": {
             "type": "object"
@@ -7345,7 +7884,7 @@
           }
         }
       },
-      "api.Fact": {
+      "github_com_konveyor_tackle2-hub_api.Fact": {
         "type": "object",
         "properties": {
           "key": {
@@ -7359,7 +7898,7 @@
           }
         }
       },
-      "api.File": {
+      "github_com_konveyor_tackle2-hub_api.File": {
         "type": "object",
         "properties": {
           "createTime": {
@@ -7388,7 +7927,7 @@
           }
         }
       },
-      "api.FileReport": {
+      "github_com_konveyor_tackle2-hub_api.FileReport": {
         "type": "object",
         "properties": {
           "effort": {
@@ -7405,105 +7944,31 @@
           }
         }
       },
-      "api.Generator": {
+      "github_com_konveyor_tackle2-hub_api.IdentityRef": {
         "required": [
-          "kind"
+          "id",
+          "role"
         ],
         "type": "object",
         "properties": {
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
           "id": {
             "type": "integer"
-          },
-          "identity": {
-            "$ref": "#/components/schemas/api.Ref"
-          },
-          "kind": {
-            "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "params": {
-            "$ref": "#/components/schemas/api.Map"
-          },
-          "profiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/api.Ref"
-            }
-          },
-          "repository": {
-            "$ref": "#/components/schemas/api.Repository"
-          },
-          "updateUser": {
-            "type": "string"
-          },
-          "values": {
-            "$ref": "#/components/schemas/api.Map"
-          }
-        }
-      },
-      "api.Identity": {
-        "required": [
-          "kind",
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "default": {
-            "type": "boolean"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "key": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "settings": {
-            "type": "string"
-          },
-          "updateUser": {
-            "type": "string"
-          },
-          "user": {
+          "role": {
             "type": "string"
           }
         }
       },
-      "api.Import": {
+      "github_com_konveyor_tackle2-hub_api.Import": {
         "type": "object",
         "additionalProperties": {
           "type": "object"
         }
       },
-      "api.ImportSummary": {
+      "github_com_konveyor_tackle2-hub_api.ImportSummary": {
         "type": "object",
         "properties": {
           "createEntities": {
@@ -7538,7 +8003,7 @@
           }
         }
       },
-      "api.Incident": {
+      "github_com_konveyor_tackle2-hub_api.Incident": {
         "type": "object",
         "properties": {
           "codeSnip": {
@@ -7551,7 +8016,7 @@
             "type": "string"
           },
           "facts": {
-            "$ref": "#/components/schemas/api.Map"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
           },
           "file": {
             "type": "string"
@@ -7573,7 +8038,7 @@
           }
         }
       },
-      "api.Insight": {
+      "github_com_konveyor_tackle2-hub_api.Insight": {
         "required": [
           "name",
           "rule",
@@ -7600,7 +8065,7 @@
             "type": "integer"
           },
           "facts": {
-            "$ref": "#/components/schemas/api.Map"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
           },
           "id": {
             "type": "integer"
@@ -7608,7 +8073,7 @@
           "incidents": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Incident"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Incident"
             }
           },
           "labels": {
@@ -7620,7 +8085,7 @@
           "links": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Link"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Link"
             }
           },
           "name": {
@@ -7637,7 +8102,7 @@
           }
         }
       },
-      "api.InsightAppReport": {
+      "github_com_konveyor_tackle2-hub_api.InsightAppReport": {
         "type": "object",
         "properties": {
           "businessService": {
@@ -7683,7 +8148,7 @@
           }
         }
       },
-      "api.InsightReport": {
+      "github_com_konveyor_tackle2-hub_api.InsightReport": {
         "type": "object",
         "properties": {
           "category": {
@@ -7710,7 +8175,7 @@
           "links": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Link"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Link"
             }
           },
           "name": {
@@ -7724,7 +8189,7 @@
           }
         }
       },
-      "api.IssueType": {
+      "github_com_konveyor_tackle2-hub_api.IssueType": {
         "type": "object",
         "properties": {
           "id": {
@@ -7735,7 +8200,7 @@
           }
         }
       },
-      "api.JobFunction": {
+      "github_com_konveyor_tackle2-hub_api.JobFunction": {
         "required": [
           "name"
         ],
@@ -7756,7 +8221,7 @@
           "stakeholders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "updateUser": {
@@ -7764,18 +8229,7 @@
           }
         }
       },
-      "api.LatestSchema": {
-        "type": "object",
-        "properties": {
-          "definition": {
-            "$ref": "#/components/schemas/api.Map"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Link": {
+      "github_com_konveyor_tackle2-hub_api.Link": {
         "type": "object",
         "properties": {
           "title": {
@@ -7786,7 +8240,7 @@
           }
         }
       },
-      "api.Login": {
+      "github_com_konveyor_tackle2-hub_api.Login": {
         "type": "object",
         "properties": {
           "expiry": {
@@ -7806,39 +8260,13 @@
           }
         }
       },
-      "api.Manifest": {
-        "type": "object",
-        "properties": {
-          "application": {
-            "$ref": "#/components/schemas/api.Ref"
-          },
-          "content": {
-            "$ref": "#/components/schemas/api.Map"
-          },
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "secret": {
-            "$ref": "#/components/schemas/api.Map"
-          },
-          "updateUser": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Map": {
+      "github_com_konveyor_tackle2-hub_api.Map": {
         "type": "object",
         "additionalProperties": {
           "type": "object"
         }
       },
-      "api.MigrationWave": {
+      "github_com_konveyor_tackle2-hub_api.MigrationWave": {
         "required": [
           "endDate",
           "startDate"
@@ -7848,7 +8276,7 @@
           "applications": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "createTime": {
@@ -7869,13 +8297,13 @@
           "stakeholderGroups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "stakeholders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "startDate": {
@@ -7886,45 +8314,7 @@
           }
         }
       },
-      "api.Platform": {
-        "required": [
-          "kind"
-        ],
-        "type": "object",
-        "properties": {
-          "applications": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/api.Ref"
-            }
-          },
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "identity": {
-            "$ref": "#/components/schemas/api.Ref"
-          },
-          "kind": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "updateUser": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Project": {
+      "github_com_konveyor_tackle2-hub_api.Project": {
         "type": "object",
         "properties": {
           "id": {
@@ -7935,49 +8325,7 @@
           }
         }
       },
-      "api.Proxy": {
-        "type": "object",
-        "properties": {
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "excluded": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "host": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "identity": {
-            "$ref": "#/components/schemas/api.Ref"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "http",
-              "https"
-            ]
-          },
-          "port": {
-            "type": "integer"
-          },
-          "updateUser": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Questionnaire": {
+      "github_com_konveyor_tackle2-hub_api.Questionnaire": {
         "required": [
           "name",
           "riskMessages",
@@ -8025,7 +8373,7 @@
           }
         }
       },
-      "api.Ref": {
+      "github_com_konveyor_tackle2-hub_api.Ref": {
         "required": [
           "id"
         ],
@@ -8039,7 +8387,7 @@
           }
         }
       },
-      "api.Repository": {
+      "github_com_konveyor_tackle2-hub_api.Repository": {
         "type": "object",
         "properties": {
           "branch": {
@@ -8059,28 +8407,14 @@
           }
         }
       },
-      "api.RestAPI": {
-        "type": "object",
-        "properties": {
-          "routes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "version": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Review": {
+      "github_com_konveyor_tackle2-hub_api.Review": {
         "type": "object",
         "properties": {
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "archetype": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "businessCriticality": {
             "type": "integer"
@@ -8111,24 +8445,7 @@
           }
         }
       },
-      "api.RiskMessages": {
-        "type": "object",
-        "properties": {
-          "green": {
-            "type": "string"
-          },
-          "red": {
-            "type": "string"
-          },
-          "unknown": {
-            "type": "string"
-          },
-          "yellow": {
-            "type": "string"
-          }
-        }
-      },
-      "api.Rule": {
+      "github_com_konveyor_tackle2-hub_api.Rule": {
         "type": "object",
         "properties": {
           "createTime": {
@@ -8141,7 +8458,7 @@
             "type": "string"
           },
           "file": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "id": {
             "type": "integer"
@@ -8160,7 +8477,7 @@
           }
         }
       },
-      "api.RuleReport": {
+      "github_com_konveyor_tackle2-hub_api.RuleReport": {
         "type": "object",
         "properties": {
           "applications": {
@@ -8184,7 +8501,7 @@
           "links": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Link"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Link"
             }
           },
           "name": {
@@ -8198,7 +8515,7 @@
           }
         }
       },
-      "api.RuleSet": {
+      "github_com_konveyor_tackle2-hub_api.RuleSet": {
         "type": "object",
         "properties": {
           "createTime": {
@@ -8210,7 +8527,7 @@
           "dependsOn": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "description": {
@@ -8220,7 +8537,7 @@
             "type": "integer"
           },
           "identity": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "kind": {
             "type": "string"
@@ -8229,12 +8546,12 @@
             "type": "string"
           },
           "repository": {
-            "$ref": "#/components/schemas/api.Repository"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
           },
           "rules": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Rule"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Rule"
             }
           },
           "updateUser": {
@@ -8242,51 +8559,7 @@
           }
         }
       },
-      "api.Schema": {
-        "type": "object",
-        "properties": {
-          "domain": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "variant": {
-            "type": "string"
-          },
-          "versions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/jsd.Version"
-            }
-          }
-        }
-      },
-      "api.Section": {
-        "type": "object",
-        "properties": {
-          "comment": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "order": {
-            "type": "integer"
-          },
-          "questions": {
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.Question"
-            }
-          }
-        }
-      },
-      "api.Service": {
+      "github_com_konveyor_tackle2-hub_api.Service": {
         "type": "object",
         "properties": {
           "name": {
@@ -8297,7 +8570,7 @@
           }
         }
       },
-      "api.Setting": {
+      "github_com_konveyor_tackle2-hub_api.Setting": {
         "type": "object",
         "properties": {
           "key": {
@@ -8308,7 +8581,7 @@
           }
         }
       },
-      "api.Stakeholder": {
+      "github_com_konveyor_tackle2-hub_api.Stakeholder": {
         "required": [
           "email",
           "name"
@@ -8318,13 +8591,13 @@
           "businessServices": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "contributes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "createTime": {
@@ -8340,12 +8613,12 @@
             "type": "integer"
           },
           "jobFunction": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "migrationWaves": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "name": {
@@ -8354,13 +8627,13 @@
           "owns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "stakeholderGroups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "updateUser": {
@@ -8368,7 +8641,7 @@
           }
         }
       },
-      "api.StakeholderGroup": {
+      "github_com_konveyor_tackle2-hub_api.StakeholderGroup": {
         "required": [
           "name"
         ],
@@ -8389,7 +8662,7 @@
           "migrationWaves": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "name": {
@@ -8398,7 +8671,7 @@
           "stakeholders": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "updateUser": {
@@ -8406,21 +8679,7 @@
           }
         }
       },
-      "api.Stakeholders": {
-        "type": "object",
-        "properties": {
-          "contributors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/api.Ref"
-            }
-          },
-          "owner": {
-            "$ref": "#/components/schemas/api.Ref"
-          }
-        }
-      },
-      "api.TTL": {
+      "github_com_konveyor_tackle2-hub_api.TTL": {
         "type": "object",
         "properties": {
           "created": {
@@ -8440,7 +8699,7 @@
           }
         }
       },
-      "api.Tag": {
+      "github_com_konveyor_tackle2-hub_api.Tag": {
         "required": [
           "category",
           "name"
@@ -8448,7 +8707,7 @@
         "type": "object",
         "properties": {
           "category": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "createTime": {
             "type": "string"
@@ -8467,7 +8726,7 @@
           }
         }
       },
-      "api.TagCategory": {
+      "github_com_konveyor_tackle2-hub_api.TagCategory": {
         "required": [
           "name"
         ],
@@ -8495,7 +8754,7 @@
           "tags": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "updateUser": {
@@ -8507,7 +8766,7 @@
           }
         }
       },
-      "api.TagRef": {
+      "github_com_konveyor_tackle2-hub_api.TagRef": {
         "required": [
           "id"
         ],
@@ -8527,67 +8786,15 @@
           }
         }
       },
-      "api.Target": {
-        "type": "object",
-        "properties": {
-          "choice": {
-            "type": "boolean"
-          },
-          "createTime": {
-            "type": "string"
-          },
-          "createUser": {
-            "type": "string"
-          },
-          "custom": {
-            "type": "boolean"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "image": {
-            "$ref": "#/components/schemas/api.Ref"
-          },
-          "labels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/api.TargetLabel"
-            }
-          },
-          "name": {
-            "type": "string"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "ruleset": {
-            "$ref": "#/components/schemas/api.RuleSet"
-          },
-          "updateUser": {
-            "type": "string"
-          }
-        }
-      },
-      "api.TargetLabel": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
-      "api.TargetProfile": {
+      "github_com_konveyor_tackle2-hub_api.TargetProfile": {
         "required": [
           "name"
         ],
         "type": "object",
         "properties": {
+          "analysisProfile": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
           "createTime": {
             "type": "string"
           },
@@ -8597,7 +8804,7 @@
           "generators": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Ref"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
             }
           },
           "id": {
@@ -8611,7 +8818,7 @@
           }
         }
       },
-      "api.Task": {
+      "github_com_konveyor_tackle2-hub_api.Task": {
         "type": "object",
         "properties": {
           "activity": {
@@ -8624,16 +8831,16 @@
             "type": "string"
           },
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "attached": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Attachment"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Attachment"
             }
           },
           "bucket": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "createTime": {
             "type": "string"
@@ -8647,13 +8854,13 @@
           "errors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TaskError"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskError"
             }
           },
           "events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TaskEvent"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskEvent"
             }
           },
           "extensions": {
@@ -8675,13 +8882,13 @@
             "type": "string"
           },
           "platform": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "pod": {
             "type": "string"
           },
           "policy": {
-            "$ref": "#/components/schemas/api.TaskPolicy"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskPolicy"
           },
           "priority": {
             "type": "integer"
@@ -8699,21 +8906,21 @@
             "type": "string"
           },
           "ttl": {
-            "$ref": "#/components/schemas/api.TTL"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TTL"
           },
           "updateUser": {
             "type": "string"
           }
         }
       },
-      "api.TaskDashboard": {
+      "github_com_konveyor_tackle2-hub_api.TaskDashboard": {
         "type": "object",
         "properties": {
           "addon": {
             "type": "string"
           },
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "createTime": {
             "type": "string"
@@ -8736,6 +8943,9 @@
           "name": {
             "type": "string"
           },
+          "platform": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
           "started": {
             "type": "string"
           },
@@ -8750,7 +8960,7 @@
           }
         }
       },
-      "api.TaskError": {
+      "github_com_konveyor_tackle2-hub_api.TaskError": {
         "type": "object",
         "properties": {
           "description": {
@@ -8761,7 +8971,7 @@
           }
         }
       },
-      "api.TaskEvent": {
+      "github_com_konveyor_tackle2-hub_api.TaskEvent": {
         "type": "object",
         "properties": {
           "count": {
@@ -8778,7 +8988,7 @@
           }
         }
       },
-      "api.TaskGroup": {
+      "github_com_konveyor_tackle2-hub_api.TaskGroup": {
         "required": [
           "data"
         ],
@@ -8788,7 +8998,7 @@
             "type": "string"
           },
           "bucket": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "createTime": {
             "type": "string"
@@ -8816,7 +9026,7 @@
             "type": "string"
           },
           "policy": {
-            "$ref": "#/components/schemas/api.TaskPolicy"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskPolicy"
           },
           "priority": {
             "type": "integer"
@@ -8827,7 +9037,7 @@
           "tasks": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Task"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Task"
             }
           },
           "updateUser": {
@@ -8835,7 +9045,7 @@
           }
         }
       },
-      "api.TaskPolicy": {
+      "github_com_konveyor_tackle2-hub_api.TaskPolicy": {
         "type": "object",
         "properties": {
           "isolated": {
@@ -8849,7 +9059,7 @@
           }
         }
       },
-      "api.TaskQueue": {
+      "github_com_konveyor_tackle2-hub_api.TaskQueue": {
         "type": "object",
         "properties": {
           "pending": {
@@ -8872,7 +9082,7 @@
           }
         }
       },
-      "api.TaskReport": {
+      "github_com_konveyor_tackle2-hub_api.TaskReport": {
         "type": "object",
         "properties": {
           "activity": {
@@ -8884,7 +9094,7 @@
           "attached": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.Attachment"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Attachment"
             }
           },
           "completed": {
@@ -8899,7 +9109,7 @@
           "errors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/api.TaskError"
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskError"
             }
           },
           "id": {
@@ -8922,7 +9132,7 @@
           }
         }
       },
-      "api.TechDependency": {
+      "github_com_konveyor_tackle2-hub_api.TechDependency": {
         "required": [
           "name"
         ],
@@ -8966,21 +9176,7 @@
           }
         }
       },
-      "api.Thresholds": {
-        "type": "object",
-        "properties": {
-          "red": {
-            "type": "integer"
-          },
-          "unknown": {
-            "type": "integer"
-          },
-          "yellow": {
-            "type": "integer"
-          }
-        }
-      },
-      "api.Ticket": {
+      "github_com_konveyor_tackle2-hub_api.Ticket": {
         "required": [
           "application",
           "kind",
@@ -8990,7 +9186,7 @@
         "type": "object",
         "properties": {
           "application": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "createTime": {
             "type": "string"
@@ -9002,7 +9198,7 @@
             "type": "boolean"
           },
           "fields": {
-            "$ref": "#/components/schemas/api.Map"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
           },
           "id": {
             "type": "integer"
@@ -9029,14 +9225,14 @@
             "type": "string"
           },
           "tracker": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "updateUser": {
             "type": "string"
           }
         }
       },
-      "api.Tracker": {
+      "github_com_konveyor_tackle2-hub_api.Tracker": {
         "required": [
           "identity",
           "kind",
@@ -9058,7 +9254,7 @@
             "type": "integer"
           },
           "identity": {
-            "$ref": "#/components/schemas/api.Ref"
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
           },
           "insecure": {
             "type": "boolean"
@@ -9087,7 +9283,7 @@
           }
         }
       },
-      "api.Vertex": {
+      "github_com_konveyor_tackle2-hub_api.Vertex": {
         "type": "object",
         "properties": {
           "applicationId": {
@@ -9113,1080 +9309,1134 @@
           }
         }
       },
-      "github_com_konveyor_tackle2-hub_api_jsd.Map": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "object"
-        }
-      },
-      "github_com_konveyor_tackle2-hub_jsd.Map": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "object"
-        }
-      },
-      "github_com_konveyor_tackle2-hub_migration_v18_model.Answer": {
+      "github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile": {
         "type": "object",
         "properties": {
-          "applyTags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-            }
-          },
-          "autoAnswerFor": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-            }
-          },
-          "autoAnswered": {
-            "type": "boolean"
-          },
-          "mitigation": {
+          "createTime": {
             "type": "string"
           },
-          "order": {
-            "type": "integer"
-          },
-          "rationale": {
+          "createUser": {
             "type": "string"
           },
-          "risk": {
-            "type": "string",
-            "enum": [
-              "red",
-              "yellow",
-              "green",
-              "unknown"
-            ]
-          },
-          "selected": {
-            "type": "boolean"
-          },
-          "text": {
+          "description": {
             "type": "string"
-          }
-        }
-      },
-      "github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag": {
-        "type": "object",
-        "properties": {
-          "category": {
-            "type": "string"
-          },
-          "tag": {
-            "type": "string"
-          }
-        }
-      },
-      "github_com_konveyor_tackle2-hub_migration_v18_model.Question": {
-        "type": "object",
-        "properties": {
-          "answers": {
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.Answer"
-            }
-          },
-          "excludeFor": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-            }
-          },
-          "explanation": {
-            "type": "string"
-          },
-          "includeFor": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_migration_v18_model.CategorizedTag"
-            }
-          },
-          "order": {
-            "type": "integer"
-          },
-          "text": {
-            "type": "string"
-          }
-        }
-      },
-      "intstr.IntOrString": {
-        "type": "object",
-        "properties": {
-          "intVal": {
-            "type": "integer"
-          },
-          "strVal": {
-            "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/intstr.Type"
-          }
-        }
-      },
-      "intstr.Type": {
-        "type": "integer",
-        "enum": [
-          0,
-          1
-        ],
-        "x-enum-comments": {
-          "Int": "The IntOrString holds an int.",
-          "String": "The IntOrString holds a string."
-        },
-        "x-enum-varnames": [
-          "Int",
-          "String"
-        ]
-      },
-      "jsd.Document": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api_jsd.Map"
-          },
-          "schema": {
-            "type": "string"
-          }
-        }
-      },
-      "jsd.Version": {
-        "type": "object",
-        "properties": {
-          "definition": {
-            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_jsd.Map"
           },
           "id": {
             "type": "integer"
           },
-          "migration": {
+          "mode": {
+            "$ref": "#/components/schemas/api.ApMode"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/api.ApRules"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/api.ApScope"
+          },
+          "updateUser": {
             "type": "string"
           }
         }
       },
-      "resource.Quantity": {
+      "github_com_konveyor_tackle2-hub_internal_api.Dependency": {
         "type": "object",
         "properties": {
-          "Format": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "from": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "to": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Generator": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "params": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+            }
+          },
+          "repository": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "values": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Identity": {
+        "required": [
+          "kind",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "default": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.LatestSchema": {
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Manifest": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "content": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "secret": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Map"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Platform": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+            }
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Proxy": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "excluded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "host": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "kind": {
             "type": "string",
             "enum": [
-              "DecimalExponent",
-              "BinarySI",
-              "DecimalSI"
-            ],
-            "x-enum-varnames": [
-              "DecimalExponent",
-              "BinarySI",
-              "DecimalSI"
-            ],
-            "x-enum-comments": {
-              "BinarySI": "e.g., 12Mi (12 * 2^20)",
-              "DecimalExponent": "e.g., 12e6",
-              "DecimalSI": "e.g., 12M  (12 * 10^6)"
+              "http",
+              "https"
+            ]
+          },
+          "port": {
+            "type": "integer"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Ref": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.RestAPI": {
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.RuleSet": {
+        "type": "object",
+        "properties": {
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Repository"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Rule"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Schema": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.Version"
             }
           }
         }
       },
-      "v1.Capabilities": {
+      "github_com_konveyor_tackle2-hub_internal_api.Tag": {
+        "required": [
+          "category",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.TagRef": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "virtual": {
+            "type": "boolean"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Target": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "boolean"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "custom": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "image": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api.TargetLabel"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "ruleset": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.RuleSet"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.Task": {
+        "type": "object",
+        "properties": {
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "addon": {
+            "type": "string"
+          },
+          "application": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "attached": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Attachment"
+            }
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskError"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskEvent"
+            }
+          },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "locator": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "pod": {
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "retries": {
+            "type": "integer"
+          },
+          "started": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "terminated": {
+            "type": "string"
+          },
+          "ttl": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TTL"
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "github_com_konveyor_tackle2-hub_internal_api.TaskGroup": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "addon": {
+            "type": "string"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Ref"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "createUser": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/github_com_konveyor_tackle2-hub_api.Task"
+            }
+          },
+          "updateUser": {
+            "type": "string"
+          }
+        }
+      },
+      "k8s.Capabilities": {
         "type": "object",
         "properties": {
           "add": {
             "type": "array",
-            "description": "Added capabilities\n+optional",
             "items": {
               "type": "string"
             }
           },
           "drop": {
             "type": "array",
-            "description": "Removed capabilities\n+optional",
             "items": {
               "type": "string"
             }
           }
         }
       },
-      "v1.ConfigMapEnvSource": {
+      "k8s.ConfigMapEnvSource": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          "localObjectReference": {
+            "$ref": "#/components/schemas/k8s.LocalObjectReference"
           },
           "optional": {
-            "type": "boolean",
-            "description": "Specify whether the ConfigMap must be defined\n+optional"
+            "type": "boolean"
           }
         }
       },
-      "v1.ConfigMapKeySelector": {
+      "k8s.ConfigMapKeySelector": {
         "type": "object",
         "properties": {
           "key": {
-            "type": "string",
-            "description": "The key to select."
+            "type": "string"
           },
-          "name": {
-            "type": "string",
-            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          "localObjectReference": {
+            "$ref": "#/components/schemas/k8s.LocalObjectReference"
           },
           "optional": {
-            "type": "boolean",
-            "description": "Specify whether the ConfigMap or its key must be defined\n+optional"
+            "type": "boolean"
           }
         }
       },
-      "v1.Container": {
+      "k8s.Container": {
         "type": "object",
         "properties": {
           "args": {
             "type": "array",
-            "description": "Arguments to the entrypoint.\nThe container image's CMD is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
             "items": {
               "type": "string"
             }
           },
           "command": {
             "type": "array",
-            "description": "Entrypoint array. Not executed within a shell.\nThe container image's ENTRYPOINT is used if this is not provided.\nVariable references $(VAR_NAME) are expanded using the container's environment. If a variable\ncannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will\nproduce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless\nof whether the variable exists or not. Cannot be updated.\nMore info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell\n+optional",
             "items": {
               "type": "string"
             }
           },
           "env": {
             "type": "array",
-            "description": "List of environment variables to set in the container.\nCannot be updated.\n+optional\n+patchMergeKey=name\n+patchStrategy=merge",
             "items": {
-              "$ref": "#/components/schemas/v1.EnvVar"
+              "$ref": "#/components/schemas/k8s.EnvVar"
             }
           },
           "envFrom": {
             "type": "array",
-            "description": "List of sources to populate environment variables in the container.\nThe keys defined within a source must be a C_IDENTIFIER. All invalid keys\nwill be reported as an event when the container is starting. When a key exists in multiple\nsources, the value associated with the last source will take precedence.\nValues defined by an Env with a duplicate key will take precedence.\nCannot be updated.\n+optional",
             "items": {
-              "$ref": "#/components/schemas/v1.EnvFromSource"
+              "$ref": "#/components/schemas/k8s.EnvFromSource"
             }
           },
           "image": {
-            "type": "string",
-            "description": "Container image name.\nMore info: https://kubernetes.io/docs/concepts/containers/images\nThis field is optional to allow higher level config management to default or override\ncontainer images in workload controllers like Deployments and StatefulSets.\n+optional"
+            "type": "string"
           },
           "imagePullPolicy": {
-            "type": "object",
-            "description": "Image pull policy.\nOne of Always, Never, IfNotPresent.\nDefaults to Always if :latest tag is specified, or IfNotPresent otherwise.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/containers/images#updating-images\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.PullPolicy"
-              }
-            ]
+            "type": "string"
           },
           "lifecycle": {
-            "type": "object",
-            "description": "Actions that the management system should take in response to container lifecycle events.\nCannot be updated.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Lifecycle"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.Lifecycle"
           },
           "livenessProbe": {
-            "type": "object",
-            "description": "Periodic probe of container liveness.\nContainer will be restarted if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Probe"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.Probe"
           },
           "name": {
-            "type": "string",
-            "description": "Name of the container specified as a DNS_LABEL.\nEach container in a pod must have a unique name (DNS_LABEL).\nCannot be updated."
+            "type": "string"
           },
           "ports": {
             "type": "array",
-            "description": "List of ports to expose from the container. Not specifying a port here\nDOES NOT prevent that port from being exposed. Any port which is\nlistening on the default \"0.0.0.0\" address inside a container will be\naccessible from the network.\nModifying this array with strategic merge patch may corrupt the data.\nFor more information See https://github.com/kubernetes/kubernetes/issues/108255.\nCannot be updated.\n+optional\n+patchMergeKey=containerPort\n+patchStrategy=merge\n+listType=map\n+listMapKey=containerPort\n+listMapKey=protocol",
             "items": {
-              "$ref": "#/components/schemas/v1.ContainerPort"
+              "$ref": "#/components/schemas/k8s.ContainerPort"
             }
           },
           "readinessProbe": {
-            "type": "object",
-            "description": "Periodic probe of container service readiness.\nContainer will be removed from service endpoints if the probe fails.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Probe"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.Probe"
           },
           "resources": {
-            "type": "object",
-            "description": "Compute Resources required by this container.\nCannot be updated.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ResourceRequirements"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ResourceRequirements"
           },
           "securityContext": {
-            "type": "object",
-            "description": "SecurityContext defines the security options the container should be run with.\nIf set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.\nMore info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SecurityContext"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.SecurityContext"
           },
           "startupProbe": {
-            "type": "object",
-            "description": "StartupProbe indicates that the Pod has successfully initialized.\nIf specified, no other probes are executed until this completes successfully.\nIf this probe fails, the Pod will be restarted, just as if the livenessProbe failed.\nThis can be used to provide different probe parameters at the beginning of a Pod's lifecycle,\nwhen it might take a long time to load data or warm a cache, than during steady-state operation.\nThis cannot be updated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Probe"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.Probe"
           },
           "stdin": {
-            "type": "boolean",
-            "description": "Whether this container should allocate a buffer for stdin in the container runtime. If this\nis not set, reads from stdin in the container will always result in EOF.\nDefault is false.\n+optional"
+            "type": "boolean"
           },
           "stdinOnce": {
-            "type": "boolean",
-            "description": "Whether the container runtime should close the stdin channel after it has been opened by\na single attach. When stdin is true the stdin stream will remain open across multiple attach\nsessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the\nfirst client attaches to stdin, and then remains open and accepts data until the client disconnects,\nat which time stdin is closed and remains closed until the container is restarted. If this\nflag is false, a container processes that reads from stdin will never receive an EOF.\nDefault is false\n+optional"
+            "type": "boolean"
           },
           "terminationMessagePath": {
-            "type": "string",
-            "description": "Optional: Path at which the file to which the container's termination message\nwill be written is mounted into the container's filesystem.\nMessage written is intended to be brief final status, such as an assertion failure message.\nWill be truncated by the node if greater than 4096 bytes. The total message length across\nall containers will be limited to 12kb.\nDefaults to /dev/termination-log.\nCannot be updated.\n+optional"
+            "type": "string"
           },
           "terminationMessagePolicy": {
-            "type": "object",
-            "description": "Indicate how the termination message should be populated. File will use the contents of\nterminationMessagePath to populate the container status message on both success and failure.\nFallbackToLogsOnError will use the last chunk of container log output if the termination\nmessage file is empty and the container exited with an error.\nThe log output is limited to 2048 bytes or 80 lines, whichever is smaller.\nDefaults to File.\nCannot be updated.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.TerminationMessagePolicy"
-              }
-            ]
+            "type": "string"
           },
           "tty": {
-            "type": "boolean",
-            "description": "Whether this container should allocate a TTY for itself, also requires 'stdin' to be true.\nDefault is false.\n+optional"
+            "type": "boolean"
           },
           "volumeDevices": {
             "type": "array",
-            "description": "volumeDevices is the list of block devices to be used by the container.\n+patchMergeKey=devicePath\n+patchStrategy=merge\n+optional",
             "items": {
-              "$ref": "#/components/schemas/v1.VolumeDevice"
+              "$ref": "#/components/schemas/k8s.VolumeDevice"
             }
           },
           "volumeMounts": {
             "type": "array",
-            "description": "Pod volumes to mount into the container's filesystem.\nCannot be updated.\n+optional\n+patchMergeKey=mountPath\n+patchStrategy=merge",
             "items": {
-              "$ref": "#/components/schemas/v1.VolumeMount"
+              "$ref": "#/components/schemas/k8s.VolumeMount"
             }
           },
           "workingDir": {
-            "type": "string",
-            "description": "Container's working directory.\nIf not specified, the container runtime's default will be used, which\nmight be configured in the container image.\nCannot be updated.\n+optional"
+            "type": "string"
           }
         }
       },
-      "v1.ContainerPort": {
+      "k8s.ContainerPort": {
         "type": "object",
         "properties": {
           "containerPort": {
-            "type": "integer",
-            "description": "Number of port to expose on the pod's IP address.\nThis must be a valid port number, 0 < x < 65536."
+            "type": "integer"
           },
           "hostIP": {
-            "type": "string",
-            "description": "What host IP to bind the external port to.\n+optional"
+            "type": "string"
           },
           "hostPort": {
-            "type": "integer",
-            "description": "Number of port to expose on the host.\nIf specified, this must be a valid port number, 0 < x < 65536.\nIf HostNetwork is specified, this must match ContainerPort.\nMost containers do not need this.\n+optional"
+            "type": "integer"
           },
           "name": {
-            "type": "string",
-            "description": "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each\nnamed port in a pod must have a unique name. Name for the port that can be\nreferred to by services.\n+optional"
+            "type": "string"
           },
           "protocol": {
-            "type": "object",
-            "description": "Protocol for port. Must be UDP, TCP, or SCTP.\nDefaults to \"TCP\".\n+optional\n+default=\"TCP\"",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Protocol"
-              }
-            ]
+            "type": "string",
+            "description": "Default \"TCP\""
           }
         }
       },
-      "v1.EnvFromSource": {
+      "k8s.EnvFromSource": {
         "type": "object",
         "properties": {
           "configMapRef": {
-            "type": "object",
-            "description": "The ConfigMap to select from\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ConfigMapEnvSource"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ConfigMapEnvSource"
           },
           "prefix": {
-            "type": "string",
-            "description": "An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.\n+optional"
+            "type": "string"
           },
           "secretRef": {
-            "type": "object",
-            "description": "The Secret to select from\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SecretEnvSource"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.SecretEnvSource"
           }
         }
       },
-      "v1.EnvVar": {
+      "k8s.EnvVar": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "description": "Name of the environment variable. Must be a C_IDENTIFIER."
+            "type": "string"
           },
           "value": {
-            "type": "string",
-            "description": "Variable references $(VAR_NAME) are expanded\nusing the previously defined environment variables in the container and\nany service environment variables. If a variable cannot be resolved,\nthe reference in the input string will be unchanged. Double $$ are reduced\nto a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.\n\"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\".\nEscaped references will never be expanded, regardless of whether the variable\nexists or not.\nDefaults to \"\".\n+optional"
+            "type": "string"
           },
           "valueFrom": {
-            "type": "object",
-            "description": "Source for the environment variable's value. Cannot be used if value is not empty.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.EnvVarSource"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.EnvVarSource"
           }
         }
       },
-      "v1.EnvVarSource": {
+      "k8s.EnvVarSource": {
         "type": "object",
         "properties": {
           "configMapKeyRef": {
-            "type": "object",
-            "description": "Selects a key of a ConfigMap.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ConfigMapKeySelector"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ConfigMapKeySelector"
           },
           "fieldRef": {
-            "type": "object",
-            "description": "Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,\nspec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ObjectFieldSelector"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ObjectFieldSelector"
           },
           "resourceFieldRef": {
-            "type": "object",
-            "description": "Selects a resource of the container: only resources limits and requests\n(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ResourceFieldSelector"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ResourceFieldSelector"
           },
           "secretKeyRef": {
-            "type": "object",
-            "description": "Selects a key of a secret in the pod's namespace\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SecretKeySelector"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.SecretKeySelector"
           }
         }
       },
-      "v1.ExecAction": {
+      "k8s.ExecAction": {
         "type": "object",
         "properties": {
           "command": {
             "type": "array",
-            "description": "Command is the command line to execute inside the container, the working directory for the\ncommand  is root ('/') in the container's filesystem. The command is simply exec'd, it is\nnot run inside a shell, so traditional shell instructions ('|', etc) won't work. To use\na shell, you need to explicitly call out to that shell.\nExit status of 0 is treated as live/healthy and non-zero is unhealthy.\n+optional",
             "items": {
               "type": "string"
             }
           }
         }
       },
-      "v1.GRPCAction": {
+      "k8s.GRPCAction": {
         "type": "object",
         "properties": {
           "port": {
-            "type": "integer",
-            "description": "Port number of the gRPC service. Number must be in the range 1 to 65535."
+            "type": "integer"
           },
           "service": {
-            "type": "string",
-            "description": "Service is the name of the service to place in the gRPC HealthCheckRequest\n(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).\n\nIf this is not specified, the default behavior is defined by gRPC.\n+optional\n+default=\"\""
+            "type": "string"
           }
         }
       },
-      "v1.HTTPGetAction": {
+      "k8s.HTTPGetAction": {
         "type": "object",
         "properties": {
           "host": {
-            "type": "string",
-            "description": "Host name to connect to, defaults to the pod IP. You probably want to set\n\"Host\" in httpHeaders instead.\n+optional"
+            "type": "string"
           },
           "httpHeaders": {
             "type": "array",
-            "description": "Custom headers to set in the request. HTTP allows repeated headers.\n+optional",
             "items": {
-              "$ref": "#/components/schemas/v1.HTTPHeader"
+              "$ref": "#/components/schemas/k8s.HTTPHeader"
             }
           },
           "path": {
-            "type": "string",
-            "description": "Path to access on the HTTP server.\n+optional"
+            "type": "string"
           },
           "port": {
-            "type": "object",
-            "description": "Name or number of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/intstr.IntOrString"
-              }
-            ]
+            "type": "integer"
           },
           "scheme": {
-            "type": "object",
-            "description": "Scheme to use for connecting to the host.\nDefaults to HTTP.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.URIScheme"
-              }
-            ]
+            "type": "string"
           }
         }
       },
-      "v1.HTTPHeader": {
+      "k8s.HTTPHeader": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "description": "The header field name"
+            "type": "string"
           },
           "value": {
-            "type": "string",
-            "description": "The header field value"
+            "type": "string"
           }
         }
       },
-      "v1.Lifecycle": {
+      "k8s.Lifecycle": {
         "type": "object",
         "properties": {
           "postStart": {
-            "type": "object",
-            "description": "PostStart is called immediately after a container is created. If the handler fails,\nthe container is terminated and restarted according to its restart policy.\nOther management of the container blocks until the hook completes.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.LifecycleHandler"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.LifecycleHandler"
           },
           "preStop": {
-            "type": "object",
-            "description": "PreStop is called immediately before a container is terminated due to an\nAPI request or management event such as liveness/startup probe failure,\npreemption, resource contention, etc. The handler is not called if the\ncontainer crashes or exits. The Pod's termination grace period countdown begins before the\nPreStop hook is executed. Regardless of the outcome of the handler, the\ncontainer will eventually terminate within the Pod's termination grace\nperiod (unless delayed by finalizers). Other management of the container blocks until the hook completes\nor until the termination grace period is reached.\nMore info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.LifecycleHandler"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.LifecycleHandler"
           }
         }
       },
-      "v1.LifecycleHandler": {
+      "k8s.LifecycleHandler": {
         "type": "object",
         "properties": {
           "exec": {
-            "type": "object",
-            "description": "Exec specifies the action to take.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ExecAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.ExecAction"
           },
           "httpGet": {
-            "type": "object",
-            "description": "HTTPGet specifies the http request to perform.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.HTTPGetAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.HTTPGetAction"
           },
           "tcpSocket": {
-            "type": "object",
-            "description": "Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept\nfor the backward compatibility. There are no validation of this field and\nlifecycle hooks will fail in runtime when tcp handler is specified.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.TCPSocketAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.TCPSocketAction"
           }
         }
       },
-      "v1.MountPropagationMode": {
-        "type": "string",
-        "enum": [
-          "None",
-          "HostToContainer",
-          "Bidirectional"
-        ],
-        "x-enum-varnames": [
-          "MountPropagationNone",
-          "MountPropagationHostToContainer",
-          "MountPropagationBidirectional"
-        ]
+      "k8s.LocalObjectReference": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
       },
-      "v1.ObjectFieldSelector": {
+      "k8s.ObjectFieldSelector": {
         "type": "object",
         "properties": {
           "apiVersion": {
             "type": "string",
-            "description": "Version of the schema the FieldPath is written in terms of, defaults to \"v1\".\n+optional"
+            "description": "default \"v1\""
           },
           "fieldPath": {
-            "type": "string",
-            "description": "Path of the field to select in the specified API version."
+            "type": "string"
           }
         }
       },
-      "v1.Probe": {
+      "k8s.Probe": {
         "type": "object",
         "properties": {
           "exec": {
             "type": "object",
-            "description": "Exec specifies the action to take.\n+optional",
+            "description": "ProbeHandler fields inlined for direct compilation without embedding.",
             "allOf": [
               {
-                "$ref": "#/components/schemas/v1.ExecAction"
+                "$ref": "#/components/schemas/k8s.ExecAction"
               }
             ]
           },
           "failureThreshold": {
-            "type": "integer",
-            "description": "Minimum consecutive failures for the probe to be considered failed after having succeeded.\nDefaults to 3. Minimum value is 1.\n+optional"
+            "type": "integer"
           },
           "grpc": {
-            "type": "object",
-            "description": "GRPC specifies an action involving a GRPC port.\nThis is a beta field and requires enabling GRPCContainerProbe feature gate.\n+featureGate=GRPCContainerProbe\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.GRPCAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.GRPCAction"
           },
           "httpGet": {
-            "type": "object",
-            "description": "HTTPGet specifies the http request to perform.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.HTTPGetAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.HTTPGetAction"
           },
           "initialDelaySeconds": {
-            "type": "integer",
-            "description": "Number of seconds after the container has started before liveness probes are initiated.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional"
+            "type": "integer"
           },
           "periodSeconds": {
-            "type": "integer",
-            "description": "How often (in seconds) to perform the probe.\nDefault to 10 seconds. Minimum value is 1.\n+optional"
+            "type": "integer"
           },
           "successThreshold": {
-            "type": "integer",
-            "description": "Minimum consecutive successes for the probe to be considered successful after having failed.\nDefaults to 1. Must be 1 for liveness and startup. Minimum value is 1.\n+optional"
+            "type": "integer"
           },
           "tcpSocket": {
-            "type": "object",
-            "description": "TCPSocket specifies an action involving a TCP port.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.TCPSocketAction"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.TCPSocketAction"
           },
           "terminationGracePeriodSeconds": {
-            "type": "integer",
-            "description": "Optional duration in seconds the pod needs to terminate gracefully upon probe failure.\nThe grace period is the duration in seconds after the processes running in the pod are sent\na termination signal and the time when the processes are forcibly halted with a kill signal.\nSet this value longer than the expected cleanup time for your process.\nIf this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this\nvalue overrides the value provided by the pod spec.\nValue must be non-negative integer. The value zero indicates stop immediately via\nthe kill signal (no opportunity to shut down).\nThis is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.\nMinimum value is 1. spec.terminationGracePeriodSeconds is used if unset.\n+optional"
+            "type": "integer"
           },
           "timeoutSeconds": {
-            "type": "integer",
-            "description": "Number of seconds after which the probe times out.\nDefaults to 1 second. Minimum value is 1.\nMore info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n+optional"
+            "type": "integer"
           }
         }
       },
-      "v1.ProcMountType": {
-        "type": "string",
-        "enum": [
-          "Default",
-          "Unmasked"
-        ],
-        "x-enum-varnames": [
-          "DefaultProcMount",
-          "UnmaskedProcMount"
-        ]
-      },
-      "v1.Protocol": {
-        "type": "string",
-        "enum": [
-          "TCP",
-          "UDP",
-          "SCTP"
-        ],
-        "x-enum-varnames": [
-          "ProtocolTCP",
-          "ProtocolUDP",
-          "ProtocolSCTP"
-        ]
-      },
-      "v1.PullPolicy": {
-        "type": "string",
-        "enum": [
-          "Always",
-          "Never",
-          "IfNotPresent"
-        ],
-        "x-enum-varnames": [
-          "PullAlways",
-          "PullNever",
-          "PullIfNotPresent"
-        ]
-      },
-      "v1.ResourceFieldSelector": {
+      "k8s.ResourceFieldSelector": {
         "type": "object",
         "properties": {
           "containerName": {
-            "type": "string",
-            "description": "Container name: required for volumes, optional for env vars\n+optional"
+            "type": "string"
           },
           "divisor": {
-            "type": "object",
-            "description": "Specifies the output format of the exposed resources, defaults to \"1\"\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/resource.Quantity"
-              }
-            ]
+            "type": "string",
+            "description": "Quantity as string"
           },
           "resource": {
-            "type": "string",
-            "description": "Required: resource to select"
+            "type": "string"
           }
         }
       },
-      "v1.ResourceList": {
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/resource.Quantity"
-        }
-      },
-      "v1.ResourceRequirements": {
+      "k8s.ResourceRequirements": {
         "type": "object",
         "properties": {
           "limits": {
             "type": "object",
-            "description": "Limits describes the maximum amount of compute resources allowed.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ResourceList"
-              }
-            ]
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "e.g. \"100m\", \"500Mi\" as string"
           },
           "requests": {
             "type": "object",
-            "description": "Requests describes the minimum amount of compute resources required.\nIf Requests is omitted for a container, it defaults to Limits if that is explicitly specified,\notherwise to an implementation-defined value.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ResourceList"
-              }
-            ]
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "e.g. \"100m\", \"500Mi\" as string"
           }
         }
       },
-      "v1.SELinuxOptions": {
+      "k8s.SELinuxOptions": {
         "type": "object",
         "properties": {
           "level": {
-            "type": "string",
-            "description": "Level is SELinux level label that applies to the container.\n+optional"
+            "type": "string"
           },
           "role": {
-            "type": "string",
-            "description": "Role is a SELinux role label that applies to the container.\n+optional"
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "description": "Type is a SELinux type label that applies to the container.\n+optional"
+            "type": "string"
           },
           "user": {
-            "type": "string",
-            "description": "User is a SELinux user label that applies to the container.\n+optional"
+            "type": "string"
           }
         }
       },
-      "v1.SeccompProfile": {
+      "k8s.SeccompProfile": {
         "type": "object",
         "properties": {
           "localhostProfile": {
-            "type": "string",
-            "description": "localhostProfile indicates a profile defined in a file on the node should be used.\nThe profile must be preconfigured on the node to work.\nMust be a descending path, relative to the kubelet's configured seccomp profile location.\nMust only be set if type is \"Localhost\".\n+optional"
+            "type": "string"
           },
           "type": {
-            "type": "object",
-            "description": "type indicates which kind of seccomp profile will be applied.\nValid options are:\n\nLocalhost - a profile defined in a file on the node should be used.\nRuntimeDefault - the container runtime default profile should be used.\nUnconfined - no profile should be applied.\n+unionDiscriminator",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SeccompProfileType"
-              }
-            ]
+            "type": "string"
           }
         }
       },
-      "v1.SeccompProfileType": {
-        "type": "string",
-        "enum": [
-          "Unconfined",
-          "RuntimeDefault",
-          "Localhost"
-        ],
-        "x-enum-varnames": [
-          "SeccompProfileTypeUnconfined",
-          "SeccompProfileTypeRuntimeDefault",
-          "SeccompProfileTypeLocalhost"
-        ]
-      },
-      "v1.SecretEnvSource": {
+      "k8s.SecretEnvSource": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          "localObjectReference": {
+            "$ref": "#/components/schemas/k8s.LocalObjectReference"
           },
           "optional": {
-            "type": "boolean",
-            "description": "Specify whether the Secret must be defined\n+optional"
+            "type": "boolean"
           }
         }
       },
-      "v1.SecretKeySelector": {
+      "k8s.SecretKeySelector": {
         "type": "object",
         "properties": {
           "key": {
-            "type": "string",
-            "description": "The key of the secret to select from.  Must be a valid secret key."
+            "type": "string"
           },
-          "name": {
-            "type": "string",
-            "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional"
+          "localObjectReference": {
+            "$ref": "#/components/schemas/k8s.LocalObjectReference"
           },
           "optional": {
-            "type": "boolean",
-            "description": "Specify whether the Secret or its key must be defined\n+optional"
+            "type": "boolean"
           }
         }
       },
-      "v1.SecurityContext": {
+      "k8s.SecurityContext": {
         "type": "object",
         "properties": {
           "allowPrivilegeEscalation": {
-            "type": "boolean",
-            "description": "AllowPrivilegeEscalation controls whether a process can gain more\nprivileges than its parent process. This bool directly controls if\nthe no_new_privs flag will be set on the container process.\nAllowPrivilegeEscalation is true always when the container is:\n1) run as Privileged\n2) has CAP_SYS_ADMIN\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+            "type": "boolean"
           },
           "capabilities": {
-            "type": "object",
-            "description": "The capabilities to add/drop when running containers.\nDefaults to the default set of capabilities granted by the container runtime.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.Capabilities"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.Capabilities"
           },
           "privileged": {
-            "type": "boolean",
-            "description": "Run container in privileged mode.\nProcesses in privileged containers are essentially equivalent to root on the host.\nDefaults to false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+            "type": "boolean"
           },
           "procMount": {
-            "type": "object",
-            "description": "procMount denotes the type of proc mount to use for the containers.\nThe default is DefaultProcMount which uses the container runtime defaults for\nreadonly paths and masked paths.\nThis requires the ProcMountType feature flag to be enabled.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.ProcMountType"
-              }
-            ]
+            "type": "string"
           },
-          "readOnlyRootFilesystem": {
-            "type": "boolean",
-            "description": "Whether this container has a read-only root filesystem.\nDefault is false.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+          "readOnlyRouteFilesystem": {
+            "type": "boolean"
           },
           "runAsGroup": {
-            "type": "integer",
-            "description": "The GID to run the entrypoint of the container process.\nUses runtime default if unset.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+            "type": "integer"
           },
-          "runAsNonRoot": {
-            "type": "boolean",
-            "description": "Indicates that the container must run as a non-root user.\nIf true, the Kubelet will validate the image at runtime to ensure that it\ndoes not run as UID 0 (root) and fail to start the container if it does.\nIf unset or false, no such validation will be performed.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional"
+          "runAsNonRoute": {
+            "type": "boolean"
           },
           "runAsUser": {
-            "type": "integer",
-            "description": "The UID to run the entrypoint of the container process.\nDefaults to user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional"
+            "type": "integer"
           },
           "seLinuxOptions": {
-            "type": "object",
-            "description": "The SELinux context to be applied to the container.\nIf unspecified, the container runtime will allocate a random SELinux context for each\ncontainer.  May also be set in PodSecurityContext.  If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SELinuxOptions"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.SELinuxOptions"
           },
           "seccompProfile": {
-            "type": "object",
-            "description": "The seccomp options to use by this container. If seccomp options are\nprovided at both the pod & container level, the container options\noverride the pod options.\nNote that this field cannot be set when spec.os.name is windows.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.SeccompProfile"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.SeccompProfile"
           },
           "windowsOptions": {
-            "type": "object",
-            "description": "The Windows specific settings applied to all containers.\nIf unspecified, the options from the PodSecurityContext will be used.\nIf set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.\nNote that this field cannot be set when spec.os.name is linux.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.WindowsSecurityContextOptions"
-              }
-            ]
+            "$ref": "#/components/schemas/k8s.WindowsSecurityContextOptions"
           }
         }
       },
-      "v1.TCPSocketAction": {
+      "k8s.TCPSocketAction": {
         "type": "object",
         "properties": {
           "host": {
-            "type": "string",
-            "description": "Optional: Host name to connect to, defaults to the pod IP.\n+optional"
+            "type": "string"
           },
           "port": {
-            "type": "object",
-            "description": "Number or name of the port to access on the container.\nNumber must be in the range 1 to 65535.\nName must be an IANA_SVC_NAME.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/intstr.IntOrString"
-              }
-            ]
+            "type": "integer"
           }
         }
       },
-      "v1.TerminationMessagePolicy": {
-        "type": "string",
-        "enum": [
-          "File",
-          "FallbackToLogsOnError"
-        ],
-        "x-enum-varnames": [
-          "TerminationMessageReadFile",
-          "TerminationMessageFallbackToLogsOnError"
-        ]
-      },
-      "v1.URIScheme": {
-        "type": "string",
-        "enum": [
-          "HTTP",
-          "HTTPS"
-        ],
-        "x-enum-varnames": [
-          "URISchemeHTTP",
-          "URISchemeHTTPS"
-        ]
-      },
-      "v1.VolumeDevice": {
+      "k8s.VolumeDevice": {
         "type": "object",
         "properties": {
           "devicePath": {
-            "type": "string",
-            "description": "devicePath is the path inside of the container that the device will be mapped to."
+            "type": "string"
           },
           "name": {
-            "type": "string",
-            "description": "name must match the name of a persistentVolumeClaim in the pod"
+            "type": "string"
           }
         }
       },
-      "v1.VolumeMount": {
+      "k8s.VolumeMount": {
         "type": "object",
         "properties": {
           "mountPath": {
-            "type": "string",
-            "description": "Path within the container at which the volume should be mounted.  Must\nnot contain ':'."
+            "type": "string"
           },
           "mountPropagation": {
-            "type": "object",
-            "description": "mountPropagation determines how mounts are propagated from the host\nto container and the other way around.\nWhen not set, MountPropagationNone is used.\nThis field is beta in 1.10.\n+optional",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/v1.MountPropagationMode"
-              }
-            ]
+            "type": "string"
           },
           "name": {
-            "type": "string",
-            "description": "This must match the Name of a Volume."
+            "type": "string"
           },
           "readOnly": {
-            "type": "boolean",
-            "description": "Mounted read-only if true, read-write otherwise (false or unspecified).\nDefaults to false.\n+optional"
+            "type": "boolean"
           },
           "subPath": {
-            "type": "string",
-            "description": "Path within the volume from which the container's volume should be mounted.\nDefaults to \"\" (volume's root).\n+optional"
+            "type": "string"
           },
           "subPathExpr": {
-            "type": "string",
-            "description": "Expanded path within the volume from which the container's volume should be mounted.\nBehaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.\nDefaults to \"\" (volume's root).\nSubPathExpr and SubPath are mutually exclusive.\n+optional"
+            "type": "string"
           }
         }
       },
-      "v1.WindowsSecurityContextOptions": {
+      "k8s.WindowsSecurityContextOptions": {
         "type": "object",
         "properties": {
           "gmsaCredentialSpec": {
-            "type": "string",
-            "description": "GMSACredentialSpec is where the GMSA admission webhook\n(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the\nGMSA credential spec named by the GMSACredentialSpecName field.\n+optional"
+            "type": "string"
           },
           "gmsaCredentialSpecName": {
-            "type": "string",
-            "description": "GMSACredentialSpecName is the name of the GMSA credential spec to use.\n+optional"
+            "type": "string"
           },
           "hostProcess": {
-            "type": "boolean",
-            "description": "HostProcess determines if a container should be run as a 'Host Process' container.\nThis field is alpha-level and will only be honored by components that enable the\nWindowsHostProcessContainers feature flag. Setting this field without the feature\nflag will result in errors when validating the Pod. All of a Pod's containers must\nhave the same effective HostProcess value (it is not allowed to have a mix of HostProcess\ncontainers and non-HostProcess containers).  In addition, if HostProcess is true\nthen HostNetwork must also be set to true.\n+optional"
+            "type": "boolean"
           },
           "runAsUserName": {
-            "type": "string",
-            "description": "The UserName in Windows to run the entrypoint of the container process.\nDefaults to the user specified in image metadata if unspecified.\nMay also be set in PodSecurityContext. If set in both SecurityContext and\nPodSecurityContext, the value specified in SecurityContext takes precedence.\n+optional"
+            "type": "string"
           }
         }
       }
