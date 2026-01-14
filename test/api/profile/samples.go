@@ -17,7 +17,7 @@ var (
 			},
 		},
 		Rules: api.ApRules{
-			Targets: []api.Ref{
+			Targets: []api.ApTargetRef{
 				{ID: 2, Name: "Containerization"},
 			},
 			Labels: api.InExList{
