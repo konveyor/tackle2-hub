@@ -16,7 +16,19 @@ func TestAnalysisProfileCRUD(t *testing.T) {
 	b, _ := json.Marshal(Base)
 	_ = json.Unmarshal(b, &r)
 
-	err := AnalysisProfile.Create(&r)
+	direct := &api.Identity{
+		Name: "direct",
+		Kind: "Test",
+	}
+	err := RichClient.Identity.Create(direct)
+	assert.Must(t, err)
+	defer func() {
+		_ = RichClient.Identity.Delete(direct.ID)
+	}()
+
+	r.Rules.Identity = &api.Ref{ID: direct.ID, Name: direct.Name}
+
+	err = AnalysisProfile.Create(&r)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
