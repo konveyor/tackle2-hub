@@ -186,8 +186,8 @@ type ApRules struct {
 // ApTargetRef target reference.
 type ApTargetRef struct {
 	ID        uint   `json:"id" binding:"required"`
-	Name      string `json:"name,omitempty"`
-	Selection string `yaml:",omitempty"`
+	Name      string `json:"name,omitempty" yaml:",omitempty"`
+	Selection string `json:"selection,omitempty" yaml:"-,omitempty"`
 }
 
 // AnalysisProfile REST resource.
