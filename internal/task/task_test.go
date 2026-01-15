@@ -3,6 +3,7 @@ package task
 import (
 	"bytes"
 	"io"
+	"strconv"
 	"testing"
 
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
@@ -460,4 +461,36 @@ func TestPredRegex(t *testing.T) {
 
 	matches = PredRegex.FindAllStringSubmatch(":Language=Java", -1)
 	g.Expect(len(matches)).To(gomega.Equal(0))
+}
+
+func TestSelector(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	selector := Selector{}
+	selector.predicate = map[string]Predicate{
+		"T": _TestPredicate{},
+	}
+	m, err := selector.Match("T:true && T:true")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m).To(gomega.BeTrue())
+	m, err = selector.Match("T:true && T:false")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m).To(gomega.BeFalse())
+	m, err = selector.Match("T:true||T:true")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m).To(gomega.BeTrue())
+	m, err = selector.Match("T:true || T:false")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m).To(gomega.BeTrue())
+	m, err = selector.Match("T:false || T:false")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m).To(gomega.BeFalse())
+}
+
+type _TestPredicate struct {
+}
+
+func (p _TestPredicate) Match(ref string) (matched bool, err error) {
+	matched, _ = strconv.ParseBool(ref)
+	return
 }
