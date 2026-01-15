@@ -17,8 +17,9 @@ var (
 			},
 		},
 		Rules: api.ApRules{
-			Targets: []api.Ref{
+			Targets: []api.ApTargetRef{
 				{ID: 2, Name: "Containerization"},
+				{ID: 6, Name: "OpenJDK", Selection: "konveyor.io/target=openjdk17"},
 			},
 			Labels: api.InExList{
 				Included: []string{"rA", "rB"},

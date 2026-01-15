@@ -176,10 +176,18 @@ type ApScope struct {
 
 // ApRules analysis rules.
 type ApRules struct {
-	Targets    []Ref       `json:"targets"`
-	Labels     InExList    `json:"labels,omitempty" yaml:",omitempty"`
-	Files      []Ref       `json:"files,omitempty" yaml:",omitempty"`
-	Repository *Repository `json:"repository,omitempty" yaml:",omitempty"`
+	Targets    []ApTargetRef `json:"targets"`
+	Labels     InExList      `json:"labels,omitempty" yaml:",omitempty"`
+	Files      []Ref         `json:"files,omitempty" yaml:",omitempty"`
+	Repository *Repository   `json:"repository,omitempty" yaml:",omitempty"`
+	Identity   *Ref          `json:"identity,omitempty" yaml:",omitempty"`
+}
+
+// ApTargetRef target reference.
+type ApTargetRef struct {
+	ID        uint   `json:"id" binding:"required"`
+	Name      string `json:"name,omitempty" yaml:",omitempty"`
+	Selection string `json:"selection,omitempty" yaml:"-,omitempty"`
 }
 
 // AnalysisProfile REST resource.

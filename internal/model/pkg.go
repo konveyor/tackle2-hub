@@ -70,6 +70,7 @@ type TaskEvent = model.TaskEvent
 type TaskPolicy = model.TaskPolicy
 type TTL = model.TTL
 type InExList = model.InExList
+type TargetSelection = model.TargetSelection
 
 // Assessment JSON fields
 type Section = model.Section
