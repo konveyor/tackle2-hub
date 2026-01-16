@@ -39,12 +39,6 @@ func (d *Document) Validate(m *jsd.Manager) (err error) {
 	return
 }
 
-// As deserialize the content into the object.
-func (d *Document) As(object any) (err error) {
-	err = d.Content.As(object)
-	return
-}
-
 func (d *Document) With(md *model.Document) {
 	d.Content = md.Content
 	d.Schema = md.Schema
