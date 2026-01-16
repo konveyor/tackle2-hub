@@ -744,7 +744,7 @@ func (h ApplicationHandler) TagAdd(ctx *gin.Context) {
 		return
 	}
 	if ref.Virtual {
-		err = &BadRequestError{"cannot add virtual tags"}
+		err = &BadRequestError{Reason: "cannot add virtual tags"}
 		_ = ctx.Error(err)
 		return
 	}

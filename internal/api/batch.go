@@ -57,7 +57,7 @@ func (h BatchHandler) create(ctx *gin.Context, create gin.HandlerFunc) {
 	}
 
 	rtx := RichContext(ctx)
-	bErr := BatchError{Message: "Create failed."}
+	bErr := &BatchError{Message: "Create failed."}
 	for i := range resources {
 		b, _ := json.Marshal(resources[i])
 		bfr := bytes.NewBuffer(b)

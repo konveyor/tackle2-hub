@@ -351,7 +351,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	reader := &ManifestReader{}
 	err = reader.Open(file.Path, BeginMainMarker, EndMainMarker)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	} else {
@@ -359,14 +359,14 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	d, err := h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	r := &Analysis{}
 	err = d.Decode(r)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -384,7 +384,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	reader = &ManifestReader{}
 	err = reader.Open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	} else {
@@ -392,7 +392,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -403,7 +403,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				err = &BadRequestError{err.Error()}
+				err = &BadRequestError{Reason: err.Error()}
 				_ = ctx.Error(err)
 				return
 			}
@@ -422,7 +422,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	reader = &ManifestReader{}
 	err = reader.Open(file.Path, BeginDepsMarker, EndDepsMarker)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	} else {
@@ -430,7 +430,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	d, err = h.Decoder(ctx, file.Encoding, reader)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -442,7 +442,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 			if errors.Is(err, io.EOF) {
 				break
 			} else {
-				err = &BadRequestError{err.Error()}
+				err = &BadRequestError{Reason: err.Error()}
 				_ = ctx.Error(err)
 				return
 			}
@@ -2144,7 +2144,7 @@ func (r *InsightWriter) Create(id uint, filter qf.Filter) (path string, count in
 	case binding.MIMEYAML:
 		ext = ".yaml"
 	default:
-		err = &BadRequestError{"MIME not supported."}
+		err = &BadRequestError{Reason: "MIME not supported."}
 	}
 	file, err := os.CreateTemp("", "insight-*"+ext)
 	if err != nil {
@@ -2234,7 +2234,7 @@ func (r *AnalysisWriter) Create(id uint) (path string, err error) {
 	case binding.MIMEYAML:
 		ext = ".yaml"
 	default:
-		err = &BadRequestError{"MIME not supported."}
+		err = &BadRequestError{Reason: "MIME not supported."}
 	}
 	file, err := os.CreateTemp("", "report-*"+ext)
 	if err != nil {

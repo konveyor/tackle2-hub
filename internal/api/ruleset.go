@@ -224,7 +224,7 @@ func (h *RuleSetHandler) update(ctx *gin.Context, r *RuleSet) (err error) {
 		return
 	}
 	if m.Builtin() {
-		err = &Forbidden{"update on builtin not permitted."}
+		err = &Forbidden{Reason: "update on builtin not permitted."}
 		return
 	}
 	//
@@ -279,7 +279,7 @@ func (h *RuleSetHandler) delete(ctx *gin.Context, id uint) (err error) {
 		return
 	}
 	if ruleset.Builtin() {
-		err = &Forbidden{"delete on builtin not permitted."}
+		err = &Forbidden{Reason: "delete on builtin not permitted."}
 		return
 	}
 	err = h.DB(ctx).Delete(ruleset, id).Error

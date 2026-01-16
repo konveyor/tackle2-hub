@@ -67,7 +67,7 @@ func (h *BaseHandler) WithCount(ctx *gin.Context, count int64) (err error) {
 	if n > MaxPage {
 		if p.Limit == 0 || p.Limit > MaxPage {
 			err = &BadRequestError{
-				fmt.Sprintf(
+				Reason: fmt.Sprintf(
 					"Found=%d, ?Limit <= %d required.",
 					n,
 					MaxPage)}
@@ -167,10 +167,10 @@ func (h *BaseHandler) Bind(ctx *gin.Context, r any) (err error) {
 	case binding.MIMEYAML:
 		err = h.BindYAML(ctx, r)
 	default:
-		err = &BadRequestError{"Bind: MIME not supported."}
+		err = &BadRequestError{Reason: "Bind: MIME not supported."}
 	}
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 	}
 	return
 }
@@ -242,10 +242,10 @@ func (h *BaseHandler) Decoder(ctx *gin.Context, encoding string, r io.Reader) (d
 	case binding.MIMEYAML:
 		d = yaml.NewDecoder(r)
 	default:
-		err = &BadRequestError{"Bind: MIME not supported."}
+		err = &BadRequestError{Reason: "Bind: MIME not supported."}
 	}
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 	}
 	return
 }

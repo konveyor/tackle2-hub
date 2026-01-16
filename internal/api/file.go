@@ -89,7 +89,7 @@ func (h FileHandler) Append(ctx *gin.Context) {
 	var err error
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -103,7 +103,7 @@ func (h FileHandler) Append(ctx *gin.Context) {
 	}
 	reader, err := input.Open()
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -206,7 +206,7 @@ func (h FileHandler) create(ctx *gin.Context, name string) (m *model.File, err e
 func (h FileHandler) createMultipart(ctx *gin.Context, name string) (m *model.File, err error) {
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		return
 	}
 	m = &model.File{}
@@ -227,7 +227,7 @@ func (h FileHandler) createMultipart(ctx *gin.Context, name string) (m *model.Fi
 	}()
 	reader, err := input.Open()
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		return
 	}
 	defer func() {
