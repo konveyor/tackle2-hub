@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -14,23 +13,19 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
 
 // BadRequestError reports bad request errors.
-type BadRequestError struct {
-	Reason string
-}
+type BadRequestError = api.BadRequestError
 
-func (r *BadRequestError) Error() string {
-	return r.Reason
-}
+// Forbidden reports auth errors.
+type Forbidden = api.Forbidden
 
-func (r *BadRequestError) Is(err error) (matched bool) {
-	_, matched = err.(*BadRequestError)
-	return
-}
+// NotFound reports resource not-found errors.
+type NotFound = api.NotFound
 
 // BatchError reports errors stemming from batch operations.
 type BatchError struct {
@@ -43,12 +38,13 @@ type BatchErrorItem struct {
 	Resource any
 }
 
-func (r BatchError) Error() string {
+func (r *BatchError) Error() string {
 	return r.Message
 }
 
-func (r BatchError) Is(err error) (matched bool) {
-	_, matched = err.(BatchError)
+func (r *BatchError) Is(err error) (matched bool) {
+	var target *BatchError
+	matched = errors.As(err, &target)
 	return
 }
 
@@ -63,37 +59,8 @@ func (r *TrackerError) Error() string {
 }
 
 func (r *TrackerError) Is(err error) (matched bool) {
-	_, matched = err.(*TrackerError)
-	return
-}
-
-// Forbidden reports auth errors.
-type Forbidden struct {
-	Reason string
-}
-
-func (r *Forbidden) Error() string {
-	return r.Reason
-}
-
-func (r *Forbidden) Is(err error) (matched bool) {
-	_, matched = err.(*Forbidden)
-	return
-}
-
-// NotFound reports resource not-found errors.
-type NotFound struct {
-	Resource string
-	Reason   string
-}
-
-func (r *NotFound) Error() string {
-	return fmt.Sprintf("Resource '%s' not found. %s", r.Resource, r.Reason)
-}
-
-func (r *NotFound) Is(err error) (matched bool) {
-	var forbidden *Forbidden
-	matched = errors.As(err, &forbidden)
+	var target *TrackerError
+	matched = errors.As(err, &target)
 	return
 }
 
@@ -188,7 +155,7 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		bErr := &BatchError{}
-		if errors.As(err, bErr) {
+		if errors.As(err, &bErr) {
 			rtx.Respond(
 				http.StatusBadRequest,
 				bErr.Items,

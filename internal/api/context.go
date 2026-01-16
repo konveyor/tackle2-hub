@@ -349,7 +349,7 @@ func NewEncoder(ctx *gin.Context, output io.Writer) (encoder Encoder, err error)
 	case binding.MIMEYAML:
 		encoder = &yamlEncoder{output: output}
 	default:
-		err = &BadRequestError{"MIME not supported."}
+		err = &BadRequestError{Reason: "MIME not supported."}
 	}
 
 	return

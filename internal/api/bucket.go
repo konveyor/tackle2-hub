@@ -273,12 +273,12 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 	file, err := ctx.FormFile(FileField)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		return
 	}
 	fileReader, err := file.Open()
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
@@ -325,13 +325,13 @@ func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
 	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}
 	reader, err := input.Open()
 	if err != nil {
-		err = &BadRequestError{err.Error()}
+		err = &BadRequestError{Reason: err.Error()}
 		_ = ctx.Error(err)
 		return
 	}

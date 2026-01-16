@@ -6,6 +6,12 @@ type Document struct {
 	Schema  string `json:"schema,omitempty"`
 }
 
+// As deserialize the content into the object.
+func (d *Document) As(object any) (err error) {
+	err = d.Content.As(object)
+	return
+}
+
 // Schema represents a document json-schema.
 type Schema struct {
 	Name     string   `json:"name"`
