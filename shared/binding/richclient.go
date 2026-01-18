@@ -3,6 +3,11 @@ package binding
 import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
+	"github.com/konveyor/tackle2-hub/shared/binding/application"
+	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
+	"github.com/konveyor/tackle2-hub/shared/binding/client"
+	"github.com/konveyor/tackle2-hub/shared/binding/task"
 )
 
 var (
@@ -15,11 +20,12 @@ type RichClient struct {
 	Client *Client
 	// API namespaces.
 	Addon            Addon
+	Analysis         analysis.Analysis
 	AnalysisProfile  AnalysisProfile
-	Application      Application
+	Application      application.Application
 	Archetype        Archetype
 	Assessment       Assessment
-	Bucket           Bucket
+	Bucket           bucket.Bucket
 	BusinessService  BusinessService
 	Dependency       Dependency
 	File             File
@@ -40,33 +46,30 @@ type RichClient struct {
 	Tag              Tag
 	TagCategory      TagCategory
 	Target           Target
-	Task             Task
+	Task             task.Task
 	Ticket           Ticket
 	Tracker          Tracker
 }
 
 // New builds a new RichClient object.
 func New(baseURL string) (r *RichClient) {
-	client := NewClient(baseURL)
+	client := client.New(baseURL)
 	r = &RichClient{
 		Addon: Addon{
 			client: client,
 		},
+		Analysis: analysis.New(client),
 		AnalysisProfile: AnalysisProfile{
 			client: client,
 		},
-		Application: Application{
-			client: client,
-		},
+		Application: application.New(client),
 		Archetype: Archetype{
 			client: client,
 		},
 		Assessment: Assessment{
 			client: client,
 		},
-		Bucket: Bucket{
-			client: client,
-		},
+		Bucket: bucket.New(client),
 		BusinessService: BusinessService{
 			client: client,
 		},
@@ -127,9 +130,7 @@ func New(baseURL string) (r *RichClient) {
 		Target: Target{
 			client: client,
 		},
-		Task: Task{
-			client: client,
-		},
+		Task: task.New(client),
 		Ticket: Ticket{
 			client: client,
 		},

@@ -2,13 +2,14 @@ package importcsv
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	RichClient  *binding.RichClient
 	Client      *binding.Client
-	Application binding.Application
+	Application application.Application
 	Dependency  binding.Dependency
 	Stakeholder binding.Stakeholder
 )

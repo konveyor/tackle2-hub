@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
@@ -10,7 +11,7 @@ var (
 	Ticket      binding.Ticket
 	Tracker     binding.Tracker
 	Identity    binding.Identity
-	Application binding.Application
+	Application application.Application
 )
 
 func init() {

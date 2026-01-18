@@ -1,12 +1,19 @@
-package binding
+package task
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
+	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
+
+func New(client *client.Client) (h Task) {
+	h = Task{client: client}
+	return
+}
 
 // Task API.
 type Task struct {
-	client *Client
+	client *client.Client
 }
 
 // Create a Task.
@@ -18,7 +25,7 @@ func (h *Task) Create(r *api.Task) (err error) {
 // Get a Task by ID.
 func (h *Task) Get(id uint) (r *api.Task, err error) {
 	r = &api.Task{}
-	path := Path(api.TaskRoute).Inject(Params{api.ID: id})
+	path := client.Path(api.TaskRoute).Inject(client.Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -31,41 +38,38 @@ func (h *Task) List() (list []api.Task, err error) {
 }
 
 // BulkCancel - Cancel tasks matched by filter.
-func (h *Task) BulkCancel(filter Filter) (err error) {
+func (h *Task) BulkCancel(filter client.Filter) (err error) {
 	err = h.client.Put(api.TasksCancelRoute, 0, filter.Param())
 	return
 }
 
 // Update a Task.
 func (h *Task) Update(r *api.Task) (err error) {
-	path := Path(api.TaskRoute).Inject(Params{api.ID: r.ID})
+	path := client.Path(api.TaskRoute).Inject(client.Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Patch a Task.
 func (h *Task) Patch(id uint, r any) (err error) {
-	path := Path(api.TaskRoute).Inject(Params{api.ID: id})
+	path := client.Path(api.TaskRoute).Inject(client.Params{api.ID: id})
 	err = h.client.Patch(path, r)
 	return
 }
 
 // Delete a Task.
 func (h *Task) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.TaskRoute).Inject(Params{api.ID: id}))
+	err = h.client.Delete(client.Path(api.TaskRoute).Inject(client.Params{api.ID: id}))
 	return
 }
 
 // Bucket returns the bucket API.
-func (h *Task) Bucket(id uint) (b *BucketContent) {
-	params := Params{
+func (h *Task) Bucket(id uint) (b bucket.BucketContent) {
+	params := client.Params{
 		api.ID:       id,
 		api.Wildcard: "",
 	}
-	path := Path(api.TaskBucketContentRoute).Inject(params)
-	b = &BucketContent{
-		root:   path,
-		client: h.client,
-	}
+	path := client.Path(api.TaskBucketContentRoute).Inject(params)
+	b = bucket.NewContent(h.client, path)
 	return
 }

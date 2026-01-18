@@ -1,67 +1,74 @@
-package binding
+package application
 
 import (
 	"errors"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
+	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
+	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
+
+func New(client *client.Client) (h Application) {
+	h = Application{client: client}
+	return
+}
 
 // Application API.
 type Application struct {
-	client *Client
+	client *client.Client
 }
 
 // Create an Application.
-func (h *Application) Create(r *api.Application) (err error) {
+func (h Application) Create(r *api.Application) (err error) {
 	err = h.client.Post(api.ApplicationsRoute, &r)
 	return
 }
 
 // Get an Application by ID.
-func (h *Application) Get(id uint) (r *api.Application, err error) {
+func (h Application) Get(id uint) (r *api.Application, err error) {
 	r = &api.Application{}
-	path := Path(api.ApplicationRoute).Inject(Params{api.ID: id})
+	path := client.
+		Path(api.ApplicationRoute).
+		Inject(client.Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
 
 // List Applications.
-func (h *Application) List() (list []api.Application, err error) {
+func (h Application) List() (list []api.Application, err error) {
 	list = []api.Application{}
 	err = h.client.Get(api.ApplicationsRoute, &list)
 	return
 }
 
 // Update an Application.
-func (h *Application) Update(r *api.Application) (err error) {
-	path := Path(api.ApplicationRoute).Inject(Params{api.ID: r.ID})
+func (h Application) Update(r *api.Application) (err error) {
+	path := client.Path(api.ApplicationRoute).Inject(client.Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete an Application.
-func (h *Application) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.ApplicationRoute).Inject(Params{api.ID: id}))
+func (h Application) Delete(id uint) (err error) {
+	err = h.client.Delete(client.Path(api.ApplicationRoute).Inject(client.Params{api.ID: id}))
 	return
 }
 
 // Bucket returns the bucket API.
-func (h *Application) Bucket(id uint) (b *BucketContent) {
-	params := Params{
+func (h Application) Bucket(id uint) (b bucket.BucketContent) {
+	params := client.Params{
 		api.Wildcard: "",
 		api.ID:       id,
 	}
-	path := Path(api.AppBucketContentRoute).Inject(params)
-	b = &BucketContent{
-		root:   path,
-		client: h.client,
-	}
+	path := client.Path(api.AppBucketContentRoute).Inject(params)
+	b = bucket.NewContent(h.client, path)
 	return
 }
 
 // Tags returns the tags API.
-func (h *Application) Tags(id uint) (tg AppTags) {
+func (h Application) Tags(id uint) (tg AppTags) {
 	tg = AppTags{
 		client: h.client,
 		appId:  id,
@@ -70,7 +77,7 @@ func (h *Application) Tags(id uint) (tg AppTags) {
 }
 
 // Facts returns the facts API.
-func (h *Application) Facts(id uint) (f AppFacts) {
+func (h Application) Facts(id uint) (f AppFacts) {
 	f = AppFacts{
 		client: h.client,
 		appId:  id,
@@ -79,8 +86,8 @@ func (h *Application) Facts(id uint) (f AppFacts) {
 }
 
 // Analysis returns the analysis API.
-func (h *Application) Analysis(id uint) (a Analysis) {
-	a = Analysis{
+func (h Application) Analysis(id uint) (a AppAnalysis) {
+	a = AppAnalysis{
 		client: h.client,
 		appId:  id,
 	}
@@ -88,7 +95,7 @@ func (h *Application) Analysis(id uint) (a Analysis) {
 }
 
 // Manifest returns the manifest API.
-func (h *Application) Manifest(id uint) (f AppManifest) {
+func (h Application) Manifest(id uint) (f AppManifest) {
 	f = AppManifest{
 		client: h.client,
 		appId:  id,
@@ -97,7 +104,7 @@ func (h *Application) Manifest(id uint) (f AppManifest) {
 }
 
 // Identity returns the identity API.
-func (h *Application) Identity(id uint) (f AppIdentity) {
+func (h Application) Identity(id uint) (f AppIdentity) {
 	f = AppIdentity{
 		client: h.client,
 		appId:  id,
@@ -106,7 +113,7 @@ func (h *Application) Identity(id uint) (f AppIdentity) {
 }
 
 // Assessment returns the assessment API.
-func (h *Application) Assessment(id uint) (f AppAssessment) {
+func (h Application) Assessment(id uint) (f AppAssessment) {
 	f = AppAssessment{
 		client: h.client,
 		appId:  id,
@@ -117,7 +124,7 @@ func (h *Application) Assessment(id uint) (f AppAssessment) {
 // AppTags sub-resource API.
 // Provides association management of tags to applications by name.
 type AppTags struct {
-	client *Client
+	client *client.Client
 	appId  uint
 	source *string
 }
@@ -134,12 +141,12 @@ func (h *AppTags) Replace(ids []uint) (err error) {
 		err = liberr.New("Source required.")
 		return
 	}
-	path := Path(api.ApplicationTagsRoute).Inject(Params{api.ID: h.appId})
-	query := []Param{}
+	path := client.Path(api.ApplicationTagsRoute).Inject(client.Params{api.ID: h.appId})
+	query := []client.Param{}
 	if h.source != nil {
 		query = append(
 			query,
-			Param{
+			client.Param{
 				Key:   api.Source,
 				Value: *h.source,
 			})
@@ -156,12 +163,12 @@ func (h *AppTags) Replace(ids []uint) (err error) {
 // Returns a list of tag names.
 func (h *AppTags) List() (list []api.TagRef, err error) {
 	list = []api.TagRef{}
-	path := Path(api.ApplicationTagsRoute).Inject(Params{api.ID: h.appId})
-	query := []Param{}
+	path := client.Path(api.ApplicationTagsRoute).Inject(client.Params{api.ID: h.appId})
+	query := []client.Param{}
 	if h.source != nil {
 		query = append(
 			query,
-			Param{
+			client.Param{
 				Key:   api.Source,
 				Value: *h.source,
 			})
@@ -172,7 +179,7 @@ func (h *AppTags) List() (list []api.TagRef, err error) {
 
 // Add associates a tag with the application.
 func (h *AppTags) Add(id uint) (err error) {
-	path := Path(api.ApplicationTagsRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.ApplicationTagsRoute).Inject(client.Params{api.ID: h.appId})
 	tag := api.TagRef{ID: id}
 	if h.source != nil {
 		tag.Source = *h.source
@@ -184,7 +191,7 @@ func (h *AppTags) Add(id uint) (err error) {
 // Ensure ensures tag is associated with the application.
 func (h *AppTags) Ensure(id uint) (err error) {
 	err = h.Add(id)
-	if errors.Is(err, &Conflict{}) {
+	if errors.Is(err, &client.Conflict{}) {
 		err = nil
 	}
 	return
@@ -192,14 +199,14 @@ func (h *AppTags) Ensure(id uint) (err error) {
 
 // Delete ensures the tag is not associated with the application.
 func (h *AppTags) Delete(id uint) (err error) {
-	path := Path(
+	path := client.Path(
 		api.ApplicationTagRoute).Inject(
-		Params{
+		client.Params{
 			api.ID:  h.appId,
 			api.ID2: id})
-	query := []Param{}
+	query := []client.Param{}
 	if h.source != nil {
-		query = append(query, Param{Key: api.Source, Value: *h.source})
+		query = append(query, client.Param{Key: api.Source, Value: *h.source})
 	}
 	err = h.client.Delete(path, query...)
 	return
@@ -220,7 +227,7 @@ func (h *AppTags) unique(ids []uint) (u []uint) {
 // AppFacts sub-resource API.
 // Provides association management of facts.
 type AppFacts struct {
-	client *Client
+	client *client.Client
 	appId  uint
 	source string
 }
@@ -235,7 +242,7 @@ func (h *AppFacts) List() (facts api.Map, err error) {
 	facts = api.Map{}
 	key := api.FactKey("")
 	key.Qualify(h.source)
-	path := Path(api.ApplicationFactsRoute).Inject(Params{api.ID: h.appId, api.Key: key})
+	path := client.Path(api.ApplicationFactsRoute).Inject(client.Params{api.ID: h.appId, api.Key: key})
 	err = h.client.Get(path, &facts)
 	return
 }
@@ -244,8 +251,8 @@ func (h *AppFacts) List() (facts api.Map, err error) {
 func (h *AppFacts) Get(name string, value any) (err error) {
 	key := api.FactKey(name)
 	key.Qualify(h.source)
-	path := Path(api.ApplicationFactRoute).Inject(
-		Params{
+	path := client.Path(api.ApplicationFactRoute).Inject(
+		client.Params{
 			api.ID:  h.appId,
 			api.Key: key,
 		})
@@ -257,8 +264,8 @@ func (h *AppFacts) Get(name string, value any) (err error) {
 func (h *AppFacts) Set(name string, value any) (err error) {
 	key := api.FactKey(name)
 	key.Qualify(h.source)
-	path := Path(api.ApplicationFactRoute).Inject(
-		Params{
+	path := client.Path(api.ApplicationFactRoute).Inject(
+		client.Params{
 			api.ID:  h.appId,
 			api.Key: key,
 		})
@@ -270,8 +277,8 @@ func (h *AppFacts) Set(name string, value any) (err error) {
 func (h *AppFacts) Delete(name string) (err error) {
 	key := api.FactKey(name)
 	key.Qualify(h.source)
-	path := Path(api.ApplicationFactRoute).Inject(
-		Params{
+	path := client.Path(api.ApplicationFactRoute).Inject(
+		client.Params{
 			api.ID:  h.appId,
 			api.Key: key,
 		})
@@ -283,14 +290,14 @@ func (h *AppFacts) Delete(name string) (err error) {
 func (h *AppFacts) Replace(facts api.Map) (err error) {
 	key := api.FactKey("")
 	key.Qualify(h.source)
-	path := Path(api.ApplicationFactsRoute).Inject(Params{api.ID: h.appId, api.Key: key})
+	path := client.Path(api.ApplicationFactsRoute).Inject(client.Params{api.ID: h.appId, api.Key: key})
 	err = h.client.Put(path, facts)
 	return
 }
 
-// Analysis sub-resource API.
-type Analysis struct {
-	client *Client
+// AppAnalysis sub-resource API.
+type AppAnalysis struct {
+	client *client.Client
 	appId  uint
 }
 
@@ -310,7 +317,8 @@ type Analysis struct {
 // The encoding must be:
 // - application/json
 // - application/x-yaml
-func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
+// Deprecated: Use Add().
+func (h *AppAnalysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
 	switch encoding {
 	case "":
 		encoding = api.MIMEJSON
@@ -322,7 +330,7 @@ func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error
 			encoding)
 	}
 	r = &api.Analysis{}
-	path := Path(api.AppAnalysesRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppAnalysesRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.FilePostEncoded(path, manifest, r, encoding)
 	if err != nil {
 		return
@@ -330,15 +338,42 @@ func (h *Analysis) Create(manifest, encoding string) (r *api.Analysis, err error
 	return
 }
 
+func (h *AppAnalysis) Add(r *api.Analysis) (err error) {
+	r.Application.ID = h.appId
+	err = analysis.New(h.client).Create(r)
+	return
+}
+
+// Get the latest analysis for an application.
+func (h *AppAnalysis) Get() (r *api.Analysis, err error) {
+	path := client.Path(api.AppAnalysisRoute).Inject(client.Params{api.ID: h.appId})
+	err = h.client.Get(path, &r)
+	return
+}
+
+// GetInsights Insights analysis for an application.
+func (h *AppAnalysis) GetInsights() (r []api.Insight, err error) {
+	path := client.Path(api.AppAnalysisInsightsRoute).Inject(client.Params{api.ID: h.appId})
+	err = h.client.Get(path, &r)
+	return
+}
+
+// GetDependencies dependencies for an application.
+func (h *AppAnalysis) GetDependencies() (r []api.TechDependency, err error) {
+	path := client.Path(api.AppAnalysisDepsRoute).Inject(client.Params{api.ID: h.appId})
+	err = h.client.Get(path, &r)
+	return
+}
+
 // AppManifest sub-resource API.
 type AppManifest struct {
-	client *Client
+	client *client.Client
 	appId  uint
 }
 
 // Create manifest.
 func (h *AppManifest) Create(r *api.Manifest) (err error) {
-	path := Path(api.AppManifestsRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppManifestsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Post(path, &r)
 	return
 }
@@ -347,26 +382,26 @@ func (h *AppManifest) Create(r *api.Manifest) (err error) {
 // Params:
 // Param{Key: Decrypted, Value: "1"}
 // Param{Key: Injected, Value: "1"}
-func (h *AppManifest) Get(param ...Param) (r *api.Manifest, err error) {
+func (h *AppManifest) Get(param ...client.Param) (r *api.Manifest, err error) {
 	r = &api.Manifest{}
-	path := Path(api.AppManifestRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppManifestRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, r, param...)
 	return
 }
 
 // AppIdentity sub-resource API.
 type AppIdentity struct {
-	client *Client
+	client *client.Client
 	appId  uint
 }
 
 // List identities.
 func (h AppIdentity) List() (list []api.Identity, err error) {
-	p := Param{
+	p := client.Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := Path(api.AppIdentitiesRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppIdentitiesRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &list, p)
 	if err != nil {
 		return
@@ -377,13 +412,13 @@ func (h AppIdentity) List() (list []api.Identity, err error) {
 // Direct finds identities associated with the application.
 func (h AppIdentity) Direct(role string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	p := Param{
+	p := client.Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	filter := Filter{}
+	filter := client.Filter{}
 	filter.And("role").Eq(role)
-	path := Path(api.AppIdentitiesRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppIdentitiesRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &list, p, filter.Param())
 	if err != nil {
 		return
@@ -399,11 +434,11 @@ func (h AppIdentity) Direct(role string) (r *api.Identity, found bool, err error
 // Indirect returns identities associated indirectly with the application.
 func (h AppIdentity) Indirect(kind string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	p := Param{
+	p := client.Param{
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	filter := Filter{}
+	filter := client.Filter{}
 	filter.And("kind").Eq(kind)
 	filter.And("default").Eq(true)
 	err = h.client.Get(api.IdentitiesRoute, &list, p, filter.Param())
@@ -426,13 +461,13 @@ func (h AppIdentity) Search() (s IdentitySearch) {
 
 // AppAssessment sub-resource API.
 type AppAssessment struct {
-	client *Client
+	client *client.Client
 	appId  uint
 }
 
 // Create an Assessment.
 func (h AppAssessment) Create(r *api.Assessment) (err error) {
-	path := Path(api.AppAssessmentsRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppAssessmentsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Post(path, &r)
 	return
 }
@@ -440,7 +475,7 @@ func (h AppAssessment) Create(r *api.Assessment) (err error) {
 // List Assessments.
 func (h AppAssessment) List() (list []api.Assessment, err error) {
 	list = []api.Assessment{}
-	path := Path(api.AppAssessmentsRoute).Inject(Params{api.ID: h.appId})
+	path := client.Path(api.AppAssessmentsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &list)
 	return
 }

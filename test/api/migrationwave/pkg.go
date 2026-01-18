@@ -2,13 +2,14 @@ package migrationwave
 
 import (
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/test/api/client"
 )
 
 var (
 	RichClient       *binding.RichClient
 	MigrationWave    binding.MigrationWave
-	Application      binding.Application
+	Application      application.Application
 	Stakeholder      binding.Stakeholder
 	StakeholderGroup binding.StakeholderGroup
 )
