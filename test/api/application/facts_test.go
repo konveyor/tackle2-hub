@@ -28,6 +28,9 @@ func TestApplicationFactCRUD(t *testing.T) {
 
 	// Create the application.
 	assert.Must(t, Application.Create(&application))
+	defer func() {
+		_ = Application.Delete(application.ID)
+	}()
 
 	// Test Facts subresource.
 	for _, r := range SampleFacts {
@@ -84,9 +87,6 @@ func TestApplicationFactCRUD(t *testing.T) {
 			}
 		})
 	}
-
-	// Clean the application.
-	assert.Must(t, Application.Delete(application.ID))
 }
 
 func TestApplicationFactsList(t *testing.T) {
@@ -95,6 +95,9 @@ func TestApplicationFactsList(t *testing.T) {
 
 	// Create the application.
 	assert.Must(t, Application.Create(&application))
+	defer func() {
+		_ = Application.Delete(application.ID)
+	}()
 
 	// Create facts.
 	for _, r := range SampleFacts {
@@ -119,7 +122,88 @@ func TestApplicationFactsList(t *testing.T) {
 			// Compare returned list values?
 		})
 	}
+}
 
-	// Clean the application.
-	assert.Must(t, Application.Delete(application.ID))
+func TestApplicationFactCRUD_Select(t *testing.T) {
+	// Test Facts subresource on the first sample application only.
+	application := Minimal
+
+	// Create the application.
+	assert.Must(t, Application.Create(&application))
+	defer func() {
+		_ = Application.Delete(application.ID)
+	}()
+
+	// Test Facts subresource.
+	for _, r := range SampleFacts {
+		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
+			err := RichClient.Application.Select(application.ID).Fact.Create(r)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Get.
+			var v any
+			err = RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				Get(r.Key, &v)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			// Update.
+			err = RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				Set(r.Key, &v)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Get the updated.
+			err = RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				Get(r.Key, &v)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// List
+			facts, err := RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				List()
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+			if len(facts) != 1 {
+				t.Errorf("Len facts must be 1.")
+			}
+
+			// Delete.
+			err = RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				Delete(r.Key)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+
+			// Ensure it's deleted.
+			err = RichClient.Application.
+				Select(application.ID).
+				Fact.
+				Source(r.Source).
+				Get(r.Key, &v)
+			if err == nil {
+				t.Errorf("Exits, but should be deleted: %v", r)
+			}
+		})
+	}
 }

@@ -1,6 +1,8 @@
 package application
 
 import (
+	pathlib "path"
+
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
@@ -21,12 +23,26 @@ func (h Fact) Source(name string) (h2 Fact) {
 	return
 }
 
+// Create a fact.
+func (h Fact) Create(r *api.Fact) (err error) {
+	params := client.Params{
+		api.ID: h.appId,
+	}
+	path := client.Path(api.ApplicationFactsRoute).Inject(params)
+	err = h.client.Post(path, r)
+	return
+}
+
 // List facts.
 func (h Fact) List() (facts api.Map, err error) {
 	facts = api.Map{}
 	key := api.FactKey("")
 	key.Qualify(h.source)
-	path := client.Path(api.ApplicationFactsRoute).Inject(client.Params{api.ID: h.appId, api.Key: key})
+	path := client.Path(api.ApplicationFactsRoute).Inject(
+		client.Params{
+			api.ID: h.appId,
+		})
+	path = pathlib.Join(path, string(key))
 	err = h.client.Get(path, &facts)
 	return
 }
@@ -74,7 +90,11 @@ func (h Fact) Delete(name string) (err error) {
 func (h Fact) Replace(facts api.Map) (err error) {
 	key := api.FactKey("")
 	key.Qualify(h.source)
-	path := client.Path(api.ApplicationFactsRoute).Inject(client.Params{api.ID: h.appId, api.Key: key})
+	path := client.Path(api.ApplicationFactsRoute).Inject(
+		client.Params{
+			api.ID:  h.appId,
+			api.Key: key,
+		})
 	err = h.client.Put(path, facts)
 	return
 }

@@ -53,7 +53,42 @@ func (h Application) Delete(id uint) (err error) {
 	return
 }
 
+func (h Application) Select(id uint) (h2 Selected) {
+	h2 = Selected{
+		client: h.client,
+	}
+	params := client.Params{
+		api.Wildcard: "",
+		api.ID:       id,
+	}
+	path := client.Path(api.AppBucketContentRoute).Inject(params)
+	h2.Bucket = bucket.NewContent(h.client, path)
+	h2.Identity = Identity{client: h.client, appId: id}
+	h2.Assessment = Assessment{client: h.client, appId: id}
+	h2.Analysis = Analysis{client: h.client, appId: id}
+	h2.Manifest = Manifest{client: h.client, appId: id}
+	h2.Tag = Tag{client: h.client, appId: id}
+	h2.Fact = Fact{client: h.client, appId: id}
+	return
+}
+
+// Selected application API.
+type Selected struct {
+	client     *client.Client
+	Bucket     bucket.BucketContent
+	Identity   Identity
+	Assessment Assessment
+	Analysis   Analysis
+	Manifest   Manifest
+	Tag        Tag
+	Fact       Fact
+}
+
+//
+// Deprecated.
+
 // Bucket returns the bucket API.
+// Deprecated.  Use Select().
 func (h Application) Bucket(id uint) (h2 bucket.BucketContent) {
 	params := client.Params{
 		api.Wildcard: "",
@@ -65,6 +100,7 @@ func (h Application) Bucket(id uint) (h2 bucket.BucketContent) {
 }
 
 // Tags returns the tags API.
+// Deprecated.  Use Select().
 func (h Application) Tags(id uint) (tg Tag) {
 	tg = Tag{
 		client: h.client,
@@ -74,6 +110,7 @@ func (h Application) Tags(id uint) (tg Tag) {
 }
 
 // Facts returns the facts API.
+// Deprecated.  Use Select().
 func (h Application) Facts(id uint) (f Fact) {
 	f = Fact{
 		client: h.client,
@@ -83,6 +120,7 @@ func (h Application) Facts(id uint) (f Fact) {
 }
 
 // Analysis returns the analysis API.
+// Deprecated.  Use Select().
 func (h Application) Analysis(id uint) (a Analysis) {
 	a = Analysis{
 		client: h.client,
@@ -92,6 +130,7 @@ func (h Application) Analysis(id uint) (a Analysis) {
 }
 
 // Manifest returns the manifest API.
+// Deprecated.  Use Select().
 func (h Application) Manifest(id uint) (f Manifest) {
 	f = Manifest{
 		client: h.client,
@@ -101,6 +140,7 @@ func (h Application) Manifest(id uint) (f Manifest) {
 }
 
 // Identity returns the identity API.
+// Deprecated.  Use Select().
 func (h Application) Identity(id uint) (f Identity) {
 	f = Identity{
 		client: h.client,
@@ -110,6 +150,7 @@ func (h Application) Identity(id uint) (f Identity) {
 }
 
 // Assessment returns the assessment API.
+// Deprecated.  Use Select().
 func (h Application) Assessment(id uint) (f Assessment) {
 	f = Assessment{
 		client: h.client,

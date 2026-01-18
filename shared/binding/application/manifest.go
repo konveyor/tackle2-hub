@@ -12,7 +12,7 @@ type Manifest struct {
 }
 
 // Create manifest.
-func (h *Manifest) Create(r *api.Manifest) (err error) {
+func (h Manifest) Create(r *api.Manifest) (err error) {
 	path := client.Path(api.ManifestsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Post(path, &r)
 	return
@@ -22,11 +22,9 @@ func (h *Manifest) Create(r *api.Manifest) (err error) {
 // Params:
 // Param{Key: Decrypted, Value: "1"}
 // Param{Key: Injected, Value: "1"}
-func (h *Manifest) Get(param ...client.Param) (r *api.Manifest, err error) {
+func (h Manifest) Get(param ...client.Param) (r *api.Manifest, err error) {
 	r = &api.Manifest{}
-	path := client.
-		Path(api.AppManifestRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AppManifestRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, r, param...)
 	return
 }
