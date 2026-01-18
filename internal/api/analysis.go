@@ -381,6 +381,7 @@ func (h AnalysisHandler) AppCreate(ctx *gin.Context) {
 	}
 	//
 	// Insights
+	analysis.Effort = 0
 	reader = &ManifestReader{}
 	err = reader.Open(file.Path, BeginInsightsMarker, EndInsightsMarker)
 	if err != nil {
