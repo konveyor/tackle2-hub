@@ -42,9 +42,7 @@ func (h Analysis) Create(manifest, encoding string) (r *api.Analysis, err error)
 			encoding)
 	}
 	r = &api.Analysis{}
-	path := client.
-		Path(api.AppAnalysesRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AppAnalysesRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.FilePostEncoded(path, manifest, r, encoding)
 	if err != nil {
 		return
@@ -70,18 +68,14 @@ func (h Analysis) Get() (r *api.Analysis, err error) {
 
 // GetInsights Insights analysis for an application.
 func (h Analysis) GetInsights() (r []api.Insight, err error) {
-	path := client.
-		Path(api.AppAnalysisInsightsRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AppAnalysisInsightsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &r)
 	return
 }
 
 // GetDependencies dependencies for an application.
 func (h Analysis) GetDependencies() (r []api.TechDependency, err error) {
-	path := client.
-		Path(api.AppAnalysisDepsRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AppAnalysisDepsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &r)
 	return
 }

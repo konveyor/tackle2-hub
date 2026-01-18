@@ -25,9 +25,7 @@ func (h Application) Create(r *api.Application) (err error) {
 // Get an Application by ID.
 func (h Application) Get(id uint) (r *api.Application, err error) {
 	r = &api.Application{}
-	path := client.
-		Path(api.ApplicationRoute).
-		Inject(client.Params{api.ID: id})
+	path := client.Path(api.ApplicationRoute).Inject(client.Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -41,9 +39,7 @@ func (h Application) List() (list []api.Application, err error) {
 
 // Update an Application.
 func (h Application) Update(r *api.Application) (err error) {
-	path := client.
-		Path(api.ApplicationRoute).
-		Inject(client.Params{api.ID: r.ID})
+	path := client.Path(api.ApplicationRoute).Inject(client.Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }

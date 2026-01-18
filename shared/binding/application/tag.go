@@ -31,9 +31,7 @@ func (h Tag) Replace(ids []uint) (err error) {
 		err = liberr.New("Source required.")
 		return
 	}
-	path := client.
-		Path(api.ApplicationTagsRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.ApplicationTagsRoute).Inject(client.Params{api.ID: h.appId})
 	query := []client.Param{}
 	if h.source != nil {
 		query = append(
@@ -73,9 +71,7 @@ func (h Tag) List() (list []api.TagRef, err error) {
 
 // Add associates a tag with the application.
 func (h Tag) Add(id uint) (err error) {
-	path := client.
-		Path(api.ApplicationTagsRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.ApplicationTagsRoute).Inject(client.Params{api.ID: h.appId})
 	tag := api.TagRef{ID: id}
 	if h.source != nil {
 		tag.Source = *h.source

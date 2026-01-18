@@ -13,19 +13,15 @@ type Assessment struct {
 
 // Create an Assessment.
 func (h Assessment) Create(r *api.Assessment) (err error) {
-	path := client.
-		Path(api.AssessmentsRoute).
-		Inject(client.Params{api.ID: h.appId})
-	err = h.client.Post(path, &r)
+	path := client.Path(api.AppAssessmentsRoute).Inject(client.Params{api.ID: h.appId})
+	err = h.client.Post(path, r)
 	return
 }
 
 // List Assessments.
 func (h Assessment) List() (list []api.Assessment, err error) {
 	list = []api.Assessment{}
-	path := client.
-		Path(api.AssessmentsRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AssessmentsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &list)
 	return
 }

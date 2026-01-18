@@ -10,12 +10,14 @@ import (
 )
 
 func TestAssessmentCRUD(t *testing.T) {
+	q := questionnaire.Questionnaire1
+	assert.Must(t, RichClient.Questionnaire.Create(&q))
+	defer func() {
+		_ = RichClient.Questionnaire.Delete(q.ID)
+	}()
 	for _, r := range Samples {
 		t.Run(fmt.Sprintf("%s for application %s", r.Questionnaire.Name, r.Application.Name), func(t *testing.T) {
-			// Prepare questionnaire
-			questionnaire := questionnaire.Questionnaire1
-			assert.Must(t, RichClient.Questionnaire.Create(&questionnaire))
-			r.Questionnaire.ID = questionnaire.ID
+			r.Questionnaire.ID = q.ID
 
 			// Create via parent resource.
 			if r.Application.Name != "" {

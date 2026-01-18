@@ -17,9 +17,7 @@ func (h Identity) List() (list []api.Identity, err error) {
 		Key:   api.Decrypted,
 		Value: "1",
 	}
-	path := client.
-		Path(api.AppIdentitiesRoute).
-		Inject(client.Params{api.ID: h.appId})
+	path := client.Path(api.AppIdentitiesRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &list, p)
 	if err != nil {
 		return
