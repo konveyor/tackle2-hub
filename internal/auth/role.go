@@ -39,6 +39,7 @@ var AddonRole = []string{
 	"tasks.bucket:get",
 	"files:*",
 	"rulesets:get",
+	"targets:get",
 }
 
 // Role represents a RBAC role which grants
