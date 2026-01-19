@@ -178,7 +178,7 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 }
 
 // playWithBucket
-func playWithBucket(bucket *hub.BucketContent) (err error) {
+func playWithBucket(bucket hub.BucketContent) (err error) {
 	tmpDir := tmpDir()
 	defer func() {
 		_ = nas.RmDir(tmpDir)
