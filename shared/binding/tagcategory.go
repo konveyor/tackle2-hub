@@ -12,13 +12,13 @@ type TagCategory struct {
 }
 
 // Create a TagCategory.
-func (h *TagCategory) Create(r *api.TagCategory) (err error) {
-	err = h.client.Post(api.TagCategoriesRoute, &r)
+func (h TagCategory) Create(r *api.TagCategory) (err error) {
+	err = h.client.Post(api.TagCategoriesRoute, r)
 	return
 }
 
 // Get a TagCategory by ID.
-func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
+func (h TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
 	path := Path(api.TagCategoryRoute).Inject(Params{api.ID: id})
 	err = h.client.Get(path, r)
@@ -26,27 +26,27 @@ func (h *TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 }
 
 // List TagCategories.
-func (h *TagCategory) List() (list []api.TagCategory, err error) {
+func (h TagCategory) List() (list []api.TagCategory, err error) {
 	list = []api.TagCategory{}
 	err = h.client.Get(api.TagCategoriesRoute, &list)
 	return
 }
 
 // Update a TagCategory.
-func (h *TagCategory) Update(r *api.TagCategory) (err error) {
+func (h TagCategory) Update(r *api.TagCategory) (err error) {
 	path := Path(api.TagCategoryRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a TagCategory.
-func (h *TagCategory) Delete(id uint) (err error) {
+func (h TagCategory) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.TagCategoryRoute).Inject(Params{api.ID: id}))
 	return
 }
 
 // Find by name.
-func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err error) {
+func (h TagCategory) Find(name string) (r *api.TagCategory, found bool, err error) {
 	list := []api.TagCategory{}
 	err = h.client.Get(
 		api.TagCategoriesRoute,
@@ -66,7 +66,7 @@ func (h *TagCategory) Find(name string) (r *api.TagCategory, found bool, err err
 }
 
 // Ensure a tag-type exists.
-func (h *TagCategory) Ensure(wanted *api.TagCategory) (err error) {
+func (h TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 	for i := 0; i < 10; i++ {
 		err = h.Create(wanted)
 		if err == nil {

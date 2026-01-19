@@ -10,13 +10,13 @@ type Identity struct {
 }
 
 // Create a Identity.
-func (h *Identity) Create(r *api.Identity) (err error) {
-	err = h.client.Post(api.IdentitiesRoute, &r)
+func (h Identity) Create(r *api.Identity) (err error) {
+	err = h.client.Post(api.IdentitiesRoute, r)
 	return
 }
 
 // Get a decrypted Identity by ID.
-func (h *Identity) Get(id uint) (r *api.Identity, err error) {
+func (h Identity) Get(id uint) (r *api.Identity, err error) {
 	r = &api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
@@ -28,7 +28,7 @@ func (h *Identity) Get(id uint) (r *api.Identity, err error) {
 }
 
 // List decrypted Identities.
-func (h *Identity) List() (list []api.Identity, err error) {
+func (h Identity) List() (list []api.Identity, err error) {
 	list = []api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
@@ -39,7 +39,7 @@ func (h *Identity) List() (list []api.Identity, err error) {
 }
 
 // Find decrypted Identities.
-func (h *Identity) Find(filter Filter) (list []api.Identity, err error) {
+func (h Identity) Find(filter Filter) (list []api.Identity, err error) {
 	list = []api.Identity{}
 	p := Param{
 		Key:   api.Decrypted,
@@ -50,14 +50,14 @@ func (h *Identity) Find(filter Filter) (list []api.Identity, err error) {
 }
 
 // Update a Identity.
-func (h *Identity) Update(r *api.Identity) (err error) {
+func (h Identity) Update(r *api.Identity) (err error) {
 	path := Path(api.IdentityRoute).Inject(Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a Identity.
-func (h *Identity) Delete(id uint) (err error) {
+func (h Identity) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.IdentityRoute).Inject(Params{api.ID: id}))
 	return
 }

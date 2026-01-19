@@ -7,6 +7,7 @@ import (
 
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/task"
 )
 
@@ -262,8 +263,9 @@ func (h *Task) Completed(n int) {
 }
 
 // Bucket returns the bucket API.
-func (h *Task) Bucket() (b *binding.BucketContent) {
-	b = h.richClient.Task.Bucket(h.task.ID)
+func (h *Task) Bucket() (b bucket.Content) {
+	selected := h.richClient.Task.Select(h.task.ID)
+	b = selected.Bucket
 	return
 }
 

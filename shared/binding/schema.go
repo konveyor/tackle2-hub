@@ -10,7 +10,7 @@ type Schema struct {
 }
 
 // Get returns a schema by name.
-func (h *Schema) Get(name string) (r *api.Schema, err error) {
+func (h Schema) Get(name string) (r *api.Schema, err error) {
 	r = &api.Schema{}
 	path := Path(api.SchemasGetRoute).Inject(Params{api.Name: name})
 	err = h.client.Get(path, r)
@@ -18,7 +18,7 @@ func (h *Schema) Get(name string) (r *api.Schema, err error) {
 }
 
 // Find returns a schema by domain, variant, subject.
-func (h *Schema) Find(domain, variant, subject string) (r *api.LatestSchema, err error) {
+func (h Schema) Find(domain, variant, subject string) (r *api.LatestSchema, err error) {
 	r = &api.LatestSchema{}
 	params := Params{
 		api.Domain:  domain,
