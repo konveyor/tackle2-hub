@@ -11,7 +11,7 @@ type Identity struct {
 
 // Create a Identity.
 func (h Identity) Create(r *api.Identity) (err error) {
-	err = h.client.Post(api.IdentitiesRoute, &r)
+	err = h.client.Post(api.IdentitiesRoute, r)
 	return
 }
 

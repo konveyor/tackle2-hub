@@ -92,9 +92,9 @@ func (h Fact) Replace(facts api.Map) (err error) {
 	key.Qualify(h.source)
 	path := client.Path(api.ApplicationFactsRoute).Inject(
 		client.Params{
-			api.ID:  h.appId,
-			api.Key: key,
+			api.ID: h.appId,
 		})
+	path = pathlib.Join(path, string(key))
 	err = h.client.Put(path, facts)
 	return
 }

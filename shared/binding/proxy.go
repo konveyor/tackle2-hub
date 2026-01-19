@@ -11,7 +11,7 @@ type Proxy struct {
 
 // Create a Proxy.
 func (h Proxy) Create(r *api.Proxy) (err error) {
-	err = h.client.Post(api.ProxiesRoute, &r)
+	err = h.client.Post(api.ProxiesRoute, r)
 	return
 }
 

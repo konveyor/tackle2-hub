@@ -11,7 +11,7 @@ type Review struct {
 
 // Create a Review.
 func (h Review) Create(r *api.Review) (err error) {
-	err = h.client.Post(api.ReviewsRoute, &r)
+	err = h.client.Post(api.ReviewsRoute, r)
 	return
 }
 

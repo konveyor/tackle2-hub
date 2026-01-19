@@ -18,7 +18,7 @@ type Task struct {
 
 // Create a Task.
 func (h Task) Create(r *api.Task) (err error) {
-	err = h.client.Post(api.TasksRoute, &r)
+	err = h.client.Post(api.TasksRoute, r)
 	return
 }
 

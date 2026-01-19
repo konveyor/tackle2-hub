@@ -13,7 +13,7 @@ type Tag struct {
 
 // Create a Tag.
 func (h Tag) Create(r *api.Tag) (err error) {
-	err = h.client.Post(api.TagsRoute, &r)
+	err = h.client.Post(api.TagsRoute, r)
 	return
 }
 

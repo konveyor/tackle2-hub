@@ -237,6 +237,6 @@ func TestFindIdentity_Select(t *testing.T) {
 	list, err := Application.Select(application.ID).Identity.List()
 	assert.Must(t, err)
 	if len(list) != 2 {
-		t.Errorf("list expected: 1, actual: %d", len(list))
+		t.Errorf("list expected: 2, actual: %d", len(list))
 	}
 }

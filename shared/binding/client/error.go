@@ -18,7 +18,8 @@ type RestError struct {
 }
 
 func (e *RestError) Is(err error) (matched bool) {
-	_, matched = err.(*RestError)
+	var inst *RestError
+	matched = errors.As(err, &inst)
 	return
 }
 

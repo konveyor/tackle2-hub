@@ -39,6 +39,7 @@ func (h Analysis) Upload(manifest, encoding string) (r *api.Analysis, err error)
 		err = liberr.New(
 			"Encoding: %s not supported",
 			encoding)
+		return
 	}
 	r = &api.Analysis{}
 	path := client.Path(api.AppAnalysesRoute).Inject(client.Params{api.ID: h.appId})
@@ -58,22 +59,23 @@ func (h Analysis) Create(r *api.Analysis) (err error) {
 
 // Get the latest analysis for an application.
 func (h Analysis) Get() (r *api.Analysis, err error) {
+	r = &api.Analysis{}
 	path := client.
 		Path(api.AppAnalysisRoute).
 		Inject(client.Params{api.ID: h.appId})
-	err = h.client.Get(path, &r)
+	err = h.client.Get(path, r)
 	return
 }
 
-// GetInsights Insights analysis for an application.
-func (h Analysis) GetInsights() (r []api.Insight, err error) {
+// ListInsights returns a list of Insights analysis for an application.
+func (h Analysis) ListInsights() (r []api.Insight, err error) {
 	path := client.Path(api.AppAnalysisInsightsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &r)
 	return
 }
 
-// GetDependencies dependencies for an application.
-func (h Analysis) GetDependencies() (r []api.TechDependency, err error) {
+// ListDependencies returns a list of dependencies for an application.
+func (h Analysis) ListDependencies() (r []api.TechDependency, err error) {
 	path := client.Path(api.AppAnalysisDepsRoute).Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, &r)
 	return

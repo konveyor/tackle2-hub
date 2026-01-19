@@ -36,7 +36,7 @@ func (h Setting) Int(key string) (n int, err error) {
 
 // Create a Setting.
 func (h Setting) Create(r *api.Setting) (err error) {
-	err = h.client.Post(api.SettingsRoute, &r)
+	err = h.client.Post(api.SettingsRoute, r)
 	return
 }
 

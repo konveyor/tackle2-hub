@@ -12,7 +12,7 @@ type Dependency struct {
 
 // Create a Dependency.
 func (h Dependency) Create(r *api.Dependency) (err error) {
-	err = h.client.Post(api.DependenciesRoute, &r)
+	err = h.client.Post(api.DependenciesRoute, r)
 	return
 }
 

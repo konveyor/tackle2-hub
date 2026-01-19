@@ -11,7 +11,7 @@ type Tracker struct {
 
 // Create a Tracker.
 func (h Tracker) Create(r *api.Tracker) (err error) {
-	err = h.client.Post(api.TrackersRoute, &r)
+	err = h.client.Post(api.TrackersRoute, r)
 	return
 }
 

@@ -14,7 +14,7 @@ type Manifest struct {
 // Create manifest.
 func (h Manifest) Create(r *api.Manifest) (err error) {
 	path := client.Path(api.ManifestsRoute).Inject(client.Params{api.ID: h.appId})
-	err = h.client.Post(path, &r)
+	err = h.client.Post(path, r)
 	return
 }
 

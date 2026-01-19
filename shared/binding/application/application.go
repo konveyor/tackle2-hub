@@ -18,7 +18,7 @@ type Application struct {
 
 // Create an Application.
 func (h Application) Create(r *api.Application) (err error) {
-	err = h.client.Post(api.ApplicationsRoute, &r)
+	err = h.client.Post(api.ApplicationsRoute, r)
 	return
 }
 

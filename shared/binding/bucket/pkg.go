@@ -27,7 +27,7 @@ type Bucket struct {
 
 // Create a Bucket.
 func (h Bucket) Create(r *api.Bucket) (err error) {
-	err = h.client.Post(api.BucketsRoute, &r)
+	err = h.client.Post(api.BucketsRoute, r)
 	return
 }
 

@@ -11,7 +11,7 @@ type Stakeholder struct {
 
 // Create a Stakeholder.
 func (h Stakeholder) Create(r *api.Stakeholder) (err error) {
-	err = h.client.Post(api.StakeholdersRoute, &r)
+	err = h.client.Post(api.StakeholdersRoute, r)
 	return
 }
 

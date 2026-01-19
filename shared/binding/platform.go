@@ -11,7 +11,7 @@ type Platform struct {
 
 // Create a Platform.
 func (h Platform) Create(r *api.Platform) (err error) {
-	err = h.client.Post(api.PlatformsRoute, &r)
+	err = h.client.Post(api.PlatformsRoute, r)
 	return
 }
 

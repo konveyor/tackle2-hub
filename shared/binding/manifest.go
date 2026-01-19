@@ -11,7 +11,7 @@ type Manifest struct {
 
 // Create a Manifest.
 func (h Manifest) Create(r *api.Manifest) (err error) {
-	err = h.client.Post(api.ManifestsRoute, &r)
+	err = h.client.Post(api.ManifestsRoute, r)
 	return
 }
 

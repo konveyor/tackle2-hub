@@ -11,7 +11,7 @@ type Archetype struct {
 
 // Create a Archetype.
 func (h Archetype) Create(r *api.Archetype) (err error) {
-	err = h.client.Post(api.ArchetypesRoute, &r)
+	err = h.client.Post(api.ArchetypesRoute, r)
 	return
 }
 

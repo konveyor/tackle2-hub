@@ -11,7 +11,7 @@ type Generator struct {
 
 // Create a Generator.
 func (h Generator) Create(r *api.Generator) (err error) {
-	err = h.client.Post(api.GeneratorsRoute, &r)
+	err = h.client.Post(api.GeneratorsRoute, r)
 	return
 }
 

@@ -11,7 +11,7 @@ type StakeholderGroup struct {
 
 // Create a StakeholderGroup.
 func (h StakeholderGroup) Create(r *api.StakeholderGroup) (err error) {
-	err = h.client.Post(api.StakeholderGroupsRoute, &r)
+	err = h.client.Post(api.StakeholderGroupsRoute, r)
 	return
 }
 

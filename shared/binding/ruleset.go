@@ -11,7 +11,7 @@ type RuleSet struct {
 
 // Create a RuleSet.
 func (h RuleSet) Create(r *api.RuleSet) (err error) {
-	err = h.client.Post(api.RuleSetsRoute, &r)
+	err = h.client.Post(api.RuleSetsRoute, r)
 	return
 }
 

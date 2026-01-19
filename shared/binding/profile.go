@@ -11,7 +11,7 @@ type AnalysisProfile struct {
 
 // Create a profile.
 func (h AnalysisProfile) Create(r *api.AnalysisProfile) (err error) {
-	err = h.client.Post(api.AnalysisProfilesRoute, &r)
+	err = h.client.Post(api.AnalysisProfilesRoute, r)
 	return
 }
 

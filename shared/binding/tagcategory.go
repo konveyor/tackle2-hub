@@ -13,7 +13,7 @@ type TagCategory struct {
 
 // Create a TagCategory.
 func (h TagCategory) Create(r *api.TagCategory) (err error) {
-	err = h.client.Post(api.TagCategoriesRoute, &r)
+	err = h.client.Post(api.TagCategoriesRoute, r)
 	return
 }
 

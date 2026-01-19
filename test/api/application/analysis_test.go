@@ -40,8 +40,8 @@ func TestApplicationAnalysis(t *testing.T) {
 		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, r)
 	}
 
-	// Test get insights.
-	gotInsights, err := analysis.GetInsights()
+	// Test list insights.
+	gotInsights, err := analysis.ListInsights()
 	if len(r.Insights) != len(gotInsights) {
 		return
 	}
@@ -51,8 +51,8 @@ func TestApplicationAnalysis(t *testing.T) {
 		}
 	}
 
-	// Test get insights.
-	gotDeps, err := analysis.GetDependencies()
+	// Test list insights.
+	gotDeps, err := analysis.ListDependencies()
 	if len(r.Dependencies) != len(gotDeps) {
 		return
 	}

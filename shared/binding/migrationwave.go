@@ -11,7 +11,7 @@ type MigrationWave struct {
 
 // Create a MigrationWave.
 func (h MigrationWave) Create(r *api.MigrationWave) (err error) {
-	err = h.client.Post(api.MigrationWavesRoute, &r)
+	err = h.client.Post(api.MigrationWavesRoute, r)
 	return
 }
 

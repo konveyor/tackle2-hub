@@ -11,7 +11,7 @@ type Ticket struct {
 
 // Create a Ticket.
 func (h Ticket) Create(r *api.Ticket) (err error) {
-	err = h.client.Post(api.TicketsRoute, &r)
+	err = h.client.Post(api.TicketsRoute, r)
 	return
 }
 

@@ -11,7 +11,7 @@ type Questionnaire struct {
 
 // Create a Questionnaire.
 func (h Questionnaire) Create(r *api.Questionnaire) (err error) {
-	err = h.client.Post(api.QuestionnairesRoute, &r)
+	err = h.client.Post(api.QuestionnairesRoute, r)
 	return
 }
 

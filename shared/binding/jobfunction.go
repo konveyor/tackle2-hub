@@ -11,7 +11,7 @@ type JobFunction struct {
 
 // Create a JobFunction.
 func (h JobFunction) Create(r *api.JobFunction) (err error) {
-	err = h.client.Post(api.JobFunctionsRoute, &r)
+	err = h.client.Post(api.JobFunctionsRoute, r)
 	return
 }
 

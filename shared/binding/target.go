@@ -11,7 +11,7 @@ type Target struct {
 
 // Create a Target.
 func (h Target) Create(r *api.Target) (err error) {
-	err = h.client.Post(api.TargetsRoute, &r)
+	err = h.client.Post(api.TargetsRoute, r)
 	return
 }
 

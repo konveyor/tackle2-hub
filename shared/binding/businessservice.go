@@ -11,7 +11,7 @@ type BusinessService struct {
 
 // Create a BusinessService.
 func (h BusinessService) Create(r *api.BusinessService) (err error) {
-	err = h.client.Post(api.BusinessServicesRoute, &r)
+	err = h.client.Post(api.BusinessServicesRoute, r)
 	return
 }
 
