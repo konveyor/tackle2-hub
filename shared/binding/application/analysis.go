@@ -13,7 +13,7 @@ type Analysis struct {
 	appId  uint
 }
 
-// Create an analysis report using the manifest at the specified path.
+// Upload an analysis manifest at the specified path.
 // The manifest contains 3 sections containing documents delimited by markers.
 // The manifest must contain ALL markers even when sections are empty.
 // Note: `^]` = `\x1D` = GS (group separator).
@@ -29,8 +29,7 @@ type Analysis struct {
 // The encoding must be:
 // - application/json
 // - application/x-yaml
-// Deprecated: Use Add().
-func (h Analysis) Create(manifest, encoding string) (r *api.Analysis, err error) {
+func (h Analysis) Upload(manifest, encoding string) (r *api.Analysis, err error) {
 	switch encoding {
 	case "":
 		encoding = api.MIMEJSON
@@ -50,8 +49,8 @@ func (h Analysis) Create(manifest, encoding string) (r *api.Analysis, err error)
 	return
 }
 
-// Add an analysis report for an application.
-func (h Analysis) Add(r *api.Analysis) (err error) {
+// Create an analysis report for an application.
+func (h Analysis) Create(r *api.Analysis) (err error) {
 	r.Application.ID = h.appId
 	err = analysis.New(h.client).Create(r)
 	return
