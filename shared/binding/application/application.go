@@ -53,16 +53,71 @@ func (h Application) Delete(id uint) (err error) {
 	return
 }
 
+// Bucket returns the bucket API.
+// Deprecated.  Use Selected().
+func (h Application) Bucket(id uint) (h2 bucket.Content) {
+	selected := h.Select(id)
+	h2 = selected.Bucket
+	return
+}
+
+// Tags returns the tags API.
+// Deprecated.  Use Selected().
+func (h Application) Tags(id uint) (h2 Tag) {
+	selected := h.Select(id)
+	h2 = selected.Tag
+	return
+}
+
+// Facts returns the facts API.
+// Deprecated.  Use Selected().
+func (h Application) Facts(id uint) (h2 Fact) {
+	selected := h.Select(id)
+	h2 = selected.Fact
+	return
+}
+
+// Analysis returns the analysis API.
+// Deprecated.  Use Selected().
+func (h Application) Analysis(id uint) (h2 Analysis) {
+	selected := h.Select(id)
+	h2 = selected.Analysis
+	return
+}
+
+// Manifest returns the manifest API.
+// Deprecated.  Use Selected().
+func (h Application) Manifest(id uint) (h2 Manifest) {
+	selected := h.Select(id)
+	h2 = selected.Manifest
+	return
+}
+
+// Identity returns the identity API.
+// Deprecated.  Use Selected().
+func (h Application) Identity(id uint) (h2 Identity) {
+	selected := h.Select(id)
+	h2 = selected.Identity
+	return
+}
+
+// Assessment returns the assessment API.
+// Deprecated.  Use Selected().
+func (h Application) Assessment(id uint) (f Assessment) {
+	selected := h.Select(id)
+	f = selected.Assessment
+	return
+}
+
+// Select returns the API for a selected application.
 func (h Application) Select(id uint) (h2 Selected) {
-	h2 = Selected{
-		client: h.client,
-	}
-	params := client.Params{
-		api.Wildcard: "",
-		api.ID:       id,
-	}
-	path := client.Path(api.AppBucketContentRoute).Inject(params)
-	h2.Bucket = bucket.NewContent(h.client, path)
+	h2 = Selected{}
+	bucketRoot := client.Path(api.AppBucketContentRoute).
+		Inject(client.Params{
+			api.Wildcard: "",
+			api.ID:       id,
+		})
+	h2.Bucket = bucket.NewContent(h.client, bucketRoot)
 	h2.Identity = Identity{client: h.client, appId: id}
 	h2.Assessment = Assessment{client: h.client, appId: id}
 	h2.Analysis = Analysis{client: h.client, appId: id}
@@ -72,89 +127,13 @@ func (h Application) Select(id uint) (h2 Selected) {
 	return
 }
 
-// Selected application API.
+// Selected  application API.
 type Selected struct {
-	client     *client.Client
-	Bucket     bucket.BucketContent
+	Bucket     bucket.Content
 	Identity   Identity
 	Assessment Assessment
 	Analysis   Analysis
 	Manifest   Manifest
 	Tag        Tag
 	Fact       Fact
-}
-
-//
-// Deprecated.
-
-// Bucket returns the bucket API.
-// Deprecated.  Use Select().
-func (h Application) Bucket(id uint) (h2 bucket.BucketContent) {
-	params := client.Params{
-		api.Wildcard: "",
-		api.ID:       id,
-	}
-	path := client.Path(api.AppBucketContentRoute).Inject(params)
-	h2 = bucket.NewContent(h.client, path)
-	return
-}
-
-// Tags returns the tags API.
-// Deprecated.  Use Select().
-func (h Application) Tags(id uint) (tg Tag) {
-	tg = Tag{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Facts returns the facts API.
-// Deprecated.  Use Select().
-func (h Application) Facts(id uint) (f Fact) {
-	f = Fact{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Analysis returns the analysis API.
-// Deprecated.  Use Select().
-func (h Application) Analysis(id uint) (a Analysis) {
-	a = Analysis{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Manifest returns the manifest API.
-// Deprecated.  Use Select().
-func (h Application) Manifest(id uint) (f Manifest) {
-	f = Manifest{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Identity returns the identity API.
-// Deprecated.  Use Select().
-func (h Application) Identity(id uint) (f Identity) {
-	f = Identity{
-		client: h.client,
-		appId:  id,
-	}
-	return
-}
-
-// Assessment returns the assessment API.
-// Deprecated.  Use Select().
-func (h Application) Assessment(id uint) (f Assessment) {
-	f = Assessment{
-		client: h.client,
-		appId:  id,
-	}
-	return
 }

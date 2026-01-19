@@ -263,8 +263,9 @@ func (h *Task) Completed(n int) {
 }
 
 // Bucket returns the bucket API.
-func (h *Task) Bucket() (b bucket.BucketContent) {
-	b = h.richClient.Task.Bucket(h.task.ID)
+func (h *Task) Bucket() (b bucket.Content) {
+	selected := h.richClient.Task.Select(h.task.ID)
+	b = selected.Bucket
 	return
 }
 
