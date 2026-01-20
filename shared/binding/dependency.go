@@ -7,7 +7,7 @@ import (
 // Dependency API.
 type Dependency struct {
 	// hub API client.
-	client *Client
+	client RestClient
 }
 
 // Create a Dependency.

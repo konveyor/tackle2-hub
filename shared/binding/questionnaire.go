@@ -6,7 +6,7 @@ import (
 
 // Questionnaire API.
 type Questionnaire struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Questionnaire.

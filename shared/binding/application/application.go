@@ -6,14 +6,14 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
 
-func New(client *client.Client) (h Application) {
+func New(client client.RestClient) (h Application) {
 	h = Application{client: client}
 	return
 }
 
 // Application API.
 type Application struct {
-	client *client.Client
+	client client.RestClient
 }
 
 // Create an Application.

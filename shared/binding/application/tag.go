@@ -11,7 +11,7 @@ import (
 // Tag sub-resource API.
 // Provides association management of tags to applications by name.
 type Tag struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 	source *string
 }

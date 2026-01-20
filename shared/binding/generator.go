@@ -6,7 +6,7 @@ import (
 
 // Generator API.
 type Generator struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Generator.

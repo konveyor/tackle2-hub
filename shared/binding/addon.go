@@ -6,7 +6,7 @@ import (
 
 // Addon API.
 type Addon struct {
-	client *Client
+	client RestClient
 }
 
 // Get an Addon by name.

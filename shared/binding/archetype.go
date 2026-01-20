@@ -6,7 +6,7 @@ import (
 
 // Archetype API.
 type Archetype struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Archetype.

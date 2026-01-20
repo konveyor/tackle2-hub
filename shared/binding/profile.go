@@ -6,7 +6,7 @@ import (
 
 // Analysis profile API.
 type AnalysisProfile struct {
-	client *Client
+	client RestClient
 }
 
 // Create a profile.

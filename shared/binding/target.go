@@ -6,7 +6,7 @@ import (
 
 // Target API.
 type Target struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Target.

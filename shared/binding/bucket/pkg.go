@@ -7,12 +7,12 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
 
-func New(client *client.Client) (h Bucket) {
+func New(client client.RestClient) (h Bucket) {
 	h = Bucket{client: client}
 	return
 }
 
-func NewContent(client *client.Client, root string) (h Content) {
+func NewContent(client client.RestClient, root string) (h Content) {
 	h = Content{
 		client: client,
 		root:   root,
@@ -22,7 +22,7 @@ func NewContent(client *client.Client, root string) (h Content) {
 
 // Bucket API.
 type Bucket struct {
-	client *client.Client
+	client client.RestClient
 }
 
 // Create a Bucket.
@@ -80,7 +80,7 @@ type Selected struct {
 
 // Content API.
 type Content struct {
-	client *client.Client
+	client client.RestClient
 	root   string
 }
 

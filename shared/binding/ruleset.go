@@ -6,7 +6,7 @@ import (
 
 // RuleSet API.
 type RuleSet struct {
-	client *Client
+	client RestClient
 }
 
 // Create a RuleSet.

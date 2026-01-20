@@ -6,7 +6,7 @@ import (
 
 // Manifest API.
 type Manifest struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Manifest.

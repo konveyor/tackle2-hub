@@ -30,6 +30,9 @@ type Field = client.Field
 // Client Http client.
 type Client = client.Client
 
+// RestClient interface for HTTP client operations.
+type RestClient = client.RestClient
+
 // RestError reports REST errors.
 type RestError = client.RestError
 

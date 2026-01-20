@@ -8,7 +8,7 @@ import (
 
 // Tag API.
 type Tag struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Tag.

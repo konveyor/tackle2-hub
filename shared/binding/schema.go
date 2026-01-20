@@ -6,7 +6,7 @@ import (
 
 // Schema API.
 type Schema struct {
-	client *Client
+	client RestClient
 }
 
 // Get returns a schema by name.

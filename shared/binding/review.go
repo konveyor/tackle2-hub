@@ -6,7 +6,7 @@ import (
 
 // Review API.
 type Review struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Review.

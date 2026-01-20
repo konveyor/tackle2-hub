@@ -6,7 +6,7 @@ import (
 
 // Platform API.
 type Platform struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Platform.

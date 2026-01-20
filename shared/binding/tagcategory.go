@@ -8,7 +8,7 @@ import (
 
 // TagCategory API.
 type TagCategory struct {
-	client *Client
+	client RestClient
 }
 
 // Create a TagCategory.

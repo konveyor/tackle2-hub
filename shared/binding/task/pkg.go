@@ -6,14 +6,14 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
 
-func New(client *client.Client) (h Task) {
+func New(client client.RestClient) (h Task) {
 	h = Task{client: client}
 	return
 }
 
 // Task API.
 type Task struct {
-	client *client.Client
+	client client.RestClient
 }
 
 // Create a Task.

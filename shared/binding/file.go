@@ -8,7 +8,7 @@ import (
 
 // File API.
 type File struct {
-	client *Client
+	client RestClient
 }
 
 // Get downloads a file.

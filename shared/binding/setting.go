@@ -6,7 +6,7 @@ import (
 
 // Setting API.
 type Setting struct {
-	client *Client
+	client RestClient
 }
 
 // Get a setting by key.

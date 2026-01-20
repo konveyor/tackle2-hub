@@ -6,7 +6,7 @@ import (
 
 // Ticket API.
 type Ticket struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Ticket.

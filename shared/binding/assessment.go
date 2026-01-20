@@ -6,7 +6,7 @@ import (
 
 // Assessment API.
 type Assessment struct {
-	client *Client
+	client RestClient
 }
 
 // Get a Assessment by ID.
