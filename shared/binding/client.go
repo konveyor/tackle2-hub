@@ -7,7 +7,7 @@ import (
 const (
 	// RetryLimit request retry limit.
 	RetryLimit = client.RetryLimit
-	
+
 	// RetryDelay delay between client request retries.
 	RetryDelay = client.RetryDelay
 )
@@ -23,6 +23,9 @@ type Params = client.Params
 
 // Path URL path.
 type Path = client.Path
+
+// Field Http form field.
+type Field = client.Field
 
 // Client Http client.
 type Client = client.Client
