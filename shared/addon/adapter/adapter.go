@@ -35,7 +35,7 @@ func init() {
 }
 
 // Client
-type Client = binding.Client
+type RestClient = binding.RestClient
 type RichClient = binding.RichClient
 type Params = binding.Params
 type Param = binding.Param

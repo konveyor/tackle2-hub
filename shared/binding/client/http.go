@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	Log = logr.New("binding", 0)
+	_   RestClient = (*Client)(nil)
+	Log            = logr.New("binding", 0)
 )
 
 // Client provides a REST client.

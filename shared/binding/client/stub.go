@@ -1,6 +1,8 @@
 package client
 
 import (
+	"fmt"
+
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
@@ -43,7 +45,8 @@ func (s *Stub) SetRetry(n uint8) {
 // Get retrieves a resource from the specified path.
 func (s *Stub) Get(path string, object any, params ...Param) (err error) {
 	if s.GetFn == nil {
-		panic("Get not implemented")
+		err = fmt.Errorf("Get not implemented")
+		return
 	}
 	return s.GetFn(path, object, params...)
 }
@@ -51,7 +54,8 @@ func (s *Stub) Get(path string, object any, params ...Param) (err error) {
 // Post creates a resource at the specified path.
 func (s *Stub) Post(path string, object any) (err error) {
 	if s.PostFn == nil {
-		panic("Post not implemented")
+		err = fmt.Errorf("Post not implemented")
+		return
 	}
 	return s.PostFn(path, object)
 }
@@ -59,7 +63,8 @@ func (s *Stub) Post(path string, object any) (err error) {
 // Put updates a resource at the specified path.
 func (s *Stub) Put(path string, object any, params ...Param) (err error) {
 	if s.PutFn == nil {
-		panic("Put not implemented")
+		err = fmt.Errorf("Put not implemented")
+		return
 	}
 	return s.PutFn(path, object, params...)
 }
@@ -67,7 +72,8 @@ func (s *Stub) Put(path string, object any, params ...Param) (err error) {
 // Patch partially updates a resource at the specified path.
 func (s *Stub) Patch(path string, object any, params ...Param) (err error) {
 	if s.PatchFn == nil {
-		panic("Patch not implemented")
+		err = fmt.Errorf("Patch not implemented")
+		return
 	}
 	return s.PatchFn(path, object, params...)
 }
@@ -75,7 +81,8 @@ func (s *Stub) Patch(path string, object any, params ...Param) (err error) {
 // Delete removes a resource at the specified path.
 func (s *Stub) Delete(path string, params ...Param) (err error) {
 	if s.DeleteFn == nil {
-		panic("Delete not implemented")
+		err = fmt.Errorf("Delete not implemented")
+		return
 	}
 	return s.DeleteFn(path, params...)
 }
@@ -83,7 +90,8 @@ func (s *Stub) Delete(path string, params ...Param) (err error) {
 // BucketGet downloads a file or directory from the bucket.
 func (s *Stub) BucketGet(source, destination string) (err error) {
 	if s.BucketGetFn == nil {
-		panic("BucketGet not implemented")
+		err = fmt.Errorf("BucketGet not implemented")
+		return
 	}
 	return s.BucketGetFn(source, destination)
 }
@@ -91,7 +99,8 @@ func (s *Stub) BucketGet(source, destination string) (err error) {
 // BucketPut uploads a file or directory to the bucket.
 func (s *Stub) BucketPut(source, destination string) (err error) {
 	if s.BucketPutFn == nil {
-		panic("BucketPut not implemented")
+		err = fmt.Errorf("BucketPut not implemented")
+		return
 	}
 	return s.BucketPutFn(source, destination)
 }
@@ -99,7 +108,8 @@ func (s *Stub) BucketPut(source, destination string) (err error) {
 // FileGet downloads a file from the specified path.
 func (s *Stub) FileGet(path, destination string) (err error) {
 	if s.FileGetFn == nil {
-		panic("FileGet not implemented")
+		err = fmt.Errorf("FileGet not implemented")
+		return
 	}
 	return s.FileGetFn(path, destination)
 }
@@ -107,7 +117,8 @@ func (s *Stub) FileGet(path, destination string) (err error) {
 // FilePost uploads a file to the specified path using POST.
 func (s *Stub) FilePost(path, source string, object any) (err error) {
 	if s.FilePostFn == nil {
-		panic("FilePost not implemented")
+		err = fmt.Errorf("FilePost not implemented")
+		return
 	}
 	return s.FilePostFn(path, source, object)
 }
@@ -115,7 +126,8 @@ func (s *Stub) FilePost(path, source string, object any) (err error) {
 // FilePostEncoded uploads a file with a specific encoding using POST.
 func (s *Stub) FilePostEncoded(path, source string, object any, encoding string) (err error) {
 	if s.FilePostEncodedFn == nil {
-		panic("FilePostEncoded not implemented")
+		err = fmt.Errorf("FilePostEncoded not implemented")
+		return
 	}
 	return s.FilePostEncodedFn(path, source, object, encoding)
 }
@@ -123,7 +135,8 @@ func (s *Stub) FilePostEncoded(path, source string, object any, encoding string)
 // FilePut uploads a file to the specified path using PUT.
 func (s *Stub) FilePut(path, source string, object any) (err error) {
 	if s.FilePutFn == nil {
-		panic("FilePut not implemented")
+		err = fmt.Errorf("FilePut not implemented")
+		return
 	}
 	return s.FilePutFn(path, source, object)
 }
@@ -131,7 +144,8 @@ func (s *Stub) FilePut(path, source string, object any) (err error) {
 // FilePutEncoded uploads a file with a specific encoding using PUT.
 func (s *Stub) FilePutEncoded(path, source string, object any, encoding string) (err error) {
 	if s.FilePutEncodedFn == nil {
-		panic("FilePutEncoded not implemented")
+		err = fmt.Errorf("FilePutEncoded not implemented")
+		return
 	}
 	return s.FilePutEncodedFn(path, source, object, encoding)
 }
@@ -139,7 +153,8 @@ func (s *Stub) FilePutEncoded(path, source string, object any, encoding string) 
 // FilePatch appends data to a file at the specified path.
 func (s *Stub) FilePatch(path string, buffer []byte) (err error) {
 	if s.FilePatchFn == nil {
-		panic("FilePatch not implemented")
+		err = fmt.Errorf("FilePatch not implemented")
+		return
 	}
 	return s.FilePatchFn(path, buffer)
 }
@@ -147,7 +162,8 @@ func (s *Stub) FilePatch(path string, buffer []byte) (err error) {
 // FileSend sends a multipart file upload request.
 func (s *Stub) FileSend(path, method string, fields []Field, object any) (err error) {
 	if s.FileSendFn == nil {
-		panic("FileSend not implemented")
+		err = fmt.Errorf("FileSend not implemented")
+		return
 	}
 	return s.FileSendFn(path, method, fields, object)
 }
@@ -155,7 +171,9 @@ func (s *Stub) FileSend(path, method string, fields []Field, object any) (err er
 // IsDir determines if the given path is a directory.
 func (s *Stub) IsDir(path string, must bool) (isDir bool, err error) {
 	if s.IsDirFn == nil {
-		panic("IsDir not implemented")
+		isDir = false
+		err = fmt.Errorf("IsDir not implemented")
+		return
 	}
 	return s.IsDirFn(path, must)
 }
