@@ -7,6 +7,7 @@ import (
 const (
 	// RetryLimit request retry limit.
 	RetryLimit = client.RetryLimit
+	
 	// RetryDelay delay between client request retries.
 	RetryDelay = client.RetryDelay
 )
