@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Client     *binding.Client
+	Client     binding.Client
 	RichClient *binding.RichClient
 	Analysis   analysis.Analysis
 )

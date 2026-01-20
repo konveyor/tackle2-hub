@@ -28,7 +28,7 @@ type Path = client.Path
 type Field = client.Field
 
 // Client Http client.
-type Client = client.Client
+type Client = client.RestClient
 
 // RestClient interface for HTTP client operations.
 type RestClient = client.RestClient

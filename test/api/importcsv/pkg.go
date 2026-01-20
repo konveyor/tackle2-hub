@@ -8,7 +8,7 @@ import (
 
 var (
 	RichClient  *binding.RichClient
-	Client      *binding.Client
+	Client      binding.Client
 	Application application.Application
 	Dependency  binding.Dependency
 	Stakeholder binding.Stakeholder

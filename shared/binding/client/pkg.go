@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/shared/api"
 	qf "github.com/konveyor/tackle2-hub/shared/binding/filter"
 )
 
@@ -68,6 +69,10 @@ func (s Path) Inject(p Params) (out string) {
 type RestClient interface {
 	// Reset clears the error state of the client.
 	Reset()
+	// Use login.
+	Use(login api.Login)
+	// SetRetry set the number of retries.
+	SetRetry(n uint8)
 
 	// Get retrieves a resource from the specified path.
 	// The response is unmarshaled into the provided object.

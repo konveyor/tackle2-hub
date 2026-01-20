@@ -35,7 +35,7 @@ type Client struct {
 	// login API resource.
 	Login api.Login
 	// Retry limit.
-	Retry int
+	Retry uint8
 	// Error
 	Error error
 }
@@ -43,6 +43,16 @@ type Client struct {
 // Reset the client.
 func (r *Client) Reset() {
 	r.Error = nil
+}
+
+// Use the login.
+func (r *Client) Use(login api.Login) {
+	r.Login = login
+}
+
+// SetRetry set the number of retries.
+func (r *Client) SetRetry(n uint8) {
+	r.Retry = n
 }
 
 // Get a resource.
@@ -677,7 +687,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 	if err != nil {
 		return
 	}
-	for i := 0; ; i++ {
+	for i := uint8(0); ; i++ {
 		request, err = rb()
 		if err != nil {
 			return
