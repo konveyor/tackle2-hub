@@ -153,12 +153,11 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-// Use set the richClient.
+// Use sets the richClient.
 func (h *Adapter) Use(richClient *RichClient) {
 	h.Log = Log
 	h.Wrap = Wrap
 	h.richClient = richClient
-	h.Task.richClient = richClient
 	h.AnalysisProfile = richClient.AnalysisProfile
 	h.Application = richClient.Application
 	h.Archetype = richClient.Archetype
