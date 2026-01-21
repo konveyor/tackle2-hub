@@ -11,7 +11,7 @@ import (
 	logapi "github.com/go-logr/logr"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/internal/api"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
