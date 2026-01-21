@@ -7,7 +7,7 @@ import (
 )
 
 // Bucket returns the bucket API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Analysis instead.
 func (h Application) Bucket(id uint) (h2 bucket.Content) {
 	selected := h.Select(id)
 	h2 = selected.Bucket
@@ -15,7 +15,7 @@ func (h Application) Bucket(id uint) (h2 bucket.Content) {
 }
 
 // Tags returns the tags API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Analysis instead.
 func (h Application) Tags(id uint) (h2 TagXX) {
 	h2 = TagXX{
 		client: h.client,
@@ -25,7 +25,7 @@ func (h Application) Tags(id uint) (h2 TagXX) {
 }
 
 // Facts returns the facts API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Analysis instead.
 func (h Application) Facts(id uint) (h2 FactXX) {
 	h2 = FactXX{
 		client: h.client,
@@ -35,7 +35,7 @@ func (h Application) Facts(id uint) (h2 FactXX) {
 }
 
 // Analysis returns the analysis API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Analysis instead.
 func (h Application) Analysis(id uint) (h2 AnalysisXX) {
 	h2 = AnalysisXX{
 		client: h.client,
@@ -45,7 +45,7 @@ func (h Application) Analysis(id uint) (h2 AnalysisXX) {
 }
 
 // Manifest returns the manifest API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Manifest instead.
 func (h Application) Manifest(id uint) (h2 Manifest) {
 	selected := h.Select(id)
 	h2 = selected.Manifest
@@ -53,7 +53,7 @@ func (h Application) Manifest(id uint) (h2 Manifest) {
 }
 
 // Identity returns the identity API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Identity instead.
 func (h Application) Identity(id uint) (h2 Identity) {
 	selected := h.Select(id)
 	h2 = selected.Identity
@@ -61,7 +61,7 @@ func (h Application) Identity(id uint) (h2 Identity) {
 }
 
 // Assessment returns the assessment API.
-// Deprecated.  Use Selected().
+// Deprecated: Use Application.Select(id).Assessment instead.
 func (h Application) Assessment(id uint) (f Assessment) {
 	selected := h.Select(id)
 	f = selected.Assessment
@@ -69,6 +69,7 @@ func (h Application) Assessment(id uint) (f Assessment) {
 }
 
 // AnalysisXX analysis API.
+// Deprecated: Use Analysis instead.
 type AnalysisXX struct {
 	client client.RestClient
 	appId  uint
@@ -85,6 +86,7 @@ func (h AnalysisXX) Create(manifest, encoding string) (r *api.Analysis, err erro
 
 // TagXX sub-resource API.
 // Provides association management of tags to applications by name.
+// Deprecated: Use Tag instead.
 type TagXX struct {
 	client client.RestClient
 	appId  uint
@@ -150,6 +152,7 @@ func (h *TagXX) Delete(id uint) (err error) {
 
 // FactXX sub-resource API.
 // Provides association management of facts.
+// Deprecated: Use Fact instead.
 type FactXX struct {
 	client client.RestClient
 	appId  uint
