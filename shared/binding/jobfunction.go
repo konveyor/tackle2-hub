@@ -6,7 +6,7 @@ import (
 
 // JobFunction API.
 type JobFunction struct {
-	client *Client
+	client RestClient
 }
 
 // Create a JobFunction.

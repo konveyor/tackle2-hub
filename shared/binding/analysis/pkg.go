@@ -8,14 +8,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func New(client *client.Client) (h Analysis) {
+func New(client client.RestClient) (h Analysis) {
 	h = Analysis{client: client}
 	return
 }
 
 // Analysis API.
 type Analysis struct {
-	client *client.Client
+	client client.RestClient
 }
 
 // Create an Analysis.

@@ -7,7 +7,7 @@ import (
 
 // Identity sub-resource API.
 type Identity struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 }
 

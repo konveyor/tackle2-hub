@@ -33,7 +33,7 @@ func PrepareRichClient() (richClient *binding.RichClient) {
 	}
 
 	// Disable HTTP requests retry for network-related errors to fail quickly.
-	richClient.Client.Retry = 1
+	richClient.Client.SetRetry(uint8(1))
 
 	return
 }

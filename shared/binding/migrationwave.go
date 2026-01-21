@@ -6,7 +6,7 @@ import (
 
 // MigrationWave API.
 type MigrationWave struct {
-	client *Client
+	client RestClient
 }
 
 // Create a MigrationWave.

@@ -7,7 +7,7 @@ import (
 
 // Manifest sub-resource API.
 type Manifest struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 }
 

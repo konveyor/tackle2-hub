@@ -6,7 +6,7 @@ import (
 
 // BusinessService API.
 type BusinessService struct {
-	client *Client
+	client RestClient
 }
 
 // Create a BusinessService.

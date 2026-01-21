@@ -6,7 +6,7 @@ import (
 
 // Tracker API.
 type Tracker struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Tracker.

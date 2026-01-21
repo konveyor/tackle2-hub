@@ -10,7 +10,7 @@ import (
 // Fact sub-resource API.
 // Provides association management of facts.
 type Fact struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 	source string
 }

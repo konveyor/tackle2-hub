@@ -6,7 +6,7 @@ import (
 
 // Identity API.
 type Identity struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Identity.

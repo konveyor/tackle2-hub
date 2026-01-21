@@ -11,6 +11,7 @@ import (
 	logapi "github.com/go-logr/logr"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
@@ -34,7 +35,7 @@ func init() {
 }
 
 // Client
-type Client = binding.Client
+type RestClient = binding.RestClient
 type RichClient = binding.RichClient
 type Params = binding.Params
 type Param = binding.Param
@@ -153,17 +154,16 @@ func (h *Adapter) Run(addon func() error) {
 }
 
 // Client returns a configured rich-client.
-func (h *Adapter) Client() (client *RichClient) {
-	client = &RichClient{}
-	client.Client.Login = h.Task.richClient.Client.Login
-	client.Client.Retry = h.Task.richClient.Client.Retry
+func (h *Adapter) Client() (richClient *RichClient) {
+	richClient = binding.New(Settings.Hub.URL)
+	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
 	return
 }
 
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
-	richClient.Client.Login.Token = Settings.Hub.Token
+	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
 	adapter = &Adapter{
 		Task: Task{
 			richClient: richClient,

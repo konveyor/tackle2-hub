@@ -8,7 +8,7 @@ import (
 
 var (
 	RichClient *binding.RichClient
-	Client     *binding.Client
+	Client     binding.RestClient
 	Bucket     bucket.Bucket
 )
 

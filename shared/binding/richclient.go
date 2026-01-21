@@ -14,10 +14,17 @@ var (
 	Log = logr.New("binding", 0)
 )
 
+// New builds a new RichClient object.
+func New(baseURL string) (r *RichClient) {
+	r = &RichClient{}
+	r.build(client.New(baseURL))
+	return
+}
+
 // The RichClient provides API integration.
 type RichClient struct {
 	// Client
-	Client *Client
+	Client RestClient
 	// API namespaces.
 	Addon            Addon
 	Analysis         analysis.Analysis
@@ -51,95 +58,9 @@ type RichClient struct {
 	Tracker          Tracker
 }
 
-// New builds a new RichClient object.
-func New(baseURL string) (r *RichClient) {
-	client := client.New(baseURL)
-	r = &RichClient{
-		Addon: Addon{
-			client: client,
-		},
-		Analysis: analysis.New(client),
-		AnalysisProfile: AnalysisProfile{
-			client: client,
-		},
-		Application: application.New(client),
-		Archetype: Archetype{
-			client: client,
-		},
-		Assessment: Assessment{
-			client: client,
-		},
-		Bucket: bucket.New(client),
-		BusinessService: BusinessService{
-			client: client,
-		},
-		Dependency: Dependency{
-			client: client,
-		},
-		File: File{
-			client: client,
-		},
-		Generator: Generator{
-			client: client,
-		},
-		Identity: Identity{
-			client: client,
-		},
-		JobFunction: JobFunction{
-			client: client,
-		},
-		Manifest: Manifest{
-			client: client,
-		},
-		MigrationWave: MigrationWave{
-			client: client,
-		},
-		Platform: Platform{
-			client: client,
-		},
-		Proxy: Proxy{
-			client: client,
-		},
-		Questionnaire: Questionnaire{
-			client: client,
-		},
-		Review: Review{
-			client: client,
-		},
-		RuleSet: RuleSet{
-			client: client,
-		},
-		Schema: Schema{
-			client: client,
-		},
-		Setting: Setting{
-			client: client,
-		},
-		Stakeholder: Stakeholder{
-			client: client,
-		},
-		StakeholderGroup: StakeholderGroup{
-			client: client,
-		},
-		Tag: Tag{
-			client: client,
-		},
-		TagCategory: TagCategory{
-			client: client,
-		},
-		Target: Target{
-			client: client,
-		},
-		Task: task.New(client),
-		Ticket: Ticket{
-			client: client,
-		},
-		Tracker: Tracker{
-			client: client,
-		},
-		Client: client,
-	}
-	return
+// Use login.
+func (r *RichClient) Use(client RestClient) {
+	r.build(client)
 }
 
 // Login set token.
@@ -152,6 +73,41 @@ func (r *RichClient) Login(user, password string) (err error) {
 	if err != nil {
 		return
 	}
-	r.Client.Login = login
+	r.Client.Use(login)
 	return
+}
+
+// build the handlers.
+func (r *RichClient) build(client RestClient) {
+	r.Client = client
+	r.Addon = Addon{client: client}
+	r.Analysis = analysis.New(client)
+	r.AnalysisProfile = AnalysisProfile{client: client}
+	r.Application = application.New(client)
+	r.Archetype = Archetype{client: client}
+	r.Assessment = Assessment{client: client}
+	r.Bucket = bucket.New(client)
+	r.BusinessService = BusinessService{client: client}
+	r.Dependency = Dependency{client: client}
+	r.File = File{client: client}
+	r.Generator = Generator{client: client}
+	r.Identity = Identity{client: client}
+	r.JobFunction = JobFunction{client: client}
+	r.Manifest = Manifest{client: client}
+	r.MigrationWave = MigrationWave{client: client}
+	r.Platform = Platform{client: client}
+	r.Proxy = Proxy{client: client}
+	r.Questionnaire = Questionnaire{client: client}
+	r.Review = Review{client: client}
+	r.RuleSet = RuleSet{client: client}
+	r.Schema = Schema{client: client}
+	r.Setting = Setting{client: client}
+	r.Stakeholder = Stakeholder{client: client}
+	r.StakeholderGroup = StakeholderGroup{client: client}
+	r.Tag = Tag{client: client}
+	r.TagCategory = TagCategory{client: client}
+	r.Target = Target{client: client}
+	r.Task = task.New(client)
+	r.Ticket = Ticket{client: client}
+	r.Tracker = Tracker{client: client}
 }

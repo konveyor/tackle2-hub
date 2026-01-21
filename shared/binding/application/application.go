@@ -6,14 +6,14 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
 
-func New(client *client.Client) (h Application) {
+func New(client client.RestClient) (h Application) {
 	h = Application{client: client}
 	return
 }
 
 // Application API.
 type Application struct {
-	client *client.Client
+	client client.RestClient
 }
 
 // Create an Application.
@@ -50,62 +50,6 @@ func (h Application) Delete(id uint) (err error) {
 		Path(api.ApplicationRoute).
 		Inject(client.Params{api.ID: id})
 	err = h.client.Delete(path)
-	return
-}
-
-// Bucket returns the bucket API.
-// Deprecated.  Use Selected().
-func (h Application) Bucket(id uint) (h2 bucket.Content) {
-	selected := h.Select(id)
-	h2 = selected.Bucket
-	return
-}
-
-// Tags returns the tags API.
-// Deprecated.  Use Selected().
-func (h Application) Tags(id uint) (h2 Tag) {
-	selected := h.Select(id)
-	h2 = selected.Tag
-	return
-}
-
-// Facts returns the facts API.
-// Deprecated.  Use Selected().
-func (h Application) Facts(id uint) (h2 Fact) {
-	selected := h.Select(id)
-	h2 = selected.Fact
-	return
-}
-
-// Analysis returns the analysis API.
-// Deprecated.  Use Selected().
-func (h Application) Analysis(id uint) (h2 Analysis) {
-	selected := h.Select(id)
-	h2 = selected.Analysis
-	return
-}
-
-// Manifest returns the manifest API.
-// Deprecated.  Use Selected().
-func (h Application) Manifest(id uint) (h2 Manifest) {
-	selected := h.Select(id)
-	h2 = selected.Manifest
-	return
-}
-
-// Identity returns the identity API.
-// Deprecated.  Use Selected().
-func (h Application) Identity(id uint) (h2 Identity) {
-	selected := h.Select(id)
-	h2 = selected.Identity
-	return
-}
-
-// Assessment returns the assessment API.
-// Deprecated.  Use Selected().
-func (h Application) Assessment(id uint) (f Assessment) {
-	selected := h.Select(id)
-	f = selected.Assessment
 	return
 }
 

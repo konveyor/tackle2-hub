@@ -31,7 +31,7 @@ const (
 )
 
 // Client
-type Client = adapter.Client
+type RestClient = adapter.RestClient
 type Params = adapter.Params
 type Param = adapter.Param
 type Path = adapter.Path

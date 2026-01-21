@@ -33,15 +33,45 @@ func TestApplicationAnalysis(t *testing.T) {
 	}()
 
 	// Get the analysis back.
-	analysis := Application.Analysis(app.ID)
-	got, err := analysis.Get()
+	got, err := Application.Select(app.ID).Analysis.Get()
+	assert.Must(t, err)
+	if !at.Eq(&r, got) {
+		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, r)
+	}
+}
+
+func TestApplicationAnalysis_Select(t *testing.T) {
+	// Setup.
+	app := &api.Application{
+		Name:        "Test App for Analysis",
+		Description: "Application for testing analysis",
+	}
+	err := RichClient.Application.Create(app)
+	assert.Must(t, err)
+	defer func() {
+		_ = RichClient.Application.Delete(app.ID)
+	}()
+
+	// Create.
+	var r api.Analysis
+	b, _ := json.Marshal(at.Sample)
+	_ = json.Unmarshal(b, &r)
+	r.Application = api.Ref{ID: app.ID}
+	err = RichClient.Analysis.Create(&r)
+	assert.Must(t, err)
+	defer func() {
+		_ = RichClient.Analysis.Delete(r.ID)
+	}()
+
+	// Get the analysis back.
+	got, err := Application.Select(app.ID).Analysis.Get()
 	assert.Must(t, err)
 	if !at.Eq(&r, got) {
 		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, r)
 	}
 
 	// Test list insights.
-	gotInsights, err := analysis.ListInsights()
+	gotInsights, err := Application.Select(app.ID).Analysis.ListInsights()
 	if len(r.Insights) != len(gotInsights) {
 		return
 	}
@@ -52,7 +82,7 @@ func TestApplicationAnalysis(t *testing.T) {
 	}
 
 	// Test list insights.
-	gotDeps, err := analysis.ListDependencies()
+	gotDeps, err := Application.Select(app.ID).Analysis.ListDependencies()
 	if len(r.Dependencies) != len(gotDeps) {
 		return
 	}

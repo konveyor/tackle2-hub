@@ -6,7 +6,7 @@ import (
 
 // Proxy API.
 type Proxy struct {
-	client *Client
+	client RestClient
 }
 
 // Create a Proxy.

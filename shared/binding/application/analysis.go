@@ -9,7 +9,7 @@ import (
 
 // Analysis sub-resource API.
 type Analysis struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 }
 

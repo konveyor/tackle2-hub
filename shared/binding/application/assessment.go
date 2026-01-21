@@ -7,7 +7,7 @@ import (
 
 // Assessment sub-resource API.
 type Assessment struct {
-	client *client.Client
+	client client.RestClient
 	appId  uint
 }
 

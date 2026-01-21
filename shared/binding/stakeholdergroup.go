@@ -6,7 +6,7 @@ import (
 
 // StakeholderGroup API.
 type StakeholderGroup struct {
-	client *Client
+	client RestClient
 }
 
 // Create a StakeholderGroup.
