@@ -153,10 +153,14 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-// Client returns a configured rich-client.
+// Use set the richClient.
+func (h *Adapter) Use(richClient *RichClient) {
+	h.richClient = richClient
+}
+
+// Client returns the rich-client.
 func (h *Adapter) Client() (richClient *RichClient) {
-	richClient = binding.New(Settings.Hub.URL)
-	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
+	richClient = h.richClient
 	return
 }
 
