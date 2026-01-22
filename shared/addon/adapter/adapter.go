@@ -153,10 +153,31 @@ func (h *Adapter) Run(addon func() error) {
 	}
 }
 
-// Client returns a configured rich-client.
+// Use sets the richClient.
+func (h *Adapter) Use(richClient *RichClient) {
+	h.Log = Log
+	h.Wrap = Wrap
+	h.richClient = richClient
+	h.AnalysisProfile = richClient.AnalysisProfile
+	h.Application = richClient.Application
+	h.Archetype = richClient.Archetype
+	h.File = richClient.File
+	h.Generator = richClient.Generator
+	h.Identity = richClient.Identity
+	h.Manifest = richClient.Manifest
+	h.Platform = richClient.Platform
+	h.Proxy = richClient.Proxy
+	h.RuleSet = richClient.RuleSet
+	h.Schema = richClient.Schema
+	h.Setting = richClient.Setting
+	h.Tag = richClient.Tag
+	h.TagCategory = richClient.TagCategory
+	h.Target = richClient.Target
+}
+
+// Client returns the rich-client.
 func (h *Adapter) Client() (richClient *RichClient) {
-	richClient = binding.New(Settings.Hub.URL)
-	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
+	richClient = h.richClient
 	return
 }
 
@@ -164,31 +185,8 @@ func (h *Adapter) Client() (richClient *RichClient) {
 func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
-	adapter = &Adapter{
-		Task: Task{
-			richClient: richClient,
-		},
-		Log:  Log,
-		Wrap: Wrap,
-		//
-		AnalysisProfile: richClient.AnalysisProfile,
-		Application:     richClient.Application,
-		Archetype:       richClient.Archetype,
-		File:            richClient.File,
-		Generator:       richClient.Generator,
-		Identity:        richClient.Identity,
-		Manifest:        richClient.Manifest,
-		Platform:        richClient.Platform,
-		Proxy:           richClient.Proxy,
-		RuleSet:         richClient.RuleSet,
-		Schema:          richClient.Schema,
-		Setting:         richClient.Setting,
-		Tag:             richClient.Tag,
-		TagCategory:     richClient.TagCategory,
-		Target:          richClient.Target,
-	}
-
+	adapter = &Adapter{}
+	adapter.Use(richClient)
 	Log.Info("Addon (adapter) created.")
-
 	return
 }
