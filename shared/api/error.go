@@ -2,16 +2,60 @@ package api
 
 import (
 	"errors"
-	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
 )
+
+// RestError reports REST errors.
+type RestError struct {
+	Reason string
+	Method string
+	Path   string
+	Status int
+	Body   string
+}
+
+func (e *RestError) Is(err error) (matched bool) {
+	var inst *RestError
+	matched = errors.As(err, &inst)
+	return
+}
+
+func (e *RestError) Error() (s string) {
+	s = e.Reason
+	return
+}
+
+func (e *RestError) With(r *http.Response) {
+	e.Method = r.Request.Method
+	e.Path = r.Request.URL.Path
+	e.Status = r.StatusCode
+	if r.Body != nil {
+		body, err := io.ReadAll(r.Body)
+		if err == nil {
+			e.Body = string(body)
+		}
+	}
+	s := strings.ToUpper(e.Method)
+	s += " "
+	s += e.Path
+	s += " failed: "
+	s += strconv.Itoa(e.Status)
+	s += "("
+	s += http.StatusText(e.Status)
+	s += ")"
+	if e.Body != "" {
+		s += " body: "
+		s += e.Body
+	}
+	e.Reason = s
+}
 
 // BadRequestError reports bad request errors.
 type BadRequestError struct {
-	Reason string
-}
-
-func (r *BadRequestError) Error() string {
-	return r.Reason
+	RestError
 }
 
 func (r *BadRequestError) Is(err error) (matched bool) {
@@ -22,11 +66,7 @@ func (r *BadRequestError) Is(err error) (matched bool) {
 
 // Forbidden reports auth errors.
 type Forbidden struct {
-	Reason string
-}
-
-func (r *Forbidden) Error() string {
-	return r.Reason
+	RestError
 }
 
 func (r *Forbidden) Is(err error) (matched bool) {
@@ -35,18 +75,35 @@ func (r *Forbidden) Is(err error) (matched bool) {
 	return
 }
 
-// NotFound reports resource not-found errors.
+// Conflict reports 409 error.
+type Conflict struct {
+	RestError
+}
+
+func (e *Conflict) Is(err error) (matched bool) {
+	var inst *Conflict
+	matched = errors.As(err, &inst)
+	return
+}
+
+// NotFound reports 404 error.
 type NotFound struct {
-	Resource string
-	Reason   string
+	RestError
 }
 
-func (r *NotFound) Error() string {
-	return fmt.Sprintf("Resource '%s' not found. %s", r.Resource, r.Reason)
+func (e *NotFound) Is(err error) (matched bool) {
+	var inst *NotFound
+	matched = errors.As(err, &inst)
+	return
 }
 
-func (r *NotFound) Is(err error) (matched bool) {
-	var target *NotFound
-	matched = errors.As(err, &target)
+// EmptyBody reports an empty body.
+type EmptyBody struct {
+	RestError
+}
+
+func (e *EmptyBody) Is(err error) (matched bool) {
+	var inst *EmptyBody
+	matched = errors.As(err, &inst)
 	return
 }
