@@ -27,7 +27,7 @@ var (
 			},
 			Repository: &api.Repository{
 				URL:  "https://github.com/konveyor/rulesets.git",
-				Path: "default/generated/camel3",
+				Path: "stable/java/camel3",
 			},
 		}}
 )
