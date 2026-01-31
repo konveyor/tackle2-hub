@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCmp(t *testing.T) {
+func TestEq(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	listA := []int{1, 2, 3}
@@ -203,9 +203,103 @@ func TestCmp(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			eq, report := Eq(tc.a, tc.b, tc.ignore...)
+			if !eq {
+				print(report)
+			}
 			g.Expect(eq).To(Equal(tc.wantEq))
 			if eq != tc.wantEq {
 				t.Logf("report:\n%s", report)
+			}
+		})
+	}
+}
+
+func TestEqReport(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	listA := []int{1, 2, 3}
+	listB := []int{1, 3, 2}
+
+	testCases := []struct {
+		name         string
+		a, b         any
+		wantEq       bool
+		wantInReport []string
+	}{
+		{
+			name:         "strings not equal",
+			a:            "hello",
+			b:            "world",
+			wantEq:       false,
+			wantInReport: []string{`~  = "world" expected: "hello"`},
+		},
+		{
+			name:         "int not equal",
+			a:            42,
+			b:            100,
+			wantEq:       false,
+			wantInReport: []string{"~  = 100 expected: 42"},
+		},
+		{
+			name:   "type mismatch (int vs string)",
+			a:      42,
+			b:      "42",
+			wantEq: false,
+			wantInReport: []string{
+				": (type) int != string",
+			},
+		},
+		{
+			name:   "[]int not equal (order)",
+			a:      listA,
+			b:      listB,
+			wantEq: false,
+			wantInReport: []string{
+				"~ [1] = 3 expected: 2",
+				"~ [2] = 2 expected: 3",
+			},
+		},
+		{
+			name: "struct not equal (different values)",
+			a: T{
+				ID:   1,
+				List: listA,
+				Name: &T2{
+					First:  "Elmer",
+					Middle: "James",
+					Last:   "Fudd",
+				},
+			},
+			b: T{
+				ID:   1,
+				List: listB,
+				Name: &T2{
+					First:  "James",
+					Middle: "",
+					Last:   "Bond",
+				},
+			},
+			wantEq: false,
+			wantInReport: []string{
+				"~ List[1] = 3 expected: 2",
+				`~ Name.First = "James" expected: "Elmer"`,
+				`~ Name.Middle = "" expected: "James"`,
+				`~ Name.Last = "Bond" expected: "Fudd"`,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			eq, report := Eq(tc.a, tc.b)
+			g.Expect(eq).To(Equal(tc.wantEq))
+			if tc.wantEq {
+				g.Expect(report).To(BeEmpty())
+			} else {
+				g.Expect(report).ToNot(BeEmpty())
+				for _, expected := range tc.wantInReport {
+					g.Expect(report).To(ContainSubstring(expected))
+				}
 			}
 		})
 	}

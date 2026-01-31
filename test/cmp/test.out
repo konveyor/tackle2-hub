@@ -1,0 +1,630 @@
+GOROOT=/home/jortel/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.11.linux-amd64 #gosetup
+GOPATH=/home/jortel/go #gosetup
+/home/jortel/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.11.linux-amd64/bin/go test -c -o /home/jortel/.cache/JetBrains/GoLand2025.1/tmp/GoLand/___TestEq_in_github_com_konveyor_tackle2_hub_test_cmp.test github.com/konveyor/tackle2-hub/test/cmp #gosetup
+/home/jortel/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.11.linux-amd64/bin/go tool test2json -t /home/jortel/.cache/JetBrains/GoLand2025.1/tmp/GoLand/___TestEq_in_github_com_konveyor_tackle2_hub_test_cmp.test -test.v=test2json -test.paniconexit0 -test.run ^\QTestEq\E$ #gosetup
+=== RUN   TestEq
+=== RUN   TestEq/strings_equal
+--- PASS: TestEq/strings_equal (0.00s)
+=== RUN   TestEq/strings_not_equal
+
+Expected:
+__________________________
+(string) (len=5) "hello"
+
+
+Got:
+__________________________
+(string) (len=5) "world"
+
+Diff
+__________________________
+~  = "world" expected: "hello"
+
+--- PASS: TestEq/strings_not_equal (0.00s)
+=== RUN   TestEq/int_equal
+--- PASS: TestEq/int_equal (0.00s)
+=== RUN   TestEq/int_not_equal
+
+Expected:
+__________________________
+(int) 42
+
+
+Got:
+__________________________
+(int) 100
+
+Diff
+__________________________
+~  = 100 expected: 42
+
+--- PASS: TestEq/int_not_equal (0.00s)
+=== RUN   TestEq/float_equal
+--- PASS: TestEq/float_equal (0.00s)
+=== RUN   TestEq/float_not_equal
+
+Expected:
+__________________________
+(float64) 3.14
+
+
+Got:
+__________________________
+(float64) 2.71
+
+Diff
+__________________________
+~  = 2.71 expected: 3.14
+
+--- PASS: TestEq/float_not_equal (0.00s)
+=== RUN   TestEq/bool_equal
+--- PASS: TestEq/bool_equal (0.00s)
+=== RUN   TestEq/bool_not_equal
+
+Expected:
+__________________________
+(bool) true
+
+
+Got:
+__________________________
+(bool) false
+
+Diff
+__________________________
+~  = false expected: true
+
+--- PASS: TestEq/bool_not_equal (0.00s)
+=== RUN   TestEq/type_mismatch_(int_vs_string)
+
+Expected:
+__________________________
+(int) 42
+
+
+Got:
+__________________________
+(string) (len=2) "42"
+
+Diff
+__________________________
+: (type) int != string
+
+--- PASS: TestEq/type_mismatch_(int_vs_string) (0.00s)
+=== RUN   TestEq/type_mismatch_(int_vs_float)
+
+Expected:
+__________________________
+(int) 42
+
+
+Got:
+__________________________
+(float64) 42
+
+Diff
+__________________________
+: (type) int != float64
+
+--- PASS: TestEq/type_mismatch_(int_vs_float) (0.00s)
+=== RUN   TestEq/[]int_equal
+--- PASS: TestEq/[]int_equal (0.00s)
+=== RUN   TestEq/[]int_not_equal_(order)
+
+Expected:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 2,
+    (int) 3
+}
+
+
+Got:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 3,
+    (int) 2
+}
+
+Diff
+__________________________
+~ [1] = 3 expected: 2
+~ [2] = 2 expected: 3
+
+--- PASS: TestEq/[]int_not_equal_(order) (0.00s)
+=== RUN   TestEq/[]int_not_equal_(different_values)
+
+Expected:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 2,
+    (int) 3
+}
+
+
+Got:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 2,
+    (int) 4
+}
+
+Diff
+__________________________
+~ [2] = 4 expected: 3
+
+--- PASS: TestEq/[]int_not_equal_(different_values) (0.00s)
+=== RUN   TestEq/[]int_not_equal_(different_length_-_longer_first)
+
+Expected:
+__________________________
+([]int) (len=4) {
+    (int) 1,
+    (int) 2,
+    (int) 3,
+    (int) 4
+}
+
+
+Got:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 3,
+    (int) 2
+}
+
+Diff
+__________________________
+~ [1] = 3 expected: 2
+~ [2] = 2 expected: 3
+- [3] = 4
+
+--- PASS: TestEq/[]int_not_equal_(different_length_-_longer_first) (0.00s)
+=== RUN   TestEq/[]int_not_equal_(different_length_-_shorter_first)
+
+Expected:
+__________________________
+([]int) (len=3) {
+    (int) 1,
+    (int) 3,
+    (int) 2
+}
+
+
+Got:
+__________________________
+([]int) (len=5) {
+    (int) 1,
+    (int) 2,
+    (int) 3,
+    (int) 4,
+    (int) 5
+}
+
+Diff
+__________________________
+~ [1] = 2 expected: 3
+~ [2] = 3 expected: 2
++ [3] = 4
++ [4] = 5
+
+--- PASS: TestEq/[]int_not_equal_(different_length_-_shorter_first) (0.00s)
+=== RUN   TestEq/empty_slices_equal
+--- PASS: TestEq/empty_slices_equal (0.00s)
+=== RUN   TestEq/nil_slice_vs_empty_slice
+--- PASS: TestEq/nil_slice_vs_empty_slice (0.00s)
+=== RUN   TestEq/nil_slice_vs_nil_slice
+--- PASS: TestEq/nil_slice_vs_nil_slice (0.00s)
+=== RUN   TestEq/nil_vs_non-nil
+
+Expected:
+__________________________
+(interface {}) <nil>
+
+
+Got:
+__________________________
+(int) 10
+
+Diff
+__________________________
+~  = <nil> expected: <ptr>
+
+--- PASS: TestEq/nil_vs_non-nil (0.00s)
+=== RUN   TestEq/non-nil_vs_nil
+
+Expected:
+__________________________
+(int) 10
+
+
+Got:
+__________________________
+(interface {}) <nil>
+
+Diff
+__________________________
+~  = <ptr> expected: <nil>
+
+--- PASS: TestEq/non-nil_vs_nil (0.00s)
+=== RUN   TestEq/nil_vs_nil
+--- PASS: TestEq/nil_vs_nil (0.00s)
+=== RUN   TestEq/pointer_equal_(same_content)
+--- PASS: TestEq/pointer_equal_(same_content) (0.00s)
+=== RUN   TestEq/pointer_not_equal_(different_content)
+
+Expected:
+__________________________
+(*cmp.T2)({
+    First: (string) (len=4) "John",
+    Middle: (string) "",
+    Last: (string) "",
+    List: ([]int) <nil>,
+    Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+})
+
+
+Got:
+__________________________
+(*cmp.T2)({
+    First: (string) (len=4) "Jane",
+    Middle: (string) "",
+    Last: (string) "",
+    List: ([]int) <nil>,
+    Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+})
+
+Diff
+__________________________
+~ First = "Jane" expected: "John"
+
+--- PASS: TestEq/pointer_not_equal_(different_content) (0.00s)
+=== RUN   TestEq/pointer_vs_nil
+
+Expected:
+__________________________
+(*cmp.T2)({
+    First: (string) (len=4) "John",
+    Middle: (string) "",
+    Last: (string) "",
+    List: ([]int) <nil>,
+    Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+})
+
+
+Got:
+__________________________
+(*cmp.T2)(<nil>)
+
+Diff
+__________________________
+~  = <ptr> expected: <nil>
+
+--- PASS: TestEq/pointer_vs_nil (0.00s)
+=== RUN   TestEq/nil_pointer_vs_nil_pointer
+--- PASS: TestEq/nil_pointer_vs_nil_pointer (0.00s)
+=== RUN   TestEq/map_equal_(same_value)
+--- PASS: TestEq/map_equal_(same_value) (0.00s)
+=== RUN   TestEq/map_not_equal_(different_values)
+
+Expected:
+__________________________
+(map[string]interface {}) (len=4) {
+    (string) (len=7) "Address": (map[string]interface {}) (len=5) {
+        (string) (len=4) "City": (string) (len=10) "Huntsville",
+        (string) (len=7) "Country": (string) (len=2) "US",
+        (string) (len=5) "State": (string) (len=2) "AL",
+        (string) (len=6) "Street": (string) (len=3) "123",
+        (string) (len=3) "Zip": (string) (len=5) "12345"
+    },
+    (string) (len=2) "ID": (int) 1,
+    (string) (len=4) "List": ([]int) (len=3) {
+        (int) 1,
+        (int) 2,
+        (int) 3
+    },
+    (string) (len=4) "Name": (map[string]interface {}) (len=3) {
+        (string) (len=5) "First": (string) (len=5) "Elmer",
+        (string) (len=4) "Last": (string) (len=4) "Fudd",
+        (string) (len=6) "Middle": (string) (len=5) "James"
+    }
+}
+
+
+Got:
+__________________________
+(map[string]interface {}) (len=4) {
+    (string) (len=7) "Address": (map[string]interface {}) (len=5) {
+        (string) (len=4) "City": (string) (len=6) "London",
+        (string) (len=7) "Country": (string) (len=2) "EN",
+        (string) (len=5) "State": (string) "",
+        (string) (len=6) "Street": (string) (len=2) "44",
+        (string) (len=3) "Zip": (string) (len=7) "34-0595"
+    },
+    (string) (len=2) "ID": (int) 1,
+    (string) (len=4) "List": ([]int) (len=3) {
+        (int) 1,
+        (int) 3,
+        (int) 2
+    },
+    (string) (len=4) "Name": (map[string]interface {}) (len=3) {
+        (string) (len=5) "First": (string) (len=5) "James",
+        (string) (len=4) "Last": (string) (len=4) "Bond",
+        (string) (len=6) "Middle": (string) ""
+    }
+}
+
+Diff
+__________________________
+~ Address.City: "London" expected: "Huntsville"
+~ Address.Country: "EN" expected: "US"
+~ Address.State: "" expected: "AL"
+~ Address.Street: "44" expected: "123"
+~ Address.Zip: "34-0595" expected: "12345"
+~ List[1] = 3 expected: 2
+~ List[2] = 2 expected: 3
+~ Name.First: "James" expected: "Elmer"
+~ Name.Last: "Bond" expected: "Fudd"
+~ Name.Middle: "" expected: "James"
+
+--- PASS: TestEq/map_not_equal_(different_values) (0.00s)
+=== RUN   TestEq/map_with_extra_key_in_A
+
+Expected:
+__________________________
+(map[string]int) (len=2) {
+    (string) (len=1) "a": (int) 1,
+    (string) (len=1) "b": (int) 2
+}
+
+
+Got:
+__________________________
+(map[string]int) (len=1) {
+    (string) (len=1) "a": (int) 1
+}
+
+Diff
+__________________________
+~ : b<ptr> expected: <nil>
+
+--- PASS: TestEq/map_with_extra_key_in_A (0.00s)
+=== RUN   TestEq/map_with_extra_key_in_B
+
+Expected:
+__________________________
+(map[string]int) (len=1) {
+    (string) (len=1) "a": (int) 1
+}
+
+
+Got:
+__________________________
+(map[string]int) (len=2) {
+    (string) (len=1) "a": (int) 1,
+    (string) (len=1) "b": (int) 2
+}
+
+Diff
+__________________________
+~ : b<nil> expected: <ptr>
+
+--- PASS: TestEq/map_with_extra_key_in_B (0.00s)
+=== RUN   TestEq/empty_maps_equal
+--- PASS: TestEq/empty_maps_equal (0.00s)
+=== RUN   TestEq/nil_map_vs_nil_map
+--- PASS: TestEq/nil_map_vs_nil_map (0.00s)
+=== RUN   TestEq/time_equal
+--- PASS: TestEq/time_equal (0.00s)
+=== RUN   TestEq/time_not_equal
+
+Expected:
+__________________________
+(time.Time) 1969-12-31 18:16:40 -0600 CST
+
+
+Got:
+__________________________
+(time.Time) 1969-12-31 18:33:20 -0600 CST
+
+Diff
+__________________________
+~  = 1969-12-31 18:33:20 -0600 CST expected: 1969-12-31 18:33:20 -0600 CST
+
+--- PASS: TestEq/time_not_equal (0.00s)
+=== RUN   TestEq/struct_equal_(identical)
+--- PASS: TestEq/struct_equal_(identical) (0.00s)
+=== RUN   TestEq/struct_not_equal_(different_values)
+
+Expected:
+__________________________
+(cmp.T) {
+    ID: (int) 1,
+    Created: (time.Time) 2026-01-31 11:05:56.955824417 -0600 CST m=+0.000855711,
+    List: ([]int) (len=3) {
+        (int) 1,
+        (int) 2,
+        (int) 3
+    },
+    Name: (*cmp.T2)({
+        First: (string) (len=5) "Elmer",
+        Middle: (string) (len=5) "James",
+        Last: (string) (len=4) "Fudd",
+        List: ([]int) <nil>,
+        Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+    }),
+    Address: (cmp.T3) {
+        Street: (string) (len=3) "123",
+        City: (string) (len=10) "Huntsville",
+        State: (string) (len=2) "AL",
+        Country: (string) (len=2) "US",
+        Zip: (string) (len=5) "12345"
+    }
+}
+
+
+Got:
+__________________________
+(cmp.T) {
+    ID: (int) 1,
+    Created: (time.Time) 0001-01-01 00:00:00 +0000 UTC,
+    List: ([]int) (len=3) {
+        (int) 1,
+        (int) 3,
+        (int) 2
+    },
+    Name: (*cmp.T2)({
+        First: (string) (len=5) "James",
+        Middle: (string) "",
+        Last: (string) (len=4) "Bond",
+        List: ([]int) <nil>,
+        Born: (time.Time) 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888
+    }),
+    Address: (cmp.T3) {
+        Street: (string) (len=2) "44",
+        City: (string) (len=6) "London",
+        State: (string) "",
+        Country: (string) (len=2) "EN",
+        Zip: (string) (len=7) "34-0595"
+    }
+}
+
+Diff
+__________________________
+~ Created = 0001-01-01 00:00:00 +0000 UTC expected: 0001-01-01 00:00:00 +0000 UTC
+~ List[1] = 3 expected: 2
+~ List[2] = 2 expected: 3
+~ Name.First = "James" expected: "Elmer"
+~ Name.Middle = "" expected: "James"
+~ Name.Last = "Bond" expected: "Fudd"
+~ Name.Born = 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888 expected: 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888
+~ Address.Street = "44" expected: "123"
+~ Address.City = "London" expected: "Huntsville"
+~ Address.State = "" expected: "AL"
+~ Address.Country = "EN" expected: "US"
+~ Address.Zip = "34-0595" expected: "12345"
+
+--- PASS: TestEq/struct_not_equal_(different_values) (0.00s)
+=== RUN   TestEq/struct_equal_when_ignoring_Created_and_Name.Born
+--- PASS: TestEq/struct_equal_when_ignoring_Created_and_Name.Born (0.00s)
+=== RUN   TestEq/struct_equal_when_ignoring_Created_and_entire_Name
+--- PASS: TestEq/struct_equal_when_ignoring_Created_and_entire_Name (0.00s)
+=== RUN   TestEq/struct_with_unexported_fields
+--- PASS: TestEq/struct_with_unexported_fields (0.00s)
+=== RUN   TestEq/struct_with_anonymous_field
+--- PASS: TestEq/struct_with_anonymous_field (0.00s)
+=== RUN   TestEq/struct_with_anonymous_field_not_equal
+
+Expected:
+__________________________
+(cmp.T5) {
+    T2: (cmp.T2) {
+        First: (string) (len=4) "John",
+        Middle: (string) "",
+        Last: (string) "",
+        List: ([]int) <nil>,
+        Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+    },
+    Age: (int) 30
+}
+
+
+Got:
+__________________________
+(cmp.T5) {
+    T2: (cmp.T2) {
+        First: (string) (len=4) "Jane",
+        Middle: (string) "",
+        Last: (string) "",
+        List: ([]int) <nil>,
+        Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+    },
+    Age: (int) 30
+}
+
+Diff
+__________________________
+~ First = "Jane" expected: "John"
+
+--- PASS: TestEq/struct_with_anonymous_field_not_equal (0.00s)
+=== RUN   TestEq/struct_ignoring_non-existent_path
+
+Expected:
+__________________________
+(cmp.T) {
+    ID: (int) 1,
+    Created: (time.Time) 2026-01-31 11:05:56.955824417 -0600 CST m=+0.000855711,
+    List: ([]int) (len=3) {
+        (int) 1,
+        (int) 2,
+        (int) 3
+    },
+    Name: (*cmp.T2)({
+        First: (string) (len=5) "Elmer",
+        Middle: (string) (len=5) "James",
+        Last: (string) (len=4) "Fudd",
+        List: ([]int) <nil>,
+        Born: (time.Time) 0001-01-01 00:00:00 +0000 UTC
+    }),
+    Address: (cmp.T3) {
+        Street: (string) (len=3) "123",
+        City: (string) (len=10) "Huntsville",
+        State: (string) (len=2) "AL",
+        Country: (string) (len=2) "US",
+        Zip: (string) (len=5) "12345"
+    }
+}
+
+
+Got:
+__________________________
+(cmp.T) {
+    ID: (int) 1,
+    Created: (time.Time) 0001-01-01 00:00:00 +0000 UTC,
+    List: ([]int) (len=3) {
+        (int) 1,
+        (int) 3,
+        (int) 2
+    },
+    Name: (*cmp.T2)({
+        First: (string) (len=5) "James",
+        Middle: (string) "",
+        Last: (string) (len=4) "Bond",
+        List: ([]int) <nil>,
+        Born: (time.Time) 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888
+    }),
+    Address: (cmp.T3) {
+        Street: (string) (len=2) "44",
+        City: (string) (len=6) "London",
+        State: (string) "",
+        Country: (string) (len=2) "EN",
+        Zip: (string) (len=7) "34-0595"
+    }
+}
+
+Diff
+__________________________
+~ Created = 0001-01-01 00:00:00 +0000 UTC expected: 0001-01-01 00:00:00 +0000 UTC
+~ List[1] = 3 expected: 2
+~ List[2] = 2 expected: 3
+~ Name.First = "James" expected: "Elmer"
+~ Name.Middle = "" expected: "James"
+~ Name.Last = "Bond" expected: "Fudd"
+~ Name.Born = 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888 expected: 2026-01-31 11:05:56.955824597 -0600 CST m=+0.000855888
+~ Address.Street = "44" expected: "123"
+~ Address.City = "London" expected: "Huntsville"
+~ Address.State = "" expected: "AL"
+~ Address.Country = "EN" expected: "US"
+~ Address.Zip = "34-0595" expected: "12345"
+
+--- PASS: TestEq/struct_ignoring_non-existent_path (0.00s)
+--- PASS: TestEq (0.00s)
+PASS
+
+Process finished with the exit code 0
+
