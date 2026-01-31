@@ -2,21 +2,21 @@ package cmp
 
 import (
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 )
 
-type Differ struct {
-	IgnoredPaths []string
+type EQ struct {
+	IgnoredPaths [][]string
 	//
 	path  []string
 	kinds []reflect.Kind
 	notes []string
 }
 
-func (d *Differ) Eq(expected, got any) (eq bool, report string) {
+func (d *EQ) Is(expected, got any) (eq bool, report string) {
 	eq, report = d.Inspect(expected, got)
 	if eq {
 		return
@@ -33,7 +33,7 @@ func (d *Differ) Eq(expected, got any) (eq bool, report string) {
 	return
 }
 
-func (d *Differ) Inspect(a, b any) (eq bool, report string) {
+func (d *EQ) Inspect(a, b any) (eq bool, report string) {
 	d.reset()
 	d.cmp(a, b)
 	report = strings.Join(d.notes, "\n")
@@ -41,13 +41,13 @@ func (d *Differ) Inspect(a, b any) (eq bool, report string) {
 	return
 }
 
-func (d *Differ) reset() {
+func (d *EQ) reset() {
 	d.path = nil
 	d.notes = nil
 	d.kinds = nil
 }
 
-func (d *Differ) push(k reflect.Kind, p string, v ...any) {
+func (d *EQ) push(k reflect.Kind, p string, v ...any) {
 	d.kinds = append(d.kinds, k)
 	p = fmt.Sprintf(p, v...)
 	if len(d.path) == 0 {
@@ -56,7 +56,7 @@ func (d *Differ) push(k reflect.Kind, p string, v ...any) {
 	d.path = append(d.path, p)
 }
 
-func (d *Differ) pop() {
+func (d *EQ) pop() {
 	if len(d.path) > 0 {
 		d.path = d.path[:len(d.path)-1]
 	}
@@ -65,7 +65,7 @@ func (d *Differ) pop() {
 	}
 }
 
-func (d *Differ) note(n string, v ...any) {
+func (d *EQ) note(n string, v ...any) {
 	parts := make([]string, 0, len(d.path))
 	for _, p := range d.path {
 		if strings.HasPrefix(p, "[") {
@@ -73,9 +73,19 @@ func (d *Differ) note(n string, v ...any) {
 		}
 		parts = append(parts, p)
 	}
-	current := strings.Join(parts, "")
-	for _, p := range d.IgnoredPaths {
-		matched, _ := filepath.Match(p, current)
+	for _, path := range d.IgnoredPaths {
+		end := min(
+			len(parts),
+			len(path))
+		matched := false
+		for i := 0; i < end; i++ {
+			if parts[i] != path[i] {
+				matched = false
+				break
+			} else {
+				matched = true
+			}
+		}
 		if matched {
 			return
 		}
@@ -85,7 +95,7 @@ func (d *Differ) note(n string, v ...any) {
 		fmt.Sprintf(n, v...))
 }
 
-func (d *Differ) cmpNIL(a, b any) (n bool) {
+func (d *EQ) cmpNIL(a, b any) (n bool) {
 	var nA, nB bool
 	switch v := a.(type) {
 	case reflect.Value:
@@ -117,12 +127,12 @@ func (d *Differ) cmpNIL(a, b any) (n bool) {
 	return
 }
 
-func (d *Differ) at() (path string) {
+func (d *EQ) at() (path string) {
 	path = strings.Join(d.path, "")
 	return
 }
 
-func (d *Differ) kind() (k reflect.Kind) {
+func (d *EQ) kind() (k reflect.Kind) {
 	n := len(d.kinds)
 	if n == 0 {
 		return
@@ -131,7 +141,7 @@ func (d *Differ) kind() (k reflect.Kind) {
 	return
 }
 
-func (d *Differ) operator() (op string) {
+func (d *EQ) operator() (op string) {
 	switch d.kind() {
 	case reflect.Map:
 		op = ": "
@@ -141,7 +151,7 @@ func (d *Differ) operator() (op string) {
 	return
 }
 
-func (d *Differ) cmp(a, b any) {
+func (d *EQ) cmp(a, b any) {
 	if d.cmpNIL(a, b) {
 		return
 	}
@@ -156,6 +166,9 @@ func (d *Differ) cmp(a, b any) {
 	if tB.Kind() == reflect.Ptr {
 		tB = tB.Elem()
 		vB = vB.Elem()
+	}
+	if d.cmpNIL(vA, vB) {
+		return
 	}
 	if tA != tB {
 		d.note(
@@ -235,6 +248,23 @@ func (d *Differ) cmp(a, b any) {
 			d.pop()
 		}
 	case reflect.Struct:
+		switch xA := a.(type) {
+		case time.Time:
+			eq := false
+			xB, cast := b.(time.Time)
+			if cast {
+				eq = xA.Equal(xB)
+			}
+			if !eq {
+				d.note(
+					"~ %s%s%s expected: %s",
+					d.at(),
+					d.operator(),
+					xB.String(),
+					xB.String())
+			}
+			return
+		}
 		for i := 0; i < vA.NumField(); i++ {
 			ftA := tA.Field(i)
 			if !ftA.IsExported() {
