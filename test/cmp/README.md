@@ -1,6 +1,7 @@
 # CMP - Deep Object Comparison Package
 
-Package `cmp` provides deep comparison of Go objects with detailed difference reporting. It uses reflection to traverse and compare complex data structures including structs, slices, maps, pointers, and primitives.
+Package `cmp` provides deep comparison of Go objects with detailed difference reporting. 
+It uses reflection to traverse and compare complex data structures including structs, slices, maps, pointers, and primitives.
 
 ## Features
 
