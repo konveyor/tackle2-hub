@@ -215,12 +215,14 @@ func (d *EQ) cmp(a, b any) {
 			vA := vA.MapIndex(kA)
 			vB := vB.MapIndex(kA)
 			if d.cmpNIL(vA, vB) {
+				d.pop()
 				continue
 			}
 			xA := vA.Interface()
 			if !vB.IsValid() {
 				d.note(
-					"- %s: <value>",
+					"- %s%s <value>",
+					d.operator(),
 					d.at())
 			} else {
 				xB := vB.Interface()
@@ -238,11 +240,13 @@ func (d *EQ) cmp(a, b any) {
 			vA := vA.MapIndex(kB)
 			vB := vB.MapIndex(kB)
 			if d.cmpNIL(vA, vB) {
+				d.pop()
 				continue
 			}
 			if !vA.IsValid() {
 				d.note(
-					"+ %s: <value>",
+					"+ %s%s <value>",
+					d.operator(),
 					d.at())
 			}
 			d.pop()
@@ -261,7 +265,7 @@ func (d *EQ) cmp(a, b any) {
 					d.at(),
 					d.operator(),
 					xB.String(),
-					xB.String())
+					xA.String())
 			}
 			return
 		}
