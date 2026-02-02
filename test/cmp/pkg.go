@@ -1,5 +1,5 @@
 // Package cmp provides object comparison.
-// Example EQ() report:
+// Example Cmp() report:
 //
 // Expected:
 // __________________________
@@ -52,8 +52,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-func New(ignoredPaths ...string) (eq *EQ) {
-	eq = &EQ{}
+func New(ignoredPaths ...string) (cmp *Cmp) {
+	cmp = &Cmp{}
 	for _, path := range ignoredPaths {
 		part := []string{}
 		for _, p := range strings.Split(path, ".") {
@@ -62,7 +62,7 @@ func New(ignoredPaths ...string) (eq *EQ) {
 			}
 			part = append(part, p)
 		}
-		eq.IgnoredPaths = append(eq.IgnoredPaths, part)
+		cmp.IgnoredPaths = append(cmp.IgnoredPaths, part)
 	}
 	return
 }
@@ -81,7 +81,7 @@ func Format(a any) (s string) {
 
 func Eq(expected, got any, ignoredPaths ...string) (eq bool, report string) {
 	cmp := New(ignoredPaths...)
-	eq, report = cmp.Is(expected, got)
+	eq, report = cmp.Eq(expected, got)
 	return
 }
 

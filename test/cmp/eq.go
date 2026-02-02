@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type EQ struct {
+type Cmp struct {
 	IgnoredPaths [][]string
 	//
 	path  []string
@@ -16,7 +16,7 @@ type EQ struct {
 	notes []string
 }
 
-func (d *EQ) Is(expected, got any) (eq bool, report string) {
+func (d *Cmp) Eq(expected, got any) (eq bool, report string) {
 	eq, report = d.Inspect(expected, got)
 	if eq {
 		return
@@ -33,7 +33,7 @@ func (d *EQ) Is(expected, got any) (eq bool, report string) {
 	return
 }
 
-func (d *EQ) Inspect(a, b any) (eq bool, report string) {
+func (d *Cmp) Inspect(a, b any) (eq bool, report string) {
 	d.reset()
 	d.cmp(a, b)
 	report = strings.Join(d.notes, "\n")
@@ -41,13 +41,13 @@ func (d *EQ) Inspect(a, b any) (eq bool, report string) {
 	return
 }
 
-func (d *EQ) reset() {
+func (d *Cmp) reset() {
 	d.path = nil
 	d.notes = nil
 	d.kinds = nil
 }
 
-func (d *EQ) push(k reflect.Kind, p string, v ...any) {
+func (d *Cmp) push(k reflect.Kind, p string, v ...any) {
 	d.kinds = append(d.kinds, k)
 	p = fmt.Sprintf(p, v...)
 	if len(d.path) == 0 {
@@ -56,7 +56,7 @@ func (d *EQ) push(k reflect.Kind, p string, v ...any) {
 	d.path = append(d.path, p)
 }
 
-func (d *EQ) pop() {
+func (d *Cmp) pop() {
 	if len(d.path) > 0 {
 		d.path = d.path[:len(d.path)-1]
 	}
@@ -65,7 +65,7 @@ func (d *EQ) pop() {
 	}
 }
 
-func (d *EQ) note(n string, v ...any) {
+func (d *Cmp) note(n string, v ...any) {
 	parts := make([]string, 0, len(d.path))
 	for _, p := range d.path {
 		if strings.HasPrefix(p, "[") {
@@ -95,7 +95,7 @@ func (d *EQ) note(n string, v ...any) {
 		fmt.Sprintf(n, v...))
 }
 
-func (d *EQ) cmpNIL(a, b any) (n bool) {
+func (d *Cmp) cmpNIL(a, b any) (n bool) {
 	var nA, nB bool
 	switch v := a.(type) {
 	case reflect.Value:
@@ -127,12 +127,12 @@ func (d *EQ) cmpNIL(a, b any) (n bool) {
 	return
 }
 
-func (d *EQ) at() (path string) {
+func (d *Cmp) at() (path string) {
 	path = strings.Join(d.path, "")
 	return
 }
 
-func (d *EQ) kind() (k reflect.Kind) {
+func (d *Cmp) kind() (k reflect.Kind) {
 	n := len(d.kinds)
 	if n == 0 {
 		return
@@ -141,7 +141,7 @@ func (d *EQ) kind() (k reflect.Kind) {
 	return
 }
 
-func (d *EQ) operator() (op string) {
+func (d *Cmp) operator() (op string) {
 	switch d.kind() {
 	case reflect.Map:
 		op = ": "
@@ -151,7 +151,7 @@ func (d *EQ) operator() (op string) {
 	return
 }
 
-func (d *EQ) cmp(a, b any) {
+func (d *Cmp) cmp(a, b any) {
 	if d.cmpNIL(a, b) {
 		return
 	}
