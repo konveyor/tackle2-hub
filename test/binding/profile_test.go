@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
 
@@ -69,25 +70,8 @@ func TestAnalysisProfile(t *testing.T) {
 	retrieved, err := client.AnalysisProfile.Get(profile.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	g.Expect(retrieved.ID).To(Equal(profile.ID))
-	g.Expect(retrieved.Name).To(Equal(profile.Name))
-	g.Expect(retrieved.Description).To(Equal(profile.Description))
-	g.Expect(retrieved.Mode.WithDeps).To(Equal(profile.Mode.WithDeps))
-	g.Expect(retrieved.Scope.WithKnownLibs).To(Equal(profile.Scope.WithKnownLibs))
-	g.Expect(retrieved.Scope.Packages.Included).To(Equal(profile.Scope.Packages.Included))
-	g.Expect(retrieved.Scope.Packages.Excluded).To(Equal(profile.Scope.Packages.Excluded))
-	g.Expect(retrieved.Rules.Labels.Included).To(Equal(profile.Rules.Labels.Included))
-	g.Expect(retrieved.Rules.Labels.Excluded).To(Equal(profile.Rules.Labels.Excluded))
-	g.Expect(retrieved.Rules.Repository).NotTo(BeNil())
-	g.Expect(retrieved.Rules.Repository.URL).To(Equal(profile.Rules.Repository.URL))
-	g.Expect(retrieved.Rules.Repository.Path).To(Equal(profile.Rules.Repository.Path))
-	g.Expect(retrieved.Rules.Targets).To(HaveLen(len(profile.Rules.Targets)))
-	for i, target := range retrieved.Rules.Targets {
-		g.Expect(target.ID).To(Equal(profile.Rules.Targets[i].ID))
-		g.Expect(target.Name).To(Equal(profile.Rules.Targets[i].Name))
-	}
-	g.Expect(retrieved.Rules.Identity).NotTo(BeNil())
-	g.Expect(retrieved.Rules.Identity.ID).To(Equal(identity.ID))
+	eq, report := cmp.Eq(profile, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the profile
 	profile.Name = "Updated Test Profile"
@@ -106,15 +90,8 @@ func TestAnalysisProfile(t *testing.T) {
 	updated, err := client.AnalysisProfile.Get(profile.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	g.Expect(updated.ID).To(Equal(profile.ID))
-	g.Expect(updated.Name).To(Equal(profile.Name))
-	g.Expect(updated.Description).To(Equal(profile.Description))
-	g.Expect(updated.Mode.WithDeps).To(Equal(profile.Mode.WithDeps))
-	g.Expect(updated.Scope.WithKnownLibs).To(Equal(profile.Scope.WithKnownLibs))
-	g.Expect(updated.Scope.Packages.Included).To(Equal(profile.Scope.Packages.Included))
-	g.Expect(updated.Scope.Packages.Excluded).To(Equal(profile.Scope.Packages.Excluded))
-	g.Expect(updated.Rules.Labels.Included).To(Equal(profile.Rules.Labels.Included))
-	g.Expect(updated.Rules.Labels.Excluded).To(Equal(profile.Rules.Labels.Excluded))
+	eq, report = cmp.Eq(profile, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the profile
 	err = client.AnalysisProfile.Delete(profile.ID)
