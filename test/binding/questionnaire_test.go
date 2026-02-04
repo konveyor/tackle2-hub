@@ -55,8 +55,12 @@ func TestQuestionnaire(t *testing.T) {
 		},
 	}
 
+	// Get seeded.
+	seeded, err := client.Questionnaire.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the questionnaire
-	err := client.Questionnaire.Create(questionnaire)
+	err = client.Questionnaire.Create(questionnaire)
 	g.Expect(err).To(BeNil())
 	g.Expect(questionnaire.ID).NotTo(BeZero())
 
@@ -64,11 +68,18 @@ func TestQuestionnaire(t *testing.T) {
 		_ = client.Questionnaire.Delete(questionnaire.ID)
 	}()
 
+	// GET: List questionnaires
+	list, err := client.Questionnaire.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(questionnaire, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the questionnaire and verify it matches
 	retrieved, err := client.Questionnaire.Get(questionnaire.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(questionnaire, retrieved)
+	eq, report = cmp.Eq(questionnaire, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the questionnaire

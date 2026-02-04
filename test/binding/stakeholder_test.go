@@ -27,11 +27,18 @@ func TestStakeholder(t *testing.T) {
 		_ = client.Stakeholder.Delete(stakeholder.ID)
 	}()
 
+	// GET: List stakeholders
+	list, err := client.Stakeholder.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(stakeholder, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the stakeholder and verify it matches
 	retrieved, err := client.Stakeholder.Get(stakeholder.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(stakeholder, retrieved)
+	eq, report = cmp.Eq(stakeholder, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the stakeholder

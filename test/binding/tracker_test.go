@@ -47,11 +47,18 @@ func TestTracker(t *testing.T) {
 		_ = client.Tracker.Delete(tracker.ID)
 	}()
 
+	// GET: List trackers
+	list, err := client.Tracker.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(tracker, list[0], "LastUpdated")
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the tracker and verify it matches
 	retrieved, err := client.Tracker.Get(tracker.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(tracker, retrieved, "LastUpdated")
+	eq, report = cmp.Eq(tracker, retrieved, "LastUpdated")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the tracker

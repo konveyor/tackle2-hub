@@ -77,11 +77,18 @@ func TestTicket(t *testing.T) {
 		_ = client.Ticket.Delete(ticket.ID)
 	}()
 
+	// GET: List tickets
+	list, err := client.Ticket.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(ticket, list[0], "Status", "Message", "LastUpdated", "Fields", "Link")
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the ticket and verify it matches
 	retrieved, err := client.Ticket.Get(ticket.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(ticket, retrieved, "Status", "Message", "LastUpdated", "Fields", "Link")
+	eq, report = cmp.Eq(ticket, retrieved, "Status", "Message", "LastUpdated", "Fields", "Link")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// NOTE: Ticket does not have an Update method according to the API

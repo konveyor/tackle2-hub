@@ -27,11 +27,18 @@ func TestBusinessService(t *testing.T) {
 		_ = client.BusinessService.Delete(businessService.ID)
 	}()
 
+	// GET: List business services
+	list, err := client.BusinessService.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(businessService, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the business service and verify it matches
 	retrieved, err := client.BusinessService.Get(businessService.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(businessService, retrieved)
+	eq, report = cmp.Eq(businessService, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the business service

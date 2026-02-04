@@ -19,8 +19,12 @@ func TestRuleSet(t *testing.T) {
 		Rules:       []api.Rule{},
 	}
 
+	// Get seeded.
+	seeded, err := client.RuleSet.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the ruleset
-	err := client.RuleSet.Create(ruleSet)
+	err = client.RuleSet.Create(ruleSet)
 	g.Expect(err).To(BeNil())
 	g.Expect(ruleSet.ID).NotTo(BeZero())
 
@@ -28,11 +32,18 @@ func TestRuleSet(t *testing.T) {
 		_ = client.RuleSet.Delete(ruleSet.ID)
 	}()
 
+	// GET: List rulesets
+	list, err := client.RuleSet.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(ruleSet, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the ruleset and verify it matches
 	retrieved, err := client.RuleSet.Get(ruleSet.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(ruleSet, retrieved)
+	eq, report = cmp.Eq(ruleSet, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the ruleset

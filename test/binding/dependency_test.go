@@ -54,11 +54,18 @@ func TestDependency(t *testing.T) {
 		_ = client.Dependency.Delete(dependency.ID)
 	}()
 
+	// GET: List dependencies
+	list, err := client.Dependency.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(dependency, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the dependency and verify it matches
 	retrieved, err := client.Dependency.Get(dependency.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(dependency, retrieved)
+	eq, report = cmp.Eq(dependency, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// NOTE: Dependency does not have an Update method according to the API

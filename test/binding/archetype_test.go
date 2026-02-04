@@ -28,11 +28,18 @@ func TestArchetype(t *testing.T) {
 		_ = client.Archetype.Delete(archetype.ID)
 	}()
 
+	// GET: List archetypes
+	list, err := client.Archetype.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(archetype, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the archetype and verify it matches
 	retrieved, err := client.Archetype.Get(archetype.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(archetype, retrieved)
+	eq, report = cmp.Eq(archetype, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the archetype

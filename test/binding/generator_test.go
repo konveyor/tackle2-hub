@@ -30,8 +30,12 @@ func TestGenerator(t *testing.T) {
 		},
 	}
 
+	// Get seeded.
+	seeded, err := client.Generator.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the generator
-	err := client.Generator.Create(generator)
+	err = client.Generator.Create(generator)
 	g.Expect(err).To(BeNil())
 	g.Expect(generator.ID).NotTo(BeZero())
 
@@ -39,11 +43,18 @@ func TestGenerator(t *testing.T) {
 		_ = client.Generator.Delete(generator.ID)
 	}()
 
+	// GET: List generators
+	list, err := client.Generator.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(generator, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the generator and verify it matches
 	retrieved, err := client.Generator.Get(generator.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(generator, retrieved)
+	eq, report = cmp.Eq(generator, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the generator

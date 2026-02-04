@@ -55,11 +55,18 @@ func TestManifest(t *testing.T) {
 		_ = client.Manifest.Delete(manifest.ID)
 	}()
 
+	// GET: List manifests
+	list, err := client.Manifest.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(manifest, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the manifest and verify it matches
 	retrieved, err := client.Manifest.Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(manifest, retrieved)
+	eq, report = cmp.Eq(manifest, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the manifest

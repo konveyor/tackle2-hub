@@ -27,11 +27,18 @@ func TestStakeholderGroup(t *testing.T) {
 		_ = client.StakeholderGroup.Delete(group.ID)
 	}()
 
+	// GET: List stakeholder groups
+	list, err := client.StakeholderGroup.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(group, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the stakeholder group and verify it matches
 	retrieved, err := client.StakeholderGroup.Get(group.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(group, retrieved)
+	eq, report = cmp.Eq(group, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the stakeholder group

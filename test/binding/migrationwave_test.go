@@ -30,11 +30,18 @@ func TestMigrationWave(t *testing.T) {
 		_ = client.MigrationWave.Delete(migrationWave.ID)
 	}()
 
+	// GET: List migration waves
+	list, err := client.MigrationWave.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(migrationWave, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the migration wave and verify it matches
 	retrieved, err := client.MigrationWave.Get(migrationWave.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(migrationWave, retrieved)
+	eq, report = cmp.Eq(migrationWave, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the migration wave

@@ -12,12 +12,17 @@ import (
 func TestTag(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create a tag category for the tag to reference
 	tagCategory := &api.TagCategory{
 		Name:  "Test Category for Tag",
 		Color: "#00dd00",
 	}
-	err := client.TagCategory.Create(tagCategory)
+
+	// Get seeded.
+	seeded, err := client.Tag.List()
+	g.Expect(err).To(BeNil())
+
+	// CREATE: tag category.
+	err = client.TagCategory.Create(tagCategory)
 	g.Expect(err).To(BeNil())
 	defer func() {
 		_ = client.TagCategory.Delete(tagCategory.ID)
@@ -41,11 +46,18 @@ func TestTag(t *testing.T) {
 		_ = client.Tag.Delete(tag.ID)
 	}()
 
+	// GET: List tags
+	list, err := client.Tag.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(tag, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the tag and verify it matches
 	retrieved, err := client.Tag.Get(tag.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(tag, retrieved)
+	eq, report = cmp.Eq(tag, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the tag

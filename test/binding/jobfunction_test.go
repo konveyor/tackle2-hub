@@ -17,8 +17,12 @@ func TestJobFunction(t *testing.T) {
 		Name: "Engineer",
 	}
 
+	// Get seeded
+	seeded, err := client.JobFunction.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the job function
-	err := client.JobFunction.Create(jobFunction)
+	err = client.JobFunction.Create(jobFunction)
 	g.Expect(err).To(BeNil())
 	g.Expect(jobFunction.ID).NotTo(BeZero())
 
@@ -26,11 +30,18 @@ func TestJobFunction(t *testing.T) {
 		_ = client.JobFunction.Delete(jobFunction.ID)
 	}()
 
+	// GET: List job functions
+	list, err := client.JobFunction.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(jobFunction, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the job function and verify it matches
 	retrieved, err := client.JobFunction.Get(jobFunction.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(jobFunction, retrieved)
+	eq, report = cmp.Eq(jobFunction, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the job function

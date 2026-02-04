@@ -29,12 +29,20 @@ func TestIdentity(t *testing.T) {
 		_ = client.Identity.Delete(identity.ID)
 	}()
 
+	// GET: List identities
+	list, err := client.Identity.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	list[0].Password = identity.Password // encrypted.
+	eq, report := cmp.Eq(identity, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the identity and verify it matches
 	retrieved, err := client.Identity.Get(identity.ID)
 	retrieved.Password = identity.Password // encrypted.
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(identity, retrieved)
+	eq, report = cmp.Eq(identity, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the identity

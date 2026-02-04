@@ -45,11 +45,18 @@ func TestReview(t *testing.T) {
 		_ = client.Review.Delete(review.ID)
 	}()
 
+	// GET: List reviews
+	list, err := client.Review.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(review, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the review and verify it matches
 	retrieved, err := client.Review.Get(review.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(review, retrieved)
+	eq, report = cmp.Eq(review, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the review

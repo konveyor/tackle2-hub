@@ -14,12 +14,16 @@ func TestTagCategory(t *testing.T) {
 
 	// Define the tag category to create
 	tagCategory := &api.TagCategory{
-		Name:   "Test OS",
-		Color:  "#dd0000",
+		Name:  "Test OS",
+		Color: "#dd0000",
 	}
 
+	// Get seeded.
+	seeded, err := client.TagCategory.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the tag category
-	err := client.TagCategory.Create(tagCategory)
+	err = client.TagCategory.Create(tagCategory)
 	g.Expect(err).To(BeNil())
 	g.Expect(tagCategory.ID).NotTo(BeZero())
 
@@ -27,11 +31,18 @@ func TestTagCategory(t *testing.T) {
 		_ = client.TagCategory.Delete(tagCategory.ID)
 	}()
 
+	// GET: List tag categories
+	list, err := client.TagCategory.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(tagCategory, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the tag category and verify it matches
 	retrieved, err := client.TagCategory.Get(tagCategory.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(tagCategory, retrieved)
+	eq, report = cmp.Eq(tagCategory, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the tag category

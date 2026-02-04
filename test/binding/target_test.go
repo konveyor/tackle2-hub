@@ -22,8 +22,12 @@ func TestTarget(t *testing.T) {
 		Description: "Test target description",
 	}
 
+	// Get seeded.
+	seeded, err := client.Target.List()
+	g.Expect(err).To(BeNil())
+
 	// CREATE: Create the target
-	err := client.Target.Create(target)
+	err = client.Target.Create(target)
 	g.Expect(err).To(BeNil())
 	g.Expect(target.ID).NotTo(BeZero())
 
@@ -31,11 +35,18 @@ func TestTarget(t *testing.T) {
 		_ = client.Target.Delete(target.ID)
 	}()
 
+	// GET: List targets
+	list, err := client.Target.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(len(seeded) + 1))
+	eq, report := cmp.Eq(target, list[len(seeded)])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the target and verify it matches
 	retrieved, err := client.Target.Get(target.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(target, retrieved)
+	eq, report = cmp.Eq(target, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the target

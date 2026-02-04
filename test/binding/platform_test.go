@@ -28,11 +28,18 @@ func TestPlatform(t *testing.T) {
 		_ = client.Platform.Delete(platform.ID)
 	}()
 
+	// GET: List platforms
+	list, err := client.Platform.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(platform, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the platform and verify it matches
 	retrieved, err := client.Platform.Get(platform.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(platform, retrieved)
+	eq, report = cmp.Eq(platform, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the platform
