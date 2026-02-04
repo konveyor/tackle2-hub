@@ -66,11 +66,18 @@ func TestAnalysisProfile(t *testing.T) {
 		_ = client.AnalysisProfile.Delete(profile.ID)
 	}()
 
+	// GET: List profiles
+	list, err := client.AnalysisProfile.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(profile, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
 	// GET: Retrieve the profile and verify it matches
 	retrieved, err := client.AnalysisProfile.Get(profile.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(profile, retrieved)
+	eq, report = cmp.Eq(profile, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the profile

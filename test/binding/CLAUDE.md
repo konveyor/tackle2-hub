@@ -43,7 +43,7 @@ func TestResourceName(t *testing.T) {
 
 ## CRUD Test Structure
 
-Tests should follow this standard CRUD pattern:
+Tests should follow this standard CRUD+List pattern:
 
 ### 1. Setup - Create Dependencies
 ```go
@@ -91,7 +91,24 @@ defer func() {
 - Assert ID is populated: `g.Expect(profile.ID).NotTo(BeZero())`
 - Add cleanup with defer (main resource cleaned up before dependencies)
 
-### 3. GET - Retrieve and Verify
+### 3. LIST - List Resources and Verify
+```go
+// GET: List profiles
+list, err := client.AnalysisProfile.List()
+g.Expect(err).To(BeNil())
+g.Expect(len(list)).To(Equal(1))
+eq, report := cmp.Eq(profile, list[0])
+g.Expect(eq).To(BeTrue(), report)
+```
+
+**Key Points:**
+- Use section comment: `// GET: List <resources>` (note the GET prefix with List action)
+- Assert no error
+- Assert expected count using `len(list)` with `Equal()` matcher
+- Verify the created resource is in the list using `cmp.Eq()` on the first element
+- This validates that CREATE worked and the resource is retrievable via List
+
+### 4. GET - Retrieve and Verify
 ```go
 // GET: Retrieve the profile and verify it matches
 retrieved, err := client.AnalysisProfile.Get(profile.ID)
@@ -109,7 +126,7 @@ g.Expect(eq).To(BeTrue(), report)
 - `cmp.Eq()` returns `(eq bool, report string)`
 - Pass report to `Expect()` for better failure messages
 
-### 4. UPDATE - Modify the Resource
+### 5. UPDATE - Modify the Resource
 ```go
 // UPDATE: Modify the profile
 profile.Name = "Updated Test Profile"
@@ -125,7 +142,7 @@ g.Expect(err).To(BeNil())
 - Modify multiple fields to test various update scenarios
 - Assert no error on update
 
-### 5. GET - Verify Updates
+### 6. GET - Verify Updates
 ```go
 // GET: Retrieve again and verify updates
 updated, err := client.AnalysisProfile.Get(profile.ID)
@@ -139,7 +156,7 @@ g.Expect(eq).To(BeTrue(), report)
 - Use section comment: `// GET: Retrieve again and verify updates`
 - May pass additional parameters to `cmp.Eq()` (e.g., `"UpdateUser"`) to exclude certain fields from comparison
 
-### 6. DELETE - Remove the Resource
+### 7. DELETE - Remove the Resource
 ```go
 // DELETE: Remove the profile
 err = client.AnalysisProfile.Delete(profile.ID)
@@ -164,6 +181,7 @@ g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 
 ### Standard Methods
 - `Create(resource)` - Creates a resource, populates the ID field
+- `List()` - Retrieves all resources of this type, returns a slice
 - `Get(id)` - Retrieves a resource by ID
 - `Update(resource)` - Updates a resource
 - `Delete(id)` - Deletes a resource by ID
@@ -179,6 +197,12 @@ g.Expect(err).To(BeNil())
 ```go
 g.Expect(profile.ID).NotTo(BeZero())
 g.Expect(retrieved).NotTo(BeNil())
+```
+
+### List Length Validation
+```go
+g.Expect(len(list)).To(Equal(1))
+g.Expect(len(list)).To(Equal(expectedCount))
 ```
 
 ### Deep Equality
@@ -217,7 +241,8 @@ defer func() {
 ### Section Comments
 Use clear section comments before each CRUD operation:
 - `// CREATE: Create the <resource>`
-- `// GET: Retrieve the <resource> and verify it matches`
+- `// GET: List <resources>` (for List operation)
+- `// GET: Retrieve the <resource> and verify it matches` (for individual Get)
 - `// UPDATE: Modify the <resource>`
 - `// GET: Retrieve again and verify updates`
 - `// DELETE: Remove the <resource>`
@@ -286,10 +311,11 @@ Mode: api.ApMode{
 - [ ] Gomega initialized: `g := NewGomegaWithT(t)`
 - [ ] Dependencies created first with defer cleanup
 - [ ] CREATE operation with assertions
-- [ ] First GET with `cmp.Eq()` verification
+- [ ] LIST operation with count validation and `cmp.Eq()` verification
+- [ ] First GET (individual) with `cmp.Eq()` verification
 - [ ] UPDATE operation modifying multiple fields
 - [ ] Second GET with `cmp.Eq()` verification
 - [ ] DELETE operation
 - [ ] Deletion verified with NotFound error check
-- [ ] Section comments for each CRUD operation
+- [ ] Section comments for each CRUD+List operation
 - [ ] Cleanup defers use `_ =` to ignore errors
