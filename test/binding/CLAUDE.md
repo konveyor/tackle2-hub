@@ -97,7 +97,7 @@ defer func() {
 list, err := client.AnalysisProfile.List()
 g.Expect(err).To(BeNil())
 g.Expect(len(list)).To(Equal(1))
-eq, report := cmp.Eq(profile, list[0])
+eq, report := cmp.Eq(profile, &list[0])
 g.Expect(eq).To(BeTrue(), report)
 ```
 
@@ -105,7 +105,7 @@ g.Expect(eq).To(BeTrue(), report)
 - Use section comment: `// GET: List <resources>` (note the GET prefix with List action)
 - Assert no error
 - Assert expected count using `len(list)` with `Equal()` matcher
-- Verify the created resource is in the list using `cmp.Eq()` on the first element
+- **ALWAYS use `cmp.Eq()` to verify the resource** - pass `&list[0]` (pointer to first element)
 - This validates that CREATE worked and the resource is retrievable via List
 
 ### 4. GET - Retrieve and Verify
@@ -122,7 +122,7 @@ g.Expect(eq).To(BeTrue(), report)
 - Use section comment: `// GET: Retrieve the <resource> and verify it matches`
 - Assert no error
 - Assert retrieved object is not nil
-- Use `cmp.Eq()` for deep equality comparison
+- **ALWAYS use `cmp.Eq()` for deep equality comparison** - never compare individual fields
 - `cmp.Eq()` returns `(eq bool, report string)`
 - Pass report to `Expect()` for better failure messages
 
@@ -154,6 +154,7 @@ g.Expect(eq).To(BeTrue(), report)
 
 **Key Points:**
 - Use section comment: `// GET: Retrieve again and verify updates`
+- **ALWAYS use `cmp.Eq()` to verify updates** - never use field-by-field comparisons like `g.Expect(updated.Name).To(Equal(...))`
 - May pass additional parameters to `cmp.Eq()` (e.g., `"UpdateUser"`) to exclude certain fields from comparison
 
 ### 7. DELETE - Remove the Resource
@@ -205,13 +206,30 @@ g.Expect(len(list)).To(Equal(1))
 g.Expect(len(list)).To(Equal(expectedCount))
 ```
 
-### Deep Equality
+### Deep Equality - Resource Comparisons
+
+**CRITICAL:** Always use `cmp.Eq()` for comparing resources. Never use individual field comparisons.
+
 ```go
 eq, report := cmp.Eq(expected, actual)
 g.Expect(eq).To(BeTrue(), report)
 
 // With optional ignore fields
 eq, report := cmp.Eq(expected, actual, "UpdateUser", "CreateUser")
+g.Expect(eq).To(BeTrue(), report)
+```
+
+**DO NOT do this:**
+```go
+// WRONG - Don't compare individual fields
+g.Expect(updated.Name).To(Equal(expected.Name))
+g.Expect(updated.Description).To(Equal(expected.Description))
+```
+
+**DO this instead:**
+```go
+// CORRECT - Use cmp.Eq() for full resource comparison
+eq, report := cmp.Eq(expected, updated, "UpdateUser")
 g.Expect(eq).To(BeTrue(), report)
 ```
 
@@ -314,7 +332,8 @@ Mode: api.ApMode{
 - [ ] LIST operation with count validation and `cmp.Eq()` verification
 - [ ] First GET (individual) with `cmp.Eq()` verification
 - [ ] UPDATE operation modifying multiple fields
-- [ ] Second GET with `cmp.Eq()` verification
+- [ ] Second GET with `cmp.Eq()` verification (using `cmp.Eq()`, NOT individual field checks)
+- [ ] **ALL resource comparisons use `cmp.Eq()` - NO individual field comparisons**
 - [ ] DELETE operation
 - [ ] Deletion verified with NotFound error check
 - [ ] Section comments for each CRUD+List operation
