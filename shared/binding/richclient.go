@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
+	"github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 )
 
@@ -38,6 +39,7 @@ type RichClient struct {
 	File             File
 	Generator        Generator
 	Identity         Identity
+	Import           _import.Import
 	JobFunction      JobFunction
 	Manifest         Manifest
 	MigrationWave    MigrationWave
@@ -92,6 +94,7 @@ func (r *RichClient) build(client RestClient) {
 	r.File = File{client: client}
 	r.Generator = Generator{client: client}
 	r.Identity = Identity{client: client}
+	r.Import = _import.New(client)
 	r.JobFunction = JobFunction{client: client}
 	r.Manifest = Manifest{client: client}
 	r.MigrationWave = MigrationWave{client: client}
