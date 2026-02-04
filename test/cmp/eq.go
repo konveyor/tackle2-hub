@@ -171,12 +171,19 @@ func (d *Cmp) cmp(a, b any) {
 		return
 	}
 	if tA != tB {
-		d.note(
-			"%s: (type) %s != %s",
-			d.at(),
-			tA.Name(),
-			tB.Name())
-		return
+		aliased := false
+		kA := tA.Kind()
+		kB := tB.Kind()
+		if kA == reflect.Slice || kA == reflect.Map {
+			aliased = kA == kB
+		}
+		if !aliased {
+			d.note(
+				"%s: (type) %s != %s",
+				d.at(),
+				tA.Name(),
+				tB.Name())
+		}
 	}
 	kind := tA.Kind()
 	switch kind {

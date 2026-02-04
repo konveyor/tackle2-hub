@@ -135,6 +135,10 @@ test-api:
 	for pkg in $$(go list ./test/api/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
 	done
+test-binding:
+	for pkg in $$(go list ./test/binding/...); do \
+	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
+	done
 
 # Run Hub test suite.
 test-all: test-unit test-api

@@ -50,7 +50,7 @@ func (h Setting) List() (list []api.Setting, err error) {
 // Update a Setting.
 func (h Setting) Update(r *api.Setting) (err error) {
 	path := Path(api.SettingRoute).Inject(Params{api.Key: r.Key})
-	err = h.client.Put(path, r)
+	err = h.client.Put(path, r.Value)
 	return
 }
 
