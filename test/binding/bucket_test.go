@@ -15,6 +15,12 @@ import (
 func TestBucket(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Get existing buckets created by other tests.
+	// Buckets are reaped and are not directly cleaned up
+	// as part of other tests creating bucket owners such as applications.
+	existing, err := client.Bucket.List()
+	g.Expect(err).To(BeNil())
+
 	// Create a temporary directory for test files
 	testDir, err := os.MkdirTemp("", "test-bucket-*")
 	g.Expect(err).To(BeNil())
@@ -58,8 +64,8 @@ func TestBucket(t *testing.T) {
 	// GET: List buckets
 	list, err := client.Bucket.List()
 	g.Expect(err).To(BeNil())
-	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(bucket, list[0])
+	g.Expect(len(list)).To(Equal(len(existing) + 1))
+	eq, report := cmp.Eq(bucket, list[len(existing)])
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the bucket and verify it matches

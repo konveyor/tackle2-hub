@@ -13,12 +13,12 @@ const (
 )
 
 var (
-	Settings = &settings.Settings.Addon.Hub
+	Settings = &settings.Settings
 	client   *binding.RichClient
 )
 
 func init() {
-	client = binding.New(Settings.URL)
+	client = binding.New(Settings.Addon.Hub.URL)
 	client.Client.SetRetry(uint8(1))
 	user := os.Getenv(User)
 	password := os.Getenv(Password)
