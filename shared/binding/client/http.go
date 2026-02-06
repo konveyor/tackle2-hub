@@ -309,6 +309,47 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 	return
 }
 
+// DeleteWith deletes a resource using the specified body.
+func (r *Client) DeleteWith(path string, body any, params ...Param) (err error) {
+	bfr, err := json.Marshal(body)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	reader := bytes.NewReader(bfr)
+	request := func() (request *http.Request, err error) {
+		request, err = http.NewRequest(http.MethodDelete, r.join(path), reader)
+		if err != nil {
+			return
+		}
+		request.Header.Set(api.Accept, api.MIMEJSON)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
+		return
+	}
+	response, err := r.send(request)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+	status := response.StatusCode
+	switch status {
+	case http.StatusOK,
+		http.StatusNoContent:
+	default:
+		err = r.restError(response)
+	}
+
+	return
+}
+
 // BucketGet downloads a file/directory.
 // The source (path) is relative to the bucket root.
 func (r *Client) BucketGet(source, destination string) (err error) {

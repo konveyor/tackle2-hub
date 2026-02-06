@@ -1020,3 +1020,137 @@ func TestApplicationBucket(t *testing.T) {
 	err = selected.Bucket.Get("test-file.txt", tmpDest)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
+
+// TestApplicationDeleteList tests bulk deletion of applications
+func TestApplicationDeleteList(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create multiple applications
+	app1 := &api.Application{
+		Name:        "Test App for Delete List 1",
+		Description: "Application for testing bulk delete",
+	}
+	err := client.Application.Create(app1)
+	g.Expect(err).To(BeNil())
+	g.Expect(app1.ID).NotTo(BeZero())
+
+	app2 := &api.Application{
+		Name:        "Test App for Delete List 2",
+		Description: "Application for testing bulk delete",
+	}
+	err = client.Application.Create(app2)
+	g.Expect(err).To(BeNil())
+	g.Expect(app2.ID).NotTo(BeZero())
+
+	app3 := &api.Application{
+		Name:        "Test App for Delete List 3",
+		Description: "Application for testing bulk delete",
+	}
+	err = client.Application.Create(app3)
+	g.Expect(err).To(BeNil())
+	g.Expect(app3.ID).NotTo(BeZero())
+
+	// DELETE LIST: Delete multiple applications at once
+	ids := []uint{app1.ID, app2.ID, app3.ID}
+	err = client.Application.DeleteList(ids)
+	g.Expect(err).To(BeNil())
+
+	// VERIFY: All applications should be deleted
+	_, err = client.Application.Get(app1.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+
+	_, err = client.Application.Get(app2.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+
+	_, err = client.Application.Get(app3.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestApplicationUpdateStakeholders tests updating application stakeholders
+func TestApplicationUpdateStakeholders(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create stakeholders
+	owner := &api.Stakeholder{
+		Name:  "Test Owner for Stakeholders",
+		Email: "stakeholder-owner@test.com",
+	}
+	err := client.Stakeholder.Create(owner)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(owner.ID)
+	})
+
+	contributor1 := &api.Stakeholder{
+		Name:  "Test Contributor 1 for Stakeholders",
+		Email: "contributor1@test.com",
+	}
+	err = client.Stakeholder.Create(contributor1)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(contributor1.ID)
+	})
+
+	contributor2 := &api.Stakeholder{
+		Name:  "Test Contributor 2 for Stakeholders",
+		Email: "contributor2@test.com",
+	}
+	err = client.Stakeholder.Create(contributor2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(contributor2.ID)
+	})
+
+	// CREATE: Create an application
+	app := &api.Application{
+		Name:        "Test App for Stakeholders",
+		Description: "Application for testing stakeholder updates",
+	}
+	err = client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	// UPDATE STAKEHOLDERS: Update the application's stakeholders
+	stakeholders := &api.Stakeholders{
+		Owner: &api.Ref{
+			ID:   owner.ID,
+			Name: owner.Name,
+		},
+		Contributors: []api.Ref{
+			{
+				ID:   contributor1.ID,
+				Name: contributor1.Name,
+			},
+			{
+				ID:   contributor2.ID,
+				Name: contributor2.Name,
+			},
+		},
+	}
+	err = client.Application.UpdateStakeholders(app.ID, stakeholders)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve the application and verify stakeholders were updated
+	retrieved, err := client.Application.Get(app.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	g.Expect(retrieved.Owner).NotTo(BeNil())
+	g.Expect(retrieved.Owner.ID).To(Equal(owner.ID))
+	g.Expect(len(retrieved.Contributors)).To(Equal(2))
+
+	// Verify contributors
+	foundContributor1 := false
+	foundContributor2 := false
+	for _, c := range retrieved.Contributors {
+		if c.ID == contributor1.ID {
+			foundContributor1 = true
+		}
+		if c.ID == contributor2.ID {
+			foundContributor2 = true
+		}
+	}
+	g.Expect(foundContributor1).To(BeTrue())
+	g.Expect(foundContributor2).To(BeTrue())
+}
