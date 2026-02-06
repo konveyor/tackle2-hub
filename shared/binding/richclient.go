@@ -9,6 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 	"github.com/konveyor/tackle2-hub/shared/binding/import"
+	"github.com/konveyor/tackle2-hub/shared/binding/report"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
 )
@@ -48,6 +49,7 @@ type RichClient struct {
 	Platform         Platform
 	Proxy            Proxy
 	Questionnaire    Questionnaire
+	Report           report.Report
 	Review           Review
 	Schema           Schema
 	RuleSet          RuleSet
@@ -104,6 +106,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Platform = Platform{client: client}
 	r.Proxy = Proxy{client: client}
 	r.Questionnaire = Questionnaire{client: client}
+	r.Report = report.New(client)
 	r.Review = Review{client: client}
 	r.RuleSet = RuleSet{client: client}
 	r.Schema = Schema{client: client}

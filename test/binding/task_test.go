@@ -213,7 +213,7 @@ func TestTaskWithPlatform(t *testing.T) {
 func TestTaskBulkCancel(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	t.Skip("")
+	t.Skip("NEEDS CLUSTER SIMULATOR") // TODO: add hub k8s simulator.
 	return
 
 	// Create first task
