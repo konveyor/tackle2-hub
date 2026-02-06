@@ -19,9 +19,9 @@ func TestReview(t *testing.T) {
 	}
 	err := client.Application.Create(application)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(application.ID)
-	}()
+	})
 
 	// Define the review to create
 	review := &api.Review{
@@ -41,9 +41,9 @@ func TestReview(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(review.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Review.Delete(review.ID)
-	}()
+	})
 
 	// GET: List reviews
 	list, err := client.Review.List()

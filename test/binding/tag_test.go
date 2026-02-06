@@ -24,9 +24,9 @@ func TestTag(t *testing.T) {
 	// CREATE: tag category.
 	err = client.TagCategory.Create(tagCategory)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.TagCategory.Delete(tagCategory.ID)
-	}()
+	})
 
 	// Define the tag to create
 	tag := &api.Tag{
@@ -42,9 +42,9 @@ func TestTag(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(tag.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Tag.Delete(tag.ID)
-	}()
+	})
 
 	// GET: List tags
 	list, err := client.Tag.List()

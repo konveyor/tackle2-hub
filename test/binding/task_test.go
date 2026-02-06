@@ -32,9 +32,9 @@ func TestTask(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Task.Delete(task.ID)
-	}()
+	})
 
 	// GET: List tasks
 	list, err := client.Task.List()

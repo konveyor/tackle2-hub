@@ -23,9 +23,9 @@ func TestBusinessService(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(businessService.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.BusinessService.Delete(businessService.ID)
-	}()
+	})
 
 	// GET: List business services
 	list, err := client.BusinessService.List()

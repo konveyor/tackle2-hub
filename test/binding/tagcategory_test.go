@@ -27,9 +27,9 @@ func TestTagCategory(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(tagCategory.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.TagCategory.Delete(tagCategory.ID)
-	}()
+	})
 
 	// GET: List tag categories
 	list, err := client.TagCategory.List()

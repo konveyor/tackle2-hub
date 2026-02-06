@@ -20,9 +20,9 @@ func TestImport(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "test-import-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(testDir)
-	}()
+	})
 
 	csvFile := filepath.Join(testDir, "test_import.csv")
 	csvLine1 := []string{
@@ -154,9 +154,9 @@ func TestImport(t *testing.T) {
 	g.Expect(uploaded).NotTo(BeNil())
 	g.Expect(uploaded.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Import.Summary().Delete(uploaded.ID)
-	}()
+	})
 
 	// Wait for the import processing to complete
 	time.Sleep(2 * time.Second)

@@ -19,9 +19,9 @@ func TestDependency(t *testing.T) {
 	}
 	err := client.Application.Create(appFrom)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(appFrom.ID)
-	}()
+	})
 
 	appTo := &api.Application{
 		Name:        "Inventory App",
@@ -29,9 +29,9 @@ func TestDependency(t *testing.T) {
 	}
 	err = client.Application.Create(appTo)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(appTo.ID)
-	}()
+	})
 
 	// Define the dependency to create
 	dependency := &api.Dependency{
@@ -50,9 +50,9 @@ func TestDependency(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(dependency.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Dependency.Delete(dependency.ID)
-	}()
+	})
 
 	// GET: List dependencies
 	list, err := client.Dependency.List()

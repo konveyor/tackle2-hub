@@ -22,9 +22,9 @@ func TestManifest(t *testing.T) {
 	}
 	err := client.Application.Create(application)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(application.ID)
-	}()
+	})
 
 	// Define the manifest to create
 	manifest := &api.Manifest{
@@ -54,9 +54,9 @@ func TestManifest(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(manifest.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Manifest.Delete(manifest.ID)
-	}()
+	})
 
 	// GET: List manifests
 	list, err := client.Manifest.List()

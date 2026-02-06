@@ -25,9 +25,9 @@ func TestBucket(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "test-bucket-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(testDir)
-	}()
+	})
 
 	// Create test files in the temp directory
 	testFile := filepath.Join(testDir, "file1.txt")
@@ -57,9 +57,9 @@ func TestBucket(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(bucket.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Bucket.Delete(bucket.ID)
-	}()
+	})
 
 	// GET: List buckets
 	list, err := client.Bucket.List()
@@ -87,9 +87,9 @@ func TestBucket(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	_ = downloadedFile.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(downloadedFile.Name())
-	}()
+	})
 
 	err = selected.Content.Get("uploaded-file1.txt", downloadedFile.Name())
 	g.Expect(err).To(BeNil())
@@ -109,9 +109,9 @@ func TestBucket(t *testing.T) {
 	downloadedDir, err := os.MkdirTemp("", "test-downloaded-dir-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(downloadedDir)
-	}()
+	})
 
 	err = selected.Content.Get("uploaded-dir", downloadedDir)
 	g.Expect(err).To(BeNil())
@@ -137,9 +137,9 @@ func TestBucket(t *testing.T) {
 	deletedFilePath := deletedFile.Name()
 	_ = deletedFile.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(deletedFilePath)
-	}()
+	})
 
 	err = selected.Content.Get("uploaded-file1.txt", deletedFilePath)
 	g.Expect(err).ToNot(BeNil())
@@ -152,9 +152,9 @@ func TestBucket(t *testing.T) {
 	deletedDir, err := os.MkdirTemp("", "test-deleted-dir-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(deletedDir)
-	}()
+	})
 
 	err = selected.Content.Get("uploaded-dir", deletedDir)
 	g.Expect(err).ToNot(BeNil())

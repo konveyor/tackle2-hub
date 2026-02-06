@@ -17,9 +17,9 @@ func TestCreateGet(t *testing.T) {
 	app := &api.Application{Name: "Test"}
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	analysis := api.Analysis{
 		Commit: "abc123def456",
@@ -172,9 +172,9 @@ func TestCreateGet(t *testing.T) {
 	analysis.Application = api.Ref{ID: app.ID}
 	err = client.Analysis.Create(&analysis)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Analysis.Delete(analysis.ID)
-	}()
+	})
 
 	// Fetch by id.
 	retrieved, err := client.Analysis.Get(analysis.ID)

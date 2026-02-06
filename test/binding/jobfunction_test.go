@@ -26,9 +26,9 @@ func TestJobFunction(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jobFunction.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.JobFunction.Delete(jobFunction.ID)
-	}()
+	})
 
 	// GET: List job functions
 	list, err := client.JobFunction.List()

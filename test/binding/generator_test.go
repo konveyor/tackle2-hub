@@ -39,9 +39,9 @@ func TestGenerator(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(generator.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Generator.Delete(generator.ID)
-	}()
+	})
 
 	// GET: List generators
 	list, err := client.Generator.List()

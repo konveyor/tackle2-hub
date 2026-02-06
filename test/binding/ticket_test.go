@@ -21,9 +21,9 @@ func TestTicket(t *testing.T) {
 	}
 	err := client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
-	}()
+	})
 
 	// Create a tracker for the ticket to reference
 	tracker := &api.Tracker{
@@ -39,9 +39,9 @@ func TestTicket(t *testing.T) {
 	}
 	err = client.Tracker.Create(tracker)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Tracker.Delete(tracker.ID)
-	}()
+	})
 
 	// Create an application for the ticket to reference
 	application := &api.Application{
@@ -50,9 +50,9 @@ func TestTicket(t *testing.T) {
 	}
 	err = client.Application.Create(application)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(application.ID)
-	}()
+	})
 
 	// Define the ticket to create
 	ticket := &api.Ticket{
@@ -73,9 +73,9 @@ func TestTicket(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(ticket.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Ticket.Delete(ticket.ID)
-	}()
+	})
 
 	// GET: List tickets
 	list, err := client.Ticket.List()

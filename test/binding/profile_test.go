@@ -19,9 +19,9 @@ func TestAnalysisProfile(t *testing.T) {
 	}
 	err := client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
-	}()
+	})
 
 	// Define the profile to create
 	profile := &api.AnalysisProfile{
@@ -62,9 +62,9 @@ func TestAnalysisProfile(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(profile.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.AnalysisProfile.Delete(profile.ID)
-	}()
+	})
 
 	// GET: List profiles
 	list, err := client.AnalysisProfile.List()

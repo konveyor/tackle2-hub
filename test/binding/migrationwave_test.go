@@ -26,9 +26,9 @@ func TestMigrationWave(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(migrationWave.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.MigrationWave.Delete(migrationWave.ID)
-	}()
+	})
 
 	// GET: List migration waves
 	list, err := client.MigrationWave.List()

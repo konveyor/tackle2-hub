@@ -31,9 +31,9 @@ func TestTarget(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(target.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Target.Delete(target.ID)
-	}()
+	})
 
 	// GET: List targets
 	list, err := client.Target.List()

@@ -21,9 +21,9 @@ func TestSetting(t *testing.T) {
 	err := client.Setting.Create(setting)
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Setting.Delete(setting.Key)
-	}()
+	})
 
 	// GET: Retrieve the setting and verify it matches
 	var retrievedValue string

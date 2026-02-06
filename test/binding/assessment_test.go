@@ -64,9 +64,9 @@ func TestAssessment(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(questionnaire.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Questionnaire.Delete(questionnaire.ID)
-	}()
+	})
 
 	// Create an application for the assessment to reference
 	application := &api.Application{
@@ -77,9 +77,9 @@ func TestAssessment(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(application.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(application.ID)
-	}()
+	})
 
 	// Define the assessment to create
 	assessment := &api.Assessment{
@@ -129,9 +129,9 @@ func TestAssessment(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(assessment.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Assessment.Delete(assessment.ID)
-	}()
+	})
 
 	// GET: List assessments
 	list, err := client.Assessment.List()

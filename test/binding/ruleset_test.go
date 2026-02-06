@@ -28,9 +28,9 @@ func TestRuleSet(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(ruleSet.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.RuleSet.Delete(ruleSet.ID)
-	}()
+	})
 
 	// GET: List rulesets
 	list, err := client.RuleSet.List()

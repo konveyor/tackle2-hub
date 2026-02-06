@@ -24,9 +24,9 @@ func TestPlatform(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(platform.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Platform.Delete(platform.ID)
-	}()
+	})
 
 	// GET: List platforms
 	list, err := client.Platform.List()

@@ -26,9 +26,9 @@ func TestFile(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "test-file-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(testDir)
-	}()
+	})
 
 	sourceFile := filepath.Join(testDir, "testfile.txt")
 	testContent := []byte("This is test file content\nLine 2\nLine 3\n")
@@ -48,9 +48,9 @@ func TestFile(t *testing.T) {
 	eq, report := cmp.Eq(expectedFile, uploaded, ignoredPaths...)
 	g.Expect(eq).To(BeTrue(), report)
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.File.Delete(uploaded.ID)
-	}()
+	})
 
 	// GET: Download the file to a specific path and verify content matches
 	downloadFile, err := os.CreateTemp("", "test-download-*")
@@ -58,9 +58,9 @@ func TestFile(t *testing.T) {
 	downloadPath := downloadFile.Name()
 	_ = downloadFile.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(downloadPath)
-	}()
+	})
 
 	err = client.File.Get(uploaded.ID, downloadPath)
 	g.Expect(err).To(BeNil())
@@ -72,9 +72,9 @@ func TestFile(t *testing.T) {
 	downloadDir, err := os.MkdirTemp("", "test-download-dir-*")
 	g.Expect(err).To(BeNil())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.RemoveAll(downloadDir)
-	}()
+	})
 
 	err = client.File.Get(uploaded.ID, downloadDir)
 	g.Expect(err).To(BeNil())
@@ -94,9 +94,9 @@ func TestFile(t *testing.T) {
 	patchedPath := patchedFile.Name()
 	_ = patchedFile.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(patchedPath)
-	}()
+	})
 
 	err = client.File.Get(uploaded.ID, patchedPath)
 	g.Expect(err).To(BeNil())
@@ -118,9 +118,9 @@ func TestFile(t *testing.T) {
 	deletedPath := deletedFile.Name()
 	_ = deletedFile.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(deletedPath)
-	}()
+	})
 
 	err = client.File.Get(uploaded.ID, deletedPath)
 	g.Expect(err).ToNot(BeNil())
@@ -138,9 +138,9 @@ func TestFile(t *testing.T) {
 	eq, report = cmp.Eq(expectedEmpty, emptyFile, ignoredPaths...)
 	g.Expect(eq).To(BeTrue(), report)
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.File.Delete(emptyFile.ID)
-	}()
+	})
 
 	// GET: Download the empty file and verify it's empty
 	emptyDownload, err := os.CreateTemp("", "test-empty-*")
@@ -148,9 +148,9 @@ func TestFile(t *testing.T) {
 	emptyDownloadPath := emptyDownload.Name()
 	_ = emptyDownload.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(emptyDownloadPath)
-	}()
+	})
 
 	err = client.File.Get(emptyFile.ID, emptyDownloadPath)
 	g.Expect(err).To(BeNil())
@@ -181,9 +181,9 @@ func TestFile(t *testing.T) {
 	eq, report = cmp.Eq(expectedPosted, posted, ignoredPaths...)
 	g.Expect(eq).To(BeTrue(), report)
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.File.Delete(posted.ID)
-	}()
+	})
 
 	// GET: Verify the posted file content
 	postedDownload, err := os.CreateTemp("", "test-posted-*")
@@ -191,9 +191,9 @@ func TestFile(t *testing.T) {
 	postedDownloadPath := postedDownload.Name()
 	_ = postedDownload.Close()
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = os.Remove(postedDownloadPath)
-	}()
+	})
 
 	err = client.File.Get(posted.ID, postedDownloadPath)
 	g.Expect(err).To(BeNil())

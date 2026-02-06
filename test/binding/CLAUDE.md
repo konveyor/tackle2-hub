@@ -55,14 +55,14 @@ identity := &api.Identity{
 }
 err := client.Identity.Create(identity)
 g.Expect(err).To(BeNil())
-defer func() {
+t.Cleanup(func() {
 	_ = client.Identity.Delete(identity.ID)
-}()
+})
 ```
 
 **Key Points:**
 - Create dependent resources first
-- Add cleanup with `defer` immediately after creation
+- Add cleanup with `t.Cleanup()` immediately after creation
 - Use descriptive comments explaining the dependency relationship
 - Ignore cleanup errors: `_ = client.Resource.Delete(id)`
 
@@ -80,9 +80,9 @@ err = client.AnalysisProfile.Create(profile)
 g.Expect(err).To(BeNil())
 g.Expect(profile.ID).NotTo(BeZero())
 
-defer func() {
+t.Cleanup(func() {
 	_ = client.AnalysisProfile.Delete(profile.ID)
-}()
+})
 ```
 
 **Key Points:**
@@ -90,7 +90,7 @@ defer func() {
 - Define resource with test data
 - Assert no error: `g.Expect(err).To(BeNil())`
 - Assert ID is populated: `g.Expect(profile.ID).NotTo(BeZero())`
-- Add cleanup with defer (main resource cleaned up before dependencies)
+- Add cleanup with `t.Cleanup()` (main resource cleaned up before dependencies due to LIFO order)
 
 ### 3. LIST - List Resources and Verify
 ```go
@@ -243,17 +243,19 @@ g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 
 ### Cleanup Order
 1. Main resource deleted first (in explicit DELETE test section)
-2. Dependent resources cleaned up via deferred functions
-3. Deferred cleanups execute in LIFO order
+2. Dependent resources cleaned up via `t.Cleanup()` functions
+3. Cleanup functions execute in LIFO (last-in, first-out) order
 
-### Defer Pattern
+### t.Cleanup() Pattern
 ```go
-defer func() {
+t.Cleanup(func() {
 	_ = client.Resource.Delete(id)
-}()
+})
 ```
-- Use anonymous function with defer
+- Use `t.Cleanup()` with anonymous function for resource cleanup
 - Ignore errors with `_` (cleanup is best-effort)
+- Preferred over `defer` for Go 1.14+ (more idiomatic for test cleanup)
+- Cleanup runs after all subtests complete
 
 ## Comments
 
@@ -296,9 +298,9 @@ identity := &api.Identity{
 }
 err := client.Identity.Create(identity)
 g.Expect(err).To(BeNil())
-defer func() {
+t.Cleanup(func() {
 	_ = client.Identity.Delete(identity.ID)
-}()
+})
 
 // Use the reference
 profile.Rules.Identity = &api.Ref{
@@ -328,7 +330,7 @@ Mode: api.ApMode{
 - [ ] Imports include: `errors`, `testing`, `shared/api`, `test/cmp`, Gomega
 - [ ] Test function named `Test<ResourceName>(t *testing.T)`
 - [ ] Gomega initialized: `g := NewGomegaWithT(t)`
-- [ ] Dependencies created first with defer cleanup
+- [ ] Dependencies created first with `t.Cleanup()` for cleanup
 - [ ] CREATE operation with assertions
 - [ ] LIST operation with count validation and `cmp.Eq()` verification
 - [ ] First GET (individual) with `cmp.Eq()` verification
@@ -338,4 +340,4 @@ Mode: api.ApMode{
 - [ ] DELETE operation
 - [ ] Deletion verified with NotFound error check
 - [ ] Section comments for each CRUD+List operation
-- [ ] Cleanup defers use `_ =` to ignore errors
+- [ ] Cleanup uses `t.Cleanup()` and ignores errors with `_ =`

@@ -64,9 +64,9 @@ func TestQuestionnaire(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(questionnaire.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Questionnaire.Delete(questionnaire.ID)
-	}()
+	})
 
 	// GET: List questionnaires
 	list, err := client.Questionnaire.List()

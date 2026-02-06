@@ -21,9 +21,9 @@ func TestTracker(t *testing.T) {
 	}
 	err := client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
-	}()
+	})
 
 	// Define the tracker to create
 	tracker := &api.Tracker{
@@ -43,9 +43,9 @@ func TestTracker(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(tracker.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Tracker.Delete(tracker.ID)
-	}()
+	})
 
 	// GET: List trackers
 	list, err := client.Tracker.List()

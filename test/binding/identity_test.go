@@ -25,9 +25,9 @@ func TestIdentity(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(identity.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
-	}()
+	})
 
 	// GET: List identities
 	list, err := client.Identity.List()

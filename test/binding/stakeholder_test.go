@@ -23,9 +23,9 @@ func TestStakeholder(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(stakeholder.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Stakeholder.Delete(stakeholder.ID)
-	}()
+	})
 
 	// GET: List stakeholders
 	list, err := client.Stakeholder.List()

@@ -24,9 +24,9 @@ func TestApplication(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// LIST: List applications and verify
 	list, err := client.Application.List()
@@ -88,9 +88,9 @@ func TestApplicationIdentity(t *testing.T) {
 	err := client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
 	g.Expect(identity.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
-	}()
+	})
 
 	// Create an application for testing
 	app := &api.Application{
@@ -100,9 +100,9 @@ func TestApplicationIdentity(t *testing.T) {
 	err = client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -147,9 +147,9 @@ func TestApplicationIdentityWithRoles(t *testing.T) {
 	err := client.Identity.Create(directSource)
 	g.Expect(err).To(BeNil())
 	g.Expect(directSource.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(directSource.ID)
-	}()
+	})
 
 	// Direct identity with role "asset"
 	directAsset := &api.Identity{
@@ -159,9 +159,9 @@ func TestApplicationIdentityWithRoles(t *testing.T) {
 	err = client.Identity.Create(directAsset)
 	g.Expect(err).To(BeNil())
 	g.Expect(directAsset.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(directAsset.ID)
-	}()
+	})
 
 	// Indirect default identity for "Other" kind
 	indirectOther := &api.Identity{
@@ -172,9 +172,9 @@ func TestApplicationIdentityWithRoles(t *testing.T) {
 	err = client.Identity.Create(indirectOther)
 	g.Expect(err).To(BeNil())
 	g.Expect(indirectOther.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(indirectOther.ID)
-	}()
+	})
 
 	// Indirect default identity for "Test" kind
 	indirectTest := &api.Identity{
@@ -185,9 +185,9 @@ func TestApplicationIdentityWithRoles(t *testing.T) {
 	err = client.Identity.Create(indirectTest)
 	g.Expect(err).To(BeNil())
 	g.Expect(indirectTest.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Identity.Delete(indirectTest.ID)
-	}()
+	})
 
 	// CREATE: Create application with direct identities assigned with roles
 	app := &api.Application{
@@ -200,9 +200,9 @@ func TestApplicationIdentityWithRoles(t *testing.T) {
 	err = client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -264,9 +264,9 @@ func TestApplicationTag(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -345,9 +345,9 @@ func TestApplicationTagWithSource(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -448,9 +448,9 @@ func TestApplicationAssessment(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -469,9 +469,9 @@ func TestApplicationAssessment(t *testing.T) {
 	err = selected.Assessment.Create(assessment)
 	g.Expect(err).To(BeNil())
 	g.Expect(assessment.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Assessment.Delete(assessment.ID)
-	}()
+	})
 
 	// LIST: Verify assessment was created
 	list, err := selected.Assessment.List()
@@ -493,9 +493,9 @@ func TestApplicationAnalysis(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -508,9 +508,9 @@ func TestApplicationAnalysis(t *testing.T) {
 	err = selected.Analysis.Create(analysis)
 	g.Expect(err).To(BeNil())
 	g.Expect(analysis.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Analysis.Delete(analysis.ID)
-	}()
+	})
 
 	// GET: Retrieve the analysis
 	retrieved, err := selected.Analysis.Get()
@@ -541,9 +541,9 @@ func TestApplicationManifest(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -556,9 +556,9 @@ func TestApplicationManifest(t *testing.T) {
 	err = selected.Manifest.Create(manifest)
 	g.Expect(err).To(BeNil())
 	g.Expect(manifest.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Manifest.Delete(manifest.ID)
-	}()
+	})
 
 	// GET: Retrieve the manifest
 	retrieved, err := selected.Manifest.Get()
@@ -579,9 +579,9 @@ func TestApplicationFact(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -648,9 +648,9 @@ func TestApplicationFactWithSource(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
@@ -753,9 +753,9 @@ func TestApplicationBucket(t *testing.T) {
 	err := client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Application.Delete(app.ID)
-	}()
+	})
 
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)

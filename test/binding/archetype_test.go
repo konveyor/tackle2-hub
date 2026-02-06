@@ -24,9 +24,9 @@ func TestArchetype(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(archetype.ID).NotTo(BeZero())
 
-	defer func() {
+	t.Cleanup(func() {
 		_ = client.Archetype.Delete(archetype.ID)
-	}()
+	})
 
 	// GET: List archetypes
 	list, err := client.Archetype.List()
