@@ -8,7 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/archetype"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
-	"github.com/konveyor/tackle2-hub/shared/binding/import"
+	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/report"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"

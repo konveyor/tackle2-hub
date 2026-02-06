@@ -44,7 +44,6 @@ type NotFound = adapter.NotFound
 // Handlers
 type Application = adapter.Application
 type Bucket = adapter.Bucket
-type BucketContent = adapter.BucketContent
 type File = adapter.File
 type Identity = adapter.Identity
 type Manifest = adapter.Manifest
