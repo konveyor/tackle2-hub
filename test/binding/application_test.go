@@ -1,0 +1,604 @@
+package binding
+
+import (
+	"errors"
+	"os"
+	"testing"
+
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/test/cmp"
+	. "github.com/onsi/gomega"
+)
+
+// TestApplication tests the main Application CRUD operations
+func TestApplication(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create an application
+	app := &api.Application{
+		Name:        "Test Application",
+		Description: "This is a test application for CRUD operations",
+		Comments:    "Initial comments",
+		Binary:      "test-binary.jar",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// LIST: List applications and verify
+	list, err := client.Application.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(BeNumerically(">", 0))
+	found := false
+	for _, a := range list {
+		if a.ID == app.ID {
+			found = true
+			eq, report := cmp.Eq(app, &a)
+			g.Expect(eq).To(BeTrue(), report)
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
+	// GET: Retrieve the application and verify it matches
+	retrieved, err := client.Application.Get(app.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	eq, report := cmp.Eq(app, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// UPDATE: Modify the application
+	app.Name = "Updated Test Application"
+	app.Description = "This is an updated test application"
+	app.Comments = "Updated comments"
+	app.Binary = "updated-binary.war"
+	err = client.Application.Update(app)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve again and verify updates
+	updated, err := client.Application.Get(app.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(updated).NotTo(BeNil())
+	eq, report = cmp.Eq(app, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove the application
+	err = client.Application.Delete(app.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify deletion - Get should fail
+	_, err = client.Application.Get(app.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestApplicationIdentity tests the Application.Select().Identity subresource
+func TestApplicationIdentity(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an identity for testing
+	identity := &api.Identity{
+		Name:     "test-app-identity",
+		Kind:     "git",
+		User:     "test-user",
+		Password: "test-password-123",
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	g.Expect(identity.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Identity.Delete(identity.ID)
+	}()
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Identity",
+		Description: "Application for testing identity subresource",
+	}
+	err = client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// LIST: Verify initially empty
+	list, err := selected.Identity.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(0))
+
+	// Test Direct identity association (not implemented in current code, placeholder for future)
+	// Direct identities would be associated via a role field
+
+	// Test Indirect identity lookup
+	// Note: Indirect searches for identities by kind and default flag
+	foundIdentity, found, err := selected.Identity.Indirect(identity.Kind)
+	g.Expect(err).To(BeNil())
+	if found {
+		g.Expect(foundIdentity).NotTo(BeNil())
+		g.Expect(foundIdentity.Kind).To(Equal(identity.Kind))
+	}
+
+	// Test Search API
+	search := selected.Identity.Search()
+	foundIdentity, found, err = search.Indirect(identity.Kind).Find()
+	g.Expect(err).To(BeNil())
+	if found {
+		g.Expect(foundIdentity).NotTo(BeNil())
+		g.Expect(foundIdentity.Kind).To(Equal(identity.Kind))
+	}
+}
+
+// TestApplicationTag tests the Application.Select().Tag subresource
+func TestApplicationTag(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Tags",
+		Description: "Application for testing tag subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// LIST: Verify initially empty
+	list, err := selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(0))
+
+	// ADD: Add seeded tag 1
+	err = selected.Tag.Add(1)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify tag was added
+	list, err = selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	g.Expect(list[0].ID).To(Equal(uint(1)))
+
+	// ENSURE: Ensure tag 1 (should be idempotent)
+	err = selected.Tag.Ensure(1)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify still only one tag
+	list, err = selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	eq, report := cmp.Eq(
+		[]api.TagRef{
+			{ID: 1},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// ADD: Add seeded tag 2
+	err = selected.Tag.Add(2)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify both tags
+	list, err = selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 1},
+			{ID: 2},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove tag 404
+	err = selected.Tag.Delete(1)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify no tags remain
+	list, err = selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 2},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+}
+
+// TestApplicationTag tests the Application.Select().Tag subresource
+func TestApplicationTagWithSource(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Tags",
+		Description: "Application for testing tag subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+	source := selected.Tag.Source("T")
+
+	// LIST: Verify initially empty
+	list, err := source.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(0))
+
+	// ADD: Add seeded tag 1
+	err = source.Add(1)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify tag was added
+	list, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report := cmp.Eq(
+		[]api.TagRef{
+			{ID: 1, Source: "T"},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// ENSURE: Ensure tag 1 (should be idempotent)
+	err = source.Ensure(1)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify still only one tag
+	list, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 1, Source: "T"},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// ADD: Add seeded tag 2
+	err = source.Add(2)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify both tags
+	list, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 1, Source: "T"},
+			{ID: 2, Source: "T"},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// REPLACE: Replace T with only tags 4,5
+	err = source.Replace([]uint{4, 5})
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify tag 1,2,3 and 404 remains
+	list, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 4, Source: "T"},
+			{ID: 5, Source: "T"},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove tag 404
+	err = selected.Tag.Delete(5)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify no tags remain
+	list, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		[]api.TagRef{
+			{ID: 4, Source: "T"},
+		},
+		list,
+		".Name")
+	g.Expect(eq).To(BeTrue(), report)
+}
+
+// TestApplicationAssessment tests the Application.Select().Assessment subresource
+func TestApplicationAssessment(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Assessment",
+		Description: "Application for testing assessment subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// CREATE: Create an assessment
+	assessment := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   1,
+			Name: "Legacy Pathfinder"},
+		Application: &api.Ref{
+			ID:   app.ID,
+			Name: app.Name,
+		},
+		Status: "started",
+	}
+	err = selected.Assessment.Create(assessment)
+	g.Expect(err).To(BeNil())
+	g.Expect(assessment.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Assessment.Delete(assessment.ID)
+	}()
+
+	// LIST: Verify assessment was created
+	list, err := selected.Assessment.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(assessment, &list[0])
+	g.Expect(eq).To(BeTrue(), report)
+}
+
+// TestApplicationAnalysis tests the Application.Select().Analysis subresource
+func TestApplicationAnalysis(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Analysis",
+		Description: "Application for testing analysis subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// CREATE: Create an analysis
+	analysis := &api.Analysis{
+		Effort:      100,
+		Application: api.Ref{ID: app.ID},
+	}
+	err = selected.Analysis.Create(analysis)
+	g.Expect(err).To(BeNil())
+	g.Expect(analysis.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Analysis.Delete(analysis.ID)
+	}()
+
+	// GET: Retrieve the analysis
+	retrieved, err := selected.Analysis.Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	g.Expect(retrieved.ID).To(Equal(analysis.ID))
+
+	// LIST INSIGHTS: List insights for the analysis
+	insights, err := selected.Analysis.ListInsights()
+	g.Expect(err).To(BeNil())
+	g.Expect(insights).NotTo(BeNil())
+
+	// LIST DEPENDENCIES: List dependencies for the analysis
+	dependencies, err := selected.Analysis.ListDependencies()
+	g.Expect(err).To(BeNil())
+	g.Expect(dependencies).NotTo(BeNil())
+}
+
+// TestApplicationManifest tests the Application.Select().Manifest subresource
+func TestApplicationManifest(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Manifest",
+		Description: "Application for testing manifest subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// CREATE: Create a manifest
+	manifest := &api.Manifest{
+		Application: api.Ref{ID: app.ID},
+		Content:     api.Map{"test": "data"},
+	}
+	err = selected.Manifest.Create(manifest)
+	g.Expect(err).To(BeNil())
+	g.Expect(manifest.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Manifest.Delete(manifest.ID)
+	}()
+
+	// GET: Retrieve the manifest
+	retrieved, err := selected.Manifest.Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	g.Expect(retrieved.ID).To(Equal(manifest.ID))
+}
+
+// TestApplicationFact tests the Application.Select().Fact subresource
+func TestApplicationFact(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Facts",
+		Description: "Application for testing fact subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// Set source for fact operations
+	source := "test-source"
+	factAPI := selected.Fact.Source(source)
+
+	// SET: Set a fact
+	err = factAPI.Set("test-key", "test-value")
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve the fact
+	var value string
+	err = factAPI.Get("test-key", &value)
+	g.Expect(err).To(BeNil())
+	g.Expect(value).To(Equal("test-value"))
+
+	// LIST: List facts by source
+	facts, err := factAPI.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(facts)).To(Equal(1))
+	g.Expect(facts["test-key"]).To(Equal("test-value"))
+
+	// SET: Update the fact
+	err = factAPI.Set("test-key", "updated-value")
+	g.Expect(err).To(BeNil())
+
+	// GET: Verify update
+	err = factAPI.Get("test-key", &value)
+	g.Expect(err).To(BeNil())
+	g.Expect(value).To(Equal("updated-value"))
+
+	// SET: Add another fact
+	err = factAPI.Set("test-key-2", map[string]interface{}{
+		"nested": "data",
+		"count":  42,
+	})
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify both facts
+	facts, err = factAPI.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(facts)).To(Equal(2))
+
+	// REPLACE: Replace all facts
+	newFacts := api.Map{
+		"new-key-1": "new-value-1",
+		"new-key-2": "new-value-2",
+	}
+	err = factAPI.Replace(newFacts)
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify replacement
+	facts, err = factAPI.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(facts)).To(Equal(2))
+
+	// DELETE: Delete a fact
+	err = factAPI.Delete("new-key-1")
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify deletion
+	facts, err = factAPI.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(facts)).To(Equal(1))
+	g.Expect(facts["new-key-2"]).To(Equal("new-value-2"))
+
+	// GET: Verify deleted fact is not found
+	err = factAPI.Get("new-key-1", &value)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestApplicationBucket tests the Application.Select().Bucket subresource
+func TestApplicationBucket(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Bucket",
+		Description: "Application for testing bucket subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// PUT: Upload a file to the bucket
+	tmpFile := "/tmp/test-bucket-source.txt"
+	testContent := []byte("This is test content for the bucket")
+	err = os.WriteFile(tmpFile, testContent, 0644)
+	g.Expect(err).To(BeNil())
+	defer os.Remove(tmpFile)
+
+	err = selected.Bucket.Put(tmpFile, "test-file.txt")
+	g.Expect(err).To(BeNil())
+
+	// GET: Download the file
+	tmpDest := "/tmp/test-bucket-dest.txt"
+	defer os.Remove(tmpDest)
+	err = selected.Bucket.Get("test-file.txt", tmpDest)
+	g.Expect(err).To(BeNil())
+	content, err := os.ReadFile(tmpDest)
+	g.Expect(err).To(BeNil())
+	g.Expect(content).To(Equal(testContent))
+
+	// PUT: Upload another file
+	tmpFile2 := "/tmp/test-bucket-nested.txt"
+	nestedContent := []byte("nested content")
+	err = os.WriteFile(tmpFile2, nestedContent, 0644)
+	g.Expect(err).To(BeNil())
+	defer os.Remove(tmpFile2)
+
+	err = selected.Bucket.Put(tmpFile2, "test-dir/nested-file.txt")
+	g.Expect(err).To(BeNil())
+
+	// GET: Download nested file
+	tmpDest2 := "/tmp/test-bucket-nested-dest.txt"
+	defer os.Remove(tmpDest2)
+	err = selected.Bucket.Get("test-dir/nested-file.txt", tmpDest2)
+	g.Expect(err).To(BeNil())
+	content, err = os.ReadFile(tmpDest2)
+	g.Expect(err).To(BeNil())
+	g.Expect(content).To(Equal(nestedContent))
+
+	// DELETE: Delete a file
+	err = selected.Bucket.Delete("test-file.txt")
+	g.Expect(err).To(BeNil())
+
+	// GET: Verify deletion
+	err = selected.Bucket.Get("test-file.txt", tmpDest)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}

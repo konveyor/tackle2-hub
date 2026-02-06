@@ -102,6 +102,7 @@ func TestEq(t *testing.T) {
 	}
 
 	testCases := []struct {
+		id     int
 		name   string
 		a, b   any
 		ignore []string
@@ -132,6 +133,13 @@ func TestEq(t *testing.T) {
 		{name: "empty slices equal", a: []int{}, b: []int{}, wantEq: true},
 		{name: "nil slice vs empty slice", a: []int(nil), b: []int{}, wantEq: true},
 		{name: "nil slice vs nil slice", a: []int(nil), b: []int(nil), wantEq: true},
+		{name: "[]T6]", a: []T6{{Id: 1}, {Id: 2}}, b: []T6{{Id: 1}, {Id: 2}}, wantEq: true},
+		{
+			name:   "[]T6] name ignored.",
+			a:      []T6{{Id: 1, Name: "xx"}, {Id: 2}},
+			b:      []T6{{Id: 1}, {Id: 2}},
+			wantEq: true,
+			ignore: []string{".Name"}},
 
 		// ── Nil ───────────────────────────────────────────────────
 		{name: "nil vs non-nil", a: nil, b: 10, wantEq: false},
@@ -183,6 +191,13 @@ func TestEq(t *testing.T) {
 			name:   "struct with anonymous field",
 			a:      T5{T2: T2{First: "John"}, Age: 30},
 			b:      T5{T2: T2{First: "John"}, Age: 30},
+			wantEq: true,
+		},
+		{
+			name:   "struct with anonymous field and ignored Refs name.",
+			a:      T5{T2: T2{First: "John"}, Age: 30, Refs: []T6{{Id: 1}, {Id: 2}}},
+			b:      T5{T2: T2{First: "John"}, Age: 30, Refs: []T6{{Id: 1, Name: "xx"}, {Id: 2}}},
+			ignore: []string{"Refs.Name"},
 			wantEq: true,
 		},
 		{
@@ -336,5 +351,11 @@ type T4 struct {
 
 type T5 struct {
 	T2
-	Age int
+	Age  int
+	Refs []T6
+}
+
+type T6 struct {
+	Id   int
+	Name string
 }

@@ -1,10 +1,13 @@
 package binding
 
 import (
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -89,11 +92,43 @@ func TestManifest(t *testing.T) {
 	err = client.Manifest.Update(manifest)
 	g.Expect(err).To(BeNil())
 
-	// GET: Retrieve again and verify updates
-	updated, err := client.Manifest.Get(manifest.ID)
+	// GET: Retrieve decrypted again and verify updates
+	updated, err := client.Manifest.Get(
+		manifest.ID,
+		binding.Param{
+			Key:   api.Decrypted,
+			Value: "1"})
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(manifest, updated, "UpdateUser", "Secret")
+	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve injected again and verify updates
+	var m2 api.Manifest
+	b, _ := json.Marshal(manifest)
+	_ = json.Unmarshal(b, &m2)
+	m2.Content["key"] = m2.Secret["key"]
+	m2.Content["description"] = strings.Replace(
+		m2.Content["description"].(string),
+		"$(user)",
+		m2.Secret["user"].(string),
+		1)
+	m2.Content["database"] = api.Map{
+		"url":      manifest.Content["database"].(api.Map)["url"],
+		"user":     m2.Secret["user"],
+		"password": m2.Secret["password"],
+	}
+	updated, err = client.Manifest.Get(
+		manifest.ID,
+		binding.Param{
+			Key:   api.Injected,
+			Value: "1"},
+		binding.Param{
+			Key:   api.Decrypted,
+			Value: "1"})
+	g.Expect(err).To(BeNil())
+	g.Expect(updated).NotTo(BeNil())
+	eq, report = cmp.Eq(m2, updated, "UpdateUser")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the manifest

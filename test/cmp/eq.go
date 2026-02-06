@@ -66,10 +66,14 @@ func (d *Cmp) pop() {
 }
 
 func (d *Cmp) note(n string, v ...any) {
-	parts := make([]string, 0, len(d.path))
+	parts := make([]string, 0)
 	for _, p := range d.path {
 		if strings.HasPrefix(p, "[") {
-			continue
+			if len(parts) > 0 {
+				continue
+			} else {
+				p = ""
+			}
 		}
 		parts = append(parts, p)
 	}
