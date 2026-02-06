@@ -199,3 +199,359 @@ func TestArchetypeProfileManagement(t *testing.T) {
 	g.Expect(profile1.Generators[1].ID).To(Equal(genC.ID))
 	g.Expect(profile1.Generators[2].ID).To(Equal(genB.ID))
 }
+
+// TestArchetypeAssessment tests the Archetype.Select().Assessment subresource
+func TestArchetypeAssessment(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a questionnaire for the assessment
+	questionnaire := &api.Questionnaire{
+		Name:        "Test Questionnaire for Archetype",
+		Description: "Questionnaire for testing archetype assessments",
+		Required:    true,
+		Thresholds: api.Thresholds{
+			Red:     30,
+			Yellow:  20,
+			Unknown: 10,
+		},
+		RiskMessages: api.RiskMessages{
+			Red:     "High risk",
+			Yellow:  "Medium risk",
+			Green:   "Low risk",
+			Unknown: "Unknown risk",
+		},
+		Sections: []api.Section{
+			{
+				Order: 1,
+				Name:  "Test Section",
+				Questions: []api.Question{
+					{
+						Order:       1,
+						Text:        "Test question?",
+						Explanation: "Test explanation",
+						Answers: []api.Answer{
+							{
+								Order: 1,
+								Text:  "Answer 1",
+								Risk:  "green",
+							},
+							{
+								Order: 2,
+								Text:  "Answer 2",
+								Risk:  "red",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := client.Questionnaire.Create(questionnaire)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Questionnaire.Delete(questionnaire.ID)
+	})
+
+	// Create an archetype for testing
+	archetype := &api.Archetype{
+		Name:        "Test Archetype for Assessment",
+		Description: "Archetype for testing assessment subresource",
+	}
+	err = client.Archetype.Create(archetype)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Archetype.Delete(archetype.ID)
+	})
+
+	// Get the selected archetype API
+	selected := client.Archetype.Select(archetype.ID)
+
+	// CREATE: Create an assessment for the archetype
+	assessment := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   questionnaire.ID,
+			Name: questionnaire.Name,
+		},
+		Archetype: &api.Ref{
+			ID:   archetype.ID,
+			Name: archetype.Name,
+		},
+		Status: "started",
+	}
+	err = selected.Assessment.Create(assessment)
+	g.Expect(err).To(BeNil())
+	g.Expect(assessment.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Assessment.Delete(assessment.ID)
+	})
+
+	// LIST: Verify assessment was created for the archetype
+	list, err := selected.Assessment.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	g.Expect(list[0].ID).To(Equal(assessment.ID))
+	g.Expect(list[0].Archetype).NotTo(BeNil())
+	g.Expect(list[0].Archetype.ID).To(Equal(archetype.ID))
+
+	// Create a second questionnaire for the second assessment
+	// Note: UNIQUE constraint on (ArchetypeID, QuestionnaireID) requires different questionnaire
+	questionnaire2 := &api.Questionnaire{
+		Name:        "Test Questionnaire 2 for Archetype",
+		Description: "Second questionnaire for testing archetype assessments",
+		Required:    false,
+		Thresholds: api.Thresholds{
+			Red:     25,
+			Yellow:  15,
+			Unknown: 5,
+		},
+		RiskMessages: api.RiskMessages{
+			Red:     "High risk",
+			Yellow:  "Medium risk",
+			Green:   "Low risk",
+			Unknown: "Unknown risk",
+		},
+		Sections: []api.Section{
+			{
+				Order: 1,
+				Name:  "Test Section 2",
+				Questions: []api.Question{
+					{
+						Order:       1,
+						Text:        "Another test question?",
+						Explanation: "Another test explanation",
+						Answers: []api.Answer{
+							{
+								Order: 1,
+								Text:  "Answer A",
+								Risk:  "green",
+							},
+							{
+								Order: 2,
+								Text:  "Answer B",
+								Risk:  "yellow",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = client.Questionnaire.Create(questionnaire2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Questionnaire.Delete(questionnaire2.ID)
+	})
+
+	// CREATE: Create a second assessment with different questionnaire
+	assessment2 := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   questionnaire2.ID,
+			Name: questionnaire2.Name,
+		},
+		Archetype: &api.Ref{
+			ID:   archetype.ID,
+			Name: archetype.Name,
+		},
+		Status: "complete",
+	}
+	err = selected.Assessment.Create(assessment2)
+	g.Expect(err).To(BeNil())
+	g.Expect(assessment2.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Assessment.Delete(assessment2.ID)
+	})
+
+	// LIST: Verify both assessments are associated with the archetype
+	list, err = selected.Assessment.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(2))
+
+	// Verify all assessments belong to this archetype
+	for _, a := range list {
+		g.Expect(a.Archetype).NotTo(BeNil())
+		g.Expect(a.Archetype.ID).To(Equal(archetype.ID))
+	}
+}
+
+// TestArchetypeAssessmentMultiple tests assessments across multiple archetypes
+func TestArchetypeAssessmentMultiple(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a questionnaire
+	questionnaire := &api.Questionnaire{
+		Name:        "Test Questionnaire for Multiple Archetypes",
+		Description: "Questionnaire for testing multiple archetypes",
+		Required:    true,
+		Thresholds: api.Thresholds{
+			Red:     30,
+			Yellow:  20,
+			Unknown: 10,
+		},
+		RiskMessages: api.RiskMessages{
+			Red:     "High risk",
+			Yellow:  "Medium risk",
+			Green:   "Low risk",
+			Unknown: "Unknown risk",
+		},
+		Sections: []api.Section{
+			{
+				Order: 1,
+				Name:  "Test Section",
+				Questions: []api.Question{
+					{
+						Order:       1,
+						Text:        "Test question?",
+						Explanation: "Test explanation",
+						Answers: []api.Answer{
+							{
+								Order: 1,
+								Text:  "Answer 1",
+								Risk:  "green",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := client.Questionnaire.Create(questionnaire)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Questionnaire.Delete(questionnaire.ID)
+	})
+
+	// Create first archetype
+	archetype1 := &api.Archetype{
+		Name:        "Test Archetype 1",
+		Description: "First archetype for testing",
+	}
+	err = client.Archetype.Create(archetype1)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Archetype.Delete(archetype1.ID)
+	})
+
+	// Create second archetype
+	archetype2 := &api.Archetype{
+		Name:        "Test Archetype 2",
+		Description: "Second archetype for testing",
+	}
+	err = client.Archetype.Create(archetype2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Archetype.Delete(archetype2.ID)
+	})
+
+	// Create second questionnaire for testing multiple assessments per archetype
+	questionnaire2 := &api.Questionnaire{
+		Name:        "Test Questionnaire 2 for Multiple Archetypes",
+		Description: "Second questionnaire for testing",
+		Required:    false,
+		Thresholds: api.Thresholds{
+			Red:     25,
+			Yellow:  15,
+			Unknown: 5,
+		},
+		RiskMessages: api.RiskMessages{
+			Red:     "High risk",
+			Yellow:  "Medium risk",
+			Green:   "Low risk",
+			Unknown: "Unknown risk",
+		},
+		Sections: []api.Section{
+			{
+				Order: 1,
+				Name:  "Test Section 2",
+				Questions: []api.Question{
+					{
+						Order:       1,
+						Text:        "Another question?",
+						Explanation: "Another explanation",
+						Answers: []api.Answer{
+							{
+								Order: 1,
+								Text:  "Answer A",
+								Risk:  "yellow",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = client.Questionnaire.Create(questionnaire2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Questionnaire.Delete(questionnaire2.ID)
+	})
+
+	// Create assessments for first archetype
+	selected1 := client.Archetype.Select(archetype1.ID)
+	assessment1a := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   questionnaire.ID,
+			Name: questionnaire.Name,
+		},
+		Archetype: &api.Ref{
+			ID:   archetype1.ID,
+			Name: archetype1.Name,
+		},
+		Status: "started",
+	}
+	err = selected1.Assessment.Create(assessment1a)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Assessment.Delete(assessment1a.ID)
+	})
+
+	// Second assessment for archetype1 uses different questionnaire
+	assessment1b := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   questionnaire2.ID,
+			Name: questionnaire2.Name,
+		},
+		Archetype: &api.Ref{
+			ID:   archetype1.ID,
+			Name: archetype1.Name,
+		},
+		Status: "complete",
+	}
+	err = selected1.Assessment.Create(assessment1b)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Assessment.Delete(assessment1b.ID)
+	})
+
+	// Create assessment for second archetype
+	selected2 := client.Archetype.Select(archetype2.ID)
+	assessment2a := &api.Assessment{
+		Questionnaire: api.Ref{
+			ID:   questionnaire.ID,
+			Name: questionnaire.Name,
+		},
+		Archetype: &api.Ref{
+			ID:   archetype2.ID,
+			Name: archetype2.Name,
+		},
+		Status: "started",
+	}
+	err = selected2.Assessment.Create(assessment2a)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Assessment.Delete(assessment2a.ID)
+	})
+
+	// LIST: Verify first archetype has 2 assessments
+	list1, err := selected1.Assessment.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list1)).To(Equal(2))
+	for _, a := range list1 {
+		g.Expect(a.Archetype.ID).To(Equal(archetype1.ID))
+	}
+
+	// LIST: Verify second archetype has 1 assessment
+	list2, err := selected2.Assessment.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list2)).To(Equal(1))
+	g.Expect(list2[0].Archetype.ID).To(Equal(archetype2.ID))
+}

@@ -5,10 +5,12 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
+	"github.com/konveyor/tackle2-hub/shared/binding/archetype"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 	"github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
+	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
 )
 
 var (
@@ -31,7 +33,7 @@ type RichClient struct {
 	Analysis         analysis.Analysis
 	AnalysisProfile  AnalysisProfile
 	Application      application.Application
-	Archetype        Archetype
+	Archetype        archetype.Archetype
 	Assessment       Assessment
 	Bucket           bucket.Bucket
 	BusinessService  BusinessService
@@ -56,6 +58,7 @@ type RichClient struct {
 	TagCategory      TagCategory
 	Target           Target
 	Task             task.Task
+	TaskGroup        taskgroup.TaskGroup
 	Ticket           Ticket
 	Tracker          Tracker
 }
@@ -86,7 +89,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Analysis = analysis.New(client)
 	r.AnalysisProfile = AnalysisProfile{client: client}
 	r.Application = application.New(client)
-	r.Archetype = Archetype{client: client}
+	r.Archetype = archetype.New(client)
 	r.Assessment = Assessment{client: client}
 	r.Bucket = bucket.New(client)
 	r.BusinessService = BusinessService{client: client}
@@ -111,6 +114,7 @@ func (r *RichClient) build(client RestClient) {
 	r.TagCategory = TagCategory{client: client}
 	r.Target = Target{client: client}
 	r.Task = task.New(client)
+	r.TaskGroup = taskgroup.New(client)
 	r.Ticket = Ticket{client: client}
 	r.Tracker = Tracker{client: client}
 }
