@@ -468,44 +468,119 @@ func TestApplicationFact(t *testing.T) {
 	// Get the selected application API
 	selected := client.Application.Select(app.ID)
 
-	// Set source for fact operations
-	source := "test-source"
-	factAPI := selected.Fact.Source(source)
+	// LIST: Verify initially empty
+	facts, err := selected.Fact.List()
+	g.Expect(err).To(BeNil())
+	eq, report := cmp.Eq(api.Map{}, facts)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// SET: Set a fact
-	err = factAPI.Set("test-key", "test-value")
+	err = selected.Fact.Set("test-key", "test-value")
 	g.Expect(err).To(BeNil())
 
-	// GET: Retrieve the fact
-	var value string
-	err = factAPI.Get("test-key", &value)
+	// LIST: Verify fact was added
+	facts, err = selected.Fact.List()
 	g.Expect(err).To(BeNil())
-	g.Expect(value).To(Equal("test-value"))
-
-	// LIST: List facts by source
-	facts, err := factAPI.List()
-	g.Expect(err).To(BeNil())
-	g.Expect(len(facts)).To(Equal(1))
-	g.Expect(facts["test-key"]).To(Equal("test-value"))
-
-	// SET: Update the fact
-	err = factAPI.Set("test-key", "updated-value")
-	g.Expect(err).To(BeNil())
-
-	// GET: Verify update
-	err = factAPI.Get("test-key", &value)
-	g.Expect(err).To(BeNil())
-	g.Expect(value).To(Equal("updated-value"))
+	eq, report = cmp.Eq(
+		api.Map{
+			"test-key": "test-value",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// SET: Add another fact
-	err = factAPI.Set("test-key-2", map[string]interface{}{
+	err = selected.Fact.Set("test-key-2", "test-value-2")
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify both facts
+	facts, err = selected.Fact.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		api.Map{
+			"test-key":   "test-value",
+			"test-key-2": "test-value-2",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Delete a fact
+	err = selected.Fact.Delete("test-key")
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify deletion
+	facts, err = selected.Fact.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		api.Map{
+			"test-key-2": "test-value-2",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
+}
+
+// TestApplicationFactWithSource tests the Application.Select().Fact subresource with source
+func TestApplicationFactWithSource(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Facts",
+		Description: "Application for testing fact subresource",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+	source := selected.Fact.Source("F")
+
+	// LIST: Verify initially empty
+	facts, err := source.List()
+	g.Expect(err).To(BeNil())
+	eq, report := cmp.Eq(api.Map{}, facts)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// SET: Set a fact
+	err = source.Set("test-key", "test-value")
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify fact was added
+	facts, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		api.Map{
+			"test-key": "test-value",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// SET: Update the fact
+	err = source.Set("test-key", "updated-value")
+	g.Expect(err).To(BeNil())
+
+	// LIST: Verify update
+	facts, err = source.List()
+	g.Expect(err).To(BeNil())
+	eq, report = cmp.Eq(
+		api.Map{
+			"test-key": "updated-value",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// SET: Add another fact
+	err = source.Set("test-key-2", api.Map{
 		"nested": "data",
 		"count":  42,
 	})
 	g.Expect(err).To(BeNil())
 
 	// LIST: Verify both facts
-	facts, err = factAPI.List()
+	facts, err = source.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(facts)).To(Equal(2))
 
@@ -514,26 +589,37 @@ func TestApplicationFact(t *testing.T) {
 		"new-key-1": "new-value-1",
 		"new-key-2": "new-value-2",
 	}
-	err = factAPI.Replace(newFacts)
+	err = source.Replace(newFacts)
 	g.Expect(err).To(BeNil())
 
 	// LIST: Verify replacement
-	facts, err = factAPI.List()
+	facts, err = source.List()
 	g.Expect(err).To(BeNil())
-	g.Expect(len(facts)).To(Equal(2))
+	eq, report = cmp.Eq(
+		api.Map{
+			"new-key-1": "new-value-1",
+			"new-key-2": "new-value-2",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Delete a fact
-	err = factAPI.Delete("new-key-1")
+	err = source.Delete("new-key-1")
 	g.Expect(err).To(BeNil())
 
 	// LIST: Verify deletion
-	facts, err = factAPI.List()
+	facts, err = source.List()
 	g.Expect(err).To(BeNil())
-	g.Expect(len(facts)).To(Equal(1))
-	g.Expect(facts["new-key-2"]).To(Equal("new-value-2"))
+	eq, report = cmp.Eq(
+		api.Map{
+			"new-key-2": "new-value-2",
+		},
+		facts)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Verify deleted fact is not found
-	err = factAPI.Get("new-key-1", &value)
+	var value string
+	err = source.Get("new-key-1", &value)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
 

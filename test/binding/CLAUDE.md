@@ -40,6 +40,7 @@ func TestResourceName(t *testing.T) {
 }
 ```
 - Always create Gomega instance: `g := NewGomegaWithT(t)`
+- For map[string]any use the api.Map (alias).
 
 ## CRUD Test Structure
 
