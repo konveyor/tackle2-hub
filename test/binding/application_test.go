@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -565,6 +566,128 @@ func TestApplicationManifest(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.ID).To(Equal(manifest.ID))
+}
+
+// TestApplicationManifestEncryption tests manifest encryption, decryption, and injection
+func TestApplicationManifestEncryption(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for testing
+	app := &api.Application{
+		Name:        "Test App for Manifest Encryption",
+		Description: "Application for testing manifest encryption",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// CREATE: Create a manifest with content and secrets
+	manifest := &api.Manifest{
+		Application: api.Ref{ID: app.ID},
+		Content: api.Map{
+			"name": "Test",
+			"key":  "$(key)",
+			"database": api.Map{
+				"url":      "db.com",
+				"user":     "$(user)",
+				"password": "$(password)",
+			},
+			"description": "Connect using $(user) and $(password)",
+		},
+		Secret: api.Map{
+			"key":      "ABCDEF",
+			"user":     "Elmer",
+			"password": "1234",
+		},
+	}
+	originalSecret := api.Map{
+		"key":      "ABCDEF",
+		"user":     "Elmer",
+		"password": "1234",
+	}
+
+	err = selected.Manifest.Create(manifest)
+	g.Expect(err).To(BeNil())
+	g.Expect(manifest.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Manifest.Delete(manifest.ID)
+	})
+
+	// Verify Content is unchanged
+	eq, report := cmp.Eq(
+		api.Map{
+			"name": "Test",
+			"key":  "$(key)",
+			"database": api.Map{
+				"url":      "db.com",
+				"user":     "$(user)",
+				"password": "$(password)",
+			},
+			"description": "Connect using $(user) and $(password)",
+		},
+		manifest.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is encrypted (should NOT match original)
+	eq, _ = cmp.Eq(originalSecret, manifest.Secret)
+	g.Expect(eq).To(BeFalse(), "Secret should be encrypted after create")
+
+	// GET: Retrieve with default (encrypted)
+	encrypted, err := selected.Manifest.Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(encrypted).NotTo(BeNil())
+
+	// Verify Content is unchanged
+	eq, report = cmp.Eq(manifest.Content, encrypted.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is still encrypted
+	eq, report = cmp.Eq(manifest.Secret, encrypted.Secret)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve with Decrypted param
+	decrypted, err := selected.Manifest.Get(binding.Param{Key: api.Decrypted, Value: "1"})
+	g.Expect(err).To(BeNil())
+	g.Expect(decrypted).NotTo(BeNil())
+
+	// Verify Content is unchanged
+	eq, report = cmp.Eq(manifest.Content, decrypted.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is decrypted (matches original)
+	eq, report = cmp.Eq(originalSecret, decrypted.Secret)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve with Decrypted and Injected params
+	injected, err := selected.Manifest.Get(
+		binding.Param{Key: api.Decrypted, Value: "1"},
+		binding.Param{Key: api.Injected, Value: "1"})
+	g.Expect(err).To(BeNil())
+	g.Expect(injected).NotTo(BeNil())
+
+	// Verify Content has secrets injected
+	expectedInjected := api.Map{
+		"name": "Test",
+		"key":  "ABCDEF",
+		"database": api.Map{
+			"url":      "db.com",
+			"user":     "Elmer",
+			"password": "1234",
+		},
+		"description": "Connect using Elmer and 1234",
+	}
+	eq, report = cmp.Eq(expectedInjected, injected.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is decrypted in injected response (same as original)
+	eq, report = cmp.Eq(originalSecret, injected.Secret)
+	g.Expect(eq).To(BeTrue(), report)
 }
 
 // TestApplicationFact tests the Application.Select().Fact subresource

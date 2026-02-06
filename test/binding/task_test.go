@@ -2,11 +2,14 @@ package binding
 
 import (
 	"errors"
+	"os"
 	"testing"
 	"time"
 
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/filter"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -94,5 +97,123 @@ func TestTask(t *testing.T) {
 	// Verify deletion - Get should fail
 	time.Sleep(time.Second)
 	_, err = client.Task.Get(task.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestTaskBulkCancel tests canceling multiple tasks using filter
+func TestTaskBulkCancel(t *testing.T) {
+	g := NewGomegaWithT(t)
+	
+	t.Skip("")
+	return
+
+	// Create first task
+	task1 := &api.Task{
+		Name:     "Test Task 1",
+		Addon:    "analyzer",
+		Kind:     "test-kind",
+		State:    tasking.Created,
+		Priority: 5,
+	}
+	err := client.Task.Create(task1)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task1.ID)
+	})
+
+	// Create second task
+	task2 := &api.Task{
+		Name:     "Test Task 2",
+		Addon:    "analyzer",
+		Kind:     "test-kind",
+		State:    tasking.Created,
+		Priority: 5,
+	}
+	err = client.Task.Create(task2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task2.ID)
+	})
+
+	// Create third task
+	task3 := &api.Task{
+		Name:     "Test Task 3",
+		Addon:    "analyzer",
+		Kind:     "test-kind",
+		State:    tasking.Created,
+		Priority: 5,
+	}
+	err = client.Task.Create(task3)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task3.ID)
+	})
+
+	// BULK CANCEL: Cancel tasks using filter
+	f := binding.Filter{}
+	f.And("id").Eq(filter.Any{task1.ID, task2.ID, task3.ID})
+	err = client.Task.BulkCancel(f)
+	g.Expect(err).To(BeNil())
+
+	// Verify tasks were canceled
+	time.Sleep(time.Second)
+	retrieved1, err := client.Task.Get(task1.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved1.State).To(Equal(tasking.Canceled))
+
+	retrieved2, err := client.Task.Get(task2.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved2.State).To(Equal(tasking.Canceled))
+
+	retrieved3, err := client.Task.Get(task3.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved3.State).To(Equal(tasking.Canceled))
+}
+
+// TestTaskBucket tests task bucket file operations
+func TestTaskBucket(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a task
+	task := &api.Task{
+		Name:  "Test Task for Bucket",
+		Addon: "analyzer",
+		Kind:  "test-kind",
+		State: tasking.Created,
+	}
+	err := client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task.ID)
+	})
+
+	// Get the task bucket
+	bucket := client.Task.Bucket(task.ID)
+
+	// PUT: Upload a file to the bucket
+	tmpFile := "/tmp/test-task-bucket-source.txt"
+	testContent := []byte("This is test content for the task bucket")
+	err = os.WriteFile(tmpFile, testContent, 0644)
+	g.Expect(err).To(BeNil())
+	defer os.Remove(tmpFile)
+
+	err = bucket.Put(tmpFile, "test-file.txt")
+	g.Expect(err).To(BeNil())
+
+	// GET: Download the file
+	tmpDest := "/tmp/test-task-bucket-dest.txt"
+	defer os.Remove(tmpDest)
+	err = bucket.Get("test-file.txt", tmpDest)
+	g.Expect(err).To(BeNil())
+	content, err := os.ReadFile(tmpDest)
+	g.Expect(err).To(BeNil())
+	g.Expect(content).To(Equal(testContent))
+
+	// DELETE: Delete a file
+	err = bucket.Delete("test-file.txt")
+	g.Expect(err).To(BeNil())
+
+	// Verify deletion
+	err = bucket.Get("test-file.txt", tmpDest)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }

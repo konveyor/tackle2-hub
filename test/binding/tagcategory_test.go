@@ -67,3 +67,52 @@ func TestTagCategory(t *testing.T) {
 	_, err = client.TagCategory.Get(tagCategory.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
+
+// TestTagCategoryEnsure tests idempotent create-or-get operation
+func TestTagCategoryEnsure(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Define the tag category
+	tagCategory := &api.TagCategory{
+		Name:  "Test Ensure Category",
+		Color: "#ff00ff",
+	}
+
+	// ENSURE: First call should create the tag category
+	err := client.TagCategory.Ensure(tagCategory)
+	g.Expect(err).To(BeNil())
+	g.Expect(tagCategory.ID).NotTo(BeZero())
+	firstID := tagCategory.ID
+	t.Cleanup(func() {
+		_ = client.TagCategory.Delete(tagCategory.ID)
+	})
+
+	// GET: Verify tag category was created
+	retrieved, err := client.TagCategory.Get(tagCategory.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.Name).To(Equal(tagCategory.Name))
+
+	// ENSURE: Second call with same name should return existing tag category
+	tagCategory2 := &api.TagCategory{
+		Name:  "Test Ensure Category",
+		Color: "#ff00ff",
+	}
+	err = client.TagCategory.Ensure(tagCategory2)
+	g.Expect(err).To(BeNil())
+	g.Expect(tagCategory2.ID).To(Equal(firstID), "Ensure should return existing tag category with same name")
+
+	// DELETE and ENSURE: Delete then ensure should recreate
+	err = client.TagCategory.Delete(tagCategory.ID)
+	g.Expect(err).To(BeNil())
+
+	// Reset ID to 0 and ensure again
+	tagCategory.ID = 0
+	err = client.TagCategory.Ensure(tagCategory)
+	g.Expect(err).To(BeNil())
+	g.Expect(tagCategory.ID).NotTo(BeZero())
+	g.Expect(tagCategory.ID).NotTo(Equal(firstID), "Ensured tag category after delete should have new ID")
+
+	// Clean up recreated tag category
+	err = client.TagCategory.Delete(tagCategory.ID)
+	g.Expect(err).To(BeNil())
+}

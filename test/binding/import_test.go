@@ -161,6 +161,44 @@ func TestImport(t *testing.T) {
 	// Wait for the import processing to complete
 	time.Sleep(2 * time.Second)
 
+	// Clean up resources created by the import
+	t.Cleanup(func() {
+		// Delete applications and their associated resources
+		apps, _ := client.Application.List()
+		for _, app := range apps {
+			if app.Name == "TestApp" {
+				// Delete owner stakeholder if exists
+				if app.Owner != nil {
+					_ = client.Stakeholder.Delete(app.Owner.ID)
+				}
+				// Delete contributor stakeholders if exist
+				for _, contributor := range app.Contributors {
+					_ = client.Stakeholder.Delete(contributor.ID)
+				}
+				// Delete the application
+				_ = client.Application.Delete(app.ID)
+			}
+		}
+
+		// Delete dependencies created by the import
+		deps, _ := client.Dependency.List()
+		for _, dep := range deps {
+			// Delete dependencies where From or To is TestApp
+			if dep.From.Name == "TestApp" || dep.To.Name == "TestApp" {
+				_ = client.Dependency.Delete(dep.ID)
+			}
+		}
+
+		// Delete the business service created by the import
+		services, _ := client.BusinessService.List()
+		for _, svc := range services {
+			if svc.Name == "TestService" {
+				_ = client.BusinessService.Delete(svc.ID)
+				break
+			}
+		}
+	})
+
 	// GET: List import summaries
 	list, err := client.Import.Summary().List()
 	g.Expect(err).To(BeNil())

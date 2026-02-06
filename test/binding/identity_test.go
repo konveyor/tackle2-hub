@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -68,4 +69,55 @@ func TestIdentity(t *testing.T) {
 	// Verify deletion - Get should fail
 	_, err = client.Identity.Get(identity.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestIdentityFind tests finding identities using filter
+func TestIdentityFind(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create first identity
+	direct := &api.Identity{
+		Name: "direct",
+		Kind: "Test",
+	}
+	err := client.Identity.Create(direct)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(direct.ID)
+	})
+
+	// Create second identity with different kind
+	direct2 := &api.Identity{
+		Name: "direct2",
+		Kind: "Other",
+	}
+	err = client.Identity.Create(direct2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(direct2.ID)
+	})
+
+	// Create application with first identity
+	application := &api.Application{
+		Name:       "Test App for Identity Find",
+		Identities: []api.IdentityRef{{ID: direct.ID}},
+	}
+	err = client.Application.Create(application)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(application.ID)
+	})
+
+	// FIND: Find identity using filter for application.id and kind
+	filter := binding.Filter{}
+	filter.And("application.id").Eq(int(application.ID))
+	filter.And("kind").Eq(direct.Kind)
+	found, err := client.Identity.Find(filter)
+	g.Expect(err).To(BeNil())
+	g.Expect(len(found)).To(BeNumerically(">", 0), "Should find at least one identity")
+
+	// Verify found identity is the correct one
+	identity := found[0]
+	g.Expect(identity.ID).To(Equal(direct.ID))
+	g.Expect(identity.Kind).To(Equal(direct.Kind))
 }
