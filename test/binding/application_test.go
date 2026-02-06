@@ -580,18 +580,42 @@ func TestApplicationAnalysis(t *testing.T) {
 		_ = client.Analysis.Delete(analysis.ID)
 	})
 
-	// GET: Retrieve the analysis
+	// LIST: List all analyses for the application
+	analysisList, err := selected.Analysis.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(analysisList)).To(BeNumerically(">", 0))
+	found := false
+	for _, a := range analysisList {
+		if a.ID == analysis.ID {
+			found = true
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
+	// GET: Retrieve the latest analysis
 	retrieved, err := selected.Analysis.Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.ID).To(Equal(analysis.ID))
 
-	// LIST INSIGHTS: List insights for the analysis
+	// GET REPORT: Download the latest analysis report
+	reportDest := "/tmp/test-app-analysis-report.tar.gz"
+	defer os.Remove(reportDest)
+	err = selected.Analysis.GetReport(reportDest)
+	g.Expect(err).To(BeNil())
+
+	// Verify the report file was created
+	info, err := os.Stat(reportDest)
+	g.Expect(err).To(BeNil())
+	g.Expect(info.Size()).To(BeNumerically(">", 0))
+
+	// LIST INSIGHTS: List insights for the latest analysis
 	insights, err := selected.Analysis.ListInsights()
 	g.Expect(err).To(BeNil())
 	g.Expect(insights).NotTo(BeNil())
 
-	// LIST DEPENDENCIES: List dependencies for the analysis
+	// LIST DEPENDENCIES: List dependencies for the latest analysis
 	dependencies, err := selected.Analysis.ListDependencies()
 	g.Expect(err).To(BeNil())
 	g.Expect(dependencies).NotTo(BeNil())
