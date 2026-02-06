@@ -326,3 +326,96 @@ func TestTaskBucket(t *testing.T) {
 	err = bucket.Get("test-file.txt", tmpDest)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
+
+// TestTaskGetAttached tests retrieving a task with attached resources
+func TestTaskGetAttached(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for the task to reference
+	app := &api.Application{
+		Name:        "Test App for Attached",
+		Description: "Application for testing GetAttached",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	// Create first attached file
+	tmpFile1 := "/tmp/test-attached-file1.txt"
+	file1Content := []byte("This is attached file 1 content")
+	err = os.WriteFile(tmpFile1, file1Content, 0644)
+	g.Expect(err).To(BeNil())
+	defer os.Remove(tmpFile1)
+
+	attachedFile1, err := client.File.Put(tmpFile1)
+	g.Expect(err).To(BeNil())
+	g.Expect(attachedFile1).NotTo(BeNil())
+	g.Expect(attachedFile1.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.File.Delete(attachedFile1.ID)
+	})
+
+	// Create second attached file
+	tmpFile2 := "/tmp/test-attached-file2.txt"
+	file2Content := []byte("This is attached file 2 content")
+	err = os.WriteFile(tmpFile2, file2Content, 0644)
+	g.Expect(err).To(BeNil())
+	defer os.Remove(tmpFile2)
+
+	attachedFile2, err := client.File.Put(tmpFile2)
+	g.Expect(err).To(BeNil())
+	g.Expect(attachedFile2).NotTo(BeNil())
+	g.Expect(attachedFile2.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.File.Delete(attachedFile2.ID)
+	})
+
+	// CREATE: Create a task with Application reference and attached files
+	task := &api.Task{
+		Name:  "Test Task for GetAttached",
+		Addon: "analyzer",
+		Kind:  "test-kind",
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": true,
+			},
+			"output": "/output/path",
+		},
+		Application: &api.Ref{
+			ID:   app.ID,
+			Name: app.Name,
+		},
+		Attached: []api.Attachment{
+			{
+				ID:   attachedFile1.ID,
+				Name: "test-attached-file1.txt",
+			},
+			{
+				ID:   attachedFile2.ID,
+				Name: "test-attached-file2.txt",
+			},
+		},
+		State:    tasking.Created,
+		Priority: 5,
+	}
+
+	err = client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	g.Expect(task.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task.ID)
+	})
+
+	// GET ATTACHED: Download the task's attached resources as a tarball
+	tmpDest := "/tmp/test-task-attached.tar.gz"
+	defer os.Remove(tmpDest)
+	err = client.Task.GetAttached(task.ID, tmpDest)
+	g.Expect(err).To(BeNil())
+
+	// Verify the tarball was created
+	info, err := os.Stat(tmpDest)
+	g.Expect(err).To(BeNil())
+	g.Expect(info.Size()).To(BeNumerically(">", 0))
+}

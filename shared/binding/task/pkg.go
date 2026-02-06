@@ -1,6 +1,8 @@
 package task
 
 import (
+	"path/filepath"
+
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
@@ -61,6 +63,41 @@ func (h Task) Patch(id uint, r any) (err error) {
 func (h Task) Delete(id uint) (err error) {
 	path := client.Path(api.TaskRoute).Inject(client.Params{api.ID: id})
 	err = h.client.Delete(path)
+	return
+}
+
+// Submit a Task.
+func (h Task) Submit(id uint) (err error) {
+	path := client.Path(api.TaskSubmitRoute).Inject(client.Params{api.ID: id})
+	err = h.client.Put(path, nil)
+	return
+}
+
+// Cancel a Task.
+func (h Task) Cancel(id uint) (err error) {
+	path := client.Path(api.TaskCancelRoute).Inject(client.Params{api.ID: id})
+	err = h.client.Put(path, nil)
+	return
+}
+
+// GetAttached downloads the attached resources for a Task as a tarball.
+func (h Task) GetAttached(id uint, destination string) (err error) {
+	path := client.Path(api.TaskAttachedRoute).Inject(client.Params{api.ID: id})
+	isDir, err := h.client.IsDir(destination, false)
+	if err != nil {
+		return
+	}
+	if isDir {
+		r := &api.File{}
+		err = h.client.Get(path, r)
+		if err != nil {
+			return
+		}
+		destination = filepath.Join(
+			destination,
+			r.Name)
+	}
+	err = h.client.FileGet(path, destination)
 	return
 }
 
