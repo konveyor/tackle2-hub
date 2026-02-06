@@ -103,7 +103,7 @@ func TestTask(t *testing.T) {
 // TestTaskBulkCancel tests canceling multiple tasks using filter
 func TestTaskBulkCancel(t *testing.T) {
 	g := NewGomegaWithT(t)
-	
+
 	t.Skip("")
 	return
 

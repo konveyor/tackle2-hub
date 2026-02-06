@@ -15,14 +15,75 @@ import (
 func TestApplication(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// CREATE: Create an application
+	// Create BusinessService
+	businessService := &api.BusinessService{
+		Name:        "Test Business Service",
+		Description: "Business service for application testing",
+	}
+	err := client.BusinessService.Create(businessService)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.BusinessService.Delete(businessService.ID)
+	})
+
+	// Create Owner stakeholder
+	owner := &api.Stakeholder{
+		Name:  "Test Owner",
+		Email: "owner@test.com",
+	}
+	err = client.Stakeholder.Create(owner)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(owner.ID)
+	})
+
+	// Create Contributors
+	contributor1 := &api.Stakeholder{
+		Name:  "Test Contributor 1",
+		Email: "contributor1@test.com",
+	}
+	err = client.Stakeholder.Create(contributor1)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(contributor1.ID)
+	})
+
+	contributor2 := &api.Stakeholder{
+		Name:  "Test Contributor 2",
+		Email: "contributor2@test.com",
+	}
+	err = client.Stakeholder.Create(contributor2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(contributor2.ID)
+	})
+
+	// CREATE: Create a fully populated application
 	app := &api.Application{
 		Name:        "Test Application",
 		Description: "This is a test application for CRUD operations",
 		Comments:    "Initial comments",
-		Binary:      "test-binary.jar",
+		Binary:      "com.test:test-app:1.0.0:jar",
+		Repository: &api.Repository{
+			Kind:   "git",
+			URL:    "https://github.com/test/test-app.git",
+			Branch: "main",
+			Path:   "",
+		},
+		BusinessService: &api.Ref{
+			ID:   businessService.ID,
+			Name: businessService.Name,
+		},
+		Owner: &api.Ref{
+			ID:   owner.ID,
+			Name: owner.Name,
+		},
+		Contributors: []api.Ref{
+			{ID: contributor1.ID, Name: contributor1.Name},
+			{ID: contributor2.ID, Name: contributor2.Name},
+		},
 	}
-	err := client.Application.Create(app)
+	err = client.Application.Create(app)
 	g.Expect(err).To(BeNil())
 	g.Expect(app.ID).NotTo(BeZero())
 	t.Cleanup(func() {
@@ -55,7 +116,13 @@ func TestApplication(t *testing.T) {
 	app.Name = "Updated Test Application"
 	app.Description = "This is an updated test application"
 	app.Comments = "Updated comments"
-	app.Binary = "updated-binary.war"
+	app.Binary = "com.test:test-app:2.0.0:war"
+	app.Repository = &api.Repository{
+		Kind:   "git",
+		URL:    "https://github.com/test/test-app-v2.git",
+		Branch: "develop",
+		Path:   "/src",
+	}
 	err = client.Application.Update(app)
 	g.Expect(err).To(BeNil())
 
