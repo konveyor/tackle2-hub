@@ -134,6 +134,124 @@ func TestApplicationIdentity(t *testing.T) {
 	}
 }
 
+// TestApplicationIdentityWithRoles tests the Application.Select().Identity Direct search with roles
+func TestApplicationIdentityWithRoles(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create identities for testing
+	// Direct identity with role "source"
+	directSource := &api.Identity{
+		Name: "direct-source",
+		Kind: "Test",
+	}
+	err := client.Identity.Create(directSource)
+	g.Expect(err).To(BeNil())
+	g.Expect(directSource.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Identity.Delete(directSource.ID)
+	}()
+
+	// Direct identity with role "asset"
+	directAsset := &api.Identity{
+		Name: "direct-asset",
+		Kind: "Other",
+	}
+	err = client.Identity.Create(directAsset)
+	g.Expect(err).To(BeNil())
+	g.Expect(directAsset.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Identity.Delete(directAsset.ID)
+	}()
+
+	// Indirect default identity for "Other" kind
+	indirectOther := &api.Identity{
+		Name:    "indirect-other",
+		Kind:    "Other",
+		Default: true,
+	}
+	err = client.Identity.Create(indirectOther)
+	g.Expect(err).To(BeNil())
+	g.Expect(indirectOther.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Identity.Delete(indirectOther.ID)
+	}()
+
+	// Indirect default identity for "Test" kind
+	indirectTest := &api.Identity{
+		Kind:    "Test",
+		Name:    "indirect-test",
+		Default: true,
+	}
+	err = client.Identity.Create(indirectTest)
+	g.Expect(err).To(BeNil())
+	g.Expect(indirectTest.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Identity.Delete(indirectTest.ID)
+	}()
+
+	// CREATE: Create application with direct identities assigned with roles
+	app := &api.Application{
+		Name: "Test App for Identity with Roles",
+		Identities: []api.IdentityRef{
+			{ID: directSource.ID, Role: "source"},
+			{ID: directAsset.ID, Role: "asset"},
+		},
+	}
+	err = client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	defer func() {
+		_ = client.Application.Delete(app.ID)
+	}()
+
+	// Get the selected application API
+	selected := client.Application.Select(app.ID)
+
+	// LIST: Verify direct identities are assigned
+	list, err := selected.Identity.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(2))
+
+	// SEARCH: Find direct identity with role "source"
+	foundIdentity, found, err := selected.Identity.Search().
+		Direct("source").
+		Indirect(indirectOther.Kind).
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(foundIdentity).NotTo(BeNil())
+	g.Expect(foundIdentity.ID).To(Equal(directSource.ID))
+
+	// SEARCH: Find indirect identity when no direct role specified
+	foundIdentity, found, err = selected.Identity.Search().
+		Direct("").
+		Indirect(indirectOther.Kind).
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(foundIdentity).NotTo(BeNil())
+	g.Expect(foundIdentity.ID).To(Equal(indirectOther.ID))
+
+	// SEARCH: Find direct identity with role "asset" (multiple Direct calls)
+	foundIdentity, found, err = selected.Identity.Search().
+		Direct("none").
+		Direct("asset").
+		Indirect(indirectOther.Kind).
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(foundIdentity).NotTo(BeNil())
+	g.Expect(foundIdentity.ID).To(Equal(directAsset.ID))
+
+	// SEARCH: Verify not found when no match
+	foundIdentity, found, err = selected.Identity.Search().
+		Direct("none").
+		Indirect("none").
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeFalse())
+}
+
 // TestApplicationTag tests the Application.Select().Tag subresource
 func TestApplicationTag(t *testing.T) {
 	g := NewGomegaWithT(t)
