@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/report"
+	"github.com/konveyor/tackle2-hub/shared/binding/tagcategory"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
 )
@@ -19,6 +20,7 @@ type (
 	Bucket      = bucket.Bucket
 	Import      = _import.Import
 	Report      = report.Report
+	TagCategory = tagcategory.TagCategory
 	Task        = task.Task
 	TaskGroup   = taskgroup.TaskGroup
 )

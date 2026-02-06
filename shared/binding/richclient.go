@@ -10,6 +10,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/report"
+	"github.com/konveyor/tackle2-hub/shared/binding/tagcategory"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
 )
@@ -57,7 +58,7 @@ type RichClient struct {
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
-	TagCategory      TagCategory
+	TagCategory      tagcategory.TagCategory
 	Target           Target
 	Task             task.Task
 	TaskGroup        taskgroup.TaskGroup
@@ -114,7 +115,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Stakeholder = Stakeholder{client: client}
 	r.StakeholderGroup = StakeholderGroup{client: client}
 	r.Tag = Tag{client: client}
-	r.TagCategory = TagCategory{client: client}
+	r.TagCategory = tagcategory.New(client)
 	r.Target = Target{client: client}
 	r.Task = task.New(client)
 	r.TaskGroup = taskgroup.New(client)

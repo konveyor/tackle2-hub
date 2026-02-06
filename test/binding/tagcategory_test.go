@@ -116,3 +116,79 @@ func TestTagCategoryEnsure(t *testing.T) {
 	err = client.TagCategory.Delete(tagCategory.ID)
 	g.Expect(err).To(BeNil())
 }
+
+// TestTagCategorySelectTagList tests listing tags within a category
+func TestTagCategorySelectTagList(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a tag category
+	tagCategory := &api.TagCategory{
+		Name:  "Test Platform",
+		Color: "#00ff00",
+	}
+	err := client.TagCategory.Create(tagCategory)
+	g.Expect(err).To(BeNil())
+	g.Expect(tagCategory.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.TagCategory.Delete(tagCategory.ID)
+	})
+
+	// CREATE: Create tags within this category
+	tag1 := &api.Tag{
+		Name:     "Linux",
+		Category: api.Ref{ID: tagCategory.ID, Name: tagCategory.Name},
+	}
+	err = client.Tag.Create(tag1)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Tag.Delete(tag1.ID)
+	})
+
+	tag2 := &api.Tag{
+		Name:     "Windows",
+		Category: api.Ref{ID: tagCategory.ID, Name: tagCategory.Name},
+	}
+	err = client.Tag.Create(tag2)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Tag.Delete(tag2.ID)
+	})
+
+	tag3 := &api.Tag{
+		Name:     "MacOS",
+		Category: api.Ref{ID: tagCategory.ID, Name: tagCategory.Name},
+	}
+	err = client.Tag.Create(tag3)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Tag.Delete(tag3.ID)
+	})
+
+	// SELECT and LIST: Get tags for this category
+	selected := client.TagCategory.Select(tagCategory.ID)
+	tags, err := selected.Tag.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(tags)).To(Equal(3))
+
+	// Verify all tags are present
+	foundTag1 := false
+	foundTag2 := false
+	foundTag3 := false
+	for _, tag := range tags {
+		if tag.ID == tag1.ID {
+			foundTag1 = true
+			g.Expect(tag.Name).To(Equal(tag1.Name))
+		}
+		if tag.ID == tag2.ID {
+			foundTag2 = true
+			g.Expect(tag.Name).To(Equal(tag2.Name))
+		}
+		if tag.ID == tag3.ID {
+			foundTag3 = true
+			g.Expect(tag.Name).To(Equal(tag3.Name))
+		}
+	}
+	g.Expect(foundTag1).To(BeTrue())
+	g.Expect(foundTag2).To(BeTrue())
+	g.Expect(foundTag3).To(BeTrue())
+}
