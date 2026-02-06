@@ -14,24 +14,54 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTask(t *testing.T) {
+func TestTaskWithApplication(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Define the task to create
+	// Create an application for the task to reference
+	app := &api.Application{
+		Name:        "Test App for Task",
+		Description: "Application for task testing",
+	}
+	err := client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	// Define the task to create with complex Data and Application reference
 	task := &api.Task{
 		Name:  "Test Task",
 		Addon: "analyzer",
 		Kind:  "test-kind",
 		Data: api.Map{
-			"key1": "value1",
-			"key2": "value2",
+			"mode": api.Map{
+				"binary":       true,
+				"withDeps":     false,
+				"artifact":     "",
+				"diva":         true,
+				"csv":          false,
+				"dependencies": true,
+			},
+			"output":  "/windup/report",
+			"rules":   []string{"ruleA", "ruleB"},
+			"targets": []string{"cloud-readiness"},
+			"scope": api.Map{
+				"packages": api.Map{
+					"included": []string{"com.example"},
+					"excluded": []string{"com.example.test"},
+				},
+			},
+		},
+		Application: &api.Ref{
+			ID:   app.ID,
+			Name: app.Name,
 		},
 		State:    tasking.Created,
 		Priority: 5,
 	}
 
 	// CREATE: Create the task
-	err := client.Task.Create(task)
+	err = client.Task.Create(task)
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
 
@@ -56,6 +86,25 @@ func TestTask(t *testing.T) {
 	// UPDATE: Modify the task
 	task.Name = "Updated Test Task"
 	task.Priority = 10
+	task.Data = api.Map{
+		"mode": api.Map{
+			"binary":       false,
+			"withDeps":     true,
+			"artifact":     "app.jar",
+			"diva":         false,
+			"csv":          true,
+			"dependencies": false,
+		},
+		"output":  "/windup/report-updated",
+		"rules":   []string{"ruleC", "ruleD", "ruleE"},
+		"targets": []string{"quarkus", "cloud-readiness"},
+		"scope": api.Map{
+			"packages": api.Map{
+				"included": []string{"com.example", "com.test"},
+				"excluded": []string{},
+			},
+		},
+	}
 
 	err = client.Task.Update(task)
 	g.Expect(err).To(BeNil())
@@ -95,6 +144,66 @@ func TestTask(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify deletion - Get should fail
+	time.Sleep(time.Second)
+	_, err = client.Task.Get(task.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestTaskWithPlatform tests creating a task with Platform reference instead of Application
+func TestTaskWithPlatform(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a platform for the task to reference
+	platform := &api.Platform{
+		Kind: "kubernetes",
+		Name: "Test Platform",
+		URL:  "https://test-platform.example.com",
+	}
+	err := client.Platform.Create(platform)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Platform.Delete(platform.ID)
+	})
+
+	// CREATE: Create a task with Platform reference
+	task := &api.Task{
+		Name:  "Test Task with Platform",
+		Addon: "move2kube",
+		Kind:  "discovery",
+		Data: api.Map{
+			"source": "/source/path",
+			"target": "kubernetes",
+			"output": "/output/path",
+		},
+		Platform: &api.Ref{
+			ID:   platform.ID,
+			Name: platform.Name,
+		},
+		State:    tasking.Created,
+		Priority: 3,
+	}
+
+	err = client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	g.Expect(task.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task.ID)
+	})
+
+	// GET: Retrieve the task and verify it matches
+	retrieved, err := client.Task.Get(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	g.Expect(retrieved.Platform).NotTo(BeNil())
+	g.Expect(retrieved.Platform.ID).To(Equal(platform.ID))
+	eq, report := cmp.Eq(task, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove the task
+	err = client.Task.Delete(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify deletion
 	time.Sleep(time.Second)
 	_, err = client.Task.Get(task.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
