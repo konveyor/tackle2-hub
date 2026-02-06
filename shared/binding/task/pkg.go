@@ -118,10 +118,42 @@ func (h Task) Select(id uint) (h2 Selected) {
 			api.Wildcard: "",
 		})
 	h2.Bucket = bucket.NewContent(h.client, path)
+	h2.Report = Report{
+		client: h.client,
+		taskId: id,
+	}
 	return
 }
 
 // Selected task API.
 type Selected struct {
 	Bucket bucket.Content
+	Report Report
+}
+
+// Report API for a selected task.
+type Report struct {
+	client client.RestClient
+	taskId uint
+}
+
+// Create creates a task report.
+func (h Report) Create(r *api.TaskReport) (err error) {
+	path := client.Path(api.TaskReportRoute).Inject(client.Params{api.ID: h.taskId})
+	err = h.client.Post(path, r)
+	return
+}
+
+// Update updates a task report.
+func (h Report) Update(r *api.TaskReport) (err error) {
+	path := client.Path(api.TaskReportRoute).Inject(client.Params{api.ID: h.taskId})
+	err = h.client.Put(path, r)
+	return
+}
+
+// Delete deletes a task report.
+func (h Report) Delete() (err error) {
+	path := client.Path(api.TaskReportRoute).Inject(client.Params{api.ID: h.taskId})
+	err = h.client.Delete(path)
+	return
 }

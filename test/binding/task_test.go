@@ -419,3 +419,69 @@ func TestTaskGetAttached(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(info.Size()).To(BeNumerically(">", 0))
 }
+
+// TestTaskReport tests task report operations
+func TestTaskReport(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a task
+	task := &api.Task{
+		Name:  "Test Task for Report",
+		Addon: "analyzer",
+		Kind:  "test-kind",
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": true,
+			},
+		},
+		State:    tasking.Created,
+		Priority: 5,
+	}
+	err := client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	g.Expect(task.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Task.Delete(task.ID)
+	})
+
+	// Get selected task API
+	selected := client.Task.Select(task.ID)
+
+	// CREATE REPORT: Create a task report
+	report := &api.TaskReport{
+		Status:    "Completed",
+		Total:     100,
+		Completed: 100,
+		Activity:  []string{"Step 1", "Step 2", "Step 3"},
+		Result: api.Map{
+			"findings": 42,
+			"issues":   5,
+		},
+	}
+	err = selected.Report.Create(report)
+	g.Expect(err).To(BeNil())
+	g.Expect(report.ID).NotTo(BeZero())
+
+	// UPDATE REPORT: Update the task report
+	report.Status = "Failed"
+	report.Completed = 50
+	report.Errors = []api.TaskError{
+		{
+			Severity:    "ERROR",
+			Description: "Test error occurred",
+		},
+	}
+	err = selected.Report.Update(report)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve the task and verify it has a report
+	retrieved, err := client.Task.Get(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	// Note: We can't directly verify the report contents via Get,
+	// but we can verify the task was retrieved successfully
+
+	// DELETE REPORT: Delete the task report
+	err = selected.Report.Delete()
+	g.Expect(err).To(BeNil())
+}
