@@ -25,6 +25,20 @@ func TestSetting(t *testing.T) {
 		_ = client.Setting.Delete(setting.Key)
 	})
 
+	// LIST: List settings and verify
+	list, err := client.Setting.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(BeNumerically(">", 0))
+	found := false
+	for _, s := range list {
+		if s.Key == setting.Key {
+			found = true
+			g.Expect(s.Value).To(Equal(setting.Value))
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
 	// GET: Retrieve the setting and verify it matches
 	var retrievedValue string
 	err = client.Setting.Get(setting.Key, &retrievedValue)

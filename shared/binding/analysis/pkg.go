@@ -77,6 +77,13 @@ func (h Analysis) Get(id uint) (r *api.Analysis, err error) {
 	return
 }
 
+// List Analyses.
+func (h Analysis) List() (r []api.Analysis, err error) {
+	r = []api.Analysis{}
+	err = h.client.Get(api.AnalysesRoute, &r)
+	return
+}
+
 // Delete an Analysis by ID.
 func (h Analysis) Delete(id uint) (err error) {
 	path := client.Path(api.AnalysisRoute).Inject(client.Params{api.ID: id})

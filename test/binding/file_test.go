@@ -52,6 +52,21 @@ func TestFile(t *testing.T) {
 		_ = client.File.Delete(uploaded.ID)
 	})
 
+	// LIST: List files and verify
+	list, err := client.File.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(BeNumerically(">", 0))
+	found := false
+	for _, f := range list {
+		if f.ID == uploaded.ID {
+			found = true
+			eq, report := cmp.Eq(expectedFile, &f, ignoredPaths...)
+			g.Expect(eq).To(BeTrue(), report)
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
 	// GET: Download the file to a specific path and verify content matches
 	downloadFile, err := os.CreateTemp("", "test-download-*")
 	g.Expect(err).To(BeNil())

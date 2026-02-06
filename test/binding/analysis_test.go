@@ -168,7 +168,7 @@ func TestCreateGet(t *testing.T) {
 		},
 	}
 
-	// Create.
+	// CREATE: Create the analysis
 	analysis.Application = api.Ref{ID: app.ID}
 	err = client.Analysis.Create(&analysis)
 	g.Expect(err).To(BeNil())
@@ -176,14 +176,44 @@ func TestCreateGet(t *testing.T) {
 		_ = client.Analysis.Delete(analysis.ID)
 	})
 
-	// Fetch by id.
+	// LIST: List analyses and verify
+	list, err := client.Analysis.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(BeNumerically(">", 0))
+	found := false
+	for _, a := range list {
+		if a.ID == analysis.ID {
+			found = true
+			// Dependencies returned sorted by name
+			sort.Slice(a.Dependencies, func(i, j int) bool {
+				return a.Dependencies[i].Name < a.Dependencies[j].Name
+			})
+			sort.Slice(analysis.Dependencies, func(i, j int) bool {
+				return analysis.Dependencies[i].Name < analysis.Dependencies[j].Name
+			})
+			eq, report := cmp.Eq(&analysis, &a,
+				"Application.Name",
+				"Insights.ID",
+				"Insights.CreateTime",
+				"Insights.Analysis",
+				"Insights.Incidents.ID",
+				"Insights.Incidents.CreateTime",
+				"Insights.Incidents.Insight",
+				"Dependencies.ID",
+				"Dependencies.CreateTime",
+				"Dependencies.Analysis",
+			)
+			g.Expect(eq).To(BeTrue(), report)
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
+	// GET: Retrieve the analysis and verify it matches
 	retrieved, err := client.Analysis.Get(analysis.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(len(retrieved.Dependencies) == len(analysis.Dependencies)).To(BeTrue())
-	// dependencies returned sorted by name.
-	sort.Slice(analysis.Dependencies, func(i, j int) bool {
-		return analysis.Dependencies[i].Name < analysis.Dependencies[j].Name
-	})
+	// Dependencies returned sorted by name (already sorted from List section)
 	sort.Slice(retrieved.Dependencies, func(i, j int) bool {
 		return retrieved.Dependencies[i].Name < retrieved.Dependencies[j].Name
 	})
