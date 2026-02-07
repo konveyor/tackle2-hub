@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/k8s/fake"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apiserver/pkg/storage/names"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -20,6 +22,10 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+)
+
+var (
+	nameGen = names.SimpleNameGenerator
 )
 
 // Client simulates a Kubernetes cluster for testing.
@@ -208,6 +214,14 @@ func (c *Client) List(_ context.Context, list client.ObjectList, _ ...client.Lis
 func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.CreateOption) (err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	//
+	name := obj.GetName()
+	gName := obj.GetGenerateName()
+	if name == "" {
+		name = nameGen.GenerateName(gName)
+		obj.SetName(name)
+	}
+	//
 	switch r := obj.(type) {
 	case *core.Pod:
 		if _, found := c.pods[r.Name]; found {
@@ -313,6 +327,7 @@ func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.Create
 func (c *Client) Delete(_ context.Context, obj client.Object, _ ...client.DeleteOption) (err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	//
 	switch r := obj.(type) {
 	case *core.Pod:
 		delete(c.pods, r.Name)
@@ -340,6 +355,7 @@ func (c *Client) Delete(_ context.Context, obj client.Object, _ ...client.Delete
 func (c *Client) DeleteAllOf(_ context.Context, obj client.Object, _ ...client.DeleteAllOfOption) (err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	//
 	switch obj.(type) {
 	case *core.Pod:
 		c.pods = make(map[string]*podEntry)
@@ -367,6 +383,7 @@ func (c *Client) DeleteAllOf(_ context.Context, obj client.Object, _ ...client.D
 func (c *Client) Update(_ context.Context, obj client.Object, _ ...client.UpdateOption) (err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	//
 	switch r := obj.(type) {
 	case *core.Pod:
 		entry, found := c.pods[r.Name]
@@ -559,8 +576,12 @@ func (c *Client) seed(path string, r client.Object) {
 	if err != nil {
 		panic(err)
 	}
+	rt := reflect.TypeOf(r)
+	rt = rt.Elem()
 	content := strings.Split(string(b), "\n---\n")
 	for _, d := range content {
+		nt := reflect.New(rt)
+		r = nt.Interface().(client.Object)
 		err = yaml.Unmarshal([]byte(d), r)
 		err = c.Create(ctx, r)
 		if err != nil {
