@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/internal/k8s/fake"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,14 +19,13 @@ import (
 	core "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 )
 
 // Client simulates a Kubernetes cluster for testing.
 // Embeds k8s.FakeClient to get default no-op implementations.
 type Client struct {
-	k8s.FakeClient
+	fake.Client
 	mutex      sync.RWMutex
 	pods       map[string]*podEntry
 	secrets    map[string]*core.Secret
@@ -34,6 +34,7 @@ type Client struct {
 	addons     map[string]*crd.Addon
 	extensions map[string]*crd.Extension
 	tasks      map[string]*crd.Task
+	schemas    map[string]*crd.Schema
 	// Simulation parameters
 	pendingDuration    time.Duration // How long pod stays in Pending
 	runningDuration    time.Duration // How long pod stays in Running before Succeeded
@@ -56,6 +57,7 @@ func New() *Client {
 		addons:             make(map[string]*crd.Addon),
 		extensions:         make(map[string]*crd.Extension),
 		tasks:              make(map[string]*crd.Task),
+		schemas:            make(map[string]*crd.Schema),
 		pendingDuration:    5 * time.Second,
 		runningDuration:    10 * time.Second,
 		failureProbability: 0.0, // No failures by default
@@ -64,6 +66,7 @@ func New() *Client {
 	c.seed("addon.yaml", &crd.Addon{})
 	c.seed("extension.yaml", &crd.Extension{})
 	c.seed("task.yaml", &crd.Task{})
+	c.seed("jsd.yaml", &crd.Schema{})
 	return c
 }
 
@@ -89,7 +92,7 @@ func (c *Client) Get(_ context.Context, key client.ObjectKey, obj client.Object,
 	case *core.Pod:
 		entry, found := c.pods[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		c.updatePodState(entry)
@@ -97,47 +100,54 @@ func (c *Client) Get(_ context.Context, key client.ObjectKey, obj client.Object,
 	case *core.Secret:
 		secret, found := c.secrets[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *secret.DeepCopy()
 	case *core.ResourceQuota:
 		quota, found := c.quotas[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *quota.DeepCopy()
 	case *crd.Tackle:
 		tackle, found := c.tackle[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *tackle.DeepCopy()
 	case *crd.Addon:
 		addon, found := c.addons[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *addon.DeepCopy()
 	case *crd.Extension:
 		extension, found := c.extensions[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *extension.DeepCopy()
 	case *crd.Task:
 		task, found := c.tasks[key.Name]
 		if !found {
-			err = &meta.NoKindMatchError{}
+			err = KindUnknownError{Object: obj}
+			return
+		}
+		*r = *task.DeepCopy()
+	case *crd.Schema:
+		task, found := c.schemas[key.Name]
+		if !found {
+			err = KindUnknownError{Object: obj}
 			return
 		}
 		*r = *task.DeepCopy()
 	default:
-		err = &meta.NoKindMatchError{}
+		err = KindUnknownError{Object: obj}
 	}
 	return
 }
@@ -181,6 +191,11 @@ func (c *Client) List(_ context.Context, list client.ObjectList, _ ...client.Lis
 	case *crd.TaskList:
 		l.Items = make([]crd.Task, 0, len(c.tasks))
 		for _, task := range c.tasks {
+			l.Items = append(l.Items, *task.DeepCopy())
+		}
+	case *crd.SchemaList:
+		l.Items = make([]crd.Schema, 0, len(c.tasks))
+		for _, task := range c.schemas {
 			l.Items = append(l.Items, *task.DeepCopy())
 		}
 	default:
@@ -279,6 +294,15 @@ func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.Create
 			return
 		}
 		c.tasks[r.Name] = r.DeepCopy()
+	case *crd.Schema:
+		if _, found := c.schemas[r.Name]; found {
+			err = ConflictError{
+				Kind: "Task",
+				Name: r.Name,
+			}
+			return
+		}
+		c.schemas[r.Name] = r.DeepCopy()
 	default:
 		err = fmt.Errorf("unsupported resource type: %T", obj)
 	}
@@ -292,27 +316,22 @@ func (c *Client) Delete(_ context.Context, obj client.Object, _ ...client.Delete
 	switch r := obj.(type) {
 	case *core.Pod:
 		delete(c.pods, r.Name)
-
 	case *core.Secret:
 		delete(c.secrets, r.Name)
-
 	case *core.ResourceQuota:
 		delete(c.quotas, r.Name)
-
 	case *crd.Tackle:
 		delete(c.tackle, r.Name)
-
 	case *crd.Addon:
 		delete(c.addons, r.Name)
-
 	case *crd.Extension:
 		delete(c.extensions, r.Name)
-
 	case *crd.Task:
 		delete(c.tasks, r.Name)
-
+	case *crd.Schema:
+		delete(c.schemas, r.Name)
 	default:
-		err = fmt.Errorf("unsupported resource type: %T", obj)
+		err = KindUnknownError{Object: obj}
 	}
 	return
 }
@@ -336,8 +355,10 @@ func (c *Client) DeleteAllOf(_ context.Context, obj client.Object, _ ...client.D
 		c.extensions = make(map[string]*crd.Extension)
 	case *crd.Task:
 		c.tasks = make(map[string]*crd.Task)
+	case *crd.Schema:
+		c.schemas = make(map[string]*crd.Schema)
 	default:
-		err = fmt.Errorf("unsupported resource type: %T", obj)
+		err = KindUnknownError{Object: obj}
 	}
 	return
 }
@@ -350,56 +371,79 @@ func (c *Client) Update(_ context.Context, obj client.Object, _ ...client.Update
 	case *core.Pod:
 		entry, found := c.pods[r.Name]
 		if !found {
-			err = fmt.Errorf("pod %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Pod",
+				Name: r.Name,
+			}
 			return
 		}
 		// Preserve creation time and update pod
 		entry.pod = r.DeepCopy()
-
 	case *core.Secret:
 		if _, found := c.secrets[r.Name]; !found {
-			err = fmt.Errorf("secret %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Secret",
+				Name: r.Name,
+			}
 			return
 		}
 		c.secrets[r.Name] = r.DeepCopy()
-
 	case *core.ResourceQuota:
 		if _, found := c.quotas[r.Name]; !found {
-			err = fmt.Errorf("quota %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "ResourceQuota",
+				Name: r.Name,
+			}
 			return
 		}
 		c.quotas[r.Name] = r.DeepCopy()
-
 	case *crd.Tackle:
 		if _, found := c.tackle[r.Name]; !found {
-			err = fmt.Errorf("tackle %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Tackle",
+				Name: r.Name,
+			}
 			return
 		}
 		c.tackle[r.Name] = r.DeepCopy()
-
 	case *crd.Addon:
 		if _, found := c.addons[r.Name]; !found {
-			err = fmt.Errorf("addon %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Addon",
+				Name: r.Name,
+			}
 			return
 		}
 		c.addons[r.Name] = r.DeepCopy()
-
 	case *crd.Extension:
 		if _, found := c.extensions[r.Name]; !found {
-			err = fmt.Errorf("extension %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Extension",
+				Name: r.Name,
+			}
 			return
 		}
 		c.extensions[r.Name] = r.DeepCopy()
-
 	case *crd.Task:
 		if _, found := c.tasks[r.Name]; !found {
-			err = fmt.Errorf("task %s not found", r.Name)
+			err = NotFoundError{
+				Kind: "Task",
+				Name: r.Name,
+			}
 			return
 		}
 		c.tasks[r.Name] = r.DeepCopy()
-
+	case *crd.Schema:
+		if _, found := c.schemas[r.Name]; !found {
+			err = NotFoundError{
+				Kind: "Schema",
+				Name: r.Name,
+			}
+			return
+		}
+		c.schemas[r.Name] = r.DeepCopy()
 	default:
-		err = fmt.Errorf("unsupported resource type: %T", obj)
+		err = KindUnknownError{Object: obj}
 	}
 	return
 }
@@ -436,7 +480,6 @@ func (c *Client) updatePodState(entry *podEntry) {
 		pod.Status.ContainerStatuses = containerStatuses
 		return
 	}
-
 	// Pod is in Running state
 	if elapsed < c.pendingDuration+c.runningDuration {
 		pod.Status.Phase = core.PodRunning
@@ -530,7 +573,7 @@ func (c *Client) seed(path string, r client.Object) {
 // dataDir returns the path to the data directory.
 func dataDir() string {
 	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), "data")
+	return filepath.Join(filepath.Dir(filename), "seed")
 }
 
 // newUID generates a simple UID for resources.
@@ -545,4 +588,21 @@ type ConflictError struct {
 
 func (e ConflictError) Error() string {
 	return fmt.Sprintf("(%s) %s already exists.", e.Kind, e.Name)
+}
+
+type NotFoundError struct {
+	Kind string
+	Name string
+}
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("(%s) %s not found.", e.Kind, e.Name)
+}
+
+type KindUnknownError struct {
+	Object any
+}
+
+func (e KindUnknownError) Error() string {
+	return fmt.Sprintf("kind %T unknown.", e.Object)
 }

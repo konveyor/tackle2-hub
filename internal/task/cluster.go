@@ -6,7 +6,6 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,9 +14,6 @@ import (
 
 // NewCluster returns a configured cluster.
 func NewCluster(client k8s.Client) (cluster Cluster) {
-	if Settings.Hub.Task.Simulated {
-		client = simulator.New()
-	}
 	cluster = Cluster{Client: client}
 	return
 }

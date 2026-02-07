@@ -1,0 +1,107 @@
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Schema
+metadata:
+  name: cloudfoundry-coordinates
+  namespace: konveyor-tackle
+spec:
+  domain: platform
+  subject: coordinates
+  variant: cloudfoundry
+  versions:
+    - definition:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        properties:
+          name:
+            description: Application name.
+            minLength: 1
+            type: string
+          space:
+            description: Space name.
+            minLength: 1
+            type: string
+        required:
+          - space
+          - name
+        title: Coordinates
+        type: object
+    - definition:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        properties:
+          name:
+            description: Application name.
+            minLength: 1
+            type: string
+          organization:
+            description: Organization name.
+            minLength: 1
+            type: string
+          space:
+            description: Space name.
+            minLength: 1
+            type: string
+        required:
+          - organization
+          - space
+          - name
+        title: Coordinates
+        type: object
+  migration: |
+    .organization = "unknown"
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Schema
+metadata:
+  name: cloudfoundry-filter
+  namespace: konveyor-tackle
+spec:
+  domain: platform
+  subject: filter
+  variant: cloudfoundry
+  versions:
+    - definition:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        properties:
+          names:
+            description: Application names. Each may be a glob expression.
+            items:
+              minLength: 1
+              type: string
+            minItems: 0
+            type: array
+          spaces:
+            description: Space names.
+            items:
+              minLength: 1
+              type: string
+            minItems: 1
+            type: array
+        required:
+          - spaces
+        title: Coordinates
+        type: object
+    - definition:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        properties:
+          names:
+            description: Application names. Each may be a glob expression.
+            items:
+              minLength: 1
+              type: string
+            type: array
+          organizations:
+            description: Organization names.
+            items:
+              minLength: 1
+              type: string
+            minItems: 1
+            type: array
+          spaces:
+            description: Space names.
+            items:
+              minLength: 1
+              type: string
+            type: array
+        title: Coordinates
+        type: object
