@@ -19,10 +19,10 @@ var Settings = &settings.Settings
 func NewClient() (newClient client.Client, err error) {
 	if Settings.Disconnected {
 		b := fake.NewClientBuilder()
-		newClient = b.WithScheme(
-			seed.Scheme()).
-			WithObjects(seed.Resources()...).
-			Build()
+		newClient =
+			b.WithScheme(seed.Scheme()).
+				WithObjects(seed.Resources()...).
+				Build()
 		return
 	}
 	if Settings.Hub.Task.Simulated {

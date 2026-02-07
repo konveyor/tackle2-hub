@@ -28,10 +28,11 @@ type Client struct {
 
 // New creates a new simulator client with default timing and operator-installed resources.
 func New() *Client {
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(seed.Scheme()).
-		WithObjects(seed.Resources()...).
-		Build()
+	b := fake.NewClientBuilder()
+	fakeClient :=
+		b.WithScheme(seed.Scheme()).
+			WithObjects(seed.Resources()...).
+			Build()
 	return &Client{
 		Client:             fakeClient,
 		podTiming:          make(map[string]time.Time),
