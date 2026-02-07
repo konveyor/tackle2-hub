@@ -56,10 +56,11 @@ func New() *Client {
 		addons:             make(map[string]*crd.Addon),
 		extensions:         make(map[string]*crd.Extension),
 		tasks:              make(map[string]*crd.Task),
-		pendingDuration:    10 * time.Second,
-		runningDuration:    20 * time.Second,
+		pendingDuration:    5 * time.Second,
+		runningDuration:    10 * time.Second,
 		failureProbability: 0.0, // No failures by default
 	}
+	c.seed("tackle.yaml", &crd.Tackle{})
 	c.seed("addon.yaml", &crd.Addon{})
 	c.seed("extension.yaml", &crd.Extension{})
 	c.seed("task.yaml", &crd.Task{})

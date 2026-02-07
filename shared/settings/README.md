@@ -70,6 +70,7 @@ These settings pertain to the tasking system.
 | Name                    | T | Envar                     | Default    | Definition                                                              |
 |-------------------------|---|---------------------------|------------|-------------------------------------------------------------------------|
 | Enabled                 | B | TASK_ENABLED              | TRUE       | Tasking enabled. FALSE when Disconnected=TRUE.                          |
+| Simulated               | B | TASK_SIMULATED            | FALSE      | Task simulator enabled. When enabled: k8s client simulated.             |
 | SA                      | S | TASK_SA                   |            | Task pod service account name.                                          |
 | Retries                 | I | TASK_RETRIES              | 1          | Task pod creation retires.                                              |
 | Reaper.Created          | I | TASK_REAP_CREATED         | 72 (hour)  | (seconds) task may remain in state=CREATED before deleted.              |

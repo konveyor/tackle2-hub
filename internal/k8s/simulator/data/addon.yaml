@@ -2,6 +2,7 @@
 apiVersion: tackle.konveyor.io/v1alpha1
 kind: Addon
 metadata:
+  generation: 1
   name: analyzer
 spec:
   container:
@@ -16,11 +17,21 @@ spec:
         cpu: "1"
         memory: 512Mi
   task: ^(analyzer|tech-discovery)$
+status:
+  conditions:
+  - lastTransitionTime: "2026-02-07T16:36:36Z"
+    message: ""
+    observedGeneration: 1
+    reason: Validated
+    status: "True"
+    type: Ready
+  observedGeneration: 1
 
 ---
 apiVersion: tackle.konveyor.io/v1alpha1
 kind: Addon
 metadata:
+  generation: 1
   name: language-discovery
 spec:
   container:
@@ -35,11 +46,21 @@ spec:
         cpu: 500m
         memory: 512Mi
   task: language-discovery
+status:
+  conditions:
+    - lastTransitionTime: "2026-02-07T16:36:36Z"
+      message: ""
+      observedGeneration: 1
+      reason: Validated
+      status: "True"
+      type: Ready
+  observedGeneration: 1
 
 ---
 apiVersion: tackle.konveyor.io/v1alpha1
 kind: Addon
 metadata:
+  generation: 1
   name: platform
 spec:
   container:
@@ -54,3 +75,12 @@ spec:
         cpu: "1"
         memory: 100Mi
   task: ^(application-import|application-manifest|asset-generation)$
+status:
+  conditions:
+    - lastTransitionTime: "2026-02-07T16:36:36Z"
+      message: ""
+      observedGeneration: 1
+      reason: Validated
+      status: "True"
+      type: Ready
+  observedGeneration: 1

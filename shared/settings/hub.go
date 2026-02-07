@@ -27,6 +27,7 @@ const (
 	EnvTaskRetries             = "TASK_RETRIES"
 	EnvTaskUid                 = "TASK_UID"
 	EnvTaskEnabled             = "TASK_ENABLED"
+	EnvTaskSimulated           = "TASK_SIMULATED"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
 	EnvFrequencyHeap           = "FREQUENCY_HEAP"
@@ -81,10 +82,11 @@ type Hub struct {
 	}
 	// Task
 	Task struct {
-		Enabled bool
-		SA      string
-		Retries int
-		Reaper  struct { // minutes.
+		Enabled   bool
+		Simulated bool
+		SA        string
+		Retries   int
+		Reaper    struct { // minutes.
 			Created   int
 			Succeeded int
 			Failed    int
@@ -282,6 +284,11 @@ func (r *Hub) Load() (err error) {
 		r.Task.Enabled = !r.Disconnected && b
 	} else {
 		r.Task.Enabled = !r.Disconnected
+	}
+	s, found = os.LookupEnv(EnvTaskSimulated)
+	if found {
+		b, _ := strconv.ParseBool(s)
+		r.Task.Simulated = b
 	}
 	s, found = os.LookupEnv(EnvDevelopment)
 	if found {
