@@ -67,9 +67,10 @@ func New() *Client {
 }
 
 // WithTiming sets custom timing for pod state progression.
-func (c *Client) WithTiming(pending, running time.Duration) *Client {
-	c.pendingDuration = pending
-	c.runningDuration = running
+// Parameters are number of seconds.
+func (c *Client) WithTiming(pending, running int) *Client {
+	c.pendingDuration = time.Duration(pending) * time.Second
+	c.runningDuration = time.Duration(running) * time.Second
 	return c
 }
 
