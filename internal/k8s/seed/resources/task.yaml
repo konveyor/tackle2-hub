@@ -3,6 +3,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: analyzer
+  namespace: konveyor-tackle
 spec:
   dependencies:
     - language-discovery
@@ -13,6 +14,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: application-import
+  namespace: konveyor-tackle
 spec:
   data:
     action: import
@@ -22,6 +24,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: application-manifest
+  namespace: konveyor-tackle
 spec:
   data:
     action: fetch
@@ -31,6 +34,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: asset-generation
+  namespace: konveyor-tackle
 spec:
   data:
     action: generate
@@ -40,6 +44,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: language-discovery
+  namespace: konveyor-tackle
 spec:
   data:
     source: language-discovery
@@ -49,6 +54,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Task
 metadata:
   name: tech-discovery
+  namespace: konveyor-tackle
 spec:
   data:
     mode:

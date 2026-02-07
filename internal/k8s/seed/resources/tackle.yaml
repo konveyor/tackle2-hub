@@ -3,4 +3,5 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Tackle
 metadata:
   name: main
+  namespace: konveyor-tackle
 spec: {}

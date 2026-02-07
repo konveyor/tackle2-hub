@@ -3,6 +3,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Extension
 metadata:
   name: csharp
+  namespace: konveyor-tackle
 spec:
   addon: ^(analyzer|tech-discovery)$
   container:
@@ -37,6 +38,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Extension
 metadata:
   name: java
+  namespace: konveyor-tackle
 spec:
   addon: ^(analyzer|tech-discovery)$
   container:
@@ -91,6 +93,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Extension
 metadata:
   name: nodejs
+  namespace: konveyor-tackle
 spec:
   addon: ^(analyzer|tech-discovery)$
   container:
@@ -129,6 +132,7 @@ apiVersion: tackle.konveyor.io/v1alpha1
 kind: Extension
 metadata:
   name: python
+  namespace: konveyor-tackle
 spec:
   addon: ^(analyzer|tech-discovery)$
   container:
