@@ -42,12 +42,12 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	// Immediately after creation, pod should be Pending
 	retrieved := &core.Pod{}
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodPending))
 	// Wait for pod to transition to Running (2 seconds)
 	time.Sleep(2500 * time.Millisecond)
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodRunning))
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
@@ -55,7 +55,7 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses[1].Ready).To(gomega.BeTrue())
 	// Wait for pod to transition to Succeeded (3 more seconds)
 	time.Sleep(3500 * time.Millisecond)
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodSucceeded))
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
@@ -67,7 +67,7 @@ func TestPodLifecycle(t *testing.T) {
 	err = simClient.Delete(context.TODO(), pod)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	// Verify pod is deleted
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).To(gomega.HaveOccurred())
 }
 
@@ -110,7 +110,7 @@ func TestResourceTypes(t *testing.T) {
 	err := simClient.Create(context.TODO(), secret)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	retrieved := &core.Secret{}
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-secret"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-secret", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(string(retrieved.Data["key"])).To(gomega.Equal("value"))
 	// Test Addon
@@ -150,7 +150,7 @@ func TestUpdate(t *testing.T) {
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	// Verify update
 	retrieved := &core.Secret{}
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-secret"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-secret", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(string(retrieved.Data["key"])).To(gomega.Equal("updated"))
 }
@@ -179,7 +179,7 @@ func TestWithFailures(t *testing.T) {
 	// Wait for pod to complete
 	time.Sleep(2500 * time.Millisecond)
 	retrieved := &core.Pod{}
-	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "failing-pod"}, retrieved)
+	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "failing-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodFailed))
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())

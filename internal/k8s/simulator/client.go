@@ -3,76 +3,42 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"reflect"
-	"runtime"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/internal/k8s/fake"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apiserver/pkg/storage/names"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
-
+	"github.com/konveyor/tackle2-hub/internal/k8s/seed"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-)
-
-var (
-	nameGen = names.SimpleNameGenerator
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 // Client simulates a Kubernetes cluster for testing.
-// Embeds k8s.FakeClient to get default no-op implementations.
+// Wraps the fake client and adds pod lifecycle simulation.
 type Client struct {
-	fake.Client
-	mutex      sync.RWMutex
-	pods       map[string]*podEntry
-	secrets    map[string]*core.Secret
-	quotas     map[string]*core.ResourceQuota
-	tackle     map[string]*crd.Tackle
-	addons     map[string]*crd.Addon
-	extensions map[string]*crd.Extension
-	tasks      map[string]*crd.Task
-	schemas    map[string]*crd.Schema
+	client.Client
+	mutex     sync.RWMutex
+	podTiming map[string]time.Time
 	// Simulation parameters
 	pendingDuration    time.Duration // How long pod stays in Pending
 	runningDuration    time.Duration // How long pod stays in Running before Succeeded
 	failureProbability float64       // Probability pod will fail instead of succeed
 }
 
-// podEntry tracks a pod and its creation time for state simulation.
-type podEntry struct {
-	pod       *core.Pod
-	createdAt time.Time
-}
-
 // New creates a new simulator client with default timing and operator-installed resources.
 func New() *Client {
-	c := &Client{
-		pods:               make(map[string]*podEntry),
-		secrets:            make(map[string]*core.Secret),
-		quotas:             make(map[string]*core.ResourceQuota),
-		tackle:             make(map[string]*crd.Tackle),
-		addons:             make(map[string]*crd.Addon),
-		extensions:         make(map[string]*crd.Extension),
-		tasks:              make(map[string]*crd.Task),
-		schemas:            make(map[string]*crd.Schema),
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(seed.Scheme()).
+		WithObjects(seed.Resources()...).
+		Build()
+	return &Client{
+		Client:             fakeClient,
+		podTiming:          make(map[string]time.Time),
 		pendingDuration:    5 * time.Second,
 		runningDuration:    10 * time.Second,
-		failureProbability: 0.0, // No failures by default
+		failureProbability: 0.0,
 	}
-	c.seed("tackle.yaml", &crd.Tackle{})
-	c.seed("addon.yaml", &crd.Addon{})
-	c.seed("extension.yaml", &crd.Extension{})
-	c.seed("task.yaml", &crd.Task{})
-	c.seed("jsd.yaml", &crd.Schema{})
-	return c
 }
 
 // WithTiming sets custom timing for pod state progression.
@@ -90,147 +56,54 @@ func (c *Client) WithFailureProbability(prob float64) *Client {
 }
 
 // Get retrieves a resource by key.
-func (c *Client) Get(_ context.Context, key client.ObjectKey, obj client.Object, _ ...client.GetOption) (err error) {
+func (c *Client) Get(
+	ctx context.Context,
+	key client.ObjectKey,
+	obj client.Object,
+	opts ...client.GetOption) (err error) {
+	//
+	err = c.Client.Get(ctx, key, obj, opts...)
+	if err != nil {
+		return
+	}
+	pod, isPod := obj.(*core.Pod)
+	if !isPod {
+		return
+	}
 	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	switch r := obj.(type) {
-	case *core.Pod:
-		entry, found := c.pods[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		c.updatePodState(entry)
-		*r = *entry.pod.DeepCopy()
-	case *core.Secret:
-		secret, found := c.secrets[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *secret.DeepCopy()
-	case *core.ResourceQuota:
-		quota, found := c.quotas[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *quota.DeepCopy()
-	case *crd.Tackle:
-		tackle, found := c.tackle[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *tackle.DeepCopy()
-	case *crd.Addon:
-		addon, found := c.addons[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *addon.DeepCopy()
-	case *crd.Extension:
-		extension, found := c.extensions[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *extension.DeepCopy()
-	case *crd.Task:
-		task, found := c.tasks[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *task.DeepCopy()
-	case *crd.Schema:
-		task, found := c.schemas[key.Name]
-		if !found {
-			err = KindUnknownError{Object: obj}
-			return
-		}
-		*r = *task.DeepCopy()
-	default:
-		err = KindUnknownError{Object: obj}
+	createdAt, found := c.podTiming[key.String()]
+	c.mutex.RUnlock()
+	if found {
+		c.updatePodState(pod, createdAt)
 	}
 	return
 }
 
 // List retrieves a list of resources.
-func (c *Client) List(_ context.Context, list client.ObjectList, _ ...client.ListOption) (err error) {
+func (c *Client) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) (err error) {
+	err = c.Client.List(ctx, list, opts...)
+	if err != nil {
+		return
+	}
+	podList, isPodList := list.(*core.PodList)
+	if !isPodList {
+		return
+	}
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	switch l := list.(type) {
-	case *core.PodList:
-		l.Items = make([]core.Pod, 0, len(c.pods))
-		for _, entry := range c.pods {
-			c.updatePodState(entry)
-			l.Items = append(l.Items, *entry.pod.DeepCopy())
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		key := client.ObjectKeyFromObject(pod).String()
+		if createdAt, found := c.podTiming[key]; found {
+			c.updatePodState(pod, createdAt)
 		}
-	case *core.SecretList:
-		l.Items = make([]core.Secret, 0, len(c.secrets))
-		for _, secret := range c.secrets {
-			l.Items = append(l.Items, *secret.DeepCopy())
-		}
-	case *core.ResourceQuotaList:
-		l.Items = make([]core.ResourceQuota, 0, len(c.quotas))
-		for _, quota := range c.quotas {
-			l.Items = append(l.Items, *quota.DeepCopy())
-		}
-	case *crd.TackleList:
-		l.Items = make([]crd.Tackle, 0, len(c.tackle))
-		for _, tackle := range c.tackle {
-			l.Items = append(l.Items, *tackle.DeepCopy())
-		}
-	case *crd.AddonList:
-		l.Items = make([]crd.Addon, 0, len(c.addons))
-		for _, addon := range c.addons {
-			l.Items = append(l.Items, *addon.DeepCopy())
-		}
-	case *crd.ExtensionList:
-		l.Items = make([]crd.Extension, 0, len(c.extensions))
-		for _, extension := range c.extensions {
-			l.Items = append(l.Items, *extension.DeepCopy())
-		}
-	case *crd.TaskList:
-		l.Items = make([]crd.Task, 0, len(c.tasks))
-		for _, task := range c.tasks {
-			l.Items = append(l.Items, *task.DeepCopy())
-		}
-	case *crd.SchemaList:
-		l.Items = make([]crd.Schema, 0, len(c.tasks))
-		for _, task := range c.schemas {
-			l.Items = append(l.Items, *task.DeepCopy())
-		}
-	default:
-		err = KindUnknownError{Object: list}
 	}
 	return
 }
 
 // Create creates a new resource.
-func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.CreateOption) (err error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	//
-	name := obj.GetName()
-	gName := obj.GetGenerateName()
-	if name == "" {
-		name = nameGen.GenerateName(gName)
-		obj.SetName(name)
-	}
-	//
-	switch r := obj.(type) {
-	case *core.Pod:
-		if _, found := c.pods[r.Name]; found {
-			err = ConflictError{
-				Kind: "Pod",
-				Name: r.Name,
-			}
-			return
-		}
-		pod := r.DeepCopy()
+func (c *Client) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) (err error) {
+	if pod, isPod := obj.(*core.Pod); isPod {
 		pod.Status.Phase = core.PodPending
 		pod.Status.Conditions = []core.PodCondition{
 			{
@@ -242,239 +115,35 @@ func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.Create
 		if pod.UID == "" {
 			pod.UID = newUID()
 		}
-		c.pods[pod.Name] = &podEntry{
-			pod:       pod,
-			createdAt: time.Now(),
-		}
-		*r = *pod
-	case *core.Secret:
-		if _, found := c.secrets[r.Name]; found {
-			err = ConflictError{
-				Kind: "Secret",
-				Name: r.Name,
-			}
-			return
-		}
-		secret := r.DeepCopy()
-		// Generate UID if not set
-		if secret.UID == "" {
-			secret.UID = newUID()
-		}
-		c.secrets[secret.Name] = secret
-		*r = *secret
-	case *core.ResourceQuota:
-		if _, found := c.quotas[r.Name]; found {
-			err = ConflictError{
-				Kind: "Quota",
-				Name: r.Name,
-			}
-			return
-		}
-		c.quotas[r.Name] = r.DeepCopy()
-	case *crd.Tackle:
-		if _, found := c.tackle[r.Name]; found {
-			err = ConflictError{
-				Kind: "Tackle",
-				Name: r.Name,
-			}
-			return
-		}
-		c.tackle[r.Name] = r.DeepCopy()
-	case *crd.Addon:
-		if _, found := c.addons[r.Name]; found {
-			err = ConflictError{
-				Kind: "Addon",
-				Name: r.Name,
-			}
-			return
-		}
-		c.addons[r.Name] = r.DeepCopy()
-	case *crd.Extension:
-		if _, found := c.extensions[r.Name]; found {
-			err = ConflictError{
-				Kind: "Extension",
-				Name: r.Name,
-			}
-			return
-		}
-		c.extensions[r.Name] = r.DeepCopy()
-	case *crd.Task:
-		if _, found := c.tasks[r.Name]; found {
-			err = ConflictError{
-				Kind: "Task",
-				Name: r.Name,
-			}
-			return
-		}
-		c.tasks[r.Name] = r.DeepCopy()
-	case *crd.Schema:
-		if _, found := c.schemas[r.Name]; found {
-			err = ConflictError{
-				Kind: "Task",
-				Name: r.Name,
-			}
-			return
-		}
-		c.schemas[r.Name] = r.DeepCopy()
-	default:
-		err = fmt.Errorf("unsupported resource type: %T", obj)
+	}
+	err = c.Client.Create(ctx, obj, opts...)
+	if err != nil {
+		return
+	}
+	if _, isPod := obj.(*core.Pod); isPod {
+		c.mutex.Lock()
+		key := client.ObjectKeyFromObject(obj).String()
+		c.podTiming[key] = time.Now()
+		c.mutex.Unlock()
 	}
 	return
 }
 
 // Delete removes a resource.
-func (c *Client) Delete(_ context.Context, obj client.Object, _ ...client.DeleteOption) (err error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	//
-	switch r := obj.(type) {
-	case *core.Pod:
-		delete(c.pods, r.Name)
-	case *core.Secret:
-		delete(c.secrets, r.Name)
-	case *core.ResourceQuota:
-		delete(c.quotas, r.Name)
-	case *crd.Tackle:
-		delete(c.tackle, r.Name)
-	case *crd.Addon:
-		delete(c.addons, r.Name)
-	case *crd.Extension:
-		delete(c.extensions, r.Name)
-	case *crd.Task:
-		delete(c.tasks, r.Name)
-	case *crd.Schema:
-		delete(c.schemas, r.Name)
-	default:
-		err = KindUnknownError{Object: obj}
+func (c *Client) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) (err error) {
+	if _, isPod := obj.(*core.Pod); isPod {
+		c.mutex.Lock()
+		key := client.ObjectKeyFromObject(obj).String()
+		delete(c.podTiming, key)
+		c.mutex.Unlock()
 	}
-	return
-}
-
-// DeleteAllOf deletes all resources matching the criteria.
-func (c *Client) DeleteAllOf(_ context.Context, obj client.Object, _ ...client.DeleteAllOfOption) (err error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	//
-	switch obj.(type) {
-	case *core.Pod:
-		c.pods = make(map[string]*podEntry)
-	case *core.Secret:
-		c.secrets = make(map[string]*core.Secret)
-	case *core.ResourceQuota:
-		c.quotas = make(map[string]*core.ResourceQuota)
-	case *crd.Tackle:
-		c.tackle = make(map[string]*crd.Tackle)
-	case *crd.Addon:
-		c.addons = make(map[string]*crd.Addon)
-	case *crd.Extension:
-		c.extensions = make(map[string]*crd.Extension)
-	case *crd.Task:
-		c.tasks = make(map[string]*crd.Task)
-	case *crd.Schema:
-		c.schemas = make(map[string]*crd.Schema)
-	default:
-		err = KindUnknownError{Object: obj}
-	}
-	return
-}
-
-// Update updates a resource.
-func (c *Client) Update(_ context.Context, obj client.Object, _ ...client.UpdateOption) (err error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	//
-	switch r := obj.(type) {
-	case *core.Pod:
-		entry, found := c.pods[r.Name]
-		if !found {
-			err = NotFoundError{
-				Kind: "Pod",
-				Name: r.Name,
-			}
-			return
-		}
-		// Preserve creation time and update pod
-		entry.pod = r.DeepCopy()
-	case *core.Secret:
-		if _, found := c.secrets[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Secret",
-				Name: r.Name,
-			}
-			return
-		}
-		c.secrets[r.Name] = r.DeepCopy()
-	case *core.ResourceQuota:
-		if _, found := c.quotas[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "ResourceQuota",
-				Name: r.Name,
-			}
-			return
-		}
-		c.quotas[r.Name] = r.DeepCopy()
-	case *crd.Tackle:
-		if _, found := c.tackle[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Tackle",
-				Name: r.Name,
-			}
-			return
-		}
-		c.tackle[r.Name] = r.DeepCopy()
-	case *crd.Addon:
-		if _, found := c.addons[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Addon",
-				Name: r.Name,
-			}
-			return
-		}
-		c.addons[r.Name] = r.DeepCopy()
-	case *crd.Extension:
-		if _, found := c.extensions[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Extension",
-				Name: r.Name,
-			}
-			return
-		}
-		c.extensions[r.Name] = r.DeepCopy()
-	case *crd.Task:
-		if _, found := c.tasks[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Task",
-				Name: r.Name,
-			}
-			return
-		}
-		c.tasks[r.Name] = r.DeepCopy()
-	case *crd.Schema:
-		if _, found := c.schemas[r.Name]; !found {
-			err = NotFoundError{
-				Kind: "Schema",
-				Name: r.Name,
-			}
-			return
-		}
-		c.schemas[r.Name] = r.DeepCopy()
-	default:
-		err = KindUnknownError{Object: obj}
-	}
-	return
-}
-
-// Patch patches a resource.
-func (c *Client) Patch(ctx context.Context, obj client.Object, _ client.Patch, _ ...client.PatchOption) (err error) {
-	err = c.Update(ctx, obj)
+	err = c.Client.Delete(ctx, obj, opts...)
 	return
 }
 
 // updatePodState updates a pod's state based on time elapsed since creation.
-// This method should be called while holding at least a read lock.
-func (c *Client) updatePodState(entry *podEntry) {
-	elapsed := time.Since(entry.createdAt)
-	pod := entry.pod
+func (c *Client) updatePodState(pod *core.Pod, createdAt time.Time) {
+	elapsed := time.Since(createdAt)
 	// Build container statuses dynamically based on pod spec.
 	// This supports pods with multiple containers (e.g., main task + extensions).
 	containerStatuses := make([]core.ContainerStatus, len(pod.Spec.Containers))
@@ -512,7 +181,7 @@ func (c *Client) updatePodState(entry *podEntry) {
 				Ready: true,
 				State: core.ContainerState{
 					Running: &core.ContainerStateRunning{
-						StartedAt: meta.NewTime(entry.createdAt.Add(c.pendingDuration)),
+						StartedAt: meta.NewTime(createdAt.Add(c.pendingDuration)),
 					},
 				},
 			}
@@ -553,9 +222,6 @@ func (c *Client) updatePodState(entry *podEntry) {
 }
 
 // podFailed determines if a pod should fail based on configured probability.
-// For deterministic behavior, use pod name hash
-// In production, you might want to use random based on probability
-// Simple hash-based deterministic failure
 func (c *Client) podFailed(pod *core.Pod) (failed bool) {
 	if c.failureProbability == 0.0 {
 		return
@@ -568,61 +234,9 @@ func (c *Client) podFailed(pod *core.Pod) (failed bool) {
 	return
 }
 
-func (c *Client) seed(path string, r client.Object) {
-	ctx := context.TODO()
-	path = filepath.Join(dataDir(), path)
-	b, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	rt := reflect.TypeOf(r)
-	rt = rt.Elem()
-	content := strings.Split(string(b), "\n---\n")
-	for _, d := range content {
-		nt := reflect.New(rt)
-		r = nt.Interface().(client.Object)
-		err = yaml.Unmarshal([]byte(d), r)
-		err = c.Create(ctx, r)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return
-}
-
-// dataDir returns the path to the data directory.
-func dataDir() string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), "seed")
-}
-
 // newUID generates a simple UID for resources.
-func newUID() types.UID {
-	return types.UID(fmt.Sprintf("%d", time.Now().UnixNano()))
-}
-
-type ConflictError struct {
-	Kind string
-	Name string
-}
-
-func (e ConflictError) Error() string {
-	return fmt.Sprintf("(%s) %s already exists.", e.Kind, e.Name)
-}
-
-type NotFoundError struct {
-	Kind string
-	Name string
-}
-
-func (e NotFoundError) Error() string {
-	return fmt.Sprintf("(%s) %s not found.", e.Kind, e.Name)
-}
-
-type KindUnknownError struct {
-	Object any
-}
-
-func (e KindUnknownError) Error() string {
-	return fmt.Sprintf("kind %T unknown.", e.Object)
+func newUID() (u types.UID) {
+	u = types.UID(
+		fmt.Sprintf("%d", time.Now().UnixNano()))
+	return
 }
