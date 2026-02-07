@@ -38,16 +38,7 @@ type Cluster struct {
 func (k *Cluster) Refresh() (err error) {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
-	if !Settings.Hub.Task.Enabled {
-		k.tackle = &crd.Tackle{}
-		k.addons = make(map[string]*crd.Addon)
-		k.extensions = make(map[string]*crd.Extension)
-		k.tasks = make(map[string]*crd.Task)
-		k.pods.other = make(map[string]*core.Pod)
-		k.pods.tasks = make(map[string]*core.Pod)
-		k.quotas = make(map[string]*core.ResourceQuota)
-		return
-	}
+	//
 	err = k.getTackle()
 	if err != nil {
 		return

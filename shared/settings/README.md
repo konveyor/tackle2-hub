@@ -27,7 +27,7 @@ These settings pertain to the Hub in general.
 | **Shared**.Path           | S | SHARED_PATH           | /shared         | Shared volume mount path.                         |
 | **Encryption**.Passphrase | S | ENCRYPTION_PASSPHRASE | tackle          | RSA encryption passphrase.                        |
 | Development               | B | DEVELOPMENT           | FALSE           | Development mode.                                 |
-| Disconnected              | B | DISCONNECTED          | FALSE           | Not connected to a cluster.                       |
+| Disconnected              | B | DISCONNECTED          | FALSE           | Not connected to a cluster. Simulated.            |
 | Product                   | S | APP_NAME              | tackle          | Product/application name. Affects target seeding. |
 | **Metrics**.Enabled       | B | METRICS_ENABLED       | TRUE            | Metrics reporting enabled.                        |
 | **Metrics**.Port          | I | METRICS_PORT          |                 | Metrics reporting (listen) port number.           |
@@ -69,8 +69,6 @@ These settings pertain to the tasking system.
 
 | Name                    | T | Envar                     | Default    | Definition                                                              |
 |-------------------------|---|---------------------------|------------|-------------------------------------------------------------------------|
-| Enabled                 | B | TASK_ENABLED              | TRUE       | Tasking enabled. FALSE when Disconnected=TRUE.                          |
-| Simulated               | B | TASK_SIMULATED            | FALSE      | Task simulator enabled. When enabled: k8s client simulated.             |
 | SA                      | S | TASK_SA                   |            | Task pod service account name.                                          |
 | Retries                 | I | TASK_RETRIES              | 1          | Task pod creation retires.                                              |
 | Reaper.Created          | I | TASK_REAP_CREATED         | 72 (hour)  | (seconds) task may remain in state=CREATED before deleted.              |

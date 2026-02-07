@@ -418,10 +418,6 @@ func (m *Manager) startReady() {
 		return
 	}
 	list := m.taskList(fetched)
-	list, err = m.disabled(list)
-	if err != nil {
-		return
-	}
 	err = m.adjustPriority(list)
 	if err != nil {
 		return
@@ -449,22 +445,6 @@ func (m *Manager) startReady() {
 	return
 }
 
-// disabled fails tasks when tasking is not enabled.
-// The returned list is empty when disabled.
-func (m *Manager) disabled(list []*Task) (kept []*Task, err error) {
-	if Settings.Hub.Task.Enabled {
-		kept = list
-		return
-	}
-	for _, task := range list {
-		mark := time.Now()
-		task.State = Failed
-		task.Terminated = &mark
-		task.Error("Error", "Tasking is disabled.")
-	}
-	return
-}
-
 // FindRefs find referenced resources.
 // - addon
 // - extensions
@@ -472,9 +452,6 @@ func (m *Manager) disabled(list []*Task) (kept []*Task, err error) {
 // - priority
 // The priority is defaulted to the kind as needed.
 func (m *Manager) findRefs(task *Task) (err error) {
-	if !Settings.Hub.Task.Enabled {
-		return
-	}
 	if task.Addon != "" {
 		_, found := m.cluster.Addon(task.Addon)
 		if !found {
