@@ -27,8 +27,12 @@ func TestPodLifecycle(t *testing.T) {
 		Spec: core.PodSpec{
 			Containers: []core.Container{
 				{
-					Name:  "main",
-					Image: "test:latest",
+					Name:  "addon",
+					Image: "addon:latest",
+				},
+				{
+					Name:  "ext0",
+					Image: "extension:latest",
 				},
 			},
 		},
@@ -48,6 +52,7 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodRunning))
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
 	g.Expect(retrieved.Status.ContainerStatuses[0].Ready).To(gomega.BeTrue())
+	g.Expect(retrieved.Status.ContainerStatuses[1].Ready).To(gomega.BeTrue())
 	// Wait for pod to transition to Succeeded (3 more seconds)
 	time.Sleep(3500 * time.Millisecond)
 	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod"}, retrieved)
@@ -56,6 +61,8 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated).ToNot(gomega.BeNil())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated.ExitCode).To(gomega.Equal(int32(0)))
+	g.Expect(retrieved.Status.ContainerStatuses[1].State.Terminated).ToNot(gomega.BeNil())
+	g.Expect(retrieved.Status.ContainerStatuses[1].State.Terminated.ExitCode).To(gomega.Equal(int32(0)))
 	// DELETE: Delete the pod
 	err = simClient.Delete(context.TODO(), pod)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
