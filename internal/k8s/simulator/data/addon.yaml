@@ -1,0 +1,56 @@
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Addon
+metadata:
+  name: analyzer
+spec:
+  container:
+    image: quay.io/jortel/tackle2-addon-analyzer
+    imagePullPolicy: Always
+    name: addon
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 512Mi
+  task: ^(analyzer|tech-discovery)$
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Addon
+metadata:
+  name: language-discovery
+spec:
+  container:
+    image: quay.io/konveyor/tackle2-addon-discovery:latest
+    imagePullPolicy: Always
+    name: addon
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+  task: language-discovery
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Addon
+metadata:
+  name: platform
+spec:
+  container:
+    image: quay.io/konveyor/tackle2-addon-platform:latest
+    imagePullPolicy: Always
+    name: addon
+    resources:
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      requests:
+        cpu: "1"
+        memory: 100Mi
+  task: ^(application-import|application-manifest|asset-generation)$

@@ -1,0 +1,66 @@
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: analyzer
+spec:
+  dependencies:
+    - language-discovery
+  priority: 10
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: application-import
+spec:
+  data:
+    action: import
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: application-manifest
+spec:
+  data:
+    action: fetch
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: asset-generation
+spec:
+  data:
+    action: generate
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: language-discovery
+spec:
+  data:
+    source: language-discovery
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Task
+metadata:
+  name: tech-discovery
+spec:
+  data:
+    mode:
+      discovery: true
+      withDeps: true
+    rules:
+      labels:
+        included:
+          - discovery
+    tagger:
+      enabled: true
+      source: tech-discovery
+  dependencies:
+    - language-discovery
+  priority: 1

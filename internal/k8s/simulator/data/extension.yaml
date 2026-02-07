@@ -1,0 +1,164 @@
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Extension
+metadata:
+  name: csharp
+spec:
+  addon: ^(analyzer|tech-discovery)$
+  container:
+    args:
+      - --port
+      - $(PORT)
+    env:
+      - name: PORT
+        value: ${seq:8000}
+    image: quay.io/konveyor/c-sharp-provider:latest
+    imagePullPolicy: Always
+    name: csharp
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+  metadata:
+    provider:
+      address: localhost:$(PORT)
+      initConfig:
+        - providerSpecificConfig:
+            ilspy_cmd: /usr/local/bin/ilspycmd
+            paket_cmd: /usr/local/bin/paket
+      name: csharp
+  selector: tag:Language=C#
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Extension
+metadata:
+  name: java
+spec:
+  addon: ^(analyzer|tech-discovery)$
+  container:
+    args:
+      - --port
+      - $(PORT)
+    env:
+      - name: PORT
+        value: ${seq:8000}
+      - name: MAVEN_OPTS
+        value: -Dmaven.repo.local=/cache/m2
+      - name: JAVA_TOOL_OPTIONS
+        value: -Declipse.log.console=true -Dorg.eclipse.jdt.ls.log=all -Dorg.eclipse.jdt.ls.log.level=ALL
+    image: quay.io/konveyor/java-external-provider:latest
+    imagePullPolicy: Always
+    name: java
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2.5Gi
+      requests:
+        cpu: "1"
+        memory: 2.5Gi
+  metadata:
+    provider:
+      address: localhost:$(PORT)
+      initConfig:
+        - providerSpecificConfig:
+            bundles: /jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar
+            depOpenSourceLabelsFile: /usr/local/etc/maven.default.index
+            disableMavenSearch: false
+            lspServerPath: /jdtls/bin/jdtls
+            mavenCacheDir: /cache/m2
+            mavenIndexPath: /usr/local/etc/maven-index.txt
+            mavenInsecure: $(maven.insecure)
+            mavenSettingsFile: $(maven.settings.path)
+      name: java
+    resources:
+      - fields:
+          - key: maven.settings.path
+            name: settings
+            path: /shared/creds/maven/settings.xml
+        selector: identity:kind=maven
+      - fields:
+          - key: maven.insecure
+            name: value
+        selector: setting:key=mvn.insecure.enabled
+  selector: tag:Language=Java || !tag:Language
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Extension
+metadata:
+  name: nodejs
+spec:
+  addon: ^(analyzer|tech-discovery)$
+  container:
+    args:
+      - --port
+      - $(PORT)
+    env:
+      - name: PORT
+        value: ${seq:8000}
+    image: quay.io/konveyor/generic-external-provider:latest
+    imagePullPolicy: Always
+    name: nodejs
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+  metadata:
+    provider:
+      address: localhost:$(PORT)
+      initConfig:
+        - providerSpecificConfig:
+            lspServerArgs:
+              - --stdio
+            lspServerName: nodejs
+            lspServerPath: /usr/local/bin/typescript-language-server
+            workspaceFolders:
+              - $(builtin.location)
+      name: nodejs
+  selector: tag:Language=TypeScript||tag:Language=JavaScript
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: Extension
+metadata:
+  name: python
+spec:
+  addon: ^(analyzer|tech-discovery)$
+  container:
+    args:
+      - --port
+      - $(PORT)
+    env:
+      - name: PORT
+        value: ${seq:8000}
+    image: quay.io/konveyor/generic-external-provider:latest
+    imagePullPolicy: Always
+    name: python
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+  metadata:
+    provider:
+      address: localhost:$(PORT)
+      initConfig:
+        - providerSpecificConfig:
+            dependencyFolders:
+              - examples/python/__pycache__
+              - examples/python/.venv
+            lspServerName: pylsp
+            lspServerPath: /usr/local/bin/pylsp
+            workspaceFolders:
+              - $(builtin.location)
+      name: python
+  selector: tag:Language=Python
