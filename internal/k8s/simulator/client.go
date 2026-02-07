@@ -12,14 +12,13 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/internal/k8s/fake"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apiserver/pkg/storage/names"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	core "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 )
@@ -205,7 +204,7 @@ func (c *Client) List(_ context.Context, list client.ObjectList, _ ...client.Lis
 			l.Items = append(l.Items, *task.DeepCopy())
 		}
 	default:
-		err = &meta.NoKindMatchError{}
+		err = KindUnknownError{Object: list}
 	}
 	return
 }
@@ -237,7 +236,7 @@ func (c *Client) Create(_ context.Context, obj client.Object, _ ...client.Create
 			{
 				Type:               core.PodScheduled,
 				Status:             core.ConditionTrue,
-				LastTransitionTime: meta_v1.Now(),
+				LastTransitionTime: meta.Now(),
 			},
 		}
 		if pod.UID == "" {
@@ -504,7 +503,7 @@ func (c *Client) updatePodState(entry *podEntry) {
 			{
 				Type:               core.PodReady,
 				Status:             core.ConditionTrue,
-				LastTransitionTime: meta_v1.Now(),
+				LastTransitionTime: meta.Now(),
 			},
 		}
 		for i, container := range pod.Spec.Containers {
@@ -513,7 +512,7 @@ func (c *Client) updatePodState(entry *podEntry) {
 				Ready: true,
 				State: core.ContainerState{
 					Running: &core.ContainerStateRunning{
-						StartedAt: meta_v1.NewTime(entry.createdAt.Add(c.pendingDuration)),
+						StartedAt: meta.NewTime(entry.createdAt.Add(c.pendingDuration)),
 					},
 				},
 			}
@@ -545,7 +544,7 @@ func (c *Client) updatePodState(entry *podEntry) {
 					ExitCode:   int32(exitCode),
 					Reason:     reason,
 					Message:    message,
-					FinishedAt: meta_v1.Now(),
+					FinishedAt: meta.Now(),
 				},
 			},
 		}
