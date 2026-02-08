@@ -13,7 +13,7 @@ import (
 )
 
 //go:embed resources/*.yaml
-var embeddedSeeds embed.FS
+var embedded embed.FS
 
 // Scheme creates a scheme with both core Kubernetes types and custom CRDs.
 func Scheme() (scheme *k8srt.Scheme) {
@@ -34,7 +34,7 @@ func Resources() []client.Object {
 		"resources/jsd.yaml":       &crd.Schema{},
 	}
 	for path, r := range files {
-		b, err := embeddedSeeds.ReadFile(path)
+		b, err := embedded.ReadFile(path)
 		if err != nil {
 			panic(err)
 		}
