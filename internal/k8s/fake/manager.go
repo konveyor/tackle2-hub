@@ -48,8 +48,6 @@ func (m *Manager) Start(ctx context.Context) (err error) {
 	return
 }
 
-// No-op implementations for other manager.Manager interface methods
-
 func (m *Manager) GetConfig() (cfg *rest.Config) {
 	return
 }
@@ -79,6 +77,9 @@ func (m *Manager) Add(manager.Runnable) (err error) {
 }
 
 func (m *Manager) Elected() (ch <-chan struct{}) {
+	closed := make(chan struct{})
+	close(closed)
+	ch = closed
 	return
 }
 
