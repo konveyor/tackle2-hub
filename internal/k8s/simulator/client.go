@@ -2,9 +2,8 @@ package simulator
 
 import (
 	"context"
-	"fmt"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/k8s/seed"
 	core "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -44,26 +43,26 @@ func New() *Client {
 }
 
 // Use pod monitor.
-func (c *Client) Use(monitor PodMonitor) *Client {
-	c.podMonitor = monitor
-	return c
+func (s *Client) Use(monitor PodMonitor) *Client {
+	s.podMonitor = monitor
+	return s
 }
 
 // Get retrieves a resource by key.
-func (c *Client) Get(
+func (s *Client) Get(
 	ctx context.Context,
 	key client.ObjectKey,
 	object client.Object,
 	options ...client.GetOption) (err error) {
 	//
-	err = c.Client.Get(ctx, key, object, options...)
+	err = s.Client.Get(ctx, key, object, options...)
 	if err != nil {
 		return
 	}
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		err = c.updatePod(ctx, pod)
+		err = s.updatePod(ctx, pod)
 		if err != nil {
 			return
 		}
@@ -75,15 +74,15 @@ func (c *Client) Get(
 }
 
 // List retrieves a list of resources.
-func (c *Client) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) (err error) {
-	err = c.Client.List(ctx, list, opts...)
+func (s *Client) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) (err error) {
+	err = s.Client.List(ctx, list, opts...)
 	if err != nil {
 		return
 	}
 	switch r := list.(type) {
 	case *core.PodList:
 		for i := range r.Items {
-			err = c.updatePod(ctx, &r.Items[i])
+			err = s.updatePod(ctx, &r.Items[i])
 			if err != nil {
 				return
 			}
@@ -96,22 +95,22 @@ func (c *Client) List(ctx context.Context, list client.ObjectList, opts ...clien
 }
 
 // Create creates a new resource.
-func (c *Client) Create(ctx context.Context, object client.Object, opts ...client.CreateOption) (err error) {
+func (s *Client) Create(ctx context.Context, object client.Object, opts ...client.CreateOption) (err error) {
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		c.podCreated(pod)
+		s.podCreated(pod)
 	default:
 		//
 	}
-	err = c.Client.Create(ctx, object, opts...)
+	err = s.Client.Create(ctx, object, opts...)
 	if err != nil {
 		return
 	}
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		c.podMonitor.Created(pod)
+		s.podMonitor.Created(pod)
 	default:
 		//
 	}
@@ -120,15 +119,15 @@ func (c *Client) Create(ctx context.Context, object client.Object, opts ...clien
 }
 
 // Delete removes a resource.
-func (c *Client) Delete(ctx context.Context, object client.Object, opts ...client.DeleteOption) (err error) {
-	err = c.Client.Delete(ctx, object, opts...)
+func (s *Client) Delete(ctx context.Context, object client.Object, opts ...client.DeleteOption) (err error) {
+	err = s.Client.Delete(ctx, object, opts...)
 	if err != nil {
 		return
 	}
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		c.podMonitor.Deleted(pod)
+		s.podMonitor.Deleted(pod)
 	default:
 		//
 	}
@@ -136,9 +135,9 @@ func (c *Client) Delete(ctx context.Context, object client.Object, opts ...clien
 }
 
 // updatePod updates a pod's disposition.
-func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
+func (s *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 	current := pod.Status.Phase
-	next := c.podMonitor.Next(pod)
+	next := s.podMonitor.Next(pod)
 	if next == current ||
 		current == core.PodSucceeded ||
 		current == core.PodFailed {
@@ -146,13 +145,13 @@ func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 	}
 	switch next {
 	case core.PodPending:
-		c.podPending(pod)
+		s.podPending(pod)
 	case core.PodRunning:
-		c.podRunning(pod)
+		s.podRunning(pod)
 	case core.PodSucceeded:
-		c.podSucceeded(pod)
+		s.podSucceeded(pod)
 	case core.PodFailed:
-		c.podFailed(pod)
+		s.podFailed(pod)
 	default:
 		phase := field.Invalid(
 			field.NewPath("status").
@@ -171,13 +170,13 @@ func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 		)
 		return
 	}
-	err = c.Update(ctx, pod)
+	err = s.Update(ctx, pod)
 	return
 }
 
 // podCreated updates the pod to reflect a scheduled state.
-func (c *Client) podCreated(pod *core.Pod) {
-	pod.UID = newUID()
+func (s *Client) podCreated(pod *core.Pod) {
+	pod.UID = s.newUID()
 	pod.Status.Phase = core.PodPending
 	pod.Status.Conditions = []core.PodCondition{
 		{
@@ -189,7 +188,7 @@ func (c *Client) podCreated(pod *core.Pod) {
 }
 
 // podPending updates the pod to reflect a pending state.
-func (c *Client) podPending(pod *core.Pod) {
+func (s *Client) podPending(pod *core.Pod) {
 	pod.Status.Phase = core.PodPending
 	statuses := make(
 		[]core.ContainerStatus,
@@ -210,7 +209,7 @@ func (c *Client) podPending(pod *core.Pod) {
 }
 
 // podRunning updates the pod to reflect a running state.
-func (c *Client) podRunning(pod *core.Pod) {
+func (s *Client) podRunning(pod *core.Pod) {
 	pod.Status.Phase = core.PodRunning
 	statuses := make(
 		[]core.ContainerStatus,
@@ -237,7 +236,7 @@ func (c *Client) podRunning(pod *core.Pod) {
 }
 
 // podSucceeded updates the pod to reflect a succeeded state.
-func (c *Client) podSucceeded(pod *core.Pod) {
+func (s *Client) podSucceeded(pod *core.Pod) {
 	pod.Status.Phase = core.PodSucceeded
 	statuses := make(
 		[]core.ContainerStatus,
@@ -263,7 +262,7 @@ func (c *Client) podSucceeded(pod *core.Pod) {
 }
 
 // podFailed updates the pod to reflect a failed state.
-func (c *Client) podFailed(pod *core.Pod) {
+func (s *Client) podFailed(pod *core.Pod) {
 	pod.Status.Phase = core.PodFailed
 	statuses := make(
 		[]core.ContainerStatus,
@@ -288,9 +287,9 @@ func (c *Client) podFailed(pod *core.Pod) {
 	pod.Status.ContainerStatuses = statuses
 }
 
-// newUID generates a simple UID for resources.
-func newUID() (u types.UID) {
-	u = types.UID(
-		fmt.Sprintf("%d", time.Now().UnixNano()))
+// newUID generates a UID for resources.
+func (s *Client) newUID() (u types.UID) {
+	n, _ := uuid.NewUUID()
+	u = types.UID(n.String())
 	return
 }
