@@ -11,7 +11,6 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/auth"
-	"github.com/konveyor/tackle2-hub/internal/controller"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/heap"
 	"github.com/konveyor/tackle2-hub/internal/importer"
@@ -30,8 +29,6 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/ssh"
 	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -72,31 +69,6 @@ func buildScheme() (err error) {
 	return
 }
 
-// addonManager
-func addonManager(db *gorm.DB) (mgr manager.Manager, err error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	mgr, err = manager.New(
-		cfg,
-		manager.Options{
-			MetricsBindAddress: "0",
-			Namespace:          Settings.Hub.Namespace,
-		})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = controller.Add(mgr, db)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	return
-}
-
 // main.
 func main() {
 	Log.Info("Started:\n" + Settings.String())
@@ -115,28 +87,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if !Settings.Disconnected {
-		//
-		// k8s scheme.
-		err = buildScheme()
-		if err != nil {
-			return
-		}
-		//
-		// Add controller.
-		addonManager, aErr := addonManager(db)
-		if aErr != nil {
-			err = aErr
-			return
-		}
-		go func() {
-			err = addonManager.Start(context.Background())
-			if err != nil {
-				err = liberr.Wrap(err)
-				return
-			}
-		}()
+	//
+	// k8s scheme.
+	err = buildScheme()
+	if err != nil {
+		return
 	}
+	//
+	// Add controller manager.
+	addonManager, aErr := k8s.NewManager(db)
+	if aErr != nil {
+		err = aErr
+		return
+	}
+	go func() {
+		err = addonManager.Start(context.Background())
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}()
 	//
 	// k8s client.
 	client, err := k8s.NewClient()

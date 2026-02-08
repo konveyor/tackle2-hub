@@ -17,7 +17,7 @@ import (
 func TestPodLifecycle(t *testing.T) {
 	g := gomega.NewWithT(t)
 	// Create simulator with fast timing for testing
-	simClient := New().WithTiming(2, 3)
+	simClient := New().Use(NewMonitor(1, 1))
 	// Create a pod
 	pod := &core.Pod{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -46,7 +46,7 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodPending))
 	// Wait for pod to transition to Running (2 seconds)
-	time.Sleep(2500 * time.Millisecond)
+	time.Sleep(time.Second)
 	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodRunning))
@@ -54,7 +54,7 @@ func TestPodLifecycle(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses[0].Ready).To(gomega.BeTrue())
 	g.Expect(retrieved.Status.ContainerStatuses[1].Ready).To(gomega.BeTrue())
 	// Wait for pod to transition to Succeeded (3 more seconds)
-	time.Sleep(3500 * time.Millisecond)
+	time.Sleep(time.Second)
 	err = simClient.Get(context.TODO(), client.ObjectKey{Name: "test-pod", Namespace: "default"}, retrieved)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(retrieved.Status.Phase).To(gomega.Equal(core.PodSucceeded))
@@ -159,7 +159,7 @@ func TestUpdate(t *testing.T) {
 func TestWithFailures(t *testing.T) {
 	g := gomega.NewWithT(t)
 	// Create simulator that always fails pods
-	simClient := New().WithTiming(1, 1).WithFailureProbability(1.0)
+	simClient := New().Use(&TestMonitor{})
 	pod := &core.Pod{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "failing-pod",
@@ -185,4 +185,16 @@ func TestWithFailures(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated).ToNot(gomega.BeNil())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated.ExitCode).ToNot(gomega.Equal(int32(0)))
+}
+
+type TestMonitor struct {
+	PodMonitor
+}
+
+func (m *TestMonitor) Created(pod *core.Pod) {}
+
+func (m *TestMonitor) Deleted(pod *core.Pod) {}
+
+func (m *TestMonitor) Next(pod *core.Pod) (next core.PodPhase) {
+	return core.PodFailed
 }
