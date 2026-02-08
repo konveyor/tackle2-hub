@@ -54,9 +54,9 @@ func (c *Client) Get(
 	ctx context.Context,
 	key client.ObjectKey,
 	object client.Object,
-	opts ...client.GetOption) (err error) {
+	options ...client.GetOption) (err error) {
 	//
-	err = c.Client.Get(ctx, key, object, opts...)
+	err = c.Client.Get(ctx, key, object, options...)
 	if err != nil {
 		return
 	}
