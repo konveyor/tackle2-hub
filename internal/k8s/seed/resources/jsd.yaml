@@ -79,7 +79,7 @@ spec:
             type: array
         required:
           - spaces
-        title: Coordinates
+        title: Filter
         type: object
     - definition:
         $schema: https://json-schema.org/draft/2020-12/schema
