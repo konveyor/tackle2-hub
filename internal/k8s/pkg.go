@@ -5,7 +5,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	k8s "k8s.io/client-go/kubernetes"
-	fake2 "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -35,7 +35,7 @@ func NewClient() (newClient client.Client, err error) {
 // NewClientSet builds new k8s client.
 func NewClientSet() (newClient k8s.Interface, err error) {
 	if Settings.Disconnected {
-		newClient = fake2.NewSimpleClientset()
+		newClient = fake.NewSimpleClientset()
 		return
 	}
 	cfg, _ := config.GetConfig()
