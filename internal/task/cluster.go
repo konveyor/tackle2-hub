@@ -112,6 +112,8 @@ func (k *Cluster) Extensions() (list []*crd.Extension) {
 
 // FindExtensions returns extensions by name.
 func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err error) {
+	k.mutex.RLock()
+	defer k.mutex.RUnlock()
 	for _, name := range names {
 		r, found := k.extensions[name]
 		if !found {
