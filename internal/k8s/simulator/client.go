@@ -3,13 +3,15 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/konveyor/tackle2-hub/internal/k8s/seed"
 	core "k8s.io/api/core/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -25,7 +27,6 @@ type FakeClient interface {
 // Wraps the fake client and adds pod lifecycle simulation.
 type Client struct {
 	client.Client
-	mutex      sync.RWMutex
 	podMonitor PodMonitor
 }
 
@@ -44,8 +45,6 @@ func New() *Client {
 
 // Use pod monitor.
 func (c *Client) Use(monitor PodMonitor) *Client {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
 	c.podMonitor = monitor
 	return c
 }
@@ -64,7 +63,7 @@ func (c *Client) Get(
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		err = c.updatePod(pod)
+		err = c.updatePod(ctx, pod)
 		if err != nil {
 			return
 		}
@@ -84,7 +83,7 @@ func (c *Client) List(ctx context.Context, list client.ObjectList, opts ...clien
 	switch r := list.(type) {
 	case *core.PodList:
 		for i := range r.Items {
-			err = c.updatePod(&r.Items[i])
+			err = c.updatePod(ctx, &r.Items[i])
 			if err != nil {
 				return
 			}
@@ -137,7 +136,7 @@ func (c *Client) Delete(ctx context.Context, object client.Object, opts ...clien
 }
 
 // updatePod updates a pod's disposition.
-func (c *Client) updatePod(pod *core.Pod) (err error) {
+func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 	current := pod.Status.Phase
 	next := c.podMonitor.Next(pod)
 	switch next {
@@ -150,11 +149,26 @@ func (c *Client) updatePod(pod *core.Pod) (err error) {
 	case core.PodFailed:
 		c.podFailed(pod)
 	default:
-		pod.Status.Phase = core.PodReasonUnschedulable
+		phase := field.Invalid(
+			field.NewPath("status").
+				Child("phase"),
+			next,
+			"invalid pod phase returned by monitor",
+		)
+		err = k8serr.NewInvalid(
+			schema.GroupKind{
+				Group: "",
+				Kind:  "Pod"},
+			pod.Name,
+			field.ErrorList{
+				phase,
+			},
+		)
+		return
 	}
 	dirty := next != current
 	if dirty {
-		err = c.Update(context.TODO(), pod)
+		err = c.Update(ctx, pod)
 	}
 	return
 }
@@ -190,6 +204,7 @@ func (c *Client) podPending(pod *core.Pod) {
 			},
 		}
 	}
+	pod.Status.ContainerStatuses = statuses
 }
 
 // podRunning updates the pod to reflect a running state.

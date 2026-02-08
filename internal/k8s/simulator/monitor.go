@@ -27,7 +27,7 @@ type PodMonitor interface {
 
 // TimedMonitor provides time-based execution.
 type TimedMonitor struct {
-	sync.Mutex
+	mutex      sync.Mutex
 	podMap     map[types.UID]TimedPod
 	Thresholds struct {
 		Pending time.Duration
@@ -37,16 +37,16 @@ type TimedMonitor struct {
 
 // Use updates the monitor.
 func (m *TimedMonitor) Use(pending, running int) {
-	m.Lock()
-	defer m.Unlock()
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	m.Thresholds.Pending = time.Duration(pending) * time.Second
 	m.Thresholds.Running = time.Duration(running) * time.Second
 }
 
 // Created adds a pod for monitoring.
 func (m *TimedMonitor) Created(pod *core.Pod) {
-	m.Lock()
-	defer m.Unlock()
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	p := make(TimedPod)
 	p[pod.Status.Phase] = time.Now()
 	m.podMap[pod.UID] = p
@@ -54,15 +54,15 @@ func (m *TimedMonitor) Created(pod *core.Pod) {
 
 // Deleted deletes a pod.
 func (m *TimedMonitor) Deleted(pod *core.Pod) {
-	m.Lock()
-	defer m.Unlock()
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	delete(m.podMap, pod.UID)
 }
 
 // Next returns the next pod phase.
 func (m *TimedMonitor) Next(pod *core.Pod) (phase core.PodPhase) {
-	m.Lock()
-	defer m.Unlock()
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	phase = pod.Status.Phase
 	p, found := m.podMap[pod.UID]
 	if !found {
