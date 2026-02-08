@@ -74,7 +74,7 @@ func (k *Cluster) Tackle() (r *crd.Tackle) {
 	return
 }
 
-// Addon returns an addon my name.
+// Addon returns an addon by name.
 func (k *Cluster) Addon(name string) (r *crd.Addon, found bool) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
@@ -82,7 +82,7 @@ func (k *Cluster) Addon(name string) (r *crd.Addon, found bool) {
 	return
 }
 
-// Addons returns an addon my name.
+// Addons returns an addon by name.
 func (k *Cluster) Addons() (list []*crd.Addon) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
@@ -100,7 +100,7 @@ func (k *Cluster) Extension(name string) (r *crd.Extension, found bool) {
 	return
 }
 
-// Extensions returns an extension my name.
+// Extensions returns an extension by name.
 func (k *Cluster) Extensions() (list []*crd.Extension) {
 	k.mutex.RLock()
 	defer k.mutex.RUnlock()
