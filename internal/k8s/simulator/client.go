@@ -139,6 +139,11 @@ func (c *Client) Delete(ctx context.Context, object client.Object, opts ...clien
 func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 	current := pod.Status.Phase
 	next := c.podMonitor.Next(pod)
+	if next == current ||
+		current == core.PodSucceeded ||
+		current == core.PodFailed {
+		return
+	}
 	switch next {
 	case core.PodPending:
 		c.podPending(pod)
@@ -166,10 +171,7 @@ func (c *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 		)
 		return
 	}
-	dirty := next != current
-	if dirty {
-		err = c.Update(ctx, pod)
-	}
+	err = c.Update(ctx, pod)
 	return
 }
 

@@ -80,6 +80,10 @@ func (m *TimedMonitor) Next(pod *core.Pod) (phase core.PodPhase) {
 			phase = core.PodSucceeded
 			p.Mark(phase)
 		}
+	case core.PodSucceeded:
+		//
+	case core.PodFailed:
+		//
 	default:
 		phase = core.PodFailed
 		p.Mark(phase)

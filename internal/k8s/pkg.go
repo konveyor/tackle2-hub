@@ -52,12 +52,9 @@ func NewClientSet() (newClient k8s.Interface, err error) {
 }
 
 // NewManager builds new k8s manager.
-// In disconnected mode, returns a fake manager that does nothing.
-// Otherwise, creates a real manager with addon controller.
 func NewManager(db *gorm.DB) (mgr manager.Manager, err error) {
 	if Settings.Disconnected {
-		client := simulator.New()
-		mgr = fakemgr.NewManager(client)
+		mgr = fakemgr.NewManager(simulator.New())
 		return
 	}
 	cfg, err := config.GetConfig()
