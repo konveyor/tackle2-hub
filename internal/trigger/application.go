@@ -21,9 +21,6 @@ func (r *Application) Created(m *model.Application) (err error) {
 
 // Updated trigger.
 func (r *Application) Updated(m *model.Application) (err error) {
-	if !Settings.Hub.Task.Enabled {
-		return
-	}
 	if m.Repository == (model.Repository{}) {
 		return
 	}
