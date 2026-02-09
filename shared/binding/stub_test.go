@@ -12,7 +12,7 @@ func TestStub(t *testing.T) {
 	g := gomega.NewWithT(t)
 	binding := New("")
 	binding.Use(&client.Stub{
-		GetFn: func(path string, object any, params ...Param) (err error) {
+		DoGet: func(path string, object any, params ...Param) (err error) {
 			switch r := object.(type) {
 			case *api.Application:
 				r.ID = 23
