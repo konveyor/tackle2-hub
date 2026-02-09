@@ -19,14 +19,14 @@ import (
 // Provided to support behavior adjustments for testing.
 type FakeClient interface {
 	client.Client
-	Use(monitor PodMonitor) *Client
+	Use(manager PodManager) *Client
 }
 
 // Client simulates a Kubernetes cluster for testing.
 // Wraps the fake client and adds pod lifecycle simulation.
 type Client struct {
 	client.Client
-	podMonitor PodMonitor
+	podManager PodManager
 }
 
 // New creates a new simulator with seeded resources.
@@ -38,13 +38,13 @@ func New() *Client {
 			Build()
 	return &Client{
 		Client:     fakeClient,
-		podMonitor: NewMonitor(5, 10),
+		podManager: NewManager(5, 10),
 	}
 }
 
-// Use pod monitor.
-func (s *Client) Use(monitor PodMonitor) *Client {
-	s.podMonitor = monitor
+// Use pod manager.
+func (s *Client) Use(manager PodManager) *Client {
+	s.podManager = manager
 	return s
 }
 
@@ -110,7 +110,7 @@ func (s *Client) Create(ctx context.Context, object client.Object, opts ...clien
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		s.podMonitor.Created(pod)
+		s.podManager.Created(pod)
 	default:
 		//
 	}
@@ -127,7 +127,7 @@ func (s *Client) Delete(ctx context.Context, object client.Object, opts ...clien
 	switch r := object.(type) {
 	case *core.Pod:
 		pod := r
-		s.podMonitor.Deleted(pod)
+		s.podManager.Deleted(pod)
 	default:
 		//
 	}
@@ -137,7 +137,7 @@ func (s *Client) Delete(ctx context.Context, object client.Object, opts ...clien
 // updatePod updates a pod's disposition.
 func (s *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 	current := pod.Status.Phase
-	next := s.podMonitor.Next(pod)
+	next := s.podManager.Next(pod)
 	if next == current ||
 		current == core.PodSucceeded ||
 		current == core.PodFailed {
@@ -157,7 +157,7 @@ func (s *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 			field.NewPath("status").
 				Child("phase"),
 			next,
-			"invalid pod phase returned by monitor",
+			"invalid pod phase returned by manager",
 		)
 		err = k8serr.NewInvalid(
 			schema.GroupKind{

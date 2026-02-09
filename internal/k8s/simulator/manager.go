@@ -8,25 +8,25 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// NewMonitor returns a time-based pod monitor.
-func NewMonitor(pending, running int) (m *TimedMonitor) {
-	m = &TimedMonitor{
+// NewManager returns a time-based pod manager.
+func NewManager(pending, running int) (m *TimedManager) {
+	m = &TimedManager{
 		podMap: make(map[types.UID]TimedPod),
 	}
 	m.Use(pending, running)
 	return
 }
 
-// PodMonitor monitors pod progression through execution.
+// PodManager managers pod progression through execution.
 // Provides a method to orchestrate succeeded and failed cases.
-type PodMonitor interface {
+type PodManager interface {
 	Created(pod *core.Pod)
 	Next(pod *core.Pod) (phase core.PodPhase)
 	Deleted(pod *core.Pod)
 }
 
-// TimedMonitor provides time-based execution.
-type TimedMonitor struct {
+// TimedManager provides time-based execution.
+type TimedManager struct {
 	mutex      sync.Mutex
 	podMap     map[types.UID]TimedPod
 	Thresholds struct {
@@ -35,16 +35,16 @@ type TimedMonitor struct {
 	}
 }
 
-// Use updates the monitor.
-func (m *TimedMonitor) Use(pending, running int) {
+// Use updates the manager.
+func (m *TimedManager) Use(pending, running int) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.Thresholds.Pending = time.Duration(pending) * time.Second
 	m.Thresholds.Running = time.Duration(running) * time.Second
 }
 
-// Created adds a pod for monitoring.
-func (m *TimedMonitor) Created(pod *core.Pod) {
+// Created adds a pod for managering.
+func (m *TimedManager) Created(pod *core.Pod) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	p := make(TimedPod)
@@ -53,14 +53,14 @@ func (m *TimedMonitor) Created(pod *core.Pod) {
 }
 
 // Deleted deletes a pod.
-func (m *TimedMonitor) Deleted(pod *core.Pod) {
+func (m *TimedManager) Deleted(pod *core.Pod) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	delete(m.podMap, pod.UID)
 }
 
 // Next returns the next pod phase.
-func (m *TimedMonitor) Next(pod *core.Pod) (phase core.PodPhase) {
+func (m *TimedManager) Next(pod *core.Pod) (phase core.PodPhase) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	phase = pod.Status.Phase

@@ -17,7 +17,7 @@ import (
 func TestPodLifecycle(t *testing.T) {
 	g := gomega.NewWithT(t)
 	// Create simulator with fast timing for testing
-	simClient := New().Use(NewMonitor(1, 1))
+	simClient := New().Use(NewManager(1, 1))
 	// Create a pod
 	pod := &core.Pod{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -159,7 +159,7 @@ func TestUpdate(t *testing.T) {
 func TestWithFailures(t *testing.T) {
 	g := gomega.NewWithT(t)
 	// Create simulator that always fails pods
-	simClient := New().Use(&TestMonitor{})
+	simClient := New().Use(&TestManager{})
 	pod := &core.Pod{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "failing-pod",
@@ -187,14 +187,14 @@ func TestWithFailures(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated.ExitCode).ToNot(gomega.Equal(int32(0)))
 }
 
-type TestMonitor struct {
-	PodMonitor
+type TestManager struct {
+	PodManager
 }
 
-func (m *TestMonitor) Created(pod *core.Pod) {}
+func (m *TestManager) Created(pod *core.Pod) {}
 
-func (m *TestMonitor) Deleted(pod *core.Pod) {}
+func (m *TestManager) Deleted(pod *core.Pod) {}
 
-func (m *TestMonitor) Next(pod *core.Pod) (next core.PodPhase) {
+func (m *TestManager) Next(pod *core.Pod) (next core.PodPhase) {
 	return core.PodFailed
 }
