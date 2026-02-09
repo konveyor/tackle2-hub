@@ -159,7 +159,12 @@ func TestUpdate(t *testing.T) {
 func TestWithFailures(t *testing.T) {
 	g := gomega.NewWithT(t)
 	// Create simulator that always fails pods
-	simClient := New().Use(&TestManager{})
+	stub := &StubManager{
+		DoNext: func(pod *core.Pod) (phase core.PodPhase) {
+			return core.PodFailed
+		},
+	}
+	simClient := New().Use(stub)
 	pod := &core.Pod{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "failing-pod",
@@ -185,16 +190,4 @@ func TestWithFailures(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated).ToNot(gomega.BeNil())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated.ExitCode).ToNot(gomega.Equal(int32(0)))
-}
-
-type TestManager struct {
-	PodManager
-}
-
-func (m *TestManager) Created(pod *core.Pod) {}
-
-func (m *TestManager) Deleted(pod *core.Pod) {}
-
-func (m *TestManager) Next(pod *core.Pod) (next core.PodPhase) {
-	return core.PodFailed
 }
