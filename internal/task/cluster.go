@@ -188,8 +188,9 @@ func (k *Cluster) Quotas() (list []*core.ResourceQuota) {
 func (k *Cluster) PodQuota() (quota int, found bool) {
 	for _, r := range k.Quotas() {
 		var qty resource.Quantity
-		qty, found = r.Spec.Hard[core.ResourcePods]
-		if found {
+		qty, hasQuota := r.Spec.Hard[core.ResourcePods]
+		if hasQuota {
+			found = true
 			n := int(qty.Value())
 			if quota == 0 || quota > n {
 				quota = n

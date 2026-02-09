@@ -43,7 +43,7 @@ func (m *TimedManager) Use(pending, running int) {
 	m.Thresholds.Running = time.Duration(running) * time.Second
 }
 
-// Created adds a pod for managering.
+// Created adds a pod for managing.
 func (m *TimedManager) Created(pod *core.Pod) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
