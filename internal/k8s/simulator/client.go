@@ -176,7 +176,7 @@ func (s *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 
 // podCreated updates the pod to reflect a scheduled state.
 func (s *Client) podCreated(pod *core.Pod) {
-	pod.UID = s.newUID()
+	s.setUID(pod)
 	pod.Status.Phase = core.PodPending
 	pod.Status.Conditions = []core.PodCondition{
 		{
@@ -287,9 +287,11 @@ func (s *Client) podFailed(pod *core.Pod) {
 	pod.Status.ContainerStatuses = statuses
 }
 
-// newUID generates a UID for resources.
-func (s *Client) newUID() (u types.UID) {
-	n, _ := uuid.NewUUID()
-	u = types.UID(n.String())
+// setUID generates a UID for a pod (when not set).
+func (s *Client) setUID(pod *core.Pod) {
+	if pod.UID == "" {
+		n, _ := uuid.NewUUID()
+		pod.UID = types.UID(n.String())
+	}
 	return
 }
