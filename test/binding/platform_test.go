@@ -12,15 +12,31 @@ import (
 func TestPlatform(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create identity for the platform to reference
+	identity := &api.Identity{
+		Name:     "platform-identity",
+		Kind:     "basic-auth",
+		User:     "platform-user",
+		Password: "platform-password",
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
 	// Define the platform to create
 	platform := &api.Platform{
 		Kind: "test-platform",
 		Name: "Test Platform",
 		URL:  "http://localhost:8080",
+		Identity: &api.Ref{
+			ID: identity.ID,
+		},
 	}
 
 	// CREATE: Create the platform
-	err := client.Platform.Create(platform)
+	err = client.Platform.Create(platform)
 	g.Expect(err).To(BeNil())
 	g.Expect(platform.ID).NotTo(BeZero())
 
@@ -32,14 +48,14 @@ func TestPlatform(t *testing.T) {
 	list, err := client.Platform.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(platform, list[0])
+	eq, report := cmp.Eq(platform, list[0], "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the platform and verify it matches
 	retrieved, err := client.Platform.Get(platform.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(platform, retrieved)
+	eq, report = cmp.Eq(platform, retrieved, "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the platform
@@ -53,7 +69,7 @@ func TestPlatform(t *testing.T) {
 	updated, err := client.Platform.Get(platform.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(platform, updated, "UpdateUser")
+	eq, report = cmp.Eq(platform, updated, "UpdateUser", "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the platform

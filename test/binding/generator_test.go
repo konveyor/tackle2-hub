@@ -12,13 +12,31 @@ import (
 func TestGenerator(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create identity for the generator repository
+	identity := &api.Identity{
+		Name:     "generator-git-identity",
+		Kind:     "git",
+		User:     "git-user",
+		Password: "git-password",
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
 	// Define the generator to create
 	generator := &api.Generator{
 		Kind:        "base",
 		Name:        "Test Generator",
 		Description: "This is a test generator",
 		Repository: &api.Repository{
-			URL: "https://github.com/konveyor/tackle2-hub",
+			Kind:   "git",
+			URL:    "https://github.com/konveyor/tackle2-hub",
+			Branch: "main",
+		},
+		Identity: &api.Ref{
+			ID: identity.ID,
 		},
 		Params: api.Map{
 			"p1": "v1",
@@ -47,14 +65,14 @@ func TestGenerator(t *testing.T) {
 	list, err := client.Generator.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(len(seeded) + 1))
-	eq, report := cmp.Eq(generator, list[len(seeded)])
+	eq, report := cmp.Eq(generator, list[len(seeded)], "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the generator and verify it matches
 	retrieved, err := client.Generator.Get(generator.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(generator, retrieved)
+	eq, report = cmp.Eq(generator, retrieved, "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the generator
@@ -72,7 +90,7 @@ func TestGenerator(t *testing.T) {
 	updated, err := client.Generator.Get(generator.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(generator, updated, "UpdateUser")
+	eq, report = cmp.Eq(generator, updated, "UpdateUser", "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the generator

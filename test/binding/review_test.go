@@ -84,3 +84,71 @@ func TestReview(t *testing.T) {
 	_, err = client.Review.Get(review.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
+
+// TestReviewWithArchetype tests creating a review for an archetype
+func TestReviewWithArchetype(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an archetype for the review to reference
+	archetype := &api.Archetype{
+		Name:        "Test Review Archetype",
+		Description: "Archetype for review testing",
+	}
+	err := client.Archetype.Create(archetype)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Archetype.Delete(archetype.ID)
+	})
+
+	// Define the review to create
+	review := &api.Review{
+		BusinessCriticality: 3,
+		EffortEstimate:      "large",
+		ProposedAction:      "replatform",
+		WorkPriority:        3,
+		Comments:            "Review for archetype",
+		Archetype: &api.Ref{
+			ID:   archetype.ID,
+			Name: archetype.Name,
+		},
+	}
+
+	// CREATE: Create the review
+	err = client.Review.Create(review)
+	g.Expect(err).To(BeNil())
+	g.Expect(review.ID).NotTo(BeZero())
+
+	t.Cleanup(func() {
+		_ = client.Review.Delete(review.ID)
+	})
+
+	// GET: Retrieve the review and verify it matches
+	retrieved, err := client.Review.Get(review.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	eq, report := cmp.Eq(review, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// UPDATE: Modify the review
+	review.BusinessCriticality = 4
+	review.EffortEstimate = "extra-large"
+	review.Comments = "Updated review for archetype"
+
+	err = client.Review.Update(review)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve again and verify updates
+	updated, err := client.Review.Get(review.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(updated).NotTo(BeNil())
+	eq, report = cmp.Eq(review, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove the review
+	err = client.Review.Delete(review.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify deletion - Get should fail
+	_, err = client.Review.Get(review.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}

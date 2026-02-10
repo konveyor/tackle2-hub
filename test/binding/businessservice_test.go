@@ -12,14 +12,28 @@ import (
 func TestBusinessService(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create stakeholder to be the owner
+	owner := &api.Stakeholder{
+		Name:  "Business Owner",
+		Email: "owner@acme.local",
+	}
+	err := client.Stakeholder.Create(owner)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(owner.ID)
+	})
+
 	// Define the business service to create
 	businessService := &api.BusinessService{
 		Name:        "Marketing",
 		Description: "Marketing dept service.",
+		Stakeholder: &api.Ref{
+			ID: owner.ID,
+		},
 	}
 
 	// CREATE: Create the business service
-	err := client.BusinessService.Create(businessService)
+	err = client.BusinessService.Create(businessService)
 	g.Expect(err).To(BeNil())
 	g.Expect(businessService.ID).NotTo(BeZero())
 
@@ -31,14 +45,14 @@ func TestBusinessService(t *testing.T) {
 	list, err := client.BusinessService.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(businessService, list[0])
+	eq, report := cmp.Eq(businessService, list[0], "Stakeholder.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the business service and verify it matches
 	retrieved, err := client.BusinessService.Get(businessService.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(businessService, retrieved)
+	eq, report = cmp.Eq(businessService, retrieved, "Stakeholder.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the business service
@@ -52,7 +66,7 @@ func TestBusinessService(t *testing.T) {
 	updated, err := client.BusinessService.Get(businessService.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(businessService, updated, "UpdateUser")
+	eq, report = cmp.Eq(businessService, updated, "UpdateUser", "Stakeholder.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the business service

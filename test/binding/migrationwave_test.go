@@ -13,16 +13,58 @@ import (
 func TestMigrationWave(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create application for the migration wave
+	application := &api.Application{
+		Name:        "Migration Wave App",
+		Description: "Application for migration wave testing",
+	}
+	err := client.Application.Create(application)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(application.ID)
+	})
+
+	// Create stakeholder for the migration wave
+	stakeholder := &api.Stakeholder{
+		Name:  "Wave Stakeholder",
+		Email: "stakeholder@wave.local",
+	}
+	err = client.Stakeholder.Create(stakeholder)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(stakeholder.ID)
+	})
+
+	// Create stakeholder group for the migration wave
+	stakeholderGroup := &api.StakeholderGroup{
+		Name:        "Wave Group",
+		Description: "Stakeholder group for migration wave",
+	}
+	err = client.StakeholderGroup.Create(stakeholderGroup)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.StakeholderGroup.Delete(stakeholderGroup.ID)
+	})
+
 	// Define the migration wave to create
 	now := time.Now()
 	migrationWave := &api.MigrationWave{
 		Name:      "Test Migration Wave",
 		StartDate: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
 		EndDate:   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local).Add(30 * 24 * time.Hour),
+		Applications: []api.Ref{
+			{ID: application.ID},
+		},
+		Stakeholders: []api.Ref{
+			{ID: stakeholder.ID},
+		},
+		StakeholderGroups: []api.Ref{
+			{ID: stakeholderGroup.ID},
+		},
 	}
 
 	// CREATE: Create the migration wave
-	err := client.MigrationWave.Create(migrationWave)
+	err = client.MigrationWave.Create(migrationWave)
 	g.Expect(err).To(BeNil())
 	g.Expect(migrationWave.ID).NotTo(BeZero())
 
@@ -34,14 +76,14 @@ func TestMigrationWave(t *testing.T) {
 	list, err := client.MigrationWave.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(migrationWave, list[0])
+	eq, report := cmp.Eq(migrationWave, list[0], "Applications.Name", "Stakeholders.Name", "StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the migration wave and verify it matches
 	retrieved, err := client.MigrationWave.Get(migrationWave.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(migrationWave, retrieved)
+	eq, report = cmp.Eq(migrationWave, retrieved, "Applications.Name", "Stakeholders.Name", "StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the migration wave
@@ -55,7 +97,7 @@ func TestMigrationWave(t *testing.T) {
 	updated, err := client.MigrationWave.Get(migrationWave.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(migrationWave, updated, "UpdateUser")
+	eq, report = cmp.Eq(migrationWave, updated, "UpdateUser", "Applications.Name", "Stakeholders.Name", "StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the migration wave

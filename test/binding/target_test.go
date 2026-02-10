@@ -16,10 +16,16 @@ func TestTarget(t *testing.T) {
 	target := &api.Target{
 		Name: "Test Target",
 		Image: api.Ref{
-			ID:   1,
-			Name: "./data/image.svg",
+			ID: 1,
 		},
 		Description: "Test target description",
+		Provider:    "konveyor",
+		Choice:      true,
+		Custom:      false,
+		Labels: []api.TargetLabel{
+			{Name: "konveyor.io/target", Label: "test-target"},
+			{Name: "konveyor.io/source", Label: "test-source"},
+		},
 	}
 
 	// Get seeded.
@@ -39,14 +45,14 @@ func TestTarget(t *testing.T) {
 	list, err := client.Target.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(len(seeded) + 1))
-	eq, report := cmp.Eq(target, list[len(seeded)])
+	eq, report := cmp.Eq(target, list[len(seeded)], "Image.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the target and verify it matches
 	retrieved, err := client.Target.Get(target.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(target, retrieved)
+	eq, report = cmp.Eq(target, retrieved, "Image.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the target
@@ -60,7 +66,7 @@ func TestTarget(t *testing.T) {
 	updated, err := client.Target.Get(target.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(target, updated, "UpdateUser")
+	eq, report = cmp.Eq(target, updated, "UpdateUser", "Image.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the target

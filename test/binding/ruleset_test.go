@@ -12,11 +12,49 @@ import (
 func TestRuleSet(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create identity for the ruleset repository
+	identity := &api.Identity{
+		Name:     "ruleset-git-identity",
+		Kind:     "git",
+		User:     "git-user",
+		Password: "git-password",
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
+	// Create a dependency ruleset
+	depRuleSet := &api.RuleSet{
+		Name:        "Dependency RuleSet",
+		Description: "Ruleset that this one depends on",
+		Kind:        "yaml",
+	}
+	err = client.RuleSet.Create(depRuleSet)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.RuleSet.Delete(depRuleSet.ID)
+	})
+
 	// Define the ruleset to create
 	ruleSet := &api.RuleSet{
 		Name:        "Test RuleSet",
 		Description: "Test ruleset description",
-		Rules:       []api.Rule{},
+		Kind:        "yaml",
+		Repository: &api.Repository{
+			Kind:   "git",
+			URL:    "https://github.com/konveyor/rulesets.git",
+			Branch: "main",
+			Path:   "/rules",
+		},
+		Identity: &api.Ref{
+			ID: identity.ID,
+		},
+		DependsOn: []api.Ref{
+			{ID: depRuleSet.ID},
+		},
+		Rules: []api.Rule{},
 	}
 
 	// Get seeded.
@@ -36,14 +74,14 @@ func TestRuleSet(t *testing.T) {
 	list, err := client.RuleSet.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(len(seeded) + 1))
-	eq, report := cmp.Eq(ruleSet, list[len(seeded)])
+	eq, report := cmp.Eq(ruleSet, list[len(seeded)], "Identity.Name", "DependsOn.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the ruleset and verify it matches
 	retrieved, err := client.RuleSet.Get(ruleSet.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(ruleSet, retrieved)
+	eq, report = cmp.Eq(ruleSet, retrieved, "Identity.Name", "DependsOn.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the ruleset
@@ -57,7 +95,7 @@ func TestRuleSet(t *testing.T) {
 	updated, err := client.RuleSet.Get(ruleSet.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(ruleSet, updated, "UpdateUser")
+	eq, report = cmp.Eq(ruleSet, updated, "UpdateUser", "Identity.Name", "DependsOn.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the ruleset

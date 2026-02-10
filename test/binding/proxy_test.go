@@ -11,12 +11,29 @@ import (
 func TestProxy(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create identity for the proxy to reference
+	identity := &api.Identity{
+		Name:     "proxy-identity",
+		Kind:     "basic-auth",
+		User:     "proxy-user",
+		Password: "proxy-password",
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
 	// Define the proxy to create
 	proxy := &api.Proxy{
 		Resource: api.Resource{ID: 1},
+		Enabled:  true,
 		Kind:     "http",
 		Host:     "http-proxy.local",
 		Port:     80,
+		Identity: &api.Ref{
+			ID: identity.ID,
+		},
 	}
 
 	// GET: Retrieve the proxy and verify it matches
@@ -36,6 +53,6 @@ func TestProxy(t *testing.T) {
 	updated, err := client.Proxy.Get(proxy.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report := cmp.Eq(proxy, updated, "CreateTime", "UpdateUser")
+	eq, report := cmp.Eq(proxy, updated, "CreateTime", "UpdateUser", "Identity.Name")
 	g.Expect(eq).To(BeTrue(), report)
 }

@@ -14,18 +14,30 @@ func TestIdentity(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Define the identity to create
+	password := "test-password-123"
+	key := "test-key-123"
+	settings := "{\"insecureSkipVerify\": true}"
 	identity := &api.Identity{
-		Name:     "test-git-identity",
-		Kind:     "git",
-		User:     "test-user",
-		Password: "test-password-123",
+		Name:        "test-git-identity",
+		Kind:        "git",
+		Description: "Git identity for testing",
+		User:        "test-user",
+		Password:    password,
+		Key:         key,
+		Settings:    settings,
+		Default:     false,
 	}
 
 	// CREATE: Create the identity
 	err := client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
 	g.Expect(identity.ID).NotTo(BeZero())
-
+	g.Expect(identity.Password).ToNot(Equal(password)) // encrypted.
+	g.Expect(identity.Key).ToNot(Equal(key))           // encrypted.
+	g.Expect(identity.Settings).ToNot(Equal(settings)) // encrypted.
+	identity.Password = password
+	identity.Key = key
+	identity.Settings = settings
 	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
 	})
@@ -34,13 +46,11 @@ func TestIdentity(t *testing.T) {
 	list, err := client.Identity.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	list[0].Password = identity.Password // encrypted.
 	eq, report := cmp.Eq(identity, list[0])
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the identity and verify it matches
 	retrieved, err := client.Identity.Get(identity.ID)
-	retrieved.Password = identity.Password // encrypted.
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	eq, report = cmp.Eq(identity, retrieved)

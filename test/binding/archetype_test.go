@@ -12,15 +12,50 @@ import (
 func TestArchetype(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create stakeholder and stakeholder group
+	stakeholder := &api.Stakeholder{
+		Name:  "Archetype Owner",
+		Email: "owner@archetype.local",
+	}
+	err := client.Stakeholder.Create(stakeholder)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Stakeholder.Delete(stakeholder.ID)
+	})
+
+	stakeholderGroup := &api.StakeholderGroup{
+		Name:        "Archetype Group",
+		Description: "Group for archetype",
+	}
+	err = client.StakeholderGroup.Create(stakeholderGroup)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.StakeholderGroup.Delete(stakeholderGroup.ID)
+	})
+
 	// Define the archetype to create
 	archetype := &api.Archetype{
 		Name:        "Minimal",
 		Description: "Archetype minimal sample 1",
 		Comments:    "Archetype comments",
+		Tags: []api.TagRef{
+			{ID: 1}, // Use seeded tag
+			{ID: 2}, // Use seeded tag
+		},
+		Criteria: []api.TagRef{
+			{ID: 3}, // Use seeded tag
+			{ID: 4}, // Use seeded tag
+		},
+		Stakeholders: []api.Ref{
+			{ID: stakeholder.ID},
+		},
+		StakeholderGroups: []api.Ref{
+			{ID: stakeholderGroup.ID},
+		},
 	}
 
 	// CREATE: Create the archetype
-	err := client.Archetype.Create(archetype)
+	err = client.Archetype.Create(archetype)
 	g.Expect(err).To(BeNil())
 	g.Expect(archetype.ID).NotTo(BeZero())
 
@@ -32,14 +67,14 @@ func TestArchetype(t *testing.T) {
 	list, err := client.Archetype.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(archetype, list[0])
+	eq, report := cmp.Eq(archetype, list[0], "Tags.Name", "Criteria.Name", "Stakeholders.Name", "StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the archetype and verify it matches
 	retrieved, err := client.Archetype.Get(archetype.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(archetype, retrieved)
+	eq, report = cmp.Eq(archetype, retrieved, "Tags.Name", "Criteria.Name", "Stakeholders.Name", "StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the archetype
@@ -62,7 +97,11 @@ func TestArchetype(t *testing.T) {
 		updated,
 		"UpdateUser",
 		"Profiles.ID",
-		"Profiles.CreateTime")
+		"Profiles.CreateTime",
+		"Tags.Name",
+		"Criteria.Name",
+		"Stakeholders.Name",
+		"StakeholderGroups.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the archetype
