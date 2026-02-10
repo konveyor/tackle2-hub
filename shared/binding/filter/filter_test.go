@@ -20,6 +20,16 @@ func TestFilter(t *testing.T) {
 	g.Expect("name=('One','Two','Three')").To(gomega.Equal(p))
 
 	filter = Filter{}
+	filter.And("id").Eq(Any{1, 2, 3})
+	p = filter.String()
+	g.Expect("id=(1|2|3)").To(gomega.Equal(p))
+
+	filter = Filter{}
+	filter.And("id").Eq(Any{uint(1), uint(2), uint(3)})
+	p = filter.String()
+	g.Expect("id=(1|2|3)").To(gomega.Equal(p))
+
+	filter = Filter{}
 	filter.And("name").Eq("Elmer")
 	filter.And("age").Gt(10)
 	filter.And("height").Lt(44)

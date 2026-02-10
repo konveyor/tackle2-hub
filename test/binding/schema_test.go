@@ -20,10 +20,6 @@ func TestGetSchema(t *testing.T) {
 }
 
 func TestSchemaGet(t *testing.T) {
-	if Settings.Hub.Disconnected {
-		t.Skip("Hub is not connected")
-		return
-	}
 	g := NewGomegaWithT(t)
 	r, err := client.Schema.Get(name)
 	g.Expect(err).To(BeNil())
@@ -31,10 +27,6 @@ func TestSchemaGet(t *testing.T) {
 }
 
 func TestSchemaFind(t *testing.T) {
-	if Settings.Hub.Disconnected {
-		t.Skip("Hub is not connected")
-		return
-	}
 	g := NewGomegaWithT(t)
 	r, err := client.Schema.Find("platform", "cloudfoundry", "coordinates")
 	g.Expect(err).To(BeNil())

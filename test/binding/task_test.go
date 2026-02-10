@@ -30,9 +30,8 @@ func TestTaskWithApplication(t *testing.T) {
 
 	// Define the task to create with complex Data and Application reference
 	task := &api.Task{
-		Name:  "Test Task",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Name: "Test Task",
+		Kind: "analyzer",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary":       true,
@@ -167,9 +166,8 @@ func TestTaskWithPlatform(t *testing.T) {
 
 	// CREATE: Create a task with Platform reference
 	task := &api.Task{
-		Name:  "Test Task with Platform",
-		Addon: "move2kube",
-		Kind:  "discovery",
+		Name: "Test Task with Platform",
+		Kind: "application-manifest",
 		Data: api.Map{
 			"source": "/source/path",
 			"target": "kubernetes",
@@ -213,14 +211,10 @@ func TestTaskWithPlatform(t *testing.T) {
 func TestTaskBulkCancel(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	t.Skip("NEEDS CLUSTER SIMULATOR") // TODO: add hub k8s simulator.
-	return
-
 	// Create first task
 	task1 := &api.Task{
 		Name:     "Test Task 1",
 		Addon:    "analyzer",
-		Kind:     "test-kind",
 		State:    tasking.Created,
 		Priority: 5,
 	}
@@ -234,7 +228,6 @@ func TestTaskBulkCancel(t *testing.T) {
 	task2 := &api.Task{
 		Name:     "Test Task 2",
 		Addon:    "analyzer",
-		Kind:     "test-kind",
 		State:    tasking.Created,
 		Priority: 5,
 	}
@@ -248,7 +241,6 @@ func TestTaskBulkCancel(t *testing.T) {
 	task3 := &api.Task{
 		Name:     "Test Task 3",
 		Addon:    "analyzer",
-		Kind:     "test-kind",
 		State:    tasking.Created,
 		Priority: 5,
 	}
@@ -286,8 +278,7 @@ func TestTaskBucket(t *testing.T) {
 	// Create a task
 	task := &api.Task{
 		Name:  "Test Task for Bucket",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Kind:  "analyzer",
 		State: tasking.Created,
 	}
 	err := client.Task.Create(task)
@@ -374,9 +365,8 @@ func TestTaskGetAttached(t *testing.T) {
 
 	// CREATE: Create a task with Application reference and attached files
 	task := &api.Task{
-		Name:  "Test Task for GetAttached",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Name: "Test Task for GetAttached",
+		Kind: "analyzer",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary": true,
@@ -428,7 +418,6 @@ func TestTaskReport(t *testing.T) {
 	task := &api.Task{
 		Name:  "Test Task for Report",
 		Addon: "analyzer",
-		Kind:  "test-kind",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary": true,

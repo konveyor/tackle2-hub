@@ -133,8 +133,6 @@ func TestTaskGroupPatch(t *testing.T) {
 func TestTaskGroupSubmit(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	t.Skip("Submit requires valid task configuration")
-
 	// CREATE: Create a task group
 	taskGroup := &api.TaskGroup{
 		Name:  "Test Task Group for Submit",

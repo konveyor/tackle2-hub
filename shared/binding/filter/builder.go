@@ -136,6 +136,14 @@ func (p *Predicate) valueOf(object any) (result string) {
 		reflect.Int64:
 		n := value.Int()
 		result = strconv.Itoa(int(n))
+	case
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64:
+		n := value.Uint()
+		result = strconv.Itoa(int(n))
 	case reflect.Bool:
 		result = strconv.FormatBool(value.Bool())
 	case reflect.Slice:

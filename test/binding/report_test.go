@@ -2,6 +2,7 @@ package binding
 
 import (
 	"testing"
+	"time"
 
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -12,14 +13,10 @@ import (
 func TestReportTaskQueued(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	t.Skip("NEEDS CLUSTER SIMULATOR") // TODO: add hub k8s simulator.
-	return
-
 	// CREATE: Create a few tasks in different states
 	task1 := &api.Task{
-		Name:  "Test Task 1 for Queue Report",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Name: "Test Task 1 for Queue Report",
+		Kind: "analyzer",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary": true,
@@ -35,15 +32,14 @@ func TestReportTaskQueued(t *testing.T) {
 	})
 
 	task2 := &api.Task{
-		Name:  "Test Task 2 for Queue Report",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Name: "Test Task 2 for Queue Report",
+		Kind: "analyzer",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary": true,
 			},
 		},
-		State:    tasking.Pending,
+		State:    tasking.Ready,
 		Priority: 3,
 	}
 	err = client.Task.Create(task2)
@@ -51,6 +47,8 @@ func TestReportTaskQueued(t *testing.T) {
 	t.Cleanup(func() {
 		_ = client.Task.Delete(task2.ID)
 	})
+
+	time.Sleep(5 * time.Second)
 
 	// GET QUEUED REPORT: Get the task queue report
 	queuedReport, err := client.Report.Task.Queued()
@@ -63,14 +61,10 @@ func TestReportTaskQueued(t *testing.T) {
 func TestReportTaskDashboard(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	t.Skip("NEEDS CLUSTER SIMULATOR") // TODO: add hub k8s simulator.
-	return
-
 	// CREATE: Create a task for the dashboard report
 	task := &api.Task{
-		Name:  "Test Task for Dashboard Report",
-		Addon: "analyzer",
-		Kind:  "test-kind",
+		Name: "Test Task for Dashboard Report",
+		Kind: "analyzer",
 		Data: api.Map{
 			"mode": api.Map{
 				"binary": true,
