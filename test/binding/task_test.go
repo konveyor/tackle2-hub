@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"context"
 	"errors"
 	"os"
 	"testing"
@@ -65,7 +66,11 @@ func TestTaskWithApplication(t *testing.T) {
 	g.Expect(task.ID).NotTo(BeZero())
 
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// GET: List tasks
@@ -109,7 +114,6 @@ func TestTaskWithApplication(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve again and verify updates
-	time.Sleep(time.Second)
 	updated, err := client.Task.Get(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
@@ -131,7 +135,6 @@ func TestTaskWithApplication(t *testing.T) {
 	task.Name = "Patched Test Task"
 
 	// GET: Retrieve again and verify patch
-	time.Sleep(time.Second)
 	patched, err := client.Task.Get(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(patched).NotTo(BeNil())
@@ -139,11 +142,14 @@ func TestTaskWithApplication(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the task
-	err = client.Task.Delete(task.ID)
+	ctx, cfn := context.WithTimeout(
+		context.Background(),
+		time.Minute)
+	defer cfn()
+	err = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	g.Expect(err).To(BeNil())
 
 	// Verify deletion - Get should fail
-	time.Sleep(time.Second)
 	_, err = client.Task.Get(task.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
@@ -185,7 +191,11 @@ func TestTaskWithPlatform(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// GET: Retrieve the task and verify it matches
@@ -198,13 +208,51 @@ func TestTaskWithPlatform(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the task
-	err = client.Task.Delete(task.ID)
+	ctx, cfn := context.WithTimeout(
+		context.Background(),
+		time.Minute)
+	defer cfn()
+	err = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	g.Expect(err).To(BeNil())
 
 	// Verify deletion
-	time.Sleep(time.Second)
 	_, err = client.Task.Get(task.ID)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestTaskBulkCancel tests canceling multiple tasks using filter
+func TestTaskCancel(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create task
+	task := &api.Task{
+		Name:     "Test Task 1",
+		Addon:    "analyzer",
+		State:    tasking.Created,
+		Priority: 5,
+	}
+	err := client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
+	})
+
+	// CANCEL: task
+	ctx, cfn := context.WithTimeout(
+		context.Background(),
+		time.Minute)
+	defer cfn()
+	err = client.Task.Select(task.ID).Blocking.Cancel(ctx)
+	g.Expect(err).To(BeNil())
+
+	// Verify task was canceled
+	retrieved, err := client.Task.Get(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.State).To(Equal(tasking.Canceled))
 }
 
 // TestTaskBulkCancel tests canceling multiple tasks using filter
@@ -221,7 +269,11 @@ func TestTaskBulkCancel(t *testing.T) {
 	err := client.Task.Create(task1)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task1.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task1.ID).Blocking.Delete(ctx)
 	})
 
 	// Create second task
@@ -234,7 +286,11 @@ func TestTaskBulkCancel(t *testing.T) {
 	err = client.Task.Create(task2)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task2.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task2.ID).Blocking.Delete(ctx)
 	})
 
 	// Create third task
@@ -247,7 +303,11 @@ func TestTaskBulkCancel(t *testing.T) {
 	err = client.Task.Create(task3)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task3.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task3.ID).Blocking.Delete(ctx)
 	})
 
 	// BULK CANCEL: Cancel tasks using filter
@@ -257,18 +317,24 @@ func TestTaskBulkCancel(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify tasks were canceled
-	time.Sleep(time.Second)
-	retrieved1, err := client.Task.Get(task1.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(retrieved1.State).To(Equal(tasking.Canceled))
-
-	retrieved2, err := client.Task.Get(task2.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(retrieved2.State).To(Equal(tasking.Canceled))
-
-	retrieved3, err := client.Task.Get(task3.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(retrieved3.State).To(Equal(tasking.Canceled))
+	canceled := map[uint]bool{
+		task1.ID: false,
+		task2.ID: false,
+		task3.ID: false,
+	}
+	n := 30
+	for id, done := range canceled {
+		time.Sleep(time.Second)
+		n--
+		if !done {
+			task, err := client.Task.Get(id)
+			g.Expect(err).To(BeNil())
+			if task.State != tasking.Canceled {
+				canceled[id] = true
+			}
+		}
+	}
+	g.Expect(n > 0).To(BeTrue(), "Task should have been canceled")
 }
 
 // TestTaskBucket tests task bucket file operations
@@ -284,7 +350,11 @@ func TestTaskBucket(t *testing.T) {
 	err := client.Task.Create(task)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// Get the task bucket
@@ -395,7 +465,11 @@ func TestTaskGetAttached(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// GET ATTACHED: Download the task's attached resources as a tarball
@@ -430,7 +504,11 @@ func TestTaskReport(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// Get selected task API

@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -28,7 +29,11 @@ func TestReportTaskQueued(t *testing.T) {
 	err := client.Task.Create(task1)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task1.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task1.ID).Blocking.Delete(ctx)
 	})
 
 	task2 := &api.Task{
@@ -45,7 +50,11 @@ func TestReportTaskQueued(t *testing.T) {
 	err = client.Task.Create(task2)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task2.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task2.ID).Blocking.Delete(ctx)
 	})
 
 	time.Sleep(5 * time.Second)
@@ -76,7 +85,11 @@ func TestReportTaskDashboard(t *testing.T) {
 	err := client.Task.Create(task)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
-		_ = client.Task.Delete(task.ID)
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
 	})
 
 	// GET DASHBOARD REPORT: Get the task dashboard report

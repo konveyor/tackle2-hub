@@ -1,8 +1,12 @@
 package task
 
 import (
+	"context"
+	"errors"
 	"path/filepath"
+	"time"
 
+	task2 "github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
@@ -118,6 +122,10 @@ func (h Task) Select(id uint) (h2 Selected) {
 			api.Wildcard: "",
 		})
 	h2.Bucket = bucket.NewContent(h.client, path)
+	h2.Blocking = Blocking{
+		client: h.client,
+		taskId: id,
+	}
 	h2.Report = Report{
 		client: h.client,
 		taskId: id,
@@ -127,8 +135,9 @@ func (h Task) Select(id uint) (h2 Selected) {
 
 // Selected task API.
 type Selected struct {
-	Bucket bucket.Content
-	Report Report
+	Bucket   bucket.Content
+	Blocking Blocking
+	Report   Report
 }
 
 // Report API for a selected task.
@@ -155,5 +164,70 @@ func (h Report) Update(r *api.TaskReport) (err error) {
 func (h Report) Delete() (err error) {
 	path := client.Path(api.TaskReportRoute).Inject(client.Params{api.ID: h.taskId})
 	err = h.client.Delete(path)
+	return
+}
+
+// Blocking API for asynchronous operations.
+type Blocking struct {
+	client client.RestClient
+	taskId uint
+}
+
+// Delete deletes a task.
+func (h Blocking) Delete(ctx context.Context) (err error) {
+	h2 := Task{
+		client: h.client,
+	}
+	err = h2.Delete(h.taskId)
+	if err != nil {
+		return
+	}
+	for i := 0; i < 180; i++ {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			return
+		default:
+			<-time.After(time.Second)
+		}
+		_, err = h2.Get(h.taskId)
+		if err != nil {
+			if errors.Is(err, &api.NotFound{}) {
+				err = nil
+			}
+			return
+		}
+	}
+	err = context.DeadlineExceeded
+	return
+}
+
+// Cancel a Task.
+func (h Blocking) Cancel(ctx context.Context) (err error) {
+	h2 := Task{
+		client: h.client,
+	}
+	err = h2.Cancel(h.taskId)
+	if err != nil {
+		return
+	}
+	for i := 0; i < 180; i++ {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			return
+		default:
+			<-time.After(time.Second)
+		}
+		var task *api.Task
+		task, err = h2.Get(h.taskId)
+		if err != nil {
+			return
+		}
+		if task.State == task2.Canceled {
+			return
+		}
+	}
+	err = context.DeadlineExceeded
 	return
 }
