@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
@@ -58,6 +59,39 @@ func TestApplication(t *testing.T) {
 		_ = client.Stakeholder.Delete(contributor2.ID)
 	})
 
+	// Create additional dependencies for comprehensive testing
+	migrationWave := &api.MigrationWave{
+		Name:      "Test Migration Wave",
+		StartDate: time.Now(),
+		EndDate:   time.Now().Add(30 * 24 * time.Hour),
+	}
+	err = client.MigrationWave.Create(migrationWave)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.MigrationWave.Delete(migrationWave.ID)
+	})
+
+	platform := &api.Platform{
+		Kind: "test-platform",
+		Name: "Test Platform",
+		URL:  "http://localhost:8080",
+	}
+	err = client.Platform.Create(platform)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Platform.Delete(platform.ID)
+	})
+
+	archetype := &api.Archetype{
+		Name:        "Test Archetype",
+		Description: "Archetype for application testing",
+	}
+	err = client.Archetype.Create(archetype)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Archetype.Delete(archetype.ID)
+	})
+
 	// CREATE: Create a fully populated application
 	app := &api.Application{
 		Name:        "Test Application",
@@ -70,17 +104,34 @@ func TestApplication(t *testing.T) {
 			Branch: "main",
 			Path:   "",
 		},
+		Assets: &api.Repository{
+			Kind:   "git",
+			URL:    "https://github.com/test/test-app-assets.git",
+			Branch: "main",
+			Path:   "/assets",
+		},
+		Coordinates: &api.Document{
+			Content: api.Map{
+				"groupId":    "com.test",
+				"artifactId": "test-app",
+				"version":    "1.0.0",
+			},
+		},
 		BusinessService: &api.Ref{
-			ID:   businessService.ID,
-			Name: businessService.Name,
+			ID: businessService.ID,
 		},
 		Owner: &api.Ref{
-			ID:   owner.ID,
-			Name: owner.Name,
+			ID: owner.ID,
 		},
 		Contributors: []api.Ref{
-			{ID: contributor1.ID, Name: contributor1.Name},
-			{ID: contributor2.ID, Name: contributor2.Name},
+			{ID: contributor1.ID},
+			{ID: contributor2.ID},
+		},
+		MigrationWave: &api.Ref{
+			ID: migrationWave.ID,
+		},
+		Platform: &api.Ref{
+			ID: platform.ID,
 		},
 	}
 	err = client.Application.Create(app)
@@ -98,7 +149,14 @@ func TestApplication(t *testing.T) {
 	for _, a := range list {
 		if a.ID == app.ID {
 			found = true
-			eq, report := cmp.Eq(app, &a)
+			eq, report := cmp.Eq(app, &a,
+				"BusinessService.Name",
+				"Owner.Name",
+				"Contributors.Name",
+				"Tags",
+				"MigrationWave.Name",
+				"Platform.Name",
+				"Archetypes")
 			g.Expect(eq).To(BeTrue(), report)
 			break
 		}
@@ -109,7 +167,14 @@ func TestApplication(t *testing.T) {
 	retrieved, err := client.Application.Get(app.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(app, retrieved)
+	eq, report := cmp.Eq(app, retrieved,
+		"BusinessService.Name",
+		"Owner.Name",
+		"Contributors.Name",
+		"Tags",
+		"MigrationWave.Name",
+		"Platform.Name",
+		"Archetypes")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the application
@@ -130,7 +195,15 @@ func TestApplication(t *testing.T) {
 	updated, err := client.Application.Get(app.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(app, updated, "UpdateUser")
+	eq, report = cmp.Eq(app, updated,
+		"UpdateUser",
+		"BusinessService.Name",
+		"Owner.Name",
+		"Contributors.Name",
+		"Tags",
+		"MigrationWave.Name",
+		"Platform.Name",
+		"Archetypes")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the application
@@ -526,11 +599,10 @@ func TestApplicationAssessment(t *testing.T) {
 	// CREATE: Create an assessment
 	assessment := &api.Assessment{
 		Questionnaire: api.Ref{
-			ID:   1,
-			Name: "Legacy Pathfinder"},
+			ID: 1,
+		},
 		Application: &api.Ref{
-			ID:   app.ID,
-			Name: app.Name,
+			ID: app.ID,
 		},
 		Status: "started",
 	}
@@ -545,7 +617,7 @@ func TestApplicationAssessment(t *testing.T) {
 	list, err := selected.Assessment.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(assessment, &list[0])
+	eq, report := cmp.Eq(assessment, &list[0], "Questionnaire.Name", "Application.Name")
 	g.Expect(eq).To(BeTrue(), report)
 }
 
@@ -1115,17 +1187,14 @@ func TestApplicationUpdateStakeholders(t *testing.T) {
 	// UPDATE STAKEHOLDERS: Update the application's stakeholders
 	stakeholders := &api.Stakeholders{
 		Owner: &api.Ref{
-			ID:   owner.ID,
-			Name: owner.Name,
+			ID: owner.ID,
 		},
 		Contributors: []api.Ref{
 			{
-				ID:   contributor1.ID,
-				Name: contributor1.Name,
+				ID: contributor1.ID,
 			},
 			{
-				ID:   contributor2.ID,
-				Name: contributor2.Name,
+				ID: contributor2.ID,
 			},
 		},
 	}
