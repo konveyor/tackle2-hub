@@ -6,14 +6,47 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	sort2 "github.com/konveyor/tackle2-hub/test/cmp/sort"
 )
 
 type Cmp struct {
-	IgnoredPaths [][]string
+	ignoredPaths [][]string
+	sortMap      sort2.Map
 	//
 	path  []string
 	kinds []reflect.Kind
 	notes []string
+}
+
+func (d *Cmp) Ignore(paths ...string) (d2 *Cmp) {
+	d2 = New()
+	for k, v := range d.sortMap {
+		d2.sortMap[k] = v
+	}
+	for _, path := range paths {
+		part := []string{}
+		for _, p := range strings.Split(path, ".") {
+			if len(part) > 0 {
+				p = "." + p
+			}
+			part = append(part, p)
+		}
+		d2.ignoredPaths = append(d2.ignoredPaths, part)
+	}
+	return
+}
+
+// Sort a slice.
+func (d *Cmp) Sort(s sort2.Sort, values ...any) (d2 *Cmp) {
+	d2 = New()
+	d2.ignoredPaths = append(
+		d2.ignoredPaths,
+		d.ignoredPaths...)
+	for _, v := range values {
+		d2.sortMap[reflect.TypeOf(v)] = s
+	}
+	return
 }
 
 func (d *Cmp) Eq(expected, got any) (eq bool, report string) {
@@ -77,7 +110,7 @@ func (d *Cmp) note(n string, v ...any) {
 		}
 		parts = append(parts, p)
 	}
-	for _, path := range d.IgnoredPaths {
+	for _, path := range d.ignoredPaths {
 		end := min(
 			len(parts),
 			len(path))
@@ -192,6 +225,8 @@ func (d *Cmp) cmp(a, b any) {
 	kind := tA.Kind()
 	switch kind {
 	case reflect.Slice:
+		d.sort(vA)
+		d.sort(vB)
 		for i := 0; i < vA.Len(); i++ {
 			d.push(kind, "[%d]", i)
 			xA := vA.Index(i).Interface()
@@ -317,5 +352,20 @@ func (d *Cmp) cmp(a, b any) {
 				xB,
 				xA)
 		}
+	}
+}
+
+// Sort sorts the slice.
+func (d *Cmp) sort(v reflect.Value) {
+	m := sort2.Map{}
+	for k, v := range sort2.Registered {
+		m[k] = v
+	}
+	for k, v := range d.sortMap {
+		m[k] = v
+	}
+	sorter, found := m[v.Type()]
+	if found {
+		sorter(v)
 	}
 }

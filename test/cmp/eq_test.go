@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	sort2 "github.com/konveyor/tackle2-hub/test/cmp/sort"
 	. "github.com/onsi/gomega"
 )
 
@@ -213,7 +214,27 @@ func TestEq(t *testing.T) {
 			ignore: []string{"NonExistent.Field"},
 			wantEq: false,
 		},
+		{
+			name: "struct with unsorted list",
+			a: T8{
+				List: []T7{
+					{ID: 1, Name: "one"},
+					{ID: 2, Name: "two"},
+					{ID: 3, Name: "three"},
+				},
+			},
+			b: T8{
+				List: []T7{
+					{ID: 3, Name: "three"},
+					{ID: 1, Name: "one"},
+					{ID: 2, Name: "two"},
+				},
+			},
+			wantEq: true,
+		},
 	}
+
+	sort2.Add(sort2.ById, []T7{})
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -358,4 +379,13 @@ type T5 struct {
 type T6 struct {
 	Id   int
 	Name string
+}
+
+type T7 struct {
+	ID   uint
+	Name string
+}
+
+type T8 struct {
+	List []T7
 }
