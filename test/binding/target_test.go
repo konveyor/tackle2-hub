@@ -11,12 +11,16 @@ import (
 
 func TestTarget(t *testing.T) {
 	g := NewGomegaWithT(t)
+	
+	files, err := client.File.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(files)).To(BeNumerically(">", 0))
 
 	// Define the target to create
 	target := &api.Target{
 		Name: "Test Target",
 		Image: api.Ref{
-			ID: 1,
+			ID: files[0].ID,
 		},
 		Description: "Test target description",
 		Provider:    "konveyor",

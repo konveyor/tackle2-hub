@@ -39,6 +39,7 @@ type RichClient struct {
 	Assessment       Assessment
 	Bucket           bucket.Bucket
 	BusinessService  BusinessService
+	ConfigMap        ConfigMap
 	Dependency       Dependency
 	File             File
 	Generator        Generator
@@ -96,6 +97,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Assessment = Assessment{client: client}
 	r.Bucket = bucket.New(client)
 	r.BusinessService = BusinessService{client: client}
+	r.ConfigMap = ConfigMap{client: client}
 	r.Dependency = Dependency{client: client}
 	r.File = File{client: client}
 	r.Generator = Generator{client: client}
