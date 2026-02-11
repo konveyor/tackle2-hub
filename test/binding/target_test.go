@@ -11,7 +11,7 @@ import (
 
 func TestTarget(t *testing.T) {
 	g := NewGomegaWithT(t)
-	
+
 	files, err := client.File.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(files)).To(BeNumerically(">", 0))

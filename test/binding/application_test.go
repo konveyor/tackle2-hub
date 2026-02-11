@@ -82,16 +82,6 @@ func TestApplication(t *testing.T) {
 		_ = client.Platform.Delete(platform.ID)
 	})
 
-	archetype := &api.Archetype{
-		Name:        "Test Archetype",
-		Description: "Archetype for application testing",
-	}
-	err = client.Archetype.Create(archetype)
-	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Archetype.Delete(archetype.ID)
-	})
-
 	// CREATE: Create a fully populated application
 	app := &api.Application{
 		Name:        "Test Application",
