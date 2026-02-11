@@ -430,6 +430,10 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
+	list, err = m.selectAddons(list)
+	if err != nil {
+		return
+	}
 	err = m.batchUpdate(list)
 	if err != nil {
 		return
@@ -618,7 +622,13 @@ func (m *Manager) postpone(list []*Task) (err error) {
 			cluster: &m.cluster,
 		},
 	}
-	domain := NewDomain(list)
+	inflight := []*Task{}
+	err = m.DB.Find(&inflight, "state", Running).Error
+	if err != nil {
+		return
+	}
+	inDomain := append(list, inflight...)
+	domain := NewDomain(inDomain)
 	for _, task := range list {
 		if !task.StateIn(Ready, Postponed, QuotaBlocked) {
 			continue
@@ -653,6 +663,7 @@ func (m *Manager) postpone(list []*Task) (err error) {
 		}
 		_, found = released[task.ID]
 		if found {
+			task.Extensions = nil
 			task.State = Ready
 		}
 	}
