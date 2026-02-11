@@ -93,8 +93,8 @@ func ByName(v reflect.Value) {
 	if first.Kind() != reflect.Struct {
 		return
 	}
-	idField := first.FieldByName("Name")
-	if !idField.IsValid() {
+	nameField := first.FieldByName("Name")
+	if !nameField.IsValid() {
 		return
 	}
 	sort.Slice(

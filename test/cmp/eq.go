@@ -21,6 +21,9 @@ type Cmp struct {
 
 func (d *Cmp) Ignore(paths ...string) (d2 *Cmp) {
 	d2 = New()
+	d2.ignoredPaths = append(
+		d2.ignoredPaths,
+		d.ignoredPaths...)
 	for k, v := range d.sortMap {
 		d2.sortMap[k] = v
 	}
@@ -43,6 +46,9 @@ func (d *Cmp) Sort(s sort2.Sort, values ...any) (d2 *Cmp) {
 	d2.ignoredPaths = append(
 		d2.ignoredPaths,
 		d.ignoredPaths...)
+	for k, v := range d.sortMap {
+		d2.sortMap[k] = v
+	}
 	for _, v := range values {
 		d2.sortMap[reflect.TypeOf(v)] = s
 	}
