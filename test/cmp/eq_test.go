@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	sort2 "github.com/konveyor/tackle2-hub/test/cmp/sort"
+	sort "github.com/konveyor/tackle2-hub/test/cmp/sort"
 	. "github.com/onsi/gomega"
 )
 
@@ -234,8 +234,10 @@ func TestEq(t *testing.T) {
 		},
 	}
 
-	sort2.Add(sort2.ById, []T7{})
-
+	sort.Add(sort.ById, []T7{})
+	t.Cleanup(func() {
+		sort.Reset()
+	})
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			eq, report := Eq(tc.a, tc.b, tc.ignore...)
@@ -248,6 +250,43 @@ func TestEq(t *testing.T) {
 			}
 		})
 	}
+
+	sort.Reset()
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			eq, report := New().
+				Sort(sort.ById, []T7{}).
+				Ignore(tc.ignore...).
+				Eq(tc.a, tc.b)
+			if !eq {
+				print(report)
+			}
+			g.Expect(eq).To(Equal(tc.wantEq))
+			if eq != tc.wantEq {
+				t.Logf("report:\n%s", report)
+			}
+		})
+	}
+}
+
+func TestEqSort(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	a := []T7{
+		{ID: 1, Name: "one"},
+		{ID: 2, Name: "two"},
+		{ID: 3, Name: "three"},
+	}
+	b := []T7{
+		{ID: 3, Name: "three"},
+		{ID: 1, Name: "one"},
+		{ID: 2, Name: "two"},
+	}
+	cmp := New()
+	cmp = cmp.Sort(sort.ById, []T7{})
+	eq, report := cmp.Eq(a, b)
+	g.Expect(eq).To(BeTrue(), report)
 }
 
 func TestEqReport(t *testing.T) {

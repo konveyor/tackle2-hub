@@ -48,12 +48,12 @@ package cmp
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	sort2 "github.com/konveyor/tackle2-hub/test/cmp/sort"
+	"github.com/konveyor/tackle2-hub/test/cmp/sort"
 )
 
 func New() (cmp *Cmp) {
 	cmp = &Cmp{
-		sortMap: make(sort2.Map),
+		sortMap: make(sort.Map),
 	}
 	return
 }

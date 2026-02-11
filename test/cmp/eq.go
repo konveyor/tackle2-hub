@@ -225,8 +225,8 @@ func (d *Cmp) cmp(a, b any) {
 	kind := tA.Kind()
 	switch kind {
 	case reflect.Slice:
-		d.sort(vA)
-		d.sort(vB)
+		vA = d.sort(vA)
+		vB = d.sort(vB)
 		for i := 0; i < vA.Len(); i++ {
 			d.push(kind, "[%d]", i)
 			xA := vA.Index(i).Interface()
@@ -356,7 +356,26 @@ func (d *Cmp) cmp(a, b any) {
 }
 
 // Sort sorts the slice.
-func (d *Cmp) sort(v reflect.Value) {
+func (d *Cmp) sort(v reflect.Value) (v2 reflect.Value) {
+	v2 = v
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.IsNil() {
+		return
+	}
+	if v.Kind() != reflect.Slice {
+		return
+	}
+	if v.Len() < 2 {
+		return
+	}
+	v2 = reflect.AppendSlice(
+		reflect.MakeSlice(
+			v.Type(),
+			0,
+			v.Len()),
+		v)
 	m := sort2.Map{}
 	for k, v := range sort2.Registered {
 		m[k] = v
@@ -364,8 +383,9 @@ func (d *Cmp) sort(v reflect.Value) {
 	for k, v := range d.sortMap {
 		m[k] = v
 	}
-	sorter, found := m[v.Type()]
+	srt, found := m[v2.Type()]
 	if found {
-		sorter(v)
+		srt(v2)
 	}
+	return
 }
