@@ -26,7 +26,7 @@ func init() {
 		return
 	}
 	err := client.Login(user, password)
-	if err == nil {
+	if err != nil {
 		panic(err)
 	}
 }

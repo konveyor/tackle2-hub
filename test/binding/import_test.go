@@ -232,12 +232,12 @@ func TestImport(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Download the CSV file
-	downloadFile := filepath.Join(testDir, "downloaded.csv")
-	err = client.Import.Summary().Download(downloadFile)
+	destination := filepath.Join(testDir, "downloaded.csv")
+	err = client.Import.Summary().Download(destination)
 	g.Expect(err).To(BeNil())
 
 	// Verify the downloaded file exists and has content
-	g.Expect(assert.EqualFileContent(downloadFile, csvFile)).To(BeTrue())
+	g.Expect(assert.EqualFileContent(destination, csvFile)).To(BeTrue())
 
 	// GET: List imports
 	imports, err := client.Import.Summary().List()

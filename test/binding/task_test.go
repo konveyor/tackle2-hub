@@ -317,24 +317,23 @@ func TestTaskBulkCancel(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify tasks were canceled
-	canceled := map[uint]bool{
-		task1.ID: false,
-		task2.ID: false,
-		task3.ID: false,
-	}
-	n := 30
-	for id, done := range canceled {
-		time.Sleep(time.Second)
-		n--
-		if !done {
-			task, err := client.Task.Get(id)
-			g.Expect(err).To(BeNil())
+	canceled := []uint{task1.ID, task2.ID, task3.ID}
+	isDone := func() (done bool) {
+		for _, id := range canceled {
+			var task *api.Task
+			task, err = client.Task.Get(id)
+			if err != nil {
+				return
+			}
 			if task.State != tasking.Canceled {
-				canceled[id] = true
+				return
 			}
 		}
+		done = true
+		return
 	}
-	g.Expect(n > 0).To(BeTrue(), "Task should have been canceled")
+	g.Eventually(isDone, 30*time.Second, time.Second).
+		Should(BeTrue(), "Tasks should have been canceled")
 }
 
 // TestTaskBucket tests task bucket file operations
