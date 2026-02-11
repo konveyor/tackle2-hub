@@ -414,7 +414,7 @@ func (m *Manager) startReady() {
 	if result.Error != nil {
 		return
 	}
-	inflight := []*model.Task{}
+	inflight := []*Task{}
 	err = m.DB.Find(&inflight, "state", Running).Error
 	if err != nil {
 		return
@@ -431,7 +431,7 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.postpone(list, m.taskList(inflight))
+	err = m.postpone(list, inflight)
 	if err != nil {
 		return
 	}
