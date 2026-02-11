@@ -414,6 +414,11 @@ func (m *Manager) startReady() {
 	if result.Error != nil {
 		return
 	}
+	inflight := []*model.Task{}
+	err = m.DB.Find(&inflight, "state", Running).Error
+	if err != nil {
+		return
+	}
 	if len(fetched) == 0 {
 		return
 	}
@@ -426,7 +431,7 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.postpone(list)
+	err = m.postpone(list, m.taskList(inflight))
 	if err != nil {
 		return
 	}
@@ -598,7 +603,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 // postpone order:
 // - priority (lower)
 // - Age (newer)
-func (m *Manager) postpone(list []*Task) (err error) {
+func (m *Manager) postpone(list []*Task, inflight []*Task) (err error) {
 	if len(list) == 0 {
 		return
 	}
@@ -621,11 +626,6 @@ func (m *Manager) postpone(list []*Task) (err error) {
 		&RuleDeps{
 			cluster: &m.cluster,
 		},
-	}
-	inflight := []*Task{}
-	err = m.DB.Find(&inflight, "state", Running).Error
-	if err != nil {
-		return
 	}
 	inDomain := append(list, inflight...)
 	domain := NewDomain(inDomain)
