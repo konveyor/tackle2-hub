@@ -417,6 +417,11 @@ func (m *Manager) startReady() {
 	if result.Error != nil {
 		return
 	}
+	inflight := []*Task{}
+	err = m.DB.Find(&inflight, "state", Running).Error
+	if err != nil {
+		return
+	}
 	if len(fetched) == 0 {
 		return
 	}
@@ -433,7 +438,7 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.postpone(list)
+	err = m.postpone(list, inflight)
 	if err != nil {
 		return
 	}
@@ -620,7 +625,7 @@ func (m *Manager) selectExtensions(task *Task, addon *crd.Addon) (err error) {
 // postpone order:
 // - priority (lower)
 // - Age (newer)
-func (m *Manager) postpone(list []*Task) (err error) {
+func (m *Manager) postpone(list []*Task, inflight []*Task) (err error) {
 	if len(list) == 0 {
 		return
 	}
@@ -644,7 +649,8 @@ func (m *Manager) postpone(list []*Task) (err error) {
 			cluster: &m.cluster,
 		},
 	}
-	domain := NewDomain(list)
+	inDomain := append(list, inflight...)
+	domain := NewDomain(inDomain)
 	for _, task := range list {
 		if !task.StateIn(Ready, Postponed, QuotaBlocked) {
 			continue
@@ -669,6 +675,7 @@ func (m *Manager) postpone(list []*Task) (err error) {
 		reason, found := postponed[task.ID]
 		if found {
 			task.State = Postponed
+			task.Extensions = nil // TODO: see hub issue-1001.
 			task.Event(Postponed, reason)
 			Log.Info(
 				"Task postponed.",
