@@ -435,10 +435,6 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	list, err = m.selectAddons(list)
-	if err != nil {
-		return
-	}
 	err = m.batchUpdate(list)
 	if err != nil {
 		return
