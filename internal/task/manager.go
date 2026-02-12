@@ -649,6 +649,7 @@ func (m *Manager) postpone(list []*Task, inflight []*Task) (err error) {
 		reason, found := postponed[task.ID]
 		if found {
 			task.State = Postponed
+			task.Extensions = nil // TODO: see hub issue-1001.
 			task.Event(Postponed, reason)
 			Log.Info(
 				"Task postponed.",
@@ -659,7 +660,6 @@ func (m *Manager) postpone(list []*Task, inflight []*Task) (err error) {
 		}
 		_, found = released[task.ID]
 		if found {
-			task.Extensions = nil
 			task.State = Ready
 		}
 	}
