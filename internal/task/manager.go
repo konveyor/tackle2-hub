@@ -423,6 +423,7 @@ func (m *Manager) startReady() {
 		return
 	}
 	list := m.taskList(fetched)
+	m.stashAdjusted(list)
 	err = m.adjustPriority(list)
 	if err != nil {
 		return
@@ -439,11 +440,18 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	err = m.createPod(list, quota)
-	if err != nil {
-		return
-	}
-	err = m.batchUpdate(list)
+	defer func() {
+		m.restoreAdjusted(list)
+		nErr := m.batchUpdate(list)
+		if nErr != nil {
+			if err != nil {
+				Log.Error(nErr, "")
+			} else {
+				err = nErr
+			}
+		}
+	}()
+	err = m.createPods(list, quota)
 	if err != nil {
 		return
 	}
@@ -490,7 +498,7 @@ func (m *Manager) findRefs(task *Task) (err error) {
 	return
 }
 
-// selectAddon selects addon as needed.
+// selectAddon selects addons and extensions as needed.
 // The returned list has failed tasks removed.
 func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 	if len(list) == 0 {
@@ -509,6 +517,7 @@ func (m *Manager) selectAddons(list []*Task) (kept []*Task, err error) {
 				task.Error("Error", err.Error())
 				task.Terminated = &mark
 				task.State = Failed
+				err = nil
 			}
 		} else {
 			kept = append(kept, task)
@@ -649,7 +658,6 @@ func (m *Manager) postpone(list []*Task, inflight []*Task) (err error) {
 		reason, found := postponed[task.ID]
 		if found {
 			task.State = Postponed
-			task.Extensions = nil // TODO: see hub issue-1001.
 			task.Event(Postponed, reason)
 			Log.Info(
 				"Task postponed.",
@@ -692,8 +700,8 @@ func (m *Manager) adjustPriority(list []*Task) (err error) {
 	return
 }
 
-// createPod creates a pod for the task.
-func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
+// createPods creates a pod for the task.
+func (m *Manager) createPods(list []*Task, quota *Quota) (err error) {
 	if len(list) == 0 {
 		return
 	}
@@ -749,6 +757,20 @@ func (m *Manager) createPod(list []*Task, quota *Quota) (err error) {
 		"created",
 		created)
 	return
+}
+
+// stashAdjusted capture fields adjusted during scheduling.
+func (m *Manager) stashAdjusted(list []*Task) {
+	for _, task := range list {
+		task.stashAdjusted()
+	}
+}
+
+// restoreAdjusted restores fields adjusted during scheduling.
+func (m *Manager) restoreAdjusted(list []*Task) {
+	for _, task := range list {
+		task.restoreAdjusted()
+	}
 }
 
 // updateRunning tasks to reflect pod state.

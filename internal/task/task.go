@@ -40,9 +40,13 @@ func NewTaskGroup(m *model.TaskGroup) (t *TaskGroup) {
 
 // Task is an runtime task.
 type Task struct {
-	// model.
 	*model.Task
-	digest string
+	digest   string
+	adjusted struct {
+		addon      string
+		extensions []string
+		priority   int
+	}
 }
 
 // With initializes the object.
@@ -51,7 +55,7 @@ func (r *Task) With(m *model.Task) {
 	r.digest = r.getDigest()
 }
 
-// StateIn returns true matches on of the specified states.
+// StateIn returns true matches one of the specified states.
 func (r *Task) StateIn(states ...string) (matched bool) {
 	for _, state := range states {
 		if r.State == state {
@@ -801,6 +805,24 @@ func (r *Task) podRetention() (seconds int) {
 		seconds = Settings.Hub.Task.Pod.Retention.Failed
 	}
 	return
+}
+
+// stashAdjusted records fields adjusted during scheduling.
+func (r *Task) stashAdjusted() {
+	r.adjusted.addon = r.Addon
+	r.adjusted.extensions = r.Extensions
+	r.adjusted.priority = r.Priority
+}
+
+// restoreAdjusted restores fields adjusted during scheduling.
+func (r *Task) restoreAdjusted() {
+	if r.State == Ready ||
+		r.State == Postponed ||
+		r.State == QuotaBlocked {
+		r.Addon = r.adjusted.addon
+		r.Extensions = r.adjusted.extensions
+		r.Priority = r.adjusted.priority
+	}
 }
 
 // Event represents a pod event.
