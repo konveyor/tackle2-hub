@@ -23,10 +23,6 @@ func TestGetSchema(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	if Settings.Hub.Disconnected {
-		t.Skip("Hub is not connected")
-		return
-	}
 	r, err := RichClient.Schema.Get(name)
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -37,10 +33,6 @@ func TestGet(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	if Settings.Hub.Disconnected {
-		t.Skip("Hub is not connected")
-		return
-	}
 	r, err := RichClient.Schema.Find("platform", "cloudfoundry", "coordinates")
 	if err != nil {
 		t.Fatalf(err.Error())

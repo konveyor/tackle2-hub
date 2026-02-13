@@ -25,9 +25,6 @@ type Validator struct {
 
 // Validate validates the specified document based on schema.
 func (v *Validator) Validate(r any) (err error) {
-	if Settings.Hub.Disconnected {
-		return
-	}
 	fields := v.fields(r)
 	for _, f := range fields {
 		if f != nil {
