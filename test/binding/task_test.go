@@ -31,8 +31,21 @@ func TestTaskWithApplication(t *testing.T) {
 
 	// Define the task to create with complex Data and Application reference
 	task := &api.Task{
-		Name: "Test Task",
-		Kind: "analyzer",
+		Name:       "Test Task",
+		Kind:       "analyzer",
+		Addon:      "analyzer",
+		Extensions: []string{"java", "nodejs"},
+		Locator:    "task-locator-123",
+		Policy: api.TaskPolicy{
+			Isolated: true,
+		},
+		TTL: api.TTL{
+			Created:   30,
+			Pending:   60,
+			Running:   120,
+			Succeeded: 180,
+			Failed:    240,
+		},
 		Data: api.Map{
 			"mode": api.Map{
 				"binary":       true,
@@ -89,7 +102,18 @@ func TestTaskWithApplication(t *testing.T) {
 
 	// UPDATE: Modify the task
 	task.Name = "Updated Test Task"
+	task.Locator = "updated-locator-456"
 	task.Priority = 10
+	task.Policy = api.TaskPolicy{
+		Isolated: false,
+	}
+	task.TTL = api.TTL{
+		Created:   60,
+		Pending:   90,
+		Running:   180,
+		Succeeded: 240,
+		Failed:    300,
+	}
 	task.Data = api.Map{
 		"mode": api.Map{
 			"binary":       false,

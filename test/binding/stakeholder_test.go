@@ -3,6 +3,7 @@ package binding
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/test/cmp"
@@ -58,18 +59,62 @@ func TestStakeholder(t *testing.T) {
 		_ = client.Stakeholder.Delete(stakeholder.ID)
 	})
 
+	// Create application owned by stakeholder
+	ownedApp := &api.Application{
+		Name:  "Owned App",
+		Owner: &api.Ref{ID: stakeholder.ID},
+	}
+	err = client.Application.Create(ownedApp)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(ownedApp.ID)
+	})
+
+	// Create application contributed to by stakeholder
+	contributedApp := &api.Application{
+		Name: "Contributed App",
+		Contributors: []api.Ref{
+			{ID: stakeholder.ID},
+		},
+	}
+	err = client.Application.Create(contributedApp)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(contributedApp.ID)
+	})
+
+	// Create migration wave with stakeholder
+	migrationWave := &api.MigrationWave{
+		Name:      "Test Wave",
+		StartDate: time.Now(),
+		EndDate:   time.Now().Add(30 * 24 * time.Hour),
+		Stakeholders: []api.Ref{
+			{ID: stakeholder.ID},
+		},
+	}
+	err = client.MigrationWave.Create(migrationWave)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.MigrationWave.Delete(migrationWave.ID)
+	})
+
+	// Update local stakeholder object with expected read-only relationship fields
+	stakeholder.Owns = []api.Ref{{ID: ownedApp.ID}}
+	stakeholder.Contributes = []api.Ref{{ID: contributedApp.ID}}
+	stakeholder.MigrationWaves = []api.Ref{{ID: migrationWave.ID}}
+
 	// GET: List stakeholders
 	list, err := client.Stakeholder.List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
-	eq, report := cmp.Eq(stakeholder, list[0], "Groups.Name", "BusinessServices.Name", "JobFunction.Name")
+	eq, report := cmp.Eq(stakeholder, list[0], "Groups.Name", "BusinessServices.Name", "JobFunction.Name", "Owns.Name", "Contributes.Name", "MigrationWaves.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the stakeholder and verify it matches
 	retrieved, err := client.Stakeholder.Get(stakeholder.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report = cmp.Eq(stakeholder, retrieved, "Groups.Name", "BusinessServices.Name", "JobFunction.Name")
+	eq, report = cmp.Eq(stakeholder, retrieved, "Groups.Name", "BusinessServices.Name", "JobFunction.Name", "Owns.Name", "Contributes.Name", "MigrationWaves.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the stakeholder
@@ -83,7 +128,7 @@ func TestStakeholder(t *testing.T) {
 	updated, err := client.Stakeholder.Get(stakeholder.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(stakeholder, updated, "UpdateUser", "Groups.Name", "BusinessServices.Name", "JobFunction.Name")
+	eq, report = cmp.Eq(stakeholder, updated, "UpdateUser", "Groups.Name", "BusinessServices.Name", "JobFunction.Name", "Owns.Name", "Contributes.Name", "MigrationWaves.Name")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the stakeholder
