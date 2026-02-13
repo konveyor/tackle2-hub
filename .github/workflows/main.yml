@@ -72,6 +72,7 @@ jobs:
           make run &
           sleep 15  # probably a dirty solution
           make test-api
+          make test-binding
 
   build-image:
     needs:
