@@ -27,6 +27,7 @@ func (r *Tracker) Model() (m *model.Tracker) {
 		Name:       r.Name,
 		URL:        r.URL,
 		Kind:       r.Kind,
+		Message:    r.Message,
 		Insecure:   r.Insecure,
 		IdentityID: r.Identity.ID,
 	}

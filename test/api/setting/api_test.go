@@ -31,7 +31,7 @@ func TestSettingCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			err = Setting.Get(r.Key, &r)
+			err = Setting.Get(r.Key, &r.Value)
 			if err != nil {
 				t.Errorf(err.Error())
 			}

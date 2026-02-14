@@ -218,6 +218,35 @@ eq, report := cmp.Eq(a, b, "Created")
 // eq = true (Created field is ignored)
 ```
 
+### Ignore Fields in slice of structs.
+
+```go
+type R struct {
+	Id int
+	Name string
+}
+a := []R{{Id: 1}, Id: 2}}
+b := []R{{Id: 1, Name: "Thing"}, Id: 2}}
+eq, report := cmp.Eq(a, b, ".Name")
+```
+
+### Ignore Fields in nested slice of structs.
+
+```go
+type R struct {
+	Id int
+	Name string
+}
+type T struct {
+	Name string
+	Age int
+	Refs []R
+}
+a := T{Name: "Elmer", Age: 52, Refs: []R{{Id: 1}, Id: 2}}
+b := T{Name: "Elmer", Age: 52, Refs: []R{{Id: 1, Name: "Thing"}, Id: 2}}
+eq, report := cmp.Eq(a, b, "Refs.Name")
+```
+
 ### Ignore Nested Fields
 
 ```go

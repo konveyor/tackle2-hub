@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  namespace: konveyor-tackle
+  labels:
+    konveyor.io/configuration: "true"
+data:
+  key1: "value1"
+  key2: "value2"
+  database.url: "postgresql://localhost:5432/test"
+  database.user: "testuser"
