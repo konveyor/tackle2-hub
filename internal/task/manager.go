@@ -400,10 +400,10 @@ func (m *Manager) startReady() {
 	}
 	quota := &Quota{}
 	quota.with(&m.cluster)
-	fetched := []*model.Task{}
+	list := []*Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
-		&fetched,
+		&list,
 		"state IN ?",
 		[]string{
 			Ready,
@@ -419,10 +419,9 @@ func (m *Manager) startReady() {
 	if err != nil {
 		return
 	}
-	if len(fetched) == 0 {
+	if len(list) == 0 {
 		return
 	}
-	list := m.taskList(fetched)
 	m.stashAdjusted(list)
 	err = m.adjustPriority(list)
 	if err != nil {
@@ -794,10 +793,10 @@ func (m *Manager) updateRunning(ctx context.Context) {
 		}
 	}()
 	//
-	fetched := []*model.Task{}
+	list := []*Task{}
 	db := m.DB.Order("priority DESC, id")
 	result := db.Find(
-		&fetched,
+		&list,
 		"state IN ?",
 		[]string{
 			Pending,
@@ -807,11 +806,11 @@ func (m *Manager) updateRunning(ctx context.Context) {
 		err = liberr.Wrap(result.Error)
 		return
 	}
-	if len(fetched) == 0 {
+	if len(list) == 0 {
 		return
 	}
 	var updated []*Task
-	for _, task := range m.taskList(fetched) {
+	for _, task := range list {
 		pod, found := task.Reflect(&m.cluster)
 		if found {
 			err = m.logManager.EnsureCollection(task, pod, ctx)
@@ -869,9 +868,9 @@ func (m *Manager) deleteRetainedPods() {
 	defer func() {
 		Log.Error(err, "")
 	}()
-	fetched := []*model.Task{}
+	list := []*Task{}
 	err = m.DB.Find(
-		&fetched,
+		&list,
 		"Retained",
 		true).Error
 	if err != nil {
@@ -879,7 +878,7 @@ func (m *Manager) deleteRetainedPods() {
 		return
 	}
 	var updated []*Task
-	for _, task := range m.taskList(fetched) {
+	for _, task := range list {
 		if !task.podRetentionExpired() {
 			continue
 		}
@@ -1251,15 +1250,6 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 				break
 			}
 		}
-	}
-	return
-}
-
-// taskList returns a list of Task.
-func (m *Manager) taskList(in []*model.Task) (out []*Task) {
-	out = make([]*Task, len(in))
-	for i := range in {
-		out[i] = NewTask(in[i])
 	}
 	return
 }

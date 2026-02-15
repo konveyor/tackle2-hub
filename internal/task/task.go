@@ -52,7 +52,6 @@ type Task struct {
 // With initializes the object.
 func (r *Task) With(m *model.Task) {
 	r.Task = m
-	r.digest = r.getDigest()
 }
 
 // StateIn returns true matches one of the specified states.
@@ -372,6 +371,18 @@ func (r *Task) Cancel(client k8s.Client) (err error) {
 		"Task canceled.",
 		"id",
 		r.ID)
+	return
+}
+
+// AfterFind updates the digest.
+func (r *Task) AfterFind(_ *gorm.DB) (err error) {
+	r.digest = r.getDigest()
+	return
+}
+
+// AfterSave updates the digest.
+func (r *Task) AfterSave(_ *gorm.DB) (err error) {
+	r.digest = r.getDigest()
 	return
 }
 
@@ -747,7 +758,6 @@ func (r *Task) update(db *gorm.DB) (err error) {
 	err = db.Save(r).Error
 	if err == nil {
 		Log.V(1).Info("Task updated.", "id", r.ID)
-		r.With(r.Task)
 	}
 	return
 }
