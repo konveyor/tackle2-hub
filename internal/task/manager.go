@@ -1226,9 +1226,11 @@ func (m *Manager) advancePipeline(task *Task) (updated []*Task, err error) {
 
 // batchUpdate tasks.
 func (m *Manager) batchUpdate(tasks []*Task) (err error) {
+	digest := make(map[uint]string)
 	err = m.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			for _, task := range tasks {
+				digest[task.ID] = task.digest
 				if task.hasChanged() {
 					err = task.update(tx)
 					if err != nil {
@@ -1243,6 +1245,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 		return
 	}
 	for _, task := range tasks {
+		task.digest = digest[task.ID]
 		if task.hasChanged() {
 			err = task.update(m.DB)
 			if err != nil {
