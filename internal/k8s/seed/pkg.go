@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	core "k8s.io/api/core/v1"
 	k8srt "k8s.io/apimachinery/pkg/runtime"
 	k8scheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,6 +28,7 @@ func Scheme() (scheme *k8srt.Scheme) {
 func Resources() []client.Object {
 	var objects []client.Object
 	files := map[string]client.Object{
+		"resources/configmap.yaml": &core.ConfigMap{},
 		"resources/tackle.yaml":    &crd.Tackle{},
 		"resources/addon.yaml":     &crd.Addon{},
 		"resources/extension.yaml": &crd.Extension{},

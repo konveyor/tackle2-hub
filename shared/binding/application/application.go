@@ -53,6 +53,19 @@ func (h Application) Delete(id uint) (err error) {
 	return
 }
 
+// DeleteList deletes multiple applications by ID.
+func (h Application) DeleteList(ids []uint) (err error) {
+	err = h.client.DeleteWith(api.ApplicationsRoute, ids)
+	return
+}
+
+// UpdateStakeholders updates the stakeholders for an application.
+func (h Application) UpdateStakeholders(id uint, stakeholders *api.Stakeholders) (err error) {
+	path := client.Path(api.AppStakeholdersRoute).Inject(client.Params{api.ID: id})
+	err = h.client.Put(path, stakeholders)
+	return
+}
+
 // Select returns the API for a selected application.
 func (h Application) Select(id uint) (h2 Selected) {
 	h2 = Selected{}

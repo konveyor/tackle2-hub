@@ -1,14 +1,20 @@
-package binding
+package tagcategory
 
 import (
 	"errors"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
+
+func New(client client.RestClient) (h TagCategory) {
+	h = TagCategory{client: client}
+	return
+}
 
 // TagCategory API.
 type TagCategory struct {
-	client RestClient
+	client client.RestClient
 }
 
 // Create a TagCategory.
@@ -20,7 +26,7 @@ func (h TagCategory) Create(r *api.TagCategory) (err error) {
 // Get a TagCategory by ID.
 func (h TagCategory) Get(id uint) (r *api.TagCategory, err error) {
 	r = &api.TagCategory{}
-	path := Path(api.TagCategoryRoute).Inject(Params{api.ID: id})
+	path := client.Path(api.TagCategoryRoute).Inject(client.Params{api.ID: id})
 	err = h.client.Get(path, r)
 	return
 }
@@ -34,14 +40,14 @@ func (h TagCategory) List() (list []api.TagCategory, err error) {
 
 // Update a TagCategory.
 func (h TagCategory) Update(r *api.TagCategory) (err error) {
-	path := Path(api.TagCategoryRoute).Inject(Params{api.ID: r.ID})
+	path := client.Path(api.TagCategoryRoute).Inject(client.Params{api.ID: r.ID})
 	err = h.client.Put(path, r)
 	return
 }
 
 // Delete a TagCategory.
 func (h TagCategory) Delete(id uint) (err error) {
-	err = h.client.Delete(Path(api.TagCategoryRoute).Inject(Params{api.ID: id}))
+	err = h.client.Delete(client.Path(api.TagCategoryRoute).Inject(client.Params{api.ID: id}))
 	return
 }
 
@@ -51,7 +57,7 @@ func (h TagCategory) Find(name string) (r *api.TagCategory, found bool, err erro
 	err = h.client.Get(
 		api.TagCategoriesRoute,
 		&list,
-		Param{
+		client.Param{
 			Key:   api.Name,
 			Value: name,
 		})
@@ -73,7 +79,7 @@ func (h TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 			return
 		}
 		found := false
-		if errors.Is(err, &Conflict{}) {
+		if errors.Is(err, &client.Conflict{}) {
 			var cat *api.TagCategory
 			cat, found, err = h.Find(wanted.Name)
 			if found {
@@ -82,5 +88,35 @@ func (h TagCategory) Ensure(wanted *api.TagCategory) (err error) {
 			}
 		}
 	}
+	return
+}
+
+// Select returns the API for a selected tag category.
+func (h TagCategory) Select(id uint) (h2 Selected) {
+	h2 = Selected{
+		Tag: Tag{
+			client:        h.client,
+			tagCategoryId: id,
+		},
+	}
+	return
+}
+
+// Selected tag category API.
+type Selected struct {
+	Tag Tag
+}
+
+// Tag API for tags within a category.
+type Tag struct {
+	client        client.RestClient
+	tagCategoryId uint
+}
+
+// List returns all tags for a tag category.
+func (h Tag) List() (list []api.Tag, err error) {
+	list = []api.Tag{}
+	path := client.Path(api.TagCategoryTagsRoute).Inject(client.Params{api.ID: h.tagCategoryId})
+	err = h.client.Get(path, &list)
 	return
 }

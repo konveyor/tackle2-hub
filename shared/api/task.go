@@ -15,9 +15,7 @@ type TTL struct {
 
 // TaskPolicy scheduling policies.
 type TaskPolicy struct {
-	Isolated       bool `json:"isolated,omitempty" yaml:",omitempty"`
-	PreemptEnabled bool `json:"preemptEnabled,omitempty" yaml:"preemptEnabled,omitempty"`
-	PreemptExempt  bool `json:"preemptExempt,omitempty" yaml:"preemptExempt,omitempty"`
+	Isolated bool `json:"isolated,omitempty" yaml:",omitempty"`
 }
 
 // TaskError used in Task.Errors.

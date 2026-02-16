@@ -57,6 +57,16 @@ func (h Analysis) Create(r *api.Analysis) (err error) {
 	return
 }
 
+// List returns all analyses for an application.
+func (h Analysis) List() (list []api.Analysis, err error) {
+	list = []api.Analysis{}
+	path := client.
+		Path(api.AppAnalysesRoute).
+		Inject(client.Params{api.ID: h.appId})
+	err = h.client.Get(path, &list)
+	return
+}
+
 // Get the latest analysis for an application.
 func (h Analysis) Get() (r *api.Analysis, err error) {
 	r = &api.Analysis{}
@@ -64,6 +74,15 @@ func (h Analysis) Get() (r *api.Analysis, err error) {
 		Path(api.AppAnalysisRoute).
 		Inject(client.Params{api.ID: h.appId})
 	err = h.client.Get(path, r)
+	return
+}
+
+// GetReport downloads the latest analysis report for an application.
+func (h Analysis) GetReport(destination string) (err error) {
+	path := client.
+		Path(api.AppAnalysisReportRoute).
+		Inject(client.Params{api.ID: h.appId})
+	err = h.client.FileGet(path, destination)
 	return
 }
 

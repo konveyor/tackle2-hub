@@ -12,6 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -56,6 +57,7 @@ func (h ManifestHandler) Get(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Manifest{}
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -98,6 +100,7 @@ func (h ManifestHandler) List(ctx *gin.Context) {
 	// Fetch.
 	var list []model.Manifest
 	db := h.DB(ctx)
+	db = db.Preload(clause.Associations)
 	db = filter.Where(db)
 	err = db.Find(&list).Error
 	if err != nil {

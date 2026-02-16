@@ -13,7 +13,7 @@ func (r *Manifest) With(m *model.Manifest) {
 	baseWith(&r.Resource, &m.Model)
 	r.Content = m.Content
 	r.Secret = m.Secret
-	r.Application = Ref{ID: m.ApplicationID, Name: ""}
+	r.Application = Ref{ID: m.ApplicationID, Name: m.Application.Name}
 }
 
 // Model builds a model.

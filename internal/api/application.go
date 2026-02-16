@@ -1061,8 +1061,7 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 		_ = ctx.Error(err)
 		return
 	}
-
-	// remove all the existing Facts for that source and app id.
+	// Delete all the existing facts with that source and application id.
 	db := h.DB(ctx)
 	db = db.Where("ApplicationID", id)
 	db = db.Where("Source", key.Source())
@@ -1071,16 +1070,14 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 		_ = ctx.Error(err)
 		return
 	}
-
-	// create new Facts
+	// Create new facts.
 	if len(facts) > 0 {
 		newFacts := []model.Fact{}
 		for k, v := range facts {
-			value, _ := json.Marshal(v)
 			newFacts = append(newFacts, model.Fact{
 				ApplicationID: id,
 				Key:           FactKey(k).Name(),
-				Value:         value,
+				Value:         v,
 				Source:        key.Source(),
 			})
 		}

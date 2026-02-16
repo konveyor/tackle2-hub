@@ -32,6 +32,13 @@ func (h File) Get(id uint, destination string) (err error) {
 	return
 }
 
+// List Files.
+func (h File) List() (r []api.File, err error) {
+	r = []api.File{}
+	err = h.client.Get(api.FilesRoute, &r)
+	return
+}
+
 // Touch creates an empty file.
 func (h File) Touch(name string) (r *api.File, err error) {
 	r = &api.File{}

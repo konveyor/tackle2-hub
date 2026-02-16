@@ -18,6 +18,7 @@ import (
 
 	hub "github.com/konveyor/tackle2-hub/shared/addon"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	bucketapi "github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/nas"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -154,7 +155,7 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 	//
 	// Upload list directory.
 	addon.Activity("[BUCKET] uploading %s => bucket/%s.", output, BucketDir)
-	bucket := addon.Application.Bucket(application.ID)
+	bucket := addon.Application.Select(application.ID).Bucket
 	err = bucket.Put(output, BucketDir)
 	if err != nil {
 		return
@@ -178,7 +179,7 @@ func listDir(d *Data, application *api.Application, paths []string) (err error) 
 }
 
 // playWithBucket
-func playWithBucket(bucket hub.BucketContent) (err error) {
+func playWithBucket(bucket bucketapi.Content) (err error) {
 	tmpDir := tmpDir()
 	defer func() {
 		_ = nas.RmDir(tmpDir)

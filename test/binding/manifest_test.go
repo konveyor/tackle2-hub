@@ -1,0 +1,141 @@
+package binding
+
+import (
+	"encoding/json"
+	"errors"
+	"strings"
+	"testing"
+
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/test/cmp"
+	. "github.com/onsi/gomega"
+)
+
+func TestManifest(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create an application for the manifest to reference
+	application := &api.Application{
+		Name:        "Test Manifest App",
+		Description: "Application for manifest testing",
+	}
+	err := client.Application.Create(application)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(application.ID)
+	})
+
+	// Define the manifest to create
+	manifest := &api.Manifest{
+		Application: api.Ref{
+			ID:   application.ID,
+			Name: application.Name,
+		},
+		Content: api.Map{
+			"name": "Test Manifest",
+			"key":  "$(key)",
+			"database": api.Map{
+				"url":      "db.test.com",
+				"user":     "$(user)",
+				"password": "$(password)",
+			},
+			"description": "Connect using $(user) and $(password)",
+		},
+		Secret: api.Map{
+			"key":      "TESTKEY123",
+			"user":     "testuser",
+			"password": "testpass",
+		},
+	}
+
+	// CREATE: Create the manifest
+	err = client.Manifest.Create(manifest)
+	g.Expect(err).To(BeNil())
+	g.Expect(manifest.ID).NotTo(BeZero())
+
+	t.Cleanup(func() {
+		_ = client.Manifest.Delete(manifest.ID)
+	})
+
+	// GET: List manifests
+	list, err := client.Manifest.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(list)).To(Equal(1))
+	eq, report := cmp.Eq(manifest, list[0])
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve the manifest and verify it matches
+	retrieved, err := client.Manifest.Get(manifest.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved).NotTo(BeNil())
+	eq, report = cmp.Eq(manifest, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// UPDATE: Modify the manifest
+	manifest.Content = api.Map{
+		"name": "Updated Test Manifest",
+		"key":  "$(key)",
+		"database": api.Map{
+			"url":      "db.updated.com",
+			"user":     "$(user)",
+			"password": "$(password)",
+		},
+		"description": "Updated manifest using $(user)",
+	}
+	manifest.Secret = api.Map{
+		"key":      "UPDATEDKEY456",
+		"user":     "updateduser",
+		"password": "updatedpass",
+	}
+
+	err = client.Manifest.Update(manifest)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve decrypted again and verify updates
+	updated, err := client.Manifest.Get(
+		manifest.ID,
+		binding.Param{
+			Key:   api.Decrypted,
+			Value: "1"})
+	g.Expect(err).To(BeNil())
+	g.Expect(updated).NotTo(BeNil())
+	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve injected again and verify updates
+	var m2 api.Manifest
+	b, _ := json.Marshal(manifest)
+	_ = json.Unmarshal(b, &m2)
+	m2.Content["key"] = m2.Secret["key"]
+	m2.Content["description"] = strings.Replace(
+		m2.Content["description"].(string),
+		"$(user)",
+		m2.Secret["user"].(string),
+		1)
+	m2.Content["database"] = api.Map{
+		"url":      manifest.Content["database"].(api.Map)["url"],
+		"user":     m2.Secret["user"],
+		"password": m2.Secret["password"],
+	}
+	updated, err = client.Manifest.Get(
+		manifest.ID,
+		binding.Param{
+			Key:   api.Injected,
+			Value: "1"},
+		binding.Param{
+			Key:   api.Decrypted,
+			Value: "1"})
+	g.Expect(err).To(BeNil())
+	g.Expect(updated).NotTo(BeNil())
+	eq, report = cmp.Eq(m2, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// DELETE: Remove the manifest
+	err = client.Manifest.Delete(manifest.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify deletion - Get should fail
+	_, err = client.Manifest.Get(manifest.ID)
+	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}

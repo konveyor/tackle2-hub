@@ -8549,12 +8549,6 @@ const docTemplate = `{
                 "isolated": {
                     "type": "boolean"
                 },
-                "preemptEnabled": {
-                    "type": "boolean"
-                },
-                "preemptExempt": {
-                    "type": "boolean"
-                }
             }
         },
         "github_com_konveyor_tackle2-hub_api.TaskQueue": {
