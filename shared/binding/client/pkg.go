@@ -100,6 +100,10 @@ type RestClient interface {
 	// Optional query parameters can be provided via params.
 	Delete(path string, params ...Param) (err error)
 
+	// DeleteWith removes a resource at the specified path as specified by the body.
+	// Optional query parameters can be provided via params.
+	DeleteWith(path string, body any, params ...Param) (err error)
+
 	// BucketGet downloads a file or directory from the bucket.
 	// The source path is relative to the bucket root.
 	// Directories are automatically extracted to the destination.

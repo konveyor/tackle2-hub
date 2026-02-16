@@ -10,11 +10,12 @@ var _ RestClient = (*Stub)(nil)
 
 // Stub implementation
 type Stub struct {
-	DoGet    func(path string, object any, params ...Param) (err error)
-	DoPost   func(path string, object any) (err error)
-	DoPut    func(path string, object any, params ...Param) (err error)
-	DoPatch  func(path string, object any, params ...Param) (err error)
-	DoDelete func(path string, params ...Param) (err error)
+	DoGet        func(path string, object any, params ...Param) (err error)
+	DoPost       func(path string, object any) (err error)
+	DoPut        func(path string, object any, params ...Param) (err error)
+	DoPatch      func(path string, object any, params ...Param) (err error)
+	DoDeleteWith func(path string, body any, params ...Param) (err error)
+	DoDelete     func(path string, params ...Param) (err error)
 
 	DoBucketGet func(source, destination string) (err error)
 	DoBucketPut func(source, destination string) (err error)
@@ -85,6 +86,15 @@ func (s *Stub) Delete(path string, params ...Param) (err error) {
 		return
 	}
 	return s.DoDelete(path, params...)
+}
+
+// DeleteWith removes a resource at the specified path as spcified by the body.
+func (s *Stub) DeleteWith(path string, body any, params ...Param) (err error) {
+	if s.DoDeleteWith == nil {
+		err = fmt.Errorf("DeleteWith not implemented")
+		return
+	}
+	return s.DoDeleteWith(path, body, params...)
 }
 
 // BucketGet downloads a file or directory from the bucket.

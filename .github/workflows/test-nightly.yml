@@ -14,6 +14,25 @@ jobs:
           go-version: '1.21'
       - run: make test
 
+  test-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: konveyor/tackle2-seed
+      - run: |
+          mkdir -p /tmp/seed
+          cp -r resources/* /tmp/seed
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.21'
+      - run: |
+          make vet
+          DISCONNECTED=1 make run &
+          sleep 15  # probably a dirty solution
+          HUB_BASE_URL=http://localhost:8080 make test-binding
+
   test-api:
     runs-on: ubuntu-latest
     steps:
@@ -26,4 +45,3 @@ jobs:
           DISCONNECTED=1 make run &
           sleep 15  # probably a dirty solution
           HUB_BASE_URL=http://localhost:8080 make test-api
-          HUB_BASE_URL=http://localhost:8080 make test-api  # Intentionaly run 2x to catch data left in Hub DB.

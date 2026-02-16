@@ -13,8 +13,6 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
-	"github.com/konveyor/tackle2-hub/shared/binding/application"
-	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/task"
 	"golang.org/x/sys/unix"
@@ -48,10 +46,9 @@ type NotFound = binding.NotFound
 
 // API namespaces.
 type AnalysisProfile = binding.AnalysisProfile
-type Application = application.Application
+type Application = binding.Application
 type Archetype = binding.Archetype
-type Bucket = bucket.Bucket
-type BucketContent = bucket.Content
+type Bucket = binding.Bucket
 type File = binding.File
 type Generator = binding.Generator
 type Identity = binding.Identity

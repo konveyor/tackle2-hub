@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	sort "github.com/konveyor/tackle2-hub/test/cmp/sort"
 	. "github.com/onsi/gomega"
 )
 
@@ -102,6 +103,7 @@ func TestEq(t *testing.T) {
 	}
 
 	testCases := []struct {
+		id     int
 		name   string
 		a, b   any
 		ignore []string
@@ -132,6 +134,13 @@ func TestEq(t *testing.T) {
 		{name: "empty slices equal", a: []int{}, b: []int{}, wantEq: true},
 		{name: "nil slice vs empty slice", a: []int(nil), b: []int{}, wantEq: true},
 		{name: "nil slice vs nil slice", a: []int(nil), b: []int(nil), wantEq: true},
+		{name: "[]T6]", a: []T6{{Id: 1}, {Id: 2}}, b: []T6{{Id: 1}, {Id: 2}}, wantEq: true},
+		{
+			name:   "[]T6] name ignored.",
+			a:      []T6{{Id: 1, Name: "xx"}, {Id: 2}},
+			b:      []T6{{Id: 1}, {Id: 2}},
+			wantEq: true,
+			ignore: []string{".Name"}},
 
 		// ── Nil ───────────────────────────────────────────────────
 		{name: "nil vs non-nil", a: nil, b: 10, wantEq: false},
@@ -186,6 +195,13 @@ func TestEq(t *testing.T) {
 			wantEq: true,
 		},
 		{
+			name:   "struct with anonymous field and ignored Refs name.",
+			a:      T5{T2: T2{First: "John"}, Age: 30, Refs: []T6{{Id: 1}, {Id: 2}}},
+			b:      T5{T2: T2{First: "John"}, Age: 30, Refs: []T6{{Id: 1, Name: "xx"}, {Id: 2}}},
+			ignore: []string{"Refs.Name"},
+			wantEq: true,
+		},
+		{
 			name:   "struct with anonymous field not equal",
 			a:      T5{T2: T2{First: "John"}, Age: 30},
 			b:      T5{T2: T2{First: "Jane"}, Age: 30},
@@ -198,8 +214,30 @@ func TestEq(t *testing.T) {
 			ignore: []string{"NonExistent.Field"},
 			wantEq: false,
 		},
+		{
+			name: "struct with unsorted list",
+			a: T8{
+				List: []T7{
+					{ID: 1, Name: "one"},
+					{ID: 2, Name: "two"},
+					{ID: 3, Name: "three"},
+				},
+			},
+			b: T8{
+				List: []T7{
+					{ID: 3, Name: "three"},
+					{ID: 1, Name: "one"},
+					{ID: 2, Name: "two"},
+				},
+			},
+			wantEq: true,
+		},
 	}
 
+	sort.Add(sort.ById, []T7{})
+	t.Cleanup(func() {
+		sort.Reset()
+	})
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			eq, report := Eq(tc.a, tc.b, tc.ignore...)
@@ -212,6 +250,43 @@ func TestEq(t *testing.T) {
 			}
 		})
 	}
+
+	sort.Reset()
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			eq, report := New().
+				Sort(sort.ById, []T7{}).
+				Ignore(tc.ignore...).
+				Eq(tc.a, tc.b)
+			if !eq {
+				print(report)
+			}
+			g.Expect(eq).To(Equal(tc.wantEq))
+			if eq != tc.wantEq {
+				t.Logf("report:\n%s", report)
+			}
+		})
+	}
+}
+
+func TestEqSort(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	a := []T7{
+		{ID: 1, Name: "one"},
+		{ID: 2, Name: "two"},
+		{ID: 3, Name: "three"},
+	}
+	b := []T7{
+		{ID: 3, Name: "three"},
+		{ID: 1, Name: "one"},
+		{ID: 2, Name: "two"},
+	}
+	cmp := New()
+	cmp = cmp.Sort(sort.ById, []T7{})
+	eq, report := cmp.Eq(a, b)
+	g.Expect(eq).To(BeTrue(), report)
 }
 
 func TestEqReport(t *testing.T) {
@@ -336,5 +411,20 @@ type T4 struct {
 
 type T5 struct {
 	T2
-	Age int
+	Age  int
+	Refs []T6
+}
+
+type T6 struct {
+	Id   int
+	Name string
+}
+
+type T7 struct {
+	ID   uint
+	Name string
+}
+
+type T8 struct {
+	List []T7
 }

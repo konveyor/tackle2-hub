@@ -87,6 +87,12 @@ type IdentityRef struct {
 	Name string `json:"name"`
 }
 
+// Stakeholders REST resource for updating application stakeholders.
+type Stakeholders struct {
+	Owner        *Ref  `json:"owner"`
+	Contributors []Ref `json:"contributors"`
+}
+
 // TagCategory REST resource.
 type TagCategory struct {
 	Resource `yaml:",inline"`

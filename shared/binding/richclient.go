@@ -5,9 +5,14 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
+	"github.com/konveyor/tackle2-hub/shared/binding/archetype"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
+	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
+	"github.com/konveyor/tackle2-hub/shared/binding/report"
+	"github.com/konveyor/tackle2-hub/shared/binding/tagcategory"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
+	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
 )
 
 var (
@@ -30,20 +35,23 @@ type RichClient struct {
 	Analysis         analysis.Analysis
 	AnalysisProfile  AnalysisProfile
 	Application      application.Application
-	Archetype        Archetype
+	Archetype        archetype.Archetype
 	Assessment       Assessment
 	Bucket           bucket.Bucket
 	BusinessService  BusinessService
+	ConfigMap        ConfigMap
 	Dependency       Dependency
 	File             File
 	Generator        Generator
 	Identity         Identity
+	Import           _import.Import
 	JobFunction      JobFunction
 	Manifest         Manifest
 	MigrationWave    MigrationWave
 	Platform         Platform
 	Proxy            Proxy
 	Questionnaire    Questionnaire
+	Report           report.Report
 	Review           Review
 	Schema           Schema
 	RuleSet          RuleSet
@@ -51,9 +59,10 @@ type RichClient struct {
 	Stakeholder      Stakeholder
 	StakeholderGroup StakeholderGroup
 	Tag              Tag
-	TagCategory      TagCategory
+	TagCategory      tagcategory.TagCategory
 	Target           Target
 	Task             task.Task
+	TaskGroup        taskgroup.TaskGroup
 	Ticket           Ticket
 	Tracker          Tracker
 }
@@ -84,20 +93,23 @@ func (r *RichClient) build(client RestClient) {
 	r.Analysis = analysis.New(client)
 	r.AnalysisProfile = AnalysisProfile{client: client}
 	r.Application = application.New(client)
-	r.Archetype = Archetype{client: client}
+	r.Archetype = archetype.New(client)
 	r.Assessment = Assessment{client: client}
 	r.Bucket = bucket.New(client)
 	r.BusinessService = BusinessService{client: client}
+	r.ConfigMap = ConfigMap{client: client}
 	r.Dependency = Dependency{client: client}
 	r.File = File{client: client}
 	r.Generator = Generator{client: client}
 	r.Identity = Identity{client: client}
+	r.Import = _import.New(client)
 	r.JobFunction = JobFunction{client: client}
 	r.Manifest = Manifest{client: client}
 	r.MigrationWave = MigrationWave{client: client}
 	r.Platform = Platform{client: client}
 	r.Proxy = Proxy{client: client}
 	r.Questionnaire = Questionnaire{client: client}
+	r.Report = report.New(client)
 	r.Review = Review{client: client}
 	r.RuleSet = RuleSet{client: client}
 	r.Schema = Schema{client: client}
@@ -105,9 +117,10 @@ func (r *RichClient) build(client RestClient) {
 	r.Stakeholder = Stakeholder{client: client}
 	r.StakeholderGroup = StakeholderGroup{client: client}
 	r.Tag = Tag{client: client}
-	r.TagCategory = TagCategory{client: client}
+	r.TagCategory = tagcategory.New(client)
 	r.Target = Target{client: client}
 	r.Task = task.New(client)
+	r.TaskGroup = taskgroup.New(client)
 	r.Ticket = Ticket{client: client}
 	r.Tracker = Tracker{client: client}
 }

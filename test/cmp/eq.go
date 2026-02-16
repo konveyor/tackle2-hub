@@ -6,14 +6,53 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	sort2 "github.com/konveyor/tackle2-hub/test/cmp/sort"
 )
 
 type Cmp struct {
-	IgnoredPaths [][]string
+	ignoredPaths [][]string
+	sortMap      sort2.Map
 	//
 	path  []string
 	kinds []reflect.Kind
 	notes []string
+}
+
+func (d *Cmp) Ignore(paths ...string) (d2 *Cmp) {
+	d2 = New()
+	d2.ignoredPaths = append(
+		d2.ignoredPaths,
+		d.ignoredPaths...)
+	for k, v := range d.sortMap {
+		d2.sortMap[k] = v
+	}
+	for _, path := range paths {
+		part := []string{}
+		for _, p := range strings.Split(path, ".") {
+			if len(part) > 0 {
+				p = "." + p
+			}
+			part = append(part, p)
+		}
+		d2.ignoredPaths = append(d2.ignoredPaths, part)
+	}
+	return
+}
+
+// Sort a slice.
+func (d *Cmp) Sort(s sort2.Sort, values ...any) (d2 *Cmp) {
+	d2 = New()
+	d2.ignoredPaths = append(
+		d2.ignoredPaths,
+		d.ignoredPaths...)
+	for k, v := range d.sortMap {
+		d2.sortMap[k] = v
+	}
+	for _, v := range values {
+		d2.sortMap[reflect.TypeOf(v)] = s
+	}
+	return
 }
 
 func (d *Cmp) Eq(expected, got any) (eq bool, report string) {
@@ -66,14 +105,18 @@ func (d *Cmp) pop() {
 }
 
 func (d *Cmp) note(n string, v ...any) {
-	parts := make([]string, 0, len(d.path))
+	parts := make([]string, 0)
 	for _, p := range d.path {
 		if strings.HasPrefix(p, "[") {
-			continue
+			if len(parts) > 0 {
+				continue
+			} else {
+				p = ""
+			}
 		}
 		parts = append(parts, p)
 	}
-	for _, path := range d.IgnoredPaths {
+	for _, path := range d.ignoredPaths {
 		end := min(
 			len(parts),
 			len(path))
@@ -171,16 +214,25 @@ func (d *Cmp) cmp(a, b any) {
 		return
 	}
 	if tA != tB {
-		d.note(
-			"%s: (type) %s != %s",
-			d.at(),
-			tA.Name(),
-			tB.Name())
-		return
+		aliased := false
+		kA := tA.Kind()
+		kB := tB.Kind()
+		if kA == reflect.Slice || kA == reflect.Map {
+			aliased = kA == kB
+		}
+		if !aliased {
+			d.note(
+				"%s: (type) %s != %s",
+				d.at(),
+				tA.Name(),
+				tB.Name())
+		}
 	}
 	kind := tA.Kind()
 	switch kind {
 	case reflect.Slice:
+		vA = d.sort(vA)
+		vB = d.sort(vB)
 		for i := 0; i < vA.Len(); i++ {
 			d.push(kind, "[%d]", i)
 			xA := vA.Index(i).Interface()
@@ -307,4 +359,39 @@ func (d *Cmp) cmp(a, b any) {
 				xA)
 		}
 	}
+}
+
+// Sort sorts the slice.
+func (d *Cmp) sort(v reflect.Value) (v2 reflect.Value) {
+	v2 = v
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.IsNil() {
+		return
+	}
+	if v.Kind() != reflect.Slice {
+		return
+	}
+	if v.Len() < 2 {
+		return
+	}
+	v2 = reflect.AppendSlice(
+		reflect.MakeSlice(
+			v.Type(),
+			0,
+			v.Len()),
+		v)
+	m := sort2.Map{}
+	for k, v := range sort2.Registered {
+		m[k] = v
+	}
+	for k, v := range d.sortMap {
+		m[k] = v
+	}
+	srt, found := m[v2.Type()]
+	if found {
+		srt(v2)
+	}
+	return
 }

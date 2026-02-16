@@ -23,8 +23,9 @@ import (
 )
 
 var (
-	_   RestClient = (*Client)(nil)
-	Log            = logr.New("binding", 0)
+	_      RestClient = (*Client)(nil)
+	Log               = logr.New("binding", 0)
+	NoBody            = io.Reader(nil)
 )
 
 // Client provides a REST client.
@@ -59,10 +60,9 @@ func (r *Client) SetRetry(n uint8) {
 // Get a resource.
 func (r *Client) Get(path string, object any, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodGet,
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodGet, r.join(path), NoBody)
+		if err != nil {
+			return
 		}
 		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
@@ -117,12 +117,11 @@ func (r *Client) Post(path string, object any) (err error) {
 			return
 		}
 		reader := bytes.NewReader(bfr)
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPost,
-			Body:   io.NopCloser(reader),
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodPost, r.join(path), reader)
+		if err != nil {
+			return
 		}
+		request.Header.Set(api.ContentType, api.MIMEJSON)
 		request.Header.Set(api.Accept, api.MIMEJSON)
 		return
 	}
@@ -168,12 +167,11 @@ func (r *Client) Put(path string, object any, params ...Param) (err error) {
 			return
 		}
 		reader := bytes.NewReader(bfr)
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPut,
-			Body:   io.NopCloser(reader),
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodPut, r.join(path), reader)
+		if err != nil {
+			return
 		}
+		request.Header.Set(api.ContentType, api.MIMEJSON)
 		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
@@ -227,12 +225,11 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 			return
 		}
 		reader := bytes.NewReader(bfr)
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPatch,
-			Body:   io.NopCloser(reader),
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodPatch, r.join(path), reader)
+		if err != nil {
+			return
 		}
+		request.Header.Set(api.ContentType, api.MIMEJSON)
 		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
 			q := request.URL.Query()
@@ -280,10 +277,50 @@ func (r *Client) Patch(path string, object any, params ...Param) (err error) {
 // Delete a resource.
 func (r *Client) Delete(path string, params ...Param) (err error) {
 	request := func() (request *http.Request, err error) {
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodDelete,
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodDelete, r.join(path), NoBody)
+		if err != nil {
+			return
+		}
+		request.Header.Set(api.Accept, api.MIMEJSON)
+		if len(params) > 0 {
+			q := request.URL.Query()
+			for _, p := range params {
+				q.Add(p.Key, p.Value)
+			}
+			request.URL.RawQuery = q.Encode()
+		}
+		return
+	}
+	response, err := r.send(request)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+	status := response.StatusCode
+	switch status {
+	case http.StatusOK,
+		http.StatusNoContent:
+	default:
+		err = r.restError(response)
+	}
+
+	return
+}
+
+// DeleteWith deletes a resource using the specified body.
+func (r *Client) DeleteWith(path string, body any, params ...Param) (err error) {
+	bfr, err := json.Marshal(body)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	reader := bytes.NewReader(bfr)
+	request := func() (request *http.Request, err error) {
+		request, err = http.NewRequest(http.MethodDelete, r.join(path), reader)
+		if err != nil {
+			return
 		}
 		request.Header.Set(api.Accept, api.MIMEJSON)
 		if len(params) > 0 {
@@ -317,10 +354,9 @@ func (r *Client) Delete(path string, params ...Param) (err error) {
 // The source (path) is relative to the bucket root.
 func (r *Client) BucketGet(source, destination string) (err error) {
 	request := func() (request *http.Request, err error) {
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodGet,
-			URL:    r.join(source),
+		request, err = http.NewRequest(http.MethodGet, r.join(source), NoBody)
+		if err != nil {
+			return
 		}
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
@@ -357,11 +393,9 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 	}
 	request := func() (request *http.Request, err error) {
 		pr, pw := io.Pipe()
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodPut,
-			Body:   pr,
-			URL:    r.join(destination),
+		request, err = http.NewRequest(http.MethodPut, r.join(destination), pr)
+		if err != nil {
+			return
 		}
 		mp := multipart.NewWriter(pw)
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
@@ -411,10 +445,9 @@ func (r *Client) BucketPut(source, destination string) (err error) {
 // FileGet downloads a file.
 func (r *Client) FileGet(path, destination string) (err error) {
 	request := func() (request *http.Request, err error) {
-		request = &http.Request{
-			Header: http.Header{},
-			Method: http.MethodGet,
-			URL:    r.join(path),
+		request, err = http.NewRequest(http.MethodGet, r.join(path), NoBody)
+		if err != nil {
+			return
 		}
 		request.Header.Set(api.Accept, api.MIMEOCTETSTREAM)
 		return
@@ -537,11 +570,9 @@ func (r *Client) FilePatch(path string, buffer []byte) (err error) {
 func (r *Client) FileSend(path, method string, fields []Field, object any) (err error) {
 	request := func() (request *http.Request, err error) {
 		pr, pw := io.Pipe()
-		request = &http.Request{
-			Header: http.Header{},
-			Method: method,
-			Body:   pr,
-			URL:    r.join(path),
+		request, err = http.NewRequest(method, r.join(path), pr)
+		if err != nil {
+			return
 		}
 		mp := multipart.NewWriter(pw)
 		request.Header.Set(api.Accept, api.MIMEJSON)
@@ -764,9 +795,10 @@ func (r *Client) buildTransport() (err error) {
 }
 
 // Join the URL.
-func (r *Client) join(path string) (parsedURL *url.URL) {
-	parsedURL, _ = url.Parse(r.BaseURL)
-	parsedURL.Path = pathlib.Join(parsedURL.Path, path)
+func (r *Client) join(path string) (joined string) {
+	parsed, _ := url.Parse(r.BaseURL)
+	parsed.Path = pathlib.Join(parsed.Path, path)
+	joined = parsed.String()
 	return
 }
 
