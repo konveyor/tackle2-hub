@@ -1,6 +1,7 @@
 # Tackle2 Hub Coding Patterns Conventions and Standards
 
-This document defines the Go coding standards and patterns for the Tackle2 Hub project. Follow these conventions to maintain consistency and code quality across the codebase.
+This document defines the Go coding standards and patterns for the Tackle2 Hub project. Follow these conventions
+to maintain consistency and code quality across the codebase.
 
 ## Table of Contents
 
@@ -32,7 +33,8 @@ When creating a new type, ask:
 
 ### Exported Types Go in shared/
 
-**All exported types, interfaces, and APIs that are consumed by external packages or clients must live in `shared/`.** This includes:
+**All exported types, interfaces, and APIs that are consumed by external packages or clients must live in
+`shared/`.** This includes:
 
 - REST API request/response types
 - Client binding interfaces and implementations
@@ -115,7 +117,8 @@ func (h ApplicationHandler) Get(ctx *gin.Context) {
 
 ### Critical Rule: shared/ Cannot Import from internal/
 
-**NEVER import anything from `internal/` in `shared/` packages.** This is a hard architectural boundary that ensures:
+**NEVER import anything from `internal/` in `shared/` packages.** This is a hard architectural boundary that
+ensures:
 - Clean separation of concerns
 - Clients don't accidentally depend on internal implementation details
 - Internal refactoring doesn't break external consumers
@@ -196,7 +199,8 @@ func (h *Application) Create(r *api.Application) (err error) {
 
 ### Meaningful Package Names
 
-**Use descriptive, domain-specific package names** that clearly indicate their purpose. Package names should be:
+**Use descriptive, domain-specific package names** that clearly indicate their purpose. Package names should
+be:
 - **Singular nouns** (e.g., `model`, `api`, `filter`)
 - **Descriptive** of their domain responsibility
 - **Short** and concise
@@ -267,7 +271,8 @@ shared/
 
 ### Prefer Structs with Methods
 
-**Model behavior using structs with methods** rather than package-level functions. This promotes encapsulation and makes dependencies explicit.
+**Model behavior using structs with methods** rather than package-level functions. This promotes encapsulation
+and makes dependencies explicit.
 
 ```go
 // Good
@@ -341,19 +346,22 @@ func (h *ApplicationHandler) idMap(ctx *gin.Context, appId uint) (mp IdentityMap
     // Only builds and returns the identity map
 }
 
-func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (appTags []AppTag, err error) {
+func (h *ApplicationHandler) replaceTags(db *gorm.DB, id uint, r *Application) (
+    appTags []AppTag, err error) {
     // Only replaces tags
 }
 
 // Bad - doing multiple things
-func (h *ApplicationHandler) getTagsAndIdentitiesAndReplaceTags(ctx *gin.Context, id uint) (tags []Tag, ids []Identity, err error) {
+func (h *ApplicationHandler) getTagsAndIdentitiesAndReplaceTags(
+    ctx *gin.Context, id uint) (tags []Tag, ids []Identity, err error) {
     // Don't combine multiple responsibilities
 }
 ```
 
 ### No "And" in Method Names
 
-**Method names containing "and" indicate the method is doing too many things.** Split such methods into multiple focused methods.
+**Method names containing "and" indicate the method is doing too many things.** Split such methods into
+multiple focused methods.
 
 ```go
 // Bad - method name contains "and"
@@ -379,7 +387,8 @@ func (h Handler) Save(ctx *gin.Context) (err error) {
 
 ### Avoid Long Function Bodies
 
-**Keep function bodies concise.** If a function has multiple distinct code blocks or exceeds ~50 lines, consider decomposing it into smaller functions.
+**Keep function bodies concise.** If a function has multiple distinct code blocks or exceeds ~50 lines,
+consider decomposing it into smaller functions.
 
 ```go
 // Bad - long function with multiple blocks
@@ -489,7 +498,8 @@ var temp string // Non-descriptive
 
 #### Named Return Variables
 
-**Always use named return variables** for function signatures. This provides clarity about what the function returns and enables cleaner error handling patterns.
+**Always use named return variables** for function signatures. This provides clarity about what the function
+returns and enables cleaner error handling patterns.
 
 ```go
 // Good
@@ -528,7 +538,8 @@ func (h *BaseHandler) DB(ctx *gin.Context) *gorm.DB {
 
 #### Bare Return Statements
 
-When using named return variables, **use bare `return` statements** instead of explicitly returning the values.
+When using named return variables, **use bare `return` statements** instead of explicitly returning the
+values.
 
 ```go
 // Good
@@ -552,7 +563,8 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 
 #### Function and Method Docstrings
 
-**All exported functions and methods must have docstrings** that explain what the function does. Use standard godoc format: start with the function/method name followed by what it does.
+**All exported functions and methods must have docstrings** that explain what the function does. Use standard
+godoc format: start with the function/method name followed by what it does.
 
 **Godoc Format Pattern:**
 ```
@@ -636,7 +648,8 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 
 #### Inline Comments: Document Why, Not What
 
-**Inline comments should be rare and should only explain *why* something is done when it's not obvious from the code itself.** The code should be self-documenting through clear naming and structure.
+**Inline comments should be rare and should only explain *why* something is done when it's not obvious from the
+code itself.** The code should be self-documenting through clear naming and structure.
 
 ```go
 // Good - explains WHY, provides important context
@@ -791,7 +804,8 @@ func (h Handler) ComplexQuery() (results []Result, err error) {
 
 ### Test File Organization
 
-**Prefer a single test file per package** named `pkg_test.go` unless the number of test functions makes this impractical.
+**Prefer a single test file per package** named `pkg_test.go` unless the number of test functions makes this
+impractical.
 
 ```bash
 # Good - single test file for package
@@ -833,7 +847,8 @@ internal/model/
 
 ### Use Gomega for Assertions
 
-**All tests must use Gomega for assertions** instead of basic Go testing comparisons. Gomega provides better error messages and more expressive assertions.
+**All tests must use Gomega for assertions** instead of basic Go testing comparisons. Gomega provides better
+error messages and more expressive assertions.
 
 ```go
 // Good - using Gomega
@@ -1059,13 +1074,20 @@ func (m *Manager) DoThing() (err error) {
 }
 ```
 
+## Formatting
+
+Code will be formatted using `go fmt`.
+To minimize horizontal scrolling and code reviews in _github_,
+lines should not exceed 120 characters.
+
 ---
 
 ## Git Commits
 
 ### Signed Commits Required
 
-**All commits MUST be signed off** using the `-s` flag. This adds a "Signed-off-by" line certifying you have the right to submit the code under the project's license.
+**All commits MUST be signed off** using the `-s` flag. This adds a "Signed-off-by" line certifying you have
+the right to submit the code under the project's license.
 
 ```bash
 # Required - always use -s flag
@@ -1093,7 +1115,8 @@ Following these standards ensures:
 - **Maintainability** over time
 - **Quality** through good design practices
 
-When in doubt, look at existing code in `internal/api/`, `internal/model/`, and `internal/task/` for examples of these patterns in practice.
+When in doubt, look at existing code in `internal/api/`, `internal/model/`, and `internal/task/` for examples
+of these patterns in practice.
 
 ## References
 
