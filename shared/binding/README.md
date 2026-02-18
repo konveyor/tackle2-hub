@@ -104,6 +104,116 @@ err = client.Application.Update(app)
 err = client.Application.Delete(123)
 ```
 
+### Method Chaining Patterns
+
+The binding package supports method chaining for certain operations, allowing you to write more concise and fluent code. This is particularly useful when working with subresources that support scoping or filtering.
+
+#### With Method Chaining
+
+Some methods return the modified object, allowing you to chain operations together:
+
+```go
+// Fully chained: Select application, set source, and add tag
+err := client.Application.Select(appID).
+    Tag.Source("analysis").
+    Add(tagID)
+
+// Fully chained: Select application, set source, and set fact
+err = client.Application.Select(appID).
+    Fact.Source("discovery").
+    Set("language", "Java")
+
+// Fully chained: Select application, set source, and list tags
+tags, err := client.Application.Select(appID).
+    Tag.Source("assessment").
+    List()
+
+// Fully chained: Select application and get latest analysis
+analysis, err := client.Application.Select(appID).
+    Analysis.
+    Get()
+
+// Fully chained: Select task and upload to bucket
+err = client.Task.Select(taskID).
+    Bucket.
+    Put("/output/report.html", "/local/report.html")
+```
+
+#### Without Method Chaining
+
+The same operations can be written without chaining for better readability in complex scenarios:
+
+```go
+// Select the application first
+selected := client.Application.Select(appID)
+
+// Set up the tag API with source
+tagAPI := selected.Tag.Source("analysis")
+
+// Perform multiple operations on the same scope
+err := tagAPI.Add(tagID1)
+if err != nil {
+    return err
+}
+
+err = tagAPI.Add(tagID2)
+if err != nil {
+    return err
+}
+
+// List all tags for this source
+tags, err := tagAPI.List()
+```
+
+#### When to Use Each Approach
+
+**Use chaining when:**
+- Performing a single operation on a scoped resource
+- The code is simple and readable
+- You want concise, one-line operations
+
+**Avoid chaining when:**
+- Performing multiple operations on the same scope (reuse the scoped object)
+- Error handling needs to be explicit between steps
+- The chain becomes too long and hard to read
+
+#### Complete Application Workflow Example
+
+```go
+// Complete workflow with mixed chaining approaches
+client := binding.New("http://localhost:8080")
+client.Login("admin", "password")
+
+// Create application
+app := &api.Application{Name: "Customer Portal"}
+err := client.Application.Create(app)
+if err != nil {
+    return err
+}
+
+// Use full chaining for single operations
+err = client.Application.Select(app.ID).
+    Fact.Source("discovery").
+    Set("language", "Java")
+
+// Use non-chained for multiple operations on same scope
+selected := client.Application.Select(app.ID)
+tagAPI := selected.Tag.Source("analysis")
+err = tagAPI.Add(languageTagID)
+err = tagAPI.Add(frameworkTagID)
+err = tagAPI.Add(databaseTagID)
+
+// Upload analysis with full chaining
+analysis, err := client.Application.Select(app.ID).
+    Analysis.
+    Upload("/path/to/manifest.yaml", api.MIMEYAML)
+
+// Download report with full chaining
+err = client.Application.Select(app.ID).
+    Analysis.
+    GetReport("/reports/customer-portal.html")
+```
+
 ### Available Resources
 
 The client provides access to these resource APIs:
@@ -148,7 +258,7 @@ The client provides access to these resource APIs:
 
 ### Working with Subresources
 
-Some resources have nested subresources accessed via the `Select()` pattern:
+Some resources have nested subresources accessed via the `Select()` pattern. This allows you to work with resources that belong to a specific parent resource.
 
 ```go
 // Select an application
@@ -165,13 +275,235 @@ err = selected.Assessment.Create(assessment)
 identities, err := selected.Identity.List()
 ```
 
-#### Resources with Select() Pattern
+#### Application Subresources
 
-- **Application**: Analysis, Assessment, Identity
-- **Task**: Bucket, Report, Blocking operations
-- **TagCategory**: Tag listing
-- **Archetype**: Assessment management
-- **TaskGroup**: Bucket operations
+After selecting an application with `client.Application.Select(appID)`, you have access to:
+
+**Analysis** - Manage application analysis results
+```go
+selected := client.Application.Select(appID)
+
+// Upload analysis manifest (JSON or YAML)
+analysis, err := selected.Analysis.Upload("/path/to/manifest.yaml", api.MIMEYAML)
+
+// Create analysis
+err = selected.Analysis.Create(&api.Analysis{})
+
+// Get latest analysis
+analysis, err = selected.Analysis.Get()
+
+// List all analyses
+analyses, err := selected.Analysis.List()
+
+// Download latest analysis report
+err = selected.Analysis.GetReport("/path/to/report.html")
+
+// Get insights
+insights, err := selected.Analysis.ListInsights()
+
+// Get technology dependencies
+deps, err := selected.Analysis.ListDependencies()
+```
+
+**Assessment** - Manage application assessments
+```go
+// Create assessment
+err = selected.Assessment.Create(&api.Assessment{})
+
+// List all assessments
+assessments, err := selected.Assessment.List()
+
+// Delete assessment
+err = selected.Assessment.Delete(assessmentID)
+```
+
+**Identity** - Manage credentials for an application
+```go
+// Create identity
+err = selected.Identity.Create(&api.Identity{})
+
+// Get identity
+identity, err := selected.Identity.Get(identityID)
+
+// List identities
+identities, err := selected.Identity.List()
+
+// Update identity
+err = selected.Identity.Update(identity)
+
+// Delete identity
+err = selected.Identity.Delete(identityID)
+```
+
+**Manifest** - Manage application manifests
+```go
+// Create manifest
+err = selected.Manifest.Create(&api.Manifest{})
+
+// Get latest manifest (with optional decryption/injection)
+manifest, err := selected.Manifest.Get(
+    client.Param{Key: "decrypted", Value: "1"},
+    client.Param{Key: "injected", Value: "1"},
+)
+```
+
+**Tag** - Associate tags with an application
+```go
+// Set source for tag operations (optional)
+tagAPI := selected.Tag.Source("analysis")
+
+// Add a tag
+err = tagAPI.Add(tagID)
+
+// Ensure tag is associated (idempotent)
+err = tagAPI.Ensure(tagID)
+
+// List associated tags
+tags, err := tagAPI.List()
+
+// Replace all tags for a source
+err = tagAPI.Replace([]uint{tagID1, tagID2, tagID3})
+
+// Remove tag association
+err = tagAPI.Delete(tagID)
+```
+
+**Fact** - Manage application facts (key-value metadata)
+```go
+// Set source for fact operations
+factAPI := selected.Fact.Source("analysis")
+
+// Set a fact (creates or updates)
+err = factAPI.Set("language", "Java")
+
+// Get a fact
+var language string
+err = factAPI.Get("language", &language)
+
+// List all facts for source
+facts, err := factAPI.List()
+
+// Create a fact
+err = factAPI.Create(&api.Fact{Key: "version", Value: "17"})
+
+// Replace all facts for a source
+err = factAPI.Replace(api.Map{"language": "Java", "version": "17"})
+
+// Delete a fact
+err = factAPI.Delete("language")
+```
+
+**Bucket** - Access application storage bucket
+```go
+// List bucket contents
+entries, err := selected.Bucket.List("/")
+
+// Upload file to bucket
+err = selected.Bucket.Put("/data/file.txt", "/local/path/file.txt")
+
+// Download from bucket
+err = selected.Bucket.Get("/data/file.txt", "/local/destination/")
+
+// Delete from bucket
+err = selected.Bucket.Delete("/data/file.txt")
+```
+
+#### Task Subresources
+
+After selecting a task with `client.Task.Select(taskID)`, you have access to:
+
+**Bucket** - Task storage operations
+```go
+selected := client.Task.Select(taskID)
+
+// List bucket contents
+entries, err := selected.Bucket.List("/output")
+
+// Upload to task bucket
+err = selected.Bucket.Put("/input/config.yaml", "/local/config.yaml")
+
+// Download from task bucket
+err = selected.Bucket.Get("/output/report.html", "./report.html")
+
+// Delete from bucket
+err = selected.Bucket.Delete("/temp/data.json")
+```
+
+**Report** - Task report management
+```go
+// Create task report
+err = selected.Report.Create(&api.TaskReport{})
+
+// Update task report
+err = selected.Report.Update(&api.TaskReport{})
+
+// Delete task report
+err = selected.Report.Delete()
+```
+
+**Blocking** - Asynchronous task operations
+```go
+import "context"
+
+ctx := context.Background()
+
+// Cancel task and wait for completion (up to 3 minutes)
+err = selected.Blocking.Cancel(ctx)
+
+// Delete task and wait for confirmation (up to 3 minutes)
+err = selected.Blocking.Delete(ctx)
+```
+
+#### TagCategory Subresources
+
+After selecting a tag category with `client.TagCategory.Select(categoryID)`, you have access to:
+
+**Tag** - List tags in the category
+```go
+selected := client.TagCategory.Select(categoryID)
+
+// List all tags in this category
+tags, err := selected.Tag.List()
+```
+
+#### Archetype Subresources
+
+After selecting an archetype with `client.Archetype.Select(archetypeID)`, you have access to:
+
+**Assessment** - Manage archetype assessments
+```go
+selected := client.Archetype.Select(archetypeID)
+
+// Create assessment for archetype
+err = selected.Assessment.Create(&api.Assessment{})
+
+// List assessments
+assessments, err := selected.Assessment.List()
+
+// Delete assessment
+err = selected.Assessment.Delete(assessmentID)
+```
+
+#### TaskGroup Subresources
+
+After selecting a task group with `client.TaskGroup.Select(groupID)`, you have access to:
+
+**Bucket** - Task group storage operations
+```go
+selected := client.TaskGroup.Select(groupID)
+
+// List bucket contents
+entries, err := selected.Bucket.List("/")
+
+// Upload to task group bucket
+err = selected.Bucket.Put("/shared/config.yaml", "/local/config.yaml")
+
+// Download from task group bucket
+err = selected.Bucket.Get("/shared/data.json", "./data.json")
+
+// Delete from bucket
+err = selected.Bucket.Delete("/temp/file.txt")
+```
 
 ### Filtering and Searching
 
