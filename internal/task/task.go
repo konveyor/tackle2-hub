@@ -802,17 +802,16 @@ func (r *Task) podRetentionExpired() (expired bool) {
 	if r.Terminated != nil {
 		mark = *r.Terminated
 	}
-	d := time.Duration(period) * time.Second
-	expired = time.Since(mark) > d
+	expired = time.Since(mark) > period
 	return
 }
 
-// retention returns the retention period (seconds).
-func (r *Task) podRetention() (seconds int) {
+// retention returns the retention period.
+func (r *Task) podRetention() (period time.Duration) {
 	if r.State == Succeeded {
-		seconds = Settings.Hub.Task.Pod.Retention.Succeeded
+		period = Settings.Hub.Task.Pod.Retention.Succeeded
 	} else {
-		seconds = Settings.Hub.Task.Pod.Retention.Failed
+		period = Settings.Hub.Task.Pod.Retention.Failed
 	}
 	return
 }

@@ -33,7 +33,6 @@ func (m *CapacityMonitor) Reset() {
 
 // Run the monitor.
 func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
-	pause := Unit * time.Duration(Settings.Frequency.Task)
 	m.Reset()
 	Log.Info("CapacityMonitor started.")
 	go func() {
@@ -46,7 +45,7 @@ func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
 				err := cluster.Refresh()
 				Log.Error(err, "")
 				m.Adjust(cluster)
-				time.Sleep(pause)
+				time.Sleep(Settings.Frequency.Task)
 			}
 		}
 	}()

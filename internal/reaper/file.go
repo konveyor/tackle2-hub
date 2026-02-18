@@ -54,7 +54,7 @@ func (r *FileReaper) Run() {
 		}
 		if file.Expiration == nil {
 			Log.Info("File (orphan) found.", "id", file.ID, "path", file.Path)
-			mark := time.Now().Add(time.Minute * time.Duration(Settings.File.TTL))
+			mark := time.Now().Add(Settings.File.TTL)
 			file.Expiration = &mark
 			err = r.DB.Save(&file).Error
 			Log.Error(err, "")

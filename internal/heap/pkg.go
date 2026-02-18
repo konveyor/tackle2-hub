@@ -42,13 +42,12 @@ func Print() {
 }
 
 func Monitor() {
-	delay := time.Duration(Settings.Frequency.Heap) * time.Second
-	if delay == 0 {
+	if Settings.Frequency.Heap == 0 {
 		return // disabled
 	}
 	go func() {
 		for {
-			time.Sleep(delay)
+			time.Sleep(Settings.Frequency.Heap)
 			Free()
 		}
 	}()

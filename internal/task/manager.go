@@ -82,10 +82,6 @@ const (
 )
 
 const (
-	Unit = time.Second
-)
-
-const (
 	Addon  = "addon"
 	Shared = "shared"
 	Cache  = "cache"
@@ -337,8 +333,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 
 // Pause.
 func (m *Manager) pause() {
-	d := Unit * time.Duration(Settings.Frequency.Task)
-	time.Sleep(d)
+	time.Sleep(Settings.Frequency.Task)
 }
 
 // action enqueues an asynchronous action.

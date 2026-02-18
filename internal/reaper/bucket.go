@@ -53,7 +53,7 @@ func (r *BucketReaper) Run() {
 		}
 		if bucket.Expiration == nil {
 			Log.Info("Bucket (orphan) found.", "id", bucket.ID, "path", bucket.Path)
-			mark := time.Now().Add(time.Minute * time.Duration(Settings.Bucket.TTL))
+			mark := time.Now().Add(Settings.Bucket.TTL)
 			bucket.Expiration = &mark
 			err = r.DB.Save(&bucket).Error
 			Log.Error(err, "")

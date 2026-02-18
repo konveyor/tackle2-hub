@@ -12,10 +12,6 @@ import (
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	Unit = time.Minute
-)
-
 var (
 	Settings = &settings.Settings
 	Log      = logr.New("reaper", Settings.Log.Reaper)
@@ -77,8 +73,7 @@ func (m *Manager) Run(ctx context.Context) {
 
 // Pause.
 func (m *Manager) pause() {
-	d := Unit * time.Duration(Settings.Frequency.Reaper)
-	time.Sleep(d)
+	time.Sleep(Settings.Frequency.Reaper)
 }
 
 // Reaper interface.
