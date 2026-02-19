@@ -74,15 +74,14 @@ func (r *TaskReaper) Run() {
 		case task.Created:
 			mark := m.CreateTime
 			if m.TTL.Created > 0 {
-				d := time.Duration(m.TTL.Created) * Unit
+				d := time.Duration(m.TTL.Created) * time.Minute
 				if time.Since(mark) > d {
 					if !pipelineSet.Contains(m) {
 						r.delete(m)
 					}
 				}
 			} else {
-				d := time.Duration(Settings.Hub.Task.Reaper.Created) * Unit
-				if time.Since(mark) > d {
+				if time.Since(mark) > Settings.Hub.Task.Reaper.Created {
 					if !pipelineSet.Contains(m) {
 						r.release(m)
 					}
@@ -93,7 +92,7 @@ func (r *TaskReaper) Run() {
 			task.QuotaBlocked:
 			mark := m.CreateTime
 			if m.TTL.Pending > 0 {
-				d := time.Duration(m.TTL.Pending) * Unit
+				d := time.Duration(m.TTL.Pending) * time.Minute
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
@@ -104,7 +103,7 @@ func (r *TaskReaper) Run() {
 				mark = *m.Started
 			}
 			if m.TTL.Running > 0 {
-				d := time.Duration(m.TTL.Running) * Unit
+				d := time.Duration(m.TTL.Running) * time.Minute
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
@@ -115,13 +114,12 @@ func (r *TaskReaper) Run() {
 				mark = *m.Terminated
 			}
 			if m.TTL.Succeeded > 0 {
-				d := time.Duration(m.TTL.Succeeded) * Unit
+				d := time.Duration(m.TTL.Succeeded) * time.Minute
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
 			} else {
-				d := time.Duration(Settings.Hub.Task.Reaper.Succeeded) * Unit
-				if time.Since(mark) > d {
+				if time.Since(mark) > Settings.Hub.Task.Reaper.Succeeded {
 					r.release(m)
 				}
 			}
@@ -131,13 +129,12 @@ func (r *TaskReaper) Run() {
 				mark = *m.Terminated
 			}
 			if m.TTL.Failed > 0 {
-				d := time.Duration(m.TTL.Failed) * Unit
+				d := time.Duration(m.TTL.Failed) * time.Minute
 				if time.Since(mark) > d {
 					r.delete(m)
 				}
 			} else {
-				d := time.Duration(Settings.Hub.Task.Reaper.Failed) * Unit
-				if time.Since(mark) > d {
+				if time.Since(mark) > Settings.Hub.Task.Reaper.Failed {
 					r.release(m)
 				}
 			}
@@ -231,9 +228,7 @@ func (r *GroupReaper) Run() {
 		switch m.State {
 		case task.Created:
 			mark := m.CreateTime
-			d := time.Duration(
-				Settings.Hub.Task.Reaper.Created) * Unit
-			if time.Since(mark) > d {
+			if time.Since(mark) > Settings.Hub.Task.Reaper.Created {
 				r.delete(m)
 			}
 		case task.Ready:

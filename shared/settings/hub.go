@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"time"
 )
 
 const (
@@ -63,11 +64,11 @@ type Hub struct {
 	// Bucket settings.
 	Bucket struct {
 		Path string
-		TTL  int
+		TTL  time.Duration
 	}
 	// File settings.
 	File struct {
-		TTL int
+		TTL time.Duration
 	}
 	// Cache settings.
 	Cache struct {
@@ -82,25 +83,25 @@ type Hub struct {
 	Task struct {
 		SA      string
 		Retries int
-		Reaper  struct { // minutes.
-			Created   int
-			Succeeded int
-			Failed    int
+		Reaper  struct {
+			Created   time.Duration
+			Succeeded time.Duration
+			Failed    time.Duration
 		}
 		Pod struct {
 			Quota     int
 			Retention struct {
-				Succeeded int
-				Failed    int
+				Succeeded time.Duration
+				Failed    time.Duration
 			}
 		}
 		UID int64
 	}
 	// Frequency
 	Frequency struct {
-		Task   int
-		Reaper int
-		Heap   int
+		Task   time.Duration
+		Reaper time.Duration
+		Heap   time.Duration
 	}
 	// Development environment
 	Development bool
@@ -177,23 +178,23 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvTaskReapCreated)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Task.Reaper.Created = n
+		r.Task.Reaper.Created = time.Duration(n) * time.Minute
 	} else {
-		r.Task.Reaper.Created = 4320 // 72 hours.
+		r.Task.Reaper.Created = 4320 * time.Minute // 72 hours.
 	}
 	s, found = os.LookupEnv(EnvTaskReapSucceeded)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Task.Reaper.Succeeded = n
+		r.Task.Reaper.Succeeded = time.Duration(n) * time.Minute
 	} else {
-		r.Task.Reaper.Succeeded = 4320 // 72 hours.
+		r.Task.Reaper.Succeeded = 4320 * time.Minute // 72 hours.
 	}
 	s, found = os.LookupEnv(EnvTaskReapFailed)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Task.Reaper.Failed = n
+		r.Task.Reaper.Failed = time.Duration(n) * time.Minute
 	} else {
-		r.Task.Reaper.Failed = 43200 // 720 hours (30 days).
+		r.Task.Reaper.Failed = 43200 * time.Minute // 720 hours (30 days).
 	}
 	s, found = os.LookupEnv(EnvTaskPodQuota)
 	if found {
@@ -205,16 +206,16 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvTaskPodRetainSucceeded)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Task.Pod.Retention.Succeeded = n
+		r.Task.Pod.Retention.Succeeded = time.Duration(n) * time.Minute
 	} else {
-		r.Task.Pod.Retention.Succeeded = 1
+		r.Task.Pod.Retention.Succeeded = 1 * time.Minute
 	}
 	s, found = os.LookupEnv(EnvTaskPodRetainFailed)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Task.Pod.Retention.Failed = n
+		r.Task.Pod.Retention.Failed = time.Duration(n) * time.Minute
 	} else {
-		r.Task.Pod.Retention.Failed = 4320 // 72 hours.
+		r.Task.Pod.Retention.Failed = 4320 * time.Minute // 72 hours.
 	}
 	r.Task.SA, found = os.LookupEnv(EnvTaskSA)
 	if !found {
@@ -230,23 +231,23 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvFrequencyTask)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Frequency.Task = n
+		r.Frequency.Task = time.Duration(n) * time.Second
 	} else {
-		r.Frequency.Task = 1 // 1 second.
+		r.Frequency.Task = 1 * time.Second
 	}
 	s, found = os.LookupEnv(EnvFrequencyReaper)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Frequency.Reaper = n
+		r.Frequency.Reaper = time.Duration(n) * time.Minute
 	} else {
-		r.Frequency.Reaper = 1 // 1 minute.
+		r.Frequency.Reaper = 1 * time.Minute
 	}
 	s, found = os.LookupEnv(EnvFrequencyHeap)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Frequency.Heap = n // seconds.
+		r.Frequency.Heap = time.Duration(n) * time.Second
 	} else {
-		r.Frequency.Heap = 240 // 4 minutes.
+		r.Frequency.Heap = 240 * time.Second // 4 minutes.
 	}
 	s, found = os.LookupEnv(EnvTaskUid)
 	if found {
@@ -282,16 +283,16 @@ func (r *Hub) Load() (err error) {
 	s, found = os.LookupEnv(EnvBucketTTL)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.Bucket.TTL = n
+		r.Bucket.TTL = time.Duration(n) * time.Minute
 	} else {
-		r.Bucket.TTL = 1 // minutes.
+		r.Bucket.TTL = 1 * time.Minute
 	}
 	s, found = os.LookupEnv(EnvFileTTL)
 	if found {
 		n, _ := strconv.Atoi(s)
-		r.File.TTL = n
+		r.File.TTL = time.Duration(n) * time.Minute
 	} else {
-		r.File.TTL = 720 // minutes: 12 hours.
+		r.File.TTL = 720 * time.Minute // 12 hours.
 	}
 	s, found = os.LookupEnv(EnvAppName)
 	if found {
