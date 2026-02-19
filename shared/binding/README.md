@@ -1,4 +1,4 @@
-# Tackle2 Hub Go Client Library
+# API Go Client
 
 The `binding` package provides a Go client library for interacting with the Tackle2 Hub REST API. It offers a clean, type-safe interface for managing applications, tasks, assessments, and other Tackle2 resources.
 
@@ -182,7 +182,10 @@ tags, err := tagAPI.List()
 ```go
 // Complete workflow with mixed chaining approaches
 client := binding.New("http://localhost:8080")
-client.Login("admin", "password")
+err := client.Login("admin", "password")
+if err != nil {
+	return err
+}
 
 // Create application
 app := &api.Application{Name: "Customer Portal"}
@@ -674,10 +677,10 @@ The binding package provides typed errors for common HTTP status codes:
 app, err := client.Application.Get(123)
 if err != nil {
     switch {
-    case errors.As(err, &binding.NotFound{}):
+    case errors.Is(err, &binding.NotFound{}):
         // Resource not found (404)
         fmt.Println("Application not found")
-    case errors.As(err, &binding.Conflict{}):
+    case errors.Is(err, &binding.Conflict{}):
         // Conflict error (409)
         fmt.Println("Conflict occurred")
     default:
