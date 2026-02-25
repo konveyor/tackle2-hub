@@ -150,8 +150,9 @@ func TestAnalysisProfile(t *testing.T) {
 	_ = f.Close()
 	err = client.AnalysisProfile.GetBundle(profile.ID, f.Name())
 	g.Expect(err).To(BeNil())
-	_, err = os.Stat(f.Name())
+	st, err := os.Stat(f.Name())
 	g.Expect(err).To(BeNil())
+	g.Expect(st.Size()).To(BeNumerically(">", 0))
 
 	// DELETE: Remove the profile
 	err = client.AnalysisProfile.Delete(profile.ID)
