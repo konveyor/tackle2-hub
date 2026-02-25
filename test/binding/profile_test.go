@@ -47,6 +47,7 @@ func TestAnalysisProfile(t *testing.T) {
 	}
 	err = client.Target.Create(targetA)
 	g.Expect(err).To(BeNil())
+	g.Expect(targetA.ID).NotTo(BeZero())
 	t.Cleanup(func() {
 		_ = client.Target.Delete(targetA.ID)
 	})
@@ -58,6 +59,7 @@ func TestAnalysisProfile(t *testing.T) {
 	}
 	err = client.Target.Create(targetB)
 	g.Expect(err).To(BeNil())
+	g.Expect(targetB.ID).NotTo(BeZero())
 	t.Cleanup(func() {
 		_ = client.Target.Delete(targetB.ID)
 	})
@@ -152,7 +154,7 @@ func TestAnalysisProfile(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	st, err := os.Stat(f.Name())
 	g.Expect(err).To(BeNil())
-	g.Expect(st.Size()).To(BeNumerically(">", 0))
+	g.Expect(st.Size()).NotTo(BeZero())
 
 	// DELETE: Remove the profile
 	err = client.AnalysisProfile.Delete(profile.ID)
