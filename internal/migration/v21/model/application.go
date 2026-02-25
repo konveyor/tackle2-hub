@@ -96,12 +96,10 @@ func (r *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 		err = DependencyCyclicError{}
 		return
 	}
-
 	visited := make(map[uint]bool)
 	var queue []uint
 	queue = append(queue, r.FromID)
 	visited[r.FromID] = true
-
 	for len(queue) > 0 {
 		var deps []Dependency
 		err = db.Select("FromID").
@@ -110,9 +108,7 @@ func (r *Dependency) BeforeCreate(db *gorm.DB) (err error) {
 		if err != nil {
 			return
 		}
-
 		queue = queue[:0]
-
 		for _, dep := range deps {
 			if dep.FromID == r.ToID {
 				err = DependencyCyclicError{}
