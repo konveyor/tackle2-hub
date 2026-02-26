@@ -406,6 +406,9 @@ func (b *ApBundle) addTargets(m *model.AnalysisProfile) (err error) {
 		if target.Builtin() {
 			continue
 		}
+		if target.RuleSet == nil {
+			continue
+		}
 		err = b.addRuleSet(target.RuleSet)
 		if err != nil {
 			return

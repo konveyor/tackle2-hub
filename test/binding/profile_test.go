@@ -2,6 +2,7 @@ package binding
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -12,15 +13,55 @@ import (
 func TestAnalysisProfile(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Grab seeded files.
+	files, err := client.File.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(files)).To(BeNumerically(">", 0))
+
 	// Create an identity for the profile to reference
 	identity := &api.Identity{
 		Name: "test-identity",
 		Kind: "Test",
 	}
-	err := client.Identity.Create(identity)
+	err = client.Identity.Create(identity)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
 		_ = client.Identity.Delete(identity.ID)
+	})
+
+	// Create a custom target with ruleSet.
+	targetA := &api.Target{
+		Name:  "test-target-a",
+		Image: api.Ref{ID: files[0].ID},
+		RuleSet: &api.RuleSet{
+			Rules: []api.Rule{
+				{
+					Name: "test-rule-1",
+					File: &api.Ref{ID: files[0].ID},
+				},
+				{
+					Name: "test-rule-2",
+				},
+			},
+		},
+	}
+	err = client.Target.Create(targetA)
+	g.Expect(err).To(BeNil())
+	g.Expect(targetA.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Target.Delete(targetA.ID)
+	})
+
+	// Create a custom target without ruleSet.
+	targetB := &api.Target{
+		Name:  "test-target-no-ruleset",
+		Image: api.Ref{ID: files[0].ID},
+	}
+	err = client.Target.Create(targetB)
+	g.Expect(err).To(BeNil())
+	g.Expect(targetB.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Target.Delete(targetB.ID)
 	})
 
 	// Define the profile to create
@@ -48,11 +89,13 @@ func TestAnalysisProfile(t *testing.T) {
 			},
 			Repository: &api.Repository{
 				URL:  "https://github.com/konveyor/rulesets.git",
-				Path: "default/generated/camel3",
+				Path: "stable/java/camel3",
 			},
 			Targets: []api.ApTargetRef{
 				{ID: 2, Name: "Containerization"},
 				{ID: 6, Name: "OpenJDK", Selection: "konveyor.io/target=openjdk17"},
+				{ID: targetA.ID, Name: targetA.Name},
+				{ID: targetB.ID, Name: targetB.Name},
 			},
 		},
 	}
@@ -99,6 +142,19 @@ func TestAnalysisProfile(t *testing.T) {
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(profile, updated, "UpdateUser")
 	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: bundle.
+	f, err := os.CreateTemp("", "bundle-*.tar")
+	g.Expect(err).To(BeNil())
+	defer func() {
+		_ = os.Remove(f.Name())
+	}()
+	_ = f.Close()
+	err = client.AnalysisProfile.GetBundle(profile.ID, f.Name())
+	g.Expect(err).To(BeNil())
+	st, err := os.Stat(f.Name())
+	g.Expect(err).To(BeNil())
+	g.Expect(st.Size()).NotTo(BeZero())
 
 	// DELETE: Remove the profile
 	err = client.AnalysisProfile.Delete(profile.ID)
