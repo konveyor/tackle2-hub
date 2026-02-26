@@ -92,18 +92,32 @@ func (r *Dependency) Create(db *gorm.DB) (err error) {
 
 // BeforeCreate detects cyclic dependencies.
 func (r *Dependency) BeforeCreate(db *gorm.DB) (err error) {
-	var nextDeps []*Dependency
-	var nextAppsIDs []uint
-	nextAppsIDs = append(nextAppsIDs, r.FromID)
-	for len(nextAppsIDs) != 0 {
-		db.Where("ToID IN ?", nextAppsIDs).Find(&nextDeps)
-		nextAppsIDs = nextAppsIDs[:0] // empty array, but keep capacity
-		for _, nextDep := range nextDeps {
-			if nextDep.FromID == r.ToID {
+	if r.FromID == r.ToID {
+		err = DependencyCyclicError{}
+		return
+	}
+	visited := make(map[uint]bool)
+	var queue []uint
+	queue = append(queue, r.FromID)
+	visited[r.FromID] = true
+	for len(queue) > 0 {
+		var deps []Dependency
+		err = db.Select("FromID").
+			Where("ToID IN ?", queue).
+			Find(&deps).Error
+		if err != nil {
+			return
+		}
+		queue = queue[:0]
+		for _, dep := range deps {
+			if dep.FromID == r.ToID {
 				err = DependencyCyclicError{}
 				return
 			}
-			nextAppsIDs = append(nextAppsIDs, nextDep.FromID)
+			if !visited[dep.FromID] {
+				visited[dep.FromID] = true
+				queue = append(queue, dep.FromID)
+			}
 		}
 	}
 
