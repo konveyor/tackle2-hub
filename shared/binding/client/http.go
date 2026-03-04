@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,6 +39,8 @@ type Client struct {
 	Login api.Login
 	// Retry limit.
 	Retry uint8
+	// Insecure TLS
+	Insecure bool
 	// Error
 	Error error
 }
@@ -55,6 +58,17 @@ func (r *Client) Use(login api.Login) {
 // SetRetry set the number of retries.
 func (r *Client) SetRetry(n uint8) {
 	r.Retry = n
+}
+
+// SetInsecure set TLS insecure for self-signed certificates.
+func (r *Client) SetInsecure(enabled bool) {
+	r.transport = nil
+	r.Insecure = enabled
+}
+
+// SetTransport set the transport.
+func (r *Client) SetTransport(tp *http.Transport) {
+	r.transport = tp
 }
 
 // Get a resource.
@@ -715,7 +729,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		err = r.Error
 		return
 	}
-	err = r.buildTransport()
+	err = r.ensureTransport()
 	if err != nil {
 		return
 	}
@@ -775,8 +789,8 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 	return
 }
 
-// buildTransport builds transport.
-func (r *Client) buildTransport() (err error) {
+// ensureTransport ensures a transport is set.
+func (r *Client) ensureTransport() (err error) {
 	if r.transport != nil {
 		return
 	}
@@ -790,6 +804,9 @@ func (r *Client) buildTransport() (err error) {
 		IdleConnTimeout:       10 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: r.Insecure,
+		},
 	}
 	return
 }
