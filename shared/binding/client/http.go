@@ -63,7 +63,15 @@ func (r *Client) SetRetry(n uint8) {
 // SetInsecure set TLS insecure for self-signed certificates.
 func (r *Client) SetInsecure(enabled bool) {
 	r.Insecure = enabled
-	r.transport = nil
+	if r.transport == nil {
+		return
+	}
+	if ht, cast := r.transport.(*http.Transport); cast {
+		if ht.TLSClientConfig == nil {
+			ht.TLSClientConfig = &tls.Config{}
+		}
+		ht.TLSClientConfig.InsecureSkipVerify = r.Insecure
+	}
 }
 
 // SetTransport set the transport.
