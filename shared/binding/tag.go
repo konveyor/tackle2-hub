@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/client"
 )
 
 // Tag API.
@@ -68,19 +69,15 @@ func (h Tag) Find(name string, category uint) (r *api.Tag, found bool, err error
 
 // Ensure a tag exists.
 func (h Tag) Ensure(wanted *api.Tag) (err error) {
-	for i := 0; i < 10; i++ {
-		err = h.Create(wanted)
-		if err == nil {
-			return
-		}
-		found := false
-		if errors.Is(err, &Conflict{}) {
-			var tag *api.Tag
-			tag, found, err = h.Find(wanted.Name, wanted.Category.ID)
-			if found {
-				*wanted = *tag
-				break
-			}
+	r, found, err := h.Find(wanted.Name, wanted.Category.ID)
+	if found && err == nil {
+		*wanted = *r
+		return
+	}
+	err = h.Create(wanted)
+	if err != nil {
+		if errors.Is(err, &client.Conflict{}) {
+			err = nil
 		}
 	}
 	return

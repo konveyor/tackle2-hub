@@ -73,19 +73,15 @@ func (h TagCategory) Find(name string) (r *api.TagCategory, found bool, err erro
 
 // Ensure a tag-type exists.
 func (h TagCategory) Ensure(wanted *api.TagCategory) (err error) {
-	for i := 0; i < 10; i++ {
-		err = h.Create(wanted)
-		if err == nil {
-			return
-		}
-		found := false
+	r, found, err := h.Find(wanted.Name)
+	if found && err == nil {
+		*wanted = *r
+		return
+	}
+	err = h.Create(wanted)
+	if err != nil {
 		if errors.Is(err, &client.Conflict{}) {
-			var cat *api.TagCategory
-			cat, found, err = h.Find(wanted.Name)
-			if found {
-				*wanted = *cat
-				break
-			}
+			err = nil
 		}
 	}
 	return
