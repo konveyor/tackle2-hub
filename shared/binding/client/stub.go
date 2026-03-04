@@ -44,12 +44,13 @@ func (s *Stub) Use(login api.Login) {
 func (s *Stub) SetRetry(n uint8) {
 }
 
-// SetInsecure set TLS insecure for self-signed certificates.
-func (s *Stub) SetInsecure(enabled bool) {
-}
-
 // SetTransport set the transport.
 func (s *Stub) SetTransport(tp *http.Transport) {
+}
+
+// Transport returns the http transport.
+func (s *Stub) Transport() (tp *http.Transport) {
+	return
 }
 
 // Get retrieves a resource from the specified path.
