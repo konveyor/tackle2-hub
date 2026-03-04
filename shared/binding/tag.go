@@ -69,15 +69,18 @@ func (h Tag) Find(name string, category uint) (r *api.Tag, found bool, err error
 
 // Ensure a tag exists.
 func (h Tag) Ensure(wanted *api.Tag) (err error) {
-	r, found, err := h.Find(wanted.Name, wanted.Category.ID)
-	if found && err == nil {
-		*wanted = *r
-		return
-	}
-	err = h.Create(wanted)
-	if err != nil {
-		if errors.Is(err, &client.Conflict{}) {
-			err = nil
+	var r *api.Tag
+	found := false
+	for i := 0; i < 3; i++ {
+		r, found, err = h.Find(wanted.Name, wanted.Category.ID)
+		if found && err == nil {
+			*wanted = *r
+			return
+		}
+		err = h.Create(wanted)
+		if err == nil ||
+			!errors.Is(err, &client.Conflict{}) {
+			return
 		}
 	}
 	return
