@@ -32,7 +32,7 @@ var (
 // Client provides a REST client.
 type Client struct {
 	// transport
-	transport http.RoundTripper
+	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
 	// login API resource.
@@ -66,12 +66,10 @@ func (r *Client) SetInsecure(enabled bool) {
 	if r.transport == nil {
 		return
 	}
-	if ht, cast := r.transport.(*http.Transport); cast {
-		if ht.TLSClientConfig == nil {
-			ht.TLSClientConfig = &tls.Config{}
-		}
-		ht.TLSClientConfig.InsecureSkipVerify = r.Insecure
+	if r.transport.TLSClientConfig == nil {
+		r.transport.TLSClientConfig = &tls.Config{}
 	}
+	r.transport.TLSClientConfig.InsecureSkipVerify = r.Insecure
 }
 
 // SetTransport set the transport.
