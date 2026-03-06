@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ func New(baseURL string) (client *Client) {
 	client = &Client{
 		BaseURL: baseURL,
 	}
+	client.ensureTransport()
 	client.Retry = RetryLimit
 	return
 }
@@ -73,6 +75,10 @@ type RestClient interface {
 	Use(login api.Login)
 	// SetRetry set the number of retries.
 	SetRetry(n uint8)
+	// SetTransport set the transport.
+	SetTransport(tp *http.Transport)
+	// Transport returns the client transport.
+	Transport() *http.Transport
 
 	// Get retrieves a resource from the specified path.
 	// The response is unmarshaled into the provided object.

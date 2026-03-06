@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
@@ -41,6 +42,15 @@ func (s *Stub) Use(login api.Login) {
 
 // SetRetry set the number of retries.
 func (s *Stub) SetRetry(n uint8) {
+}
+
+// SetTransport set the transport.
+func (s *Stub) SetTransport(tp *http.Transport) {
+}
+
+// Transport returns the http transport.
+func (s *Stub) Transport() (tp *http.Transport) {
+	return
 }
 
 // Get retrieves a resource from the specified path.
