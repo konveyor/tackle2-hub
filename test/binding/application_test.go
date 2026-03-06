@@ -264,6 +264,152 @@ func TestApplicationIdentity(t *testing.T) {
 	}
 }
 
+// TestApplicationIdentityDecryption tests the Application.Select().Identity Decrypt() method
+func TestApplicationIdentityDecryption(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create identity with secrets
+	password := "test-password-123"
+	key := "test-key-456"
+	settings := "{\"insecureSkipVerify\": true}"
+	identity := &api.Identity{
+		Name:     "test-decrypt-identity",
+		Kind:     "git",
+		User:     "test-user",
+		Password: password,
+		Key:      key,
+		Settings: settings,
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	g.Expect(identity.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
+	// Build expected identity with decrypted values
+	expectedIdentity := &api.Identity{
+		Name:     "test-decrypt-identity",
+		Kind:     "git",
+		User:     "test-user",
+		Password: password,
+		Key:      key,
+		Settings: settings,
+	}
+	expectedIdentity.ID = identity.ID
+
+	// Create application with this identity
+	app := &api.Application{
+		Name: "Test App for Identity Decryption",
+		Identities: []api.IdentityRef{
+			{ID: identity.ID, Role: "source"},
+		},
+	}
+	err = client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	selected := client.Application.Select(app.ID)
+
+	// LIST without Decrypt - verify encrypted
+	encryptedList, err := selected.Identity.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(encryptedList)).To(Equal(1))
+	g.Expect(encryptedList[0].Password).ToNot(Equal(password))
+	g.Expect(encryptedList[0].Key).ToNot(Equal(key))
+	g.Expect(encryptedList[0].Settings).ToNot(Equal(settings))
+
+	// LIST with Decrypt - verify decrypted
+	decryptedList, err := selected.Identity.Decrypt().List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(decryptedList)).To(Equal(1))
+	eq, report := cmp.Eq(expectedIdentity, &decryptedList[0], "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Direct without Decrypt
+	encryptedDirect, found, err := selected.Identity.Direct("source")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedDirect.Password).ToNot(Equal(password))
+	g.Expect(encryptedDirect.Key).ToNot(Equal(key))
+	g.Expect(encryptedDirect.Settings).ToNot(Equal(settings))
+
+	// Direct with Decrypt
+	decryptedDirect, found, err := selected.Identity.Decrypt().Direct("source")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIdentity, decryptedDirect, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Create indirect identity for testing
+	indirectPassword := "indirect-pass-789"
+	indirectKey := "indirect-key-012"
+	indirectSettings := "{\"foo\": \"bar\"}"
+	indirectIdentity := &api.Identity{
+		Name:     "indirect-decrypt",
+		Kind:     "maven",
+		User:     "indirect-user",
+		Password: indirectPassword,
+		Key:      indirectKey,
+		Settings: indirectSettings,
+		Default:  true,
+	}
+	err = client.Identity.Create(indirectIdentity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(indirectIdentity.ID)
+	})
+
+	// Build expected indirect identity with decrypted values
+	expectedIndirect := &api.Identity{
+		Name:     "indirect-decrypt",
+		Kind:     "maven",
+		User:     "indirect-user",
+		Password: indirectPassword,
+		Key:      indirectKey,
+		Settings: indirectSettings,
+		Default:  true,
+	}
+	expectedIndirect.ID = indirectIdentity.ID
+
+	// Indirect without Decrypt
+	encryptedIndirect, found, err := selected.Identity.Indirect(indirectIdentity.Kind)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedIndirect.Password).ToNot(Equal(indirectPassword))
+	g.Expect(encryptedIndirect.Key).ToNot(Equal(indirectKey))
+	g.Expect(encryptedIndirect.Settings).ToNot(Equal(indirectSettings))
+
+	// Indirect with Decrypt
+	decryptedIndirect, found, err := selected.Identity.Decrypt().Indirect(indirectIdentity.Kind)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIndirect, decryptedIndirect, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Search without Decrypt
+	encryptedSearch, found, err := selected.Identity.Search().
+		Direct("source").
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedSearch.Password).ToNot(Equal(password))
+	g.Expect(encryptedSearch.Key).ToNot(Equal(key))
+	g.Expect(encryptedSearch.Settings).ToNot(Equal(settings))
+
+	// Search with Decrypt
+	decryptedSearch, found, err := selected.Identity.Decrypt().Search().
+		Direct("source").
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIdentity, decryptedSearch, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+}
+
 // TestApplicationIdentityWithRoles tests the Application.Select().Identity Direct search with roles
 func TestApplicationIdentityWithRoles(t *testing.T) {
 	g := NewGomegaWithT(t)
