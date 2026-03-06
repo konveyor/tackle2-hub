@@ -803,8 +803,8 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	eq, report = cmp.Eq(manifest.Secret, encrypted.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 
-	// GET: Retrieve with Decrypted param
-	decrypted, err := selected.Manifest.Decrypted().Get()
+	// GET: Retrieve with Decrypt param
+	decrypted, err := selected.Manifest.Decrypt().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 
@@ -816,8 +816,8 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	eq, report = cmp.Eq(originalSecret, decrypted.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 
-	// GET: Retrieve with Decrypted and Injected params
-	injected, err := selected.Manifest.Decrypted().Injected().Get()
+	// GET: Retrieve with Decrypt and Inject params
+	injected, err := selected.Manifest.Decrypt().Inject().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injected).NotTo(BeNil())
 

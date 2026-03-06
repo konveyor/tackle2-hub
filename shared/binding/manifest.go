@@ -11,9 +11,9 @@ type Manifest struct {
 	injected  bool
 }
 
-// Decrypted enables decryption.
+// Decrypt enables decryption.
 // Returned resources with secret decrypted.
-func (h Manifest) Decrypted() (h2 Manifest) {
+func (h Manifest) Decrypt() (h2 Manifest) {
 	h2 = Manifest{
 		client:    h.client,
 		decrypted: true,
@@ -22,9 +22,9 @@ func (h Manifest) Decrypted() (h2 Manifest) {
 	return
 }
 
-// Injected enables injection.
+// Inject enables injection.
 // Returned resources with secrets to be injected into the content.
-func (h Manifest) Injected() (h2 Manifest) {
+func (h Manifest) Inject() (h2 Manifest) {
 	h2 = Manifest{
 		client:    h.client,
 		decrypted: h.decrypted,

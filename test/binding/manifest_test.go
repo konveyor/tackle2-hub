@@ -92,7 +92,7 @@ func TestManifest(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve decrypted again and verify updates
-	updated, err := client.Manifest.Decrypted().Get(manifest.ID)
+	updated, err := client.Manifest.Decrypt().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
@@ -113,7 +113,7 @@ func TestManifest(t *testing.T) {
 		"user":     m2.Secret["user"],
 		"password": m2.Secret["password"],
 	}
-	updated, err = client.Manifest.Decrypted().Injected().Get(manifest.ID)
+	updated, err = client.Manifest.Decrypt().Inject().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(m2, updated, "UpdateUser")

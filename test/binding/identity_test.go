@@ -43,14 +43,14 @@ func TestIdentity(t *testing.T) {
 	})
 
 	// GET: List identities
-	list, err := client.Identity.Decrypted().List()
+	list, err := client.Identity.Decrypt().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
 	eq, report := cmp.Eq(identity, list[0])
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the identity and verify it matches
-	retrieved, err := client.Identity.Decrypted().Get(identity.ID)
+	retrieved, err := client.Identity.Decrypt().Get(identity.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	eq, report = cmp.Eq(identity, retrieved)
@@ -66,7 +66,7 @@ func TestIdentity(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve again and verify updates
-	updated, err := client.Identity.Decrypted().Get(identity.ID)
+	updated, err := client.Identity.Decrypt().Get(identity.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(identity, updated, "UpdateUser")
