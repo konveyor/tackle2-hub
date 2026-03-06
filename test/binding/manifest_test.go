@@ -1,9 +1,7 @@
 package binding
 
 import (
-	"encoding/json"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -99,25 +97,29 @@ func TestManifest(t *testing.T) {
 	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
 	g.Expect(eq).To(BeTrue(), report)
 
-	// GET: Retrieve injected again and verify updates
-	var m2 api.Manifest
-	b, _ := json.Marshal(manifest)
-	_ = json.Unmarshal(b, &m2)
-	m2.Content["key"] = m2.Secret["key"]
-	m2.Content["description"] = strings.Replace(
-		m2.Content["description"].(string),
-		"$(user)",
-		m2.Secret["user"].(string),
-		1)
-	m2.Content["database"] = api.Map{
-		"url":      manifest.Content["database"].(api.Map)["url"],
-		"user":     m2.Secret["user"],
-		"password": m2.Secret["password"],
+	// GET: Retrieve with Decrypt and Inject - verify injected content
+	expectedInjectedContent := api.Map{
+		"name": "Updated Test Manifest",
+		"key":  "UPDATEDKEY456",
+		"database": api.Map{
+			"url":      "db.updated.com",
+			"user":     "updateduser",
+			"password": "updatedpass",
+		},
+		"description": "Updated manifest using updateduser",
 	}
+	expectedSecret := api.Map{
+		"key":      "UPDATEDKEY456",
+		"user":     "updateduser",
+		"password": "updatedpass",
+	}
+
 	updated, err = client.Manifest.Decrypt().Inject().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(m2, updated, "UpdateUser")
+	eq, report = cmp.Eq(expectedInjectedContent, updated.Content)
+	g.Expect(eq).To(BeTrue(), report)
+	eq, report = cmp.Eq(expectedSecret, updated.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the manifest
@@ -247,6 +249,15 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	eq, report = cmp.Eq(expectedInjectedContent, decryptedInjected.Content)
 	g.Expect(eq).To(BeTrue(), report)
 
+	// GET with Inject and Decrypt (reversed order) - should produce same result
+	injectedDecrypted, err := client.Manifest.Inject().Decrypt().Get(manifest.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(injectedDecrypted).NotTo(BeNil())
+	eq, report = cmp.Eq(originalSecret, injectedDecrypted.Secret)
+	g.Expect(eq).To(BeTrue(), report)
+	eq, report = cmp.Eq(expectedInjectedContent, injectedDecrypted.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
 	// LIST without Decrypt - verify secrets are encrypted
 	encryptedList, err := client.Manifest.List()
 	g.Expect(err).To(BeNil())
@@ -276,6 +287,21 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 			g.Expect(eq).To(BeTrue(), report)
 			eq, report = cmp.Eq(originalContent, m.Content)
 			g.Expect(eq).To(BeTrue(), report)
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
+	// LIST with Inject only - secret still encrypted
+	injectedOnlyList, err := client.Manifest.Inject().List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(injectedOnlyList)).To(BeNumerically(">", 0))
+	found = false
+	for _, m := range injectedOnlyList {
+		if m.ID == manifest.ID {
+			found = true
+			eq, _ = cmp.Eq(originalSecret, m.Secret)
+			g.Expect(eq).To(BeFalse(), "Secret should be encrypted with Inject() only")
 			break
 		}
 	}
@@ -325,6 +351,21 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 			found = true
 			eq, report = cmp.Eq(originalSecret, m.Secret)
 			g.Expect(eq).To(BeTrue(), report)
+			break
+		}
+	}
+	g.Expect(found).To(BeTrue())
+
+	// FIND with Inject only - secret still encrypted
+	injectedOnlyFound, err := client.Manifest.Inject().Find(filter)
+	g.Expect(err).To(BeNil())
+	g.Expect(len(injectedOnlyFound)).To(BeNumerically(">", 0))
+	found = false
+	for _, m := range injectedOnlyFound {
+		if m.ID == manifest.ID {
+			found = true
+			eq, _ = cmp.Eq(originalSecret, m.Secret)
+			g.Expect(eq).To(BeFalse(), "Secret should be encrypted with Inject() only")
 			break
 		}
 	}

@@ -998,6 +998,19 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	// (injection requires decrypted secrets to work properly)
 	eq, _ = cmp.Eq(manifest.Content, injectedOnly.Content)
 	// The content may or may not match depending on backend behavior with encrypted secrets
+
+	// GET: Retrieve with Inject and Decrypt (reversed order) - should produce same result
+	injectedDecrypted, err := selected.Manifest.Inject().Decrypt().Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(injectedDecrypted).NotTo(BeNil())
+
+	// Verify Content has secrets injected (same as Decrypt().Inject())
+	eq, report = cmp.Eq(expectedInjected, injectedDecrypted.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is decrypted
+	eq, report = cmp.Eq(originalSecret, injectedDecrypted.Secret)
+	g.Expect(eq).To(BeTrue(), report)
 }
 
 // TestApplicationFact tests the Application.Select().Fact subresource
