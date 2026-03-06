@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -805,7 +804,7 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Decrypted param
-	decrypted, err := selected.Manifest.Get(binding.Param{Key: api.Decrypted, Value: "1"})
+	decrypted, err := selected.Manifest.Decrypted().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 
@@ -818,9 +817,7 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Decrypted and Injected params
-	injected, err := selected.Manifest.Get(
-		binding.Param{Key: api.Decrypted, Value: "1"},
-		binding.Param{Key: api.Injected, Value: "1"})
+	injected, err := selected.Manifest.Decrypted().Injected().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injected).NotTo(BeNil())
 

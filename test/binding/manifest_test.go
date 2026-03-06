@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -93,11 +92,7 @@ func TestManifest(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve decrypted again and verify updates
-	updated, err := client.Manifest.Get(
-		manifest.ID,
-		binding.Param{
-			Key:   api.Decrypted,
-			Value: "1"})
+	updated, err := client.Manifest.Decrypted().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
@@ -118,14 +113,7 @@ func TestManifest(t *testing.T) {
 		"user":     m2.Secret["user"],
 		"password": m2.Secret["password"],
 	}
-	updated, err = client.Manifest.Get(
-		manifest.ID,
-		binding.Param{
-			Key:   api.Injected,
-			Value: "1"},
-		binding.Param{
-			Key:   api.Decrypted,
-			Value: "1"})
+	updated, err = client.Manifest.Decrypted().Injected().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(m2, updated, "UpdateUser")
