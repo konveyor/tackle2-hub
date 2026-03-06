@@ -53,7 +53,7 @@ func TestAppManifestGet(t *testing.T) {
 		t.Errorf("Secret not encrypted.\n Expected: %s\n Actual: %s", created.Secret, got.Secret)
 	}
 	// Get decrypted.
-	decrypted, err := Manifest.Get(manifest.Decrypted)
+	decrypted, err := Manifest.Decrypted().Get()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -64,7 +64,7 @@ func TestAppManifestGet(t *testing.T) {
 		t.Errorf("Secret not decrypted.\n Expected: %s\n Actual: %s", manifest.Base.Secret, decrypted.Secret)
 	}
 	// Get decrypted and injected.
-	injected, err := Manifest.Get(manifest.Decrypted, manifest.Injected)
+	injected, err := Manifest.Decrypted().Injected().Get()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -118,7 +118,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 		t.Errorf("Secret not encrypted.\n Expected: %s\n Actual: %s", created.Secret, got.Secret)
 	}
 	// Get decrypted.
-	decrypted, err := Application.Select(application.ID).Manifest.Get(manifest.Decrypted)
+	decrypted, err := Application.Select(application.ID).Manifest.Decrypted().Get()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -129,7 +129,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 		t.Errorf("Secret not decrypted.\n Expected: %s\n Actual: %s", manifest.Base.Secret, decrypted.Secret)
 	}
 	// Get decrypted and injected.
-	injected, err := Application.Select(application.ID).Manifest.Get(manifest.Decrypted, manifest.Injected)
+	injected, err := Application.Select(application.ID).Manifest.Decrypted().Injected().Get()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

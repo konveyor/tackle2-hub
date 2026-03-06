@@ -7,8 +7,34 @@ import (
 
 // Manifest sub-resource API.
 type Manifest struct {
-	client client.RestClient
-	appId  uint
+	client    client.RestClient
+	decrypted bool
+	injected  bool
+	appId     uint
+}
+
+// Decrypted enables decryption.
+// Returned resources with fields decrypted.
+func (h Manifest) Decrypted() (h2 Manifest) {
+	h2 = Manifest{
+		client:    h.client,
+		appId:     h.appId,
+		injected:  h.injected,
+		decrypted: true,
+	}
+	return
+}
+
+// Injected enables injection.
+// Returned resources with secrets injected into the content.
+func (h Manifest) Injected() (h2 Manifest) {
+	h2 = Manifest{
+		client:    h.client,
+		appId:     h.appId,
+		decrypted: h.decrypted,
+		injected:  true,
+	}
+	return
 }
 
 // Create manifest.
@@ -19,12 +45,32 @@ func (h Manifest) Create(r *api.Manifest) (err error) {
 }
 
 // Get returns the LATEST manifest.
-// Params:
-// Param{Key: Decrypted, Value: "1"}
-// Param{Key: Injected, Value: "1"}
-func (h Manifest) Get(param ...client.Param) (r *api.Manifest, err error) {
+func (h Manifest) Get() (r *api.Manifest, err error) {
 	r = &api.Manifest{}
+	p := h.params()
 	path := client.Path(api.AppManifestRoute).Inject(client.Params{api.ID: h.appId})
-	err = h.client.Get(path, r, param...)
+	err = h.client.Get(path, r, p...)
+	return
+}
+
+// params returns parameters.
+func (h Manifest) params(filter ...client.Filter) (param []client.Param) {
+	if h.decrypted {
+		param = append(
+			param, client.Param{
+				Key:   api.Decrypted,
+				Value: "1",
+			})
+	}
+	if h.injected {
+		param = append(
+			param, client.Param{
+				Key:   api.Injected,
+				Value: "1",
+			})
+	}
+	for _, f := range filter {
+		param = append(param, f.Param())
+	}
 	return
 }

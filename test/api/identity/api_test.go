@@ -17,7 +17,7 @@ func TestIdentityCRUD(t *testing.T) {
 			}
 
 			// Get.
-			got, err := Identity.Get(r.ID)
+			got, err := Identity.Decrypted().Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -32,7 +32,7 @@ func TestIdentityCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			got, err = Identity.Get(r.ID)
+			got, err = Identity.Decrypted().Get(r.ID)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -46,7 +46,7 @@ func TestIdentityCRUD(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			_, err = Identity.Get(r.ID)
+			_, err = Identity.Decrypted().Get(r.ID)
 			if err == nil {
 				t.Errorf("Resource exits, but should be deleted: %v", r)
 			}
@@ -63,7 +63,7 @@ func TestIdentityList(t *testing.T) {
 		samples[name] = sample
 	}
 
-	got, err := Identity.List()
+	got, err := Identity.Decrypted().List()
 	if err != nil {
 		t.Errorf(err.Error())
 	}

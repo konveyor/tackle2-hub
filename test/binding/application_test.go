@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
@@ -263,6 +262,152 @@ func TestApplicationIdentity(t *testing.T) {
 		g.Expect(foundIdentity).NotTo(BeNil())
 		g.Expect(foundIdentity.Kind).To(Equal(identity.Kind))
 	}
+}
+
+// TestApplicationIdentityDecryption tests the Application.Select().Identity Decrypt() method
+func TestApplicationIdentityDecryption(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create identity with secrets
+	password := "test-password-123"
+	key := "test-key-456"
+	settings := "{\"insecureSkipVerify\": true}"
+	identity := &api.Identity{
+		Name:     "test-decrypt-identity",
+		Kind:     "git",
+		User:     "test-user",
+		Password: password,
+		Key:      key,
+		Settings: settings,
+	}
+	err := client.Identity.Create(identity)
+	g.Expect(err).To(BeNil())
+	g.Expect(identity.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(identity.ID)
+	})
+
+	// Build expected identity with decrypted values
+	expectedIdentity := &api.Identity{
+		Name:     "test-decrypt-identity",
+		Kind:     "git",
+		User:     "test-user",
+		Password: password,
+		Key:      key,
+		Settings: settings,
+	}
+	expectedIdentity.ID = identity.ID
+
+	// Create application with this identity
+	app := &api.Application{
+		Name: "Test App for Identity Decryption",
+		Identities: []api.IdentityRef{
+			{ID: identity.ID, Role: "source"},
+		},
+	}
+	err = client.Application.Create(app)
+	g.Expect(err).To(BeNil())
+	g.Expect(app.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		_ = client.Application.Delete(app.ID)
+	})
+
+	selected := client.Application.Select(app.ID)
+
+	// LIST without Decrypt - verify encrypted
+	encryptedList, err := selected.Identity.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(encryptedList)).To(Equal(1))
+	g.Expect(encryptedList[0].Password).ToNot(Equal(password))
+	g.Expect(encryptedList[0].Key).ToNot(Equal(key))
+	g.Expect(encryptedList[0].Settings).ToNot(Equal(settings))
+
+	// LIST with Decrypt - verify decrypted
+	decryptedList, err := selected.Identity.Decrypted().List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(decryptedList)).To(Equal(1))
+	eq, report := cmp.Eq(expectedIdentity, &decryptedList[0], "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Direct without Decrypt
+	encryptedDirect, found, err := selected.Identity.Direct("source")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedDirect.Password).ToNot(Equal(password))
+	g.Expect(encryptedDirect.Key).ToNot(Equal(key))
+	g.Expect(encryptedDirect.Settings).ToNot(Equal(settings))
+
+	// Direct with Decrypt
+	decryptedDirect, found, err := selected.Identity.Decrypted().Direct("source")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIdentity, decryptedDirect, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Create indirect identity for testing
+	indirectPassword := "indirect-pass-789"
+	indirectKey := "indirect-key-012"
+	indirectSettings := "{\"foo\": \"bar\"}"
+	indirectIdentity := &api.Identity{
+		Name:     "indirect-decrypt",
+		Kind:     "maven",
+		User:     "indirect-user",
+		Password: indirectPassword,
+		Key:      indirectKey,
+		Settings: indirectSettings,
+		Default:  true,
+	}
+	err = client.Identity.Create(indirectIdentity)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Identity.Delete(indirectIdentity.ID)
+	})
+
+	// Build expected indirect identity with decrypted values
+	expectedIndirect := &api.Identity{
+		Name:     "indirect-decrypt",
+		Kind:     "maven",
+		User:     "indirect-user",
+		Password: indirectPassword,
+		Key:      indirectKey,
+		Settings: indirectSettings,
+		Default:  true,
+	}
+	expectedIndirect.ID = indirectIdentity.ID
+
+	// Indirect without Decrypt
+	encryptedIndirect, found, err := selected.Identity.Indirect(indirectIdentity.Kind)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedIndirect.Password).ToNot(Equal(indirectPassword))
+	g.Expect(encryptedIndirect.Key).ToNot(Equal(indirectKey))
+	g.Expect(encryptedIndirect.Settings).ToNot(Equal(indirectSettings))
+
+	// Indirect with Decrypt
+	decryptedIndirect, found, err := selected.Identity.Decrypted().Indirect(indirectIdentity.Kind)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIndirect, decryptedIndirect, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Search without Decrypt
+	encryptedSearch, found, err := selected.Identity.Search().
+		Direct("source").
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	g.Expect(encryptedSearch.Password).ToNot(Equal(password))
+	g.Expect(encryptedSearch.Key).ToNot(Equal(key))
+	g.Expect(encryptedSearch.Settings).ToNot(Equal(settings))
+
+	// Search with Decrypt
+	decryptedSearch, found, err := selected.Identity.Decrypted().Search().
+		Direct("source").
+		Find()
+	g.Expect(err).To(BeNil())
+	g.Expect(found).To(BeTrue())
+	eq, report = cmp.Eq(expectedIdentity, decryptedSearch, "CreateUser", "UpdateUser", "CreateTime")
+	g.Expect(eq).To(BeTrue(), report)
 }
 
 // TestApplicationIdentityWithRoles tests the Application.Select().Identity Direct search with roles
@@ -804,8 +949,8 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	eq, report = cmp.Eq(manifest.Secret, encrypted.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 
-	// GET: Retrieve with Decrypted param
-	decrypted, err := selected.Manifest.Get(binding.Param{Key: api.Decrypted, Value: "1"})
+	// GET: Retrieve with Decrypt param
+	decrypted, err := selected.Manifest.Decrypted().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 
@@ -817,10 +962,8 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	eq, report = cmp.Eq(originalSecret, decrypted.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 
-	// GET: Retrieve with Decrypted and Injected params
-	injected, err := selected.Manifest.Get(
-		binding.Param{Key: api.Decrypted, Value: "1"},
-		binding.Param{Key: api.Injected, Value: "1"})
+	// GET: Retrieve with Decrypt and Inject params
+	injected, err := selected.Manifest.Decrypted().Injected().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injected).NotTo(BeNil())
 
@@ -840,6 +983,33 @@ func TestApplicationManifestEncryption(t *testing.T) {
 
 	// Verify Secret is decrypted in injected response (same as original)
 	eq, report = cmp.Eq(originalSecret, injected.Secret)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// GET: Retrieve with Inject only (without Decrypt)
+	injectedOnly, err := selected.Manifest.Injected().Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(injectedOnly).NotTo(BeNil())
+
+	// Verify Secret is still encrypted (Inject without Decrypt)
+	eq, _ = cmp.Eq(originalSecret, injectedOnly.Secret)
+	g.Expect(eq).To(BeFalse(), "Secret should be encrypted when using Inject() without Decrypt()")
+
+	// Content should not have proper injections because secrets are encrypted
+	// (injection requires decrypted secrets to work properly)
+	eq, _ = cmp.Eq(manifest.Content, injectedOnly.Content)
+	// The content may or may not match depending on backend behavior with encrypted secrets
+
+	// GET: Retrieve with Inject and Decrypt (reversed order) - should produce same result
+	injectedDecrypted, err := selected.Manifest.Injected().Decrypted().Get()
+	g.Expect(err).To(BeNil())
+	g.Expect(injectedDecrypted).NotTo(BeNil())
+
+	// Verify Content has secrets injected (same as Decrypt().Injected())
+	eq, report = cmp.Eq(expectedInjected, injectedDecrypted.Content)
+	g.Expect(eq).To(BeTrue(), report)
+
+	// Verify Secret is decrypted
+	eq, report = cmp.Eq(originalSecret, injectedDecrypted.Secret)
 	g.Expect(eq).To(BeTrue(), report)
 }
 

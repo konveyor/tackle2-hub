@@ -7,18 +7,27 @@ import (
 
 // Identity sub-resource API.
 type Identity struct {
-	client client.RestClient
-	appId  uint
+	client    client.RestClient
+	decrypted bool
+	appId     uint
+}
+
+// Decrypted enables decryption.
+// Returned resources with fields decrypted.
+func (h Identity) Decrypted() (h2 Identity) {
+	h2 = Identity{
+		client:    h.client,
+		appId:     h.appId,
+		decrypted: true,
+	}
+	return
 }
 
 // List identities.
 func (h Identity) List() (list []api.Identity, err error) {
-	p := client.Param{
-		Key:   api.Decrypted,
-		Value: "1",
-	}
+	p := h.params()
 	path := client.Path(api.AppIdentitiesRoute).Inject(client.Params{api.ID: h.appId})
-	err = h.client.Get(path, &list, p)
+	err = h.client.Get(path, &list, p...)
 	if err != nil {
 		return
 	}
@@ -28,16 +37,13 @@ func (h Identity) List() (list []api.Identity, err error) {
 // Direct finds identities associated with the application.
 func (h Identity) Direct(role string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	p := client.Param{
-		Key:   api.Decrypted,
-		Value: "1",
-	}
 	filter := client.Filter{}
 	filter.And("role").Eq(role)
 	path := client.
 		Path(api.AppIdentitiesRoute).
 		Inject(client.Params{api.ID: h.appId})
-	err = h.client.Get(path, &list, p, filter.Param())
+	p := h.params(filter)
+	err = h.client.Get(path, &list, p...)
 	if err != nil {
 		return
 	}
@@ -52,14 +58,11 @@ func (h Identity) Direct(role string) (r *api.Identity, found bool, err error) {
 // Indirect returns identities associated indirectly with the application.
 func (h Identity) Indirect(kind string) (r *api.Identity, found bool, err error) {
 	list := []api.Identity{}
-	p := client.Param{
-		Key:   api.Decrypted,
-		Value: "1",
-	}
 	filter := client.Filter{}
 	filter.And("kind").Eq(kind)
 	filter.And("default").Eq(true)
-	err = h.client.Get(api.IdentitiesRoute, &list, p, filter.Param())
+	p := h.params(filter)
+	err = h.client.Get(api.IdentitiesRoute, &list, p...)
 	if err != nil {
 		return
 	}
@@ -67,6 +70,21 @@ func (h Identity) Indirect(kind string) (r *api.Identity, found bool, err error)
 		r = &list[i]
 		found = true
 		return
+	}
+	return
+}
+
+// params returns parameters.
+func (h Identity) params(filter ...client.Filter) (param []client.Param) {
+	if h.decrypted {
+		param = append(
+			param, client.Param{
+				Key:   api.Decrypted,
+				Value: "1",
+			})
+	}
+	for _, f := range filter {
+		param = append(param, f.Param())
 	}
 	return
 }
