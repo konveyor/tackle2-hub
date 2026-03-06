@@ -13,9 +13,9 @@ type Manifest struct {
 	appId     uint
 }
 
-// Decrypt enables decryption.
-// Returned resources with secret decrypted.
-func (h Manifest) Decrypt() (h2 Manifest) {
+// Decrypted enables decryption.
+// Returned resources with fields decrypted.
+func (h Manifest) Decrypted() (h2 Manifest) {
 	h2 = Manifest{
 		client:    h.client,
 		appId:     h.appId,
@@ -25,9 +25,9 @@ func (h Manifest) Decrypt() (h2 Manifest) {
 	return
 }
 
-// Inject enables injection.
-// Returned resources with secrets to be injected into the content.
-func (h Manifest) Inject() (h2 Manifest) {
+// Injected enables injection.
+// Returned resources with secrets injected into the content.
+func (h Manifest) Injected() (h2 Manifest) {
 	h2 = Manifest{
 		client:    h.client,
 		appId:     h.appId,

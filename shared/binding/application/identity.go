@@ -12,9 +12,9 @@ type Identity struct {
 	appId     uint
 }
 
-// Decrypt enables decryption.
+// Decrypted enables decryption.
 // Returned resources with fields decrypted.
-func (h Identity) Decrypt() (h2 Identity) {
+func (h Identity) Decrypted() (h2 Identity) {
 	h2 = Identity{
 		client:    h.client,
 		appId:     h.appId,

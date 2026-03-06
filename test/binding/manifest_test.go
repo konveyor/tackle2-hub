@@ -91,7 +91,7 @@ func TestManifest(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve decrypted again and verify updates
-	updated, err := client.Manifest.Decrypt().Get(manifest.ID)
+	updated, err := client.Manifest.Decrypted().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
@@ -114,7 +114,7 @@ func TestManifest(t *testing.T) {
 		"password": "updatedpass",
 	}
 
-	updated, err = client.Manifest.Decrypt().Inject().Get(manifest.ID)
+	updated, err = client.Manifest.Decrypted().Injected().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(expectedInjectedContent, updated.Content)
@@ -211,7 +211,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET with Decrypt - verify secret is decrypted
-	decrypted, err := client.Manifest.Decrypt().Get(manifest.ID)
+	decrypted, err := client.Manifest.Decrypted().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 	eq, report = cmp.Eq(originalSecret, decrypted.Secret)
@@ -220,7 +220,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET with Inject only - verify content has injected secrets but secret is still encrypted
-	injectedOnly, err := client.Manifest.Inject().Get(manifest.ID)
+	injectedOnly, err := client.Manifest.Injected().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(injectedOnly).NotTo(BeNil())
 	// Secret should still be encrypted when using Inject() without Decrypt()
@@ -230,7 +230,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	// (injection requires decrypted secrets to work properly)
 
 	// GET with Decrypt and Inject - verify secret is decrypted and content has injections
-	decryptedInjected, err := client.Manifest.Decrypt().Inject().Get(manifest.ID)
+	decryptedInjected, err := client.Manifest.Decrypted().Injected().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(decryptedInjected).NotTo(BeNil())
 	eq, report = cmp.Eq(originalSecret, decryptedInjected.Secret)
@@ -250,7 +250,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET with Inject and Decrypt (reversed order) - should produce same result
-	injectedDecrypted, err := client.Manifest.Inject().Decrypt().Get(manifest.ID)
+	injectedDecrypted, err := client.Manifest.Injected().Decrypted().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(injectedDecrypted).NotTo(BeNil())
 	eq, report = cmp.Eq(originalSecret, injectedDecrypted.Secret)
@@ -276,7 +276,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// LIST with Decrypt - verify secrets are decrypted
-	decryptedList, err := client.Manifest.Decrypt().List()
+	decryptedList, err := client.Manifest.Decrypted().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedList)).To(BeNumerically(">", 0))
 	found = false
@@ -293,7 +293,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// LIST with Inject only - secret still encrypted
-	injectedOnlyList, err := client.Manifest.Inject().List()
+	injectedOnlyList, err := client.Manifest.Injected().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(injectedOnlyList)).To(BeNumerically(">", 0))
 	found = false
@@ -308,7 +308,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// LIST with Decrypt and Inject - verify secrets are decrypted and content has injections
-	decryptedInjectedList, err := client.Manifest.Decrypt().Inject().List()
+	decryptedInjectedList, err := client.Manifest.Decrypted().Injected().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedInjectedList)).To(BeNumerically(">", 0))
 	found = false
@@ -342,7 +342,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// FIND with Decrypt - verify secrets are decrypted
-	decryptedFound, err := client.Manifest.Decrypt().Find(filter)
+	decryptedFound, err := client.Manifest.Decrypted().Find(filter)
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedFound)).To(BeNumerically(">", 0))
 	found = false
@@ -357,7 +357,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// FIND with Inject only - secret still encrypted
-	injectedOnlyFound, err := client.Manifest.Inject().Find(filter)
+	injectedOnlyFound, err := client.Manifest.Injected().Find(filter)
 	g.Expect(err).To(BeNil())
 	g.Expect(len(injectedOnlyFound)).To(BeNumerically(">", 0))
 	found = false
@@ -372,7 +372,7 @@ func TestManifestDecryptionAndInjection(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// FIND with Decrypt and Inject - verify secrets are decrypted and content has injections
-	decryptedInjectedFound, err := client.Manifest.Decrypt().Inject().Find(filter)
+	decryptedInjectedFound, err := client.Manifest.Decrypted().Injected().Find(filter)
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedInjectedFound)).To(BeNumerically(">", 0))
 	found = false

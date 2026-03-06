@@ -43,14 +43,14 @@ func TestIdentity(t *testing.T) {
 	})
 
 	// GET: List identities
-	list, err := client.Identity.Decrypt().List()
+	list, err := client.Identity.Decrypted().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(list)).To(Equal(1))
 	eq, report := cmp.Eq(identity, list[0])
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve the identity and verify it matches
-	retrieved, err := client.Identity.Decrypt().Get(identity.ID)
+	retrieved, err := client.Identity.Decrypted().Get(identity.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	eq, report = cmp.Eq(identity, retrieved)
@@ -66,7 +66,7 @@ func TestIdentity(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// GET: Retrieve again and verify updates
-	updated, err := client.Identity.Decrypt().Get(identity.ID)
+	updated, err := client.Identity.Decrypted().Get(identity.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
 	eq, report = cmp.Eq(identity, updated, "UpdateUser")
@@ -133,7 +133,7 @@ func TestIdentityDecryption(t *testing.T) {
 	g.Expect(encrypted.Settings).ToNot(Equal(settings))
 
 	// GET with Decrypt - verify fields are decrypted
-	decrypted, err := client.Identity.Decrypt().Get(identity.ID)
+	decrypted, err := client.Identity.Decrypted().Get(identity.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 	eq, report := cmp.Eq(expected, decrypted, "CreateUser", "UpdateUser", "CreateTime")
@@ -156,7 +156,7 @@ func TestIdentityDecryption(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// LIST with Decrypt - verify fields are decrypted
-	decryptedList, err := client.Identity.Decrypt().List()
+	decryptedList, err := client.Identity.Decrypted().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedList)).To(BeNumerically(">", 0))
 	found = false
@@ -189,7 +189,7 @@ func TestIdentityDecryption(t *testing.T) {
 	g.Expect(found).To(BeTrue())
 
 	// FIND with Decrypt - verify fields are decrypted
-	decryptedFound, err := client.Identity.Decrypt().Find(filter)
+	decryptedFound, err := client.Identity.Decrypted().Find(filter)
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedFound)).To(BeNumerically(">", 0))
 	found = false

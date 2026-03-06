@@ -323,7 +323,7 @@ func TestApplicationIdentityDecryption(t *testing.T) {
 	g.Expect(encryptedList[0].Settings).ToNot(Equal(settings))
 
 	// LIST with Decrypt - verify decrypted
-	decryptedList, err := selected.Identity.Decrypt().List()
+	decryptedList, err := selected.Identity.Decrypted().List()
 	g.Expect(err).To(BeNil())
 	g.Expect(len(decryptedList)).To(Equal(1))
 	eq, report := cmp.Eq(expectedIdentity, &decryptedList[0], "CreateUser", "UpdateUser", "CreateTime")
@@ -338,7 +338,7 @@ func TestApplicationIdentityDecryption(t *testing.T) {
 	g.Expect(encryptedDirect.Settings).ToNot(Equal(settings))
 
 	// Direct with Decrypt
-	decryptedDirect, found, err := selected.Identity.Decrypt().Direct("source")
+	decryptedDirect, found, err := selected.Identity.Decrypted().Direct("source")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).To(BeTrue())
 	eq, report = cmp.Eq(expectedIdentity, decryptedDirect, "CreateUser", "UpdateUser", "CreateTime")
@@ -384,7 +384,7 @@ func TestApplicationIdentityDecryption(t *testing.T) {
 	g.Expect(encryptedIndirect.Settings).ToNot(Equal(indirectSettings))
 
 	// Indirect with Decrypt
-	decryptedIndirect, found, err := selected.Identity.Decrypt().Indirect(indirectIdentity.Kind)
+	decryptedIndirect, found, err := selected.Identity.Decrypted().Indirect(indirectIdentity.Kind)
 	g.Expect(err).To(BeNil())
 	g.Expect(found).To(BeTrue())
 	eq, report = cmp.Eq(expectedIndirect, decryptedIndirect, "CreateUser", "UpdateUser", "CreateTime")
@@ -401,7 +401,7 @@ func TestApplicationIdentityDecryption(t *testing.T) {
 	g.Expect(encryptedSearch.Settings).ToNot(Equal(settings))
 
 	// Search with Decrypt
-	decryptedSearch, found, err := selected.Identity.Decrypt().Search().
+	decryptedSearch, found, err := selected.Identity.Decrypted().Search().
 		Direct("source").
 		Find()
 	g.Expect(err).To(BeNil())
@@ -950,7 +950,7 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Decrypt param
-	decrypted, err := selected.Manifest.Decrypt().Get()
+	decrypted, err := selected.Manifest.Decrypted().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(decrypted).NotTo(BeNil())
 
@@ -963,7 +963,7 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Decrypt and Inject params
-	injected, err := selected.Manifest.Decrypt().Inject().Get()
+	injected, err := selected.Manifest.Decrypted().Injected().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injected).NotTo(BeNil())
 
@@ -986,7 +986,7 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Inject only (without Decrypt)
-	injectedOnly, err := selected.Manifest.Inject().Get()
+	injectedOnly, err := selected.Manifest.Injected().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injectedOnly).NotTo(BeNil())
 
@@ -1000,11 +1000,11 @@ func TestApplicationManifestEncryption(t *testing.T) {
 	// The content may or may not match depending on backend behavior with encrypted secrets
 
 	// GET: Retrieve with Inject and Decrypt (reversed order) - should produce same result
-	injectedDecrypted, err := selected.Manifest.Inject().Decrypt().Get()
+	injectedDecrypted, err := selected.Manifest.Injected().Decrypted().Get()
 	g.Expect(err).To(BeNil())
 	g.Expect(injectedDecrypted).NotTo(BeNil())
 
-	// Verify Content has secrets injected (same as Decrypt().Inject())
+	// Verify Content has secrets injected (same as Decrypt().Injected())
 	eq, report = cmp.Eq(expectedInjected, injectedDecrypted.Content)
 	g.Expect(eq).To(BeTrue(), report)
 
