@@ -46,7 +46,7 @@ func TestManifestCRUD(t *testing.T) {
 		t.Errorf("Secret not encrypted.\n Expected: %s\n Actual: %s", created.Secret, got.Secret)
 	}
 	// Get decrypted.
-	decrypted, err := Manifest.Get(created.ID, Decrypted)
+	decrypted, err := Manifest.Decrypted().Get(created.ID)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -57,7 +57,7 @@ func TestManifestCRUD(t *testing.T) {
 		t.Errorf("Secret not decrypted.\n Expected: %s\n Actual: %s", Base.Secret, decrypted.Secret)
 	}
 	// Get decrypted and injected.
-	injected, err := Manifest.Get(created.ID, Decrypted, Injected)
+	injected, err := Manifest.Decrypted().Injected().Get(created.ID)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -75,7 +75,7 @@ func TestManifestCRUD(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	got, err = Manifest.Get(r.ID, Decrypted)
+	got, err = Manifest.Decrypted().Get(r.ID)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

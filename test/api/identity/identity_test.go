@@ -41,7 +41,7 @@ func TestFindIdentity(t *testing.T) {
 	filter := binding.Filter{}
 	filter.And("application.id").Eq(int(application.ID))
 	filter.And("kind").Eq(direct.Kind)
-	found, err := Identity.Find(filter)
+	found, err := Identity.Decrypted().Find(filter)
 	assert.Must(t, err)
 	if len(found) > 0 {
 		identity := found[0]
