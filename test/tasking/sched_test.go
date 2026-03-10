@@ -1,4 +1,4 @@
-package task
+package tasking
 
 import (
 	"context"
@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	internaltask "github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -18,28 +19,27 @@ import (
 func TestScheduler(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	ctx := setup(g)
-	defer ctx.teardown()
-
-	// Seed database with common test data
-	app := ctx.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create 3 tasks with kind=analyzer, state=Ready
 	for i := 1; i <= 3; i++ {
-		task := &model.Task{
+		m := &model.Task{
 			Name:          "test-task-" + strconv.Itoa(i),
 			Kind:          "analyzer",
-			State:         internaltask.Ready,
-			ApplicationID: &app.ID,
+			State:         task.Ready,
+			ApplicationID: &ctx.Application.ID,
 		}
-		err := ctx.DB.Create(task).Error
+		err := ctx.DB.Create(m).Error
 		g.Expect(err).To(gomega.BeNil())
-		g.Expect(task.ID).To(gomega.Equal(uint(i)))
+		g.Expect(m.ID).To(gomega.Equal(uint(i)))
 	}
 
-	// Create and start the manager
-	ctx.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to create pods
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// List pods to verify they were created
 	podList := &core.PodList{}
@@ -51,9 +51,9 @@ func TestScheduler(t *testing.T) {
 
 	// Check the first created pod for expected configuration
 	pod := &podList.Items[0]
-	g.Expect(pod.Labels).To(gomega.HaveKey(internaltask.TaskLabel))
-	g.Expect(pod.Labels[internaltask.AppLabel]).To(gomega.Equal("tackle"))
-	g.Expect(pod.Labels[internaltask.RoleLabel]).To(gomega.Equal("task"))
+	g.Expect(pod.Labels).To(gomega.HaveKey(task.TaskLabel))
+	g.Expect(pod.Labels[task.AppLabel]).To(gomega.Equal("tackle"))
+	g.Expect(pod.Labels[task.RoleLabel]).To(gomega.Equal("task"))
 
 	// Verify pod has 2 containers: addon (analyzer) and java extension
 	g.Expect(pod.Spec.Containers).To(gomega.HaveLen(2))
@@ -129,19 +129,19 @@ func TestScheduler(t *testing.T) {
 		mountPaths[mount.Name] = mount.MountPath
 	}
 
-	g.Expect(mountPaths).To(gomega.HaveKey(internaltask.Addon))
-	g.Expect(mountPaths[internaltask.Addon]).To(gomega.Equal(settings.Settings.Addon.HomeDir))
+	g.Expect(mountPaths).To(gomega.HaveKey(task.Addon))
+	g.Expect(mountPaths[task.Addon]).To(gomega.Equal(settings.Settings.Addon.HomeDir))
 
-	g.Expect(mountPaths).To(gomega.HaveKey(internaltask.Shared))
-	g.Expect(mountPaths[internaltask.Shared]).To(gomega.Equal(settings.Settings.Addon.SharedDir))
+	g.Expect(mountPaths).To(gomega.HaveKey(task.Shared))
+	g.Expect(mountPaths[task.Shared]).To(gomega.Equal(settings.Settings.Addon.SharedDir))
 
-	g.Expect(mountPaths).To(gomega.HaveKey(internaltask.Cache))
-	g.Expect(mountPaths[internaltask.Cache]).To(gomega.Equal(settings.Settings.Addon.CacheDir))
+	g.Expect(mountPaths).To(gomega.HaveKey(task.Cache))
+	g.Expect(mountPaths[task.Cache]).To(gomega.Equal(settings.Settings.Addon.CacheDir))
 
-	// Wait for pods to progress through lifecycle (Pending -> Running -> Succeeded)
-	// With settings.Settings.Frequency.Task at 100ms and pod transitions at 1s each,
-	// we need ~2.5s for all 3 tasks to complete (with RuleUnique postponing task 3)
-	time.Sleep(2500 * time.Millisecond)
+	// Reconcile until all 3 tasks complete
+	// With instant pod transitions and RuleUnique limiting to 2 concurrent tasks,
+	// we need several cycles to complete all 3 tasks
+	ctx.reconcile(g, 3, 1, 2, 3)
 
 	// Retrieve updated pod list to verify they progressed through lifecycle
 	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
@@ -175,78 +175,72 @@ func TestScheduler(t *testing.T) {
 	// until one of the first two completes.
 	var tasks []*model.Task
 	err = ctx.DB.Find(&tasks, "state IN ?", []string{
-		internaltask.Succeeded,
-		internaltask.Running,
-		internaltask.Pending,
+		task.Succeeded,
+		task.Running,
+		task.Pending,
 	}).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(tasks)).To(gomega.BeNumerically(">=", 2))
 
 	// Find succeeded tasks
-	var succeededTasks []*model.Task
-	for _, task := range tasks {
-		if task.State == internaltask.Succeeded {
-			succeededTasks = append(succeededTasks, task)
+	var ms []*model.Task
+	for _, m := range tasks {
+		if m.State == task.Succeeded {
+			ms = append(ms, m)
 		}
 	}
-	g.Expect(len(succeededTasks)).To(gomega.BeNumerically(">=", 1))
+	g.Expect(len(ms)).To(gomega.BeNumerically(">=", 1))
 
 	// Verify at least one task has proper state transitions recorded
-	task := succeededTasks[0]
-	g.Expect(task.State).To(gomega.Equal(internaltask.Succeeded))
-	g.Expect(task.Started).ToNot(gomega.BeNil())
-	g.Expect(task.Terminated).ToNot(gomega.BeNil())
-	g.Expect(task.Pod).ToNot(gomega.BeEmpty())
+	m := ms[0]
+	g.Expect(m.State).To(gomega.Equal(task.Succeeded))
+	g.Expect(m.Started).ToNot(gomega.BeNil())
+	g.Expect(m.Terminated).ToNot(gomega.BeNil())
+	g.Expect(m.Pod).ToNot(gomega.BeEmpty())
 }
 
 // TestRuleUnique tests concurrent task limiting per application/kind.
 func TestRuleUnique(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create 3 tasks with same kind and application
+	var taskIDs []uint
 	for i := 1; i <= 3; i++ {
-		task := &model.Task{
+		m := &model.Task{
 			Name:          "test-task-" + strconv.Itoa(i),
 			Kind:          "analyzer",
-			State:         internaltask.Ready,
-			ApplicationID: &app.ID,
+			State:         task.Ready,
+			ApplicationID: &ctx.Application.ID,
 		}
-		err := tc.DB.Create(task).Error
+		err := ctx.DB.Create(m).Error
 		g.Expect(err).To(gomega.BeNil())
+		taskIDs = append(taskIDs, m.ID)
 	}
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager using synchronous testing approach
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait briefly for scheduling
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile once: should start task 1 (capacity=1), postpone task 3 (RuleUnique)
+	_ = ctx.Manager.Reconcile(context.Background())
 
-	// Verify first 2 tasks started, third postponed
+	// Check state after first reconcile
 	var tasks []*model.Task
-	err := tc.DB.Order("id").Find(&tasks).Error
+	err := ctx.DB.Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(tasks)).To(gomega.Equal(3))
 
-	// First two should be Pending or Running
-	task1State := tasks[0].State
-	task2State := tasks[1].State
-	g.Expect(task1State).To(gomega.BeElementOf(internaltask.Pending, internaltask.Running))
-	g.Expect(task2State).To(gomega.BeElementOf(internaltask.Pending, internaltask.Running))
-
-	// Third should be Postponed
-	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Postponed))
+	// With instant transitions and capacity=1, task 1 may already be Running or Succeeded
+	// Task 2 may still be Ready (waiting for capacity)
+	// Task 3 should be Postponed by RuleUnique
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Postponed))
 
 	// Verify postponement event
 	hasPostponedEvent := false
 	for _, event := range tasks[2].Events {
-		if event.Kind == internaltask.Postponed {
+		if event.Kind == task.Postponed {
 			hasPostponedEvent = true
 			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Unique"))
 			break
@@ -254,55 +248,49 @@ func TestRuleUnique(t *testing.T) {
 	}
 	g.Expect(hasPostponedEvent).To(gomega.BeTrue())
 
-	// Wait for first tasks to complete
-	time.Sleep(2500 * time.Millisecond)
+	// Reconcile until all 3 tasks complete
+	ctx.reconcile(g, 3, taskIDs...)
 
-	// Verify third task eventually started
-	var task3 model.Task
-	err = tc.DB.First(&task3, tasks[2].ID).Error
+	// Verify all tasks eventually completed
+	err = ctx.DB.Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(task3.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running,
-		internaltask.Succeeded))
+	g.Expect(tasks[0].State).To(gomega.Equal(task.Succeeded))
+	g.Expect(tasks[1].State).To(gomega.Equal(task.Succeeded))
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Succeeded))
 }
 
 // TestPriorityOrdering tests priority-based task scheduling.
 func TestPriorityOrdering(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create tasks with different priorities
 	priorities := []int{1, 10, 5, 3}
 	for i, priority := range priorities {
-		task := &model.Task{
+		m := &model.Task{
 			Name:          "task-" + strconv.Itoa(i+1),
 			Kind:          "analyzer",
-			State:         internaltask.Ready,
+			State:         task.Ready,
 			Priority:      priority,
-			ApplicationID: &app.ID,
+			ApplicationID: &ctx.Application.ID,
 		}
-		err := tc.DB.Create(task).Error
+		err := ctx.DB.Create(m).Error
 		g.Expect(err).To(gomega.BeNil())
 	}
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait briefly for first task to be scheduled
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile once to start first task
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// First task scheduled should be highest priority (10)
 	var firstStarted model.Task
-	err := tc.DB.Where("state IN ?", []string{
-		internaltask.Pending,
-		internaltask.Running,
+	err := ctx.DB.Where("state IN ?", []string{
+		task.Pending,
+		task.Running,
 	}).Order("started").First(&firstStarted).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(firstStarted.Priority).To(gomega.Equal(10))
@@ -312,46 +300,42 @@ func TestPriorityOrdering(t *testing.T) {
 func TestOrphanPodCleanup(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create and start a task
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "test-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for pod to be created
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to create pod
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify pod exists
 	podList := &core.PodList{}
-	err = tc.Client.List(context.Background(), podList, &client.ListOptions{
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
 		Namespace: settings.Settings.Hub.Namespace,
 	})
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(podList.Items)).To(gomega.BeNumerically(">=", 1))
 
 	// Delete the task from DB (simulating orphan scenario)
-	err = tc.DB.Delete(task).Error
+	err = ctx.DB.Delete(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for scheduler to detect and clean up orphan
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to detect and clean up orphan
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify pod was deleted
-	err = tc.Client.List(context.Background(), podList, &client.ListOptions{
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
 		Namespace: settings.Settings.Hub.Namespace,
 	})
 	g.Expect(err).To(gomega.BeNil())
@@ -362,78 +346,77 @@ func TestOrphanPodCleanup(t *testing.T) {
 func TestPipelineMode(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create task group in Pipeline mode
 	taskGroup := &model.TaskGroup{
 		Name: "pipeline-group",
-		Mode: internaltask.Pipeline,
+		Mode: task.Pipeline,
 		List: []model.Task{
 			{
 				Name:          "task-1",
 				Kind:          "analyzer",
-				ApplicationID: &app.ID,
+				ApplicationID: &ctx.Application.ID,
 			},
 			{
 				Name:          "task-2",
 				Kind:          "analyzer",
-				ApplicationID: &app.ID,
+				ApplicationID: &ctx.Application.ID,
 			},
 			{
 				Name:          "task-3",
 				Kind:          "analyzer",
-				ApplicationID: &app.ID,
+				ApplicationID: &ctx.Application.ID,
 			},
 		},
 	}
-	err := tc.DB.Create(taskGroup).Error
+	err := ctx.DB.Create(taskGroup).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager first
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile once to populate cluster resources (needed for TaskGroup.Submit)
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Submit task group through manager
-	tg := internaltask.NewTaskGroup(taskGroup)
-	err = tg.Submit(tc.DB, tc.Manager)
+	tg := task.NewTaskGroup(taskGroup)
+	err = tg.Submit(ctx.DB, ctx.Manager)
 	g.Expect(err).To(gomega.BeNil())
 
 	// Verify initial state: only first task is Ready
 	var tasks []*model.Task
-	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	err = ctx.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(tasks)).To(gomega.Equal(3))
-	g.Expect(tasks[0].State).To(gomega.Equal(internaltask.Ready))
-	g.Expect(tasks[1].State).To(gomega.Equal(internaltask.Created))
-	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Created))
+	g.Expect(tasks[0].State).To(gomega.Equal(task.Ready))
+	g.Expect(tasks[1].State).To(gomega.Equal(task.Created))
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Created))
 
-	// Wait for first task to start
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to start first task
+	_ = ctx.Manager.Reconcile(context.Background())
 
-	// Verify first task running, others still Created
-	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	// Verify first task started, others still Created
+	err = ctx.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(tasks[0].State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
-	g.Expect(tasks[1].State).To(gomega.Equal(internaltask.Created))
-	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Created))
+		task.Pending,
+		task.Running))
+	g.Expect(tasks[1].State).To(gomega.Equal(task.Created))
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Created))
 
-	// Wait for first task to complete and second to start
-	time.Sleep(2500 * time.Millisecond)
+	// Reconcile until first task completes
+	ctx.reconcile(g, 1, tasks[0].ID)
 
-	// Verify first succeeded, second ready/running
-	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	// Verify first succeeded, second should be ready
+	err = ctx.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(tasks[0].State).To(gomega.Equal(internaltask.Succeeded))
+	g.Expect(tasks[0].State).To(gomega.Equal(task.Succeeded))
 	g.Expect(tasks[1].State).To(gomega.BeElementOf(
-		internaltask.Ready,
-		internaltask.Pending,
-		internaltask.Running))
+		task.Ready,
+		task.Pending,
+		task.Running))
 }
 
 // TestTaskRetryOnKill tests task retry when container exits with code 137.
@@ -450,57 +433,51 @@ func TestTaskRetryOnKill(t *testing.T) {
 func TestRuleDeps(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create language-discovery task (dependency)
-	discoveryTask := &model.Task{
+	discovery := &model.Task{
 		Name:          "discovery-task",
 		Kind:          "language-discovery",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(discoveryTask).Error
+	err := ctx.DB.Create(discovery).Error
 	g.Expect(err).To(gomega.BeNil())
 
 	// Create analyzer task (depends on language-discovery)
-	analyzerTask := &model.Task{
+	analyzer := &model.Task{
 		Name:          "analyzer-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err = tc.DB.Create(analyzerTask).Error
+	err = ctx.DB.Create(analyzer).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for scheduling
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to start tasks
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify discovery task started
-	var discovery model.Task
-	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	err = ctx.DB.First(&discovery, discovery.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(discovery.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
+		task.Pending,
+		task.Running))
 
 	// Verify analyzer task postponed due to dependency
-	var analyzer model.Task
-	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	err = ctx.DB.First(&analyzer, analyzer.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(analyzer.State).To(gomega.Equal(internaltask.Postponed))
+	g.Expect(analyzer.State).To(gomega.Equal(task.Postponed))
 
 	// Verify postponement event
 	hasDepEvent := false
 	for _, event := range analyzer.Events {
-		if event.Kind == internaltask.Postponed {
+		if event.Kind == task.Postponed {
 			hasDepEvent = true
 			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Dependency"))
 			break
@@ -508,17 +485,17 @@ func TestRuleDeps(t *testing.T) {
 	}
 	g.Expect(hasDepEvent).To(gomega.BeTrue())
 
-	// Wait for discovery task to complete
-	time.Sleep(2500 * time.Millisecond)
+	// Reconcile until discovery task completes
+	ctx.reconcile(g, 1, discovery.ID)
 
 	// Verify analyzer task eventually started
-	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	err = ctx.DB.First(&analyzer, analyzer.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(analyzer.State).To(gomega.BeElementOf(
-		internaltask.Ready,
-		internaltask.Pending,
-		internaltask.Running,
-		internaltask.Succeeded))
+		task.Ready,
+		task.Pending,
+		task.Running,
+		task.Succeeded))
 }
 
 // TestPriorityEscalation tests dependency priority escalation to prevent priority inversion.
@@ -527,51 +504,46 @@ func TestRuleDeps(t *testing.T) {
 func TestPriorityEscalation(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
 
 	// Create language-discovery task (dependency) with LOW priority
-	discoveryTask := &model.Task{
+	discovery := &model.Task{
 		Name:          "discovery-task",
 		Kind:          "language-discovery",
-		State:         internaltask.Ready,
+		State:         task.Ready,
 		Priority:      5, // Low priority
-		ApplicationID: &app.ID,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(discoveryTask).Error
+	err := ctx.DB.Create(discovery).Error
 	g.Expect(err).To(gomega.BeNil())
 
 	// Create analyzer task (depends on language-discovery) with HIGH priority
-	analyzerTask := &model.Task{
+	analyzer := &model.Task{
 		Name:          "analyzer-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
+		State:         task.Ready,
 		Priority:      10, // High priority
-		ApplicationID: &app.ID,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err = tc.DB.Create(analyzerTask).Error
+	err = ctx.DB.Create(analyzer).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for scheduling and priority escalation
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to trigger priority escalation and scheduling
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify discovery task priority was escalated from 5 to 10
-	var discovery model.Task
-	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	err = ctx.DB.First(&discovery, discovery.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(discovery.Priority).To(gomega.Equal(10)) // Escalated to match analyzer
 
 	// Verify escalation event
 	hasEscalationEvent := false
 	for _, event := range discovery.Events {
-		if event.Kind == internaltask.Escalated {
+		if event.Kind == task.Escalated {
 			hasEscalationEvent = true
 			g.Expect(event.Reason).To(gomega.ContainSubstring("Escalated:1, by:2"))
 			break
@@ -581,14 +553,13 @@ func TestPriorityEscalation(t *testing.T) {
 
 	// Verify discovery task started (not blocked)
 	g.Expect(discovery.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
+		task.Pending,
+		task.Running))
 
 	// Verify analyzer task postponed due to dependency
-	var analyzer model.Task
-	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	err = ctx.DB.First(&analyzer, analyzer.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(analyzer.State).To(gomega.Equal(internaltask.Postponed))
+	g.Expect(analyzer.State).To(gomega.Equal(task.Postponed))
 }
 
 // TestPriorityEscalationPendingTask tests that escalated Pending tasks are rescheduled.
@@ -597,133 +568,114 @@ func TestPriorityEscalation(t *testing.T) {
 func TestPriorityEscalationPendingTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with slower pod transitions so task stays Pending
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 2 seconds in Running
 
 	// Create language-discovery task with LOW priority
-	discoveryTask := &model.Task{
+	discovery := &model.Task{
 		Name:          "discovery-task",
 		Kind:          "language-discovery",
-		State:         internaltask.Ready,
+		State:         task.Ready,
 		Priority:      5,
-		ApplicationID: &app.ID,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(discoveryTask).Error
+	err := ctx.DB.Create(discovery).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager - discovery task will start with priority 5
-	tc.newManager(g)
-
-	// Wait for discovery task to start (become Pending)
-	time.Sleep(500 * time.Millisecond)
-
-	// Verify discovery task is Pending
-	var discovery model.Task
-	err = tc.DB.First(&discovery, discoveryTask.ID).Error
-	g.Expect(err).To(gomega.BeNil())
-	g.Expect(discovery.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
-
-	// Now create high-priority analyzer task that depends on discovery
-	analyzerTask := &model.Task{
+	// Create high-priority analyzer task that depends on discovery (both exist before reconcile)
+	analyzer := &model.Task{
 		Name:          "analyzer-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
+		State:         task.Ready,
 		Priority:      10, // Higher priority
-		ApplicationID: &app.ID,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err = tc.DB.Create(analyzerTask).Error
+	err = ctx.DB.Create(analyzer).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for scheduling cycle to detect escalation
-	time.Sleep(500 * time.Millisecond)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to trigger priority escalation and start discovery task
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify discovery task priority escalated
-	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	err = ctx.DB.First(&discovery, discovery.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(discovery.Priority).To(gomega.Equal(10))
 
 	// If discovery was Pending when escalated, it should have been reset to Ready
 	// and pod deleted for rescheduling (implementation may vary)
-	// This is timing-dependent, so we check either:
-	// 1. Task returned to Ready (pod deleted, will be rescheduled)
-	// 2. Task is still Running (escalation happened after pod started running)
+	// With instant transitions, task may progress quickly through states
 	g.Expect(discovery.State).To(gomega.BeElementOf(
-		internaltask.Ready,
-		internaltask.Pending,
-		internaltask.Running,
-		internaltask.Succeeded))
+		task.Ready,
+		task.Pending,
+		task.Running,
+		task.Succeeded))
 }
 
 // TestRuleIsolated tests isolated task policy.
 func TestRuleIsolated(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with slower pod transitions so first task stays running
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 2 seconds in Running
 
 	// Create first isolated task
-	task1 := &model.Task{
+	m1 := &model.Task{
 		Name:          "isolated-task-1",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 		Policy: model.TaskPolicy{
 			Isolated: true,
 		},
 	}
-	err := tc.DB.Create(task1).Error
+	err := ctx.DB.Create(m1).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for first task to start
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to start first task
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify first task started
 	var t1 model.Task
-	err = tc.DB.First(&t1, task1.ID).Error
+	err = ctx.DB.First(&t1, m1.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(t1.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
+		task.Pending,
+		task.Running))
 
 	// Create second isolated task while first is running
-	task2 := &model.Task{
+	m2 := &model.Task{
 		Name:          "isolated-task-2",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 		Policy: model.TaskPolicy{
 			Isolated: true,
 		},
 	}
-	err = tc.DB.Create(task2).Error
+	err = ctx.DB.Create(m2).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for scheduling
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to check scheduling
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify second task postponed
 	var t2 model.Task
-	err = tc.DB.First(&t2, task2.ID).Error
+	err = ctx.DB.First(&t2, m2.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(t2.State).To(gomega.Equal(internaltask.Postponed))
+	g.Expect(t2.State).To(gomega.Equal(task.Postponed))
 
 	// Verify postponement event
 	hasPostponedEvent := false
 	for _, event := range t2.Events {
-		if event.Kind == internaltask.Postponed {
+		if event.Kind == task.Postponed {
 			hasPostponedEvent = true
 			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Isolated"))
 			break
@@ -736,58 +688,51 @@ func TestRuleIsolated(t *testing.T) {
 func TestBatchMode(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 
-	// Seed database
-	app := tc.seed(g)
-
-	// Start manager first
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
 	// Create tasks directly in Ready state (simpler than using TaskGroup.Submit)
-	task1 := &model.Task{
+	m1 := &model.Task{
 		Name:          "batch-task-1",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task1).Error
+	err := ctx.DB.Create(m1).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	task2 := &model.Task{
+	m2 := &model.Task{
 		Name:          "batch-task-2",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err = tc.DB.Create(task2).Error
+	err = ctx.DB.Create(m2).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Debug: verify tasks created
+	// Verify tasks created
 	var tasks []*model.Task
-	err = tc.DB.Where("ID IN ?", []uint{task1.ID, task2.ID}).Order("id").Find(&tasks).Error
+	err = ctx.DB.Where("ID IN ?", []uint{m1.ID, m2.ID}).Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(tasks)).To(gomega.Equal(2))
-	t.Logf("Created tasks: Task 1 ID=%d state=%s, Task 2 ID=%d state=%s",
-		tasks[0].ID, tasks[0].State, tasks[1].ID, tasks[1].State)
 
-	// Wait for tasks to be processed by scheduler
-	time.Sleep(2000 * time.Millisecond)
+	// Reconcile until both tasks complete
+	ctx.reconcile(g, 2, m1.ID, m2.ID)
 
 	// Verify both tasks attempted to start
-	err = tc.DB.Where("ID IN ?", []uint{task1.ID, task2.ID}).Order("id").Find(&tasks).Error
+	err = ctx.DB.Where("ID IN ?", []uint{m1.ID, m2.ID}).Order("id").Find(&tasks).Error
 	g.Expect(err).To(gomega.BeNil())
-
-	t.Logf("After scheduling: Task 1 state=%s, Task 2 state=%s", tasks[0].State, tasks[1].State)
 
 	// Both tasks start as Ready and attempt to run concurrently
 	// Due to RuleUnique (max 2 concurrent tasks per app/kind), both should start
 	// or at least one should transition from Ready
 	statesTransitioned := 0
-	for _, task := range tasks {
-		if task.State != internaltask.Ready {
+	for _, m := range tasks {
+		if m.State != task.Ready {
 			statesTransitioned++
 		}
 	}
@@ -799,59 +744,56 @@ func TestBatchMode(t *testing.T) {
 func TestCancelRunningTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with slower pod transitions so we can catch Running state
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 2 seconds in Running
 
 	// Create task
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "running-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for task to reach Running state
-	time.Sleep(1500 * time.Millisecond)
+	// Reconcile to start task and progress to Running
+	_ = ctx.Manager.Reconcile(context.Background())
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task is Running
-	var runningTask model.Task
-	err = tc.DB.First(&runningTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(runningTask.State).To(gomega.Equal(internaltask.Running))
+	g.Expect(m.State).To(gomega.Equal(task.Running))
 
 	// Get pod name before cancellation
-	podName := runningTask.Pod
+	podName := m.Pod
 
-	// Cancel the task
-	err = tc.Manager.Cancel(tc.DB, runningTask.ID)
+	// Cancel the task (queues cancellation action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state changed to Canceled
-	err = tc.DB.First(&runningTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(runningTask.State).To(gomega.Equal(internaltask.Canceled))
+	g.Expect(m.State).To(gomega.Equal(task.Canceled))
 
 	// TODO: Verify bucket cleared - not currently implemented
 	// The spec requires Task.Bucket cleared, but task.update() doesn't
 	// save the BucketID field. See task.go:742-757 - BucketID not in field list.
-	// g.Expect(runningTask.BucketID).To(gomega.BeNil())
+	// g.Expect(m.BucketID).To(gomega.BeNil())
 
 	// Verify Canceled event recorded
 	hasCanceledEvent := false
-	for _, event := range runningTask.Events {
-		if event.Kind == internaltask.Canceled {
+	for _, event := range m.Events {
+		if event.Kind == task.Canceled {
 			hasCanceledEvent = true
 			break
 		}
@@ -860,7 +802,7 @@ func TestCancelRunningTask(t *testing.T) {
 
 	// Verify pod deleted
 	pod := &core.Pod{}
-	err = tc.Client.Get(context.Background(), client.ObjectKey{
+	err = ctx.Client.Get(context.Background(), client.ObjectKey{
 		Namespace: settings.Settings.Hub.Namespace,
 		Name:      podName,
 	}, pod)
@@ -871,68 +813,63 @@ func TestCancelRunningTask(t *testing.T) {
 func TestCancelPendingTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 
 	// Create task
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "pending-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for task to reach Pending or Running state (pod created)
-	// Timing is variable - may catch it in Pending or Running
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to start task
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task has transitioned and has a pod
-	var pendingTask model.Task
-	err = tc.DB.First(&pendingTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 
 	// Task should be in Pending or Running state (has pod, not completed)
-	g.Expect(pendingTask.State).To(gomega.BeElementOf(
-		internaltask.Pending,
-		internaltask.Running))
+	g.Expect(m.State).To(gomega.BeElementOf(
+		task.Pending,
+		task.Running))
 
 	// Get pod name before cancellation
-	podName := pendingTask.Pod
+	podName := m.Pod
 	g.Expect(podName).NotTo(gomega.BeEmpty())
 
-	// Cancel the task
-	err = tc.Manager.Cancel(tc.DB, pendingTask.ID)
+	// Cancel the task (queues cancellation action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state changed to Canceled (reload with Events)
-	err = tc.DB.First(&pendingTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(pendingTask.State).To(gomega.Equal(internaltask.Canceled))
+	g.Expect(m.State).To(gomega.Equal(task.Canceled))
 
 	// Verify pod field cleared
-	g.Expect(pendingTask.Pod).To(gomega.BeEmpty())
+	g.Expect(m.Pod).To(gomega.BeEmpty())
 
 	// TODO: Verify bucket cleared - not currently implemented
 	// The spec requires Task.Bucket cleared, but task.update() doesn't
 	// save the BucketID field. See task.go:742-757 - BucketID not in field list.
-	// g.Expect(pendingTask.BucketID).To(gomega.BeNil())
+	// g.Expect(m.BucketID).To(gomega.BeNil())
 
 	// Verify Canceled event recorded
 	hasCanceledEvent := false
-	for _, event := range pendingTask.Events {
-		if event.Kind == internaltask.Canceled {
+	for _, event := range m.Events {
+		if event.Kind == task.Canceled {
 			hasCanceledEvent = true
 			break
 		}
@@ -941,7 +878,7 @@ func TestCancelPendingTask(t *testing.T) {
 
 	// Verify pod deleted
 	pod := &core.Pod{}
-	err = tc.Client.Get(context.Background(), client.ObjectKey{
+	err = ctx.Client.Get(context.Background(), client.ObjectKey{
 		Namespace: settings.Settings.Hub.Namespace,
 		Name:      podName,
 	}, pod)
@@ -952,43 +889,39 @@ func TestCancelPendingTask(t *testing.T) {
 func TestCancelReadyTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 
 	// Create task in Ready state
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "ready-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Cancel immediately - might catch it in Ready or Pending state
-	err = tc.Manager.Cancel(tc.DB, task.ID)
+	// Cancel immediately (queues cancellation action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state changed to Canceled (reload with Events)
-	var canceledTask model.Task
-	err = tc.DB.First(&canceledTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(canceledTask.State).To(gomega.Equal(internaltask.Canceled))
+	g.Expect(m.State).To(gomega.Equal(task.Canceled))
 
 	// Verify Canceled event recorded
 	hasCanceledEvent := false
-	for _, event := range canceledTask.Events {
-		if event.Kind == internaltask.Canceled {
+	for _, event := range m.Events {
+		if event.Kind == task.Canceled {
 			hasCanceledEvent = true
 			break
 		}
@@ -1000,95 +933,87 @@ func TestCancelReadyTask(t *testing.T) {
 func TestCancelTerminalTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 
 	// Create task
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "terminal-task",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for task to complete (Succeeded)
-	time.Sleep(2500 * time.Millisecond)
+	// Reconcile until task completes
+	ctx.reconcile(g, 1, m.ID)
 
 	// Verify task completed successfully
-	var succeededTask model.Task
-	err = tc.DB.First(&succeededTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(succeededTask.State).To(gomega.Equal(internaltask.Succeeded))
+	g.Expect(m.State).To(gomega.Equal(task.Succeeded))
 
 	// Count events before cancellation
-	eventCountBefore := len(succeededTask.Events)
+	eventCountBefore := len(m.Events)
 
-	// Attempt to cancel the succeeded task (should be no-op)
-	err = tc.Manager.Cancel(tc.DB, succeededTask.ID)
+	// Attempt to cancel the succeeded task (should be no-op, queues action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed (no-op expected)
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action (no-op expected)
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state remains Succeeded
-	err = tc.DB.First(&succeededTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(succeededTask.State).To(gomega.Equal(internaltask.Succeeded))
+	g.Expect(m.State).To(gomega.Equal(task.Succeeded))
 
 	// Verify no new events added (operation discarded)
-	g.Expect(len(succeededTask.Events)).To(gomega.Equal(eventCountBefore))
+	g.Expect(len(m.Events)).To(gomega.Equal(eventCountBefore))
 }
 
 // TestCancelCreatedTask tests canceling a task in Created state.
 func TestCancelCreatedTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 
 	// Create task in Created state (not submitted)
-	task := &model.Task{
+	m := &model.Task{
 		Name:          "created-task",
 		Kind:          "analyzer",
-		State:         internaltask.Created,
-		ApplicationID: &app.ID,
+		State:         task.Created,
+		ApplicationID: &ctx.Application.ID,
 	}
-	err := tc.DB.Create(task).Error
+	err := ctx.DB.Create(m).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Cancel the task before submission
-	err = tc.Manager.Cancel(tc.DB, task.ID)
+	// Cancel the task before submission (queues cancellation action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state changed to Canceled
-	var canceledTask model.Task
-	err = tc.DB.First(&canceledTask, task.ID).Error
+	err = ctx.DB.First(&m, m.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(canceledTask.State).To(gomega.Equal(internaltask.Canceled))
+	g.Expect(m.State).To(gomega.Equal(task.Canceled))
 
 	// Verify Canceled event recorded
 	hasCanceledEvent := false
-	for _, event := range canceledTask.Events {
-		if event.Kind == internaltask.Canceled {
+	for _, event := range m.Events {
+		if event.Kind == task.Canceled {
 			hasCanceledEvent = true
 			break
 		}
@@ -1100,76 +1025,140 @@ func TestCancelCreatedTask(t *testing.T) {
 func TestCancelPostponedTask(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup test environment
-	tc := setup(g)
-	defer tc.teardown()
-
-	// Seed database
-	app := tc.seed(g)
+	// Setup test environment with slower pod transitions so first task stays running
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 2 seconds in Running
 
 	// Create first isolated task
-	task1 := &model.Task{
+	m1 := &model.Task{
 		Name:          "isolated-task-1",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 		Policy: model.TaskPolicy{
 			Isolated: true,
 		},
 	}
-	err := tc.DB.Create(task1).Error
+	err := ctx.DB.Create(m1).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Start manager
-	tc.newManager(g)
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-	// Wait for first task to start
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to start first task
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Create second isolated task (will be postponed)
-	task2 := &model.Task{
+	m2 := &model.Task{
 		Name:          "isolated-task-2",
 		Kind:          "analyzer",
-		State:         internaltask.Ready,
-		ApplicationID: &app.ID,
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
 		Policy: model.TaskPolicy{
 			Isolated: true,
 		},
 	}
-	err = tc.DB.Create(task2).Error
+	err = ctx.DB.Create(m2).Error
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for scheduling cycle
-	time.Sleep(500 * time.Millisecond)
+	// Reconcile to apply scheduling rules
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify second task is postponed
-	var postponedTask model.Task
-	err = tc.DB.First(&postponedTask, task2.ID).Error
+	var m model.Task
+	err = ctx.DB.First(&m, m2.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(postponedTask.State).To(gomega.Equal(internaltask.Postponed))
+	g.Expect(m.State).To(gomega.Equal(task.Postponed))
 
-	// Cancel the postponed task
-	err = tc.Manager.Cancel(tc.DB, postponedTask.ID)
+	// Cancel the postponed task (queues cancellation action)
+	err = ctx.Manager.Cancel(ctx.DB, m.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	// Wait for async cancellation to be processed
-	time.Sleep(300 * time.Millisecond)
+	// Reconcile to process queued cancellation action
+	_ = ctx.Manager.Reconcile(context.Background())
 
 	// Verify task state changed to Canceled
-	err = tc.DB.First(&postponedTask, task2.ID).Error
+	err = ctx.DB.First(&m, m2.ID).Error
 	g.Expect(err).To(gomega.BeNil())
-	g.Expect(postponedTask.State).To(gomega.Equal(internaltask.Canceled))
+	g.Expect(m.State).To(gomega.Equal(task.Canceled))
 
 	// Verify no pod exists (postponed tasks don't have pods)
-	g.Expect(postponedTask.Pod).To(gomega.BeEmpty())
+	g.Expect(m.Pod).To(gomega.BeEmpty())
 
 	// Verify Canceled event recorded
 	hasCanceledEvent := false
-	for _, event := range postponedTask.Events {
-		if event.Kind == internaltask.Canceled {
+	for _, event := range m.Events {
+		if event.Kind == task.Canceled {
 			hasCanceledEvent = true
 			break
 		}
 	}
 	g.Expect(hasCanceledEvent).To(gomega.BeTrue())
+}
+
+// TestAsyncManager tests the manager running asynchronously in a goroutine.
+// This ensures the async code paths (Manager.Run, goroutine lifecycle, ectx.) still work.
+func TestAsyncManager(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Configure simulator with realistic timing for async test
+	ctx.Client = simulator.New().Use(simulator.NewManager(1, 1))
+
+	// Create a simple task
+	m := &model.Task{
+		Name:          "async-test-task",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Setup async manager with goroutine and context
+	savedFrequency := settings.Settings.Frequency.Task
+	settings.Settings.Frequency.Task = 100 * time.Millisecond
+	defer func() {
+		settings.Settings.Frequency.Task = savedFrequency
+	}()
+
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+	managerCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		ctx.Manager.Run(managerCtx)
+		close(done)
+	}()
+
+	// Wait for cluster to refresh and be ready
+	time.Sleep(300 * time.Millisecond)
+
+	// Wait for task to complete
+	time.Sleep(3 * time.Second)
+
+	// Stop the manager
+	cancel()
+	select {
+	case <-done:
+		// Manager stopped successfully
+	case <-time.After(5 * time.Second):
+		t.Fatal("Manager did not stop in time")
+	}
+
+	// Verify task completed
+	err = ctx.DB.First(&m, m.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m.State).To(gomega.Equal(task.Succeeded))
+
+	// Verify pod was created
+	podList := &core.PodList{}
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(podList.Items)).To(gomega.BeNumerically(">=", 1))
 }

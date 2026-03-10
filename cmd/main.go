@@ -147,10 +147,7 @@ func main() {
 	}
 	//
 	// Task
-	taskManager := task.Manager{
-		Client: client,
-		DB:     db,
-	}
+	taskManager := task.New(db, client)
 	taskManager.Run(context.Background())
 	//
 	// Reaper
@@ -163,7 +160,7 @@ func main() {
 	// Application import.
 	importManager := importer.Manager{
 		DB:          db,
-		TaskManager: &taskManager,
+		TaskManager: taskManager,
 		Client:      client,
 	}
 	importManager.Run(context.Background())
@@ -191,7 +188,7 @@ func main() {
 	router.Use(
 		func(ctx *gin.Context) {
 			rtx := api.RichContext(ctx)
-			rtx.TaskManager = &taskManager
+			rtx.TaskManager = taskManager
 			rtx.DB = db
 			rtx.Client = client
 			ctx.Next()

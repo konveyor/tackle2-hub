@@ -6,6 +6,7 @@ import (
 	"hash/fnv"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	core "k8s.io/api/core/v1"
@@ -15,6 +16,7 @@ import (
 // Maintains a running estimation of the cluster scheduling capacity.
 type CapacityMonitor struct {
 	mutex       sync.Mutex
+	background  atomic.Bool
 	capacity    int
 	scheduled   int
 	unscheduled int
@@ -33,22 +35,47 @@ func (m *CapacityMonitor) Reset() {
 
 // Run the monitor.
 func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
+	if m.Background() {
+		return
+	}
 	m.Reset()
-	Log.Info("CapacityMonitor started.")
 	go func() {
+		Log.Info("CapacityMonitor started.")
+		m.background.Store(true)
+		defer func() {
+			Log.Info("CapacityMonitor stopped.")
+			m.background.Store(false)
+		}()
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Info("CapacityMonitor stopped.")
 				return
 			default:
-				err := cluster.Refresh()
-				Log.Error(err, "")
-				m.Adjust(cluster)
-				time.Sleep(Settings.Frequency.Task)
+				m.pause()
+				err := m.Reconcile(cluster)
+				if err != nil {
+					Log.Error(err, "")
+				}
 			}
 		}
 	}()
+}
+
+// Background returns true when running in a goroutine.
+func (m *CapacityMonitor) Background() (started bool) {
+	return m.background.Load()
+}
+
+// Reconcile capacity.
+// Turns the 'crank' once.
+// Intended to be called directly from Run() and test harnesses.
+func (m *CapacityMonitor) Reconcile(cluster *Cluster) (err error) {
+	err = cluster.Refresh()
+	if err != nil {
+		return
+	}
+	m.Adjust(cluster)
+	return
 }
 
 // Adjust updates estimated cluster capacity.
@@ -146,4 +173,9 @@ func (m *CapacityMonitor) digest() (d string) {
 	n := h.Sum64()
 	d = fmt.Sprintf("%x", n)
 	return
+}
+
+// Pause.
+func (m *CapacityMonitor) pause() {
+	time.Sleep(Settings.Frequency.Task)
 }

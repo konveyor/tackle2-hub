@@ -9,6 +9,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -96,33 +97,18 @@ var (
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
 
-// Manager provides task management.
-type Manager struct {
-	// DB
-	DB *gorm.DB
-	// k8s client.
-	Client k8s.Client
-	// Addon token scopes.
-	Scopes []string
-	// cluster resources.
-	cluster Cluster
-	// queue of actions.
-	queue chan func()
-	// logManager provides pod log collection.
-	logManager LogManager
-	// pod capacity monitor
-	capacity CapacityMonitor
-}
-
-// Run the manager.
-func (m *Manager) Run(ctx context.Context) {
-	m.queue = make(chan func(), 100)
-	m.cluster = NewCluster(m.Client)
-	m.logManager = LogManager{
-		collector: make(map[string]*LogCollector),
-		DB:        m.DB,
+// New manager.
+func New(db *gorm.DB, client k8s.Client) (m *Manager) {
+	m = &Manager{
+		DB:      db,
+		Client:  client,
+		queue:   make(chan func(), 100),
+		cluster: NewCluster(client),
+		logManager: LogManager{
+			collector: make(map[string]*LogCollector),
+			DB:        db,
+		},
 	}
-	m.capacity.Run(ctx, &m.cluster)
 	auth.Validators = append(
 		auth.Validators,
 		&Validator{
@@ -131,9 +117,40 @@ func (m *Manager) Run(ctx context.Context) {
 	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
+	return
+}
+
+// Manager provides task management.
+type Manager struct {
+	// DB
+	DB *gorm.DB
+	// k8s client.
+	Client k8s.Client
+	// cluster resources.
+	cluster Cluster
+	// queue of actions.
+	queue chan func()
+	// logManager provides pod log collection.
+	logManager LogManager
+	// pod capacity monitor
+	capacity CapacityMonitor
+	// background indicator.
+	background atomic.Bool
+}
+
+// Run the manager.
+func (m *Manager) Run(ctx context.Context) {
+	if m.background.Load() {
+		return
+	}
+	m.capacity.Run(ctx, &m.cluster)
 	go func() {
 		Log.Info("Manager started.")
-		defer Log.Info("Done.")
+		m.background.Store(true)
+		defer func() {
+			Log.Info("Manager stopped.")
+			m.background.Store(false)
+		}()
 		for {
 			select {
 			case <-ctx.Done():
@@ -154,10 +171,21 @@ func (m *Manager) Run(ctx context.Context) {
 	}()
 }
 
+// Background returns true when running in a goroutine.
+func (m *Manager) Background() (started bool) {
+	return m.background.Load()
+}
+
 // Reconcile tasks.
 // Turns the 'crank' once.
 // Intended to be called directly from Run() and test harnesses.
 func (m *Manager) Reconcile(ctx context.Context) (err error) {
+	if !m.capacity.Background() {
+		err = m.capacity.Reconcile(&m.cluster)
+		if err != nil {
+			return
+		}
+	}
 	err = m.cluster.Refresh()
 	if err != nil {
 		return
