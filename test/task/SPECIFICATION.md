@@ -163,22 +163,42 @@ This document defines the functional requirements for the task scheduler. Tests 
 
 ## Priority Escalation
 
-### Behavior: Dependency Priority Escalation
+### Behavior: Dependency Priority Escalation (Preventing Priority Inversion)
+
+**Purpose**: Prevent priority inversion where high-priority tasks are blocked by low-priority dependencies.
+
+**Priority Inversion Problem**:
+- Task A (analyzer): Priority=10, depends on language-discovery
+- Task B (language-discovery): Priority=5
+- Without escalation: Task B runs at priority 5, blocking high-priority Task A
+- Result: High-priority work waits unnecessarily for low-priority dependency
+
+**Solution**: Escalate dependency priority to match the highest dependent task.
 
 **Given**:
-- Task 1: Kind=discovery, Priority=5, State=Ready, ApplicationID=1
-- Task 2: Kind=analysis, Priority=10, State=Ready, ApplicationID=1, depends on discovery
+- Task 1 (language-discovery): Kind=discovery, Priority=5, State=Ready, ApplicationID=1
+- Task 2 (analyzer): Kind=analysis, Priority=10, State=Ready, ApplicationID=1
+- Task kind "analysis" depends on kind "discovery"
 
 **When**: Scheduler runs adjustPriority
 **Then**:
-- Task 1 priority escalated to 10
+- Task 1 priority escalated from 5 to 10 (matches dependent Task 2)
 - Event recorded: "Escalated:1, by:2"
+- Task 1 now schedules with same priority as Task 2
 
-**When**: Task 1 state is Pending
+**Rule**: If a dependency has **lower priority** than any task depending on it, escalate the dependency's priority to match the **highest** dependent task.
+
+**When**: Escalated task state is Pending (pod already created with old priority)
 **Then**:
 - Pod is deleted
-- Task 1 transitions back to Ready
-- Task 1 will be rescheduled with new priority
+- Task transitions back to Ready
+- Task will be rescheduled with new (escalated) priority
+
+**Eligible states for escalation**:
+- Ready
+- Pending
+- Postponed
+- QuotaBlocked
 
 **Test**: TestPriorityEscalation
 

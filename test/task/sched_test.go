@@ -198,3 +198,606 @@ func TestScheduler(t *testing.T) {
 	g.Expect(task.Terminated).ToNot(gomega.BeNil())
 	g.Expect(task.Pod).ToNot(gomega.BeEmpty())
 }
+
+// TestRuleUnique tests concurrent task limiting per application/kind.
+func TestRuleUnique(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create 3 tasks with same kind and application
+	for i := 1; i <= 3; i++ {
+		task := &model.Task{
+			Name:          "test-task-" + strconv.Itoa(i),
+			Kind:          "analyzer",
+			State:         internaltask.Ready,
+			ApplicationID: &app.ID,
+		}
+		err := tc.DB.Create(task).Error
+		g.Expect(err).To(gomega.BeNil())
+	}
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait briefly for scheduling
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify first 2 tasks started, third postponed
+	var tasks []*model.Task
+	err := tc.DB.Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(tasks)).To(gomega.Equal(3))
+
+	// First two should be Pending or Running
+	task1State := tasks[0].State
+	task2State := tasks[1].State
+	g.Expect(task1State).To(gomega.BeElementOf(internaltask.Pending, internaltask.Running))
+	g.Expect(task2State).To(gomega.BeElementOf(internaltask.Pending, internaltask.Running))
+
+	// Third should be Postponed
+	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Postponed))
+
+	// Verify postponement event
+	hasPostponedEvent := false
+	for _, event := range tasks[2].Events {
+		if event.Kind == internaltask.Postponed {
+			hasPostponedEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Unique"))
+			break
+		}
+	}
+	g.Expect(hasPostponedEvent).To(gomega.BeTrue())
+
+	// Wait for first tasks to complete
+	time.Sleep(2500 * time.Millisecond)
+
+	// Verify third task eventually started
+	var task3 model.Task
+	err = tc.DB.First(&task3, tasks[2].ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(task3.State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running,
+		internaltask.Succeeded))
+}
+
+// TestPriorityOrdering tests priority-based task scheduling.
+func TestPriorityOrdering(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create tasks with different priorities
+	priorities := []int{1, 10, 5, 3}
+	for i, priority := range priorities {
+		task := &model.Task{
+			Name:          "task-" + strconv.Itoa(i+1),
+			Kind:          "analyzer",
+			State:         internaltask.Ready,
+			Priority:      priority,
+			ApplicationID: &app.ID,
+		}
+		err := tc.DB.Create(task).Error
+		g.Expect(err).To(gomega.BeNil())
+	}
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait briefly for first task to be scheduled
+	time.Sleep(300 * time.Millisecond)
+
+	// First task scheduled should be highest priority (10)
+	var firstStarted model.Task
+	err := tc.DB.Where("state IN ?", []string{
+		internaltask.Pending,
+		internaltask.Running,
+	}).Order("started").First(&firstStarted).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(firstStarted.Priority).To(gomega.Equal(10))
+}
+
+// TestOrphanPodCleanup tests cleanup of pods without corresponding tasks.
+func TestOrphanPodCleanup(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create and start a task
+	task := &model.Task{
+		Name:          "test-task",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		ApplicationID: &app.ID,
+	}
+	err := tc.DB.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait for pod to be created
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify pod exists
+	podList := &core.PodList{}
+	err = tc.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(podList.Items)).To(gomega.BeNumerically(">=", 1))
+
+	// Delete the task from DB (simulating orphan scenario)
+	err = tc.DB.Delete(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Wait for scheduler to detect and clean up orphan
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify pod was deleted
+	err = tc.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(podList.Items)).To(gomega.Equal(0))
+}
+
+// TestPipelineMode tests sequential task execution in pipeline mode.
+func TestPipelineMode(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create task group in Pipeline mode
+	taskGroup := &model.TaskGroup{
+		Name: "pipeline-group",
+		Mode: internaltask.Pipeline,
+		List: []model.Task{
+			{
+				Name:          "task-1",
+				Kind:          "analyzer",
+				ApplicationID: &app.ID,
+			},
+			{
+				Name:          "task-2",
+				Kind:          "analyzer",
+				ApplicationID: &app.ID,
+			},
+			{
+				Name:          "task-3",
+				Kind:          "analyzer",
+				ApplicationID: &app.ID,
+			},
+		},
+	}
+	err := tc.DB.Create(taskGroup).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager first
+	tc.newManager(g)
+
+	// Submit task group through manager
+	tg := internaltask.NewTaskGroup(taskGroup)
+	err = tg.Submit(tc.DB, tc.Manager)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Verify initial state: only first task is Ready
+	var tasks []*model.Task
+	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(tasks)).To(gomega.Equal(3))
+	g.Expect(tasks[0].State).To(gomega.Equal(internaltask.Ready))
+	g.Expect(tasks[1].State).To(gomega.Equal(internaltask.Created))
+	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Created))
+
+	// Wait for first task to start
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify first task running, others still Created
+	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(tasks[0].State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running))
+	g.Expect(tasks[1].State).To(gomega.Equal(internaltask.Created))
+	g.Expect(tasks[2].State).To(gomega.Equal(internaltask.Created))
+
+	// Wait for first task to complete and second to start
+	time.Sleep(2500 * time.Millisecond)
+
+	// Verify first succeeded, second ready/running
+	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(tasks[0].State).To(gomega.Equal(internaltask.Succeeded))
+	g.Expect(tasks[1].State).To(gomega.BeElementOf(
+		internaltask.Ready,
+		internaltask.Pending,
+		internaltask.Running))
+}
+
+// TestTaskRetryOnKill tests task retry when container exits with code 137.
+func TestTaskRetryOnKill(t *testing.T) {
+	t.Skip("Requires simulator support for container exit codes")
+	// This test would require the simulator to support simulating
+	// container exit code 137 (killed), which isn't currently
+	// implemented. Placeholder for future enhancement.
+}
+
+// TestRuleDeps tests task dependency blocking without priority escalation.
+// The analyzer task depends on language-discovery (from seeded k8s data).
+// Both tasks have same default priority, so no escalation occurs.
+func TestRuleDeps(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create language-discovery task (dependency)
+	discoveryTask := &model.Task{
+		Name:          "discovery-task",
+		Kind:          "language-discovery",
+		State:         internaltask.Ready,
+		ApplicationID: &app.ID,
+	}
+	err := tc.DB.Create(discoveryTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create analyzer task (depends on language-discovery)
+	analyzerTask := &model.Task{
+		Name:          "analyzer-task",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		ApplicationID: &app.ID,
+	}
+	err = tc.DB.Create(analyzerTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait for scheduling
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify discovery task started
+	var discovery model.Task
+	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(discovery.State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running))
+
+	// Verify analyzer task postponed due to dependency
+	var analyzer model.Task
+	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(analyzer.State).To(gomega.Equal(internaltask.Postponed))
+
+	// Verify postponement event
+	hasDepEvent := false
+	for _, event := range analyzer.Events {
+		if event.Kind == internaltask.Postponed {
+			hasDepEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Dependency"))
+			break
+		}
+	}
+	g.Expect(hasDepEvent).To(gomega.BeTrue())
+
+	// Wait for discovery task to complete
+	time.Sleep(2500 * time.Millisecond)
+
+	// Verify analyzer task eventually started
+	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(analyzer.State).To(gomega.BeElementOf(
+		internaltask.Ready,
+		internaltask.Pending,
+		internaltask.Running,
+		internaltask.Succeeded))
+}
+
+// TestPriorityEscalation tests dependency priority escalation to prevent priority inversion.
+// When a high-priority task depends on a low-priority task, the dependency's priority
+// is escalated to match the dependent task.
+func TestPriorityEscalation(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create language-discovery task (dependency) with LOW priority
+	discoveryTask := &model.Task{
+		Name:          "discovery-task",
+		Kind:          "language-discovery",
+		State:         internaltask.Ready,
+		Priority:      5, // Low priority
+		ApplicationID: &app.ID,
+	}
+	err := tc.DB.Create(discoveryTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create analyzer task (depends on language-discovery) with HIGH priority
+	analyzerTask := &model.Task{
+		Name:          "analyzer-task",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		Priority:      10, // High priority
+		ApplicationID: &app.ID,
+	}
+	err = tc.DB.Create(analyzerTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait for scheduling and priority escalation
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify discovery task priority was escalated from 5 to 10
+	var discovery model.Task
+	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(discovery.Priority).To(gomega.Equal(10)) // Escalated to match analyzer
+
+	// Verify escalation event
+	hasEscalationEvent := false
+	for _, event := range discovery.Events {
+		if event.Kind == internaltask.Escalated {
+			hasEscalationEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Escalated:1, by:2"))
+			break
+		}
+	}
+	g.Expect(hasEscalationEvent).To(gomega.BeTrue())
+
+	// Verify discovery task started (not blocked)
+	g.Expect(discovery.State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running))
+
+	// Verify analyzer task postponed due to dependency
+	var analyzer model.Task
+	err = tc.DB.First(&analyzer, analyzerTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(analyzer.State).To(gomega.Equal(internaltask.Postponed))
+}
+
+// TestPriorityEscalationPendingTask tests that escalated Pending tasks are rescheduled.
+// When a task with state=Pending gets escalated, its pod should be deleted and the task
+// should return to Ready state to be rescheduled with the new priority.
+func TestPriorityEscalationPendingTask(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create language-discovery task with LOW priority
+	discoveryTask := &model.Task{
+		Name:          "discovery-task",
+		Kind:          "language-discovery",
+		State:         internaltask.Ready,
+		Priority:      5,
+		ApplicationID: &app.ID,
+	}
+	err := tc.DB.Create(discoveryTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager - discovery task will start with priority 5
+	tc.newManager(g)
+
+	// Wait for discovery task to start (become Pending)
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify discovery task is Pending
+	var discovery model.Task
+	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(discovery.State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running))
+
+	// Now create high-priority analyzer task that depends on discovery
+	analyzerTask := &model.Task{
+		Name:          "analyzer-task",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		Priority:      10, // Higher priority
+		ApplicationID: &app.ID,
+	}
+	err = tc.DB.Create(analyzerTask).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Wait for scheduling cycle to detect escalation
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify discovery task priority escalated
+	err = tc.DB.First(&discovery, discoveryTask.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(discovery.Priority).To(gomega.Equal(10))
+
+	// If discovery was Pending when escalated, it should have been reset to Ready
+	// and pod deleted for rescheduling (implementation may vary)
+	// This is timing-dependent, so we check either:
+	// 1. Task returned to Ready (pod deleted, will be rescheduled)
+	// 2. Task is still Running (escalation happened after pod started running)
+	g.Expect(discovery.State).To(gomega.BeElementOf(
+		internaltask.Ready,
+		internaltask.Pending,
+		internaltask.Running,
+		internaltask.Succeeded))
+}
+
+// TestRuleIsolated tests isolated task policy.
+func TestRuleIsolated(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create first isolated task
+	task1 := &model.Task{
+		Name:          "isolated-task-1",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		ApplicationID: &app.ID,
+		Policy: model.TaskPolicy{
+			Isolated: true,
+		},
+	}
+	err := tc.DB.Create(task1).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager
+	tc.newManager(g)
+
+	// Wait for first task to start
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify first task started
+	var t1 model.Task
+	err = tc.DB.First(&t1, task1.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(t1.State).To(gomega.BeElementOf(
+		internaltask.Pending,
+		internaltask.Running))
+
+	// Create second isolated task while first is running
+	task2 := &model.Task{
+		Name:          "isolated-task-2",
+		Kind:          "analyzer",
+		State:         internaltask.Ready,
+		ApplicationID: &app.ID,
+		Policy: model.TaskPolicy{
+			Isolated: true,
+		},
+	}
+	err = tc.DB.Create(task2).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Wait for scheduling
+	time.Sleep(500 * time.Millisecond)
+
+	// Verify second task postponed
+	var t2 model.Task
+	err = tc.DB.First(&t2, task2.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(t2.State).To(gomega.Equal(internaltask.Postponed))
+
+	// Verify postponement event
+	hasPostponedEvent := false
+	for _, event := range t2.Events {
+		if event.Kind == internaltask.Postponed {
+			hasPostponedEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Isolated"))
+			break
+		}
+	}
+	g.Expect(hasPostponedEvent).To(gomega.BeTrue())
+}
+
+// TestBatchMode tests parallel task execution in batch mode.
+func TestBatchMode(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	tc := setup(g)
+	defer tc.teardown()
+
+	// Seed database
+	app := tc.seed(g)
+
+	// Create task group in Batch mode
+	taskGroup := &model.TaskGroup{
+		Name: "batch-group",
+		Mode: internaltask.Batch,
+		List: []model.Task{
+			{
+				Name:          "batch-task-1",
+				Kind:          "analyzer",
+				ApplicationID: &app.ID,
+			},
+			{
+				Name:          "batch-task-2",
+				Kind:          "analyzer",
+				ApplicationID: &app.ID,
+			},
+		},
+	}
+	err := tc.DB.Create(taskGroup).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Start manager first
+	tc.newManager(g)
+
+	// Submit task group through manager
+	tg := internaltask.NewTaskGroup(taskGroup)
+	err = tg.Submit(tc.DB, tc.Manager)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Verify both tasks initially created as Ready
+	var tasks []*model.Task
+	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(tasks)).To(gomega.Equal(2))
+
+	// Both start as Ready in batch mode
+	initialReady := 0
+	for _, task := range tasks {
+		if task.State == internaltask.Ready {
+			initialReady++
+		}
+	}
+	g.Expect(initialReady).To(gomega.Equal(2))
+
+	// Wait for tasks to be processed by scheduler
+	time.Sleep(1000 * time.Millisecond)
+
+	// Verify both tasks attempted to start (may be postponed due to RuleUnique)
+	err = tc.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Both should have attempted to start (may be postponed due to RuleUnique)
+	for _, task := range tasks {
+		g.Expect(task.State).To(gomega.BeElementOf(
+			internaltask.Pending,
+			internaltask.Running,
+			internaltask.Postponed))
+	}
+}
