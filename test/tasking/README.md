@@ -12,118 +12,216 @@ The `Context` struct provides a complete test environment:
 
 ```go
 type Context struct {
-    DB       *gorm.DB            // In-memory SQLite database
-    Client   client.Client       // K8s simulator client
-    Manager  *impTask.Manager    // Task manager instance
-    Cancel   context.CancelFunc  // Context cancellation function
-    Captured struct {
-        TaskFrequency time.Duration  // Saved original frequency
-    }
+    DB          *gorm.DB           // In-memory SQLite database
+    Client      client.Client      // K8s simulator client
+    Manager     *task.Manager      // Task manager instance
+    Application *model.Application // Pre-seeded test application
 }
 ```
 
-### Setup and Teardown
+### Creating Test Context
 
 ```go
 func TestMySchedulerFeature(t *testing.T) {
     g := gomega.NewGomegaWithT(t)
 
-    // Setup creates database, k8s client, and configures fast timing
-    tc := setup(g)
-    defer tc.teardown()
+    // New() creates database, k8s client, and seeds test data
+    ctx := New(g)
 
     // Your test code here...
 }
 ```
 
-### Database Seeding
-
-```go
-// seed creates common test data:
-// - TagCategory "Language"
-// - Tag "Java"
-// - Application tagged with Java
-app := tc.seed(g)
-```
+The `New()` function automatically:
+- Creates in-memory SQLite database
+- Auto-migrates required tables
+- Creates k8s simulator with instant pod transitions (0s Pending, 0s Running)
+- Seeds test data: TagCategory "Language", Tag "Java", Application "Test Application"
 
 ### Creating Tasks
 
 ```go
-// Create tasks manually
-task := &model.Task{
+// Create tasks using the pre-seeded application
+// Use 'm' for individual task model variables
+m := &model.Task{
     Name:          "test-task",
     Kind:          "analyzer",
-    State:         impTask.Ready,
-    ApplicationID: &app.ID,
+    State:         task.Ready,
+    ApplicationID: &ctx.Application.ID,
 }
-err := tc.DB.Create(task).Error
+err := ctx.DB.Create(m).Error
 g.Expect(err).To(gomega.BeNil())
 ```
 
-### Starting the Manager
+### Running the Manager
+
+**Synchronous Testing (Recommended)**
+
+Most tests use synchronous reconciliation for deterministic, race-free execution:
 
 ```go
-// newManager creates and starts the task manager in a goroutine
-tc.newManager(g)
+// Create manager
+ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-// The manager will automatically stop when tc.teardown() is called
+// Reconcile once - processes one scheduling cycle
+_ = ctx.Manager.Reconcile(context.Background())
+
+// Reconcile until N tasks reach terminal states
+ctx.reconcile(g, 2, m1.ID, m2.ID)
 ```
 
-## Example Test
+**Asynchronous Testing (One Test Only)**
+
+Only `TestAsyncManager` uses async mode to verify goroutine lifecycle:
+
+```go
+// Configure simulator with realistic timing
+ctx.Client = simulator.New().Use(simulator.NewManager(1, 1))
+
+// Start manager in goroutine (async mode)
+managerCtx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+go func() {
+    ctx.Manager.Run(managerCtx)
+}()
+
+time.Sleep(300 * time.Millisecond) // Wait for cluster refresh
+```
+
+## Example Tests
+
+### Basic Synchronous Test
 
 ```go
 func TestMyFeature(t *testing.T) {
     g := gomega.NewGomegaWithT(t)
 
-    // Setup environment
-    tc := setup(g)
-    defer tc.teardown()
-
-    // Seed database
-    app := tc.seed(g)
+    // Create test context (database, client, seeded data)
+    ctx := New(g)
 
     // Create test tasks
+    var taskIDs []uint
     for i := 1; i <= 2; i++ {
-        task := &model.Task{
+        m := &model.Task{
             Name:          "test-task-" + strconv.Itoa(i),
             Kind:          "analyzer",
-            State:         impTask.Ready,
-            ApplicationID: &app.ID,
+            State:         task.Ready,
+            ApplicationID: &ctx.Application.ID,
         }
-        err := tc.DB.Create(task).Error
+        err := ctx.DB.Create(m).Error
         g.Expect(err).To(gomega.BeNil())
+        taskIDs = append(taskIDs, m.ID)
     }
 
-    // Start manager
-    tc.newManager(g)
+    // Create manager
+    ctx.Manager = task.New(ctx.DB, ctx.Client)
 
-    // Verify pods were created
-    podList := &core.PodList{}
-    err := tc.Client.List(context.Background(), podList, &client.ListOptions{
-        Namespace: settings.Settings.Hub.Namespace,
-    })
+    // Reconcile until both tasks complete
+    ctx.reconcile(g, 2, taskIDs...)
+
+    // Verify both tasks succeeded
+    var tasks []*model.Task
+    err := ctx.DB.Find(&tasks, taskIDs).Error
     g.Expect(err).To(gomega.BeNil())
-    g.Expect(len(podList.Items)).To(gomega.BeNumerically(">=", 1))
+    for _, m := range tasks {
+        g.Expect(m.State).To(gomega.Equal(task.Succeeded))
+    }
+}
+```
 
-    // Wait for completion
-    time.Sleep(2 * time.Second)
+### Test with Custom Simulator Timing
 
-    // Verify results
-    var completedTasks []*model.Task
-    err = tc.DB.Find(&completedTasks, "state", impTask.Succeeded).Error
+```go
+func TestSlowerTransitions(t *testing.T) {
+    g := gomega.NewGomegaWithT(t)
+
+    ctx := New(g)
+    // Override with slower transitions: 0s Pending, 2s Running
+    ctx.Client = simulator.New().Use(simulator.NewManager(0, 2))
+
+    m := &model.Task{
+        Name:          "slow-task",
+        Kind:          "analyzer",
+        State:         task.Ready,
+        ApplicationID: &ctx.Application.ID,
+    }
+    err := ctx.DB.Create(m).Error
     g.Expect(err).To(gomega.BeNil())
-    g.Expect(len(completedTasks)).To(gomega.BeNumerically(">=", 1))
+
+    ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+    // Reconcile twice to reach Running state
+    _ = ctx.Manager.Reconcile(context.Background())
+    _ = ctx.Manager.Reconcile(context.Background())
+
+    // Verify task is Running (hasn't completed yet)
+    err = ctx.DB.First(&m, m.ID).Error
+    g.Expect(err).To(gomega.BeNil())
+    g.Expect(m.State).To(gomega.Equal(task.Running))
 }
 ```
 
 ## Test Configuration
 
-The test environment is configured for fast execution:
+### Synchronous Tests (Default)
 
-- **Task Manager Frequency**: 100ms (default: ~1s)
+Most tests use synchronous testing with instant pod transitions:
+
+- **Pod Pending Duration**: 0s (instant)
+- **Pod Running Duration**: 0s (instant)
+- **Reconciliation**: Explicit `reconcile()` calls instead of time.Sleep()
+- **Total test time**: 0.02-0.10s per test
+
+**Benefits:**
+- No race conditions
+- Fast execution
+- Deterministic behavior
+- Easy to debug
+
+### Asynchronous Test (TestAsyncManager)
+
+One test verifies async code paths with realistic timing:
+
+- **Task Manager Frequency**: 100ms
 - **Pod Pending Duration**: 1s
 - **Pod Running Duration**: 1s
-- **Total test time**: ~2.8s
+- **Total test time**: ~3.3s
+
+### Simulator Timing Options
+
+```go
+// Instant transitions (default, for most tests)
+ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
+
+// Slow transitions (for state-specific tests)
+ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 0s Pending, 2s Running
+```
+
+## Helper Methods
+
+### reconcile(g, n, taskIDs...)
+
+Reconciles until N tasks reach terminal states (Succeeded, Failed, or Canceled):
+
+```go
+// Wait for 3 tasks to complete
+ctx.reconcile(g, 3, task1.ID, task2.ID, task3.ID)
+
+// Wait for 1 task to complete
+ctx.reconcile(g, 1, m.ID)
+```
+
+**Parameters:**
+- `g`: Gomega instance for assertions
+- `n`: Number of tasks expected to reach terminal state
+- `taskIDs`: Task IDs to monitor
+
+**Behavior:**
+- Calls `Manager.Reconcile()` repeatedly (up to 100 cycles by default)
+- Checks if N tasks are terminal after each cycle
+- Returns when N tasks complete
+- Fails test if max cycles exceeded
 
 ## K8s Resources
 
@@ -139,11 +237,52 @@ See `internal/k8s/seed/resources/` for full resource definitions.
 
 ```bash
 # Run all task tests
-go test -v ./test/task
+go test -v ./test/tasking
 
 # Run specific test
-go test -v ./test/task -run TestScheduler
+go test -v ./test/tasking -run TestScheduler
 
 # Run with count for stability testing
-go test -v ./test/task -count=3
+go test -v ./test/tasking -count=3
+
+# Run with race detector (should pass with synchronous approach)
+go test -v -race ./test/tasking
+```
+
+## Coding Conventions
+
+### Variable Naming
+
+- **Context**: Always use `ctx` for the test context
+- **Task Models**: Use `m` for individual task variables
+  ```go
+  m := &model.Task{...}
+  m1 := &model.Task{...}
+  m2 := &model.Task{...}
+  ```
+- **Specific Tasks**: Use descriptive names
+  ```go
+  discovery := &model.Task{Kind: "language-discovery", ...}
+  analyzer := &model.Task{Kind: "analyzer", ...}
+  ```
+
+### Import Style
+
+```go
+import (
+    "github.com/konveyor/tackle2-hub/internal/task"  // No alias needed
+)
+
+// Use task package directly
+m.State = task.Ready
+ctx.Manager = task.New(ctx.DB, ctx.Client)
+```
+
+### Accessing Pre-Seeded Data
+
+```go
+// Application is pre-seeded in context
+ApplicationID: &ctx.Application.ID
+
+// Don't create local 'app' variable unless needed
 ```
