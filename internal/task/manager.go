@@ -140,26 +140,35 @@ func (m *Manager) Run(ctx context.Context) {
 				Log.Info("Manager stopped.")
 				return
 			default:
-				err := m.cluster.Refresh()
-				if err == nil {
-					m.deleteOrphanPods()
-					m.deleteRetainedPods()
-					m.runActions()
-					m.updateRunning(ctx)
-					m.deleteZombies()
-					m.startReady()
-					m.pause()
-				} else {
+				m.pause()
+				err := m.Reconcile(ctx)
+				if err != nil {
 					if errors.Is(err, &NotReconciled{}) {
 						Log.Info(err.Error())
 					} else {
 						Log.Error(err, "")
 					}
-					m.pause()
 				}
 			}
 		}
 	}()
+}
+
+// Reconcile tasks.
+// Turns the 'crank' once.
+// Intended to be called directly from Run() and test harnesses.
+func (m *Manager) Reconcile(ctx context.Context) (err error) {
+	err = m.cluster.Refresh()
+	if err != nil {
+		return
+	}
+	m.deleteOrphanPods()
+	m.deleteRetainedPods()
+	m.runActions()
+	m.updateRunning(ctx)
+	m.deleteZombies()
+	m.startReady()
+	return
 }
 
 // Create a task.

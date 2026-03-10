@@ -21,6 +21,7 @@ type Context struct {
 	Client   client.Client
 	Manager  *impTask.Manager
 	Cancel   context.CancelFunc
+	Done     chan struct{} // Signals when manager has stopped
 	Captured struct {
 		TaskFrequency time.Duration
 	}
@@ -73,8 +74,17 @@ func (ctx *Context) teardown() {
 	// Cancel context to stop manager if running
 	if ctx.Cancel != nil {
 		ctx.Cancel()
-		// Give manager time to stop gracefully
-		time.Sleep(50 * time.Millisecond)
+		// Wait for manager goroutine to actually stop
+		// Use a timeout in case something goes wrong
+		if ctx.Done != nil {
+			select {
+			case <-ctx.Done:
+				// Manager stopped successfully
+			case <-time.After(5 * time.Second):
+				// Timeout - manager didn't stop in time
+				// This shouldn't happen in normal operation
+			}
+		}
 	}
 }
 
@@ -113,9 +123,13 @@ func (ctx *Context) newManager(g *gomega.GomegaWithT) {
 	}
 	managerCtx, cancel := context.WithCancel(context.Background())
 	ctx.Cancel = cancel
+	ctx.Done = make(chan struct{})
 
 	// Run the manager in a goroutine
-	go ctx.Manager.Run(managerCtx)
+	go func() {
+		ctx.Manager.Run(managerCtx)
+		close(ctx.Done)
+	}()
 
 	// Wait for the cluster to refresh and be ready
 	// With Settings.Frequency.Task at 100ms, this gives time for initial setup

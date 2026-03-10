@@ -534,17 +534,59 @@ This document defines the functional requirements for the task scheduler. Tests 
 
 ### Behavior: Cancel Task
 
+**Purpose**: Cancellation allows users to stop tasks in progress or prevent queued tasks from running.
+
+**Cancellable States**: Tasks in these states can be canceled:
+- Created
+- Ready
+- Pending
+- Postponed
+- QuotaBlocked
+- Running
+
+**Terminal States (No-Op)**: Cancellation is ignored for tasks in terminal states:
+- Succeeded
+- Failed
+- Canceled
+
+---
+
 **Given**: Task with State=Running and pod exists
 **When**: Manager.Cancel() called
 **Then**:
+- Pod snapshot created (pod.yaml with spec and events)
 - Pod deleted
 - Task.State = Canceled
-- Event recorded: Canceled
 - Task.Bucket cleared
+- Event recorded: Canceled
 
-**Given**: Task with State=Succeeded
+**Given**: Task with State=Pending and pod exists
 **When**: Manager.Cancel() called
-**Then**: No action (discarded)
+**Then**:
+- Pod snapshot created (pod.yaml)
+- Pod deleted
+- Task.State = Canceled
+- Task.Pod field cleared
+- Task.Bucket cleared
+- Event recorded: Canceled
+
+**Given**: Task with State=Ready, Postponed, or QuotaBlocked (no pod)
+**When**: Manager.Cancel() called
+**Then**:
+- Task.State = Canceled
+- Task.Bucket cleared (if exists)
+- Event recorded: Canceled
+- No pod operations (pod doesn't exist yet)
+
+**Given**: Task with State=Created (not submitted)
+**When**: Manager.Cancel() called
+**Then**:
+- Task.State = Canceled
+- Event recorded: Canceled
+
+**Given**: Task with State=Succeeded, Failed, or Canceled (terminal states)
+**When**: Manager.Cancel() called
+**Then**: No action (operation discarded, task remains in terminal state)
 
 **Test**: TestCancelTask
 
