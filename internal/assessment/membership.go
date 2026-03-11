@@ -118,12 +118,14 @@ func (r *MembershipResolver) cacheArchetypeMembers(db *gorm.DB) (err error) {
 	}
 	type M struct {
 		AppId      uint
+		AppName    string
 		TagId      uint
 		TagName    string
 		CategoryId uint
 	}
 	db = db.Select(
 		"a.id         AppId",
+		"a.name       AppName",
 		"t.id         TagId",
 		"t.name       TagName",
 		"t.categoryId CategoryId")
@@ -149,13 +151,15 @@ func (r *MembershipResolver) cacheArchetypeMembers(db *gorm.DB) (err error) {
 		}
 		if m.AppId != application.ID {
 			if application.ID > 0 {
-				a := Application{Application: &application}
+				appCopy := application
+				a := Application{Application: &appCopy}
 				_, err = r.Archetypes(a)
 				if err != nil {
 					return
 				}
 			}
 			application.ID = m.AppId
+			application.Name = m.AppName
 			application.Tags = nil
 		}
 		tag := model.Tag{}
@@ -167,7 +171,8 @@ func (r *MembershipResolver) cacheArchetypeMembers(db *gorm.DB) (err error) {
 	}
 	// Last
 	if application.ID > 0 {
-		a := Application{Application: &application}
+		appCopy := application
+		a := Application{Application: &appCopy}
 		_, err = r.Archetypes(a)
 		if err != nil {
 			return
