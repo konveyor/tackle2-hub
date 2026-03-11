@@ -16,6 +16,7 @@ type Context struct {
     Client      client.Client      // K8s simulator client
     Manager     *task.Manager      // Task manager instance
     Application *model.Application // Pre-seeded test application
+    Platform    *model.Platform    // Pre-seeded test platform
 }
 ```
 
@@ -34,11 +35,17 @@ func TestMySchedulerFeature(t *testing.T) {
 
 The `New()` function automatically:
 - Creates in-memory SQLite database
-- Auto-migrates required tables
+- Auto-migrates required tables (Task, TaskGroup, Application, Platform, Bucket, File, TagCategory, Tag)
 - Creates k8s simulator with instant pod transitions (0s Pending, 0s Running)
-- Seeds test data: TagCategory "Language", Tag "Java", Application "Test Application"
+- Seeds test data:
+  - TagCategory "Language"
+  - Tag "Java"
+  - Application "Test Application" (tagged with Java)
+  - Platform "Test Platform" (kind: kubernetes)
 
 ### Creating Tasks
+
+**Application-based tasks:**
 
 ```go
 // Create tasks using the pre-seeded application
@@ -52,6 +59,22 @@ m := &model.Task{
 err := ctx.DB.Create(m).Error
 g.Expect(err).To(gomega.BeNil())
 ```
+
+**Platform-based tasks:**
+
+```go
+// Create tasks using the pre-seeded platform
+m := &model.Task{
+    Name:       "platform-task",
+    Kind:       "analyzer",
+    State:      task.Ready,
+    PlatformID: &ctx.Platform.ID,
+}
+err := ctx.DB.Create(m).Error
+g.Expect(err).To(gomega.BeNil())
+```
+
+**Note:** Tasks can reference either an Application OR a Platform as the subject. The RuleUnique and RuleDeps scheduling rules apply to tasks with the same subject (same Application or same Platform).
 
 ### Running the Manager
 
@@ -281,8 +304,9 @@ ctx.Manager = task.New(ctx.DB, ctx.Client)
 ### Accessing Pre-Seeded Data
 
 ```go
-// Application is pre-seeded in context
+// Application and Platform are pre-seeded in context
 ApplicationID: &ctx.Application.ID
+PlatformID: &ctx.Platform.ID
 
-// Don't create local 'app' variable unless needed
+// Don't create local variables unless needed
 ```

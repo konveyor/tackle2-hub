@@ -498,6 +498,133 @@ func TestRuleDeps(t *testing.T) {
 		task.Succeeded))
 }
 
+// TestRuleUniquePlatform tests concurrent task limiting per platform/kind.
+func TestRuleUniquePlatform(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+
+	// Create 3 tasks with same kind and platform
+	var taskIDs []uint
+	for i := 1; i <= 3; i++ {
+		m := &model.Task{
+			Name:       "platform-task-" + strconv.Itoa(i),
+			Kind:       "analyzer",
+			State:      task.Ready,
+			PlatformID: &ctx.Platform.ID,
+		}
+		err := ctx.DB.Create(m).Error
+		g.Expect(err).To(gomega.BeNil())
+		taskIDs = append(taskIDs, m.ID)
+	}
+
+	// Create manager using synchronous testing approach
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile once: should start task 1 (capacity=1), postpone task 3 (RuleUnique)
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Check state after first reconcile
+	var tasks []*model.Task
+	err := ctx.DB.Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(tasks)).To(gomega.Equal(3))
+
+	// Task 3 should be Postponed by RuleUnique (same platform/kind)
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Postponed))
+
+	// Verify postponement event
+	hasPostponedEvent := false
+	for _, event := range tasks[2].Events {
+		if event.Kind == task.Postponed {
+			hasPostponedEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Unique"))
+			break
+		}
+	}
+	g.Expect(hasPostponedEvent).To(gomega.BeTrue())
+
+	// Reconcile until all 3 tasks complete
+	ctx.reconcile(g, 3, taskIDs...)
+
+	// Verify all tasks eventually completed
+	err = ctx.DB.Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(tasks[0].State).To(gomega.Equal(task.Succeeded))
+	g.Expect(tasks[1].State).To(gomega.Equal(task.Succeeded))
+	g.Expect(tasks[2].State).To(gomega.Equal(task.Succeeded))
+}
+
+// TestRuleDepsPlatform tests task dependency blocking for platform-based tasks.
+func TestRuleDepsPlatform(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+
+	// Create language-discovery task (dependency)
+	discovery := &model.Task{
+		Name:       "platform-discovery-task",
+		Kind:       "language-discovery",
+		State:      task.Ready,
+		PlatformID: &ctx.Platform.ID,
+	}
+	err := ctx.DB.Create(discovery).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create analyzer task (depends on language-discovery)
+	analyzer := &model.Task{
+		Name:       "platform-analyzer-task",
+		Kind:       "analyzer",
+		State:      task.Ready,
+		PlatformID: &ctx.Platform.ID,
+	}
+	err = ctx.DB.Create(analyzer).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to start tasks
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify discovery task started
+	err = ctx.DB.First(&discovery, discovery.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(discovery.State).To(gomega.BeElementOf(
+		task.Pending,
+		task.Running))
+
+	// Verify analyzer task postponed due to dependency
+	err = ctx.DB.First(&analyzer, analyzer.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(analyzer.State).To(gomega.Equal(task.Postponed))
+
+	// Verify postponement event
+	hasDepEvent := false
+	for _, event := range analyzer.Events {
+		if event.Kind == task.Postponed {
+			hasDepEvent = true
+			g.Expect(event.Reason).To(gomega.ContainSubstring("Rule:Dependency"))
+			break
+		}
+	}
+	g.Expect(hasDepEvent).To(gomega.BeTrue())
+
+	// Reconcile until discovery task completes
+	ctx.reconcile(g, 1, discovery.ID)
+
+	// Verify analyzer task eventually started
+	err = ctx.DB.First(&analyzer, analyzer.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(analyzer.State).To(gomega.BeElementOf(
+		task.Ready,
+		task.Pending,
+		task.Running,
+		task.Succeeded))
+}
+
 // TestPriorityEscalation tests dependency priority escalation to prevent priority inversion.
 // When a high-priority task depends on a low-priority task, the dependency's priority
 // is escalated to match the dependent task.

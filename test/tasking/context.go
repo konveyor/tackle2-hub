@@ -31,6 +31,7 @@ func New(g *gomega.GomegaWithT) (ctx *Context) {
 		&model.Task{},
 		&model.TaskGroup{},
 		&model.Application{},
+		&model.Platform{},
 		&model.Bucket{},
 		&model.File{},
 		&model.TagCategory{},
@@ -48,6 +49,7 @@ type Context struct {
 	Client      client.Client
 	Manager     *task.Manager
 	Application *model.Application
+	Platform    *model.Platform
 }
 
 // seed seeds the database with common test data.
@@ -71,6 +73,14 @@ func (ctx *Context) seed(g *gomega.GomegaWithT) {
 		Tags: []model.Tag{*tag},
 	}
 	err = ctx.DB.Create(ctx.Application).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create a platform for platform-based task tests
+	ctx.Platform = &model.Platform{
+		Name: "Test Platform",
+		Kind: "kubernetes",
+	}
+	err = ctx.DB.Create(ctx.Platform).Error
 	g.Expect(err).To(gomega.BeNil())
 	return
 }
