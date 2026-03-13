@@ -608,53 +608,94 @@ This document defines the functional requirements for the task scheduler. Tests 
 
 ### Test Environment Configuration
 
-All tests should use:
+All tests use:
 - In-memory SQLite database
 - K8s simulator with configurable pod lifecycle timing
-- Settings.Frequency.Task = 100ms (fast test execution)
-- Pre-seeded resources:
+- Pre-seeded resources (created by `New()` function):
   - TagCategory "Language"
   - Tag "Java"
-  - Addon "analyzer"
-  - Extension "java"
+  - Application "Test Application" (tagged with Java)
+  - Platform "Test Platform" (kind: kubernetes)
+
+**Synchronous Tests (Default - Most Tests)**:
+- Pod transitions: Instant (0s Pending, 0s Running)
+- Reconciliation: Explicit `ctx.reconcile()` calls
+- No time-based waits
+- Fast, deterministic execution
+
+**Asynchronous Test (TestAsyncManager Only)**:
+- Settings.Frequency.Task = 100ms
+- Pod transitions: Realistic (1s Pending, 1s Running)
+- Manager runs in background goroutine
 
 ### Common Test Patterns
 
 **Setup**:
 ```go
-tc := setup(g)
-defer tc.teardown()
-app := tc.seed(g)
+ctx := New(g)
 ```
+
+The `New()` function automatically creates the database, k8s simulator, and seeds test data (TagCategory, Tag, Application, Platform).
 
 **Create Task**:
 ```go
-task := &model.Task{
+m := &model.Task{
     Name:          "test-task",
     Kind:          "analyzer",
-    State:         impTask.Ready,
-    ApplicationID: &app.ID,
+    State:         task.Ready,
+    ApplicationID: &ctx.Application.ID,
 }
-err := tc.DB.Create(task).Error
+err := ctx.DB.Create(m).Error
 g.Expect(err).To(gomega.BeNil())
 ```
 
 **Start Manager**:
 ```go
-tc.newManager(g)
+ctx.Manager = task.New(ctx.DB, ctx.Client)
 ```
 
-**Wait for Completion**:
+**Wait for Completion (Synchronous - Recommended)**:
 ```go
-time.Sleep(2500 * time.Millisecond)
+// Reconcile until 1 task reaches terminal state
+ctx.reconcile(g, 1, m.ID)
+
+// Reconcile until multiple tasks complete
+ctx.reconcile(g, 3, task1.ID, task2.ID, task3.ID)
+```
+
+**Wait for Completion (Asynchronous - One Test Only)**:
+```go
+// Only used in TestAsyncManager
+time.Sleep(3 * time.Second)
 ```
 
 **Verify State**:
 ```go
-var updated model.Task
-err := tc.DB.First(&updated, task.ID).Error
+var retrieved model.Task
+err := ctx.DB.First(&retrieved, m.ID).Error
 g.Expect(err).To(gomega.BeNil())
-g.Expect(updated.State).To(gomega.Equal(impTask.Succeeded))
+g.Expect(retrieved.State).To(gomega.Equal(task.Succeeded))
+```
+
+**Simulate Pod Failures**:
+```go
+// Image pull error
+imageMgr := &TestPodManager{
+    imageError: "ErrImagePull",
+}
+ctx.Client = simulator.New().Use(imageMgr)
+
+// Container killed (exit 137) with retry
+killMgr := &TestPodManager{
+    killCount: 1,
+}
+ctx.Client = simulator.New().Use(killMgr)
+
+// Unschedulable pods (capacity exceeded)
+unschedulableMgr := &TestPodManager{
+    unschedulable: true,
+}
+ctx.Client = simulator.New().Use(unschedulableMgr)
 ```
 
 ---
@@ -672,4 +713,4 @@ The following behaviors are anticipated but not yet implemented:
 
 ---
 
-**Last Updated**: 2026-03-10
+**Last Updated**: 2026-03-13
