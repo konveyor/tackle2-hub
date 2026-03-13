@@ -3,7 +3,6 @@ package tasking
 import (
 	"context"
 	"strconv"
-	"sync"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -461,8 +459,8 @@ func TestTaskImagePullError(t *testing.T) {
 			g.Expect(err).To(gomega.BeNil())
 
 			// Use custom pod manager that simulates image pull error
-			imageMgr := &ImagePullErrorManager{
-				errorReason: tc.errorReason,
+			imageMgr := &TestPodManager{
+				imageError: tc.errorReason,
 			}
 			ctx.Client = simulator.New().Use(imageMgr)
 			ctx.Manager = task.New(ctx.DB, ctx.Client)
@@ -528,7 +526,7 @@ func TestTaskRetryOnKill(t *testing.T) {
 
 	// Use custom pod manager that simulates container killed (exit code 137)
 	// Default Settings.Hub.Task.Retries = 1, so we can kill once and succeed on retry
-	killMgr := &KilledPodManager{
+	killMgr := &TestPodManager{
 		killCount: 1, // Kill the pod once, then succeed on second attempt
 	}
 	ctx.Client = simulator.New().Use(killMgr)
@@ -1733,7 +1731,7 @@ func TestPipelineFailureCascading(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Create manager with custom simulator that fails the first pod
-	failMgr := &FailingPodManager{
+	failMgr := &TestPodManager{
 		failFirstPod: true,
 	}
 	ctx.Client = simulator.New().Use(failMgr)
@@ -1816,8 +1814,8 @@ func TestCapacityExceeded(t *testing.T) {
 	}
 
 	// Use custom pod manager that makes pods unschedulable
-	unschedulableMgr := &UnschedulablePodManager{
-		makeUnschedulable: true,
+	unschedulableMgr := &TestPodManager{
+		unschedulable: true,
 	}
 	ctx.Client = simulator.New().Use(unschedulableMgr)
 	ctx.Manager = task.New(ctx.DB, ctx.Client)
@@ -2005,193 +2003,4 @@ func TestZombiePodCleanup(t *testing.T) {
 	// - ensureTerminated() requires pod exec (remotecommand.NewSPDYExecutor)
 	// - ContainerKilled event is only added if exec succeeds
 	// - Cannot simulate persistent Running containers after task completion
-}
-
-// FailingPodManager is a custom pod manager that simulates pod failures.
-// When failFirstPod is true, the first pod created will fail immediately.
-type FailingPodManager struct {
-	mutex        sync.Mutex
-	failFirstPod bool
-	hasFailed    bool
-	failedPod    string
-}
-
-func (m *FailingPodManager) Created(pod *core.Pod) {
-	// No-op
-}
-
-func (m *FailingPodManager) Next(pod *core.Pod) (phase core.PodPhase) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Determine if this pod should fail
-	shouldFail := false
-	if m.failFirstPod && !m.hasFailed {
-		m.hasFailed = true
-		m.failedPod = pod.Name
-		shouldFail = true
-	} else if pod.Name == m.failedPod {
-		shouldFail = true
-	}
-
-	// Transition based on current phase
-	switch pod.Status.Phase {
-	case core.PodPending:
-		if shouldFail {
-			return core.PodFailed
-		}
-		return core.PodRunning
-	case core.PodRunning:
-		if shouldFail {
-			return core.PodFailed
-		}
-		return core.PodSucceeded
-	default:
-		return pod.Status.Phase
-	}
-}
-
-func (m *FailingPodManager) Deleted(pod *core.Pod) {
-	// No-op
-}
-
-// UnschedulablePodManager makes pods unschedulable to test capacity exceeded.
-type UnschedulablePodManager struct {
-	mutex             sync.Mutex
-	makeUnschedulable bool
-	unschedulablePods map[string]bool
-}
-
-func (m *UnschedulablePodManager) Created(pod *core.Pod) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	if m.unschedulablePods == nil {
-		m.unschedulablePods = make(map[string]bool)
-	}
-	if m.makeUnschedulable {
-		m.unschedulablePods[pod.Name] = true
-		// Set unschedulable condition
-		pod.Status.Conditions = []core.PodCondition{
-			{
-				Type:   core.PodScheduled,
-				Status: core.ConditionFalse,
-				Reason: core.PodReasonUnschedulable,
-			},
-		}
-	}
-}
-
-func (m *UnschedulablePodManager) Next(pod *core.Pod) (phase core.PodPhase) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Keep unschedulable pods in Pending state
-	if m.unschedulablePods[pod.Name] {
-		return core.PodPending
-	}
-
-	// Normal pod lifecycle
-	switch pod.Status.Phase {
-	case core.PodPending:
-		return core.PodRunning
-	case core.PodRunning:
-		return core.PodSucceeded
-	default:
-		return pod.Status.Phase
-	}
-}
-
-func (m *UnschedulablePodManager) Deleted(pod *core.Pod) {
-	// No-op
-}
-
-// KilledPodManager simulates containers being killed (exit code 137) for retry testing.
-type KilledPodManager struct {
-	mutex        sync.Mutex
-	killCount    int // Number of times to kill the pod before letting it succeed
-	currentKills int // Current number of kills
-}
-
-func (m *KilledPodManager) Created(pod *core.Pod) {
-	// No-op
-}
-
-func (m *KilledPodManager) Next(pod *core.Pod) (phase core.PodPhase) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	switch pod.Status.Phase {
-	case core.PodPending:
-		return core.PodRunning
-	case core.PodRunning:
-		// Check if we should kill this pod
-		if m.currentKills < m.killCount {
-			m.currentKills++
-			// Set container status with exit code 137 (SIGKILL)
-			statuses := make([]core.ContainerStatus, len(pod.Spec.Containers))
-			for i, container := range pod.Spec.Containers {
-				statuses[i] = core.ContainerStatus{
-					Name:  container.Name,
-					Ready: false,
-					State: core.ContainerState{
-						Terminated: &core.ContainerStateTerminated{
-							ExitCode:   137, // SIGKILL
-							Reason:     "Killed",
-							Message:    "Container was killed",
-							FinishedAt: meta_v1.Now(),
-						},
-					},
-				}
-			}
-			pod.Status.ContainerStatuses = statuses
-			return core.PodFailed
-		}
-		// Let it succeed after killCount attempts
-		return core.PodSucceeded
-	default:
-		return pod.Status.Phase
-	}
-}
-
-func (m *KilledPodManager) Deleted(pod *core.Pod) {
-	// No-op
-}
-
-// ImagePullErrorManager simulates image pull failures for testing.
-// Sets ContainerStateWaiting with image-related error reasons.
-type ImagePullErrorManager struct {
-	errorReason string // e.g., "ErrImagePull", "ImagePullBackOff", "InvalidImageName"
-}
-
-func (m *ImagePullErrorManager) Created(pod *core.Pod) {
-	// No-op
-}
-
-func (m *ImagePullErrorManager) Next(pod *core.Pod) (phase core.PodPhase) {
-	switch pod.Status.Phase {
-	case core.PodPending:
-		// Set waiting state with image pull error
-		statuses := make([]core.ContainerStatus, len(pod.Spec.Containers))
-		for i, container := range pod.Spec.Containers {
-			statuses[i] = core.ContainerStatus{
-				Name:  container.Name,
-				Ready: false,
-				State: core.ContainerState{
-					Waiting: &core.ContainerStateWaiting{
-						Reason:  m.errorReason,
-						Message: "Failed to pull image: " + m.errorReason,
-					},
-				},
-			}
-		}
-		pod.Status.ContainerStatuses = statuses
-		// Stay in Pending - the task manager will detect the error and fail the task
-		return core.PodPending
-	default:
-		return pod.Status.Phase
-	}
-}
-
-func (m *ImagePullErrorManager) Deleted(pod *core.Pod) {
-	// No-op
 }
