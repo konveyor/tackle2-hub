@@ -6,7 +6,6 @@ import (
 	"hash/fnv"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	core "k8s.io/api/core/v1"
@@ -16,7 +15,7 @@ import (
 // Maintains a running estimation of the cluster scheduling capacity.
 type CapacityMonitor struct {
 	mutex       sync.Mutex
-	background  atomic.Bool
+	background  bool
 	capacity    int
 	scheduled   int
 	unscheduled int
@@ -27,24 +26,23 @@ type CapacityMonitor struct {
 func (m *CapacityMonitor) Reset() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.capacity = 1
-	m.scheduled = 0
-	m.unscheduled = 0
-	m.growthRate = 1.05
+	m.reset()
 }
 
 // Run the monitor.
 func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
-	if m.Background() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.background {
 		return
 	}
-	m.Reset()
+	m.reset()
 	go func() {
-		Log.Info("CapacityMonitor started.")
-		m.background.Store(true)
 		defer func() {
+			m.mutex.Lock()
+			defer m.mutex.Unlock()
 			Log.Info("CapacityMonitor stopped.")
-			m.background.Store(false)
+			m.background = false
 		}()
 		for {
 			select {
@@ -59,11 +57,16 @@ func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
 			}
 		}
 	}()
+	Log.Info("CapacityMonitor started.")
+	m.background = true
 }
 
 // Background returns true when running in a goroutine.
-func (m *CapacityMonitor) Background() (started bool) {
-	return m.background.Load()
+func (m *CapacityMonitor) Background() (bg bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	bg = m.background
+	return
 }
 
 // Reconcile capacity.
@@ -150,6 +153,14 @@ func (m *CapacityMonitor) String() (s string) {
 	defer m.mutex.Unlock()
 	s = m.string()
 	return
+}
+
+// reset statistics.
+func (m *CapacityMonitor) reset() {
+	m.capacity = 1
+	m.scheduled = 0
+	m.unscheduled = 0
+	m.growthRate = 1.05
 }
 
 // String returns a string representation.

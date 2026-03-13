@@ -9,7 +9,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -97,6 +97,18 @@ var (
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
 
+func init() {
+	client, err := k8s2.NewClient()
+	if err != nil {
+		panic(err)
+	}
+	auth.Validators = append(
+		auth.Validators,
+		&Validator{
+			Client: client,
+		})
+}
+
 // New manager.
 func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 	m = &Manager{
@@ -109,11 +121,6 @@ func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 			DB:        db,
 		},
 	}
-	auth.Validators = append(
-		auth.Validators,
-		&Validator{
-			Client: m.Client,
-		})
 	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
@@ -122,6 +129,7 @@ func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 
 // Manager provides task management.
 type Manager struct {
+	mutex sync.Mutex
 	// DB
 	DB *gorm.DB
 	// k8s client.
@@ -135,26 +143,27 @@ type Manager struct {
 	// pod capacity monitor
 	capacity CapacityMonitor
 	// background indicator.
-	background atomic.Bool
+	background bool
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	if m.background.Load() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.background {
 		return
 	}
 	m.capacity.Run(ctx, &m.cluster)
 	go func() {
-		Log.Info("Manager started.")
-		m.background.Store(true)
 		defer func() {
+			m.mutex.Lock()
+			defer m.mutex.Unlock()
 			Log.Info("Manager stopped.")
-			m.background.Store(false)
+			m.background = false
 		}()
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Info("Manager stopped.")
 				return
 			default:
 				m.pause()
@@ -169,11 +178,16 @@ func (m *Manager) Run(ctx context.Context) {
 			}
 		}
 	}()
+	Log.Info("Manager started.")
+	m.background = true
 }
 
-// Background returns true when running in a goroutine.
-func (m *Manager) Background() (started bool) {
-	return m.background.Load()
+// Background returns true when started in a goroutine.
+func (m *Manager) Background() (bg bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	bg = m.background
+	return
 }
 
 // Reconcile tasks.
@@ -190,6 +204,8 @@ func (m *Manager) Reconcile(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	m.deleteOrphanPods()
 	m.deleteRetainedPods()
 	m.runActions()
@@ -313,13 +329,17 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 
 // Delete a task.
 func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
-	task := &Task{}
-	err = db.First(task, id).Error
+	err = db.First(&Task{}, id).Error
 	if err != nil {
 		return
 	}
 	m.action(
 		func() (err error) {
+			task := &Task{}
+			err = m.DB.First(task, id).Error
+			if err != nil {
+				return
+			}
 			err = task.Delete(m.Client)
 			if err != nil {
 				return
@@ -332,13 +352,17 @@ func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
 
 // Cancel a task.
 func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
-	task := &Task{}
-	err = db.First(task, id).Error
+	err = db.First(&Task{}, id).Error
 	if err != nil {
 		return
 	}
 	m.action(
 		func() (err error) {
+			task := &Task{}
+			err = m.DB.First(task, id).Error
+			if err != nil {
+				return
+			}
 			switch task.State {
 			case Succeeded,
 				Failed,
