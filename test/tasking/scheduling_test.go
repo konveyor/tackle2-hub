@@ -2,6 +2,7 @@ package tasking
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -799,7 +800,8 @@ func TestPriorityEscalation(t *testing.T) {
 	for _, event := range discovery.Events {
 		if event.Kind == task.Escalated {
 			hasEscalationEvent = true
-			g.Expect(event.Reason).To(gomega.ContainSubstring("Escalated:1, by:2"))
+			g.Expect(event.Reason).To(gomega.ContainSubstring(
+				fmt.Sprintf("Escalated:%d, by:%d", discovery.ID, analyzer.ID)))
 			break
 		}
 	}
