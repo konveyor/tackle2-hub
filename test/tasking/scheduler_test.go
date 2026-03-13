@@ -13,6 +13,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -420,12 +421,52 @@ func TestPipelineMode(t *testing.T) {
 		task.Running))
 }
 
-// TestTaskRetryOnKill tests task retry when container exits with code 137.
+// TestTaskRetryOnKill tests task retry when container exits with code 137 (SIGKILL).
+// Exit code 137 triggers automatic retry (up to Settings.Hub.Task.Retries times).
 func TestTaskRetryOnKill(t *testing.T) {
-	t.Skip("Requires simulator support for container exit codes")
-	// This test would require the simulator to support simulating
-	// container exit code 137 (killed), which isn't currently
-	// implemented. Placeholder for future enhancement.
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Create a task
+	m := &model.Task{
+		Name:          "kill-retry-task",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Use custom pod manager that simulates container killed (exit code 137)
+	// Default Settings.Hub.Task.Retries = 1, so we can kill once and succeed on retry
+	killMgr := &KilledPodManager{
+		killCount: 1, // Kill the pod once, then succeed on second attempt
+	}
+	ctx.Client = simulator.New().Use(killMgr)
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile until task completes (should retry once then succeed)
+	ctx.reconcile(g, 1, m.ID)
+
+	// Verify task succeeded after retry
+	var retrieved model.Task
+	err = ctx.DB.First(&retrieved, m.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(retrieved.State).To(gomega.Equal(task.Succeeded))
+
+	// Verify task was retried 1 time
+	g.Expect(retrieved.Retries).To(gomega.Equal(1))
+
+	// Verify kill event exists
+	killEventCount := 0
+	for _, event := range retrieved.Events {
+		if event.Kind == task.PodFailed && event.Reason == "Killed" {
+			killEventCount++
+		}
+	}
+	g.Expect(killEventCount).To(gomega.Equal(1), "Expected 1 'Killed' event for the retry")
 }
 
 // TestRuleDeps tests task dependency blocking without priority escalation.
@@ -1974,5 +2015,57 @@ func (m *UnschedulablePodManager) Next(pod *core.Pod) (phase core.PodPhase) {
 }
 
 func (m *UnschedulablePodManager) Deleted(pod *core.Pod) {
+	// No-op
+}
+
+// KilledPodManager simulates containers being killed (exit code 137) for retry testing.
+type KilledPodManager struct {
+	mutex        sync.Mutex
+	killCount    int // Number of times to kill the pod before letting it succeed
+	currentKills int // Current number of kills
+}
+
+func (m *KilledPodManager) Created(pod *core.Pod) {
+	// No-op
+}
+
+func (m *KilledPodManager) Next(pod *core.Pod) (phase core.PodPhase) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	switch pod.Status.Phase {
+	case core.PodPending:
+		return core.PodRunning
+	case core.PodRunning:
+		// Check if we should kill this pod
+		if m.currentKills < m.killCount {
+			m.currentKills++
+			// Set container status with exit code 137 (SIGKILL)
+			statuses := make([]core.ContainerStatus, len(pod.Spec.Containers))
+			for i, container := range pod.Spec.Containers {
+				statuses[i] = core.ContainerStatus{
+					Name:  container.Name,
+					Ready: false,
+					State: core.ContainerState{
+						Terminated: &core.ContainerStateTerminated{
+							ExitCode:   137, // SIGKILL
+							Reason:     "Killed",
+							Message:    "Container was killed",
+							FinishedAt: meta_v1.Now(),
+						},
+					},
+				}
+			}
+			pod.Status.ContainerStatuses = statuses
+			return core.PodFailed
+		}
+		// Let it succeed after killCount attempts
+		return core.PodSucceeded
+	default:
+		return pod.Status.Phase
+	}
+}
+
+func (m *KilledPodManager) Deleted(pod *core.Pod) {
 	// No-op
 }
