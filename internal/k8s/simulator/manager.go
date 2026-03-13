@@ -7,6 +7,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -56,7 +57,7 @@ func (n *BaseNode) With(cpu, memory string) (n2 Node) {
 	return
 }
 
-// Run resources.
+// Run attempts to run a pod and returns its resulting phase.
 func (n *BaseNode) Run(pod *core.Pod) (phase core.PodPhase) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
@@ -74,15 +75,31 @@ func (n *BaseNode) Run(pod *core.Pod) (phase core.PodPhase) {
 	phase = core.PodPending
 	allocated := n.Allocated.cpu.Value()
 	if allocated > 0 && consumed.cpu.Value() > allocated {
+		n.setUnschedulable(pod, "Insufficient cpu")
 		return
 	}
 	allocated = n.Allocated.memory.Value()
 	if allocated > 0 && consumed.memory.Value() > allocated {
+		n.setUnschedulable(pod, "Insufficient memory")
 		return
 	}
 	n.Consumed = consumed
 	phase = core.PodRunning
 	return
+}
+
+// setUnschedulable marks a pod as unschedulable.
+func (n *BaseNode) setUnschedulable(pod *core.Pod, message string) {
+	now := meta_v1.Now()
+	pod.Status.Conditions = []core.PodCondition{
+		{
+			Type:               core.PodScheduled,
+			Status:             core.ConditionFalse,
+			Reason:             core.PodReasonUnschedulable,
+			Message:            message,
+			LastTransitionTime: now,
+		},
+	}
 }
 
 // Terminated return pod resources.

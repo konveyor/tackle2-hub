@@ -281,6 +281,12 @@ func TestNodeRunExceedsCapacity(t *testing.T) {
 	g.Expect(phase).To(gomega.Equal(core.PodPending))
 	// Resources should not be consumed for failed scheduling
 	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(800)))
+	// Pod should have unschedulable condition
+	g.Expect(pod2.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod2.Status.Conditions[0].Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(pod2.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionFalse))
+	g.Expect(pod2.Status.Conditions[0].Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(pod2.Status.Conditions[0].Message).To(gomega.ContainSubstring("cpu"))
 }
 
 // TestNodeTerminated tests resource freeing when pods terminate.
@@ -375,6 +381,43 @@ func TestNodeString(t *testing.T) {
 	g.Expect(str).To(gomega.ContainSubstring("500m"))
 	g.Expect(str).To(gomega.ContainSubstring("2"))
 	g.Expect(str).To(gomega.ContainSubstring("512Mi"))
+}
+
+// TestNodeUnschedulableCondition tests that unschedulable conditions are set correctly.
+func TestNodeUnschedulableCondition(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "512Mi").(*BaseNode)
+
+	// Pod that exceeds memory
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Limits: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("1Gi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodPending))
+
+	// Verify unschedulable condition
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	condition := pod.Status.Conditions[0]
+	g.Expect(condition.Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(condition.Status).To(gomega.Equal(core.ConditionFalse))
+	g.Expect(condition.Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(condition.Message).To(gomega.ContainSubstring("memory"))
+	g.Expect(condition.LastTransitionTime.IsZero()).To(gomega.BeFalse())
 }
 
 // TestNodeMultipleContainers tests resource tracking with multiple containers.
