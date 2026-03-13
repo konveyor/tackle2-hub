@@ -218,7 +218,7 @@ func TestNodeRunWithinCapacity(t *testing.T) {
 					Name:  "test",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("500m"),
 							core.ResourceMemory: *parseQuantity("512Mi"),
 						},
@@ -248,7 +248,7 @@ func TestNodeRunExceedsCapacity(t *testing.T) {
 					Name:  "test1",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("800m"),
 							core.ResourceMemory: *parseQuantity("768Mi"),
 						},
@@ -268,7 +268,7 @@ func TestNodeRunExceedsCapacity(t *testing.T) {
 					Name:  "test2",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("300m"),
 							core.ResourceMemory: *parseQuantity("128Mi"),
 						},
@@ -302,7 +302,7 @@ func TestNodeTerminated(t *testing.T) {
 					Name:  "test",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("500m"),
 							core.ResourceMemory: *parseQuantity("512Mi"),
 						},
@@ -338,7 +338,7 @@ func TestNodeTerminatedNegativeProtection(t *testing.T) {
 					Name:  "test",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("500m"),
 							core.ResourceMemory: *parseQuantity("512Mi"),
 						},
@@ -366,7 +366,7 @@ func TestNodeString(t *testing.T) {
 					Name:  "test",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("500m"),
 							core.ResourceMemory: *parseQuantity("512Mi"),
 						},
@@ -397,7 +397,7 @@ func TestNodeUnschedulableCondition(t *testing.T) {
 					Name:  "test",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("500m"),
 							core.ResourceMemory: *parseQuantity("1Gi"),
 						},
@@ -433,7 +433,7 @@ func TestNodeMultipleContainers(t *testing.T) {
 					Name:  "container1",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("300m"),
 							core.ResourceMemory: *parseQuantity("256Mi"),
 						},
@@ -443,7 +443,7 @@ func TestNodeMultipleContainers(t *testing.T) {
 					Name:  "container2",
 					Image: "test:latest",
 					Resources: core.ResourceRequirements{
-						Limits: core.ResourceList{
+						Requests: core.ResourceList{
 							core.ResourceCPU:    *parseQuantity("400m"),
 							core.ResourceMemory: *parseQuantity("512Mi"),
 						},

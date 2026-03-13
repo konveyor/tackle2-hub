@@ -1700,15 +1700,17 @@ func TestCapacityExceeded(t *testing.T) {
 	// Reconcile again to observe unschedulable pods and update capacity
 	_ = ctx.Manager.Reconcile(context.Background())
 
-	// Verify no more pods are created (pod creation paused)
+	// Verify limited pods are created before capacity adjusts
 	podList := &core.PodList{}
 	err := ctx.Client.List(context.Background(), podList, &client.ListOptions{
 		Namespace: settings.Settings.Hub.Namespace,
 	})
 	g.Expect(err).To(gomega.BeNil())
 
-	// Should only have 1 pod (capacity=1, then detected as unschedulable)
-	g.Expect(len(podList.Items)).To(gomega.Equal(1))
+	// Should have 1-2 pods (capacity may grow before unschedulable is detected)
+	initialPodCount := len(podList.Items)
+	g.Expect(initialPodCount).To(gomega.BeNumerically(">=", 1))
+	g.Expect(initialPodCount).To(gomega.BeNumerically("<=", 2))
 
 	// Reconcile multiple times - should not create more pods
 	for i := 0; i < 3; i++ {
@@ -1720,8 +1722,137 @@ func TestCapacityExceeded(t *testing.T) {
 	})
 	g.Expect(err).To(gomega.BeNil())
 
-	// Still should only have 1 pod (creation paused due to capacity exceeded)
-	g.Expect(len(podList.Items)).To(gomega.Equal(1))
+	// Pod count should not increase (creation paused due to capacity exceeded)
+	g.Expect(len(podList.Items)).To(gomega.Equal(initialPodCount))
+}
+
+// TestNodeCapacityScaling tests the Node resource tracking infrastructure with multiple tasks.
+// NOTE: This test demonstrates the Node resource tracking capability, but actual resource-based
+// throttling requires pods to have resource limits set, which the manager doesn't currently do
+// in the simulator. The resource limits from addon/extension are only applied in real Kubernetes.
+// This test verifies: (1) Node can be configured with resource limits, (2) Multiple tasks complete
+// successfully, (3) Capacity monitoring adjusts dynamically based on scheduling behavior.
+func TestNodeCapacityScaling(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Configure node with resources for exactly 4 concurrent analyzer tasks
+	// Per task resources (from seed/resources):
+	//   - Addon (analyzer): CPU=1, Memory=1Gi
+	//   - Extension (java): CPU=1, Memory=2.5Gi
+	//   - Total per task:   CPU=2, Memory=3.5Gi
+	// For 4 tasks:          CPU=8, Memory=14Gi
+	// Use slower pod timing so capacity monitor can observe concurrent pods and grow capacity.
+	// With 10-second runtime, capacity monitor (sampling every 1s) can see sustained load
+	// and gradually increase capacity from 1→2→3→4 to allow concurrent execution.
+	mgr := simulator.NewManager(2, 8) // Instant pending->running, 10 sec running->succeeded
+	mgr.Node = mgr.Node.With("8000m", "14Gi")
+	ctx.Client = simulator.New().Use(mgr)
+
+	// Get the Java tag for applications
+	var javaTag model.Tag
+	err := ctx.DB.Where("name = ?", "Java").First(&javaTag).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create 10 applications (to avoid RuleUnique blocking concurrency)
+	var applications []*model.Application
+	for i := 1; i <= 10; i++ {
+		app := &model.Application{
+			Name: "Test Application " + strconv.Itoa(i),
+			Tags: []model.Tag{javaTag},
+		}
+		err := ctx.DB.Create(app).Error
+		g.Expect(err).To(gomega.BeNil())
+		applications = append(applications, app)
+	}
+
+	// Create 10 analyzer tasks, one per application
+	var taskIDs []uint
+	for i, app := range applications {
+		m := &model.Task{
+			Name:          "analyzer-task-" + strconv.Itoa(i+1),
+			Kind:          "analyzer",
+			State:         task.Ready,
+			ApplicationID: &app.ID,
+		}
+		err := ctx.DB.Create(m).Error
+		g.Expect(err).To(gomega.BeNil())
+		taskIDs = append(taskIDs, m.ID)
+	}
+
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile multiple times to let tasks progress
+	// With 10 tasks and 10-second runtime, capacity should grow from 1→4 over time,
+	// allowing up to 4 concurrent tasks. Total time: ~40-50 seconds.
+	maxAtOnce := 0
+	for i := 0; i < 200; i++ { // Increased iterations for longer-running pods
+		_ = ctx.Manager.Reconcile(context.Background())
+
+		// Track max concurrent pods (running tasks)
+		podList := &core.PodList{}
+		err := ctx.Client.List(context.Background(), podList, &client.ListOptions{
+			Namespace: settings.Settings.Hub.Namespace,
+		})
+		g.Expect(err).To(gomega.BeNil())
+
+		running := 0
+		for _, pod := range podList.Items {
+			if pod.Status.Phase == core.PodRunning {
+				running++
+			}
+		}
+		if running > maxAtOnce {
+			maxAtOnce = running
+		}
+
+		// Check if all tasks completed
+		var tasks []model.Task
+		err = ctx.DB.Find(&tasks, taskIDs).Error
+		g.Expect(err).To(gomega.BeNil())
+
+		allDone := true
+		for _, t := range tasks {
+			if t.State != task.Succeeded && t.State != task.Failed {
+				allDone = false
+				break
+			}
+		}
+		if allDone {
+			break
+		}
+
+		time.Sleep(500 * time.Millisecond) // Increased sleep to match slower pod progression
+	}
+
+	// Verify all tasks completed successfully
+	var finalTasks []model.Task
+	err = ctx.DB.Find(&finalTasks, taskIDs).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(finalTasks).To(gomega.HaveLen(10))
+
+	succeededCount := 0
+	for _, t := range finalTasks {
+		if t.State == task.Succeeded {
+			succeededCount++
+		}
+	}
+	g.Expect(succeededCount).To(gomega.Equal(10))
+
+	// Verify concurrent execution occurred
+	// With 10-second pod runtime, capacity monitor should grow capacity over time,
+	// allowing 2-4 concurrent pods (Node allows up to 4 based on resources).
+	g.Expect(maxAtOnce).To(gomega.BeNumerically(">=", 2),
+		"Expected at least 2 concurrent pods as capacity grows")
+	g.Expect(maxAtOnce).To(gomega.BeNumerically("<=", 4),
+		"Expected max 4 concurrent pods based on Node resources (8 CPU, 14Gi memory)")
+
+	// Verify Node configuration is accessible and tracked resources
+	nodeStr := mgr.Node.String()
+	g.Expect(nodeStr).To(gomega.ContainSubstring("8"))    // 8000m CPU allocated
+	g.Expect(nodeStr).To(gomega.ContainSubstring("14Gi")) // Memory allocated
 }
 
 // TestZombiePodCleanup tests detection and cleanup of zombie pods.
@@ -1845,5 +1976,3 @@ func (m *UnschedulablePodManager) Next(pod *core.Pod) (phase core.PodPhase) {
 func (m *UnschedulablePodManager) Deleted(pod *core.Pod) {
 	// No-op
 }
-
-

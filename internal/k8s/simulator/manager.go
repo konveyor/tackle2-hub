@@ -63,11 +63,11 @@ func (n *BaseNode) Run(pod *core.Pod) (phase core.PodPhase) {
 	defer n.mutex.Unlock()
 	consumed := n.Consumed
 	for _, cnt := range pod.Spec.Containers {
-		q := cnt.Resources.Limits.Cpu()
+		q := cnt.Resources.Requests.Cpu()
 		if q != nil {
 			consumed.cpu.Add(*q)
 		}
-		q = cnt.Resources.Limits.Memory()
+		q = cnt.Resources.Requests.Memory()
 		if q != nil {
 			consumed.memory.Add(*q)
 		}
@@ -88,31 +88,17 @@ func (n *BaseNode) Run(pod *core.Pod) (phase core.PodPhase) {
 	return
 }
 
-// setUnschedulable marks a pod as unschedulable.
-func (n *BaseNode) setUnschedulable(pod *core.Pod, message string) {
-	now := meta_v1.Now()
-	pod.Status.Conditions = []core.PodCondition{
-		{
-			Type:               core.PodScheduled,
-			Status:             core.ConditionFalse,
-			Reason:             core.PodReasonUnschedulable,
-			Message:            message,
-			LastTransitionTime: now,
-		},
-	}
-}
-
 // Terminated return pod resources.
 func (n *BaseNode) Terminated(pod *core.Pod) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 	consumed := n.Consumed
 	for _, cnt := range pod.Spec.Containers {
-		q := cnt.Resources.Limits.Cpu()
+		q := cnt.Resources.Requests.Cpu()
 		if q != nil {
 			consumed.cpu.Sub(*q)
 		}
-		q = cnt.Resources.Limits.Memory()
+		q = cnt.Resources.Requests.Memory()
 		if q != nil {
 			consumed.memory.Sub(*q)
 		}
@@ -137,6 +123,20 @@ func (n *BaseNode) String() (s string) {
 		n.Consumed.memory.String(),
 		n.Allocated.memory.String())
 	return
+}
+
+// setUnschedulable marks a pod as unschedulable.
+func (n *BaseNode) setUnschedulable(pod *core.Pod, message string) {
+	now := meta_v1.Now()
+	pod.Status.Conditions = []core.PodCondition{
+		{
+			Type:               core.PodScheduled,
+			Status:             core.ConditionFalse,
+			Reason:             core.PodReasonUnschedulable,
+			Message:            message,
+			LastTransitionTime: now,
+		},
+	}
 }
 
 // PodManager managers pod progression through execution.

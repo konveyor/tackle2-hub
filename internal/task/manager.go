@@ -121,6 +121,7 @@ func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 			DB:        db,
 		},
 	}
+	m.capacity.Reset()
 	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
