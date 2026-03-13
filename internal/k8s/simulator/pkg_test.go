@@ -7,6 +7,7 @@ import (
 
 	"github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -190,4 +191,326 @@ func TestWithFailures(t *testing.T) {
 	g.Expect(retrieved.Status.ContainerStatuses).ToNot(gomega.BeEmpty())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated).ToNot(gomega.BeNil())
 	g.Expect(retrieved.Status.ContainerStatuses[0].State.Terminated.ExitCode).ToNot(gomega.Equal(int32(0)))
+}
+
+// TestNodeResourceAllocation tests node resource allocation.
+func TestNodeResourceAllocation(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "1Gi").(*BaseNode)
+
+	g.Expect(node.Allocated.cpu.MilliValue()).To(gomega.Equal(int64(1000)))
+	g.Expect(node.Allocated.memory.Value()).To(gomega.Equal(int64(1073741824))) // 1Gi
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(0)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(0)))
+}
+
+// TestNodeRunWithinCapacity tests running pods within node capacity.
+func TestNodeRunWithinCapacity(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "1Gi").(*BaseNode)
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(500)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(536870912))) // 512Mi
+}
+
+// TestNodeRunExceedsCapacity tests running pods that exceed node capacity.
+func TestNodeRunExceedsCapacity(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "1Gi").(*BaseNode)
+
+	// First pod consumes most resources
+	pod1 := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test1",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("800m"),
+							core.ResourceMemory: *parseQuantity("768Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+	phase := node.Run(pod1)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+
+	// Second pod exceeds CPU capacity
+	pod2 := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test2",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("300m"),
+							core.ResourceMemory: *parseQuantity("128Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+	phase = node.Run(pod2)
+	g.Expect(phase).To(gomega.Equal(core.PodPending))
+	// Resources should not be consumed for failed scheduling
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(800)))
+	// Pod should have unschedulable condition
+	g.Expect(pod2.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod2.Status.Conditions[0].Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(pod2.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionFalse))
+	g.Expect(pod2.Status.Conditions[0].Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(pod2.Status.Conditions[0].Message).To(gomega.ContainSubstring("cpu"))
+}
+
+// TestNodeTerminated tests resource freeing when pods terminate.
+func TestNodeTerminated(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "1Gi").(*BaseNode)
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Run pod
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(500)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(536870912)))
+
+	// Terminate pod
+	node.Terminated(pod)
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(0)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(0)))
+}
+
+// TestNodeTerminatedNegativeProtection tests negative resource protection.
+func TestNodeTerminatedNegativeProtection(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "1Gi").(*BaseNode)
+
+	// Terminate a pod that was never run (should not go negative)
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	node.Terminated(pod)
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(0)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(0)))
+}
+
+// TestNodeString tests node string representation.
+func TestNodeString(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("2000m", "2Gi").(*BaseNode)
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+	node.Run(pod)
+
+	str := node.String()
+	g.Expect(str).To(gomega.ContainSubstring("500m"))
+	g.Expect(str).To(gomega.ContainSubstring("2"))
+	g.Expect(str).To(gomega.ContainSubstring("512Mi"))
+}
+
+// TestNodeUnschedulableCondition tests that unschedulable conditions are set correctly.
+func TestNodeUnschedulableCondition(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("1000m", "512Mi").(*BaseNode)
+
+	// Pod that exceeds memory
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("1Gi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodPending))
+
+	// Verify unschedulable condition
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	condition := pod.Status.Conditions[0]
+	g.Expect(condition.Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(condition.Status).To(gomega.Equal(core.ConditionFalse))
+	g.Expect(condition.Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(condition.Message).To(gomega.ContainSubstring("memory"))
+	g.Expect(condition.LastTransitionTime.IsZero()).To(gomega.BeFalse())
+}
+
+// TestNodeClearUnschedulable tests that unschedulable condition is cleared when pod is scheduled.
+func TestNodeClearUnschedulable(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("400m", "256Mi").(*BaseNode) // Not enough for the pod
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// First attempt: Pod won't fit (exceeds capacity)
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodPending))
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod.Status.Conditions[0].Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(pod.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionFalse))
+
+	// Reconfigure node with enough resources
+	node = node.With("2000m", "2Gi").(*BaseNode)
+
+	// Second attempt: Pod should fit now
+	phase = node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+
+	// Verify unschedulable condition was cleared (changed to True)
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod.Status.Conditions[0].Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(pod.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionTrue))
+	g.Expect(pod.Status.Conditions[0].Reason).To(gomega.Equal(""))
+	g.Expect(pod.Status.Conditions[0].Message).To(gomega.Equal(""))
+}
+
+// TestNodeMultipleContainers tests resource tracking with multiple containers.
+func TestNodeMultipleContainers(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("2000m", "2Gi").(*BaseNode)
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "container1",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("300m"),
+							core.ResourceMemory: *parseQuantity("256Mi"),
+						},
+					},
+				},
+				{
+					Name:  "container2",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("400m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+	// Total: 300m + 400m = 700m CPU, 256Mi + 512Mi = 768Mi memory
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(700)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(805306368))) // 768Mi
+
+	node.Terminated(pod)
+	g.Expect(node.Consumed.cpu.MilliValue()).To(gomega.Equal(int64(0)))
+	g.Expect(node.Consumed.memory.Value()).To(gomega.Equal(int64(0)))
+}
+
+// parseQuantity is a helper to parse resource quantities.
+func parseQuantity(s string) *resource.Quantity {
+	q := resource.MustParse(s)
+	return &q
 }

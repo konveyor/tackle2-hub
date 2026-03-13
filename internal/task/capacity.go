@@ -15,6 +15,7 @@ import (
 // Maintains a running estimation of the cluster scheduling capacity.
 type CapacityMonitor struct {
 	mutex       sync.Mutex
+	background  bool
 	capacity    int
 	scheduled   int
 	unscheduled int
@@ -25,30 +26,59 @@ type CapacityMonitor struct {
 func (m *CapacityMonitor) Reset() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.capacity = 1
-	m.scheduled = 0
-	m.unscheduled = 0
-	m.growthRate = 1.05
+	m.reset()
 }
 
 // Run the monitor.
 func (m *CapacityMonitor) Run(ctx context.Context, cluster *Cluster) {
-	m.Reset()
-	Log.Info("CapacityMonitor started.")
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.background {
+		return
+	}
+	m.reset()
 	go func() {
+		defer func() {
+			m.mutex.Lock()
+			defer m.mutex.Unlock()
+			Log.Info("CapacityMonitor stopped.")
+			m.background = false
+		}()
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Info("CapacityMonitor stopped.")
 				return
 			default:
-				err := cluster.Refresh()
-				Log.Error(err, "")
-				m.Adjust(cluster)
-				time.Sleep(Settings.Frequency.Task)
+				m.pause()
+				err := m.Reconcile(cluster)
+				if err != nil {
+					Log.Error(err, "")
+				}
 			}
 		}
 	}()
+	Log.Info("CapacityMonitor started.")
+	m.background = true
+}
+
+// Background returns true when running in a goroutine.
+func (m *CapacityMonitor) Background() (bg bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	bg = m.background
+	return
+}
+
+// Reconcile capacity.
+// Turns the 'crank' once.
+// Intended to be called directly from Run() and test harnesses.
+func (m *CapacityMonitor) Reconcile(cluster *Cluster) (err error) {
+	err = cluster.Refresh()
+	if err != nil {
+		return
+	}
+	m.Adjust(cluster)
+	return
 }
 
 // Adjust updates estimated cluster capacity.
@@ -125,6 +155,14 @@ func (m *CapacityMonitor) String() (s string) {
 	return
 }
 
+// reset statistics.
+func (m *CapacityMonitor) reset() {
+	m.capacity = 1
+	m.scheduled = 0
+	m.unscheduled = 0
+	m.growthRate = 1.05
+}
+
 // String returns a string representation.
 func (m *CapacityMonitor) string() (s string) {
 	s = fmt.Sprintf(
@@ -146,4 +184,9 @@ func (m *CapacityMonitor) digest() (d string) {
 	n := h.Sum64()
 	d = fmt.Sprintf("%x", n)
 	return
+}
+
+// Pause.
+func (m *CapacityMonitor) pause() {
+	time.Sleep(Settings.Frequency.Task)
 }

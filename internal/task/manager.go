@@ -9,6 +9,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"sync"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -96,14 +97,38 @@ var (
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
 
+func init() {
+	auth.Validators = append(
+		auth.Validators,
+		&Validator{})
+}
+
+// New manager.
+func New(db *gorm.DB, client k8s.Client) (m *Manager) {
+	m = &Manager{
+		DB:      db,
+		Client:  client,
+		queue:   make(chan func(), 100),
+		cluster: NewCluster(client),
+		logManager: LogManager{
+			collector: make(map[string]*LogCollector),
+			DB:        db,
+		},
+	}
+	m.capacity.Reset()
+	if Log.V(1).Enabled() {
+		m.DB = m.DB.Debug()
+	}
+	return
+}
+
 // Manager provides task management.
 type Manager struct {
+	mutex sync.Mutex
 	// DB
 	DB *gorm.DB
 	// k8s client.
 	Client k8s.Client
-	// Addon token scopes.
-	Scopes []string
 	// cluster resources.
 	cluster Cluster
 	// queue of actions.
@@ -112,54 +137,77 @@ type Manager struct {
 	logManager LogManager
 	// pod capacity monitor
 	capacity CapacityMonitor
+	// background indicator.
+	background bool
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
-	m.queue = make(chan func(), 100)
-	m.cluster = NewCluster(m.Client)
-	m.logManager = LogManager{
-		collector: make(map[string]*LogCollector),
-		DB:        m.DB,
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.background {
+		return
 	}
 	m.capacity.Run(ctx, &m.cluster)
-	auth.Validators = append(
-		auth.Validators,
-		&Validator{
-			Client: m.Client,
-		})
-	if Log.V(1).Enabled() {
-		m.DB = m.DB.Debug()
-	}
 	go func() {
-		Log.Info("Manager started.")
-		defer Log.Info("Done.")
+		defer func() {
+			m.mutex.Lock()
+			defer m.mutex.Unlock()
+			Log.Info("Manager stopped.")
+			m.background = false
+		}()
 		for {
 			select {
 			case <-ctx.Done():
-				Log.Info("Manager stopped.")
 				return
 			default:
-				err := m.cluster.Refresh()
-				if err == nil {
-					m.deleteOrphanPods()
-					m.deleteRetainedPods()
-					m.runActions()
-					m.updateRunning(ctx)
-					m.deleteZombies()
-					m.startReady()
-					m.pause()
-				} else {
+				m.pause()
+				err := m.Reconcile(ctx)
+				if err != nil {
 					if errors.Is(err, &NotReconciled{}) {
 						Log.Info(err.Error())
 					} else {
 						Log.Error(err, "")
 					}
-					m.pause()
 				}
 			}
 		}
 	}()
+	Log.Info("Manager started.")
+	m.background = true
+}
+
+// Background returns true when started in a goroutine.
+func (m *Manager) Background() (bg bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	bg = m.background
+	return
+}
+
+// Reconcile tasks.
+// Turns the 'crank' once.
+// Intended to be called directly from Run() and test harnesses.
+func (m *Manager) Reconcile(ctx context.Context) (err error) {
+	if !m.capacity.Background() {
+		err = m.capacity.Reconcile(&m.cluster)
+		if err != nil {
+			return
+		}
+	}
+	err = m.cluster.Refresh()
+	if err != nil {
+		return
+	}
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.deleteOrphanPods()
+	m.deleteRetainedPods()
+	m.runActions()
+	m.updateRunning(ctx)
+	m.deleteZombies()
+	m.startReady()
+	return
 }
 
 // Create a task.
@@ -276,13 +324,17 @@ func (m *Manager) Update(db *gorm.DB, requested *Task) (err error) {
 
 // Delete a task.
 func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
-	task := &Task{}
-	err = db.First(task, id).Error
+	err = db.First(&Task{}, id).Error
 	if err != nil {
 		return
 	}
 	m.action(
 		func() (err error) {
+			task := &Task{}
+			err = m.DB.First(task, id).Error
+			if err != nil {
+				return
+			}
 			err = task.Delete(m.Client)
 			if err != nil {
 				return
@@ -295,13 +347,17 @@ func (m *Manager) Delete(db *gorm.DB, id uint) (err error) {
 
 // Cancel a task.
 func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
-	task := &Task{}
-	err = db.First(task, id).Error
+	err = db.First(&Task{}, id).Error
 	if err != nil {
 		return
 	}
 	m.action(
 		func() (err error) {
+			task := &Task{}
+			err = m.DB.First(task, id).Error
+			if err != nil {
+				return
+			}
 			switch task.State {
 			case Succeeded,
 				Failed,

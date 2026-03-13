@@ -12,6 +12,7 @@ import (
 func NewManager(pending, running int) (m *TimedManager) {
 	m = &TimedManager{
 		podMap: make(map[types.UID]TimedPod),
+		Node:   &BaseNode{},
 	}
 	m.Use(pending, running)
 	return
@@ -29,6 +30,7 @@ type PodManager interface {
 type TimedManager struct {
 	mutex      sync.Mutex
 	podMap     map[types.UID]TimedPod
+	Node       Node
 	Thresholds struct {
 		Pending time.Duration
 		Running time.Duration
@@ -72,11 +74,12 @@ func (m *TimedManager) Next(pod *core.Pod) (phase core.PodPhase) {
 	switch phase {
 	case core.PodPending:
 		if p.Exceeded(pod, m.Thresholds.Pending) {
-			phase = core.PodRunning
+			phase = m.Node.Run(pod)
 			p.Mark(phase)
 		}
 	case core.PodRunning:
 		if p.Exceeded(pod, m.Thresholds.Running) {
+			m.Node.Terminated(pod)
 			phase = core.PodSucceeded
 			p.Mark(phase)
 		}
