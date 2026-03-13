@@ -421,6 +421,93 @@ func TestPipelineMode(t *testing.T) {
 		task.Running))
 }
 
+// TestTaskImagePullError tests that image pull errors cause task failure.
+// Common errors like ErrImagePull, ImagePullBackOff, InvalidImageName should
+// immediately fail the task without retry.
+func TestTaskImagePullError(t *testing.T) {
+	testCases := []struct {
+		name        string
+		errorReason string
+	}{
+		{
+			name:        "ErrImagePull",
+			errorReason: "ErrImagePull",
+		},
+		{
+			name:        "ImagePullBackOff",
+			errorReason: "ImagePullBackOff",
+		},
+		{
+			name:        "InvalidImageName",
+			errorReason: "InvalidImageName",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := gomega.NewGomegaWithT(t)
+
+			// Setup test environment
+			ctx := New(g)
+
+			// Create a task
+			m := &model.Task{
+				Name:          "image-error-task",
+				Kind:          "analyzer",
+				State:         task.Ready,
+				ApplicationID: &ctx.Application.ID,
+			}
+			err := ctx.DB.Create(m).Error
+			g.Expect(err).To(gomega.BeNil())
+
+			// Use custom pod manager that simulates image pull error
+			imageMgr := &ImagePullErrorManager{
+				errorReason: tc.errorReason,
+			}
+			ctx.Client = simulator.New().Use(imageMgr)
+			ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+			// Reconcile - task should fail immediately
+			for i := 0; i < 10; i++ {
+				_ = ctx.Manager.Reconcile(context.Background())
+				var retrieved model.Task
+				err = ctx.DB.First(&retrieved, m.ID).Error
+				g.Expect(err).To(gomega.BeNil())
+				if retrieved.State == task.Failed {
+					break
+				}
+			}
+
+			// Verify task failed (not retried)
+			var retrieved model.Task
+			err = ctx.DB.First(&retrieved, m.ID).Error
+			g.Expect(err).To(gomega.BeNil())
+			g.Expect(retrieved.State).To(gomega.Equal(task.Failed),
+				"Task should fail immediately on image pull error")
+
+			// Verify no retries occurred
+			g.Expect(retrieved.Retries).To(gomega.Equal(0),
+				"Image pull errors should not trigger retry")
+
+			// Verify ImageError event exists
+			hasImageError := false
+			for _, event := range retrieved.Events {
+				if event.Kind == task.ImageError {
+					g.Expect(event.Reason).To(gomega.ContainSubstring(tc.errorReason))
+					hasImageError = true
+					break
+				}
+			}
+			g.Expect(hasImageError).To(gomega.BeTrue(),
+				"Expected ImageError event with reason: %s", tc.errorReason)
+
+			// Verify error message was recorded
+			g.Expect(len(retrieved.Errors)).To(gomega.BeNumerically(">", 0),
+				"Expected error to be recorded")
+		})
+	}
+}
+
 // TestTaskRetryOnKill tests task retry when container exits with code 137 (SIGKILL).
 // Exit code 137 triggers automatic retry (up to Settings.Hub.Task.Retries times).
 func TestTaskRetryOnKill(t *testing.T) {
@@ -2067,5 +2154,44 @@ func (m *KilledPodManager) Next(pod *core.Pod) (phase core.PodPhase) {
 }
 
 func (m *KilledPodManager) Deleted(pod *core.Pod) {
+	// No-op
+}
+
+// ImagePullErrorManager simulates image pull failures for testing.
+// Sets ContainerStateWaiting with image-related error reasons.
+type ImagePullErrorManager struct {
+	errorReason string // e.g., "ErrImagePull", "ImagePullBackOff", "InvalidImageName"
+}
+
+func (m *ImagePullErrorManager) Created(pod *core.Pod) {
+	// No-op
+}
+
+func (m *ImagePullErrorManager) Next(pod *core.Pod) (phase core.PodPhase) {
+	switch pod.Status.Phase {
+	case core.PodPending:
+		// Set waiting state with image pull error
+		statuses := make([]core.ContainerStatus, len(pod.Spec.Containers))
+		for i, container := range pod.Spec.Containers {
+			statuses[i] = core.ContainerStatus{
+				Name:  container.Name,
+				Ready: false,
+				State: core.ContainerState{
+					Waiting: &core.ContainerStateWaiting{
+						Reason:  m.errorReason,
+						Message: "Failed to pull image: " + m.errorReason,
+					},
+				},
+			}
+		}
+		pod.Status.ContainerStatuses = statuses
+		// Stay in Pending - the task manager will detect the error and fail the task
+		return core.PodPending
+	default:
+		return pod.Status.Phase
+	}
+}
+
+func (m *ImagePullErrorManager) Deleted(pod *core.Pod) {
 	// No-op
 }
