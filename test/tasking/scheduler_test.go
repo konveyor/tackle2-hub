@@ -1085,6 +1085,9 @@ func TestCancelTerminalTask(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(m.State).To(gomega.Equal(task.Succeeded))
 
+	// Note: Pod may still exist if retention policy is enabled.
+	// Pod cleanup from normal completion is tested in other tests.
+
 	// Count events before cancellation
 	eventCountBefore := len(m.Events)
 
@@ -1289,3 +1292,173 @@ func TestAsyncManager(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(len(podList.Items)).To(gomega.BeNumerically(">=", 1))
 }
+
+// TestDeleteRunningTask tests deleting a task in Running state.
+func TestDeleteRunningTask(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment with slower pod transitions so we can catch Running state
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 2 seconds in Running
+
+	// Create task
+	m := &model.Task{
+		Name:          "running-task-to-delete",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to start task and progress to Running
+	_ = ctx.Manager.Reconcile(context.Background())
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify task is Running
+	err = ctx.DB.First(&m, m.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m.State).To(gomega.Equal(task.Running))
+
+	// Get pod name before deletion
+	podName := m.Pod
+	g.Expect(podName).NotTo(gomega.BeEmpty())
+
+	// Delete the task (queues deletion action)
+	taskID := m.ID
+	err = ctx.Manager.Delete(ctx.DB, taskID)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Reconcile to process queued deletion action
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify task is completely removed from database
+	err = ctx.DB.First(&m, taskID).Error
+	g.Expect(err).NotTo(gomega.BeNil()) // Should be gorm.ErrRecordNotFound
+
+	// Verify pod was deleted from cluster
+	pod := &core.Pod{}
+	err = ctx.Client.Get(context.Background(), client.ObjectKey{
+		Namespace: settings.Settings.Hub.Namespace,
+		Name:      podName,
+	}, pod)
+	g.Expect(err).NotTo(gomega.BeNil()) // Should not exist
+}
+
+// TestDeletePendingTask tests deleting a task in Pending state.
+func TestDeletePendingTask(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment with instant pod transitions
+	ctx := New(g)
+	ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
+
+	// Create task
+	m := &model.Task{
+		Name:          "pending-task-to-delete",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to start task
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify task has transitioned and has a pod
+	err = ctx.DB.First(&m, m.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Task should be in Pending or Running state (has pod, not completed)
+	g.Expect(m.State).To(gomega.BeElementOf(
+		task.Pending,
+		task.Running))
+
+	// Get pod name before deletion
+	podName := m.Pod
+	g.Expect(podName).NotTo(gomega.BeEmpty())
+
+	// Delete the task (queues deletion action)
+	taskID := m.ID
+	err = ctx.Manager.Delete(ctx.DB, taskID)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Reconcile to process queued deletion action
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify task is completely removed from database
+	err = ctx.DB.First(&m, taskID).Error
+	g.Expect(err).NotTo(gomega.BeNil()) // Should be gorm.ErrRecordNotFound
+
+	// Verify pod was deleted from cluster
+	pod := &core.Pod{}
+	err = ctx.Client.Get(context.Background(), client.ObjectKey{
+		Namespace: settings.Settings.Hub.Namespace,
+		Name:      podName,
+	}, pod)
+	g.Expect(err).NotTo(gomega.BeNil()) // Should not exist
+}
+
+// TestDeleteReadyTask tests deleting a task in Ready state (no pod).
+func TestDeleteReadyTask(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Create task in Ready state
+	m := &model.Task{
+		Name:          "ready-task-to-delete",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Delete immediately (queues deletion action)
+	taskID := m.ID
+	err = ctx.Manager.Delete(ctx.DB, taskID)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Reconcile to process queued deletion action
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify task is completely removed from database
+	err = ctx.DB.First(&m, taskID).Error
+	g.Expect(err).NotTo(gomega.BeNil()) // Should be gorm.ErrRecordNotFound
+
+	// Verify no pods exist
+	podList := &core.PodList{}
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(podList.Items)).To(gomega.Equal(0))
+}
+
+// TestDeleteNonexistentTask tests deleting a task that doesn't exist.
+func TestDeleteNonexistentTask(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Create manager
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Attempt to delete nonexistent task
+	err := ctx.Manager.Delete(ctx.DB, 99999)
+	g.Expect(err).NotTo(gomega.BeNil()) // Should return error
+}
+
