@@ -61,8 +61,8 @@ func (n *BaseNode) Run(pod *core.Pod) (phase core.PodPhase) {
 		}
 	}
 	phase = core.PodPending
-	allocated := n.Allocated.cpu.Value()
-	if allocated > 0 && consumed.cpu.Value() > allocated {
+	allocated := n.Allocated.cpu.MilliValue()
+	if allocated > 0 && consumed.cpu.MilliValue() > allocated {
 		n.markUnschedulable(pod, "Insufficient cpu")
 		return
 	}

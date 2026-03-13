@@ -4,7 +4,7 @@ This directory contains integration tests for the task scheduler using the k8s s
 
 ## Test Utilities
 
-The `pkg.go` file provides reusable test utilities:
+The `context.go` file provides reusable test utilities:
 
 ### Context
 
