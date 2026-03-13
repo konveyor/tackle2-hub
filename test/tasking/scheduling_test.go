@@ -1387,11 +1387,8 @@ func TestAsyncManager(t *testing.T) {
 	managerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	done := make(chan struct{})
-	go func() {
-		ctx.Manager.Run(managerCtx)
-		close(done)
-	}()
+	ctx.Manager.Run(managerCtx)
+	g.Eventually(ctx.Manager.Background).WithTimeout(2 * time.Second).Should(gomega.BeTrue())
 
 	// Wait for cluster to refresh and be ready
 	time.Sleep(300 * time.Millisecond)
@@ -1401,12 +1398,7 @@ func TestAsyncManager(t *testing.T) {
 
 	// Stop the manager
 	cancel()
-	select {
-	case <-done:
-		// Manager stopped successfully
-	case <-time.After(5 * time.Second):
-		t.Fatal("Manager did not stop in time")
-	}
+	g.Eventually(ctx.Manager.Background).WithTimeout(5 * time.Second).Should(gomega.BeFalse())
 
 	// Verify task completed
 	err = ctx.DB.First(&m, m.ID).Error
