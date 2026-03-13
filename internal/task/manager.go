@@ -98,15 +98,9 @@ var (
 )
 
 func init() {
-	client, err := k8s2.NewClient()
-	if err != nil {
-		panic(err)
-	}
 	auth.Validators = append(
 		auth.Validators,
-		&Validator{
-			Client: client,
-		})
+		&Validator{})
 }
 
 // New manager.

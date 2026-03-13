@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/konveyor/tackle2-hub/internal/auth"
+	k8s2 "github.com/konveyor/tackle2-hub/internal/k8s"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 	core "k8s.io/api/core/v1"
@@ -16,7 +17,7 @@ import (
 // Validator validates task tokens.
 type Validator struct {
 	// k8s client.
-	Client k8s.Client
+	client k8s.Client
 }
 
 // Valid token when:
@@ -24,6 +25,12 @@ type Validator struct {
 //   - The task is valid and running.
 //   - The task pod valid and pending|running.
 func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
+	if r.client == nil {
+		r.client, err = k8s2.NewClient()
+		if err != nil {
+			return
+		}
+	}
 	claims := token.Claims.(jwt.MapClaims)
 	v, found := claims["task"]
 	id, cast := v.(float64)
@@ -54,7 +61,7 @@ func (r *Validator) Valid(token *jwt.Token, db *gorm.DB) (err error) {
 		return
 	}
 	pod := &core.Pod{}
-	err = r.Client.Get(
+	err = r.client.Get(
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: path.Dir(task.Pod),
