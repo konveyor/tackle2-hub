@@ -420,6 +420,51 @@ func TestNodeUnschedulableCondition(t *testing.T) {
 	g.Expect(condition.LastTransitionTime.IsZero()).To(gomega.BeFalse())
 }
 
+// TestNodeClearUnschedulable tests that unschedulable condition is cleared when pod is scheduled.
+func TestNodeClearUnschedulable(t *testing.T) {
+	g := gomega.NewWithT(t)
+	node := &BaseNode{}
+	node = node.With("400m", "256Mi").(*BaseNode) // Not enough for the pod
+
+	pod := &core.Pod{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:  "test",
+					Image: "test:latest",
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceCPU:    *parseQuantity("500m"),
+							core.ResourceMemory: *parseQuantity("512Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// First attempt: Pod won't fit (exceeds capacity)
+	phase := node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodPending))
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod.Status.Conditions[0].Reason).To(gomega.Equal(core.PodReasonUnschedulable))
+	g.Expect(pod.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionFalse))
+
+	// Reconfigure node with enough resources
+	node = node.With("2000m", "2Gi").(*BaseNode)
+
+	// Second attempt: Pod should fit now
+	phase = node.Run(pod)
+	g.Expect(phase).To(gomega.Equal(core.PodRunning))
+
+	// Verify unschedulable condition was cleared (changed to True)
+	g.Expect(pod.Status.Conditions).To(gomega.HaveLen(1))
+	g.Expect(pod.Status.Conditions[0].Type).To(gomega.Equal(core.PodScheduled))
+	g.Expect(pod.Status.Conditions[0].Status).To(gomega.Equal(core.ConditionTrue))
+	g.Expect(pod.Status.Conditions[0].Reason).To(gomega.Equal(""))
+	g.Expect(pod.Status.Conditions[0].Message).To(gomega.Equal(""))
+}
+
 // TestNodeMultipleContainers tests resource tracking with multiple containers.
 func TestNodeMultipleContainers(t *testing.T) {
 	g := gomega.NewWithT(t)
