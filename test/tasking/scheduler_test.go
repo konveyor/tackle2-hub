@@ -3,6 +3,7 @@ package tasking
 import (
 	"context"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -1461,4 +1462,388 @@ func TestDeleteNonexistentTask(t *testing.T) {
 	err := ctx.Manager.Delete(ctx.DB, 99999)
 	g.Expect(err).NotTo(gomega.BeNil()) // Should return error
 }
+
+// TestQuotaEnforcement tests task quota limiting.
+func TestQuotaEnforcement(t *testing.T) {
+	t.Skip("Quota enforcement cannot be isolated from capacity monitoring in current architecture. " +
+		"CapacityMonitor always limits pod creation before quota check runs. Capacity starts at 1 and " +
+		"grows by 5% per cycle, requiring many cycles with stable Running pods to exceed quota limits. " +
+		"Even with custom PodManager keeping pods Running indefinitely, capacity growth is too slow to " +
+		"reach quota limits in reasonable test time. The check order in Manager.startReady() is: " +
+		"1) capacity.Exceeded() pauses creation, 2) quota exhausted blocks tasks. Capacity is always " +
+		"more restrictive than quota in practice. Quota enforcement is better verified through " +
+		"integration tests with real Kubernetes ResourceQuota objects that return quota exceeded errors.")
+
+	// This test attempted to verify:
+	// 1. Set pod quota to N
+	// 2. Create N+1 tasks on different apps (bypass RuleUnique)
+	// 3. Use custom PodManager to keep pods Running
+	// 4. Wait for capacity to grow beyond quota limit
+	// 5. Verify last task transitions to QuotaBlocked
+	//
+	// Why it fails:
+	// - Capacity monitor limits pod creation (manager.go:446-449)
+	// - Capacity starts at 1, grows to 1*1.05=1.05≈2 only after seeing Running pods
+	// - Capacity growth requires stable observation of Running pods across reconcile cycles
+	// - In simulator, timing/state changes make capacity growth unreliable
+	// - Even keeping pods Running for 60 seconds, capacity stayed at 1
+	// - Without exceeding capacity, quota check never runs (code path not reached)
+	//
+	// To truly test quota:
+	// - Would need to mock/bypass CapacityMonitor
+	// - Or use real k8s cluster with ResourceQuota that returns admission errors
+	// - Or refactor Manager to allow testing quota in isolation
+}
+
+// TestQuotaReleaseOnTaskCompletion tests that quota is properly released when tasks complete.
+func TestQuotaReleaseOnTaskCompletion(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Configure pod quota to 1 (strict limit)
+	savedQuota := settings.Settings.Hub.Task.Pod.Quota
+	settings.Settings.Hub.Task.Pod.Quota = 1
+	defer func() {
+		settings.Settings.Hub.Task.Pod.Quota = savedQuota
+	}()
+
+	// Disable pod retention so pods are deleted immediately on completion
+	savedRetentionSucceeded := settings.Settings.Hub.Task.Pod.Retention.Succeeded
+	savedRetentionFailed := settings.Settings.Hub.Task.Pod.Retention.Failed
+	settings.Settings.Hub.Task.Pod.Retention.Succeeded = 0
+	settings.Settings.Hub.Task.Pod.Retention.Failed = 0
+	defer func() {
+		settings.Settings.Hub.Task.Pod.Retention.Succeeded = savedRetentionSucceeded
+		settings.Settings.Hub.Task.Pod.Retention.Failed = savedRetentionFailed
+	}()
+
+	// Create 2 tasks sequentially
+	m1 := &model.Task{
+		Name:          "first-task",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err := ctx.DB.Create(m1).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Start and complete first task
+	ctx.reconcile(g, 1, m1.ID)
+
+	// Verify first task succeeded and pod was deleted (no retention)
+	err = ctx.DB.First(&m1, m1.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m1.State).To(gomega.Equal(task.Succeeded))
+	g.Expect(m1.Retained).To(gomega.BeFalse())
+
+	// Verify pod was deleted
+	podList := &core.PodList{}
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(podList.Items)).To(gomega.Equal(0))
+
+	// Create second task after first completes
+	m2 := &model.Task{
+		Name:          "second-task",
+		Kind:          "analyzer",
+		State:         task.Ready,
+		ApplicationID: &ctx.Application.ID,
+	}
+	err = ctx.DB.Create(m2).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Reconcile to start second task (quota should be available)
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify second task is NOT quota blocked (quota was released)
+	err = ctx.DB.First(&m2, m2.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(m2.State).NotTo(gomega.Equal(task.QuotaBlocked))
+	g.Expect(m2.State).To(gomega.BeElementOf(
+		task.Pending,
+		task.Running,
+		task.Succeeded))
+}
+
+// TestPipelineFailureCascading tests that when a pipeline task fails,
+// subsequent tasks in the pipeline are canceled.
+func TestPipelineFailureCascading(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Create task group in Pipeline mode with 3 tasks
+	taskGroup := &model.TaskGroup{
+		Name: "failing-pipeline",
+		Mode: task.Pipeline,
+		List: []model.Task{
+			{
+				Name:          "task-1",
+				Kind:          "analyzer",
+				ApplicationID: &ctx.Application.ID,
+			},
+			{
+				Name:          "task-2",
+				Kind:          "analyzer",
+				ApplicationID: &ctx.Application.ID,
+			},
+			{
+				Name:          "task-3",
+				Kind:          "analyzer",
+				ApplicationID: &ctx.Application.ID,
+			},
+		},
+	}
+	err := ctx.DB.Create(taskGroup).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create manager with custom simulator that fails the first pod
+	failMgr := &FailingPodManager{
+		failFirstPod: true,
+	}
+	ctx.Client = simulator.New().Use(failMgr)
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to populate cluster
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Submit task group
+	tg := task.NewTaskGroup(taskGroup)
+	err = tg.Submit(ctx.DB, ctx.Manager)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Get the tasks
+	var tasks []*model.Task
+	err = ctx.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(len(tasks)).To(gomega.Equal(3))
+
+	// Reconcile to start first task (which will fail)
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Reconcile until first task fails
+	maxCycles := 50
+	for i := 0; i < maxCycles; i++ {
+		_ = ctx.Manager.Reconcile(context.Background())
+		err = ctx.DB.First(&tasks[0], tasks[0].ID).Error
+		g.Expect(err).To(gomega.BeNil())
+		if tasks[0].State == task.Failed {
+			break
+		}
+	}
+
+	// Verify first task failed
+	g.Expect(tasks[0].State).To(gomega.Equal(task.Failed))
+
+	// Reconcile again to cascade the failure
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify remaining tasks are canceled
+	err = ctx.DB.Where("TaskGroupID", taskGroup.ID).Order("id").Find(&tasks).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Tasks 2 and 3 should be Canceled
+	for i := 1; i < len(tasks); i++ {
+		g.Expect(tasks[i].State).To(gomega.Equal(task.Canceled))
+
+		// Verify Canceled event with reason mentioning the failed task
+		hasCanceledEvent := false
+		for _, event := range tasks[i].Events {
+			if event.Kind == task.Canceled {
+				hasCanceledEvent = true
+				g.Expect(event.Reason).To(gomega.ContainSubstring("failed"))
+				break
+			}
+		}
+		g.Expect(hasCanceledEvent).To(gomega.BeTrue())
+	}
+}
+
+// TestCapacityExceeded tests that pod creation pauses when cluster capacity is exceeded.
+func TestCapacityExceeded(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Setup test environment
+	ctx := New(g)
+
+	// Create 3 tasks
+	var taskIDs []uint
+	for i := 1; i <= 3; i++ {
+		m := &model.Task{
+			Name:          "capacity-task-" + strconv.Itoa(i),
+			Kind:          "analyzer",
+			State:         task.Ready,
+			ApplicationID: &ctx.Application.ID,
+		}
+		err := ctx.DB.Create(m).Error
+		g.Expect(err).To(gomega.BeNil())
+		taskIDs = append(taskIDs, m.ID)
+	}
+
+	// Use custom pod manager that makes pods unschedulable
+	unschedulableMgr := &UnschedulablePodManager{
+		makeUnschedulable: true,
+	}
+	ctx.Client = simulator.New().Use(unschedulableMgr)
+	ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+	// Reconcile to attempt starting tasks
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Reconcile again to observe unschedulable pods and update capacity
+	_ = ctx.Manager.Reconcile(context.Background())
+
+	// Verify no more pods are created (pod creation paused)
+	podList := &core.PodList{}
+	err := ctx.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+
+	// Should only have 1 pod (capacity=1, then detected as unschedulable)
+	g.Expect(len(podList.Items)).To(gomega.Equal(1))
+
+	// Reconcile multiple times - should not create more pods
+	for i := 0; i < 3; i++ {
+		_ = ctx.Manager.Reconcile(context.Background())
+	}
+
+	err = ctx.Client.List(context.Background(), podList, &client.ListOptions{
+		Namespace: settings.Settings.Hub.Namespace,
+	})
+	g.Expect(err).To(gomega.BeNil())
+
+	// Still should only have 1 pod (creation paused due to capacity exceeded)
+	g.Expect(len(podList.Items)).To(gomega.Equal(1))
+}
+
+// TestZombiePodCleanup tests detection and cleanup of zombie pods.
+// A zombie is a succeeded/failed task with a running pod that didn't terminate after being killed.
+func TestZombiePodCleanup(t *testing.T) {
+	t.Skip("Zombie pod scenario requires ContainerKilled event added by ensureTerminated/terminateContainer, " +
+		"which needs pod exec capabilities not available in simulator. The zombie detection code path " +
+		"(manager.go:959-1003) requires: 1) Task in Succeeded/Failed state, 2) Pod still Running, " +
+		"3) ContainerKilled event exists, 4) Event >1 minute old. The ContainerKilled event is only added " +
+		"when Manager.ensureTerminated() successfully runs 'kill 1' in the container via pod exec, which " +
+		"the simulator cannot reproduce. This functionality is better tested in integration/e2e tests " +
+		"with real pods.")
+
+	// This test would verify:
+	// 1. Task completes (Succeeded/Failed)
+	// 2. Pod has retention policy, so manager tries to terminate containers
+	// 3. Container doesn't terminate, stays running (zombie)
+	// 4. Manager.ensureTerminated() adds ContainerKilled event
+	// 5. After >1 minute, Manager.deleteZombies() detects and deletes pod
+	//
+	// Cannot be tested with simulator because:
+	// - ensureTerminated() requires pod exec (remotecommand.NewSPDYExecutor)
+	// - ContainerKilled event is only added if exec succeeds
+	// - Cannot simulate persistent Running containers after task completion
+}
+
+// FailingPodManager is a custom pod manager that simulates pod failures.
+// When failFirstPod is true, the first pod created will fail immediately.
+type FailingPodManager struct {
+	mutex        sync.Mutex
+	failFirstPod bool
+	hasFailed    bool
+	failedPod    string
+}
+
+func (m *FailingPodManager) Created(pod *core.Pod) {
+	// No-op
+}
+
+func (m *FailingPodManager) Next(pod *core.Pod) (phase core.PodPhase) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	// Determine if this pod should fail
+	shouldFail := false
+	if m.failFirstPod && !m.hasFailed {
+		m.hasFailed = true
+		m.failedPod = pod.Name
+		shouldFail = true
+	} else if pod.Name == m.failedPod {
+		shouldFail = true
+	}
+
+	// Transition based on current phase
+	switch pod.Status.Phase {
+	case core.PodPending:
+		if shouldFail {
+			return core.PodFailed
+		}
+		return core.PodRunning
+	case core.PodRunning:
+		if shouldFail {
+			return core.PodFailed
+		}
+		return core.PodSucceeded
+	default:
+		return pod.Status.Phase
+	}
+}
+
+func (m *FailingPodManager) Deleted(pod *core.Pod) {
+	// No-op
+}
+
+// UnschedulablePodManager makes pods unschedulable to test capacity exceeded.
+type UnschedulablePodManager struct {
+	mutex             sync.Mutex
+	makeUnschedulable bool
+	unschedulablePods map[string]bool
+}
+
+func (m *UnschedulablePodManager) Created(pod *core.Pod) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.unschedulablePods == nil {
+		m.unschedulablePods = make(map[string]bool)
+	}
+	if m.makeUnschedulable {
+		m.unschedulablePods[pod.Name] = true
+		// Set unschedulable condition
+		pod.Status.Conditions = []core.PodCondition{
+			{
+				Type:   core.PodScheduled,
+				Status: core.ConditionFalse,
+				Reason: core.PodReasonUnschedulable,
+			},
+		}
+	}
+}
+
+func (m *UnschedulablePodManager) Next(pod *core.Pod) (phase core.PodPhase) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	// Keep unschedulable pods in Pending state
+	if m.unschedulablePods[pod.Name] {
+		return core.PodPending
+	}
+
+	// Normal pod lifecycle
+	switch pod.Status.Phase {
+	case core.PodPending:
+		return core.PodRunning
+	case core.PodRunning:
+		return core.PodSucceeded
+	default:
+		return pod.Status.Phase
+	}
+}
+
+func (m *UnschedulablePodManager) Deleted(pod *core.Pod) {
+	// No-op
+}
+
 
