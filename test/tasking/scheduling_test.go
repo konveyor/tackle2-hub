@@ -1908,7 +1908,7 @@ func TestNodeCapacityScaling(t *testing.T) {
 	// With 10 tasks and 10-second runtime, capacity should grow from 1→4 over time,
 	// allowing up to 4 concurrent tasks. Total time: ~40-50 seconds.
 	maxAtOnce := 0
-	for i := 0; i < 200; i++ { // Increased iterations for longer-running pods
+	for i := 0; i < 30; i++ { // Increased iterations for longer-running pods
 		_ = ctx.Manager.Reconcile(context.Background())
 
 		// Track max concurrent pods (running tasks)

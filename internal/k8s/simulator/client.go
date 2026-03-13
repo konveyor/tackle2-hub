@@ -264,8 +264,10 @@ func (s *Client) podSucceeded(pod *core.Pod) {
 // podFailed updates the pod to reflect a failed state.
 func (s *Client) podFailed(pod *core.Pod) {
 	pod.Status.Phase = core.PodFailed
-	if len(pod.Status.ContainerStatuses) > 0 {
-		return // Set by manager.
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.State.Terminated != nil {
+			return // Set by manager.
+		}
 	}
 	statuses := make(
 		[]core.ContainerStatus,
