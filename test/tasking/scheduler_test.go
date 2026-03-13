@@ -1747,7 +1747,7 @@ func TestNodeCapacityScaling(t *testing.T) {
 	// Use slower pod timing so capacity monitor can observe concurrent pods and grow capacity.
 	// With 10-second runtime, capacity monitor (sampling every 1s) can see sustained load
 	// and gradually increase capacity from 1→2→3→4 to allow concurrent execution.
-	mgr := simulator.NewManager(2, 8) // Instant pending->running, 10 sec running->succeeded
+	mgr := simulator.NewManager(1, 3) // Instant pending->running, 10 sec running->succeeded
 	mgr.Node = mgr.Node.With("8000m", "14Gi")
 	ctx.Client = simulator.New().Use(mgr)
 
