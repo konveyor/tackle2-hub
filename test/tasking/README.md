@@ -221,6 +221,74 @@ ctx.Client = simulator.New().Use(simulator.NewManager(0, 0))
 ctx.Client = simulator.New().Use(simulator.NewManager(0, 2)) // 0s Pending, 2s Running
 ```
 
+### Simulating Pod Failures with TestPodManager
+
+The `TestPodManager` allows testing error scenarios by configuring specific pod failure behaviors:
+
+```go
+// Simulate image pull errors (ErrImagePull, ImagePullBackOff, InvalidImageName)
+mgr := &TestPodManager{
+    imageError: "ErrImagePull",
+}
+ctx.Client = simulator.New().Use(mgr)
+
+// Simulate container killed (exit code 137) with retry
+mgr := &TestPodManager{
+    killCount: 1, // Kill once, succeed on retry
+}
+ctx.Client = simulator.New().Use(mgr)
+
+// Simulate first pod failing immediately
+mgr := &TestPodManager{
+    failFirstPod: true,
+}
+ctx.Client = simulator.New().Use(mgr)
+
+// Simulate unschedulable pods (insufficient resources)
+mgr := &TestPodManager{
+    unschedulable: true,
+}
+ctx.Client = simulator.New().Use(mgr)
+```
+
+**Available configuration fields:**
+- `imageError` - Sets image pull error reason (stays Pending, task detects error and fails)
+- `killCount` - Number of times to kill pod with exit 137 before allowing success
+- `failFirstPod` - Makes first pod transition to Failed immediately
+- `unschedulable` - Sets PodReasonUnschedulable condition (capacity exceeded scenario)
+
+**Example test:**
+```go
+func TestTaskImagePullError(t *testing.T) {
+    g := gomega.NewGomegaWithT(t)
+    ctx := New(g)
+
+    m := &model.Task{
+        Name:          "image-error-task",
+        Kind:          "analyzer",
+        State:         task.Ready,
+        ApplicationID: &ctx.Application.ID,
+    }
+    err := ctx.DB.Create(m).Error
+    g.Expect(err).To(gomega.BeNil())
+
+    // Configure simulator to simulate image pull error
+    imageMgr := &TestPodManager{
+        imageError: "ErrImagePull",
+    }
+    ctx.Client = simulator.New().Use(imageMgr)
+    ctx.Manager = task.New(ctx.DB, ctx.Client)
+
+    // Task should fail with ImageError event
+    ctx.reconcile(g, 1, m.ID)
+
+    var retrieved model.Task
+    err = ctx.DB.First(&retrieved, m.ID).Error
+    g.Expect(err).To(gomega.BeNil())
+    g.Expect(retrieved.State).To(gomega.Equal(task.Failed))
+}
+```
+
 ## Helper Methods
 
 ### reconcile(g, n, taskIDs...)
