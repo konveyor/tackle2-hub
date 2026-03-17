@@ -99,7 +99,7 @@ func (r *TaskReaper) Run() {
 			}
 		case task.Running:
 			mark := m.CreateTime
-			if m.Terminated != nil {
+			if m.Started != nil {
 				mark = *m.Started
 			}
 			if m.TTL.Running > 0 {
@@ -237,8 +237,6 @@ func (r *GroupReaper) Run() {
 				r.release(m)
 				if len(m.Tasks) == 0 {
 					r.delete(m)
-				} else {
-					r.release(m)
 				}
 			}
 		}
