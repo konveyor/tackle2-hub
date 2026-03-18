@@ -339,16 +339,21 @@ err = facts.Replace(api.Map{
 
 ## SCM Integration
 
-The adapter provides SCM (Git/Subversion) support with automatic identity and proxy injection:
+Use the `shared/addon/scm` package for Git/Subversion repository operations with automatic identity and proxy injection:
 
 ```go
+import (
+    hub "github.com/konveyor/tackle2-hub/shared/addon"
+    "github.com/konveyor/tackle2-hub/shared/addon/scm"
+)
+
 // Get application with repository
 application, err := addon.Task.Application()
 if err != nil {
     return
 }
 
-// Get identity for the repository
+// Get identity for the repository (optional)
 identity, found, err := addon.Application.Select(application.ID).
     Identity.Search().
     Direct("source").
@@ -357,22 +362,79 @@ identity, found, err := addon.Application.Select(application.ID).
 if err != nil {
     return
 }
+if !found {
+    identity = nil
+}
 
-// Create SCM instance
-scm := &hub.SCM{}
+// Create repository instance
 repo, err := scm.New("/tmp/source", application.Repository, identity)
 if err != nil {
     return
 }
 
-// Use repository
-err = repo.Checkout()
+// Clone repository
+err = repo.Fetch()
+if err != nil {
+    return
+}
 ```
 
-The SCM adapter automatically:
+The SCM package automatically:
 - Injects identity credentials (user/password/key)
 - Configures proxies from hub settings
-- Sets up insecure mode based on hub settings
+- Sets up insecure mode based on hub settings (`git.insecure.enabled`, `svn.insecure.enabled`)
+- Supports both Git and Subversion repositories
+
+**Note:** See the [scm package documentation](../../scm/) for advanced repository operations.
+
+## Command Execution
+
+Use the `shared/addon/command` package for executing external commands with automatic **task activity reporting**, output capture, and attachment:
+
+```go
+import (
+    hub "github.com/konveyor/tackle2-hub/shared/addon"
+    "github.com/konveyor/tackle2-hub/shared/addon/command"
+)
+
+// Create command
+cmd := command.New("mvn")
+cmd.Options.Add("clean")
+cmd.Options.Add("install")
+cmd.Dir = "/tmp/source"
+
+// Execute command
+err := cmd.Run()
+if err != nil {
+    return
+}
+```
+
+The command package automatically:
+- **Reports command execution to task activity** (started, succeeded, failed)
+- Captures stdout/stderr to a file
+- Attaches the output file to the task activity
+- Handles command errors
+
+**Building command options:**
+
+```go
+// Progressive construction with Add()
+cmd.Options.Add("--settings")
+cmd.Options.Add("/path/to/settings.xml")
+
+// Formatted options with Addf()
+cmd.Options.Addf("-Dmaven.repo.local=%s", repoPath)
+cmd.Options.Addf("-DskipTests=%t", skipTests)
+
+// Or assign directly
+cmd.Options = []string{"clean", "install", "-DskipTests"}
+```
+
+**Command fields:**
+- `Options` - Command arguments with `Add()` and `Addf()` methods
+- `Dir` - Working directory
+- `Env` - Environment variables ([]string)
 
 ## Error Handling
 

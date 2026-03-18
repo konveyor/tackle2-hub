@@ -937,9 +937,9 @@ func TestEnvInjectorWithPartialMatch(t *testing.T) {
 			},
 		},
 		Metadata: api.Map{
-			"incomplete": "$(VAR",     // Incomplete pattern
-			"wrong":      "$VAR1)",    // Wrong pattern
-			"correct":    "$(VAR1)",   // Correct pattern
+			"incomplete": "$(VAR",               // Incomplete pattern
+			"wrong":      "$VAR1)",              // Wrong pattern
+			"correct":    "$(VAR1)",             // Correct pattern
 			"multiple":   "$(VAR1) and $(VAR1)", // Multiple references
 		},
 	}
