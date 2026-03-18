@@ -47,7 +47,7 @@ Buckets represent file trees stored in the filesystem. They may be referenced by
 - Task (BucketID field)
 - TaskGroup (BucketID field)
 
-### Reaping Process ###
+### Bucket Reaping Process ###
 
 1. **Orphan Detection:** The BucketReaper scans all Applications, TaskGroups, and Tasks
    to find bucket references. Buckets not referenced are marked with an expiration timestamp.
@@ -73,7 +73,7 @@ References are identified using the `ref` struct tag:
 - `ref:"file"` - single file reference
 - `ref:"[]file"` - array of file references
 
-### Reaping Process ###
+### File Reaping Process ###
 
 1. **Orphan Detection:** The FileReaper uses the RefFinder to scan all models with
    `ref:"file"` or `ref:"[]file"` tags. Files not referenced are marked with an
@@ -96,7 +96,6 @@ must create the task, upload the files, then submit the task.
 Tasks reference:
 - Bucket
 - File (via Attached field)
-- Pod
 
 When a task is reaped, referenced objects such as buckets and files are _released_.
 Releasing means removing the reference to allow them to be naturally reaped (garbage-collected).
@@ -125,20 +124,16 @@ can optionally define custom TTL values that override the default settings.
 - **With custom TTL:** Deleted after `TTL.Succeeded` minutes from termination time
 - **Without custom TTL:** Released after the
   [Reaper.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting
-- Pod deleted after a period defined by the
-  [Pod.Retention.Succeeded](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting
 
 **Failed** (completed with error):
 - **With custom TTL:** Deleted after `TTL.Failed` minutes from termination time
 - **Without custom TTL:** Released after the
   [Reaper.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting
-- Pod deleted after a period defined by the
-  [Pod.Retention.Failed](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager) setting
 
 **Canceled** (user-canceled):
 - Currently not handled by the reaper
 
-### Design Notes ###
+### Task Design Notes ###
 
 - **Active states** (Ready, Pending, Running) are expected to complete or fail naturally.
   Only long-running or stuck tasks need explicit TTL protection.
@@ -173,7 +168,7 @@ TaskGroups reference:
 - **Note:** Groups with tasks are never automatically deleted to preserve the relationship
   with existing tasks
 
-### Design Notes ###
+### TaskGroup Design Notes ###
 
 - TaskGroups in the Ready state are expected to complete their tasks, which are then
   individually reaped by the TaskReaper
@@ -205,13 +200,12 @@ These settings define the default grace period before tasks are reaped when no c
 - **BUCKET_TTL** - Orphaned buckets (default: 1 minute)
 - **FILE_TTL** - Orphaned files (default: 720 minutes / 12 hours)
 
-### Pod Retention
-
-- **TASK_POD_RETAIN_SUCCEEDED** - Succeeded task pods (default: 1 minute)
-- **TASK_POD_RETAIN_FAILED** - Failed task pods (default: 4320 minutes / 72 hours)
-
 See [Settings Documentation](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md)
 for complete configuration details.
+
+**Note:** Pod retention and deletion is handled by the task manager, not the reaper.
+See [Pod Retention settings](https://github.com/konveyor/tackle2-hub/blob/main/settings/README.md#task-manager)
+for pod lifecycle management.
 
 ## Best Practices ##
 

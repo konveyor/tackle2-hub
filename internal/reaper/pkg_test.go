@@ -148,10 +148,13 @@ func TestFileReaper_OrphanDetection(t *testing.T) {
 	// Create actual files at the assigned paths
 	err = os.WriteFile(file1.Path, []byte("test1"), 0644)
 	g.Expect(err).To(gomega.BeNil())
+	t.Cleanup(func() { os.Remove(file1.Path) })
 	err = os.WriteFile(file2.Path, []byte("test2"), 0644)
 	g.Expect(err).To(gomega.BeNil())
+	t.Cleanup(func() { os.Remove(file2.Path) })
 	err = os.WriteFile(file3.Path, []byte("test3"), 0644)
 	g.Expect(err).To(gomega.BeNil())
+	t.Cleanup(func() { os.Remove(file3.Path) })
 
 	// Create task referencing file1
 	task := &model.Task{Name: "TestTask"}
@@ -244,6 +247,7 @@ func TestFileReaper_ReferenceRestoresExpiration(t *testing.T) {
 	// Create actual file at the path assigned by BeforeCreate
 	err = os.WriteFile(file.Path, []byte("test"), 0644)
 	g.Expect(err).To(gomega.BeNil())
+	t.Cleanup(func() { os.Remove(file.Path) })
 
 	// Create task referencing the file
 	task := &model.Task{Name: "TestTask"}
