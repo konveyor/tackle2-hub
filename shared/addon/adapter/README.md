@@ -84,11 +84,12 @@ addon.Activity("Processing path: %s", d.Path)
 
 ### Activity Logs
 
-Report what the addon is currently doing:
+Report what the addon is currently doing using **printf-style formatting**:
 
 ```go
 addon.Activity("Analyzing source code...")
 addon.Activity("Found %d files to process", fileCount)
+addon.Activity("Processing file: %s (size: %d bytes)", filename, size)
 ```
 
 Multi-line activity entries are automatically formatted:
@@ -132,8 +133,9 @@ addon.Error(api.TaskError{
     Description: "Could not process optional configuration",
 })
 
-// Or use formatted string
+// Or use printf-style formatting
 addon.Errorf("Error", "Failed to analyze file %s: %v", filename, err)
+addon.Errorf("Warning", "Skipping %d files due to permissions", skipCount)
 ```
 
 ### File Attachments
@@ -410,13 +412,13 @@ addon.Run(func() (err error) {
 
 ### Explicit Failure
 
-You can explicitly fail the task while continuing work:
+You can explicitly fail the task while continuing work using **printf-style formatting**:
 
 ```go
 addon.Run(func() (err error) {
     result, err := criticalOperation()
     if err != nil {
-        // Mark as failed but continue cleanup
+        // Mark as failed but continue cleanup (printf-style)
         addon.Failed("Critical operation failed: %v", err)
     }
 
@@ -520,10 +522,10 @@ When the addon loads with injection enabled, these are replaced with actual valu
 |--------|-------------|
 | `Started()` | Report task started (called by `Run()`) |
 | `Succeeded()` | Report task succeeded (called by `Run()`) |
-| `Failed(reason, ...)` | Report task failed with reason |
-| `Activity(entry, ...)` | Report activity (printf-style) |
+| `Failed(reason, ...)` | Report task failed with reason (**printf-style**) |
+| `Activity(entry, ...)` | Report activity (**printf-style**) |
 | `Error(...TaskError)` | Report errors |
-| `Errorf(severity, description, ...)` | Report formatted error |
+| `Errorf(severity, description, ...)` | Report formatted error (**printf-style**) |
 | `Total(n)` | Set total items to process |
 | `Increment()` | Increment completed count |
 | `Completed(n)` | Set completed count |
