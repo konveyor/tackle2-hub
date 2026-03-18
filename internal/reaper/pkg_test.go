@@ -73,10 +73,15 @@ func TestBucketReaper_ExpirationDeletion(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Create temp directory for bucket
+	bucketPath := t.TempDir() + "/expired-bucket"
+	err = os.Mkdir(bucketPath, 0755)
+	g.Expect(err).To(gomega.BeNil())
+
 	// Create orphan bucket with expired TTL
 	expiredTime := time.Now().Add(-1 * time.Hour)
 	bucket := &model.Bucket{
-		Path:       "/tmp/expired-bucket",
+		Path:       bucketPath,
 		Expiration: &expiredTime,
 	}
 	err = db.Create(bucket).Error
@@ -86,11 +91,15 @@ func TestBucketReaper_ExpirationDeletion(t *testing.T) {
 	reaper := &BucketReaper{DB: db}
 	reaper.Run()
 
-	// Verify bucket was deleted
+	// Verify bucket was deleted from database
 	var b model.Bucket
 	err = db.First(&b, bucket.ID).Error
 	g.Expect(err).NotTo(gomega.BeNil())
 	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
+
+	// Verify bucket was deleted from filesystem
+	_, err = os.Stat(bucketPath)
+	g.Expect(os.IsNotExist(err)).To(gomega.BeTrue())
 }
 
 // TestBucketReaper_ReferenceRestoresExpiration tests that references clear expiration.
@@ -100,10 +109,15 @@ func TestBucketReaper_ReferenceRestoresExpiration(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Create temp directory for bucket
+	bucketPath := t.TempDir() + "/referenced-bucket"
+	err = os.Mkdir(bucketPath, 0755)
+	g.Expect(err).To(gomega.BeNil())
+
 	// Create bucket with expiration
 	futureTime := time.Now().Add(1 * time.Hour)
 	bucket := &model.Bucket{
-		Path:       "/tmp/referenced-bucket",
+		Path:       bucketPath,
 		Expiration: &futureTime,
 	}
 	err = db.Create(bucket).Error
@@ -124,6 +138,10 @@ func TestBucketReaper_ReferenceRestoresExpiration(t *testing.T) {
 	err = db.First(&b, bucket.ID).Error
 	g.Expect(err).To(gomega.BeNil())
 	g.Expect(b.Expiration).To(gomega.BeNil())
+
+	// Verify bucket still exists on filesystem
+	_, err = os.Stat(bucketPath)
+	g.Expect(err).To(gomega.BeNil())
 }
 
 // TestFileReaper_OrphanDetection tests file orphan detection and deletion.
