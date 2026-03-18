@@ -186,7 +186,9 @@ func TestTaskAddonWithInjection(t *testing.T) {
 
 	// Set environment variable for injection
 	os.Setenv("_EXT_EXT1_VAR1", "value1")
-	defer os.Unsetenv("_EXT_EXT1_VAR1")
+	t.Cleanup(func() {
+		os.Unsetenv("_EXT_EXT1_VAR1")
+	})
 
 	// Create adapter with stub client
 	adapter := &Adapter{}
@@ -528,8 +530,10 @@ func TestEnvInjector(t *testing.T) {
 	// Set environment variables
 	os.Setenv("_EXT_EXT1_DB_HOST", "localhost")
 	os.Setenv("_EXT_EXT1_DB_PORT", "5432")
-	defer os.Unsetenv("_EXT_EXT1_DB_HOST")
-	defer os.Unsetenv("_EXT_EXT1_DB_PORT")
+	t.Cleanup(func() {
+		os.Unsetenv("_EXT_EXT1_DB_HOST")
+		os.Unsetenv("_EXT_EXT1_DB_PORT")
+	})
 
 	// Create extension with metadata containing env references
 	extension := &api.Extension{
@@ -565,7 +569,9 @@ func TestEnvInjectorNested(t *testing.T) {
 
 	// Set environment variables
 	os.Setenv("_EXT_EXT1_TOKEN", "secret123")
-	defer os.Unsetenv("_EXT_EXT1_TOKEN")
+	t.Cleanup(func() {
+		os.Unsetenv("_EXT_EXT1_TOKEN")
+	})
 
 	// Create extension with nested metadata
 	extension := &api.Extension{
@@ -918,7 +924,9 @@ func TestEnvInjectorWithPartialMatch(t *testing.T) {
 
 	// Set environment variable
 	os.Setenv("_EXT_EXT1_VAR1", "value1")
-	defer os.Unsetenv("_EXT_EXT1_VAR1")
+	t.Cleanup(func() {
+		os.Unsetenv("_EXT_EXT1_VAR1")
+	})
 
 	// Create extension with partial variable reference (should not inject)
 	extension := &api.Extension{
@@ -1710,6 +1718,322 @@ func TestRunStatusAlreadySet(t *testing.T) {
 	// Succeeded should not have been called since status was already Failed
 	g.Expect(succeededCalled).To(BeFalse())
 	g.Expect(adapter.report.Status).To(Equal(task.Failed))
+}
+
+// Additional Coverage Tests
+
+func TestAdapterClient(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	adapter.Use(richClient)
+
+	// Get client
+	client := adapter.Client()
+	g.Expect(client).NotTo(BeNil())
+	g.Expect(client).To(Equal(richClient))
+}
+
+func TestErrorMultiple(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	var updatedReport *api.TaskReport
+
+	// Create adapter with stub client
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+			}
+			return
+		},
+		DoDelete: func(path string, params ...client.Param) (err error) {
+			return
+		},
+		DoPost: func(path string, object any) (err error) {
+			if r, ok := object.(*api.TaskReport); ok {
+				r.ID = 100
+			}
+			return
+		},
+		DoPut: func(path string, object any, params ...client.Param) (err error) {
+			if r, ok := object.(*api.TaskReport); ok {
+				updatedReport = r
+			}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+	adapter.Started()
+
+	// Report multiple errors in single call
+	adapter.Error(
+		api.TaskError{
+			Severity:    "Warning",
+			Description: "First warning",
+		},
+		api.TaskError{
+			Severity:    "Error",
+			Description: "First error",
+		},
+		api.TaskError{
+			Severity:    "Info",
+			Description: "Information message",
+		},
+	)
+
+	g.Expect(updatedReport).NotTo(BeNil())
+	g.Expect(len(updatedReport.Errors)).To(Equal(3))
+	g.Expect(updatedReport.Errors[0].Severity).To(Equal("Warning"))
+	g.Expect(updatedReport.Errors[0].Description).To(Equal("First warning"))
+	g.Expect(updatedReport.Errors[1].Severity).To(Equal("Error"))
+	g.Expect(updatedReport.Errors[1].Description).To(Equal("First error"))
+	g.Expect(updatedReport.Errors[2].Severity).To(Equal("Info"))
+	g.Expect(updatedReport.Errors[2].Description).To(Equal("Information message"))
+}
+
+func TestIncrementUpdateReportError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client where update fails
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+			}
+			return
+		},
+		DoDelete: func(path string, params ...client.Param) (err error) {
+			return
+		},
+		DoPost: func(path string, object any) (err error) {
+			if r, ok := object.(*api.TaskReport); ok {
+				r.ID = 100
+			}
+			return
+		},
+		DoPut: func(path string, object any, params ...client.Param) (err error) {
+			// Simulate update error
+			err = &RestError{Reason: "Update failed"}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+	adapter.Started()
+
+	// Increment should panic when update fails
+	g.Expect(func() {
+		adapter.Increment()
+	}).To(Panic())
+}
+
+func TestCompletedUpdateReportError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client where update fails
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+			}
+			return
+		},
+		DoDelete: func(path string, params ...client.Param) (err error) {
+			return
+		},
+		DoPost: func(path string, object any) (err error) {
+			if r, ok := object.(*api.TaskReport); ok {
+				r.ID = 100
+			}
+			return
+		},
+		DoPut: func(path string, object any, params ...client.Param) (err error) {
+			// Simulate update error
+			err = &RestError{Reason: "Update failed"}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+	adapter.Started()
+
+	// Completed should panic when update fails
+	g.Expect(func() {
+		adapter.Completed(5)
+	}).To(Panic())
+}
+
+func TestResultUpdateReportError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client where update fails
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+			}
+			return
+		},
+		DoDelete: func(path string, params ...client.Param) (err error) {
+			return
+		},
+		DoPost: func(path string, object any) (err error) {
+			if r, ok := object.(*api.TaskReport); ok {
+				r.ID = 100
+			}
+			return
+		},
+		DoPut: func(path string, object any, params ...client.Param) (err error) {
+			// Simulate update error
+			err = &RestError{Reason: "Update failed"}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+	adapter.Started()
+
+	// Result should panic when update fails
+	g.Expect(func() {
+		adapter.Result(api.Map{"key": "value"})
+	}).To(Panic())
+}
+
+func TestAddonExtensionFiltering(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+				r.Addon = "test-addon"
+				// Only request ext2 and ext4
+				r.Extensions = []string{"ext2", "ext4"}
+			case *api.Addon:
+				r.Name = "test-addon"
+				// Addon has ext1, ext2, ext3, ext4
+				r.Extensions = []api.Extension{
+					{Name: "ext1", Container: k8s.Container{}},
+					{Name: "ext2", Container: k8s.Container{}},
+					{Name: "ext3", Container: k8s.Container{}},
+					{Name: "ext4", Container: k8s.Container{}},
+				}
+			}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+
+	// Get addon - should only include ext2 and ext4
+	addon, err := adapter.Task.Addon(false)
+	g.Expect(err).To(BeNil())
+	g.Expect(addon).NotTo(BeNil())
+	g.Expect(len(addon.Extensions)).To(Equal(2))
+	g.Expect(addon.Extensions[0].Name).To(Equal("ext2"))
+	g.Expect(addon.Extensions[1].Name).To(Equal("ext4"))
+}
+
+func TestAddonNoExtensionsRequested(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+				r.Addon = "test-addon"
+				// No extensions requested
+				r.Extensions = []string{}
+			case *api.Addon:
+				r.Name = "test-addon"
+				r.Extensions = []api.Extension{
+					{Name: "ext1", Container: k8s.Container{}},
+					{Name: "ext2", Container: k8s.Container{}},
+				}
+			}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+
+	// Get addon - should have no extensions
+	addon, err := adapter.Task.Addon(false)
+	g.Expect(err).To(BeNil())
+	g.Expect(addon).NotTo(BeNil())
+	g.Expect(len(addon.Extensions)).To(Equal(0))
+}
+
+func TestAddonAllExtensionsFiltered(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create adapter with stub client
+	adapter := &Adapter{}
+	richClient := binding.New("")
+	richClient.Use(&client.Stub{
+		DoGet: func(path string, object any, params ...client.Param) (err error) {
+			switch r := object.(type) {
+			case *api.Task:
+				r.ID = 1
+				r.Addon = "test-addon"
+				// Request extensions that don't exist
+				r.Extensions = []string{"ext99", "ext100"}
+			case *api.Addon:
+				r.Name = "test-addon"
+				r.Extensions = []api.Extension{
+					{Name: "ext1", Container: k8s.Container{}},
+					{Name: "ext2", Container: k8s.Container{}},
+				}
+			}
+			return
+		},
+	})
+	adapter.Use(richClient)
+
+	Settings.Task = 1
+	adapter.Load()
+
+	// Get addon - should have no extensions (all filtered)
+	addon, err := adapter.Task.Addon(false)
+	g.Expect(err).To(BeNil())
+	g.Expect(addon).NotTo(BeNil())
+	g.Expect(len(addon.Extensions)).To(Equal(0))
 }
 
 // SCM Resource Injection Tests
