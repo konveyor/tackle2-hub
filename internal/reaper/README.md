@@ -34,6 +34,7 @@ For buckets and files, reaping happens in two phases:
 - The reaper scans all models that can reference the resource
 - If no references are found, the resource is marked as orphaned by setting its `Expiration` field
 - If references exist but the resource was previously marked as orphaned, the `Expiration` is cleared
+  to account for short transient changes in ownership
 
 **Phase 2: Expiration & Deletion**
 - Resources with an expired `Expiration` timestamp are deleted
@@ -56,7 +57,8 @@ Buckets represent file trees stored in the filesystem. They may be referenced by
 3. **Deletion:** When the expiration timestamp is reached, both the database record and
    the filesystem directory are deleted.
 4. **Re-association:** If a bucket is re-referenced before expiration, the expiration
-   timestamp is cleared and the bucket is preserved.
+   timestamp is cleared and the bucket is preserved. This accounts for short transient
+   changes in ownership where a resource briefly becomes orphaned during reassignment.
 
 ### Files ###
 
@@ -82,7 +84,8 @@ References are identified using the `ref` struct tag:
 3. **Deletion:** When the expiration timestamp is reached, both the database record and
    the filesystem file are deleted.
 4. **Re-association:** If a file is re-referenced before expiration, the expiration
-   timestamp is cleared and the file is preserved.
+   timestamp is cleared and the file is preserved. This accounts for short transient
+   changes in ownership where a resource briefly becomes orphaned during reassignment.
 
 ### Tasks ###
 

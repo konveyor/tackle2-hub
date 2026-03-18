@@ -226,6 +226,42 @@ func TestFileReaper_ExpirationDeletion(t *testing.T) {
 	g.Expect(os.IsNotExist(err)).To(gomega.BeTrue())
 }
 
+// TestFileReaper_ReferenceRestoresExpiration tests that references clear expiration.
+func TestFileReaper_ReferenceRestoresExpiration(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create file with expiration
+	futureTime := time.Now().Add(1 * time.Hour)
+	file := &model.File{
+		Expiration: &futureTime,
+	}
+	err = db.Create(file).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create actual file at the path assigned by BeforeCreate
+	err = os.WriteFile(file.Path, []byte("test"), 0644)
+	g.Expect(err).To(gomega.BeNil())
+
+	// Create task referencing the file
+	task := &model.Task{Name: "TestTask"}
+	task.Attached = []model.Attachment{{ID: file.ID}}
+	err = db.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	// Run reaper - should clear expiration
+	reaper := &FileReaper{DB: db}
+	reaper.Run()
+
+	// Verify expiration was cleared
+	var f model.File
+	err = db.First(&f, file.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(f.Expiration).To(gomega.BeNil())
+}
+
 // TestGroupReaper_CreatedState tests group reaping in Created state.
 func TestGroupReaper_CreatedState(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
