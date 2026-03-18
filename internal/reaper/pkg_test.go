@@ -233,6 +233,12 @@ func TestGroupReaper_CreatedState(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Save original settings
+	reaperCreated := Settings.Hub.Task.Reaper.Created
+	t.Cleanup(func() {
+		Settings.Hub.Task.Reaper.Created = reaperCreated
+	})
+
 	// Create old group in Created state
 	oldTime := time.Now().Add(-2 * Settings.Hub.Task.Reaper.Created)
 	group := &model.TaskGroup{
@@ -345,6 +351,12 @@ func TestTaskReaper_SucceededState(t *testing.T) {
 
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
+
+	// Save original settings
+	reaperSucceeded := Settings.Hub.Task.Reaper.Succeeded
+	t.Cleanup(func() {
+		Settings.Hub.Task.Reaper.Succeeded = reaperSucceeded
+	})
 
 	// Create bucket for task
 	bucket := &model.Bucket{Path: "/tmp/task-bucket"}
@@ -876,6 +888,12 @@ func TestEdgeCases_TTLZero(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Save original settings
+	reaperFailed := Settings.Hub.Task.Reaper.Failed
+	t.Cleanup(func() {
+		Settings.Hub.Task.Reaper.Failed = reaperFailed
+	})
+
 	// Create task with TTL = 0 (falls back to default settings)
 	task := &model.Task{
 		Name:  "TaskWithTTLZero",
@@ -907,6 +925,12 @@ func TestTaskReaper_CreatedStateWithoutTTL(t *testing.T) {
 
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
+
+	// Save original settings
+	reaperCreated := Settings.Hub.Task.Reaper.Created
+	t.Cleanup(func() {
+		Settings.Hub.Task.Reaper.Created = reaperCreated
+	})
 
 	// Create bucket for task
 	bucket := &model.Bucket{Path: "/tmp/task-bucket"}

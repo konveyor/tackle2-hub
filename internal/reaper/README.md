@@ -26,7 +26,7 @@ setting) and processes resources in this order:
 This order is important: tasks and groups must release their references first, allowing
 buckets and files to be identified as orphans in the same iteration.
 
-#### Two-Phase Reaping for Referenced Resources
+### Two-Phase Reaping for Referenced Resources ###
 
 For buckets and files, reaping happens in two phases:
 
@@ -46,7 +46,7 @@ Buckets represent file trees stored in the filesystem. They may be referenced by
 - Task (BucketID field)
 - TaskGroup (BucketID field)
 
-#### Reaping Process
+### Reaping Process ###
 
 1. **Orphan Detection:** The BucketReaper scans all Applications, TaskGroups, and Tasks
    to find bucket references. Buckets not referenced are marked with an expiration timestamp.
@@ -71,7 +71,7 @@ References are identified using the `ref` struct tag:
 - `ref:"file"` - single file reference
 - `ref:"[]file"` - array of file references
 
-#### Reaping Process
+### Reaping Process ###
 
 1. **Orphan Detection:** The FileReaper uses the RefFinder to scan all models with
    `ref:"file"` or `ref:"[]file"` tags. Files not referenced are marked with an
@@ -98,7 +98,7 @@ Tasks reference:
 When a task is reaped, referenced objects such as buckets and files are _released_.
 Releasing means removing the reference to allow them to be naturally reaped (garbage-collected).
 
-#### Task Reaping Rules by State
+### Task Reaping Rules by State ###
 
 Tasks are reaped based on their state and TTL (time-to-live) configuration. Each task
 can optionally define custom TTL values that override the default settings.
@@ -135,7 +135,7 @@ can optionally define custom TTL values that override the default settings.
 **Canceled** (user-canceled):
 - Currently not handled by the reaper
 
-#### Design Notes
+### Design Notes ###
 
 - **Active states** (Ready, Pending, Running) are expected to complete or fail naturally.
   Only long-running or stuck tasks need explicit TTL protection.
@@ -156,7 +156,7 @@ TaskGroups reference:
 - Bucket
 - Tasks (many-to-one relationship via Task.TaskGroupID)
 
-#### TaskGroup Reaping Rules by State
+### TaskGroup Reaping Rules by State ###
 
 **Created** (not yet submitted):
 - Deleted after a period defined by the
@@ -170,7 +170,7 @@ TaskGroups reference:
 - **Note:** Groups with tasks are never automatically deleted to preserve the relationship
   with existing tasks
 
-#### Design Notes
+### Design Notes ###
 
 - TaskGroups in the Ready state are expected to complete their tasks, which are then
   individually reaped by the TaskReaper
