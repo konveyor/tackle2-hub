@@ -2,6 +2,7 @@ package reaper
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jortel/go-utils/logr"
@@ -21,17 +22,67 @@ type Task = task.Task
 
 // Manager provides task management.
 type Manager struct {
+	mutex sync.RWMutex
 	// DB
 	DB *gorm.DB
 	// k8s client.
 	Client k8s.Client
+	// background manager
+	background bool
 }
 
 // Run the manager.
 func (m *Manager) Run(ctx context.Context) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	if m.background {
+		return
+	}
 	if Log.V(1).Enabled() {
 		m.DB = m.DB.Debug()
 	}
+	threshold := 10 * time.Second
+	go func() {
+		defer func() {
+			m.mutex.Lock()
+			defer m.mutex.Unlock()
+			Log.Info("Manager stopped.")
+			m.background = false
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				mark := time.Now()
+				m.Iterate()
+				d := time.Since(mark)
+				if d > threshold {
+					Log.Info("Duration: " + d.String())
+				}
+				heap.Free()
+				m.pause()
+			}
+		}
+	}()
+	Log.Info("Manager started.")
+	m.background = true
+}
+
+// Background returns true when started in a goroutine.
+func (m *Manager) Background() (b bool) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	b = m.background
+	return
+}
+
+// Iterate reaps unreferenced resources.
+// Turns the 'crank' once.
+// Intended to be called directly from Run() and test harnesses.
+func (m *Manager) Iterate() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	registered := []Reaper{
 		&TaskReaper{
 			Client: m.Client,
@@ -47,28 +98,9 @@ func (m *Manager) Run(ctx context.Context) {
 			DB: m.DB,
 		},
 	}
-	threshold := 10 * time.Second
-	go func() {
-		Log.Info("Started.")
-		defer Log.Info("Died.")
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				mark := time.Now()
-				for _, r := range registered {
-					r.Run()
-				}
-				d := time.Since(mark)
-				if d > threshold {
-					Log.Info("Duration: " + d.String())
-				}
-				heap.Free()
-				m.pause()
-			}
-		}
-	}()
+	for _, r := range registered {
+		r.Run()
+	}
 }
 
 // Pause.
