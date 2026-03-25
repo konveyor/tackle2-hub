@@ -52,9 +52,7 @@ func TestTicketCRUD(t *testing.T) {
 			assert.Must(t, Ticket.Delete(r.ID))
 			for _, tracker := range createdTrackers {
 				assert.Must(t, Tracker.Delete(tracker.ID))
-			}
-			for _, identity := range createdIdentities {
-				assert.Must(t, Identity.Delete(identity.ID))
+				assert.Must(t, Identity.Delete(tracker.Identity.ID))
 			}
 			assert.Must(t, Application.Delete(app.ID))
 
