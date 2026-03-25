@@ -52,6 +52,10 @@ func TestTicketCRUD(t *testing.T) {
 			assert.Must(t, Ticket.Delete(r.ID))
 			for _, tracker := range createdTrackers {
 				assert.Must(t, Tracker.Delete(tracker.ID))
+				_, err = Tracker.Get(tracker.ID)
+				if err == nil {
+					t.Errorf("Resource exits, but should be deleted: %v", tracker)
+				}
 				assert.Must(t, Identity.Delete(tracker.Identity.ID))
 			}
 			assert.Must(t, Application.Delete(app.ID))
