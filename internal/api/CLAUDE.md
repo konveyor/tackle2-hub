@@ -241,9 +241,9 @@ func (h WidgetHandler) Get(ctx *gin.Context) {
 	m := &model.Widget{}
 	id := h.pk(ctx)
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -262,9 +262,9 @@ func (h WidgetHandler) Get(ctx *gin.Context) {
 func (h WidgetHandler) List(ctx *gin.Context) {
 	var list []model.Widget
 	db := h.preLoad(h.DB(ctx), clause.Associations)
-	result := db.Find(&list)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	resources := []Widget{}
@@ -295,9 +295,9 @@ func (h WidgetHandler) Create(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
-	result := h.DB(ctx).Create(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = h.DB(ctx).Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	r.With(m)
@@ -327,9 +327,9 @@ func (h WidgetHandler) Update(ctx *gin.Context) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	result := db.Save(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = db.Save(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -346,14 +346,14 @@ func (h WidgetHandler) Update(ctx *gin.Context) {
 func (h WidgetHandler) Delete(ctx *gin.Context) {
 	id := h.pk(ctx)
 	m := &model.Widget{}
-	result := h.DB(ctx).First(m, id)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	result = h.DB(ctx).Delete(m)
-	if result.Error != nil {
-		_ = ctx.Error(result.Error)
+	err = h.DB(ctx).Delete(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 
@@ -479,9 +479,9 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
     m := &model.Resource{}
     id := h.pk(ctx)
     db := h.preLoad(h.DB(ctx), clause.Associations)
-    result := db.First(m, id)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err := db.First(m, id).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
 
@@ -513,9 +513,9 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 func (h ResourceHandler) List(ctx *gin.Context) {
     var list []model.Resource
     db := h.preLoad(h.DB(ctx), clause.Associations)
-    result := db.Find(&list)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err := db.Find(&list).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
     resources := []Resource{}
@@ -556,9 +556,9 @@ func (h ResourceHandler) Create(ctx *gin.Context) {
     }
     m := r.Model()
     m.CreateUser = h.CurrentUser(ctx)
-    result := h.DB(ctx).Create(m)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err = h.DB(ctx).Create(m).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
     r.With(m)
@@ -600,9 +600,9 @@ func (h ResourceHandler) Update(ctx *gin.Context) {
     m.UpdateUser = h.CurrentUser(ctx)
     db := h.DB(ctx).Model(m)
     db = db.Omit(clause.Associations)
-    result := db.Save(m)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err = db.Save(m).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
 
@@ -632,14 +632,14 @@ func (h ResourceHandler) Update(ctx *gin.Context) {
 func (h ResourceHandler) Delete(ctx *gin.Context) {
     id := h.pk(ctx)
     m := &model.Resource{}
-    result := h.DB(ctx).First(m, id)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err := h.DB(ctx).First(m, id).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
-    result = h.DB(ctx).Delete(m)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err = h.DB(ctx).Delete(m).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
 
@@ -915,15 +915,15 @@ r.Stakeholder = refPtr(m.StakeholderID, m.Stakeholder)
 
 ```go
 // Good - delegate to ErrorHandler
-result := h.DB(ctx).First(m, id)
-if result.Error != nil {
-    _ = ctx.Error(result.Error)  // Use _ since return value is always nil
+err := h.DB(ctx).First(m, id).Error
+if err != nil {
+    _ = ctx.Error(err)  // Use _ since return value is always nil
     return
 }
 
 // Bad - handling errors inline
-result := h.DB(ctx).First(m, id)
-if result.Error != nil {
+err := h.DB(ctx).First(m, id).Error
+if err != nil {
     ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
     return
 }
@@ -1061,9 +1061,9 @@ func (h StakeholderHandler) Create(ctx *gin.Context) {
     m.CreateUser = h.CurrentUser(ctx)
 
     // Create without associations
-    result := h.DB(ctx).Omit(clause.Associations).Create(m)
-    if result.Error != nil {
-        _ = ctx.Error(result.Error)
+    err = h.DB(ctx).Omit(clause.Associations).Create(m).Error
+    if err != nil {
+        _ = ctx.Error(err)
         return
     }
 
