@@ -50,7 +50,7 @@ func (r *Auth) Load() (err error) {
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)
 	r.Idp.ClientID, _ = os.LookupEnv(EnvIdpClientID)
 	r.Idp.ClientSecret, _ = os.LookupEnv(EnvIdpClientSecret)
-	r.Idp.RedirectURI = env.Get(EnvIdpRedirectURI, "http://localhost:8080/idp/callback")
+	r.Idp.RedirectURI, _ = os.LookupEnv(EnvIdpRedirectURI)
 	s, found := os.LookupEnv(EnvIdpScopes)
 	if found && s != "" {
 		r.Idp.Scopes = strings.Split(s, ",")
