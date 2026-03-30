@@ -63,5 +63,6 @@ func All() []any {
 		Permission{},
 		Role{},
 		User{},
+		Token{},
 	}
 }

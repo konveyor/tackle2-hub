@@ -5,9 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
+)
+
+const (
+	// oidcBasePath is the base path for builtin OIDC provider endpoints
+	oidcBasePath = "/oidc"
 )
 
 // OIDCHandler handles OIDC-related routes.
@@ -17,6 +23,17 @@ type OIDCHandler struct {
 
 // AddRoutes adds routes for OIDC resources.
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
+	// Mount builtin OIDC provider if enabled and no external IssuerURL
+	if Settings.Auth.Idp.Enabled && Settings.Auth.Idp.IssuerURL == "" {
+		hubProvider, err := auth.New()
+		if err == nil {
+			// Mount the OIDC provider handler at /oidc
+			e.Any(oidcBasePath+"/*path", gin.WrapH(hubProvider.Handler()))
+		} else {
+			Log.Error(err, "Failed to initialize builtin OIDC provider")
+		}
+	}
+
 	// IdpIdentity routes
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("idpidentities"))

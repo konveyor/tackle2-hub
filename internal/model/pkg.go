@@ -58,6 +58,7 @@ type IdpIdentity = model.IdpIdentity
 type User = model.User
 type Role = model.Role
 type Permission = model.Permission
+type Token = model.Token
 
 // JSON fields
 type Ref = json.Ref
