@@ -4,6 +4,8 @@ This document describes the design patterns, conventions, and standards for impl
 
 ## Table of Contents
 
+- [Complete File Structure](#complete-file-structure)
+- [Adding a New Endpoint - Complete Example](#adding-a-new-endpoint---complete-example)
 - [Handler Architecture](#handler-architecture)
 - [Handler Implementation Patterns](#handler-implementation-patterns)
 - [Route Registration](#route-registration)
@@ -15,6 +17,397 @@ This document describes the design patterns, conventions, and standards for impl
 - [Sub-Resources](#sub-resources)
 - [Pagination and Filtering](#pagination-and-filtering)
 - [Testing API Handlers](#testing-api-handlers)
+
+---
+
+## Complete File Structure
+
+When adding a new REST API endpoint, you will need to create or modify files in multiple locations:
+
+```
+tackle2-hub/
+├── internal/
+│   ├── api/
+│   │   ├── resource.go              # Handler implementation (CREATE THIS)
+│   │   ├── pkg.go                   # Register handler in All() (MODIFY THIS)
+│   │   └── resource/
+│   │       └── resource.go          # Resource converter (CREATE THIS)
+│   ├── model/
+│   │   └── pkg.go                   # Re-export model type (MODIFY THIS)
+│   └── migration/
+│       └── v{N}/                    # Current migration version (e.g., v21)
+│           └── model/
+│               └── application.go   # Model definition (MODIFY THIS)
+│                   or core.go       # or other appropriate file
+└── shared/
+    └── api/
+        ├── application.go           # REST API type definition (MODIFY THIS)
+        │   or core.go               # or other appropriate file
+        └── pkg.go                   # Route constants (MODIFY THIS)
+```
+
+### File Locations Explained
+
+1. **Model Definition** (`internal/migration/v{N}/model/*.go`)
+   - Database model with GORM tags
+   - Latest version is current (e.g., v21)
+   - Group related models in same file (e.g., `application.go` for app-related models)
+
+2. **REST API Type** (`shared/api/*.go`)
+   - Client-facing type definition
+   - JSON/YAML struct tags
+   - Group related types in same file (e.g., `application.go`)
+   - NEVER import from `internal/` package
+
+3. **Route Constants** (`shared/api/pkg.go`)
+   - Define route path constants
+   - Organized by resource type with comments
+
+4. **Handler** (`internal/api/*.go`)
+   - HTTP handler methods (Get, List, Create, Update, Delete)
+   - One file per resource
+   - Filename matches resource (lowercase, e.g., `jobfunction.go`)
+
+5. **Resource Converter** (`internal/api/resource/*.go`)
+   - Converts between model and REST API type
+   - One file per resource
+   - Filename matches resource
+
+6. **Handler Registration** (`internal/api/pkg.go`)
+   - Add handler to `All()` function
+
+---
+
+## Adding a New Endpoint - Complete Example
+
+This example shows **every file** you need to create or modify to add a new "Widget" endpoint.
+
+### Step 1: Define the Model
+
+**File:** `internal/migration/v21/model/core.go` (or appropriate file)
+
+```go
+// Widget model for database.
+type Widget struct {
+	Model
+	Name        string `gorm:"index;unique;not null"`
+	Description string
+	OwnerID     *uint
+	Owner       *Stakeholder
+}
+```
+
+**Notes:**
+- Embed `Model` for ID, timestamps, audit fields
+- Use GORM tags for constraints
+- Foreign keys as pointer to uint
+- Associations as pointer to model type
+
+**File:** `internal/model/pkg.go` (re-export the model)
+
+```go
+type Widget = model.Widget
+```
+
+**Notes:**
+- Add type alias in alphabetical order
+- This makes `model.Widget` available to handlers
+
+### Step 2: Define REST API Type
+
+**File:** `shared/api/core.go` (or create new file)
+
+```go
+// Widget REST resource.
+type Widget struct {
+	Resource    `yaml:",inline"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+	Owner       *Ref   `json:"owner"`
+}
+```
+
+**Notes:**
+- Embed `Resource` for ID, timestamps, audit fields
+- Use JSON tags for field names
+- Use `binding` tags for validation
+- Foreign keys as `*Ref` (reference to related resource)
+
+### Step 3: Define Route Constants
+
+**File:** `shared/api/pkg.go`
+
+```go
+// Routes - Widgets
+const (
+	WidgetsRoute = "/widgets"
+	WidgetRoute  = WidgetsRoute + "/:" + ID
+)
+```
+
+**Notes:**
+- Add in appropriate alphabetical location
+- Use comment header to group routes
+- Plural for collection, singular for item
+
+### Step 4: Create Resource Converter
+
+**File:** `internal/api/resource/widget.go`
+
+```go
+package resource
+
+import (
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+)
+
+// Widget REST resource.
+type Widget api.Widget
+
+// With converts model to REST resource.
+func (r *Widget) With(m *model.Widget) {
+	baseWith(&r.Resource, &m.Model)
+	r.Name = m.Name
+	r.Description = m.Description
+	r.Owner = refPtr(m.OwnerID, m.Owner)
+}
+
+// Model converts REST resource to model.
+func (r *Widget) Model() (m *model.Widget) {
+	m = &model.Widget{
+		Name:        r.Name,
+		Description: r.Description,
+	}
+	m.ID = r.ID
+	if r.Owner != nil {
+		m.OwnerID = &r.Owner.ID
+	}
+	return
+}
+```
+
+**Notes:**
+- Type alias to `api.Widget`
+- `With()` for model → resource (outbound)
+- `Model()` for resource → model (inbound)
+- Use `baseWith()` for common fields
+- Use `refPtr()` for optional foreign key references
+- Use `ref()` for required foreign key references
+
+### Step 5: Create Handler
+
+**File:** `internal/api/widget.go`
+
+```go
+package api
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/internal/api/resource"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"gorm.io/gorm/clause"
+)
+
+// WidgetHandler handles widget routes.
+type WidgetHandler struct {
+	BaseHandler
+}
+
+// AddRoutes adds routes.
+func (h WidgetHandler) AddRoutes(e *gin.Engine) {
+	routeGroup := e.Group("/")
+	routeGroup.Use(Required("widgets"), Transaction)
+	routeGroup.GET(api.WidgetsRoute, h.List)
+	routeGroup.GET(api.WidgetsRoute+"/", h.List)
+	routeGroup.POST(api.WidgetsRoute, h.Create)
+	routeGroup.GET(api.WidgetRoute, h.Get)
+	routeGroup.PUT(api.WidgetRoute, h.Update)
+	routeGroup.DELETE(api.WidgetRoute, h.Delete)
+}
+
+// Get godoc
+// @summary Get a widget by ID.
+// @description Get a widget by ID.
+// @tags widgets
+// @produce json
+// @success 200 {object} api.Widget
+// @router /widgets/{id} [get]
+// @param id path int true "Widget ID"
+func (h WidgetHandler) Get(ctx *gin.Context) {
+	m := &model.Widget{}
+	id := h.pk(ctx)
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	r := Widget{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// List godoc
+// @summary List all widgets.
+// @description List all widgets.
+// @tags widgets
+// @produce json
+// @success 200 {object} []api.Widget
+// @router /widgets [get]
+func (h WidgetHandler) List(ctx *gin.Context) {
+	var list []model.Widget
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	result := db.Find(&list)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	resources := []Widget{}
+	for i := range list {
+		r := Widget{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// Create godoc
+// @summary Create a widget.
+// @description Create a widget.
+// @tags widgets
+// @accept json
+// @produce json
+// @success 201 {object} api.Widget
+// @router /widgets [post]
+// @param widget body api.Widget true "Widget data"
+func (h WidgetHandler) Create(ctx *gin.Context) {
+	r := &Widget{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	m := r.Model()
+	m.CreateUser = h.CurrentUser(ctx)
+	result := h.DB(ctx).Create(m)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	r.With(m)
+
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// Update godoc
+// @summary Update a widget.
+// @description Update a widget.
+// @tags widgets
+// @accept json
+// @success 204
+// @router /widgets/{id} [put]
+// @param id path int true "Widget ID"
+// @param widget body api.Widget true "Widget data"
+func (h WidgetHandler) Update(ctx *gin.Context) {
+	id := h.pk(ctx)
+	r := &Widget{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	m := r.Model()
+	m.ID = id
+	m.UpdateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx).Model(m)
+	db = db.Omit(clause.Associations)
+	result := db.Save(m)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+// Delete godoc
+// @summary Delete a widget.
+// @description Delete a widget.
+// @tags widgets
+// @success 204
+// @router /widgets/{id} [delete]
+// @param id path int true "Widget ID"
+func (h WidgetHandler) Delete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Widget{}
+	result := h.DB(ctx).First(m, id)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+	result = h.DB(ctx).Delete(m)
+	if result.Error != nil {
+		_ = ctx.Error(result.Error)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+// Widget REST resource.
+type Widget = resource.Widget
+```
+
+**Notes:**
+- Filename is lowercase resource name
+- Struct embeds `BaseHandler`
+- `AddRoutes()` registers all routes
+- Both `/widgets` and `/widgets/` for List
+- Type alias at bottom: `type Widget = resource.Widget`
+
+### Step 6: Register Handler
+
+**File:** `internal/api/pkg.go`
+
+```go
+func All() []Handler {
+	return []Handler{
+		&AddonHandler{},
+		// ... existing handlers ...
+		&WidgetHandler{},  // Add this line in alphabetical order
+		// ... more handlers ...
+	}
+}
+```
+
+### Verification Checklist
+
+After implementing, verify:
+
+**Files Created/Modified:**
+- [ ] Model defined in `internal/migration/v{N}/model/*.go`
+- [ ] Model re-exported in `internal/model/pkg.go`
+- [ ] REST API type defined in `shared/api/*.go`
+- [ ] Route constants defined in `shared/api/pkg.go`
+- [ ] Resource converter created in `internal/api/resource/widget.go`
+- [ ] Handler created in `internal/api/widget.go`
+- [ ] Handler registered in `internal/api/pkg.go`
+
+**Implementation:**
+- [ ] All CRUD methods implemented (Get, List, Create, Update, Delete)
+- [ ] Godoc comments on all methods
+- [ ] Swagger annotations on all methods
+- [ ] Proper middleware (`Required`, `Transaction`)
+- [ ] Correct status codes (200, 201, 204)
+- [ ] Using `ctx.Error()` for all errors
+- [ ] Setting `CreateUser`/`UpdateUser`
+- [ ] Using `Omit(clause.Associations)` in Update
 
 ---
 
@@ -967,9 +1360,26 @@ func TestAccepted(t *testing.T) {
 
 ## Summary
 
-### Quick Reference Checklist
+### Quick Start
+
+**To add a new endpoint, follow the [complete example](#adding-a-new-endpoint---complete-example) which shows all files you need to create/modify.**
+
+### Files to Create/Modify Checklist
 
 When implementing a new API endpoint:
+
+**Create these files:**
+- [ ] `internal/api/{resource}.go` - Handler implementation
+- [ ] `internal/api/resource/{resource}.go` - Resource converter
+
+**Modify these files:**
+- [ ] `internal/migration/v{N}/model/*.go` - Add model definition
+- [ ] `internal/model/pkg.go` - Re-export model type alias
+- [ ] `shared/api/*.go` - Add REST API type definition
+- [ ] `shared/api/pkg.go` - Add route constants
+- [ ] `internal/api/pkg.go` - Register handler in `All()`
+
+### Implementation Checklist
 
 - [ ] Create handler struct embedding `BaseHandler` or `BucketOwner`
 - [ ] Implement `AddRoutes()` with proper middleware
