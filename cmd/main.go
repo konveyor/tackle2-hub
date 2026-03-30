@@ -126,24 +126,7 @@ func main() {
 	//
 	// Auth
 	if settings.Settings.Auth.Required {
-		r := auth.NewReconciler(
-			settings.Settings.Auth.Keycloak.Host,
-			settings.Settings.Auth.Keycloak.Realm,
-			settings.Settings.Auth.Keycloak.ClientID,
-			settings.Settings.Auth.Keycloak.ClientSecret,
-			settings.Settings.Auth.Keycloak.Admin.User,
-			settings.Settings.Auth.Keycloak.Admin.Pass,
-			settings.Settings.Auth.Keycloak.Admin.Realm,
-		)
-		err = r.Reconcile()
-		if err != nil {
-			return
-		}
 		auth.Hub = &auth.Builtin{}
-		auth.Remote = auth.NewKeycloak(
-			settings.Settings.Auth.Keycloak.Host,
-			settings.Settings.Auth.Keycloak.Realm,
-		)
 	}
 	//
 	// Task
