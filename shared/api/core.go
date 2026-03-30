@@ -149,3 +149,38 @@ type Extension struct {
 	Container    k8s.Container `json:"container"`
 	Metadata     any           `json:"metadata,omitempty"`
 }
+
+// IdpIdentity REST resource.
+type IdpIdentity struct {
+	Resource          `yaml:",inline"`
+	Provider          string    `json:"provider" binding:"required"`
+	Subject           string    `json:"subject" binding:"required"`
+	RefreshToken      string    `json:"refreshToken" binding:"required"`
+	Expiration        time.Time `json:"expiration"`
+	LastAuthenticated time.Time `json:"lastAuthenticated"`
+	LastRefreshed     time.Time `json:"lastRefreshed"`
+	User              *Ref      `json:"user" binding:"required"`
+}
+
+// User REST resource.
+type User struct {
+	Resource `yaml:",inline"`
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Roles    []Ref  `json:"roles"`
+}
+
+// Role REST resource.
+type Role struct {
+	Resource    `yaml:",inline"`
+	Name        string `json:"name" binding:"required"`
+	Permissions []Ref  `json:"permissions"`
+}
+
+// Permission REST resource.
+type Permission struct {
+	Resource `yaml:",inline"`
+	Name     string `json:"name" binding:"required"`
+	Scope    string `json:"scope" binding:"required"`
+}

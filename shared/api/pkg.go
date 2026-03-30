@@ -191,6 +191,18 @@ const (
 	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
+// Routes - OIDC
+const (
+	IdpIdentitiesRoute = "/idpidentities"
+	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
+	UsersRoute         = "/users"
+	UserRoute          = UsersRoute + "/:" + ID
+	RolesRoute         = "/roles"
+	RoleRoute          = RolesRoute + "/:" + ID
+	PermissionsRoute   = "/permissions"
+	PermissionRoute    = PermissionsRoute + "/:" + ID
+)
+
 // Routes - Imports
 const (
 	SummariesRoute = "/importsummaries"

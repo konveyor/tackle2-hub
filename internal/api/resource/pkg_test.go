@@ -3314,3 +3314,262 @@ func TestFactKey_Semantics(t *testing.T) {
 	g.Expect(onlySource.Source()).To(gomega.Equal("analysis"))
 	g.Expect(onlySource.Name()).To(gomega.Equal(""))
 }
+
+// TestIdpIdentity_With tests the IdpIdentity.With() method
+func TestIdpIdentity_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	expiration := time.Now().Add(24 * time.Hour)
+	lastAuth := time.Now().Add(-1 * time.Hour)
+	lastRefresh := time.Now().Add(-30 * time.Minute)
+
+	m := &model.IdpIdentity{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+		},
+		Provider:          "google",
+		Subject:           "user@example.com",
+		RefreshToken:      "refresh-token-xyz",
+		Expiration:        expiration,
+		LastAuthenticated: lastAuth,
+		LastRefreshed:     lastRefresh,
+		UserID:            100,
+		User: model.User{
+			Model: model.Model{ID: 100},
+			Name:  "testuser",
+		},
+	}
+
+	r := &IdpIdentity{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Provider).To(gomega.Equal("google"))
+	g.Expect(r.Subject).To(gomega.Equal("user@example.com"))
+	g.Expect(r.RefreshToken).To(gomega.Equal("refresh-token-xyz"))
+	g.Expect(r.Expiration).To(gomega.Equal(expiration))
+	g.Expect(r.LastAuthenticated).To(gomega.Equal(lastAuth))
+	g.Expect(r.LastRefreshed).To(gomega.Equal(lastRefresh))
+	g.Expect(r.User).ToNot(gomega.BeNil())
+	g.Expect(r.User.ID).To(gomega.Equal(uint(100)))
+	g.Expect(r.User.Name).To(gomega.Equal("testuser"))
+}
+
+// TestIdpIdentity_Model tests the IdpIdentity.Model() method
+func TestIdpIdentity_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	expiration := time.Now().Add(24 * time.Hour)
+	lastAuth := time.Now().Add(-1 * time.Hour)
+	lastRefresh := time.Now().Add(-30 * time.Minute)
+
+	r := &IdpIdentity{
+		Resource:          Resource{ID: 1},
+		Provider:          "google",
+		Subject:           "user@example.com",
+		RefreshToken:      "refresh-token-xyz",
+		Expiration:        expiration,
+		LastAuthenticated: lastAuth,
+		LastRefreshed:     lastRefresh,
+		User:              &Ref{ID: 100, Name: "testuser"},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Provider).To(gomega.Equal("google"))
+	g.Expect(m.Subject).To(gomega.Equal("user@example.com"))
+	g.Expect(m.RefreshToken).To(gomega.Equal("refresh-token-xyz"))
+	g.Expect(m.Expiration).To(gomega.Equal(expiration))
+	g.Expect(m.LastAuthenticated).To(gomega.Equal(lastAuth))
+	g.Expect(m.LastRefreshed).To(gomega.Equal(lastRefresh))
+	g.Expect(m.UserID).To(gomega.Equal(uint(100)))
+}
+
+// TestUser_With tests the User.With() method
+func TestUser_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.User{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Name:     "john.doe",
+		Password: "encrypted-password",
+		Email:    "john.doe@example.com",
+		Roles: []model.Role{
+			{Model: model.Model{ID: 10}, Name: "admin"},
+			{Model: model.Model{ID: 11}, Name: "developer"},
+		},
+	}
+
+	r := &User{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("john.doe"))
+	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
+	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
+	g.Expect(len(r.Roles)).To(gomega.Equal(2))
+	g.Expect(r.Roles[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(r.Roles[0].Name).To(gomega.Equal("admin"))
+	g.Expect(r.Roles[1].ID).To(gomega.Equal(uint(11)))
+	g.Expect(r.Roles[1].Name).To(gomega.Equal("developer"))
+}
+
+// TestUser_Model tests the User.Model() method
+func TestUser_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &User{
+		Resource: Resource{ID: 1},
+		Name:     "john.doe",
+		Password: "encrypted-password",
+		Email:    "john.doe@example.com",
+		Roles: []Ref{
+			{ID: 10, Name: "admin"},
+			{ID: 11, Name: "developer"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("john.doe"))
+	g.Expect(m.Password).To(gomega.Equal("encrypted-password"))
+	g.Expect(m.Email).To(gomega.Equal("john.doe@example.com"))
+	g.Expect(len(m.Roles)).To(gomega.Equal(2))
+	g.Expect(m.Roles[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(m.Roles[1].ID).To(gomega.Equal(uint(11)))
+}
+
+// TestUser_Model_EmptyRoles tests User.Model() with empty roles
+func TestUser_Model_EmptyRoles(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &User{
+		Resource: Resource{ID: 1},
+		Name:     "john.doe",
+		Password: "encrypted-password",
+		Email:    "john.doe@example.com",
+		Roles:    []Ref{},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("john.doe"))
+	g.Expect(len(m.Roles)).To(gomega.Equal(0))
+}
+
+// TestRole_With tests the Role.With() method
+func TestRole_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Role{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Name: "administrator",
+		Permissions: []model.Permission{
+			{Model: model.Model{ID: 20}, Name: "read", Scope: "applications"},
+			{Model: model.Model{ID: 21}, Name: "write", Scope: "applications"},
+			{Model: model.Model{ID: 22}, Name: "delete", Scope: "applications"},
+		},
+	}
+
+	r := &Role{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("administrator"))
+	g.Expect(len(r.Permissions)).To(gomega.Equal(3))
+	g.Expect(r.Permissions[0].ID).To(gomega.Equal(uint(20)))
+	g.Expect(r.Permissions[0].Name).To(gomega.Equal("read"))
+	g.Expect(r.Permissions[1].ID).To(gomega.Equal(uint(21)))
+	g.Expect(r.Permissions[1].Name).To(gomega.Equal("write"))
+	g.Expect(r.Permissions[2].ID).To(gomega.Equal(uint(22)))
+	g.Expect(r.Permissions[2].Name).To(gomega.Equal("delete"))
+}
+
+// TestRole_Model tests the Role.Model() method
+func TestRole_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Role{
+		Resource: Resource{ID: 1},
+		Name:     "administrator",
+		Permissions: []Ref{
+			{ID: 20, Name: "read"},
+			{ID: 21, Name: "write"},
+			{ID: 22, Name: "delete"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("administrator"))
+	g.Expect(len(m.Permissions)).To(gomega.Equal(3))
+	g.Expect(m.Permissions[0].ID).To(gomega.Equal(uint(20)))
+	g.Expect(m.Permissions[1].ID).To(gomega.Equal(uint(21)))
+	g.Expect(m.Permissions[2].ID).To(gomega.Equal(uint(22)))
+}
+
+// TestRole_Model_EmptyPermissions tests Role.Model() with empty permissions
+func TestRole_Model_EmptyPermissions(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Role{
+		Resource:    Resource{ID: 1},
+		Name:        "readonly",
+		Permissions: []Ref{},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("readonly"))
+	g.Expect(len(m.Permissions)).To(gomega.Equal(0))
+}
+
+// TestPermission_With tests the Permission.With() method
+func TestPermission_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Permission{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Name:  "read",
+		Scope: "applications",
+	}
+
+	r := &Permission{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("read"))
+	g.Expect(r.Scope).To(gomega.Equal("applications"))
+}
+
+// TestPermission_Model tests the Permission.Model() method
+func TestPermission_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &Permission{
+		Resource: Resource{ID: 1},
+		Name:     "read",
+		Scope:    "applications",
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("read"))
+	g.Expect(m.Scope).To(gomega.Equal("applications"))
+}
