@@ -24,7 +24,7 @@ This document describes the design patterns, conventions, and standards for impl
 
 When adding a new REST API endpoint, you will need to create or modify files in multiple locations:
 
-```
+```text
 tackle2-hub/
 ├── internal/
 │   ├── api/
@@ -220,7 +220,7 @@ type WidgetHandler struct {
 // AddRoutes adds routes.
 func (h WidgetHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("widgets"), Transaction)
+	routeGroup.Use(Required("widgets"))
 	routeGroup.GET(api.WidgetsRoute, h.List)
 	routeGroup.GET(api.WidgetsRoute+"/", h.List)
 	routeGroup.POST(api.WidgetsRoute, h.Create)
@@ -716,7 +716,7 @@ http.StatusServiceUnavailable  // 503 - External service unavailable
 ```go
 func (h ResourceHandler) AddRoutes(e *gin.Engine) {
     routeGroup := e.Group("/")
-    routeGroup.Use(Required("resources"), Transaction)
+    routeGroup.Use(Required("resources"))
     routeGroup.GET(api.ResourcesRoute, h.List)
     routeGroup.GET(api.ResourcesRoute+"/", h.List)
     routeGroup.POST(api.ResourcesRoute, h.Create)
@@ -729,27 +729,47 @@ func (h ResourceHandler) AddRoutes(e *gin.Engine) {
 **Key points:**
 - Create route group with `e.Group("/")`
 - Apply middleware with `routeGroup.Use()`
-- `Required(scope)` enforces authentication/authorization
-- `Transaction` wraps POST/PUT/PATCH/DELETE in DB transactions
+- `Required(scope)` enforces authentication/authorization (always required)
+- `Transaction` is optional - add when managing associations (see Middleware Usage)
 - Register both `/resources` and `/resources/` for List
 - Routes defined in `shared/api/route.go`
 
 ### Middleware Usage
 
+**Required Middleware:**
+- `Required(scope)` - Authentication and authorization (always required)
+
+**Transaction Middleware:**
+- `Transaction` - Wraps POST/PUT/PATCH/DELETE in DB transactions
+- **When to use:** Only when handlers need atomic multi-step operations
+- **Examples:** Managing associations explicitly, multiple related updates
+- **Default:** Most simple CRUD handlers don't need it
+
 ```go
-// Authentication + Authorization only
-routeGroup.Use(Required("tags"))
+// Simple handler - no Transaction needed
+func (h TagHandler) AddRoutes(e *gin.Engine) {
+    routeGroup := e.Group("/")
+    routeGroup.Use(Required("tags"))
+    routeGroup.GET(api.TagsRoute, h.List)
+    routeGroup.POST(api.TagsRoute, h.Create)
+    // ... other routes
+}
 
-// Auth + Transaction (for data modifications)
-routeGroup.Use(Required("applications"), Transaction)
+// Complex handler - Transaction for association management
+func (h StakeholderHandler) AddRoutes(e *gin.Engine) {
+    routeGroup := e.Group("/")
+    routeGroup.Use(Required("stakeholders"), Transaction)
+    routeGroup.GET(api.StakeholdersRoute, h.List)
+    routeGroup.POST(api.StakeholdersRoute, h.Create)
+    // ... other routes
+}
 
-// Multiple route groups for different permissions
+// Multiple route groups for different scopes
 routeGroup := e.Group("/")
 routeGroup.Use(Required("applications"), Transaction)
 routeGroup.GET(api.ApplicationsRoute, h.List)
 routeGroup.POST(api.ApplicationsRoute, h.Create)
 
-// Separate group for sub-resource with different scope
 routeGroup = e.Group("/")
 routeGroup.Use(Required("applications.facts"), Transaction)
 routeGroup.GET(api.ApplicationFactsRoute, h.FactGet)
@@ -1205,7 +1225,7 @@ func (h ApplicationHandler) List(ctx *gin.Context) {
 ```
 
 **Filter syntax in URL:**
-```
+```text
 ?filter=name:MyApp
 ?filter=name~Java,platform.id:1
 ```
@@ -1421,4 +1441,4 @@ When implementing a new API endpoint:
 - `sort/` - Query sorting implementation
 - `association/` - Association management utilities
 
-For general Go coding standards, see `/home/jortel/go/src/github.com/konveyor/tackle2-hub/CLAUDE.md`
+For general Go coding standards, see [../../CLAUDE.md](../../CLAUDE.md)
