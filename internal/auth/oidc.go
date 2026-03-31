@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"net/http"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -201,7 +200,7 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 		goidc.GrantRefreshToken,
 	}
 	client.RedirectURIs = []string{
-		path.Join(issuer, "/callback"),
+		issuer + "/callback",
 	}
 	err = p.openId.SaveClient(context.Background(), client)
 	if err != nil {
@@ -503,6 +502,22 @@ func (g *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (g
 func (g *GrantManager) Delete(ctx context.Context, id string) (err error) {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
+	g.delete(id)
+	return
+}
+
+func (g *GrantManager) DeleteByAuthCode(ctx context.Context, code string) (err error) {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+	id, found := g.byAuthCode[code]
+	if !found {
+		return
+	}
+	g.delete(id)
+	return
+}
+
+func (g *GrantManager) delete(id string) {
 	grant, found := g.byId[id]
 	if !found {
 		return
@@ -510,13 +525,5 @@ func (g *GrantManager) Delete(ctx context.Context, id string) (err error) {
 	delete(g.byId, id)
 	delete(g.byRefreshToken, grant.RefreshToken)
 	delete(g.byAuthCode, grant.AuthCode)
-	return
-}
-
-func (g *GrantManager) DeleteByAuthCode(ctx context.Context, code string) (err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	id := g.byAuthCode[code]
-	err = g.Delete(ctx, id)
 	return
 }
