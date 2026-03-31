@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
 	"gorm.io/gorm"
@@ -109,6 +110,19 @@ func (p *BuiltinProvider) Revoke(token *jwt.Token) (err error) {
 	return
 }
 
+// Scopes returns a list of scopes.
+func (p *BuiltinProvider) Scopes(jwToken *jwt.Token) (scopes []Scope) {
+	claims := jwToken.Claims.(jwt.MapClaims)
+	for _, s := range strings.Fields(claims["scope"].(string)) {
+		scope := &BaseScope{}
+		scope.With(s)
+		scopes = append(
+			scopes,
+			scope)
+	}
+	return
+}
+
 // parseToken returns the token
 func (p *BuiltinProvider) parseToken(request *Request) (token string, err error) {
 	splitToken := strings.Fields(request.Token)
@@ -132,27 +146,19 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 			},
 		},
 	}
+	tokenManager := &TokenManager{
+		db: db,
+	}
+	authManager := &AuthManager{
+		db: db,
+	}
 	authPolicy := goidc.NewPolicy(
 		"main",
 		func(r *http.Request, client *goidc.Client, session *goidc.AuthnSession) bool {
 			return true // apply to all requests for now
 		},
-		func(w http.ResponseWriter, r *http.Request, as *goidc.AuthnSession) (status goidc.Status, err error) {
-			// TODO: Full authentication + authorization logic goes here:
-			// 1. Check if this is local login (username/password)
-			// 2. Or external IdP delegation (if idp=xxx parameter exists)
-			// 3. Lookup user from DB
-			// 4. Load roles → permissions → scopes
-			// 5. Set as.Subject and as.Scopes accordingly
-			user := &model.User{}
-			as.Subject = user.UUID
-			status = goidc.StatusSuccess
-			return
-		},
+		authManager.Login,
 	)
-	tokenManager := &TokenManager{
-		db: db,
-	}
 	p.openId, err = provider.New(
 		goidc.ProfileOpenID,
 		Settings.Auth.Token.Key,
@@ -177,11 +183,58 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	return
 }
 
+type AuthManager struct {
+	db *gorm.DB
+}
+
+func (r *AuthManager) Login(
+	writer http.ResponseWriter,
+	request *http.Request,
+	session *goidc.AuthnSession) (status goidc.Status, err error) {
+	//
+	var userid, password string
+	if session.Subject == "" {
+		userid = request.PostFormValue("userid")
+		password = request.PostFormValue("password")
+	}
+	if userid == "" || password == "" {
+		err = r.renderPage(writer, request)
+		status = goidc.StatusInProgress
+		return
+	}
+	user := &model.User{}
+	err = r.db.First(user, "name", userid).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = r.renderPage(writer, request)
+			status = goidc.StatusInProgress
+			err = nil
+		}
+		return
+	}
+	err = secret.Decrypt(user)
+	if err != nil {
+		return
+	}
+	if password != user.Password {
+		err = r.renderPage(writer, request)
+		status = goidc.StatusInProgress
+		return
+	}
+	session.Subject = user.UUID
+	status = goidc.StatusSuccess
+	return
+}
+
+func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Request) (err error) {
+	return
+}
+
 type TokenManager struct {
 	db *gorm.DB
 }
 
-func (t TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
+func (r TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
 	m := model.Token{
 		TokenId:    token.ID,
 		GrantId:    token.GrantID,
@@ -193,18 +246,18 @@ func (t TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) 
 		Expiration: token.ExpiresAtTimestamp,
 	}
 	user := &model.User{}
-	err = t.db.First(user, "uuid", token.Subject).Error
+	err = r.db.First(user, "uuid", token.Subject).Error
 	if err != nil {
 		return
 	}
 	m.UserID = user.ID
-	err = t.db.Save(m).Error
+	err = r.db.Save(m).Error
 	return
 }
 
-func (t TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
+func (r TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
 	m := model.Token{}
-	err = t.db.First(&m, "tokenId", id).Error
+	err = r.db.First(&m, "tokenId", id).Error
 	if err != nil {
 		return
 	}
@@ -221,14 +274,14 @@ func (t TokenManager) Token(ctx context.Context, id string) (token *goidc.Token,
 	return
 }
 
-func (t TokenManager) Delete(ctx context.Context, id string) (err error) {
+func (r TokenManager) Delete(ctx context.Context, id string) (err error) {
 	m := model.Token{}
-	err = t.db.Delete(m, "tokenId = ?", id).Error
+	err = r.db.Delete(m, "tokenId", id).Error
 	return
 }
 
-func (t TokenManager) DeleteByGrantID(ctx context.Context, id string) (err error) {
+func (r TokenManager) DeleteByGrantID(ctx context.Context, id string) (err error) {
 	m := model.Token{}
-	err = t.db.Delete(m, "grantId = ?", id).Error
+	err = r.db.Delete(m, "grantId", id).Error
 	return
 }

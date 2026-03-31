@@ -25,7 +25,7 @@ type OIDCHandler struct {
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	// Mount builtin OIDC provider if enabled and no external IssuerURL
 	if Settings.Auth.Idp.Enabled && Settings.Auth.Idp.IssuerURL == "" {
-		hubProvider, err := auth.New()
+		hubProvider, err := auth.New(nil)
 		if err == nil {
 			// Mount the OIDC provider handler at /oidc
 			e.Any(oidcBasePath+"/*path", gin.WrapH(hubProvider.Handler()))
