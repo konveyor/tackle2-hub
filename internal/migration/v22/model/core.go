@@ -223,15 +223,15 @@ type IdpIdentity struct {
 
 type Token struct {
 	Model
-	TokenId    string `gorm:"not null"`
-	ClientId   string `gorm:"not null"`
-	GrantId    string `gorm:"index"`
-	Kind       string `gorm:"not null"`
-	Subject    string `gorm:"index"`
-	Scopes     string `gorm:"not null"`
-	Issued     int    `gorm:"not null"`
-	Expiration int
-	Revoked    bool
+	TokenId    string    `gorm:"not null"`
+	ClientId   string    `gorm:"not null"`
+	GrantId    string    `gorm:"index"`
+	Type       string    `gorm:"not null"`
+	Subject    string    `gorm:"index"`
+	Scopes     string    `gorm:"not null"`
+	Issued     time.Time `gorm:"not null"`
+	Expiration time.Time
+	Revoked    time.Time
 	UserID     uint `gorm:"index"`
 	User       User `gorm:"constraint:OnDelete:CASCADE"`
 }

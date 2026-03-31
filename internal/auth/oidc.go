@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
@@ -234,16 +235,16 @@ type TokenManager struct {
 	db *gorm.DB
 }
 
-func (r TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
+func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
 	m := model.Token{
 		TokenId:    token.ID,
 		GrantId:    token.GrantID,
 		ClientId:   token.ClientID,
 		Subject:    token.Subject,
-		Kind:       string(token.Type),
+		Type:       string(token.Type),
 		Scopes:     token.Scopes,
-		Issued:     token.CreatedAtTimestamp,
-		Expiration: token.ExpiresAtTimestamp,
+		Issued:     r.asTime(token.CreatedAtTimestamp),
+		Expiration: r.asTime(token.ExpiresAtTimestamp),
 	}
 	user := &model.User{}
 	err = r.db.First(user, "uuid", token.Subject).Error
@@ -255,7 +256,7 @@ func (r TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) 
 	return
 }
 
-func (r TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
+func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
 	m := model.Token{}
 	err = r.db.First(&m, "tokenId", id).Error
 	if err != nil {
@@ -266,22 +267,38 @@ func (r TokenManager) Token(ctx context.Context, id string) (token *goidc.Token,
 		GrantID:            m.GrantId,
 		ClientID:           m.ClientId,
 		Subject:            m.Subject,
-		Type:               goidc.TokenType(m.Kind),
+		Type:               goidc.TokenType(m.Type),
 		Scopes:             m.Scopes,
-		CreatedAtTimestamp: m.Issued,
-		ExpiresAtTimestamp: m.Expiration,
+		CreatedAtTimestamp: r.asInt(m.Issued),
+		ExpiresAtTimestamp: r.asInt(m.Expiration),
 	}
 	return
 }
 
-func (r TokenManager) Delete(ctx context.Context, id string) (err error) {
+func (r *TokenManager) Delete(ctx context.Context, id string) (err error) {
 	m := model.Token{}
 	err = r.db.Delete(m, "tokenId", id).Error
 	return
 }
 
-func (r TokenManager) DeleteByGrantID(ctx context.Context, id string) (err error) {
+func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err error) {
 	m := model.Token{}
 	err = r.db.Delete(m, "grantId", id).Error
 	return
+}
+
+func (r *TokenManager) asTime(n int) (t time.Time) {
+	t = time.Unix(int64(n), 0)
+	t = t.UTC()
+	return
+}
+
+func (r *TokenManager) asInt(t time.Time) (i int) {
+	t = t.UTC()
+	i = int(t.Unix())
+	return
+}
+
+type SessionManager struct {
+	db *gorm.DB
 }
