@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
 	"gorm.io/gorm"
@@ -163,9 +165,15 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 		},
 		authManager.Login,
 	)
+	issuer := Settings.Auth.IssuerURL
+	if issuer == "" {
+		issuer = path.Join(
+			Settings.Addon.Hub.URL,
+			api.OIDCRoutes)
+	}
 	p.openId, err = provider.New(
 		goidc.ProfileOpenID,
-		Settings.Auth.Token.Key,
+		issuer,
 		func(ctx context.Context) (keySet goidc.JSONWebKeySet, err error) {
 			keySet = p.keySet
 			return

@@ -11,6 +11,7 @@ import (
 const (
 	EnvAuthRequired    = "AUTH_REQUIRED"
 	EnvBuiltinTokenKey = "ADDON_TOKEN"
+	EnvIssuerURL       = "ISSUER_URL"
 	EnvIdpEnabled      = "IDP_ENABLED"
 	EnvIdpName         = "IDP_NAME"
 	EnvIdpIssuerURL    = "IDP_ISSUER_URL"
@@ -27,6 +28,8 @@ type Auth struct {
 	Token struct {
 		Key string
 	}
+	// Issuer
+	IssuerURL string
 	// IDP settings
 	Idp struct {
 		Enabled      bool
@@ -44,7 +47,8 @@ func (r *Auth) Load() (err error) {
 	if !r.Required {
 		return
 	}
-	r.Token.Key = env.Get(EnvBuiltinTokenKey, "konveyor")
+	r.Token.Key = env.Get(EnvBuiltinTokenKey, "tackle")
+	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
 	r.Idp.Name = env.Get(EnvIdpName, "tackle")
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)

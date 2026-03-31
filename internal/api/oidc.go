@@ -11,22 +11,20 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const (
-	// oidcBasePath is the base path for builtin OIDC provider endpoints
-	oidcBasePath = "/oidc"
-)
-
 // OIDCHandler handles OIDC-related routes.
 type OIDCHandler struct {
 	BaseHandler
 }
 
-// AddRoutes adds routes for OIDC resources.
+// AddRoutes adds routes.
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
-	// OIDC routes
-	e.Any(api.OIDCRoutes+"/*path", gin.WrapH(auth.OIDC.Handler()))
+	// OIDC routes.
+	h2 := auth.OIDC.Handler()
+	h2 = http.StripPrefix(api.OIDCRoutes, h2)
+	routeGroup := e.Group(api.OIDCRoutes)
+	routeGroup.Any("/*path", gin.WrapH(h2))
 	// IdpIdentity routes
-	routeGroup := e.Group("/")
+	routeGroup = e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
 	routeGroup.GET(api.IdpIdentitiesRoute, h.IdpIdentityList)
 	routeGroup.GET(api.IdpIdentitiesRoute+"/", h.IdpIdentityList)
