@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
 
@@ -39,8 +40,8 @@ func TestPermission(t *testing.T) {
 	retrieved, err := client.Permission.Get(permission.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	g.Expect(retrieved.Name).To(Equal(permission.Name))
-	g.Expect(retrieved.Scope).To(Equal(permission.Scope))
+	eq, report := cmp.Eq(permission, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the permission
 	permission.Scope = "updatedscope"
@@ -52,7 +53,8 @@ func TestPermission(t *testing.T) {
 	updated, err := client.Permission.Get(permission.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	g.Expect(updated.Scope).To(Equal("updatedscope"))
+	eq, report = cmp.Eq(permission, updated, "UpdateUser")
+	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the permission
 	err = client.Permission.Delete(permission.ID)
