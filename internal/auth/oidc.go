@@ -373,7 +373,7 @@ type KeyManager struct {
 
 func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 	var keyList []*model.RsaKey
-	db := r.db.Order("CreateTime desc")
+	db := r.db.Order("id desc")
 	err = db.Find(&keyList).Error
 	if err != nil {
 		return

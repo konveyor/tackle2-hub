@@ -23,9 +23,8 @@ type OIDCHandler struct {
 
 // AddRoutes adds routes for OIDC resources.
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
-	//
-	e.Any(oidcBasePath+"/*path", gin.WrapH(auth.OIDC.Handler()))
-
+	// OIDC routes
+	e.Any(api.OIDCRoutes+"/*path", gin.WrapH(auth.OIDC.Handler()))
 	// IdpIdentity routes
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("idpidentities"))
@@ -35,7 +34,6 @@ func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.IdpIdentityRoute, h.IdpIdentityGet)
 	routeGroup.PUT(api.IdpIdentityRoute, h.IdpIdentityUpdate)
 	routeGroup.DELETE(api.IdpIdentityRoute, h.IdpIdentityDelete)
-
 	// User routes
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("users"), Transaction)
@@ -45,7 +43,6 @@ func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UserRoute, h.UserGet)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
-
 	// Role routes
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
@@ -55,7 +52,6 @@ func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.RoleRoute, h.RoleGet)
 	routeGroup.PUT(api.RoleRoute, h.RoleUpdate)
 	routeGroup.DELETE(api.RoleRoute, h.RoleDelete)
-
 	// Permission routes
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("permissions"))

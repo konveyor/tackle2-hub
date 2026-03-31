@@ -193,6 +193,7 @@ const (
 
 // Routes - OIDC
 const (
+	OIDCRoutes         = "/oidc"
 	IdpIdentitiesRoute = "/idpidentities"
 	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
 	UsersRoute         = "/users"
