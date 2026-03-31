@@ -27,7 +27,7 @@ func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	e.Any(api.OIDCRoutes+"/*path", gin.WrapH(auth.OIDC.Handler()))
 	// IdpIdentity routes
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("idpidentities"))
+	routeGroup.Use(Required("idp.identities"))
 	routeGroup.GET(api.IdpIdentitiesRoute, h.IdpIdentityList)
 	routeGroup.GET(api.IdpIdentitiesRoute+"/", h.IdpIdentityList)
 	routeGroup.POST(api.IdpIdentitiesRoute, h.IdpIdentityCreate)
