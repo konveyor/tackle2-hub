@@ -269,6 +269,37 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 			Log.Error(err, "")
 		}
 	}()
+	// Simple login form HTML
+	html := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Tackle Hub - Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; }
+        h1 { color: #333; }
+        form { background: #f5f5f5; padding: 20px; border-radius: 5px; }
+        input { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; width: 100%; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Tackle Hub Login</h1>
+    <form method="post">
+        <div>
+            <label>Username:</label>
+            <input type="text" name="userid" required autofocus />
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" name="password" required />
+        </div>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>`
+	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, err = writer.Write([]byte(html))
 	return
 }
 
