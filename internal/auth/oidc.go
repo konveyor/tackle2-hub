@@ -2,9 +2,15 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,9 +22,13 @@ import (
 	"gorm.io/gorm"
 )
 
+var OIDC *BuiltinProvider
+
+type KeySet = goidc.JSONWebKeySet
+
 type BuiltinProvider struct {
 	openId *provider.Provider
-	keySet goidc.JSONWebKeySet
+	keySet KeySet
 }
 
 func (p *BuiltinProvider) Handler() http.Handler {
@@ -138,25 +148,18 @@ func (p *BuiltinProvider) parseToken(request *Request) (token string, err error)
 // New creates a new OIDC Provider for the Hub
 func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	p = &BuiltinProvider{}
-	p.keySet = goidc.JSONWebKeySet{
-		Keys: []goidc.JSONWebKey{
-			{
-				KeyID:     "kid-1",
-				Algorithm: "RS256",
-				// Key: yourPrivateKey,   // TODO: add actual key here
-			},
-		},
-	}
-	tokenManager := &TokenManager{
-		db: db,
-	}
-	authManager := &AuthManager{
-		db: db,
+	keyManager := NewKeyManager(db)
+	authManager := NewAuthManager(db)
+	tokenManager := NewTokenManager(db)
+	clientManager := NewClientManager()
+	p.keySet, err = keyManager.KeySet()
+	if err != nil {
+		return
 	}
 	authPolicy := goidc.NewPolicy(
 		"main",
-		func(r *http.Request, client *goidc.Client, session *goidc.AuthnSession) bool {
-			return true // apply to all requests for now
+		func(*http.Request, *goidc.Client, *goidc.AuthnSession) bool {
+			return true
 		},
 		authManager.Login,
 	)
@@ -174,13 +177,18 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
 		provider.WithPolicies(authPolicy),
 		provider.WithTokenManager(tokenManager),
-		// provider.WithClientManager(gormClientManager)
-		// provider.WithAuthnSessionManager(gormSessionManager)
-		// provider.WithGrantManager(gormGrantManager)
+		provider.WithClientManager(clientManager),
 	)
 	if err != nil {
 		return
 	}
+	return
+}
+
+//
+// NewAuthManager returns an authn manager.
+func NewAuthManager(db *gorm.DB) (m *AuthManager) {
+	m = &AuthManager{db: db}
 	return
 }
 
@@ -231,6 +239,13 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 	return
 }
 
+//
+// NewTokenManager returns a token manager.
+func NewTokenManager(db *gorm.DB) (m *TokenManager) {
+	m = &TokenManager{db: db}
+	return
+}
+
 type TokenManager struct {
 	db *gorm.DB
 }
@@ -252,6 +267,10 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 		return
 	}
 	m.UserID = user.ID
+	err = secret.Encrypt(m)
+	if err != nil {
+		return
+	}
 	err = r.db.Save(m).Error
 	return
 }
@@ -259,6 +278,10 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
 	m := model.Token{}
 	err = r.db.First(&m, "tokenId", id).Error
+	if err != nil {
+		return
+	}
+	err = secret.Decrypt(m)
 	if err != nil {
 		return
 	}
@@ -299,6 +322,114 @@ func (r *TokenManager) asInt(t time.Time) (i int) {
 	return
 }
 
-type SessionManager struct {
+//
+// NewClientManager creates a new client manager.
+func NewClientManager() (m *ClientManager) {
+	m = &ClientManager{
+		clients: make(map[string]*goidc.Client),
+	}
+	return
+}
+
+// ClientManager provides in-memory storage for OIDC clients.
+type ClientManager struct {
+	mutex   sync.RWMutex
+	clients map[string]*goidc.Client
+}
+
+// Save stores a client.
+func (r *ClientManager) Save(ctx context.Context, client *goidc.Client) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.clients[client.ID] = client
+	return
+}
+
+// Client retrieves a client by ID.
+func (r *ClientManager) Client(ctx context.Context, id string) (client *goidc.Client, err error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	client, found := r.clients[id]
+	if !found {
+		err = goidc.ErrNotFound
+		return
+	}
+	return
+}
+
+// Delete removes a client by ID.
+func (r *ClientManager) Delete(ctx context.Context, id string) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.clients, id)
+	return
+}
+
+func NewKeyManager(db *gorm.DB) (m *KeyManager) {
+	m = &KeyManager{db: db}
+	return
+}
+
+type KeyManager struct {
 	db *gorm.DB
+}
+
+func (r *KeyManager) KeySet() (keySet KeySet, err error) {
+	var keyList []*model.RsaKey
+	db := r.db.Order("CreateTime desc")
+	err = db.Find(&keyList).Error
+	if err != nil {
+		return
+	}
+	for _, m := range keyList {
+		err = secret.Decrypt(m)
+		if err != nil {
+			return
+		}
+		b := []byte(m.PEM)
+		decoded, _ := pem.Decode(b)
+		var key *rsa.PrivateKey
+		key, err = x509.ParsePKCS1PrivateKey(decoded.Bytes)
+		if err != nil {
+			return
+		}
+		jwKey := r.jwKey(m.ID, key)
+		keySet.Keys = append(keySet.Keys, jwKey)
+	}
+	if len(keySet.Keys) == 0 {
+		key, m := r.newKey()
+		jwKey := r.jwKey(m.ID, key)
+		keySet.Keys = append(keySet.Keys, jwKey)
+		err = secret.Encrypt(m)
+		if err != nil {
+			return
+		}
+		err = db.Create(&m).Error
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
+	m = &model.RsaKey{}
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err)
+	}
+	b := x509.MarshalPKCS1PrivateKey(key)
+	b = pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: b,
+	})
+	m.PEM = string(b)
+	return
+}
+
+func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
+	k2.Key = strconv.Itoa(int(id))
+	k2.Algorithm = "RS256"
+	k2.Key = k
+	return
 }

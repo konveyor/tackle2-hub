@@ -257,6 +257,11 @@ type Permission struct {
 	Scope string `gorm:"not null"`
 }
 
+type RsaKey struct {
+	Model
+	PEM string `gorm:"not null" secret:""`
+}
+
 //
 // JSON Fields.
 //

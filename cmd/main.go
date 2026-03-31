@@ -128,6 +128,10 @@ func main() {
 	if settings.Settings.Auth.Required {
 		auth.Hub = &auth.Builtin{}
 	}
+	auth.OIDC, err = auth.New(db)
+	if err != nil {
+		return
+	}
 	//
 	// Task
 	taskManager := task.New(db, client)

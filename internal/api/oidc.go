@@ -23,16 +23,8 @@ type OIDCHandler struct {
 
 // AddRoutes adds routes for OIDC resources.
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
-	// Mount builtin OIDC provider if enabled and no external IssuerURL
-	if Settings.Auth.Idp.Enabled && Settings.Auth.Idp.IssuerURL == "" {
-		hubProvider, err := auth.New(nil)
-		if err == nil {
-			// Mount the OIDC provider handler at /oidc
-			e.Any(oidcBasePath+"/*path", gin.WrapH(hubProvider.Handler()))
-		} else {
-			Log.Error(err, "Failed to initialize builtin OIDC provider")
-		}
-	}
+	//
+	e.Any(oidcBasePath+"/*path", gin.WrapH(auth.OIDC.Handler()))
 
 	// IdpIdentity routes
 	routeGroup := e.Group("/")
@@ -231,7 +223,11 @@ func (h OIDCHandler) UserGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
+	err = h.Decrypt(ctx, m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := OIDCUser{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -254,8 +250,14 @@ func (h OIDCHandler) UserList(ctx *gin.Context) {
 	}
 	resources := []OIDCUser{}
 	for i := range list {
+		m := &list[i]
+		err = h.Decrypt(ctx, m)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 		r := OIDCUser{}
-		r.With(&list[i])
+		r.With(m)
 		resources = append(resources, r)
 	}
 
@@ -280,12 +282,16 @@ func (h OIDCHandler) UserCreate(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
+	err = h.Encrypt(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -323,6 +329,11 @@ func (h OIDCHandler) UserUpdate(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
+	err = h.Encrypt(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Save(m).Error

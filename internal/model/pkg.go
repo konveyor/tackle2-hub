@@ -59,6 +59,7 @@ type User = model.User
 type Role = model.Role
 type Permission = model.Permission
 type Token = model.Token
+type RsaKey = model.RsaKey
 
 // JSON fields
 type Ref = json.Ref
