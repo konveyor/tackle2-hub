@@ -232,8 +232,8 @@ type Token struct {
 	Issued     time.Time `gorm:"not null"`
 	Expiration time.Time
 	Revoked    time.Time
-	UserID     uint `gorm:"index"`
-	User       User `gorm:"constraint:OnDelete:CASCADE"`
+	UserID     *uint `gorm:"index"`
+	User       *User `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type User struct {
