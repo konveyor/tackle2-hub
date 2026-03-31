@@ -14,10 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	Role = "role"
-)
-
 // Params.
 const (
 	AppId = "application"

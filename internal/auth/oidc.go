@@ -185,7 +185,6 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	return
 }
 
-//
 // NewAuthManager returns an authn manager.
 func NewAuthManager(db *gorm.DB) (m *AuthManager) {
 	m = &AuthManager{db: db}
@@ -239,7 +238,6 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 	return
 }
 
-//
 // NewTokenManager returns a token manager.
 func NewTokenManager(db *gorm.DB) (m *TokenManager) {
 	m = &TokenManager{db: db}
@@ -322,7 +320,6 @@ func (r *TokenManager) asInt(t time.Time) (i int) {
 	return
 }
 
-//
 // NewClientManager creates a new client manager.
 func NewClientManager() (m *ClientManager) {
 	m = &ClientManager{

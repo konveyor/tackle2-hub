@@ -89,7 +89,7 @@ func (h OIDCHandler) IdpIdentityGet(ctx *gin.Context) {
 		return
 	}
 
-	r := OIDCIdpIdentity{}
+	r := IdpIdentity{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -109,9 +109,9 @@ func (h OIDCHandler) IdpIdentityList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	resources := []OIDCIdpIdentity{}
+	resources := []IdpIdentity{}
 	for i := range list {
-		r := OIDCIdpIdentity{}
+		r := IdpIdentity{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -129,7 +129,7 @@ func (h OIDCHandler) IdpIdentityList(ctx *gin.Context) {
 // @router /idpidentities [post]
 // @param idpidentity body api.IdpIdentity true "IdpIdentity data"
 func (h OIDCHandler) IdpIdentityCreate(ctx *gin.Context) {
-	r := &OIDCIdpIdentity{}
+	r := &IdpIdentity{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -158,7 +158,7 @@ func (h OIDCHandler) IdpIdentityCreate(ctx *gin.Context) {
 // @param idpidentity body api.IdpIdentity true "IdpIdentity data"
 func (h OIDCHandler) IdpIdentityUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &OIDCIdpIdentity{}
+	r := &IdpIdentity{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -228,7 +228,7 @@ func (h OIDCHandler) UserGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r := OIDCUser{}
+	r := User{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -248,7 +248,7 @@ func (h OIDCHandler) UserList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	resources := []OIDCUser{}
+	resources := []User{}
 	for i := range list {
 		m := &list[i]
 		err = h.Decrypt(ctx, m)
@@ -256,7 +256,7 @@ func (h OIDCHandler) UserList(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
-		r := OIDCUser{}
+		r := User{}
 		r.With(m)
 		resources = append(resources, r)
 	}
@@ -274,7 +274,7 @@ func (h OIDCHandler) UserList(ctx *gin.Context) {
 // @router /users [post]
 // @param user body api.User true "User data"
 func (h OIDCHandler) UserCreate(ctx *gin.Context) {
-	r := &OIDCUser{}
+	r := &User{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -320,7 +320,7 @@ func (h OIDCHandler) UserCreate(ctx *gin.Context) {
 // @param user body api.User true "User data"
 func (h OIDCHandler) UserUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &OIDCUser{}
+	r := &User{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -397,7 +397,7 @@ func (h OIDCHandler) RoleGet(ctx *gin.Context) {
 		return
 	}
 
-	r := OIDCRole{}
+	r := Role{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -417,9 +417,9 @@ func (h OIDCHandler) RoleList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	resources := []OIDCRole{}
+	resources := []Role{}
 	for i := range list {
-		r := OIDCRole{}
+		r := Role{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -437,7 +437,7 @@ func (h OIDCHandler) RoleList(ctx *gin.Context) {
 // @router /roles [post]
 // @param role body api.Role true "Role data"
 func (h OIDCHandler) RoleCreate(ctx *gin.Context) {
-	r := &OIDCRole{}
+	r := &Role{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -479,7 +479,7 @@ func (h OIDCHandler) RoleCreate(ctx *gin.Context) {
 // @param role body api.Role true "Role data"
 func (h OIDCHandler) RoleUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &OIDCRole{}
+	r := &Role{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -551,7 +551,7 @@ func (h OIDCHandler) PermissionGet(ctx *gin.Context) {
 		return
 	}
 
-	r := OIDCPermission{}
+	r := Permission{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
 }
@@ -571,9 +571,9 @@ func (h OIDCHandler) PermissionList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	resources := []OIDCPermission{}
+	resources := []Permission{}
 	for i := range list {
-		r := OIDCPermission{}
+		r := Permission{}
 		r.With(&list[i])
 		resources = append(resources, r)
 	}
@@ -591,7 +591,7 @@ func (h OIDCHandler) PermissionList(ctx *gin.Context) {
 // @router /permissions [post]
 // @param permission body api.Permission true "Permission data"
 func (h OIDCHandler) PermissionCreate(ctx *gin.Context) {
-	r := &OIDCPermission{}
+	r := &Permission{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -620,7 +620,7 @@ func (h OIDCHandler) PermissionCreate(ctx *gin.Context) {
 // @param permission body api.Permission true "Permission data"
 func (h OIDCHandler) PermissionUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	r := &OIDCPermission{}
+	r := &Permission{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -664,8 +664,8 @@ func (h OIDCHandler) PermissionDelete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-// Type aliases for resources
-type OIDCIdpIdentity = resource.IdpIdentity
-type OIDCUser = resource.User
-type OIDCRole = resource.Role
-type OIDCPermission = resource.Permission
+// OIDC REST Resources.
+type IdpIdentity = resource.IdpIdentity
+type User = resource.User
+type Role = resource.Role
+type Permission = resource.Permission
