@@ -65,6 +65,9 @@ type RichClient struct {
 	TaskGroup        taskgroup.TaskGroup
 	Ticket           Ticket
 	Tracker          Tracker
+	User             User
+	Role             Role
+	Permission       Permission
 }
 
 // Use login.
@@ -123,4 +126,7 @@ func (r *RichClient) build(client RestClient) {
 	r.TaskGroup = taskgroup.New(client)
 	r.Ticket = Ticket{client: client}
 	r.Tracker = Tracker{client: client}
+	r.User = User{client: client}
+	r.Role = Role{client: client}
+	r.Permission = Permission{client: client}
 }
