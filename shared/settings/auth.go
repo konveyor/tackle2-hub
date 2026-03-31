@@ -11,7 +11,10 @@ import (
 const (
 	EnvAuthRequired    = "AUTH_REQUIRED"
 	EnvBuiltinTokenKey = "ADDON_TOKEN"
-	EnvIssuerURL       = "ISSUER_URL"
+	EnvIssuerURL       = "OIDC_ISSUER_URL"
+	EnvClientID        = "OIDC_CLIENT_ID"
+	EnvClientName      = "OIDC_CLIENT_NAME"
+	EnvClientSecret    = "OIDC_CLIENT_SECRET"
 	EnvIdpEnabled      = "IDP_ENABLED"
 	EnvIdpName         = "IDP_NAME"
 	EnvIdpIssuerURL    = "IDP_ISSUER_URL"
@@ -30,7 +33,12 @@ type Auth struct {
 	}
 	// Issuer
 	IssuerURL string
-	// IDP settings
+	Client    struct {
+		ID     string
+		Name   string
+		Secret string
+	}
+	// IDP (identity-provider) settings
 	Idp struct {
 		Enabled      bool
 		Name         string
@@ -49,6 +57,9 @@ func (r *Auth) Load() (err error) {
 	}
 	r.Token.Key = env.Get(EnvBuiltinTokenKey, "tackle")
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
+	r.Client.ID = env.Get(EnvClientID, "main")
+	r.Client.Name = env.Get(EnvClientName, "main")
+	r.Client.Secret = env.Get(EnvClientSecret, "tackle")
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
 	r.Idp.Name = env.Get(EnvIdpName, "tackle")
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)

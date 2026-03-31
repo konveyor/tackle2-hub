@@ -11,7 +11,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -153,7 +152,6 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
 	tokenManager := NewTokenManager(db)
-	clientManager := NewClientManager()
 	p.keySet, err = keyManager.KeySet()
 	if err != nil {
 		return
@@ -179,14 +177,32 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 			return
 		},
 		provider.WithGrantTypes(
+			goidc.GrantClientCredentials,
 			goidc.GrantAuthorizationCode,
 			goidc.GrantRefreshToken,
 		),
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
-		provider.WithPolicies(authPolicy),
 		provider.WithTokenManager(tokenManager),
-		provider.WithClientManager(clientManager),
+		provider.WithPolicies(authPolicy),
 	)
+	if err != nil {
+		return
+	}
+	client := &goidc.Client{}
+	client.ID = Settings.Auth.Client.ID
+	client.Name = Settings.Auth.Client.Name
+	client.Secret = Settings.Auth.Client.Secret
+	client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
+	client.ScopeIDs = "openid profile email"
+	client.GrantTypes = []goidc.GrantType{
+		goidc.GrantClientCredentials,
+		goidc.GrantAuthorizationCode,
+		goidc.GrantRefreshToken,
+	}
+	client.RedirectURIs = []string{
+		path.Join(issuer, "/callback"),
+	}
+	err = p.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		return
 	}
@@ -325,48 +341,6 @@ func (r *TokenManager) asTime(n int) (t time.Time) {
 func (r *TokenManager) asInt(t time.Time) (i int) {
 	t = t.UTC()
 	i = int(t.Unix())
-	return
-}
-
-// NewClientManager creates a new client manager.
-func NewClientManager() (m *ClientManager) {
-	m = &ClientManager{
-		clients: make(map[string]*goidc.Client),
-	}
-	return
-}
-
-// ClientManager provides in-memory storage for OIDC clients.
-type ClientManager struct {
-	mutex   sync.RWMutex
-	clients map[string]*goidc.Client
-}
-
-// Save stores a client.
-func (r *ClientManager) Save(ctx context.Context, client *goidc.Client) (err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	r.clients[client.ID] = client
-	return
-}
-
-// Client retrieves a client by ID.
-func (r *ClientManager) Client(ctx context.Context, id string) (client *goidc.Client, err error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	client, found := r.clients[id]
-	if !found {
-		err = goidc.ErrNotFound
-		return
-	}
-	return
-}
-
-// Delete removes a client by ID.
-func (r *ClientManager) Delete(ctx context.Context, id string) (err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	delete(r.clients, id)
 	return
 }
 
