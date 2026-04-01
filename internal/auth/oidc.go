@@ -35,7 +35,7 @@ type BuiltinProvider struct {
 	keySet KeySet
 }
 
-// Hander returns an http handler.
+// Handler returns an http handler.
 func (p *BuiltinProvider) Handler() http.Handler {
 	return p.openId.Handler()
 }
@@ -154,7 +154,7 @@ func (p *BuiltinProvider) parseToken(request *Request) (token string, err error)
 
 // New returns a configured provider.
 func New(db *gorm.DB) (p *BuiltinProvider, err error) {
-	p = &BuiltinProvider{}
+	p = &BuiltinProvider{db: db}
 	grantManager := NewGrantManager(db)
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
@@ -592,10 +592,7 @@ func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, 
 	m := &model.Grant{}
 	err = r.db.First(m, "grantId", id).Error
 	if err != nil {
-		if err != nil {
-			err = notFound(err)
-			return
-		}
+		err = notFound(err)
 		return
 	}
 	grant, err = r.grant(m)
@@ -693,8 +690,6 @@ func (r *GrantManager) revoked(grant *model.Grant) (err error) {
 	return
 }
 
-//
-
 // notFound returns goidc.ErrNotFound when
 // err IsA gorm.ErrRecordNotFound.
 // Else, wrapped.
@@ -703,9 +698,9 @@ func notFound(err error) (e2 error) {
 		return
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		err = goidc.ErrNotFound
+		e2 = goidc.ErrNotFound
 	} else {
-		err = liberr.Wrap(err)
+		e2 = liberr.Wrap(err)
 	}
 	return
 }
