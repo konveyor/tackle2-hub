@@ -175,6 +175,11 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 			keySet = p.keySet
 			return
 		},
+		provider.WithScopes(
+			goidc.ScopeOpenID,
+			goidc.ScopeProfile,
+			goidc.ScopeEmail,
+		),
 		provider.WithGrantTypes(
 			goidc.GrantClientCredentials,
 			goidc.GrantAuthorizationCode,
@@ -198,6 +203,9 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 		goidc.GrantClientCredentials,
 		goidc.GrantAuthorizationCode,
 		goidc.GrantRefreshToken,
+	}
+	client.ResponseTypes = []goidc.ResponseType{
+		goidc.ResponseTypeCode,
 	}
 	client.RedirectURIs = []string{
 		issuer + "/callback",
