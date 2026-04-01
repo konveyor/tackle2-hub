@@ -377,8 +377,8 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 			Log.Error(err, "")
 		}
 	}()
-	m := model.Token{}
-	err = r.db.First(&m, "tokenId", id).Error
+	m := &model.Token{}
+	err = r.db.First(m, "tokenId", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = goidc.ErrNotFound
@@ -404,13 +404,26 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	return
 }
 
+func (r *TokenManager) ByRefreshToken(token string) (m *model.Token, err error) {
+	err = r.db.First(m, "refreshToken", token).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = goidc.ErrNotFound
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	return
+}
+
 func (r *TokenManager) Delete(ctx context.Context, id string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
-	m := model.Token{}
+	m := &model.Token{}
 	err = r.db.Delete(m, "tokenId", id).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -424,7 +437,7 @@ func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err erro
 			Log.Error(err, "")
 		}
 	}()
-	m := model.Token{}
+	m := &model.Token{}
 	err = r.db.Delete(m, "grantId", id).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -578,6 +591,10 @@ func (r *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (g
 		}
 		return
 	}
+	err = r.revoked(m)
+	if err != nil {
+		return
+	}
 	grant, err = r.grant(m)
 	return
 }
@@ -619,6 +636,18 @@ func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
+	}
+	return
+}
+
+func (r *GrantManager) revoked(grant *model.Grant) (err error) {
+	tokenManager := NewTokenManager(r.db)
+	token, err := tokenManager.ByRefreshToken(grant.RefreshToken)
+	if err != nil {
+		return
+	}
+	if !token.Revoked.IsZero() {
+		grant.Expiration = token.Revoked
 	}
 	return
 }
