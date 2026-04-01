@@ -275,6 +275,172 @@ func TestRefreshTokenFlow(t *testing.T) {
 	g.Expect(newTokenResp.AccessToken).NotTo(BeEmpty())
 }
 
+// TestAuthorizationCodeFlowWithRoles tests that user roles inject scopes into tokens.
+func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create permission with custom scope
+	permission := api.Permission{
+		Name:  "Admin Access",
+		Scope: "admin",
+	}
+	err := client.Permission.Create(&permission)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Permission.Delete(permission.ID)
+	})
+
+	// Create role with permission
+	role := api.Role{
+		Name: "Admin Role",
+		Permissions: []api.Ref{
+			{ID: permission.ID, Name: permission.Name},
+		},
+	}
+	err = client.Role.Create(&role)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Role.Delete(role.ID)
+	})
+
+	// Create test user with role
+	user := api.User{
+		Name:     "oidc-role-test-user",
+		Email:    "oidc-role-test@example.com",
+		Password: "oidc-role-test-password",
+		Roles: []api.Ref{
+			{ID: role.ID, Name: role.Name},
+		},
+	}
+	err = client.User.Create(&user)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.User.Delete(user.ID)
+	})
+
+	// Get issuer from discovery
+	resp, err := http.Get(Settings.Addon.Hub.URL + api.OIDCRoutes + "/.well-known/openid-configuration")
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	var discovery map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&discovery)
+	g.Expect(err).To(BeNil())
+	issuer := discovery["issuer"].(string)
+
+	// Use plaintext password
+	username := user.Name
+	password := "oidc-role-test-password"
+
+	// Create HTTP client with cookie jar
+	jar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: jar,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	// Generate PKCE challenge
+	verifier := "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+	hash := sha256.Sum256([]byte(verifier))
+	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
+
+	// Step 1: Request authorization
+	redirectURI := issuer + "/callback"
+	authURL := issuer + "/authorize?" +
+		"client_id=" + Settings.Auth.Client.ID +
+		"&redirect_uri=" + url.QueryEscape(redirectURI) +
+		"&response_type=code" +
+		"&scope=openid+profile+email" +
+		"&code_challenge=" + challenge +
+		"&code_challenge_method=S256"
+
+	resp, err = httpClient.Get(authURL)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	body, _ := io.ReadAll(resp.Body)
+	html := string(body)
+
+	callbackID := extractCallbackID(html)
+	g.Expect(callbackID).NotTo(BeEmpty())
+
+	// Step 2: Submit login form
+	loginURL := issuer + "/authorize/" + callbackID
+	loginForm := url.Values{}
+	loginForm.Set("userid", username)
+	loginForm.Set("password", password)
+
+	resp, err = httpClient.PostForm(loginURL, loginForm)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
+	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
+	location := resp.Header.Get("Location")
+
+	parsedURL, err := url.Parse(location)
+	g.Expect(err).To(BeNil())
+	code := parsedURL.Query().Get("code")
+	g.Expect(code).NotTo(BeEmpty())
+
+	// Step 3: Exchange code for tokens
+	tokenForm := url.Values{}
+	tokenForm.Set("grant_type", "authorization_code")
+	tokenForm.Set("code", code)
+	tokenForm.Set("redirect_uri", redirectURI)
+	tokenForm.Set("client_id", Settings.Auth.Client.ID)
+	tokenForm.Set("client_secret", Settings.Auth.Client.Secret)
+	tokenForm.Set("code_verifier", verifier)
+
+	resp, err = http.PostForm(issuer+"/token", tokenForm)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+	var tokenResp struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenResp.AccessToken).NotTo(BeEmpty())
+
+	// Decode JWT to verify scopes (base64 decode the payload, no signature verification needed)
+	parts := strings.Split(tokenResp.AccessToken, ".")
+	g.Expect(parts).To(HaveLen(3))
+
+	// Decode payload (second part)
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	g.Expect(err).To(BeNil())
+
+	var claims map[string]interface{}
+	err = json.Unmarshal(payload, &claims)
+	g.Expect(err).To(BeNil())
+
+	// Verify scope claim contains both original scopes and injected "admin" scope
+	scopeStr, ok := claims["scope"].(string)
+	g.Expect(ok).To(BeTrue())
+
+	scopes := strings.Fields(scopeStr)
+	g.Expect(scopes).To(ContainElement("openid"))
+	g.Expect(scopes).To(ContainElement("profile"))
+	g.Expect(scopes).To(ContainElement("email"))
+	g.Expect(scopes).To(ContainElement("admin")) // ← Injected scope from permission
+
+	// Test using the access token with admin scope
+	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenResp.AccessToken)
+
+	apiResp, err := http.DefaultClient.Do(req)
+	g.Expect(err).To(BeNil())
+	defer apiResp.Body.Close()
+	g.Expect(apiResp.StatusCode).To(Equal(http.StatusOK))
+}
+
 // extractCallbackID extracts the callback ID from the login form HTML.
 func extractCallbackID(html string) string {
 	// Find form action attribute

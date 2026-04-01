@@ -11,6 +11,7 @@ type User api.User
 // With converts model to REST resource.
 func (r *User) With(m *model.User) {
 	baseWith(&r.Resource, &m.Model)
+	r.UUID = m.UUID
 	r.Name = m.Name
 	r.Password = m.Password
 	r.Email = m.Email
@@ -23,6 +24,7 @@ func (r *User) With(m *model.User) {
 // Model converts REST resource to model.
 func (r *User) Model() (m *model.User) {
 	m = &model.User{
+		UUID:     r.UUID,
 		Name:     r.Name,
 		Password: r.Password,
 		Email:    r.Email,

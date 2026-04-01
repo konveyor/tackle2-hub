@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -275,6 +276,7 @@ func (h OIDCHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.UUID = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
 	err = h.Encrypt(m)
 	if err != nil {

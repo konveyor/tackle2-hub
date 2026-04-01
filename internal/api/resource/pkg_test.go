@@ -3397,6 +3397,7 @@ func TestUser_With(t *testing.T) {
 			CreateUser: "admin",
 		},
 		Name:     "john.doe",
+		UUID:     "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
 		Roles: []model.Role{
@@ -3409,6 +3410,7 @@ func TestUser_With(t *testing.T) {
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.UUID).To(gomega.Equal(m.UUID))
 	g.Expect(r.Name).To(gomega.Equal("john.doe"))
 	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
@@ -3426,6 +3428,7 @@ func TestUser_Model(t *testing.T) {
 	r := &User{
 		Resource: Resource{ID: 1},
 		Name:     "john.doe",
+		UUID:     "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
 		Roles: []Ref{
@@ -3437,6 +3440,7 @@ func TestUser_Model(t *testing.T) {
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.UUID).To(gomega.Equal(r.UUID))
 	g.Expect(m.Name).To(gomega.Equal("john.doe"))
 	g.Expect(m.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(m.Email).To(gomega.Equal("john.doe@example.com"))

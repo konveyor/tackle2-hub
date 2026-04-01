@@ -99,6 +99,7 @@ func TestUser(t *testing.T) {
 
 	// Verify basic fields
 	g.Expect(retrieved.Name).To(Equal(user.Name))
+	g.Expect(retrieved.UUID).ToNot(BeZero()) // assigned.
 	g.Expect(retrieved.Email).To(Equal(user.Email))
 
 	// Verify roles are associated

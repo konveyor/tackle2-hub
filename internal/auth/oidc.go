@@ -20,6 +20,7 @@ import (
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // OIDC is the singleton auth provider.
@@ -734,9 +735,9 @@ func (r *GrantManager) injectScopes(grant *goidc.Grant) (err error) {
 		return
 	}
 	user := &model.User{}
-	db := r.db.Preload("Roles")
+	db := r.db.Preload(clause.Associations)
 	db = db.Preload("Roles.Permissions")
-	err = r.db.First(user, "uuid", grant.Subject).Error
+	err = db.First(user, "uuid", grant.Subject).Error
 	if err != nil {
 		err = notFound(err)
 		return
