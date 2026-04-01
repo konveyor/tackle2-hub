@@ -192,6 +192,7 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 			goidc.GrantRefreshToken,
 		),
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
+		provider.WithTokenOptions(grantManager.tokenOptions),
 		provider.WithTokenManager(tokenManager),
 		provider.WithGrantManager(grantManager),
 		provider.WithPolicies(authPolicy),
@@ -573,10 +574,6 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 			Log.Error(err, "")
 		}
 	}()
-	err = r.injectScopes(grant)
-	if err != nil {
-		return
-	}
 	m := &model.Grant{
 		GrantId:      grant.ID,
 		ClientId:     grant.ClientID,
@@ -610,7 +607,10 @@ func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, 
 		return
 	}
 	grant, err = r.grant(m)
-
+	if err != nil {
+		return
+	}
+	err = r.injectScopes(grant)
 	return
 }
 
@@ -755,9 +755,33 @@ func (r *GrantManager) injectScopes(grant *goidc.Grant) (err error) {
 			unique[permission.Scope] = 0
 		}
 	}
-	grant.Scopes = ""
+	scopes := make([]string, 0, len(unique))
 	for scope := range unique {
-		grant.Scopes += scope + " "
+		scopes = append(scopes, scope)
+	}
+	grant.Scopes = strings.Join(scopes, " ")
+	return
+}
+
+// tokenOptions returns the token options for the specified grant.
+func (r *GrantManager) tokenOptions(
+	_ context.Context,
+	grant *goidc.Grant,
+	client *goidc.Client) (opt goidc.TokenOptions) {
+	//
+	opt = goidc.NewJWTTokenOptions(goidc.RS256, 300)
+	if grant.Scopes == "" {
+		grant.Scopes = client.ScopeIDs
+	}
+	scopes := grant.Scopes
+	err := r.injectScopes(grant)
+	if err != nil {
+		Log.Error(
+			err,
+			"Failed to inject permission scopes.",
+			"GrantId", grant.ID,
+			"Subject", grant.Subject)
+		grant.Scopes = scopes
 	}
 	return
 }
