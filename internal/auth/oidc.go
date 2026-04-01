@@ -191,6 +191,7 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 		provider.WithPolicies(authPolicy),
 	)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	client := &goidc.Client{}
@@ -212,6 +213,7 @@ func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	}
 	err = p.openId.SaveClient(context.Background(), client)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	return
@@ -243,7 +245,7 @@ func (r *AuthManager) Login(
 		password = request.PostFormValue("password")
 	}
 	if userid == "" || password == "" {
-		err = r.renderPage(writer, request)
+		err = r.renderPage(writer, request, session)
 		status = goidc.StatusInProgress
 		return
 	}
@@ -251,7 +253,7 @@ func (r *AuthManager) Login(
 	err = r.db.First(user, "name", userid).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = r.renderPage(writer, request)
+			err = r.renderPage(writer, request, session)
 			status = goidc.StatusInProgress
 			err = nil
 		}
@@ -259,10 +261,11 @@ func (r *AuthManager) Login(
 	}
 	err = secret.Decrypt(user)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	if password != user.Password {
-		err = r.renderPage(writer, request)
+		err = r.renderPage(writer, request, session)
 		status = goidc.StatusInProgress
 		return
 	}
@@ -271,13 +274,17 @@ func (r *AuthManager) Login(
 	return
 }
 
-func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Request) (err error) {
+func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Request, session *goidc.AuthnSession) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
-	// Simple login form HTML
+	issuer := Settings.Auth.IssuerURL
+	if issuer == "" {
+		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
+	}
+	// Simple login form HTML - POST to callback URL with session CallbackID
 	html := `<!DOCTYPE html>
 <html>
 <head>
@@ -293,7 +300,7 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 </head>
 <body>
     <h1>Tackle Hub Login</h1>
-    <form method="post">
+    <form action="` + issuer + `/authorize/` + session.CallbackID + `" method="post">
         <div>
             <label>Username:</label>
             <input type="text" name="userid" required autofocus />
@@ -308,6 +315,10 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 </html>`
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, err = writer.Write([]byte(html))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
@@ -355,6 +366,7 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 	}
 	err = secret.Encrypt(m)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = r.db.Save(m).Error
@@ -370,6 +382,7 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	m := model.Token{}
 	err = r.db.First(&m, "tokenId", id).Error
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = secret.Decrypt(m)
@@ -397,6 +410,9 @@ func (r *TokenManager) Delete(ctx context.Context, id string) (err error) {
 	}()
 	m := model.Token{}
 	err = r.db.Delete(m, "tokenId", id).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
 	return
 }
 
@@ -408,6 +424,10 @@ func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err erro
 	}()
 	m := model.Token{}
 	err = r.db.Delete(m, "grantId", id).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
@@ -437,11 +457,13 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 	db := r.db.Order("id desc")
 	err = db.Find(&keyList).Error
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range keyList {
 		err = secret.Decrypt(m)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		b := []byte(m.PEM)
@@ -449,6 +471,7 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 		var key *rsa.PrivateKey
 		key, err = x509.ParsePKCS1PrivateKey(decoded.Bytes)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		jwKey := r.jwKey(m.ID, key)
@@ -460,10 +483,12 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 		keySet.Keys = append(keySet.Keys, jwKey)
 		err = secret.Encrypt(m)
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 		err = db.Create(&m).Error
 		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
 	}
