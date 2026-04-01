@@ -558,21 +558,7 @@ func (r *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant
 		}
 		return
 	}
-	grant = &goidc.Grant{
-		ID:                 m.GrantId,
-		ClientID:           m.ClientId,
-		Subject:            m.Subject,
-		RefreshToken:       m.RefreshToken,
-		AuthCode:           m.AuthCode,
-		Type:               goidc.GrantType(m.Type),
-		Scopes:             m.Scopes,
-		ExpiresAtTimestamp: asInt(m.Expiration),
-	}
-	err = secret.Decrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
+	grant, err = r.grant(m)
 	return
 }
 
@@ -592,7 +578,7 @@ func (r *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (g
 		}
 		return
 	}
-	grant, err = r.Grant(ctx, m.GrantId)
+	grant, err = r.grant(m)
 	return
 }
 
@@ -615,6 +601,25 @@ func (r *GrantManager) DeleteByAuthCode(ctx context.Context, authCode string) (e
 	}()
 	m := &model.Grant{}
 	err = r.db.First(m, "authCode", authCode).Error
+	return
+}
+
+func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
+	grant = &goidc.Grant{
+		ID:                 m.GrantId,
+		ClientID:           m.ClientId,
+		Subject:            m.Subject,
+		RefreshToken:       m.RefreshToken,
+		AuthCode:           m.AuthCode,
+		Type:               goidc.GrantType(m.Type),
+		Scopes:             m.Scopes,
+		ExpiresAtTimestamp: asInt(m.Expiration),
+	}
+	err = secret.Decrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
