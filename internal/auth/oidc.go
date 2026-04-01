@@ -572,8 +572,9 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 			Log.Error(err, "")
 		}
 	}()
-	if grant.Type == goidc.GrantAuthorizationCode {
-
+	err = r.injectScopes(grant)
+	if err != nil {
+		return
 	}
 	m := &model.Grant{
 		GrantId:      grant.ID,
@@ -723,6 +724,39 @@ func (r *GrantManager) orphaned(grant *model.Grant) (err error) {
 	}
 	if count == 0 {
 		grant.Expiration = time.Now().UTC()
+	}
+	return
+}
+
+// injectScopes injects user scopes into the grant.
+func (r *GrantManager) injectScopes(grant *goidc.Grant) (err error) {
+	if grant.Type != goidc.GrantAuthorizationCode {
+		return
+	}
+	user := &model.User{}
+	db := r.db.Preload("Roles")
+	db = db.Preload("Roles.Permissions")
+	err = r.db.First(user, "uuid", grant.Subject).Error
+	if err != nil {
+		err = notFound(err)
+		return
+	}
+	if len(user.Roles) == 0 {
+		return
+	}
+	unique := make(map[string]byte)
+	for _, scope := range strings.Fields(grant.Scopes) {
+		scope = strings.TrimSpace(scope)
+		unique[scope] = 0
+	}
+	for _, role := range user.Roles {
+		for _, permission := range role.Permissions {
+			unique[permission.Scope] = 0
+		}
+	}
+	grant.Scopes = ""
+	for scope := range unique {
+		grant.Scopes += scope + " "
 	}
 	return
 }
