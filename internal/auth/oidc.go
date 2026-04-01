@@ -358,18 +358,9 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 		Issued:     asTime(token.CreatedAtTimestamp),
 		Expiration: asTime(token.ExpiresAtTimestamp),
 	}
-	gm := NewGrantManager(r.db)
-	grant, err := gm.Grant(ctx, token.GrantID)
+	m.UserID, err = r.getUser(token)
 	if err != nil {
 		return
-	}
-	if grant.Type != goidc.GrantClientCredentials {
-		user := &model.User{}
-		err = r.db.First(user, "uuid", token.Subject).Error
-		if err != nil {
-			return
-		}
-		m.UserID = &user.ID
 	}
 	err = secret.Encrypt(m)
 	if err != nil {
@@ -451,13 +442,32 @@ func (r *TokenManager) DeleteByGrantID(_ context.Context, id string) (err error)
 	return
 }
 
+// GetUser returns the user ID as appropriate.
+func (r *TokenManager) getUser(token *goidc.Token) (userId *uint, err error) {
+	grantManager := NewGrantManager(r.db)
+	grant, err := grantManager.Grant(context.TODO(), token.GrantID)
+	if err != nil {
+		return
+	}
+	if grant.Type != goidc.GrantAuthorizationCode {
+		return
+	}
+	user := &model.User{}
+	err = r.db.First(user, "uuid", token.Subject).Error
+	if err != nil {
+		return
+	}
+	userId = &user.ID
+	return
+}
+
 // NewKeyManager returns a configured key manager.
 func NewKeyManager(db *gorm.DB) (m *KeyManager) {
 	m = &KeyManager{db: db}
 	return
 }
 
-// Key Manager manages RSA keys.
+// KeyManager manages RSA keys.
 type KeyManager struct {
 	db *gorm.DB
 }
@@ -562,6 +572,9 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 			Log.Error(err, "")
 		}
 	}()
+	if grant.Type == goidc.GrantAuthorizationCode {
+
+	}
 	m := &model.Grant{
 		GrantId:      grant.ID,
 		ClientId:     grant.ClientID,
@@ -595,6 +608,7 @@ func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, 
 		return
 	}
 	grant, err = r.grant(m)
+
 	return
 }
 
@@ -620,6 +634,10 @@ func (r *GrantManager) GrantByRefreshToken(_ context.Context, token string) (gra
 		return
 	}
 	err = r.revoked(m)
+	if err != nil {
+		return
+	}
+	err = r.orphaned(m)
 	if err != nil {
 		return
 	}
@@ -685,6 +703,26 @@ func (r *GrantManager) revoked(grant *model.Grant) (err error) {
 	if !token.Revoked.IsZero() {
 		grant.Expiration = token.Revoked
 		err = r.db.Save(grant).Error
+	}
+	return
+}
+
+// orphaned imposes grant expiration when the
+// user cannot be found.
+func (r *GrantManager) orphaned(grant *model.Grant) (err error) {
+	if grant.Type != string(goidc.GrantAuthorizationCode) {
+		return
+	}
+	var count int64
+	user := &model.User{}
+	db := r.db.Model(user)
+	db = db.Where("uuid", grant.Subject)
+	err = r.db.Count(&count).Error
+	if err != nil {
+		return
+	}
+	if count == 0 {
+		grant.Expiration = time.Now().UTC()
 	}
 	return
 }
