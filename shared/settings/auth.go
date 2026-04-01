@@ -3,6 +3,7 @@ package settings
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/env"
 )
@@ -15,6 +16,7 @@ const (
 	EnvClientID        = "OIDC_CLIENT_ID"
 	EnvClientName      = "OIDC_CLIENT_NAME"
 	EnvClientSecret    = "OIDC_CLIENT_SECRET"
+	EnvKeyRotation     = "OIDC_KEY_ROTATION"
 	EnvIdpEnabled      = "IDP_ENABLED"
 	EnvIdpName         = "IDP_NAME"
 	EnvIdpIssuerURL    = "IDP_ISSUER_URL"
@@ -33,7 +35,12 @@ type Auth struct {
 	}
 	// Issuer
 	IssuerURL string
-	Client    struct {
+	// Key settings.
+	Key struct {
+		Rotation time.Duration
+	}
+	// OIDC client settings.
+	Client struct {
 		ID     string
 		Name   string
 		Secret string
@@ -54,6 +61,7 @@ func (r *Auth) Load() (err error) {
 	r.Required = env.GetBool(EnvAuthRequired, false)
 	r.Token.Key = env.Get(EnvBuiltinTokenKey, "tackle")
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
+	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	r.Client.ID = env.Get(EnvClientID, "main")
 	r.Client.Name = env.Get(EnvClientName, "main")
 	r.Client.Secret = env.Get(EnvClientSecret, "tackle")

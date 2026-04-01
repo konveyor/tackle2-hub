@@ -265,8 +265,8 @@ type Grant struct {
 
 type Token struct {
 	Model
-	TokenId    string    `gorm:"not null"`
-	ClientId   string    `gorm:"not null"`
+	TokenId    string    `gorm:"index;not null"`
+	ClientId   string    `gorm:"index;not null"`
 	GrantId    string    `gorm:"index"`
 	Type       string    `gorm:"not null"`
 	Subject    string    `gorm:"index"`

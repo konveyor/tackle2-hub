@@ -22,20 +22,25 @@ import (
 	"gorm.io/gorm"
 )
 
+// OIDC is the singleton auth provider.
 var OIDC *BuiltinProvider
 
+// KeySet alias.
 type KeySet = goidc.JSONWebKeySet
 
+// BuiltinProvider
 type BuiltinProvider struct {
 	db     *gorm.DB
 	openId *provider.Provider
 	keySet KeySet
 }
 
+// Hander returns an http handler.
 func (p *BuiltinProvider) Handler() http.Handler {
 	return p.openId.Handler()
 }
 
+// Authenticate a web request.
 func (p *BuiltinProvider) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
@@ -118,6 +123,7 @@ func (p *BuiltinProvider) Authenticate(request *Request) (jwToken *jwt.Token, er
 	return
 }
 
+// Revoke an access token.
 func (p *BuiltinProvider) Revoke(token *jwt.Token) (err error) {
 	return
 }
@@ -146,7 +152,7 @@ func (p *BuiltinProvider) parseToken(request *Request) (token string, err error)
 	return
 }
 
-// New creates a new OIDC Provider for the Hub
+// New returns a configured provider.
 func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	p = &BuiltinProvider{}
 	grantManager := NewGrantManager(db)
@@ -225,10 +231,12 @@ func NewAuthManager(db *gorm.DB) (m *AuthManager) {
 	return
 }
 
+// AuthManager applies authN and AuthZ.
 type AuthManager struct {
 	db *gorm.DB
 }
 
+// Login provides the access token authentication.
 func (r *AuthManager) Login(
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -274,6 +282,7 @@ func (r *AuthManager) Login(
 	return
 }
 
+// renderPage renders the login page.
 func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, session *goidc.AuthnSession) (err error) {
 	defer func() {
 		if err != nil {
@@ -324,15 +333,16 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, se
 
 // NewTokenManager returns a token manager.
 func NewTokenManager(db *gorm.DB) (m *TokenManager) {
-	m = &TokenManager{db: db,
-	}
+	m = &TokenManager{db: db}
 	return
 }
 
+// TokenManager manages tokens.
 type TokenManager struct {
 	db *gorm.DB
 }
 
+// Save stores a token.
 func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
 	defer func() {
 		if err != nil {
@@ -371,6 +381,7 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 	return
 }
 
+// Token returns a token by id.
 func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token, err error) {
 	defer func() {
 		if err != nil {
@@ -380,11 +391,7 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	m := &model.Token{}
 	err = r.db.First(m, "tokenId", id).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = goidc.ErrNotFound
-		} else {
-			err = liberr.Wrap(err)
-		}
+		err = notFound(err)
 		return
 	}
 	err = secret.Decrypt(m)
@@ -404,19 +411,17 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	return
 }
 
+// ByRefreshToken returns a grant by refresh token.
 func (r *TokenManager) ByRefreshToken(token string) (m *model.Token, err error) {
 	err = r.db.First(m, "refreshToken", token).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = goidc.ErrNotFound
-		} else {
-			err = liberr.Wrap(err)
-		}
+		err = notFound(err)
 		return
 	}
 	return
 }
 
+// Delete grant by id.
 func (r *TokenManager) Delete(ctx context.Context, id string) (err error) {
 	defer func() {
 		if err != nil {
@@ -431,7 +436,8 @@ func (r *TokenManager) Delete(ctx context.Context, id string) (err error) {
 	return
 }
 
-func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err error) {
+// DeleteByGrantID by grant by id.
+func (r *TokenManager) DeleteByGrantID(_ context.Context, id string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -446,15 +452,19 @@ func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err erro
 	return
 }
 
+// NewKeyManager returns a configured key manager.
 func NewKeyManager(db *gorm.DB) (m *KeyManager) {
 	m = &KeyManager{db: db}
 	return
 }
 
+// Key Manager manages RSA keys.
 type KeyManager struct {
 	db *gorm.DB
 }
 
+// KeySet returns a keyset.
+// Rotation is applied.
 func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 	var keyList []*model.RsaKey
 	db := r.db.Order("id desc")
@@ -463,6 +473,11 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	created, err := r.rotate(keyList)
+	if err != nil {
+		return
+	}
+	keyList = append(created, keyList...)
 	for _, m := range keyList {
 		err = secret.Decrypt(m)
 		if err != nil {
@@ -480,24 +495,35 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 		jwKey := r.jwKey(m.ID, key)
 		keySet.Keys = append(keySet.Keys, jwKey)
 	}
-	if len(keySet.Keys) == 0 {
-		key, m := r.newKey()
-		jwKey := r.jwKey(m.ID, key)
-		keySet.Keys = append(keySet.Keys, jwKey)
-		err = secret.Encrypt(m)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		err = db.Create(&m).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
 	return
 }
 
+// rotate returns a new RSA key as determined
+// by the rotation schedule.
+func (r *KeyManager) rotate(keyList []*model.RsaKey) (created []*model.RsaKey, err error) {
+	threshold := Settings.Auth.Key.Rotation
+	for _, key := range keyList {
+		age := time.Since(key.CreateTime)
+		if age < threshold {
+			return
+		}
+	}
+	_, m := r.newKey()
+	err = secret.Encrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = r.db.Create(&m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	created = append(created, m)
+	return
+}
+
+// newKey returns a new RSA key.
 func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
 	m = &model.RsaKey{}
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -513,6 +539,7 @@ func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
 	return
 }
 
+// jwKey returns a goidc.JSONWebKey.
 func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
 	k2.Key = strconv.Itoa(int(id))
 	k2.Algorithm = "RS256"
@@ -520,7 +547,6 @@ func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
 	return
 }
 
-//
 func NewGrantManager(db *gorm.DB) (m *GrantManager) {
 	m = &GrantManager{db: db}
 	return
@@ -530,7 +556,8 @@ type GrantManager struct {
 	db *gorm.DB
 }
 
-func (r *GrantManager) Save(ctx context.Context, grant *goidc.Grant) (err error) {
+// Save stores a grant.
+func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -551,11 +578,12 @@ func (r *GrantManager) Save(ctx context.Context, grant *goidc.Grant) (err error)
 		err = liberr.Wrap(err)
 		return
 	}
-	err = r.db.Create(m).Error
+	err = r.db.Save(m).Error
 	return
 }
 
-func (r *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant, err error) {
+// Grant returns a grant by id.
+func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -564,10 +592,9 @@ func (r *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant
 	m := &model.Grant{}
 	err = r.db.First(m, "grantId", id).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = goidc.ErrNotFound
-		} else {
-			err = liberr.Wrap(err)
+		if err != nil {
+			err = notFound(err)
+			return
 		}
 		return
 	}
@@ -575,20 +602,25 @@ func (r *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant
 	return
 }
 
-func (r *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (grant *goidc.Grant, err error) {
+// GrantByRefreshToken returns a grant by refresh token.
+// Revocation is applied.
+func (r *GrantManager) GrantByRefreshToken(_ context.Context, token string) (grant *goidc.Grant, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
-	m := &model.Grant{}
-	err = r.db.First(m, "refreshToken", token).Error
+	m := &model.Grant{
+		RefreshToken: token,
+	}
+	err = secret.Encrypt(m)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = goidc.ErrNotFound
-		} else {
-			err = liberr.Wrap(err)
-		}
+		err = liberr.Wrap(err)
+		return
+	}
+	err = r.db.First(m, "refreshToken", m.RefreshToken).Error
+	if err != nil {
+		err = notFound(err)
 		return
 	}
 	err = r.revoked(m)
@@ -599,29 +631,38 @@ func (r *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (g
 	return
 }
 
-func (r *GrantManager) Delete(ctx context.Context, id string) (err error) {
+// Delete a grant by id.
+func (r *GrantManager) Delete(_ context.Context, id string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
 	m := &model.Grant{}
-	err = r.db.First(m, "grantId", id).Error
+	err = r.db.Delete(m, "grantId", id).Error
 	return
 }
 
-func (r *GrantManager) DeleteByAuthCode(ctx context.Context, authCode string) (err error) {
+// DeleteByAuthCode delete a grant by auth code.
+func (r *GrantManager) DeleteByAuthCode(_ context.Context, authCode string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
 	m := &model.Grant{}
-	err = r.db.First(m, "authCode", authCode).Error
+	err = r.db.Delete(m, "authCode", authCode).Error
 	return
 }
 
+// grant returns a goidc.Grant using
+// the decrypted grant.
 func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
+	err = secret.Decrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	grant = &goidc.Grant{
 		ID:                 m.GrantId,
 		ClientID:           m.ClientId,
@@ -632,14 +673,13 @@ func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
 		Scopes:             m.Scopes,
 		ExpiresAtTimestamp: asInt(m.Expiration),
 	}
-	err = secret.Decrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }
 
+// revoked enforces token revocation.
+// When the access token associated with a granted by
+// refresh token has been revoked, the grant expiration
+// is updated to match the revocation timestamp.
 func (r *GrantManager) revoked(grant *model.Grant) (err error) {
 	tokenManager := NewTokenManager(r.db)
 	token, err := tokenManager.ByRefreshToken(grant.RefreshToken)
@@ -648,18 +688,36 @@ func (r *GrantManager) revoked(grant *model.Grant) (err error) {
 	}
 	if !token.Revoked.IsZero() {
 		grant.Expiration = token.Revoked
+		err = r.db.Save(grant).Error
 	}
 	return
 }
 
 //
 
+// notFound returns goidc.ErrNotFound when
+// err IsA gorm.ErrRecordNotFound.
+// Else, wrapped.
+func notFound(err error) (e2 error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = goidc.ErrNotFound
+	} else {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// asTime returns a time.Time for unix time.
 func asTime(n int) (t time.Time) {
 	t = time.Unix(int64(n), 0)
 	t = t.UTC()
 	return
 }
 
+// asInt returns unix time for time.Time.
 func asInt(t time.Time) (i int) {
 	t = t.UTC()
 	i = int(t.Unix())
