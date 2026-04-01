@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,6 +27,7 @@ var OIDC *BuiltinProvider
 type KeySet = goidc.JSONWebKeySet
 
 type BuiltinProvider struct {
+	db     *gorm.DB
 	openId *provider.Provider
 	keySet KeySet
 }
@@ -149,10 +149,10 @@ func (p *BuiltinProvider) parseToken(request *Request) (token string, err error)
 // New creates a new OIDC Provider for the Hub
 func New(db *gorm.DB) (p *BuiltinProvider, err error) {
 	p = &BuiltinProvider{}
-	grantManager := NewGrantManager()
+	grantManager := NewGrantManager(db)
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
-	tokenManager := NewTokenManager(db, grantManager)
+	tokenManager := NewTokenManager(db)
 	p.keySet, err = keyManager.KeySet()
 	if err != nil {
 		return
@@ -274,7 +274,7 @@ func (r *AuthManager) Login(
 	return
 }
 
-func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Request, session *goidc.AuthnSession) (err error) {
+func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, session *goidc.AuthnSession) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -323,17 +323,14 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, request *http.Reque
 }
 
 // NewTokenManager returns a token manager.
-func NewTokenManager(db *gorm.DB, grantManager *GrantManager) (m *TokenManager) {
-	m = &TokenManager{
-		grantManager: grantManager,
-		db:           db,
+func NewTokenManager(db *gorm.DB) (m *TokenManager) {
+	m = &TokenManager{db: db,
 	}
 	return
 }
 
 type TokenManager struct {
-	grantManager *GrantManager
-	db           *gorm.DB
+	db *gorm.DB
 }
 
 func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error) {
@@ -349,10 +346,11 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 		Subject:    token.Subject,
 		Type:       string(token.Type),
 		Scopes:     token.Scopes,
-		Issued:     r.asTime(token.CreatedAtTimestamp),
-		Expiration: r.asTime(token.ExpiresAtTimestamp),
+		Issued:     asTime(token.CreatedAtTimestamp),
+		Expiration: asTime(token.ExpiresAtTimestamp),
 	}
-	grant, err := r.grantManager.Grant(ctx, token.GrantID)
+	gm := NewGrantManager(r.db)
+	grant, err := gm.Grant(ctx, token.GrantID)
 	if err != nil {
 		return
 	}
@@ -382,7 +380,11 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	m := model.Token{}
 	err = r.db.First(&m, "tokenId", id).Error
 	if err != nil {
-		err = liberr.Wrap(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = goidc.ErrNotFound
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	err = secret.Decrypt(m)
@@ -396,8 +398,8 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 		Subject:            m.Subject,
 		Type:               goidc.TokenType(m.Type),
 		Scopes:             m.Scopes,
-		CreatedAtTimestamp: r.asInt(m.Issued),
-		ExpiresAtTimestamp: r.asInt(m.Expiration),
+		CreatedAtTimestamp: asInt(m.Issued),
+		ExpiresAtTimestamp: asInt(m.Expiration),
 	}
 	return
 }
@@ -428,18 +430,6 @@ func (r *TokenManager) DeleteByGrantID(ctx context.Context, id string) (err erro
 		err = liberr.Wrap(err)
 		return
 	}
-	return
-}
-
-func (r *TokenManager) asTime(n int) (t time.Time) {
-	t = time.Unix(int64(n), 0)
-	t = t.UTC()
-	return
-}
-
-func (r *TokenManager) asInt(t time.Time) (i int) {
-	t = t.UTC()
-	i = int(t.Unix())
 	return
 }
 
@@ -517,77 +507,127 @@ func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
 	return
 }
 
-func NewGrantManager() (m *GrantManager) {
-	m = &GrantManager{
-		byId:           make(map[string]*goidc.Grant),
-		byRefreshToken: make(map[string]string),
-		byAuthCode:     make(map[string]string),
-	}
+//
+func NewGrantManager(db *gorm.DB) (m *GrantManager) {
+	m = &GrantManager{db: db}
 	return
 }
 
 type GrantManager struct {
-	mutex          sync.RWMutex
-	byId           map[string]*goidc.Grant
-	byRefreshToken map[string]string
-	byAuthCode     map[string]string
+	db *gorm.DB
 }
 
-func (g *GrantManager) Save(ctx context.Context, grant *goidc.Grant) (err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.byId[grant.ID] = grant
-	g.byRefreshToken[grant.RefreshToken] = grant.ID
-	g.byAuthCode[grant.AuthCode] = grant.ID
-	return
-}
-
-func (g *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant, err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	grant, found := g.byId[id]
-	if !found {
-		err = goidc.ErrNotFound
+func (r *GrantManager) Save(ctx context.Context, grant *goidc.Grant) (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{
+		GrantId:      grant.ID,
+		ClientId:     grant.ClientID,
+		Subject:      grant.Subject,
+		RefreshToken: grant.RefreshToken,
+		AuthCode:     grant.AuthCode,
+		Type:         string(grant.Type),
+		Scopes:       grant.Scopes,
+		Expiration:   asTime(grant.ExpiresAtTimestamp),
 	}
-	return
-}
-
-func (g *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (grant *goidc.Grant, err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	id := g.byRefreshToken[token]
-	grant, found := g.byId[id]
-	if !found {
-		err = goidc.ErrNotFound
-	}
-	return
-}
-
-func (g *GrantManager) Delete(ctx context.Context, id string) (err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.delete(id)
-	return
-}
-
-func (g *GrantManager) DeleteByAuthCode(ctx context.Context, code string) (err error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	id, found := g.byAuthCode[code]
-	if !found {
+	err = secret.Encrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
-	g.delete(id)
+	err = r.db.Create(m).Error
 	return
 }
 
-func (g *GrantManager) delete(id string) {
-	grant, found := g.byId[id]
-	if !found {
+func (r *GrantManager) Grant(ctx context.Context, id string) (grant *goidc.Grant, err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{}
+	err = r.db.First(m, "grantId", id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = goidc.ErrNotFound
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
-	delete(g.byId, id)
-	delete(g.byRefreshToken, grant.RefreshToken)
-	delete(g.byAuthCode, grant.AuthCode)
+	grant = &goidc.Grant{
+		ID:                 m.GrantId,
+		ClientID:           m.ClientId,
+		Subject:            m.Subject,
+		RefreshToken:       m.RefreshToken,
+		AuthCode:           m.AuthCode,
+		Type:               goidc.GrantType(m.Type),
+		Scopes:             m.Scopes,
+		ExpiresAtTimestamp: asInt(m.Expiration),
+	}
+	err = secret.Decrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+func (r *GrantManager) GrantByRefreshToken(ctx context.Context, token string) (grant *goidc.Grant, err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{}
+	err = r.db.First(m, "refreshToken", token).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = goidc.ErrNotFound
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	grant, err = r.Grant(ctx, m.GrantId)
+	return
+}
+
+func (r *GrantManager) Delete(ctx context.Context, id string) (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{}
+	err = r.db.First(m, "grantId", id).Error
+	return
+}
+
+func (r *GrantManager) DeleteByAuthCode(ctx context.Context, authCode string) (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{}
+	err = r.db.First(m, "authCode", authCode).Error
+	return
+}
+
+//
+
+func asTime(n int) (t time.Time) {
+	t = time.Unix(int64(n), 0)
+	t = t.UTC()
+	return
+}
+
+func asInt(t time.Time) (i int) {
+	t = t.UTC()
+	i = int(t.Unix())
 	return
 }

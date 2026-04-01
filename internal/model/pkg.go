@@ -54,12 +54,13 @@ type TaskGroup = model.TaskGroup
 type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
-type IdpIdentity = model.IdpIdentity
 type User = model.User
 type Role = model.Role
 type Permission = model.Permission
-type Token = model.Token
 type RsaKey = model.RsaKey
+type IdpIdentity = model.IdpIdentity
+type Grant = model.Grant
+type Token = model.Token
 
 // JSON fields
 type Ref = json.Ref

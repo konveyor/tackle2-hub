@@ -65,5 +65,6 @@ func All() []any {
 		User{},
 		Token{},
 		RsaKey{},
+		Grant{},
 	}
 }

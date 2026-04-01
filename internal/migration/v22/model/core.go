@@ -209,33 +209,6 @@ type Identity struct {
 	Profiles     []AnalysisProfile `gorm:"constraint:OnDelete:SET NULL"`
 }
 
-type IdpIdentity struct {
-	Model
-	Provider          string    `gorm:"not null"`
-	Subject           string    `gorm:"not null"`
-	RefreshToken      string    `gorm:"not null"`
-	Expiration        time.Time `gorm:"index"`
-	LastAuthenticated time.Time
-	LastRefreshed     time.Time
-	UserID            uint `gorm:"index"`
-	User              User `gorm:"constraint:OnDelete:CASCADE"`
-}
-
-type Token struct {
-	Model
-	TokenId    string    `gorm:"not null"`
-	ClientId   string    `gorm:"not null"`
-	GrantId    string    `gorm:"index"`
-	Type       string    `gorm:"not null"`
-	Subject    string    `gorm:"index"`
-	Scopes     string    `gorm:"not null"`
-	Issued     time.Time `gorm:"not null"`
-	Expiration time.Time
-	Revoked    time.Time
-	UserID     *uint `gorm:"index"`
-	User       *User `gorm:"constraint:OnDelete:CASCADE"`
-}
-
 type User struct {
 	Model
 	UUID     string `gorm:"index;not null"`
@@ -257,9 +230,52 @@ type Permission struct {
 	Scope string `gorm:"not null"`
 }
 
+//
+// IDP State
+//
+
+type IdpIdentity struct {
+	Model
+	Provider          string    `gorm:"not null"`
+	Subject           string    `gorm:"not null"`
+	RefreshToken      string    `gorm:"not null" secret:""`
+	Expiration        time.Time `gorm:"index"`
+	LastAuthenticated time.Time
+	LastRefreshed     time.Time
+	UserID            uint `gorm:"index"`
+	User              User `gorm:"constraint:OnDelete:CASCADE"`
+}
+
 type RsaKey struct {
 	Model
 	PEM string `gorm:"not null" secret:""`
+}
+
+type Grant struct {
+	Model
+	GrantId      string `gorm:"uniqueIndex;not null"`
+	ClientId     string `gorm:"index"`
+	Subject      string `gorm:"index"`
+	RefreshToken string `gorm:"index" secret:""`
+	AuthCode     string `gorm:"index"`
+	Type         string `gorm:"not null"`
+	Scopes       string
+	Expiration   time.Time
+}
+
+type Token struct {
+	Model
+	TokenId    string    `gorm:"not null"`
+	ClientId   string    `gorm:"not null"`
+	GrantId    string    `gorm:"index"`
+	Type       string    `gorm:"not null"`
+	Subject    string    `gorm:"index"`
+	Scopes     string    `gorm:"not null"`
+	Issued     time.Time `gorm:"not null"`
+	Expiration time.Time
+	Revoked    time.Time
+	UserID     *uint `gorm:"index"`
+	User       *User `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 //
