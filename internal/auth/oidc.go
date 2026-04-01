@@ -30,7 +30,6 @@ type KeySet = goidc.JSONWebKeySet
 
 // BuiltinProvider
 type BuiltinProvider struct {
-	db     *gorm.DB
 	openId *provider.Provider
 	keySet KeySet
 }
@@ -154,7 +153,7 @@ func (p *BuiltinProvider) parseToken(request *Request) (token string, err error)
 
 // New returns a configured provider.
 func New(db *gorm.DB) (p *BuiltinProvider, err error) {
-	p = &BuiltinProvider{db: db}
+	p = &BuiltinProvider{}
 	grantManager := NewGrantManager(db)
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
