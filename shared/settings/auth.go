@@ -52,9 +52,6 @@ type Auth struct {
 
 func (r *Auth) Load() (err error) {
 	r.Required = env.GetBool(EnvAuthRequired, false)
-	if !r.Required {
-		return
-	}
 	r.Token.Key = env.Get(EnvBuiltinTokenKey, "tackle")
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Client.ID = env.Get(EnvClientID, "main")
@@ -73,7 +70,8 @@ func (r *Auth) Load() (err error) {
 		r.Idp.Scopes = []string{
 			"openid",
 			"profile",
-			"email"}
+			"email",
+		}
 	}
 	return
 }
