@@ -116,7 +116,9 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	}
 	err = client.User.Create(&user)
 	g.Expect(err).To(BeNil())
-	defer client.User.Delete(user.ID)
+	t.Cleanup(func() {
+		_ = client.User.Delete(user.ID)
+	})
 
 	// Use the original plaintext password for login (not the encrypted one from API)
 	username := user.Name
