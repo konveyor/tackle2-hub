@@ -482,6 +482,42 @@ func TestTaskPriorityAdjustment(t *testing.T) {
 	g.Expect(updated.Priority).To(Equal(10))
 }
 
+// TestTaskSubmit tests submitting a task
+func TestTaskSubmit(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a task
+	task := &api.Task{
+		Name:  "Test Task for Submit",
+		Addon: "analyzer",
+		State: tasking.Created,
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": true,
+			},
+		},
+	}
+	err := client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	g.Expect(task.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
+	})
+
+	// SUBMIT: Submit the task
+	err = client.Task.Submit(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve and verify state changed
+	submitted, err := client.Task.Get(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(submitted.State).NotTo(Equal(tasking.Created))
+}
+
 // TestTaskGetAttached tests retrieving a task with attached resources
 func TestTaskGetAttached(t *testing.T) {
 	g := NewGomegaWithT(t)
