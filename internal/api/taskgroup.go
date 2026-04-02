@@ -108,12 +108,12 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Priority = max(r.Priority, 10)
 	err = h.findRefs(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = max(r.Priority, 10)
 	rtx := RichContext(ctx)
 	m := &model.TaskGroup{}
 	r.Patch(m)
@@ -179,7 +179,6 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	r.Priority = max(r.Priority, 10)
 	if _, found := ctx.Get(Submit); found {
 		r.State = task.Ready
 	}
@@ -188,6 +187,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = max(r.Priority, 10)
 	r.Patch(m)
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
