@@ -24,13 +24,16 @@ func TestTaskGroup(t *testing.T) {
 			},
 			"output": "/output/report",
 		},
-		State: tasking.Created,
+		State:    tasking.Created,
+		Priority: 7,
 	}
 
 	// CREATE: Create the task group
 	err := client.TaskGroup.Create(taskGroup)
 	g.Expect(err).To(BeNil())
 	g.Expect(taskGroup.ID).NotTo(BeZero())
+	// Verify priority was adjusted (user priority must be >= 10)
+	g.Expect(taskGroup.Priority).To(Equal(10))
 
 	t.Cleanup(func() {
 		_ = client.TaskGroup.Delete(taskGroup.ID)
@@ -158,6 +161,75 @@ func TestTaskGroupSubmit(t *testing.T) {
 	submitted, err := client.TaskGroup.Get(taskGroup.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(submitted.State).NotTo(Equal(tasking.Created))
+}
+
+// TestTaskGroupPriorityAdjustment tests that task group priority is adjusted to be >= 10
+func TestTaskGroupPriorityAdjustment(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a task group with priority < 10
+	taskGroupLow := &api.TaskGroup{
+		Name:     "Test Task Group Low Priority",
+		State:    tasking.Created,
+		Priority: 2,
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": true,
+			},
+		},
+	}
+	err := client.TaskGroup.Create(taskGroupLow)
+	g.Expect(err).To(BeNil())
+	g.Expect(taskGroupLow.ID).NotTo(BeZero())
+	// Verify priority was adjusted to 10
+	g.Expect(taskGroupLow.Priority).To(Equal(10))
+
+	t.Cleanup(func() {
+		_ = client.TaskGroup.Delete(taskGroupLow.ID)
+	})
+
+	// GET: Retrieve and verify adjusted priority persisted
+	retrieved, err := client.TaskGroup.Get(taskGroupLow.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.Priority).To(Equal(10))
+
+	// CREATE: Create a task group with priority >= 10
+	taskGroupHigh := &api.TaskGroup{
+		Name:     "Test Task Group High Priority",
+		State:    tasking.Created,
+		Priority: 20,
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": false,
+			},
+		},
+	}
+	err = client.TaskGroup.Create(taskGroupHigh)
+	g.Expect(err).To(BeNil())
+	g.Expect(taskGroupHigh.ID).NotTo(BeZero())
+	// Verify priority was NOT adjusted (stays 20)
+	g.Expect(taskGroupHigh.Priority).To(Equal(20))
+
+	t.Cleanup(func() {
+		_ = client.TaskGroup.Delete(taskGroupHigh.ID)
+	})
+
+	// GET: Retrieve and verify priority stayed at 20
+	retrieved, err = client.TaskGroup.Get(taskGroupHigh.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.Priority).To(Equal(20))
+
+	// UPDATE: Update task group with priority < 10
+	taskGroupLow.Priority = 8
+	err = client.TaskGroup.Update(taskGroupLow)
+	g.Expect(err).To(BeNil())
+	// Verify priority was adjusted to 10
+	g.Expect(taskGroupLow.Priority).To(Equal(10))
+
+	// GET: Retrieve and verify adjusted priority after update
+	updated, err := client.TaskGroup.Get(taskGroupLow.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Priority).To(Equal(10))
 }
 
 // TestTaskGroupBucket tests task group bucket file operations

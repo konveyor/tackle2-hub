@@ -157,9 +157,10 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 // @description to ensure the priority higher than system reserved (0-9).
 // @tags taskgroups
 // @accept json
-// @success 204
+// @produce json
+// @success 200 {object} api.TaskGroup
 // @router /taskgroups/{id} [put]
-// @param id path int true "Task ID"
+// @param id path int true "TaskGroup ID"
 // @param task body TaskGroup true "Task data"
 func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -217,8 +218,27 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 			})
 		return
 	}
+	if _, found := ctx.Get(Submit); !found {
+		r.With(m)
+		h.Respond(ctx, http.StatusOK, r)
+	} else {
+		h.Status(ctx, http.StatusNoContent)
+	}
+}
 
-	h.Status(ctx, http.StatusNoContent)
+// Submit godoc
+// @summary Submit a task group.
+// @description Patch and submit a task group.
+// @tags taskgroups
+// @accept json
+// @success 204
+// @router /taskgroups/{id}/submit [put]
+// @param id path int true "TaskGroup ID"
+// @param taskgroup body TaskGroup false "TaskGroup data (optional)"
+func (h TaskGroupHandler) Submit(ctx *gin.Context) {
+	ctx.Set(Submit, true)
+	ctx.Request.Method = http.MethodPatch
+	h.Update(ctx)
 }
 
 // Delete godoc
@@ -254,21 +274,6 @@ func (h TaskGroupHandler) Delete(ctx *gin.Context) {
 	}
 
 	h.Status(ctx, http.StatusNoContent)
-}
-
-// Submit godoc
-// @summary Submit a task group.
-// @description Patch and submit a task group.
-// @tags taskgroups
-// @accept json
-// @success 204
-// @router /taskgroups/{id}/submit [put]
-// @param id path int true "TaskGroup ID"
-// @param taskgroup body TaskGroup false "TaskGroup data (optional)"
-func (h TaskGroupHandler) Submit(ctx *gin.Context) {
-	ctx.Set(Submit, true)
-	ctx.Request.Method = http.MethodPatch
-	h.Update(ctx)
 }
 
 // BucketGet godoc
