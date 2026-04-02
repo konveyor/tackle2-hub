@@ -108,7 +108,7 @@ func (h TaskGroupHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Priority = min(r.Priority, 10)
+	r.Priority = max(r.Priority, 10)
 	err = h.findRefs(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -178,7 +178,7 @@ func (h TaskGroupHandler) Update(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	r.Priority = min(r.Priority, 10)
+	r.Priority = max(r.Priority, 10)
 	if _, found := ctx.Get(Submit); found {
 		r.State = task.Ready
 	}

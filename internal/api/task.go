@@ -376,7 +376,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Priority = min(r.Priority, 10)
+	r.Priority = max(r.Priority, 10)
 	rtx := RichContext(ctx)
 	m := &model.Task{}
 	r.Patch(m)
@@ -441,7 +441,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Priority = min(r.Priority, 10)
+	r.Priority = max(r.Priority, 10)
 	if _, found := ctx.Get(Submit); found {
 		r.State = task.Ready
 	}
