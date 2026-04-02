@@ -361,6 +361,8 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 // Create godoc
 // @summary Create a task.
 // @description Create a task.
+// @description Note: The priority will be adjusted as needed
+// @description to ensure the priority higher than system reserved (0-9).
 // @tags tasks
 // @accept json
 // @produce json
@@ -374,6 +376,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = min(r.Priority, 10)
 	rtx := RichContext(ctx)
 	m := &model.Task{}
 	r.Patch(m)
@@ -412,6 +415,8 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a task.
 // @description Update a task.
+// @description Note: The priority will be adjusted as needed
+// @description to ensure the priority higher than system reserved (0-9).
 // @tags tasks
 // @accept json
 // @success 200
@@ -436,6 +441,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = min(r.Priority, 10)
 	if _, found := ctx.Get(Submit); found {
 		r.State = task.Ready
 	}
