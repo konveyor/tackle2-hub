@@ -77,6 +77,8 @@ func TestTaskWithApplication(t *testing.T) {
 	err = client.Task.Create(task)
 	g.Expect(err).To(BeNil())
 	g.Expect(task.ID).NotTo(BeZero())
+	// Verify priority was adjusted (user priority must be >= 10)
+	g.Expect(task.Priority).To(Equal(10))
 
 	t.Cleanup(func() {
 		ctx, cfn := context.WithTimeout(
@@ -409,6 +411,111 @@ func TestTaskBucket(t *testing.T) {
 	// Verify deletion
 	err = bucket.Get("test-file.txt", tmpDest)
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
+}
+
+// TestTaskPriorityAdjustment tests that task priority is adjusted to be >= 10
+func TestTaskPriorityAdjustment(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a task with priority < 10
+	taskLow := &api.Task{
+		Name:     "Test Task Low Priority",
+		Addon:    "analyzer",
+		State:    tasking.Created,
+		Priority: 3,
+	}
+	err := client.Task.Create(taskLow)
+	g.Expect(err).To(BeNil())
+	g.Expect(taskLow.ID).NotTo(BeZero())
+	// Verify priority was adjusted to 10
+	g.Expect(taskLow.Priority).To(Equal(10))
+
+	t.Cleanup(func() {
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(taskLow.ID).Blocking.Delete(ctx)
+	})
+
+	// GET: Retrieve and verify adjusted priority persisted
+	retrieved, err := client.Task.Get(taskLow.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.Priority).To(Equal(10))
+
+	// CREATE: Create a task with priority >= 10
+	taskHigh := &api.Task{
+		Name:     "Test Task High Priority",
+		Addon:    "analyzer",
+		State:    tasking.Created,
+		Priority: 15,
+	}
+	err = client.Task.Create(taskHigh)
+	g.Expect(err).To(BeNil())
+	g.Expect(taskHigh.ID).NotTo(BeZero())
+	// Verify priority was NOT adjusted (stays 15)
+	g.Expect(taskHigh.Priority).To(Equal(15))
+
+	t.Cleanup(func() {
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(taskHigh.ID).Blocking.Delete(ctx)
+	})
+
+	// GET: Retrieve and verify priority stayed at 15
+	retrieved, err = client.Task.Get(taskHigh.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(retrieved.Priority).To(Equal(15))
+
+	// UPDATE: Update task with priority < 10
+	taskLow.Priority = 5
+	err = client.Task.Update(taskLow)
+	g.Expect(err).To(BeNil())
+	// Verify priority was adjusted to 10
+	g.Expect(taskLow.Priority).To(Equal(10))
+
+	// GET: Retrieve and verify adjusted priority after update
+	updated, err := client.Task.Get(taskLow.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Priority).To(Equal(10))
+}
+
+// TestTaskSubmit tests submitting a task
+func TestTaskSubmit(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// CREATE: Create a task
+	task := &api.Task{
+		Name:  "Test Task for Submit",
+		Addon: "analyzer",
+		State: tasking.Created,
+		Data: api.Map{
+			"mode": api.Map{
+				"binary": true,
+			},
+		},
+	}
+	err := client.Task.Create(task)
+	g.Expect(err).To(BeNil())
+	g.Expect(task.ID).NotTo(BeZero())
+	t.Cleanup(func() {
+		ctx, cfn := context.WithTimeout(
+			context.Background(),
+			time.Minute)
+		defer cfn()
+		_ = client.Task.Select(task.ID).Blocking.Delete(ctx)
+	})
+
+	// SUBMIT: Submit the task
+	err = client.Task.Submit(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// GET: Retrieve and verify state changed
+	submitted, err := client.Task.Get(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(submitted.State).NotTo(Equal(tasking.Created))
 }
 
 // TestTaskGetAttached tests retrieving a task with attached resources

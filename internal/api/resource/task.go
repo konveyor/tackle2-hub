@@ -39,7 +39,7 @@ func (r *Task) With(m *model.Task) {
 	r.Extensions = m.Extensions
 	r.State = m.State
 	r.Locator = m.Locator
-	r.Priority = r.userPriority(m.Priority)
+	r.Priority = m.Priority
 	r.Policy = TaskPolicy(m.Policy)
 	r.TTL = TTL(m.TTL)
 	r.Data = m.Data.Any
@@ -130,16 +130,6 @@ func (r *Task) InjectFiles(db *gorm.DB) (err error) {
 		r.Activity = append(
 			append(snipA, content...),
 			snipB...)
-	}
-	return
-}
-
-// userPriority adjust (ensures) priority is greater than 10.
-// Priority: 0-9 reserved for system tasks.
-func (r *Task) userPriority(in int) (out int) {
-	out = in
-	if out < 10 {
-		out += 10
 	}
 	return
 }
