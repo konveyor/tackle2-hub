@@ -361,6 +361,8 @@ func (h TaskHandler) Dashboard(ctx *gin.Context) {
 // Create godoc
 // @summary Create a task.
 // @description Create a task.
+// @description Note: The priority will be adjusted as needed
+// @description to ensure the priority higher than system reserved (0-9).
 // @tags tasks
 // @accept json
 // @produce json
@@ -374,6 +376,7 @@ func (h TaskHandler) Create(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = max(r.Priority, 10)
 	rtx := RichContext(ctx)
 	m := &model.Task{}
 	r.Patch(m)
@@ -412,9 +415,12 @@ func (h TaskHandler) Delete(ctx *gin.Context) {
 // Update godoc
 // @summary Update a task.
 // @description Update a task.
+// @description Note: The priority will be adjusted as needed
+// @description to ensure the priority higher than system reserved (0-9).
 // @tags tasks
 // @accept json
-// @success 200
+// @produce json
+// @success 200 {object} api.Task
 // @router /tasks/{id} [put]
 // @param id path int true "Task ID"
 // @param task body Task true "Task data"
@@ -436,6 +442,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	r.Priority = max(r.Priority, 10)
 	if _, found := ctx.Get(Submit); found {
 		r.State = task.Ready
 	}
@@ -449,10 +456,12 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
-	r.With(m)
-
-	h.Respond(ctx, http.StatusOK, r)
+	if _, found := ctx.Get(Submit); !found {
+		r.With(m)
+		h.Respond(ctx, http.StatusOK, r)
+	} else {
+		h.Status(ctx, http.StatusNoContent)
+	}
 }
 
 // Submit godoc
@@ -460,7 +469,7 @@ func (h TaskHandler) Update(ctx *gin.Context) {
 // @description Patch and submit a task.
 // @tags tasks
 // @accept json
-// @success 200
+// @success 204
 // @router /tasks/{id}/submit [put]
 // @param id path int true "Task ID"
 // @param task body Task false "Task data (optional)"

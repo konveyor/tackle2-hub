@@ -3286,7 +3286,7 @@ func TestTask_With_and_Patch_and_userPriority(t *testing.T) {
 	g.Expect(r.Name).To(gomega.Equal("t"))
 	g.Expect(r.Kind).To(gomega.Equal("k"))
 	g.Expect(r.Addon).To(gomega.Equal("a"))
-	g.Expect(r.Priority).To(gomega.Equal(15)) // elevated
+	g.Expect(r.Priority).To(gomega.Equal(5))
 
 	// Patch back
 	m2 := &model.Task{}
@@ -3294,7 +3294,7 @@ func TestTask_With_and_Patch_and_userPriority(t *testing.T) {
 	g.Expect(m2.Name).To(gomega.Equal("t"))
 	g.Expect(m2.Kind).To(gomega.Equal("k"))
 	g.Expect(m2.Addon).To(gomega.Equal("a"))
-	g.Expect(m2.Priority).To(gomega.Equal(15))
+	g.Expect(m2.Priority).To(gomega.Equal(5))
 }
 
 // FactKey: Qualify/Source/Name semantics.
