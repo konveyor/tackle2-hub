@@ -25,6 +25,19 @@ func init() {
 	Hub = &NoAuth{}
 }
 
+// New returns an auth provider.
+func New(db *gorm.DB) (p Provider, err error) {
+	builtin, err := NewBuiltin(db)
+	if err != nil {
+		return
+	}
+	p = &NoAuth{handler: builtin.Handler()}
+	if Settings.Auth.Required {
+		p = builtin
+	}
+	return
+}
+
 // Provider provides RBAC.
 type Provider interface {
 	// UserKey returns a new key associated with a user.

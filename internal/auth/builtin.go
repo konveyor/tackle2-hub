@@ -262,9 +262,9 @@ func (p *Builtin) genKey() (key APIKey, err error) {
 	return
 }
 
-// New returns a configured provider.
-func New(db *gorm.DB) (p *Builtin, err error) {
-	p = &Builtin{
+// NewBuiltin returns a configured provider.
+func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
+	builtin = &Builtin{
 		keyCache: KeyCache{db: db},
 		db:       db,
 	}
@@ -272,7 +272,7 @@ func New(db *gorm.DB) (p *Builtin, err error) {
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
 	tokenManager := NewTokenManager(db)
-	p.keySet, err = keyManager.KeySet()
+	builtin.keySet, err = keyManager.KeySet()
 	if err != nil {
 		return
 	}
@@ -287,11 +287,11 @@ func New(db *gorm.DB) (p *Builtin, err error) {
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}
-	p.openId, err = provider.New(
+	builtin.openId, err = provider.New(
 		goidc.ProfileOpenID,
 		issuer,
 		func(ctx context.Context) (keySet goidc.JSONWebKeySet, err error) {
-			keySet = p.keySet
+			keySet = builtin.keySet
 			return
 		},
 		provider.WithScopes(
@@ -331,7 +331,7 @@ func New(db *gorm.DB) (p *Builtin, err error) {
 	client.RedirectURIs = []string{
 		issuer + "/callback",
 	}
-	err = p.openId.SaveClient(context.Background(), client)
+	err = builtin.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

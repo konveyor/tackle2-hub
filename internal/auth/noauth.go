@@ -9,6 +9,7 @@ import (
 
 // NoAuth provider always permits access.
 type NoAuth struct {
+	handler http.Handler
 }
 
 // UserKey returns a new key associated with a user.
@@ -42,5 +43,6 @@ func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 
 // Handler returns an OIDC request handler.
 func (r *NoAuth) Handler() (h http.Handler) {
+	h = r.handler
 	return
 }

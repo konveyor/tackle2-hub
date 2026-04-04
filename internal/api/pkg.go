@@ -90,7 +90,6 @@ func All() []Handler {
 		&PlatformHandler{},
 		&ProxyHandler{},
 		&ManifestHandler{},
-		&OIDCHandler{},
 		&ReviewHandler{},
 		&RuleSetHandler{},
 		&SchemaHandler{},
