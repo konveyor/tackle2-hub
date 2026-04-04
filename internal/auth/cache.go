@@ -1,12 +1,10 @@
 package auth
 
 import (
-	"errors"
 	"sync"
+	"time"
 
-	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,23 +17,16 @@ type KeyCache struct {
 
 func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	m := &model.APIKey{}
-	encrypted := nakedSecret
-	err = secret.Encrypt(&encrypted)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
+	hashedSecret := hashSecret(nakedSecret)
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
 	db = db.Preload("User.Roles.Permissions")
-	err = db.First(m, "secret", encrypted).Error
+	db = db.Where("secret", hashedSecret)
+	db = db.Where("expiration > ?", time.Now())
+	err = db.First(m).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = &NotAuthenticated{
-				Token: encrypted,
-			}
-		} else {
-			err = liberr.Wrap(err)
+		err = &NotAuthenticated{
+			Token: nakedSecret,
 		}
 		return
 	}
@@ -44,7 +35,7 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	if m.UserID != nil {
 		if m.User == nil {
 			err = &NotAuthenticated{
-				Token: encrypted,
+				Token: nakedSecret,
 			}
 			return
 		}
@@ -62,7 +53,7 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	if m.TaskID != nil {
 		if m.Task == nil {
 			err = &NotAuthenticated{
-				Token: encrypted,
+				Token: nakedSecret,
 			}
 			return
 		}
@@ -71,7 +62,7 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 			task.Failed,
 			task.Canceled:
 			err = &NotAuthenticated{
-				Token: encrypted,
+				Token: nakedSecret,
 			}
 			return
 		}

@@ -65,15 +65,11 @@ func (p *Builtin) UserKey(userId, password string, expiration time.Duration) (ke
 		}
 		return
 	}
+	hashedSecret := hashSecret(key.Secret)
 	m := &model.APIKey{
 		UserID:     &user.ID,
 		Expiration: time.Now().Add(expiration),
-		Secret:     key.Secret,
-	}
-	err = secret.Encrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+		Secret:     hashedSecret,
 	}
 	err = p.db.Create(m).Error
 	return
@@ -85,21 +81,17 @@ func (p *Builtin) TaskKey(taskId uint, expiration time.Duration) (key APIKey, er
 	if err != nil {
 		return
 	}
-	owner := &model.User{}
-	err = p.db.First(owner, taskId).Error
+	task := &model.Task{}
+	err = p.db.First(task, taskId).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	hashedSecret := hashSecret(key.Secret)
 	m := &model.APIKey{
-		TaskID:     &owner.ID,
+		TaskID:     &task.ID,
 		Expiration: time.Now().Add(expiration),
-		Secret:     key.Secret,
-	}
-	err = secret.Encrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+		Secret:     hashedSecret,
 	}
 	err = p.db.Create(m).Error
 	return
@@ -131,7 +123,8 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 			}
 			key, err = p.keySet.Key(kid.(string))
 			return
-		})
+		},
+		jwt.WithoutClaimsValidation())
 	if err != nil {
 		jwToken, err = jwt.Parse(
 			bearer,
@@ -143,7 +136,8 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 				}
 				secret = []byte(Settings.Auth.Token.Key)
 				return
-			})
+			},
+			jwt.WithoutClaimsValidation())
 	}
 	if err == nil {
 		err = p.validToken(jwToken)

@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -171,5 +174,14 @@ func asTime(n int) (t time.Time) {
 func asInt(t time.Time) (i int) {
 	t = t.UTC()
 	i = int(t.Unix())
+	return
+}
+
+// hashSecret hashes an API key secret using HMAC-SHA256.
+func hashSecret(plainSecret string) (hashed string) {
+	h := hmac.New(sha256.New, []byte(Settings.Auth.APIKeySecret))
+	h.Write([]byte(plainSecret))
+	hash := h.Sum(nil)
+	hashed = base64.StdEncoding.EncodeToString(hash)
 	return
 }
