@@ -16,25 +16,24 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	e.POST(api.AuthLoginRoute, h.Login)
-	e.POST(api.AuthRefreshRoute, h.Refresh)
+	e.POST(api.AuthAPIKeyRoute, h.CreateKey)
 }
 
-// Login godoc
-// @summary Login and obtain a bearer token.
-// @description Login and obtain a bearer token.
+// CreateKey godoc
+// @summary CreateKey create an API key.
+// @description CreateKey create an API key.
 // @tags auth
 // @produce json
-// @success 201 {object} api.Login
-// @router /auth/login [post]
-func (h AuthHandler) Login(ctx *gin.Context) {
-	r := &Login{}
+// @success 201 {object} api.APIKey
+// @router /auth/apikey [post]
+func (h AuthHandler) CreateKey(ctx *gin.Context) {
+	r := &APIKey{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	token, err := auth.Remote.Login(r.User, r.Password)
+	key, err := auth.Hub.UserKey(r.UserId, r.Password, r.Expiration)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -43,45 +42,13 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 			})
 		return
 	}
-	r.Password = "" // Clear out password from response
-	r.Token = token.Access
-	r.Refresh = token.Refresh
-	r.Expiry = token.Expiry
+	r.Password = ""
+	r.Secret = key.Secret
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-// Refresh godoc
-// @summary Refresh bearer token.
-// @description Refresh bearer token.
-// @tags auth
-// @produce json
-// @success 201 {object} api.Login
-// @router /auth/refresh [post]
-func (h AuthHandler) Refresh(ctx *gin.Context) {
-	r := &Login{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	token, err := auth.Remote.Refresh(r.Refresh)
-	if err != nil {
-		h.Respond(ctx,
-			http.StatusUnauthorized,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-	r.Password = "" // Clear out password from response
-	r.Token = token.Access
-	r.Refresh = token.Refresh
-	r.Expiry = token.Expiry
-	h.Respond(ctx, http.StatusCreated, r)
-}
-
-// Login REST resource.
-type Login = resource.Login
+// APIKey REST resource.
+type APIKey = resource.APIKey
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

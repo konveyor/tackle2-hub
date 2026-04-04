@@ -3,10 +3,15 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	"github.com/luikyv/go-oidc/pkg/goidc"
+	"gorm.io/gorm"
 )
 
 var (
@@ -14,35 +19,34 @@ var (
 	Log = logr.New("auth", Settings.Log.Auth)
 	// Hub provider.
 	Hub Provider
-	// Remote provider.
-	Remote Provider
 )
 
 func init() {
 	Hub = &NoAuth{}
-	Remote = &NoAuth{}
 }
 
 // Provider provides RBAC.
 type Provider interface {
-	// NewToken creates a signed token.
-	NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error)
-	// Authenticate authenticates and validates the token.
+	// UserKey returns a new key associated with a user.
+	UserKey(userId, password string, expiration time.Duration) (key APIKey, err error)
+	// TaskKey returns a new key associated with a task.
+	TaskKey(taskId uint, expiration time.Duration) (key APIKey, err error)
+	// Authenticate the request.
 	Authenticate(r *Request) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.
 	Scopes(jwToken *jwt.Token) []Scope
 	// User extracts the user from token.
 	User(jwToken *jwt.Token) (user string)
-	// Login and obtain a token.
-	Login(user, password string) (token Token, err error)
-	// Refresh token.
-	Refresh(refresh string) (token Token, err error)
+	// Handler returns an OIDC handler.
+	Handler() (h http.Handler)
 }
 
-type Token struct {
-	Access  string
-	Refresh string
-	Expiry  int
+// APIKey authentication key.
+type APIKey struct {
+	User       string
+	Secret     string
+	Scopes     []string
+	Expiration time.Time
 }
 
 // NotAuthenticated is returned when a token cannot be authenticated.
@@ -114,5 +118,34 @@ func (r *BaseScope) Match(resource string, method string) (b bool) {
 // String representations of the scope.
 func (r *BaseScope) String() (s string) {
 	s = strings.Join([]string{r.Resource, r.Method}, ":")
+	return
+}
+
+// notFound returns goidc.ErrNotFound when
+// err IsA gorm.ErrRecordNotFound.
+// Else, wrapped.
+func notFound(err error) (e2 error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		e2 = goidc.ErrNotFound
+	} else {
+		e2 = liberr.Wrap(err)
+	}
+	return
+}
+
+// asTime returns a time.Time for unix time.
+func asTime(n int) (t time.Time) {
+	t = time.Unix(int64(n), 0)
+	t = t.UTC()
+	return
+}
+
+// asInt returns unix time for time.Time.
+func asInt(t time.Time) (i int) {
+	t = t.UTC()
+	i = int(t.Unix())
 	return
 }

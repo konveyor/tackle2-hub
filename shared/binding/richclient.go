@@ -1,6 +1,8 @@
 package binding
 
 import (
+	"time"
+
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
@@ -77,15 +79,16 @@ func (r *RichClient) Use(client RestClient) {
 
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
-	login := api.Login{
-		User:     user,
-		Password: password,
+	key := api.APIKey{
+		UserId:     user,
+		Password:   password,
+		Expiration: time.Hour * 24,
 	}
-	err = r.Client.Post(api.AuthLoginRoute, &login)
+	err = r.Client.Post(api.AuthAPIKeyRoute, &key)
 	if err != nil {
 		return
 	}
-	r.Client.Use(login)
+	r.Client.Use(key.Secret)
 	return
 }
 

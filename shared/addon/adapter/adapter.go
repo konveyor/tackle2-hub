@@ -11,7 +11,6 @@ import (
 	logapi "github.com/go-logr/logr"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/konveyor/tackle2-hub/shared/task"
@@ -181,7 +180,7 @@ func (h *Adapter) Client() (richClient *RichClient) {
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
 	richClient := binding.New(Settings.Hub.URL)
-	richClient.Client.Use(api.Login{Token: Settings.Hub.Token})
+	richClient.Client.Use(Settings.Hub.Token)
 	adapter = &Adapter{}
 	adapter.Use(richClient)
 	Log.Info("Addon (adapter) created.")

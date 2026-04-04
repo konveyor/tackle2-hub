@@ -3,8 +3,6 @@ package client
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
 var _ RestClient = (*Stub)(nil)
@@ -36,8 +34,8 @@ type Stub struct {
 func (s *Stub) Reset() {
 }
 
-// Use login.
-func (s *Stub) Use(login api.Login) {
+// Use API key.
+func (s *Stub) Use(apiKey string) {
 }
 
 // SetRetry set the number of retries.

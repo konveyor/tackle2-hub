@@ -21,7 +21,7 @@ func (r *Request) Permit() (result Result, err error) {
 		jwToken *jwt.Token
 		p       Provider
 	)
-	for _, p = range []Provider{Hub, Remote} {
+	for _, p = range []Provider{Hub} {
 		var pErr error
 		jwToken, pErr = p.Authenticate(r)
 		if pErr == nil {

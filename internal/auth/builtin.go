@@ -1,154 +1,177 @@
 package auth
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/luikyv/go-oidc/pkg/goidc"
+	"github.com/luikyv/go-oidc/pkg/provider"
 	"gorm.io/gorm"
 )
 
-// Validators provide token validation based on claims.
-var Validators []Validator
+// KeySet alias.
+type KeySet = goidc.JSONWebKeySet
 
-// Validator provides token validation.
-type Validator interface {
-	// Valid determines if the token is valid.
-	// When valid, return nil.
-	// When not valid, return NotValid error.
-	// On failure, return the (cause) error.
-	Valid(token *jwt.Token, db *gorm.DB) (err error)
-}
-
-// NoAuth provider always permits access.
-type NoAuth struct {
-}
-
-// NewToken creates a new signed token.
-func (r NoAuth) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
-	return
-}
-
-// Authenticate the token
-func (r *NoAuth) Authenticate(_ *Request) (jwToken *jwt.Token, err error) {
-	return
-}
-
-// Scopes decodes a list of scopes from the token.
-// For the NoAuth provider, this just returns a single
-// wildcard scope matching everything.
-func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
-	scopes = append(scopes, &BaseScope{"*", "*"})
-	return
-}
-
-// User mocks username for NoAuth
-func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
-	name = "admin.noauth"
-	return
-}
-
-// Login and obtain a token.
-func (r *NoAuth) Login(user, password string) (token Token, err error) {
-	return
-}
-
-// Refresh token.
-func (r *NoAuth) Refresh(refresh string) (token Token, err error) {
-	return
-}
-
-// Builtin auth provider.
+// Builtin
 type Builtin struct {
+	db       *gorm.DB
+	openId   *provider.Provider
+	keyCache KeyCache
+	keySet   KeySet
 }
 
-// Authenticate the token
-func (r *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
+// Handler returns an http handler.
+func (p *Builtin) Handler() (h http.Handler) {
+	h = p.openId.Handler()
+	return
+}
+
+// UserKey returns a new key.
+func (p *Builtin) UserKey(userId, password string, expiration time.Duration) (key APIKey, err error) {
+	key, err = p.genKey()
+	if err != nil {
+		return
+	}
+	user := &model.User{}
+	err = p.db.First(user, "UserId", userId).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = &NotAuthenticated{
+				Token: userId,
+			}
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	err = secret.Decrypt(user)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if user.Password != password {
+		err = &NotAuthenticated{
+			Token: userId,
+		}
+		return
+	}
+	m := &model.APIKey{
+		UserID:     &user.ID,
+		Expiration: time.Now().Add(expiration),
+		Secret:     key.Secret,
+	}
+	err = secret.Encrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = p.db.Create(m).Error
+	return
+}
+
+// TaskKey returns a new key.
+func (p *Builtin) TaskKey(taskId uint, expiration time.Duration) (key APIKey, err error) {
+	key, err = p.genKey()
+	if err != nil {
+		return
+	}
+	owner := &model.User{}
+	err = p.db.First(owner, taskId).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	m := &model.APIKey{
+		TaskID:     &owner.ID,
+		Expiration: time.Now().Add(expiration),
+		Secret:     key.Secret,
+	}
+	err = secret.Encrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = p.db.Create(m).Error
+	return
+}
+
+// Authenticate a web request.
+func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
 			Log.V(2).Info("[builtin] " + err.Error())
 		}
 	}()
-	token, err := r.parseToken(request)
+	bearer, err := p.extractBearer(request)
 	if err != nil {
 		return
 	}
 	jwToken, err = jwt.Parse(
-		token,
-		func(jwToken *jwt.Token) (secret any, err error) {
-			_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
+		bearer,
+		func(jwToken *jwt.Token) (key any, err error) {
+			_, cast := jwToken.Method.(*jwt.SigningMethodRSA)
 			if !cast {
-				err = liberr.Wrap(&NotAuthenticated{Token: token})
+				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 				return
 			}
-			secret = []byte(Settings.Auth.Token.Key)
+			kid, found := jwToken.Header["kid"]
+			if !found {
+				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
+				return
+			}
+			key, err = p.keySet.Key(kid.(string))
 			return
 		})
 	if err != nil {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
-		return
-	}
-	if !jwToken.Valid {
-		err = liberr.Wrap(&NotAuthenticated{Token: token})
-		return
-	}
-	claims, cast := jwToken.Claims.(jwt.MapClaims)
-	if !cast {
-		err = liberr.Wrap(
-			&NotValid{
-				Reason: "Claims not specified.",
-				Token:  token,
+		jwToken, err = jwt.Parse(
+			bearer,
+			func(jwToken *jwt.Token) (secret any, err error) {
+				_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
+				if !cast {
+					err = liberr.Wrap(&NotAuthenticated{Token: bearer})
+					return
+				}
+				secret = []byte(Settings.Auth.Token.Key)
+				return
 			})
+	}
+	if err == nil {
+		err = p.validateToken(jwToken)
 		return
 	}
-	v, found := claims["user"]
-	if !found {
-		err = liberr.Wrap(
-			&NotValid{
-				Reason: "User not specified.",
-				Token:  token,
-			})
-		return
-	}
-	_, cast = v.(string)
-	if !cast {
-		err = liberr.Wrap(
-			&NotValid{
-				Reason: "User not string.",
-				Token:  token,
-			})
-		return
-	}
-	v, found = claims["scope"]
-	if !found {
-		err = liberr.Wrap(
-			&NotValid{
-				Reason: "Scope not specified.",
-				Token:  token,
-			})
-		return
-	}
-	_, cast = v.(string)
-	if !cast {
-		err = liberr.Wrap(
-			&NotValid{
-				Reason: "Scope not string.",
-				Token:  token,
-			})
-		return
-	}
-	for _, v := range Validators {
-		err = v.Valid(jwToken, request.DB)
-		if err != nil {
-			return
-		}
+	key, err := p.keyCache.Get(bearer)
+	if err == nil {
+		token := jwt.New(jwt.SigningMethodHS512)
+		jwtClaims := token.Claims.(jwt.MapClaims)
+		jwtClaims["scopes"] = strings.Join(key.Scopes, " ")
+		jwtClaims["subject"] = key.User
 	}
 	return
 }
 
+// Revoke an access token.
+func (p *Builtin) Revoke(token *jwt.Token) (err error) {
+	return
+}
+
+func (r *Builtin) User(jwToken *jwt.Token) (user string) {
+	claims := jwToken.Claims.(jwt.MapClaims)
+	user = claims["user"].(string)
+	return
+}
+
 // Scopes returns a list of scopes.
-func (r *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
+func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	claims := jwToken.Claims.(jwt.MapClaims)
 	for _, s := range strings.Fields(claims["scope"].(string)) {
 		scope := &BaseScope{}
@@ -160,43 +183,158 @@ func (r *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	return
 }
 
-// User returns the user associated with the token.
-func (r *Builtin) User(jwToken *jwt.Token) (user string) {
-	claims := jwToken.Claims.(jwt.MapClaims)
-	user = claims["user"].(string)
-	return
-}
-
-// Login and obtain a token.
-func (r *Builtin) Login(user, password string) (token Token, err error) {
-	return
-}
-
-// Refresh token.
-func (r *Builtin) Refresh(refresh string) (token Token, err error) {
-	return
-}
-
-// NewToken creates a new signed token.
-func (r *Builtin) NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error) {
-	token := jwt.New(jwt.SigningMethodHS512)
-	jwtClaims := token.Claims.(jwt.MapClaims)
-	for k, v := range claims {
-		jwtClaims[k] = v
-	}
-	jwtClaims["user"] = user
-	jwtClaims["scope"] = strings.Join(scopes, " ")
-	signed, err = token.SignedString([]byte(Settings.Auth.Token.Key))
-	return
-}
-
-// parseToken returns the token
-func (r *Builtin) parseToken(request *Request) (token string, err error) {
+// extractBearer returns the token
+func (p *Builtin) extractBearer(request *Request) (bearer string, err error) {
 	splitToken := strings.Fields(request.Token)
 	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
 		err = liberr.Wrap(&NotValid{Token: request.Token})
 		return
 	}
-	token = splitToken[1]
+	bearer = splitToken[1]
+	return
+}
+
+// validateToken determines if the token is valid..
+func (p *Builtin) validateToken(jwToken *jwt.Token) (err error) {
+	if !jwToken.Valid {
+		err = liberr.Wrap(&NotAuthenticated{Token: jwToken.Raw})
+		return
+	}
+	claims, cast := jwToken.Claims.(jwt.MapClaims)
+	if !cast {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Claims not specified.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	v, found := claims["sub"]
+	if !found {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "User not specified.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	_, cast = v.(string)
+	if !cast {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "User not string.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	v, found = claims["scope"]
+	if !found {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Scope not specified.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	_, cast = v.(string)
+	if !cast {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Scope not string.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	return
+}
+
+// genKey returns a new generated key.
+func (p *Builtin) genKey() (key APIKey, err error) {
+	prefix := "apikey_"
+	b := make([]byte, 32)
+	_, err = rand.Read(b)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	generated := base64.RawURLEncoding.EncodeToString(b)
+	key.Secret = prefix + generated
+	return
+}
+
+// New returns a configured provider.
+func New(db *gorm.DB) (p *Builtin, err error) {
+	p = &Builtin{
+		keyCache: KeyCache{db: db},
+		db:       db,
+	}
+	grantManager := NewGrantManager(db)
+	keyManager := NewKeyManager(db)
+	authManager := NewAuthManager(db)
+	tokenManager := NewTokenManager(db)
+	p.keySet, err = keyManager.KeySet()
+	if err != nil {
+		return
+	}
+	authPolicy := goidc.NewPolicy(
+		"main",
+		func(*http.Request, *goidc.Client, *goidc.AuthnSession) bool {
+			return true
+		},
+		authManager.Login,
+	)
+	issuer := Settings.Auth.IssuerURL
+	if issuer == "" {
+		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
+	}
+	p.openId, err = provider.New(
+		goidc.ProfileOpenID,
+		issuer,
+		func(ctx context.Context) (keySet goidc.JSONWebKeySet, err error) {
+			keySet = p.keySet
+			return
+		},
+		provider.WithScopes(
+			goidc.ScopeOpenID,
+			goidc.ScopeProfile,
+			goidc.ScopeEmail,
+		),
+		provider.WithGrantTypes(
+			goidc.GrantClientCredentials,
+			goidc.GrantAuthorizationCode,
+			goidc.GrantRefreshToken,
+		),
+		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
+		provider.WithTokenOptions(grantManager.tokenOptions),
+		provider.WithTokenManager(tokenManager),
+		provider.WithGrantManager(grantManager),
+		provider.WithPolicies(authPolicy),
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	client := &goidc.Client{}
+	client.ID = Settings.Auth.Client.ID
+	client.Name = Settings.Auth.Client.Name
+	client.Secret = Settings.Auth.Client.Secret
+	client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
+	client.ScopeIDs = "openid profile email"
+	client.GrantTypes = []goidc.GrantType{
+		goidc.GrantClientCredentials,
+		goidc.GrantAuthorizationCode,
+		goidc.GrantRefreshToken,
+	}
+	client.ResponseTypes = []goidc.ResponseType{
+		goidc.ResponseTypeCode,
+	}
+	client.RedirectURIs = []string{
+		issuer + "/callback",
+	}
+	err = p.openId.SaveClient(context.Background(), client)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }

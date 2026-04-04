@@ -20,7 +20,7 @@ type OIDCHandler struct {
 // AddRoutes adds routes.
 func (h OIDCHandler) AddRoutes(e *gin.Engine) {
 	// OIDC routes.
-	h2 := auth.OIDC.Handler()
+	h2 := auth.Hub.Handler()
 	h2 = http.StripPrefix(api.OIDCRoutes, h2)
 	routeGroup := e.Group(api.OIDCRoutes)
 	routeGroup.Any("/*path", gin.WrapH(h2))

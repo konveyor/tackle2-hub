@@ -1,0 +1,119 @@
+package auth
+
+import (
+	"errors"
+	"net/http"
+
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
+	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/luikyv/go-oidc/pkg/goidc"
+	"gorm.io/gorm"
+)
+
+// NewAuthManager returns an authn manager.
+func NewAuthManager(db *gorm.DB) (m *AuthManager) {
+	m = &AuthManager{db: db}
+	return
+}
+
+// AuthManager applies authN and AuthZ.
+type AuthManager struct {
+	db *gorm.DB
+}
+
+// Login provides the access token authentication.
+func (r *AuthManager) Login(
+	writer http.ResponseWriter,
+	request *http.Request,
+	session *goidc.AuthnSession) (status goidc.Status, err error) {
+	//
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	var userid, password string
+	if session.Subject == "" {
+		userid = request.PostFormValue("userid")
+		password = request.PostFormValue("password")
+	}
+	if userid == "" || password == "" {
+		err = r.renderPage(writer, request, session)
+		status = goidc.StatusInProgress
+		return
+	}
+	user := &model.User{}
+	err = r.db.First(user, "name", userid).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = r.renderPage(writer, request, session)
+			status = goidc.StatusInProgress
+			err = nil
+		}
+		return
+	}
+	err = secret.Decrypt(user)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	if password != user.Password {
+		err = r.renderPage(writer, request, session)
+		status = goidc.StatusInProgress
+		return
+	}
+	session.Subject = user.UUID
+	status = goidc.StatusSuccess
+	return
+}
+
+// renderPage renders the login page.
+func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, session *goidc.AuthnSession) (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	issuer := Settings.Auth.IssuerURL
+	if issuer == "" {
+		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
+	}
+	// Simple login form HTML - POST to callback URL with session CallbackID
+	html := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Tackle Hub - Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; }
+        h1 { color: #333; }
+        form { background: #f5f5f5; padding: 20px; border-radius: 5px; }
+        input { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; width: 100%; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Tackle Hub Login</h1>
+    <form action="` + issuer + `/authorize/` + session.CallbackID + `" method="post">
+        <div>
+            <label>Username:</label>
+            <input type="text" name="userid" required autofocus />
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" name="password" required />
+        </div>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>`
+	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, err = writer.Write([]byte(html))
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}

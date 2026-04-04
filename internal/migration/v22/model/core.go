@@ -212,7 +212,7 @@ type Identity struct {
 type User struct {
 	Model
 	UUID     string `gorm:"<-:create;index;not null"`
-	Name     string `gorm:"index;not null"`
+	UserId   string `gorm:"<-:create;index;not null"`
 	Password string `gorm:"not null" secret:""`
 	Email    string `gorm:"index;not null"`
 	Roles    []Role `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
@@ -227,7 +227,7 @@ type Role struct {
 type Permission struct {
 	Model
 	Name  string `gorm:"not null"`
-	Scope string `gorm:"not null"`
+	Scope string `gorm:"uniqueIndex;not null"`
 }
 
 //
@@ -276,6 +276,16 @@ type Token struct {
 	Revoked    time.Time
 	UserID     *uint `gorm:"index"`
 	User       *User `gorm:"constraint:OnDelete:CASCADE"`
+}
+
+type APIKey struct {
+	Model
+	Secret     string `gorm:"uniqueIndex;not null" secret:""`
+	Expiration time.Time
+	UserID     *uint `gorm:"index"`
+	User       *User `gorm:"constraint:OnDelete:CASCADE"`
+	TaskID     *uint `gorm:"index"`
+	Task       *Task `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 //

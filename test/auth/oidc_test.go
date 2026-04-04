@@ -110,7 +110,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 
 	// Create test user
 	user := api.User{
-		Name:     "oidc-test-user",
+		UserId:   "oidc-test-user",
 		Email:    "oidc-test@example.com",
 		Password: "oidc-test-password",
 	}
@@ -121,7 +121,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	})
 
 	// Use the original plaintext password for login (not the encrypted one from API)
-	username := user.Name
+	username := user.UserId
 	password := "oidc-test-password"
 
 	// Create HTTP client with cookie jar (to maintain session)
@@ -305,7 +305,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 
 	// Create test user with role
 	user := api.User{
-		Name:     "oidc-role-test-user",
+		UserId:   "oidc-role-test-user",
 		Email:    "oidc-role-test@example.com",
 		Password: "oidc-role-test-password",
 		Roles: []api.Ref{
@@ -329,7 +329,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	issuer := discovery["issuer"].(string)
 
 	// Use plaintext password
-	username := user.Name
+	username := user.UserId
 	password := "oidc-role-test-password"
 
 	// Create HTTP client with cookie jar

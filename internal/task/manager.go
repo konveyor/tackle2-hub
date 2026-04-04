@@ -14,7 +14,6 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/internal/auth"
 	k8s2 "github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
@@ -96,12 +95,6 @@ var (
 	Settings = &settings.Settings
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
-
-func init() {
-	auth.Validators = append(
-		auth.Validators,
-		&Validator{})
-}
 
 // New manager.
 func New(db *gorm.DB, client k8s.Client) (m *Manager) {

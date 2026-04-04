@@ -61,6 +61,7 @@ type RsaKey = model.RsaKey
 type IdpIdentity = model.IdpIdentity
 type Grant = model.Grant
 type Token = model.Token
+type APIKey = model.APIKey
 
 // JSON fields
 type Ref = json.Ref

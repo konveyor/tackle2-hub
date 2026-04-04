@@ -124,13 +124,12 @@ type Repository struct {
 	Path   string `json:"path"`
 }
 
-// Login REST resource.
-type Login struct {
-	User     string `json:"user"`
-	Password string `json:"password,omitempty"`
-	Token    string `json:"token"`
-	Refresh  string `json:"refresh"`
-	Expiry   int    `json:"expiry"`
+// APIKey REST resource.
+type APIKey struct {
+	UserId     string        `json:"userId"`
+	Password   string        `json:"password"`
+	Secret     string        `json:"secret"`
+	Expiration time.Duration `json:"expiration"`
 }
 
 // Addon REST resource.
@@ -166,7 +165,7 @@ type IdpIdentity struct {
 type User struct {
 	Resource `yaml:",inline"`
 	UUID     string `json:"uuid"`
-	Name     string `json:"name" binding:"required"`
+	UserId   string `json:"userId" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required"`
 	Roles    []Ref  `json:"roles"`

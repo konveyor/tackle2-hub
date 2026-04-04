@@ -62,7 +62,7 @@ func TestUser(t *testing.T) {
 
 	// Define the user to create with password and roles
 	user := &api.User{
-		Name:     "testuser",
+		UserId:   "testuser",
 		Password: password,
 		Email:    "testuser@example.com",
 		Roles: []api.Ref{
@@ -98,7 +98,7 @@ func TestUser(t *testing.T) {
 	g.Expect(retrieved.Password).To(Equal(password))
 
 	// Verify basic fields
-	g.Expect(retrieved.Name).To(Equal(user.Name))
+	g.Expect(retrieved.UserId).To(Equal(user.UserId))
 	g.Expect(retrieved.UUID).ToNot(BeZero()) // assigned.
 	g.Expect(retrieved.Email).To(Equal(user.Email))
 

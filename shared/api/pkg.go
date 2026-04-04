@@ -127,9 +127,8 @@ const (
 
 // Routes - Auth
 const (
-	AuthRoute        = "/auth"
-	AuthLoginRoute   = AuthRoute + "/login"
-	AuthRefreshRoute = AuthRoute + "/refresh"
+	AuthRoute       = "/auth"
+	AuthAPIKeyRoute = AuthRoute + "/apikey"
 )
 
 // Routes - Batch

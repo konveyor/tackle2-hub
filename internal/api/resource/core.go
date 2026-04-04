@@ -13,8 +13,8 @@ type Cache = api.Cache
 // ConfigMap REST resource.
 type ConfigMap = api.ConfigMap
 
-// Login REST resource.
-type Login = api.Login
+// APIKey REST resource.
+type APIKey = api.APIKey
 
 // RestAPI REST resource.
 type RestAPI = api.RestAPI

@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	pathlib "path"
-	"strings"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -34,8 +33,8 @@ type Client struct {
 	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
-	// login API resource.
-	Login api.Login
+	// APIKey api key.
+	APIKey string
 	// Retry limit.
 	Retry uint8
 	// Error
@@ -47,9 +46,9 @@ func (r *Client) Reset() {
 	r.Error = nil
 }
 
-// Use the login.
-func (r *Client) Use(login api.Login) {
-	r.Login = login
+// Use API key.
+func (r *Client) Use(apiKey string) {
+	r.APIKey = apiKey
 }
 
 // SetRetry set the number of retries.
@@ -732,7 +731,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, "Bearer "+r.Login.Token)
+		request.Header.Set(api.Authorization, "Bearer "+r.APIKey)
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -762,18 +761,6 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 				if i < r.Retry {
 					_ = response.Body.Close()
 					time.Sleep(RetryDelay)
-					continue
-				}
-			}
-			if response.StatusCode == http.StatusUnauthorized {
-				refreshed, nErr := r.refreshToken(request)
-				if nErr != nil {
-					r.Error = liberr.Wrap(nErr)
-					err = r.Error
-					return
-				}
-				if refreshed {
-					_ = response.Body.Close()
 					continue
 				}
 			}
@@ -878,24 +865,5 @@ func (f *Field) encoding() (mt string) {
 // disposition returns content-disposition.
 func (f *Field) disposition() (d string) {
 	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
-	return
-}
-
-// refreshToken refreshes the token.
-func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
-	if r.Login.Token == "" ||
-		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoute) {
-		return
-	}
-	login := &api.Login{Refresh: r.Login.Refresh}
-	err = r.Post(api.AuthRefreshRoute, login)
-	if err == nil {
-		r.Login.Token = login.Token
-		refreshed = true
-		return
-	}
-	if errors.Is(err, &RestError{}) {
-		err = nil
-	}
 	return
 }
