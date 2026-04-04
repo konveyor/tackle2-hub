@@ -3615,8 +3615,8 @@ func TestAPIKey_With(t *testing.T) {
 	g.Expect(r.User.ID).To(gomega.Equal(uint(5)))
 	g.Expect(r.User.Name).To(gomega.Equal("testuser"))
 
-	// Verify expiration is calculated as duration
-	g.Expect(r.Expiration).To(gomega.BeNumerically(">", 0))
+	// Verify lifespan is calculated as duration
+	g.Expect(r.Lifespan).To(gomega.BeNumerically(">", 0))
 }
 
 // TestAPIKey_WithTask tests the APIKey.With() method with a task reference.

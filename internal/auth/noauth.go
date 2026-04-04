@@ -13,12 +13,12 @@ type NoAuth struct {
 }
 
 // UserKey returns a new key associated with a user.
-func (r *NoAuth) UserKey(userId, password string, expiration time.Duration) (key APIKey, err error) {
+func (r *NoAuth) UserKey(userId, password string, lifespan time.Duration) (key APIKey, err error) {
 	return
 }
 
 // TaskKey returns a new key associated with a task.
-func (r *NoAuth) TaskKey(taskId uint, expiration time.Duration) (key APIKey, err error) {
+func (r *NoAuth) TaskKey(taskId uint, lifespan time.Duration) (key APIKey, err error) {
 	return
 }
 

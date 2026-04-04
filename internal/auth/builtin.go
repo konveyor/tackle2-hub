@@ -37,8 +37,8 @@ func (p *Builtin) Handler() (h http.Handler) {
 }
 
 // UserKey returns a new key.
-func (p *Builtin) UserKey(userId, password string, expiration time.Duration) (key APIKey, err error) {
-	key, err = p.genKey(expiration)
+func (p *Builtin) UserKey(userId, password string, lifespan time.Duration) (key APIKey, err error) {
+	key, err = p.genKey(lifespan)
 	if err != nil {
 		return
 	}
@@ -75,8 +75,8 @@ func (p *Builtin) UserKey(userId, password string, expiration time.Duration) (ke
 }
 
 // TaskKey returns a new key.
-func (p *Builtin) TaskKey(taskId uint, expiration time.Duration) (key APIKey, err error) {
-	key, err = p.genKey(expiration)
+func (p *Builtin) TaskKey(taskId uint, lifespan time.Duration) (key APIKey, err error) {
+	key, err = p.genKey(lifespan)
 	if err != nil {
 		return
 	}
@@ -273,7 +273,7 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 }
 
 // genKey returns a new generated key.
-func (p *Builtin) genKey(expiration time.Duration) (key APIKey, err error) {
+func (p *Builtin) genKey(lifespan time.Duration) (key APIKey, err error) {
 	prefix := "apikey_"
 	b := make([]byte, 32)
 	_, err = rand.Read(b)
@@ -284,7 +284,7 @@ func (p *Builtin) genKey(expiration time.Duration) (key APIKey, err error) {
 	generated := base64.RawURLEncoding.EncodeToString(b)
 	key.Secret = prefix + generated
 	key.Digest = hashSecret(key.Secret)
-	key.Expiration = time.Now().Add(expiration)
+	key.Expiration = time.Now().Add(lifespan)
 	return
 }
 

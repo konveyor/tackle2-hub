@@ -80,9 +80,9 @@ func (r *RichClient) Use(client RestClient) {
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
 	key := api.APIKey{
-		UserId:     user,
-		Password:   password,
-		Expiration: time.Hour * 24,
+		UserId:   user,
+		Password: password,
+		Lifespan: time.Hour * 24,
 	}
 	err = r.Client.Post(api.AuthAPIKeyRoute, &key)
 	if err != nil {
