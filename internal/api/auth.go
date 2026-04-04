@@ -20,11 +20,17 @@ type AuthHandler struct {
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
-	e.POST(api.AuthAPIKeyRoute, h.CreateKey)
+	routeGroup := e.Group("/")
+	routeGroup.Use(Required("auth.apikeys"))
+	routeGroup.POST(api.AuthAPIKeyRoute, h.CreateKey)
+	routeGroup.GET(api.AuthAPIKeysRoute, h.APIKeyList)
+	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
+	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
+	routeGroup.DELETE(api.AuthAPIKeyIDRoute, h.APIKeyDelete)
 	// OIDC routes.
 	h2 := auth.Hub.Handler()
 	h2 = http.StripPrefix(api.OIDCRoutes, h2)
-	routeGroup := e.Group(api.OIDCRoutes)
+	routeGroup = e.Group(api.OIDCRoutes)
 	routeGroup.Any("/*path", gin.WrapH(h2))
 	// IdpIdentity routes
 	routeGroup = e.Group("/")
@@ -87,9 +93,83 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 			})
 		return
 	}
-	r.Password = ""
-	r.Secret = key.Secret
+	r.UserId = ""         // redacted.
+	r.Password = ""       // redacted.
+	r.Secret = key.Secret // Plain text (user must save it).
+	r.Digest = key.Digest // Hash (for reference).
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// APIKeyGet godoc
+// @summary Get an API key by ID.
+// @description Get an API key by ID.
+// @tags apikeys
+// @produce json
+// @success 200 {object} api.APIKey
+// @router /auth/apikeys/{id} [get]
+// @param id path int true "APIKey ID"
+func (h AuthHandler) APIKeyGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.APIKey{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r := APIKey{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// APIKeyList godoc
+// @summary List all API keys.
+// @description List all API keys.
+// @tags apikeys
+// @produce json
+// @success 200 {object} []api.APIKey
+// @router /auth/apikeys [get]
+func (h AuthHandler) APIKeyList(ctx *gin.Context) {
+	var list []model.APIKey
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resources := []APIKey{}
+	for i := range list {
+		r := APIKey{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// APIKeyDelete godoc
+// @summary Delete an API key.
+// @description Delete an API key.
+// @tags apikeys
+// @success 204
+// @router /auth/apikeys/{id} [delete]
+// @param id path int true "APIKey ID"
+func (h AuthHandler) APIKeyDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.APIKey{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Delete(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
 }
 
 //

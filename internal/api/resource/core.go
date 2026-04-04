@@ -1,6 +1,9 @@
 package resource
 
 import (
+	"time"
+
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
@@ -14,7 +17,26 @@ type Cache = api.Cache
 type ConfigMap = api.ConfigMap
 
 // APIKey REST resource.
-type APIKey = api.APIKey
+type APIKey api.APIKey
+
+// With converts model to REST resource.
+func (r *APIKey) With(m *model.APIKey) {
+	baseWith(&r.Resource, &m.Model)
+	r.Digest = m.Digest
+	r.Expiration = time.Until(m.Expiration)
+	if m.User != nil {
+		r.User = &api.Ref{
+			ID:   m.User.ID,
+			Name: m.User.UserId,
+		}
+	}
+	if m.Task != nil {
+		r.Task = &api.Ref{
+			ID:   m.Task.ID,
+			Name: m.Task.Name,
+		}
+	}
+}
 
 // RestAPI REST resource.
 type RestAPI = api.RestAPI

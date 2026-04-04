@@ -68,7 +68,7 @@ func (p *Builtin) UserKey(userId, password string, expiration time.Duration) (ke
 	m := &model.APIKey{
 		UserID:     &user.ID,
 		Expiration: time.Now().Add(expiration),
-		Digest:     hashSecret(key.Secret),
+		Digest:     key.Digest,
 	}
 	err = p.db.Create(m).Error
 	return
@@ -89,7 +89,7 @@ func (p *Builtin) TaskKey(taskId uint, expiration time.Duration) (key APIKey, er
 	m := &model.APIKey{
 		TaskID:     &task.ID,
 		Expiration: time.Now().Add(expiration),
-		Digest:     hashSecret(key.Secret),
+		Digest:     key.Digest,
 	}
 	err = p.db.Create(m).Error
 	return
@@ -283,6 +283,7 @@ func (p *Builtin) genKey() (key APIKey, err error) {
 	}
 	generated := base64.RawURLEncoding.EncodeToString(b)
 	key.Secret = prefix + generated
+	key.Digest = hashSecret(key.Secret)
 	return
 }
 

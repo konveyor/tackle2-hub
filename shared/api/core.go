@@ -126,10 +126,14 @@ type Repository struct {
 
 // APIKey REST resource.
 type APIKey struct {
-	UserId     string        `json:"userId"`
-	Password   string        `json:"password"`
-	Secret     string        `json:"secret"`
-	Expiration time.Duration `json:"expiration"`
+	Resource   `yaml:",inline"`
+	UserId     string        `json:"userId,omitempty"`
+	Password   string        `json:"password,omitempty"`
+	Digest     string        `json:"digest,omitempty"`
+	Secret     string        `json:"secret,omitempty"`
+	Expiration time.Duration `json:"expiration,omitempty"`
+	User       *Ref          `json:"user,omitempty"`
+	Task       *Ref          `json:"task,omitempty"`
 }
 
 // Addon REST resource.

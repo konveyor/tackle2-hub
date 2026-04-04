@@ -41,12 +41,20 @@ func TestUserKey(t *testing.T) {
 	key, err := provider.UserKey("testuser", "testpassword", 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
+	g.Expect(key.Digest).NotTo(BeEmpty())
+	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
 
 	// Verify the API key was created in the database
 	var keyCount int64
 	err = db.Model(&model.APIKey{}).Count(&keyCount).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(keyCount).To(Equal(int64(1)))
+
+	// Verify the digest in the database matches
+	var dbKey model.APIKey
+	err = db.First(&dbKey).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
 	// Test creating API key with invalid password
 	_, err = provider.UserKey("testuser", "wrongpassword", 24*time.Hour)
@@ -71,18 +79,17 @@ func TestUserKey(t *testing.T) {
 	g.Expect(claims[ClaimSub]).To(Equal("test-uuid-123"))
 
 	// Test that expired keys are rejected
+	expiredSecret := "expired-secret-key"
 	expiredKey := &model.APIKey{
 		UserID:     &user.ID,
 		Expiration: time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
-		Digest:     "expired-secret-key",
+		Digest:     hashSecret(expiredSecret),
 	}
-	err = secret.Encrypt(expiredKey)
-	g.Expect(err).To(BeNil())
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
 
 	request = &Request{
-		Token: "Bearer expired-secret-key",
+		Token: "Bearer " + expiredSecret,
 	}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -110,6 +117,8 @@ func TestTaskKey(t *testing.T) {
 	key, err := provider.TaskKey(task.ID, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
+	g.Expect(key.Digest).NotTo(BeEmpty())
+	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
 
 	// Test authenticating with the task API key
 	request := &Request{
@@ -118,6 +127,12 @@ func TestTaskKey(t *testing.T) {
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
+
+	// Verify the digest in the database matches
+	var dbKey model.APIKey
+	err = db.First(&dbKey).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
 	// Test creating key for non-existent task
 	_, err = provider.TaskKey(99999, 24*time.Hour)

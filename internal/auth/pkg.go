@@ -60,6 +60,7 @@ type Provider interface {
 // APIKey authentication key.
 type APIKey struct {
 	User       string
+	Digest     string
 	Secret     string
 	Scopes     []string
 	Expiration time.Time
