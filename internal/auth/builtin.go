@@ -151,10 +151,10 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 	}
 	key, err := p.keyCache.Get(bearer)
 	if err == nil {
-		token := jwt.New(jwt.SigningMethodHS512)
-		jwtClaims := token.Claims.(jwt.MapClaims)
-		jwtClaims["scopes"] = strings.Join(key.Scopes, " ")
-		jwtClaims["subject"] = key.User
+		jwToken = jwt.New(jwt.SigningMethodHS512)
+		jwtClaims := jwToken.Claims.(jwt.MapClaims)
+		jwtClaims[ClaimScope] = strings.Join(key.Scopes, " ")
+		jwtClaims[ClaimSub] = key.User
 	}
 	return
 }
@@ -166,19 +166,25 @@ func (p *Builtin) Revoke(token *jwt.Token) (err error) {
 
 func (r *Builtin) User(jwToken *jwt.Token) (user string) {
 	claims := jwToken.Claims.(jwt.MapClaims)
-	user = claims["user"].(string)
+	v := claims[ClaimSub]
+	if s, cast := v.(string); cast {
+		user = s
+	}
 	return
 }
 
 // Scopes returns a list of scopes.
 func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	claims := jwToken.Claims.(jwt.MapClaims)
-	for _, s := range strings.Fields(claims["scope"].(string)) {
-		scope := &BaseScope{}
-		scope.With(s)
-		scopes = append(
-			scopes,
-			scope)
+	v := claims[ClaimScope]
+	if sList, cast := v.(string); cast {
+		for _, s := range strings.Fields(sList) {
+			scope := &BaseScope{}
+			scope.With(s)
+			scopes = append(
+				scopes,
+				scope)
+		}
 	}
 	return
 }
@@ -209,7 +215,7 @@ func (p *Builtin) validateToken(jwToken *jwt.Token) (err error) {
 			})
 		return
 	}
-	v, found := claims["sub"]
+	v, found := claims[ClaimSub]
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
@@ -227,7 +233,7 @@ func (p *Builtin) validateToken(jwToken *jwt.Token) (err error) {
 			})
 		return
 	}
-	v, found = claims["scope"]
+	v, found = claims[ClaimScope]
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
@@ -243,6 +249,32 @@ func (p *Builtin) validateToken(jwToken *jwt.Token) (err error) {
 				Reason: "Scope not string.",
 				Token:  jwToken.Raw,
 			})
+		return
+	}
+	v, found = claims[ClaimExp]
+	if !found {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Exp not specified.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	f64, cast := v.(float64)
+	if !cast {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Exp not float64.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	expiration := time.Unix(int64(f64), 0)
+	if expiration.Before(time.Now()) {
+		err = &NotValid{
+			Reason: "Token expired.",
+			Token:  jwToken.Raw,
+		}
 		return
 	}
 	return

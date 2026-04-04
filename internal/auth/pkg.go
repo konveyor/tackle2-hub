@@ -62,6 +62,17 @@ type APIKey struct {
 	Expiration time.Time
 }
 
+// JWT Claims - Standard registered claim names.
+const (
+	ClaimSub   = "sub"   // Subject
+	ClaimScope = "scope" // Scope
+	ClaimExp   = "exp"   // Expiration Time
+	ClaimIss   = "iss"   // Issuer
+	ClaimAud   = "aud"   // Audience
+	ClaimIat   = "iat"   // Issued At
+	ClaimJti   = "jti"   // JWT ID
+)
+
 // NotAuthenticated is returned when a token cannot be authenticated.
 type NotAuthenticated struct {
 	Token string
