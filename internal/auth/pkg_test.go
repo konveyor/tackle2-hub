@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -312,6 +313,273 @@ func TestInvalidBearerToken(t *testing.T) {
 	}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
+}
+
+// TestBaseScopeMatching tests scope matching with wildcards and exact matches.
+func TestBaseScopeMatching(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Wildcard scope matches everything
+	scope := &BaseScope{Resource: "*", Method: "*"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("tags", "POST")).To(BeTrue())
+
+	// Resource wildcard matches any method for that resource
+	scope = &BaseScope{Resource: "applications", Method: "*"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeTrue())
+	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
+
+	// Method wildcard matches that method for any resource
+	scope = &BaseScope{Resource: "*", Method: "GET"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("tags", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
+
+	// Exact match
+	scope = &BaseScope{Resource: "applications", Method: "GET"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
+	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
+
+	// Case insensitive
+	scope = &BaseScope{Resource: "Applications", Method: "get"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+}
+
+// TestBaseScopeParsing tests parsing scope strings.
+func TestBaseScopeParsing(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	scope := &BaseScope{}
+	scope.With("applications:read")
+	g.Expect(scope.Resource).To(Equal("applications"))
+	g.Expect(scope.Method).To(Equal("read"))
+
+	scope = &BaseScope{}
+	scope.With("*:*")
+	g.Expect(scope.Resource).To(Equal("*"))
+	g.Expect(scope.Method).To(Equal("*"))
+
+	// Test String() roundtrip
+	scope = &BaseScope{Resource: "tags", Method: "write"}
+	g.Expect(scope.String()).To(Equal("tags:write"))
+}
+
+// TestHashSecretDeterministic tests that hashing is deterministic.
+func TestHashSecretDeterministic(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	secret := "test-secret-key"
+
+	// Same input should produce same hash
+	hash1 := hashSecret(secret)
+	hash2 := hashSecret(secret)
+	g.Expect(hash1).To(Equal(hash2))
+
+	// Different inputs should produce different hashes
+	hash3 := hashSecret("different-secret")
+	g.Expect(hash1).NotTo(Equal(hash3))
+
+	// Hash should not be empty
+	g.Expect(hash1).NotTo(BeEmpty())
+}
+
+// TestKeyCacheWithTaskStates tests that keys for terminal tasks are rejected.
+func TestKeyCacheWithTaskStates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test task in running state
+	task := &model.Task{
+		Name:  "test-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create API key for running task - should work
+	key, err := provider.TaskKey(task.ID, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Authenticate with key - should work
+	request := &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Update task to Succeeded - key should now be rejected
+	db.Model(task).Update("State", "Succeeded")
+	request = &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+
+	// Test with Failed state
+	db.Model(task).Update("State", "Failed")
+	request = &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+
+	// Test with Canceled state
+	db.Model(task).Update("State", "Canceled")
+	request = &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestRequestPermit tests the complete authentication and authorization flow.
+func TestRequestPermit(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create user with specific permissions
+	user := &model.User{
+		UUID:     "user-123",
+		UserId:   "testuser",
+		Password: "password",
+		Email:    "test@example.com",
+	}
+	err = secret.Encrypt(user)
+	g.Expect(err).To(BeNil())
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// Create role with permissions
+	perm := &model.Permission{
+		Name:  "Read Applications",
+		Scope: "applications:GET",
+	}
+	err = db.Create(perm).Error
+	g.Expect(err).To(BeNil())
+
+	role := &model.Role{
+		Name: "ApplicationReader",
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role).Association("Permissions").Append(perm)
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(user).Association("Roles").Append(role)
+	g.Expect(err).To(BeNil())
+
+	// Set up provider
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	Hub = provider
+
+	// Create API key
+	key, err := provider.UserKey("testuser", "password", 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Test authenticated and authorized (matching scope)
+	request := &Request{
+		Token:  "Bearer " + key.Secret,
+		Scope:  "applications",
+		Method: "GET",
+		DB:     db,
+	}
+	result, err := request.Permit()
+	g.Expect(err).To(BeNil())
+	g.Expect(result.Authenticated).To(BeTrue())
+	g.Expect(result.Authorized).To(BeTrue())
+	g.Expect(result.User).To(Equal("user-123"))
+
+	// Test authenticated but not authorized (wrong method)
+	request = &Request{
+		Token:  "Bearer " + key.Secret,
+		Scope:  "applications",
+		Method: "POST",
+		DB:     db,
+	}
+	result, err = request.Permit()
+	g.Expect(err).To(BeNil())
+	g.Expect(result.Authenticated).To(BeTrue())
+	g.Expect(result.Authorized).To(BeFalse())
+
+	// Test not authenticated (invalid token)
+	request = &Request{
+		Token:  "Bearer invalid-token",
+		Scope:  "applications",
+		Method: "GET",
+		DB:     db,
+	}
+	result, err = request.Permit()
+	g.Expect(err).To(BeNil())
+	g.Expect(result.Authenticated).To(BeFalse())
+	g.Expect(result.Authorized).To(BeFalse())
+}
+
+// TestNoAuthProvider tests the NoAuth provider fallback behavior.
+func TestNoAuthProvider(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	provider := &NoAuth{}
+
+	// Authenticate always succeeds (returns nil token, nil error)
+	request := &Request{Token: "any-token"}
+	token, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Scopes returns wildcard
+	scopes := provider.Scopes(token)
+	g.Expect(scopes).To(HaveLen(1))
+	scope := scopes[0]
+	g.Expect(scope.Match("anything", "GET")).To(BeTrue())
+	g.Expect(scope.Match("anything", "POST")).To(BeTrue())
+
+	// User returns fixed admin user
+	user := provider.User(token)
+	g.Expect(user).To(Equal("admin.noauth"))
+
+	// UserKey and TaskKey return empty (no-op)
+	key, err := provider.UserKey("user", "pass", time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(key.Secret).To(BeEmpty())
+
+	key, err = provider.TaskKey(1, time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(key.Secret).To(BeEmpty())
+}
+
+// TestNotAuthenticatedError tests NotAuthenticated error type.
+func TestNotAuthenticatedError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	err := &NotAuthenticated{Token: "test-token"}
+	g.Expect(err.Error()).To(ContainSubstring("test-token"))
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+
+	// Test Is() method
+	var target *NotAuthenticated
+	g.Expect(errors.As(err, &target)).To(BeTrue())
+	g.Expect(errors.Is(err, &NotAuthenticated{})).To(BeTrue())
+}
+
+// TestNotValidError tests NotValid error type.
+func TestNotValidError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	err := &NotValid{
+		Token:  "test-token",
+		Reason: "expired",
+	}
+	g.Expect(err.Error()).To(ContainSubstring("test-token"))
+	g.Expect(err.Error()).To(ContainSubstring("expired"))
+	g.Expect(err.Error()).To(ContainSubstring("not-valid"))
+
+	// Test Is() method
+	var target *NotValid
+	g.Expect(errors.As(err, &target)).To(BeTrue())
+	g.Expect(errors.Is(err, &NotValid{})).To(BeTrue())
 }
 
 // setupTestDB creates an in-memory SQLite database for testing.
