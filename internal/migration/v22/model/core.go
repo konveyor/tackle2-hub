@@ -280,7 +280,7 @@ type Token struct {
 
 type APIKey struct {
 	Model
-	Secret     string `gorm:"uniqueIndex;not null"`
+	Digest     string `gorm:"uniqueIndex;not null"`
 	Expiration time.Time
 	UserID     *uint `gorm:"index"`
 	User       *User `gorm:"constraint:OnDelete:CASCADE"`

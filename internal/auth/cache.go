@@ -17,11 +17,10 @@ type KeyCache struct {
 
 func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	m := &model.APIKey{}
-	hashedSecret := hashSecret(nakedSecret)
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
 	db = db.Preload("User.Roles.Permissions")
-	db = db.Where("secret", hashedSecret)
+	db = db.Where("digest", hashSecret(nakedSecret))
 	db = db.Where("expiration > ?", time.Now())
 	err = db.First(m).Error
 	if err != nil {
