@@ -146,7 +146,7 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 			})
 	}
 	if err == nil {
-		err = p.validateToken(jwToken)
+		err = p.validToken(jwToken)
 		return
 	}
 	key, err := p.keyCache.Get(bearer)
@@ -200,8 +200,8 @@ func (p *Builtin) extractBearer(request *Request) (bearer string, err error) {
 	return
 }
 
-// validateToken determines if the token is valid..
-func (p *Builtin) validateToken(jwToken *jwt.Token) (err error) {
+// validToken returns an error if not valid.
+func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 	if !jwToken.Valid {
 		err = liberr.Wrap(&NotAuthenticated{Token: jwToken.Raw})
 		return

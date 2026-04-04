@@ -62,7 +62,7 @@ type APIKey struct {
 	Expiration time.Time
 }
 
-// JWT Claims - Standard registered claim names.
+// JWT Claims - Standard claims.
 const (
 	ClaimSub   = "sub"   // Subject
 	ClaimScope = "scope" // Scope
