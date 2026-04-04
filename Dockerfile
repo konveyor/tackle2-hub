@@ -1,6 +1,6 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
 
-FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
+FROM registry.access.redhat.com/ubi10/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
 RUN make docker
@@ -16,7 +16,7 @@ FROM quay.io/konveyor/static-report as report
 FROM quay.io/centos/centos:stream9 as centos
 RUN dnf -y install epel-release && dnf -y install tini
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal
+FROM registry.access.redhat.com/ubi10/ubi-minimal
 RUN mkdir -p /hub && chmod 0777 /hub
 ENV HOME=/hub
 WORKDIR /hub
