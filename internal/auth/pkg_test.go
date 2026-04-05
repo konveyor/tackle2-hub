@@ -592,6 +592,103 @@ func TestNoAuthProvider(t *testing.T) {
 	g.Expect(key.Secret).To(BeEmpty())
 }
 
+// TestKeyRequestGrant tests the KeyRequest.Grant() method.
+func TestKeyRequestGrant(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test user
+	user := &model.User{
+		UUID:     "user-456",
+		Userid:   "grantuser",
+		Password: "grantpassword",
+		Email:    "grant@example.com",
+	}
+	err = secret.Encrypt(user)
+	g.Expect(err).To(BeNil())
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// Create test task
+	task := &model.Task{
+		Name:  "grant-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	// Set up provider as Hub
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	Hub = provider
+
+	// Test user key request via Grant()
+	kr := KeyRequest{
+		Userid:   "grantuser",
+		Password: "grantpassword",
+		Lifespan: 2 * time.Hour,
+	}
+	key, err := kr.Grant()
+	g.Expect(err).To(BeNil())
+	g.Expect(key.Secret).NotTo(BeEmpty())
+	g.Expect(key.Digest).NotTo(BeEmpty())
+	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
+
+	// Verify the key was created in database
+	dbKey := &model.APIKey{}
+	err = db.Where("digest = ?", key.Digest).First(dbKey).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(dbKey.UserID).NotTo(BeNil())
+	g.Expect(*dbKey.UserID).To(Equal(user.ID))
+
+	// Test task key request via Grant()
+	kr = KeyRequest{
+		TaskID:   task.ID,
+		Lifespan: 1 * time.Hour,
+	}
+	key, err = kr.Grant()
+	g.Expect(err).To(BeNil())
+	g.Expect(key.Secret).NotTo(BeEmpty())
+	g.Expect(key.Digest).NotTo(BeEmpty())
+
+	// Verify the task key was created in database
+	dbKey = &model.APIKey{}
+	err = db.Where("digest = ?", key.Digest).First(dbKey).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(dbKey.TaskID).NotTo(BeNil())
+	g.Expect(*dbKey.TaskID).To(Equal(task.ID))
+
+	// Test authentication failure with wrong password
+	kr = KeyRequest{
+		Userid:   "grantuser",
+		Password: "wrongpassword",
+		Lifespan: 1 * time.Hour,
+	}
+	_, err = kr.Grant()
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+
+	// Test with non-existent user
+	kr = KeyRequest{
+		Userid:   "nonexistent",
+		Password: "password",
+		Lifespan: 1 * time.Hour,
+	}
+	_, err = kr.Grant()
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+
+	// Test with non-existent task
+	kr = KeyRequest{
+		TaskID:   99999,
+		Lifespan: 1 * time.Hour,
+	}
+	_, err = kr.Grant()
+	g.Expect(err).NotTo(BeNil())
+}
+
 // TestNotAuthenticatedError tests NotAuthenticated error type.
 func TestNotAuthenticatedError(t *testing.T) {
 	g := NewGomegaWithT(t)
