@@ -178,7 +178,7 @@ func asInt(t time.Time) (i int) {
 
 // hashSecret hashes an API key secret using HMAC-SHA256.
 func hashSecret(plainSecret string) (hashed string) {
-	h := hmac.New(sha256.New, []byte(Settings.Auth.APIKeySecret))
+	h := hmac.New(sha256.New, []byte(Settings.Auth.APIKey.Secret))
 	h.Write([]byte(plainSecret))
 	hash := h.Sum(nil)
 	hashed = base64.StdEncoding.EncodeToString(hash)

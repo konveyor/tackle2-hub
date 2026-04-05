@@ -444,6 +444,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Update task to Succeeded - key should now be rejected
+	provider.keyCache.Reset()
 	db.Model(task).Update("State", "Succeeded")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)
@@ -451,12 +452,14 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
 	// Test with Failed state
+	provider.keyCache.Reset()
 	db.Model(task).Update("State", "Failed")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test with Canceled state
+	provider.keyCache.Reset()
 	db.Model(task).Update("State", "Canceled")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)

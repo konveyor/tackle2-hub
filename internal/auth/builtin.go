@@ -26,7 +26,7 @@ type KeySet = goidc.JSONWebKeySet
 type Builtin struct {
 	db       *gorm.DB
 	openId   *provider.Provider
-	keyCache KeyCache
+	keyCache *KeyCache
 	keySet   KeySet
 }
 
@@ -281,7 +281,7 @@ func (p *Builtin) genKey(lifespan time.Duration) (key APIKey, err error) {
 // NewBuiltin returns a configured provider.
 func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin = &Builtin{
-		keyCache: KeyCache{db: db},
+		keyCache: NewCache(db),
 		db:       db,
 	}
 	grantManager := NewGrantManager(db)

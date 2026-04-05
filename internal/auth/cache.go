@@ -10,12 +10,35 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func NewCache(db *gorm.DB) (cache *KeyCache) {
+	cache = &KeyCache{db: db}
+	cache.reset()
+	return
+}
+
 type KeyCache struct {
-	db *gorm.DB
-	mu sync.RWMutex
+	db      *gorm.DB
+	mutex   sync.RWMutex
+	content map[string]APIKey
+	resetAt time.Time
+}
+
+func (r *KeyCache) Reset() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.reset()
 }
 
 func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if time.Since(r.resetAt) > Settings.Auth.APIKey.CacheLifespan {
+		r.reset()
+	}
+	key, found := r.content[nakedSecret]
+	if found {
+		return
+	}
 	m := &model.APIKey{}
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
@@ -66,5 +89,11 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 			return
 		}
 	}
+	r.content[nakedSecret] = key
 	return
+}
+
+func (r *KeyCache) reset() {
+	r.content = make(map[string]APIKey)
+	r.resetAt = time.Now()
 }
