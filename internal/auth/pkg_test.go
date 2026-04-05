@@ -724,6 +724,190 @@ func TestNotValidError(t *testing.T) {
 	g.Expect(errors.Is(err, &NotValid{})).To(BeTrue())
 }
 
+// TestKeyCacheDelete tests the KeyCache Delete method removes keys from both indexes.
+func TestKeyCacheDelete(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test user with permissions
+	user := &model.User{
+		UUID:     "cache-delete-user",
+		Userid:   "cachedeleteuser",
+		Password: "password",
+		Email:    "cachedelete@example.com",
+	}
+	err = secret.Encrypt(user)
+	g.Expect(err).To(BeNil())
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	perm := &model.Permission{
+		Name:  "Admin",
+		Scope: "*:*",
+	}
+	err = db.Create(perm).Error
+	g.Expect(err).To(BeNil())
+
+	role := &model.Role{Name: "Admin"}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role).Association("Permissions").Append(perm)
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(user).Association("Roles").Append(role)
+	g.Expect(err).To(BeNil())
+
+	// Create provider with cache
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create API key
+	kr := KeyRequest{
+		Userid:   "cachedeleteuser",
+		Password: "password",
+		Lifespan: 1 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
+	g.Expect(err).To(BeNil())
+
+	// Populate cache by authenticating
+	request := &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Delete the key from cache only
+	provider.keyCache.Delete(key.Digest)
+
+	// Verify key is removed from cache - next call should fetch from DB again
+	// Since the key still exists in DB, authentication should succeed
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Populate cache again
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Now delete from DB manually and from cache
+	err = db.Where("digest = ?", key.Digest).Delete(&model.APIKey{}).Error
+	g.Expect(err).To(BeNil())
+	provider.keyCache.Delete(key.Digest)
+
+	// Authentication should now fail (not in cache or DB)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+}
+
+// TestBuiltinDelete tests the Builtin Delete method removes key from cache and DB.
+func TestBuiltinDelete(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test user with permissions
+	user := &model.User{
+		UUID:     "builtin-delete-user",
+		Userid:   "builtindeleteuser",
+		Password: "password",
+		Email:    "builtindelete@example.com",
+	}
+	err = secret.Encrypt(user)
+	g.Expect(err).To(BeNil())
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	perm := &model.Permission{
+		Name:  "Admin",
+		Scope: "*:*",
+	}
+	err = db.Create(perm).Error
+	g.Expect(err).To(BeNil())
+
+	role := &model.Role{Name: "Admin"}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role).Association("Permissions").Append(perm)
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(user).Association("Roles").Append(role)
+	g.Expect(err).To(BeNil())
+
+	// Create provider
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create API key
+	kr := KeyRequest{
+		Userid:   "builtindeleteuser",
+		Password: "password",
+		Lifespan: 1 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
+	g.Expect(err).To(BeNil())
+
+	// Populate cache by authenticating
+	request := &Request{Token: "Bearer " + key.Secret}
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Verify key exists in DB
+	var dbKey model.APIKey
+	err = db.Where("digest = ?", key.Digest).First(&dbKey).Error
+	g.Expect(err).To(BeNil())
+
+	// Delete using provider Delete method
+	err = provider.Delete(key.Digest)
+	g.Expect(err).To(BeNil())
+
+	// Verify key is removed from DB
+	err = db.Where("digest = ?", key.Digest).First(&dbKey).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+
+	// Verify key is removed from cache - authentication should fail
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+}
+
+// TestBuiltinRevoke tests the Builtin Revoke method.
+func TestBuiltinRevoke(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create a token
+	token := jwt.New(jwt.SigningMethodHS512)
+	claims := token.Claims.(jwt.MapClaims)
+	claims[ClaimSub] = "user-123"
+	claims[ClaimScope] = "openid"
+	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
+
+	// Revoke should succeed (currently no-op)
+	err = provider.Revoke(token)
+	g.Expect(err).To(BeNil())
+}
+
+// TestNoAuthDelete tests the NoAuth Delete method.
+func TestNoAuthDelete(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	provider := &NoAuth{}
+
+	// Delete should succeed (no-op)
+	err := provider.Delete("any-digest")
+	g.Expect(err).To(BeNil())
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(

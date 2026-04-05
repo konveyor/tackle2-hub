@@ -45,6 +45,8 @@ func New(db *gorm.DB) (p Provider, err error) {
 type Provider interface {
 	// Grant the key request.
 	Grant(kr KeyRequest) (key APIKey, err error)
+	// Delete api key.
+	Delete(digest string) (err error)
 	// Authenticate the request.
 	Authenticate(r *Request) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.
@@ -53,8 +55,6 @@ type Provider interface {
 	User(jwToken *jwt.Token) (user string)
 	// Handler returns an OIDC handler.
 	Handler() (h http.Handler)
-	// Delete api key.
-	Delete(digest string) (err error)
 }
 
 // APIKey authentication key.
