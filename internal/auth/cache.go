@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// NewCache returns a configured cache.
 func NewCache(db *gorm.DB) (cache *KeyCache) {
 	cache = &KeyCache{db: db}
 	cache.reset()
@@ -17,10 +18,10 @@ func NewCache(db *gorm.DB) (cache *KeyCache) {
 }
 
 type KeyCache struct {
-	db      *gorm.DB
-	mutex   sync.RWMutex
-	content map[string]APIKey
-	resetAt time.Time
+	db        *gorm.DB
+	mutex     sync.RWMutex
+	content   map[string]APIKey
+	resetLast time.Time
 }
 
 func (r *KeyCache) Reset() {
@@ -32,7 +33,8 @@ func (r *KeyCache) Reset() {
 func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	if time.Since(r.resetAt) > Settings.Auth.APIKey.CacheLifespan {
+	if time.Since(r.resetLast) >
+		Settings.Auth.APIKey.CacheLifespan {
 		r.reset()
 	}
 	key, found := r.content[nakedSecret]
@@ -95,5 +97,5 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 
 func (r *KeyCache) reset() {
 	r.content = make(map[string]APIKey)
-	r.resetAt = time.Now()
+	r.resetLast = time.Now()
 }
