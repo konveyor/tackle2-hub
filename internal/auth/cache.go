@@ -17,6 +17,8 @@ func NewCache(db *gorm.DB) (cache *KeyCache) {
 	return
 }
 
+// KeyCache provides an APIKey cache.
+// Keys are cached to mitigate DB pressure during heavy loads.
 type KeyCache struct {
 	db        *gorm.DB
 	mutex     sync.RWMutex
