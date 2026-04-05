@@ -2,17 +2,18 @@ package auth
 
 import (
 	"errors"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
-// Request auth request.
+// Request authZ request.
 type Request struct {
+	DB     *gorm.DB
 	Token  string
 	Scope  string
 	Method string
-	DB     *gorm.DB
 }
 
 // Permit the specified request.
@@ -38,9 +39,6 @@ func (r *Request) Permit() (result Result, err error) {
 		return
 
 	}
-	if err != nil {
-		return
-	}
 	if result.Authenticated {
 		scopes := p.Scopes(jwToken)
 		for _, scope := range scopes {
@@ -60,10 +58,28 @@ func (r *Request) Permit() (result Result, err error) {
 	return
 }
 
-// Result - auth result.
+// Result - auth (request) result.
 type Result struct {
 	Authenticated bool
 	Authorized    bool
 	User          string
 	Scopes        []Scope
+}
+
+// KeyRequest APIKey grant request.
+type KeyRequest struct {
+	// Userid used to authenticate a user.
+	Userid string
+	// Password used to authenticate the user.
+	Password string
+	// TaskID associated task.
+	TaskID uint
+	// Lifespan (TTL).
+	Lifespan time.Duration
+}
+
+// Grant returns a new APIKey.
+func (r KeyRequest) Grant() (key APIKey, err error) {
+	key, err = Hub.Grant(r)
+	return
 }

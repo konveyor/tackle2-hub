@@ -43,10 +43,8 @@ func New(db *gorm.DB) (p Provider, err error) {
 
 // Provider provides RBAC.
 type Provider interface {
-	// UserKey returns a new key associated with a user.
-	UserKey(userId, password string, lifespan time.Duration) (key APIKey, err error)
-	// TaskKey returns a new key associated with a task.
-	TaskKey(taskId uint, lifespan time.Duration) (key APIKey, err error)
+	// Grant the key request.
+	Grant(kr KeyRequest) (key APIKey, err error)
 	// Authenticate the request.
 	Authenticate(r *Request) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.

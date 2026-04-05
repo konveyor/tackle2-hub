@@ -84,7 +84,12 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	key, err := auth.Hub.UserKey(r.UserId, r.Password, r.Lifespan)
+	kr := auth.KeyRequest{
+		Userid:   r.UserId,
+		Password: r.Password,
+		Lifespan: r.Lifespan,
+	}
+	key, err := kr.Grant()
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,

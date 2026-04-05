@@ -36,60 +36,50 @@ func (p *Builtin) Handler() (h http.Handler) {
 	return
 }
 
-// UserKey returns a new key.
-func (p *Builtin) UserKey(userId, password string, lifespan time.Duration) (key APIKey, err error) {
-	key, err = p.genKey(lifespan)
+// Grant the key request.
+func (p *Builtin) Grant(kr KeyRequest) (key APIKey, err error) {
+	key, err = p.genKey(kr.Lifespan)
 	if err != nil {
 		return
 	}
-	user := &model.User{}
-	err = p.db.First(user, "UserId", userId).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = &NotAuthenticated{
-				Token: userId,
-			}
-		} else {
+	m := &model.APIKey{
+		Expiration: key.Expiration,
+		Digest:     key.Digest,
+	}
+	if kr.TaskID > 0 {
+		task := &model.Task{}
+		err = p.db.First(task, kr.TaskID).Error
+		if err != nil {
 			err = liberr.Wrap(err)
+			return
 		}
-		return
+		m.TaskID = &task.ID
 	}
-	err = secret.Decrypt(user)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if user.Password != password {
-		err = &NotAuthenticated{
-			Token: userId,
+	if kr.Userid != "" {
+		user := &model.User{}
+		err = p.db.First(user, "UserId", kr.Userid).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err = &NotAuthenticated{
+					Token: kr.Userid,
+				}
+			} else {
+				err = liberr.Wrap(err)
+			}
+			return
 		}
-		return
-	}
-	m := &model.APIKey{
-		UserID:     &user.ID,
-		Expiration: key.Expiration,
-		Digest:     key.Digest,
-	}
-	err = p.db.Create(m).Error
-	return
-}
-
-// TaskKey returns a new key.
-func (p *Builtin) TaskKey(taskId uint, lifespan time.Duration) (key APIKey, err error) {
-	key, err = p.genKey(lifespan)
-	if err != nil {
-		return
-	}
-	task := &model.Task{}
-	err = p.db.First(task, taskId).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	m := &model.APIKey{
-		TaskID:     &task.ID,
-		Expiration: key.Expiration,
-		Digest:     key.Digest,
+		err = secret.Decrypt(user)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		if user.Password != kr.Password {
+			err = &NotAuthenticated{
+				Token: kr.Userid,
+			}
+			return
+		}
+		m.UserID = &user.ID
 	}
 	err = p.db.Create(m).Error
 	return

@@ -38,7 +38,12 @@ func TestUserKey(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating API key with valid credentials
-	key, err := provider.UserKey("testuser", "testpassword", 24*time.Hour)
+	kr := KeyRequest{
+		Userid:   user.UserId,
+		Password: "testpassword",
+		Lifespan: 24 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
 	g.Expect(key.Digest).NotTo(BeEmpty())
@@ -57,12 +62,14 @@ func TestUserKey(t *testing.T) {
 	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
 	// Test creating API key with invalid password
-	_, err = provider.UserKey("testuser", "wrongpassword", 24*time.Hour)
+	kr.Password = "wrong-password"
+	_, err = provider.Grant(kr)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
 	// Test creating API key with non-existent user
-	_, err = provider.UserKey("nonexistent", "password", 24*time.Hour)
+	kr.Userid = "not-existing-user"
+	_, err = provider.Grant(kr)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
@@ -114,7 +121,11 @@ func TestTaskKey(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating task API key
-	key, err := provider.TaskKey(task.ID, 24*time.Hour)
+	kr := KeyRequest{
+		TaskID:   task.ID,
+		Lifespan: 24 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
 	g.Expect(key.Digest).NotTo(BeEmpty())
@@ -135,7 +146,8 @@ func TestTaskKey(t *testing.T) {
 	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
 	// Test creating key for non-existent task
-	_, err = provider.TaskKey(99999, 24*time.Hour)
+	kr.TaskID = 9999
+	_, err = provider.Grant(kr)
 	g.Expect(err).NotTo(BeNil())
 }
 
@@ -419,7 +431,11 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create API key for running task - should work
-	key, err := provider.TaskKey(task.ID, 24*time.Hour)
+	kr := KeyRequest{
+		TaskID:   task.ID,
+		Lifespan: 24 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with key - should work
@@ -492,7 +508,12 @@ func TestRequestPermit(t *testing.T) {
 	Hub = provider
 
 	// Create API key
-	key, err := provider.UserKey("testuser", "password", 24*time.Hour)
+	kr := KeyRequest{
+		Userid:   "testuser",
+		Password: "password",
+		Lifespan: 24 * time.Hour,
+	}
+	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 
 	// Test authenticated and authorized (matching scope)
@@ -556,11 +577,17 @@ func TestNoAuthProvider(t *testing.T) {
 	g.Expect(user).To(Equal("admin.noauth"))
 
 	// UserKey and TaskKey return empty (no-op)
-	key, err := provider.UserKey("user", "pass", time.Hour)
+	kr := KeyRequest{
+		Userid:   "user-123",
+		Password: "password-123",
+		Lifespan: time.Hour,
+	}
+	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).To(BeEmpty())
 
-	key, err = provider.TaskKey(1, time.Hour)
+	kr.TaskID = 1
+	key, err = provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).To(BeEmpty())
 }

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -12,13 +11,8 @@ type NoAuth struct {
 	handler http.Handler
 }
 
-// UserKey returns a new key associated with a user.
-func (r *NoAuth) UserKey(userId, password string, lifespan time.Duration) (key APIKey, err error) {
-	return
-}
-
-// TaskKey returns a new key associated with a task.
-func (r *NoAuth) TaskKey(taskId uint, lifespan time.Duration) (key APIKey, err error) {
+// Grant the key request.
+func (r *NoAuth) Grant(kr KeyRequest) (key APIKey, err error) {
 	return
 }
 
