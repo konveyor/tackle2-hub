@@ -38,11 +38,10 @@ func (r *KeyCache) Delete(digest string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	key, found := r.byDigest[digest]
-	if !found {
-		return
+	if found {
+		delete(r.bySecret, key.Secret)
+		delete(r.byDigest, digest)
 	}
-	delete(r.bySecret, key.Secret)
-	delete(r.byDigest, digest)
 }
 
 func (r *KeyCache) Get(secret string) (key APIKey, err error) {
@@ -56,11 +55,12 @@ func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 	if found {
 		return
 	}
+	digest := hashSecret(secret)
 	m := &model.APIKey{}
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
 	db = db.Preload("User.Roles.Permissions")
-	db = db.Where("digest", hashSecret(secret))
+	db = db.Where("digest", digest)
 	db = db.Where("expiration > ?", time.Now())
 	err = db.First(m).Error
 	if err != nil {
@@ -70,6 +70,7 @@ func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 		return
 	}
 	key.Secret = secret
+	key.Digest = digest
 	key.Expiration = m.Expiration
 	if m.UserID != nil {
 		if m.User == nil {
