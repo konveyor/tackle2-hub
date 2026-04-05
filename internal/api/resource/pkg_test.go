@@ -3337,7 +3337,7 @@ func TestIdpIdentity_With(t *testing.T) {
 		UserID:            100,
 		User: model.User{
 			Model:  model.Model{ID: 100},
-			UserId: "testuser",
+			Userid: "testuser",
 		},
 	}
 
@@ -3396,7 +3396,7 @@ func TestUser_With(t *testing.T) {
 			ID:         1,
 			CreateUser: "admin",
 		},
-		UserId:   "john.doe",
+		Userid:   "john.doe",
 		UUID:     "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
@@ -3411,7 +3411,7 @@ func TestUser_With(t *testing.T) {
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.UUID).To(gomega.Equal(m.UUID))
-	g.Expect(r.UserId).To(gomega.Equal("john.doe"))
+	g.Expect(r.Userid).To(gomega.Equal("john.doe"))
 	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(r.Roles)).To(gomega.Equal(2))
@@ -3427,7 +3427,7 @@ func TestUser_Model(t *testing.T) {
 
 	r := &User{
 		Resource: Resource{ID: 1},
-		UserId:   "john.doe",
+		Userid:   "john.doe",
 		UUID:     "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
@@ -3441,7 +3441,7 @@ func TestUser_Model(t *testing.T) {
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.UUID).To(gomega.Equal(r.UUID))
-	g.Expect(m.UserId).To(gomega.Equal("john.doe"))
+	g.Expect(m.Userid).To(gomega.Equal("john.doe"))
 	g.Expect(m.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(m.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(m.Roles)).To(gomega.Equal(2))
@@ -3455,7 +3455,7 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 
 	r := &User{
 		Resource: Resource{ID: 1},
-		UserId:   "john.doe",
+		Userid:   "john.doe",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
 		Roles:    []Ref{},
@@ -3464,7 +3464,7 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
-	g.Expect(m.UserId).To(gomega.Equal("john.doe"))
+	g.Expect(m.Userid).To(gomega.Equal("john.doe"))
 	g.Expect(len(m.Roles)).To(gomega.Equal(0))
 }
 
@@ -3594,10 +3594,10 @@ func TestAPIKey_With(t *testing.T) {
 		Expiration: time.Now().Add(24 * time.Hour),
 		UserID:     &userID,
 		User: &model.User{
-			Model: model.Model{ID: 5},
-			UUID:     "user-uuid",
-			UserId:   "testuser",
-			Email:    "test@example.com",
+			Model:  model.Model{ID: 5},
+			UUID:   "user-uuid",
+			Userid: "testuser",
+			Email:  "test@example.com",
 		},
 	}
 

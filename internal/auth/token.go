@@ -123,7 +123,7 @@ func (r *TokenManager) DeleteByGrantID(_ context.Context, id string) (err error)
 }
 
 // GetUser returns the user ID as appropriate.
-func (r *TokenManager) getUser(token *goidc.Token) (userId *uint, err error) {
+func (r *TokenManager) getUser(token *goidc.Token) (userid *uint, err error) {
 	grantManager := NewGrantManager(r.db)
 	grant, err := grantManager.Grant(context.TODO(), token.GrantID)
 	if err != nil {
@@ -137,6 +137,6 @@ func (r *TokenManager) getUser(token *goidc.Token) (userId *uint, err error) {
 	if err != nil {
 		return
 	}
-	userId = &user.ID
+	userid = &user.ID
 	return
 }

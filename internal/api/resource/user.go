@@ -12,7 +12,7 @@ type User api.User
 func (r *User) With(m *model.User) {
 	baseWith(&r.Resource, &m.Model)
 	r.UUID = m.UUID
-	r.UserId = m.UserId
+	r.Userid = m.Userid
 	r.Password = m.Password
 	r.Email = m.Email
 	r.Roles = []Ref{}
@@ -25,7 +25,7 @@ func (r *User) With(m *model.User) {
 func (r *User) Model() (m *model.User) {
 	m = &model.User{
 		UUID:     r.UUID,
-		UserId:   r.UserId,
+		Userid:   r.Userid,
 		Password: r.Password,
 		Email:    r.Email,
 	}

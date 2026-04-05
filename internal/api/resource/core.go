@@ -27,7 +27,7 @@ func (r *APIKey) With(m *model.APIKey) {
 	if m.User != nil {
 		r.User = &api.Ref{
 			ID:   m.User.ID,
-			Name: m.User.UserId,
+			Name: m.User.Userid,
 		}
 	}
 	if m.Task != nil {

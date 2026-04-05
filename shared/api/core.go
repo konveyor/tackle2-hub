@@ -127,7 +127,7 @@ type Repository struct {
 // APIKey REST resource.
 type APIKey struct {
 	Resource `yaml:",inline"`
-	UserId   string        `json:"userId,omitempty"`
+	Userid   string        `json:"userid,omitempty"`
 	Password string        `json:"password,omitempty"`
 	Digest   string        `json:"digest,omitempty"`
 	Secret   string        `json:"secret,omitempty"`
@@ -169,7 +169,7 @@ type IdpIdentity struct {
 type User struct {
 	Resource `yaml:",inline"`
 	UUID     string `json:"uuid"`
-	UserId   string `json:"userId" binding:"required"`
+	Userid   string `json:"userid" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required"`
 	Roles    []Ref  `json:"roles"`

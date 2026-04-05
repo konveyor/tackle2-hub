@@ -85,7 +85,7 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 		return
 	}
 	kr := auth.KeyRequest{
-		Userid:   r.UserId,
+		Userid:   r.Userid,
 		Password: r.Password,
 		Lifespan: r.Lifespan,
 	}
@@ -98,7 +98,7 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 			})
 		return
 	}
-	r.UserId = ""         // redacted.
+	r.Userid = ""         // redacted.
 	r.Password = ""       // redacted.
 	r.Secret = key.Secret // Plain text (user must save it).
 	r.Digest = key.Digest // Hash (for reference).

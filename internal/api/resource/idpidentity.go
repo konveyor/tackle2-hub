@@ -17,7 +17,7 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	r.Expiration = m.Expiration
 	r.LastAuthenticated = m.LastAuthenticated
 	r.LastRefreshed = m.LastRefreshed
-	r.User = &Ref{ID: m.UserID, Name: m.User.UserId}
+	r.User = &Ref{ID: m.UserID, Name: m.User.Userid}
 }
 
 // Model converts REST resource to model.

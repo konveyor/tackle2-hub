@@ -24,7 +24,7 @@ func TestUserKey(t *testing.T) {
 	// Create test user
 	user := &model.User{
 		UUID:     "test-uuid-123",
-		UserId:   "testuser",
+		Userid:   "testuser",
 		Password: "testpassword",
 		Email:    "test@example.com",
 	}
@@ -39,7 +39,7 @@ func TestUserKey(t *testing.T) {
 
 	// Test creating API key with valid credentials
 	kr := KeyRequest{
-		Userid:   user.UserId,
+		Userid:   user.Userid,
 		Password: "testpassword",
 		Lifespan: 24 * time.Hour,
 	}
@@ -473,7 +473,7 @@ func TestRequestPermit(t *testing.T) {
 	// Create user with specific permissions
 	user := &model.User{
 		UUID:     "user-123",
-		UserId:   "testuser",
+		Userid:   "testuser",
 		Password: "password",
 		Email:    "test@example.com",
 	}

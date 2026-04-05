@@ -80,7 +80,7 @@ func (r *RichClient) Use(client RestClient) {
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
 	key := api.APIKey{
-		UserId:   user,
+		Userid:   user,
 		Password: password,
 		Lifespan: time.Hour * 24,
 	}

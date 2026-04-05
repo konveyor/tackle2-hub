@@ -57,7 +57,7 @@ func (p *Builtin) Grant(kr KeyRequest) (key APIKey, err error) {
 	}
 	if kr.Userid != "" {
 		user := &model.User{}
-		err = p.db.First(user, "UserId", kr.Userid).Error
+		err = p.db.First(user, "Userid", kr.Userid).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				err = &NotAuthenticated{

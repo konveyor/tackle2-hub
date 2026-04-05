@@ -45,7 +45,7 @@ func (r *AuthManager) Login(
 		return
 	}
 	user := &model.User{}
-	err = r.db.First(user, "userId", userid).Error
+	err = r.db.First(user, "userid", userid).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = r.renderPage(writer, request, session)
