@@ -22,7 +22,8 @@ func NewCache(db *gorm.DB) (cache *KeyCache) {
 type KeyCache struct {
 	db        *gorm.DB
 	mutex     sync.RWMutex
-	content   map[string]APIKey
+	bySecret  map[string]APIKey
+	byDigest  map[string]APIKey
 	resetLast time.Time
 }
 
@@ -32,14 +33,26 @@ func (r *KeyCache) Reset() {
 	r.reset()
 }
 
-func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
+// Delete a key by digest.
+func (r *KeyCache) Delete(digest string) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	key, found := r.byDigest[digest]
+	if !found {
+		return
+	}
+	delete(r.bySecret, key.Secret)
+	delete(r.byDigest, digest)
+}
+
+func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if time.Since(r.resetLast) >
 		Settings.Auth.APIKey.CacheLifespan {
 		r.reset()
 	}
-	key, found := r.content[nakedSecret]
+	key, found := r.bySecret[secret]
 	if found {
 		return
 	}
@@ -47,21 +60,21 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
 	db = db.Preload("User.Roles.Permissions")
-	db = db.Where("digest", hashSecret(nakedSecret))
+	db = db.Where("digest", hashSecret(secret))
 	db = db.Where("expiration > ?", time.Now())
 	err = db.First(m).Error
 	if err != nil {
 		err = &NotAuthenticated{
-			Token: nakedSecret,
+			Token: secret,
 		}
 		return
 	}
-	key.Secret = nakedSecret
+	key.Secret = secret
 	key.Expiration = m.Expiration
 	if m.UserID != nil {
 		if m.User == nil {
 			err = &NotAuthenticated{
-				Token: nakedSecret,
+				Token: secret,
 			}
 			return
 		}
@@ -79,7 +92,7 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 	if m.TaskID != nil {
 		if m.Task == nil {
 			err = &NotAuthenticated{
-				Token: nakedSecret,
+				Token: secret,
 			}
 			return
 		}
@@ -88,16 +101,18 @@ func (r *KeyCache) Get(nakedSecret string) (key APIKey, err error) {
 			task.Failed,
 			task.Canceled:
 			err = &NotAuthenticated{
-				Token: nakedSecret,
+				Token: secret,
 			}
 			return
 		}
 	}
-	r.content[nakedSecret] = key
+	r.bySecret[key.Secret] = key
+	r.byDigest[key.Digest] = key
 	return
 }
 
 func (r *KeyCache) reset() {
-	r.content = make(map[string]APIKey)
+	r.bySecret = make(map[string]APIKey)
+	r.byDigest = make(map[string]APIKey)
 	r.resetLast = time.Now()
 }
