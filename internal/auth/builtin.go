@@ -146,6 +146,14 @@ func (p *Builtin) Revoke(token *jwt.Token) (err error) {
 	return
 }
 
+// Delete an api key
+func (p *Builtin) Delete(digest string) (err error) {
+	p.keyCache.Delete(digest)
+	m := &model.APIKey{}
+	err = p.db.Delete(m, "digest", digest).Error
+	return
+}
+
 func (r *Builtin) User(jwToken *jwt.Token) (user string) {
 	claims := jwToken.Claims.(jwt.MapClaims)
 	v := claims[ClaimSub]

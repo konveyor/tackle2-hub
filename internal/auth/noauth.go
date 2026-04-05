@@ -40,3 +40,8 @@ func (r *NoAuth) Handler() (h http.Handler) {
 	h = r.handler
 	return
 }
+
+// Delete api key.
+func (r *NoAuth) Delete(digest string) (err error) {
+	return
+}

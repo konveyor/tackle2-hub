@@ -53,6 +53,8 @@ type Provider interface {
 	User(jwToken *jwt.Token) (user string)
 	// Handler returns an OIDC handler.
 	Handler() (h http.Handler)
+	// Delete api key.
+	Delete(digest string) (err error)
 }
 
 // APIKey authentication key.

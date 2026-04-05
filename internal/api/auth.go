@@ -168,7 +168,7 @@ func (h AuthHandler) APIKeyDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Delete(m).Error
+	err = auth.Hub.Delete(m.Digest)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
