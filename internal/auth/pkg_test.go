@@ -908,6 +908,21 @@ func TestNoAuthDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 }
 
+func TestLDAP(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ldap := &LDAP{
+		URL:      "ldap://f35a.redhat.com:389",
+		OU:       "people",
+		BaseDN:   "dc=f35a,dc=redhat,dc=com",
+		Userid:   "jsmith",
+		Password: "dog8code",
+	}
+	groups, err := ldap.Authenticate()
+	g.Expect(err).To(BeNil())
+	t.Log(groups)
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(
