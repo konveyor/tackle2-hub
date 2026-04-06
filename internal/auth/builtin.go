@@ -311,6 +311,13 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}
+	tokenOptions := func(
+		_ context.Context,
+		_ *goidc.Grant,
+		_ *goidc.Client) (options goidc.TokenOptions) {
+		options = goidc.NewJWTTokenOptions(goidc.RS256, 300)
+		return
+	}
 	builtin.openId, err = provider.New(
 		goidc.ProfileOpenID,
 		issuer,
@@ -329,7 +336,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			goidc.GrantRefreshToken,
 		),
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
-		provider.WithTokenOptions(grantManager.tokenOptions),
+		provider.WithTokenOptions(tokenOptions),
 		provider.WithTokenManager(tokenManager),
 		provider.WithGrantManager(grantManager),
 		provider.WithPolicies(authPolicy),

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -10,7 +9,6 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func NewGrantManager(db *gorm.DB) (m *GrantManager) {
@@ -65,7 +63,6 @@ func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, 
 	if err != nil {
 		return
 	}
-	err = r.injectScopes(grant)
 	return
 }
 
@@ -180,63 +177,6 @@ func (r *GrantManager) orphaned(grant *model.Grant) (err error) {
 	}
 	if count == 0 {
 		grant.Expiration = time.Now().UTC()
-	}
-	return
-}
-
-// injectScopes injects user scopes into the grant.
-func (r *GrantManager) injectScopes(grant *goidc.Grant) (err error) {
-	if grant.Type != goidc.GrantAuthorizationCode {
-		return
-	}
-	user := &model.User{}
-	db := r.db.Preload(clause.Associations)
-	db = db.Preload("Roles.Permissions")
-	err = db.First(user, "uuid", grant.Subject).Error
-	if err != nil {
-		err = notFound(err)
-		return
-	}
-	if len(user.Roles) == 0 {
-		return
-	}
-	unique := make(map[string]byte)
-	for _, scope := range strings.Fields(grant.Scopes) {
-		scope = strings.TrimSpace(scope)
-		unique[scope] = 0
-	}
-	for _, role := range user.Roles {
-		for _, permission := range role.Permissions {
-			unique[permission.Scope] = 0
-		}
-	}
-	scopes := make([]string, 0, len(unique))
-	for scope := range unique {
-		scopes = append(scopes, scope)
-	}
-	grant.Scopes = strings.Join(scopes, " ")
-	return
-}
-
-// tokenOptions returns the token options for the specified grant.
-func (r *GrantManager) tokenOptions(
-	_ context.Context,
-	grant *goidc.Grant,
-	client *goidc.Client) (opt goidc.TokenOptions) {
-	//
-	opt = goidc.NewJWTTokenOptions(goidc.RS256, 300)
-	if grant.Scopes == "" {
-		grant.Scopes = client.ScopeIDs
-	}
-	scopes := grant.Scopes
-	err := r.injectScopes(grant)
-	if err != nil {
-		Log.Error(
-			err,
-			"Failed to inject permission scopes.",
-			"GrantId", grant.ID,
-			"Subject", grant.Subject)
-		grant.Scopes = scopes
 	}
 	return
 }

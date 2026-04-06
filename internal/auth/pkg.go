@@ -73,8 +73,7 @@ const (
 	ClaimExp   = "exp"   // Expiration Time
 	ClaimIss   = "iss"   // Issuer
 	ClaimAud   = "aud"   // Audience
-	ClaimIat   = "iat"   // Issued At
-	ClaimJti   = "jti"   // JWT ID
+	ClaimRole  = "role"  // Role (non-standard)
 )
 
 // NotAuthenticated is returned when a token cannot be authenticated.

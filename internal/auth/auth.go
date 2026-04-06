@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"sort"
+	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -10,6 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // NewAuthManager returns an authn manager.
@@ -45,7 +48,9 @@ func (r *AuthManager) Login(
 		return
 	}
 	user := &model.User{}
-	err = r.db.First(user, "userid", userid).Error
+	db := r.db.Preload(clause.Associations)
+	db = db.Preload("Roles.Permissions")
+	err = db.First(user, "userid", userid).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = r.renderPage(writer, request, session)
@@ -64,8 +69,32 @@ func (r *AuthManager) Login(
 		status = goidc.StatusInProgress
 		return
 	}
+	r.appendScopes(session, user)
 	session.Subject = user.UUID
 	status = goidc.StatusSuccess
+	return
+}
+
+// appendScopes appends user scopes.
+func (r *AuthManager) appendScopes(session *goidc.AuthnSession, user *model.User) {
+	if len(user.Roles) == 0 {
+		return
+	}
+	unique := make(map[string]byte)
+	for _, scope := range strings.Fields(session.Scopes) {
+		unique[scope] = 0
+	}
+	for _, role := range user.Roles {
+		for _, permission := range role.Permissions {
+			unique[permission.Scope] = 0
+		}
+	}
+	scopes := make([]string, 0, len(unique))
+	for scope := range unique {
+		scopes = append(scopes, scope)
+	}
+	sort.Strings(scopes)
+	session.GrantedScopes = strings.Join(scopes, " ")
 	return
 }
 
