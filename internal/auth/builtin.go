@@ -281,7 +281,7 @@ func (p *Builtin) genKey(lifespan time.Duration) (key APIKey, err error) {
 	}
 	generated := base64.RawURLEncoding.EncodeToString(b)
 	key.Secret = prefix + generated
-	key.Digest = hashSecret(key.Secret)
+	key.Digest = secret.Hash(key.Secret)
 	key.Expiration = time.Now().Add(lifespan)
 	return
 }

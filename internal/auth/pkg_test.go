@@ -47,7 +47,7 @@ func TestUserKey(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
 	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
+	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
 
 	// Verify the API key was created in the database
 	var keyCount int64
@@ -90,7 +90,7 @@ func TestUserKey(t *testing.T) {
 	expiredKey := &model.APIKey{
 		UserID:     &user.ID,
 		Expiration: time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
-		Digest:     hashSecret(expiredSecret),
+		Digest:     secret.Hash(expiredSecret),
 	}
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
@@ -129,7 +129,7 @@ func TestTaskKey(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
 	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
+	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
 
 	// Test authenticating with the task API key
 	request := &Request{
@@ -393,25 +393,6 @@ func TestBaseScopeParsing(t *testing.T) {
 	g.Expect(scope.String()).To(Equal("tags:write"))
 }
 
-// TestHashSecretDeterministic tests that hashing is deterministic.
-func TestHashSecretDeterministic(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	secret := "test-secret-key"
-
-	// Same input should produce same hash
-	hash1 := hashSecret(secret)
-	hash2 := hashSecret(secret)
-	g.Expect(hash1).To(Equal(hash2))
-
-	// Different inputs should produce different hashes
-	hash3 := hashSecret("different-secret")
-	g.Expect(hash1).NotTo(Equal(hash3))
-
-	// Hash should not be empty
-	g.Expect(hash1).NotTo(BeEmpty())
-}
-
 // TestKeyCacheWithTaskStates tests that keys for terminal tasks are rejected.
 func TestKeyCacheWithTaskStates(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -637,7 +618,7 @@ func TestKeyRequestGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).NotTo(BeEmpty())
 	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(hashSecret(key.Secret)))
+	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
 
 	// Verify the key was created in database
 	dbKey := &model.APIKey{}

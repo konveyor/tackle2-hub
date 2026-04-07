@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -44,18 +45,19 @@ func (r *KeyCache) Delete(digest string) {
 	}
 }
 
-func (r *KeyCache) Get(secret string) (key APIKey, err error) {
+// Get returns a key by secret.
+func (r *KeyCache) Get(keySecret string) (key APIKey, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if time.Since(r.resetLast) >
 		Settings.Auth.APIKey.CacheLifespan {
 		r.reset()
 	}
-	key, found := r.bySecret[secret]
+	key, found := r.bySecret[keySecret]
 	if found {
 		return
 	}
-	digest := hashSecret(secret)
+	digest := secret.Hash(keySecret)
 	m := &model.APIKey{}
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
@@ -65,17 +67,17 @@ func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 	err = db.First(m).Error
 	if err != nil {
 		err = &NotAuthenticated{
-			Token: secret,
+			Token: keySecret,
 		}
 		return
 	}
-	key.Secret = secret
+	key.Secret = keySecret
 	key.Digest = digest
 	key.Expiration = m.Expiration
 	if m.UserID != nil {
 		if m.User == nil {
 			err = &NotAuthenticated{
-				Token: secret,
+				Token: keySecret,
 			}
 			return
 		}
@@ -93,7 +95,7 @@ func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 	if m.TaskID != nil {
 		if m.Task == nil {
 			err = &NotAuthenticated{
-				Token: secret,
+				Token: keySecret,
 			}
 			return
 		}
@@ -102,7 +104,7 @@ func (r *KeyCache) Get(secret string) (key APIKey, err error) {
 			task.Failed,
 			task.Canceled:
 			err = &NotAuthenticated{
-				Token: secret,
+				Token: keySecret,
 			}
 			return
 		}
