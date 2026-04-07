@@ -25,11 +25,9 @@ func TestUserKey(t *testing.T) {
 	user := &model.User{
 		UUID:     "test-uuid-123",
 		Userid:   "testuser",
-		Password: "testpassword",
+		Password: secret.HashPassword("testpassword"),
 		Email:    "test@example.com",
 	}
-	err = secret.Encrypt(user)
-	g.Expect(err).To(BeNil())
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
@@ -458,11 +456,9 @@ func TestRequestPermit(t *testing.T) {
 	user := &model.User{
 		UUID:     "user-123",
 		Userid:   "testuser",
-		Password: "password",
+		Password: secret.HashPassword("password"),
 		Email:    "test@example.com",
 	}
-	err = secret.Encrypt(user)
-	g.Expect(err).To(BeNil())
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
@@ -587,11 +583,9 @@ func TestKeyRequestGrant(t *testing.T) {
 	user := &model.User{
 		UUID:     "user-456",
 		Userid:   "grantuser",
-		Password: "grantpassword",
+		Password: secret.HashPassword("grantpassword"),
 		Email:    "grant@example.com",
 	}
-	err = secret.Encrypt(user)
-	g.Expect(err).To(BeNil())
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
@@ -716,11 +710,9 @@ func TestKeyCacheDelete(t *testing.T) {
 	user := &model.User{
 		UUID:     "cache-delete-user",
 		Userid:   "cachedeleteuser",
-		Password: "password",
+		Password: secret.HashPassword("password"),
 		Email:    "cachedelete@example.com",
 	}
-	err = secret.Encrypt(user)
-	g.Expect(err).To(BeNil())
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
@@ -793,11 +785,9 @@ func TestBuiltinDelete(t *testing.T) {
 	user := &model.User{
 		UUID:     "builtin-delete-user",
 		Userid:   "builtindeleteuser",
-		Password: "password",
+		Password: secret.HashPassword("password"),
 		Email:    "builtindelete@example.com",
 	}
-	err = secret.Encrypt(user)
-	g.Expect(err).To(BeNil())
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 

@@ -57,13 +57,14 @@ func isHashedPassword(s string) (hashed bool) {
 		return
 	}
 	_, err = bcrypt.Cost(decoded)
-	hashed = (err == nil)
+	hashed = err == nil
 	return
 }
 
 // HashPassword hashes a password using bcrypt and wraps it in URL-safe base64.
 // Returns the encoded bcrypt hash with prefix, or the input unchanged if already hashed.
-func HashPassword(password string) (hashed string, err error) {
+// Passwords longer than 72 bytes are truncated to 72 bytes due to bcrypt limitations.
+func HashPassword(password string) (hashed string) {
 	if len(password) == 0 {
 		hashed = password
 		return
@@ -73,6 +74,9 @@ func HashPassword(password string) (hashed string, err error) {
 		return
 	}
 	p := []byte(password)
+	if len(p) > 72 {
+		p = p[:72]
+	}
 	digest, err := bcrypt.GenerateFromPassword(p, bcrypt.DefaultCost)
 	if err != nil {
 		return

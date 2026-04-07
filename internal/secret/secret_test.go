@@ -204,8 +204,7 @@ func TestHashPassword(t *testing.T) {
 	password := "MySecurePassword123!"
 
 	// Hash the password
-	hashed, err := HashPassword(password)
-	g.Expect(err).To(BeNil())
+	hashed := HashPassword(password)
 	g.Expect(hashed).NotTo(BeEmpty())
 	g.Expect(hashed).NotTo(Equal(password))
 
@@ -216,8 +215,7 @@ func TestHashPassword(t *testing.T) {
 	g.Expect(len(hashed)).To(BeNumerically(">", 60))
 
 	// Hashing same password produces different hash (due to salt)
-	hashed2, err := HashPassword(password)
-	g.Expect(err).To(BeNil())
+	hashed2 := HashPassword(password)
 	g.Expect(hashed2).NotTo(Equal(hashed))
 }
 
@@ -228,12 +226,10 @@ func TestHashPasswordDoubleHashPrevention(t *testing.T) {
 	password := "MySecurePassword123!"
 
 	// Hash the password
-	hashed1, err := HashPassword(password)
-	g.Expect(err).To(BeNil())
+	hashed1 := HashPassword(password)
 
 	// Try to hash the already-hashed password
-	hashed2, err := HashPassword(hashed1)
-	g.Expect(err).To(BeNil())
+	hashed2 := HashPassword(hashed1)
 	g.Expect(hashed2).To(Equal(hashed1))
 }
 
@@ -241,8 +237,7 @@ func TestHashPasswordDoubleHashPrevention(t *testing.T) {
 func TestHashPasswordEmptyString(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	hashed, err := HashPassword("")
-	g.Expect(err).To(BeNil())
+	hashed := HashPassword("")
 	g.Expect(hashed).To(Equal(""))
 }
 
@@ -253,8 +248,7 @@ func TestHashPasswordStartingWithDollar2(t *testing.T) {
 	// Password that starts with $2 but isn't a bcrypt hash
 	password := "$2024Summer!"
 
-	hashed, err := HashPassword(password)
-	g.Expect(err).To(BeNil())
+	hashed := HashPassword(password)
 	g.Expect(hashed).NotTo(Equal(password))
 	g.Expect(hashed).To(HavePrefix("bcrypt:"))
 	g.Expect(len(hashed)).To(BeNumerically(">", 60))
@@ -267,8 +261,7 @@ func TestMatchPassword(t *testing.T) {
 	password := "MySecurePassword123!"
 
 	// Hash the password
-	hashed, err := HashPassword(password)
-	g.Expect(err).To(BeNil())
+	hashed := HashPassword(password)
 
 	// Correct password should match
 	matched := MatchPassword(password, hashed)
@@ -308,10 +301,64 @@ func TestPasswordHashAndMatch(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		hashed, err := HashPassword(tc.password)
-		g.Expect(err).To(BeNil())
+		hashed := HashPassword(tc.password)
 
 		matched := MatchPassword(tc.match, hashed)
 		g.Expect(matched).To(Equal(tc.expected))
 	}
+}
+
+// TestHashPasswordTruncation tests that passwords longer than 72 bytes are truncated.
+func TestHashPasswordTruncation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a password exactly 72 bytes
+	password72 := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890123456789"
+	g.Expect(len(password72)).To(Equal(72))
+
+	// Create a password longer than 72 bytes
+	password80 := password72 + "12345678"
+	g.Expect(len(password80)).To(Equal(80))
+
+	// Hash both passwords
+	hashed72 := HashPassword(password72)
+
+	hashed80 := HashPassword(password80)
+
+	// The 72-byte password should match itself
+	matched := MatchPassword(password72, hashed72)
+	g.Expect(matched).To(BeTrue())
+
+	// The 80-byte password should match using its hash
+	matched = MatchPassword(password80, hashed80)
+	g.Expect(matched).To(BeTrue())
+
+	// The 72-byte password should match the hash of the 80-byte password
+	// because the 80-byte password is truncated to 72 bytes
+	matched = MatchPassword(password72, hashed80)
+	g.Expect(matched).To(BeTrue())
+
+	// The 80-byte password should NOT match the hash of the 72-byte password
+	// because only the first 72 bytes are used
+	matched = MatchPassword(password80, hashed72)
+	g.Expect(matched).To(BeTrue())
+}
+
+// TestHashPasswordMultibyteCharacters tests truncation with multibyte UTF-8 characters.
+func TestHashPasswordMultibyteCharacters(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create a password with multibyte characters that exceeds 72 bytes
+	// Each emoji is 4 bytes, so 20 emojis = 80 bytes
+	password := "🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒🔒"
+	g.Expect(len(password)).To(BeNumerically(">", 72))
+
+	// Hash should succeed
+	hashed := HashPassword(password)
+	g.Expect(hashed).NotTo(BeEmpty())
+	g.Expect(hashed).To(HavePrefix("bcrypt:"))
+
+	// Password should match its own hash
+	matched := MatchPassword(password, hashed)
+	g.Expect(matched).To(BeTrue())
 }

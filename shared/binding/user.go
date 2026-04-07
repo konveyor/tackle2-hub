@@ -10,13 +10,6 @@ type User struct {
 	decrypted bool
 }
 
-// Decrypted enables decryption.
-// Returned resources with fields decrypted.
-func (h User) Decrypted() (h2 User) {
-	h2 = User{client: h.client, decrypted: true}
-	return
-}
-
 // Create a User.
 func (h User) Create(r *api.User) (err error) {
 	err = h.client.Post(api.UsersRoute, r)

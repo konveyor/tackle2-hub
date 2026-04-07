@@ -384,11 +384,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 	m := r.Model()
 	m.UUID = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
-	m.Password, err = secret.HashPassword(r.Password)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
+	m.Password = secret.HashPassword(r.Password)
 	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -431,11 +427,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-	m.Password, err = secret.HashPassword(r.Password)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
+	m.Password = secret.HashPassword(r.Password)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Save(m).Error

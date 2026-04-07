@@ -170,7 +170,7 @@ type User struct {
 	Resource `yaml:",inline"`
 	UUID     string `json:"uuid"`
 	Userid   string `json:"userid" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Password string `json:"password" binding:"required,max=72"`
 	Email    string `json:"email" binding:"required"`
 	Roles    []Ref  `json:"roles"`
 }
