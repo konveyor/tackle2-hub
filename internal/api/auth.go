@@ -8,6 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"gorm.io/gorm/clause"
 )
@@ -333,11 +334,6 @@ func (h AuthHandler) UserGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.Decrypt(ctx, m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	r := User{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -361,11 +357,6 @@ func (h AuthHandler) UserList(ctx *gin.Context) {
 	resources := []User{}
 	for i := range list {
 		m := &list[i]
-		err = h.Decrypt(ctx, m)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
 		r := User{}
 		r.With(m)
 		resources = append(resources, r)
@@ -393,7 +384,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 	m := r.Model()
 	m.UUID = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
-	err = h.Encrypt(m)
+	m.Password, err = secret.HashPassword(r.Password)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -440,7 +431,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-	err = h.Encrypt(m)
+	m.Password, err = secret.HashPassword(r.Password)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

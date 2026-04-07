@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -85,9 +84,8 @@ func HashPassword(password string) (hashed string, err error) {
 
 // MatchPassword compares a plaintext password against an encoded bcrypt hash.
 // Returns true if the password matches the hash.
-func MatchPassword(password string, hashed string) (matched bool, err error) {
+func MatchPassword(password string, hashed string) (matched bool) {
 	if !strings.HasPrefix(hashed, bcryptPrefix) {
-		err = errors.New("invalid hash format")
 		return
 	}
 	encoded := strings.TrimPrefix(hashed, bcryptPrefix)
@@ -99,10 +97,6 @@ func MatchPassword(password string, hashed string) (matched bool, err error) {
 	err = bcrypt.CompareHashAndPassword(digest, p)
 	if err == nil {
 		matched = true
-		return
-	}
-	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		err = nil
 		return
 	}
 	return

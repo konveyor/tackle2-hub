@@ -59,12 +59,7 @@ func (r *AuthManager) Login(
 		}
 		return
 	}
-	err = secret.Decrypt(user)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	if password != user.Password {
+	if !secret.MatchPassword(password, user.Password) {
 		err = r.renderPage(writer, request, session)
 		status = goidc.StatusInProgress
 		return

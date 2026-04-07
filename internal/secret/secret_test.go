@@ -271,13 +271,11 @@ func TestMatchPassword(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Correct password should match
-	matched, err := MatchPassword(password, hashed)
-	g.Expect(err).To(BeNil())
+	matched := MatchPassword(password, hashed)
 	g.Expect(matched).To(BeTrue())
 
 	// Wrong password should not match
-	matched, err = MatchPassword("WrongPassword", hashed)
-	g.Expect(err).To(BeNil())
+	matched = MatchPassword("WrongPassword", hashed)
 	g.Expect(matched).To(BeFalse())
 }
 
@@ -288,8 +286,7 @@ func TestMatchPasswordInvalidHash(t *testing.T) {
 	password := "MySecurePassword123!"
 	invalidHash := "not-a-bcrypt-hash"
 
-	matched, err := MatchPassword(password, invalidHash)
-	g.Expect(err).NotTo(BeNil())
+	matched := MatchPassword(password, invalidHash)
 	g.Expect(matched).To(BeFalse())
 }
 
@@ -314,8 +311,7 @@ func TestPasswordHashAndMatch(t *testing.T) {
 		hashed, err := HashPassword(tc.password)
 		g.Expect(err).To(BeNil())
 
-		matched, err := MatchPassword(tc.match, hashed)
-		g.Expect(err).To(BeNil())
+		matched := MatchPassword(tc.match, hashed)
 		g.Expect(matched).To(Equal(tc.expected))
 	}
 }

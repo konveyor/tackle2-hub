@@ -68,12 +68,7 @@ func (p *Builtin) Grant(kr KeyRequest) (key APIKey, err error) {
 			}
 			return
 		}
-		err = secret.Decrypt(user)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		if user.Password != kr.Password {
+		if !secret.MatchPassword(kr.Password, user.Password) {
 			err = &NotAuthenticated{
 				Token: kr.Userid,
 			}
