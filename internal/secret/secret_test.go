@@ -196,3 +196,125 @@ func TestHashSecretDeterministic(t *testing.T) {
 	hash4 := Hash(hash1)
 	g.Expect(hash4).To(Equal(hash2))
 }
+
+// TestHashPassword tests password hashing functionality.
+func TestHashPassword(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	password := "MySecurePassword123!"
+
+	// Hash the password
+	hashed, err := HashPassword(password)
+	g.Expect(err).To(BeNil())
+	g.Expect(hashed).NotTo(BeEmpty())
+	g.Expect(hashed).NotTo(Equal(password))
+
+	// Verify hash starts with bcrypt prefix
+	g.Expect(hashed).To(HavePrefix("$2"))
+
+	// Hash should be 60 characters
+	g.Expect(hashed).To(HaveLen(60))
+
+	// Hashing same password produces different hash (due to salt)
+	hashed2, err := HashPassword(password)
+	g.Expect(err).To(BeNil())
+	g.Expect(hashed2).NotTo(Equal(hashed))
+}
+
+// TestHashPasswordDoubleHashPrevention tests that already-hashed passwords are not re-hashed.
+func TestHashPasswordDoubleHashPrevention(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	password := "MySecurePassword123!"
+
+	// Hash the password
+	hashed1, err := HashPassword(password)
+	g.Expect(err).To(BeNil())
+
+	// Try to hash the already-hashed password
+	hashed2, err := HashPassword(hashed1)
+	g.Expect(err).To(BeNil())
+	g.Expect(hashed2).To(Equal(hashed1))
+}
+
+// TestHashPasswordEmptyString tests handling of empty password.
+func TestHashPasswordEmptyString(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	hashed, err := HashPassword("")
+	g.Expect(err).To(BeNil())
+	g.Expect(hashed).To(Equal(""))
+}
+
+// TestHashPasswordStartingWithDollar2 tests that passwords starting with $2 are hashed correctly.
+func TestHashPasswordStartingWithDollar2(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Password that starts with $2 but isn't a bcrypt hash
+	password := "$2024Summer!"
+
+	hashed, err := HashPassword(password)
+	g.Expect(err).To(BeNil())
+	g.Expect(hashed).NotTo(Equal(password))
+	g.Expect(hashed).To(HaveLen(60))
+}
+
+// TestMatchPassword tests password matching functionality.
+func TestMatchPassword(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	password := "MySecurePassword123!"
+
+	// Hash the password
+	hashed, err := HashPassword(password)
+	g.Expect(err).To(BeNil())
+
+	// Correct password should match
+	matched, err := MatchPassword(password, hashed)
+	g.Expect(err).To(BeNil())
+	g.Expect(matched).To(BeTrue())
+
+	// Wrong password should not match
+	matched, err = MatchPassword("WrongPassword", hashed)
+	g.Expect(err).To(BeNil())
+	g.Expect(matched).To(BeFalse())
+}
+
+// TestMatchPasswordInvalidHash tests matching against invalid hash.
+func TestMatchPasswordInvalidHash(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	password := "MySecurePassword123!"
+	invalidHash := "not-a-bcrypt-hash"
+
+	matched, err := MatchPassword(password, invalidHash)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(matched).To(BeFalse())
+}
+
+// TestPasswordHashAndMatch tests complete workflow.
+func TestPasswordHashAndMatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	testCases := []struct {
+		password string
+		match    string
+		expected bool
+	}{
+		{"SimplePassword", "SimplePassword", true},
+		{"SimplePassword", "WrongPassword", false},
+		{"C0mpl3x!P@ssw0rd", "C0mpl3x!P@ssw0rd", true},
+		{"C0mpl3x!P@ssw0rd", "c0mpl3x!p@ssw0rd", false},
+		{"short", "short", true},
+		{"VeryLongPasswordWithLotsOfCharacters123!@#", "VeryLongPasswordWithLotsOfCharacters123!@#", true},
+	}
+
+	for _, tc := range testCases {
+		hashed, err := HashPassword(tc.password)
+		g.Expect(err).To(BeNil())
+
+		matched, err := MatchPassword(tc.match, hashed)
+		g.Expect(err).To(BeNil())
+		g.Expect(matched).To(Equal(tc.expected))
+	}
+}
