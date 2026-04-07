@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	hmacPrefix = "hmac-sha256:"
+	hmacPrefix   = "hmac-sha256:"
+	bcryptPrefix = "bcrypt:"
 )
 
-// Hash hashes an API key secret using HMAC-SHA256.
+// Hash hashes a password using hmac-sha256 and wraps it in URL-safe base64.
+// Returns the encoded hmac-sha256 hash with prefix, or the input unchanged if already hashed.
 func Hash(secret string) (hashed string) {
 	if len(secret) == 0 || isHashed(secret) {
 		hashed = secret
@@ -22,8 +24,8 @@ func Hash(secret string) (hashed string) {
 	}
 	h := hmac.New(sha256.New, []byte(Settings.Passphrase))
 	h.Write([]byte(secret))
-	hash := h.Sum(nil)
-	hashed = base64.URLEncoding.EncodeToString(hash)
+	digest := h.Sum(nil)
+	hashed = base64.URLEncoding.EncodeToString(digest)
 	hashed = hmacPrefix + hashed
 	return
 }
@@ -45,33 +47,56 @@ func isHashed(s string) (hashed bool) {
 	return
 }
 
-// HashPassword hashes a password using bcrypt and prevents double hashing.
-// Returns the bcrypt hash of the password, or the input unchanged if already hashed.
+// isHashedPassword returns true when already in bcrypt hashed format.
+func isHashedPassword(s string) (hashed bool) {
+	if !strings.HasPrefix(s, bcryptPrefix) {
+		return
+	}
+	encoded := strings.TrimPrefix(s, bcryptPrefix)
+	decoded, err := base64.URLEncoding.DecodeString(encoded)
+	if err != nil {
+		return
+	}
+	_, err = bcrypt.Cost(decoded)
+	hashed = (err == nil)
+	return
+}
+
+// HashPassword hashes a password using bcrypt and wraps it in URL-safe base64.
+// Returns the encoded bcrypt hash with prefix, or the input unchanged if already hashed.
 func HashPassword(password string) (hashed string, err error) {
 	if len(password) == 0 {
 		hashed = password
 		return
 	}
-	p := []byte(password)
-	_, err = bcrypt.Cost(p)
-	if err == nil {
+	if isHashedPassword(password) {
 		hashed = password
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword(p, bcrypt.DefaultCost)
+	p := []byte(password)
+	digest, err := bcrypt.GenerateFromPassword(p, bcrypt.DefaultCost)
 	if err != nil {
 		return
 	}
-	hashed = string(hash)
+	encoded := base64.URLEncoding.EncodeToString(digest)
+	hashed = bcryptPrefix + encoded
 	return
 }
 
-// MatchPassword compares a plaintext password against a bcrypt hash.
+// MatchPassword compares a plaintext password against an encoded bcrypt hash.
 // Returns true if the password matches the hash.
 func MatchPassword(password string, hashed string) (matched bool, err error) {
+	if !strings.HasPrefix(hashed, bcryptPrefix) {
+		err = errors.New("invalid hash format")
+		return
+	}
+	encoded := strings.TrimPrefix(hashed, bcryptPrefix)
+	digest, err := base64.URLEncoding.DecodeString(encoded)
+	if err != nil {
+		return
+	}
 	p := []byte(password)
-	h := []byte(hashed)
-	err = bcrypt.CompareHashAndPassword(h, p)
+	err = bcrypt.CompareHashAndPassword(digest, p)
 	if err == nil {
 		matched = true
 		return

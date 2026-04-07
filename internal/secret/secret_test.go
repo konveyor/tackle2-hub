@@ -210,10 +210,10 @@ func TestHashPassword(t *testing.T) {
 	g.Expect(hashed).NotTo(Equal(password))
 
 	// Verify hash starts with bcrypt prefix
-	g.Expect(hashed).To(HavePrefix("$2"))
+	g.Expect(hashed).To(HavePrefix("bcrypt:"))
 
-	// Hash should be 60 characters
-	g.Expect(hashed).To(HaveLen(60))
+	// Hash should be base64 encoded (80 chars for prefix + base64 of 60-byte bcrypt)
+	g.Expect(len(hashed)).To(BeNumerically(">", 60))
 
 	// Hashing same password produces different hash (due to salt)
 	hashed2, err := HashPassword(password)
@@ -256,7 +256,8 @@ func TestHashPasswordStartingWithDollar2(t *testing.T) {
 	hashed, err := HashPassword(password)
 	g.Expect(err).To(BeNil())
 	g.Expect(hashed).NotTo(Equal(password))
-	g.Expect(hashed).To(HaveLen(60))
+	g.Expect(hashed).To(HavePrefix("bcrypt:"))
+	g.Expect(len(hashed)).To(BeNumerically(">", 60))
 }
 
 // TestMatchPassword tests password matching functionality.
