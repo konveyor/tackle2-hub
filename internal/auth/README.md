@@ -60,7 +60,7 @@ Full administrative access to nearly all resources — can create, read, update,
 
 ---
 
-## 🛠 Role: **tackle-architect**
+## 🛠 Role: **architect**
 Broad create/update/delete rights but restricted on identities, proxies, settings, and trackers.
 
 | Resource                  | Create | Read | Update | Delete |
@@ -110,7 +110,7 @@ Broad create/update/delete rights but restricted on identities, proxies, setting
 
 ---
 
-## 🚚 Role: **tackle-migrator**
+## 🚚 Role: **migrator**
 Mostly read-only, except can fully manage dependencies and tasks.
 
 | Resource                 | Create | Read | Update | Delete |
@@ -159,7 +159,7 @@ Mostly read-only, except can fully manage dependencies and tasks.
 
 ---
 
-## 📋 Role: **tackle-project-manager**
+## 📋 Role: **project-manager**
 Read-only for most resources, except can update `applications.stakeholders` and fully manage `migrationwaves`.
 
 | Resource                  | Create | Read | Update | Delete |
