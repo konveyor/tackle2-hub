@@ -24,6 +24,7 @@ func (r *APIKey) With(m *model.APIKey) {
 	baseWith(&r.Resource, &m.Model)
 	r.Digest = m.Digest
 	r.Lifespan = int(time.Until(m.Expiration) / time.Hour)
+	r.Expired = time.Now().After(m.Expiration)
 	if m.User != nil {
 		r.User = &api.Ref{
 			ID:   m.User.ID,

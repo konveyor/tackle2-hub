@@ -128,7 +128,6 @@ const (
 // Routes - Auth
 const (
 	AuthRoute         = "/auth"
-	AuthAPIKeyRoute   = AuthRoute + "/apikey"
 	AuthAPIKeysRoute  = AuthRoute + "/apikeys"
 	AuthAPIKeyIDRoute = AuthAPIKeysRoute + "/:" + ID
 )

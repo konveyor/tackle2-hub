@@ -8,12 +8,7 @@ import (
 
 // NoAuth provider always permits access.
 type NoAuth struct {
-	handler http.Handler
-}
-
-// Grant the key request.
-func (r *NoAuth) Grant(kr KeyRequest) (key APIKey, err error) {
-	return
+	Builtin
 }
 
 // Authenticate the token
@@ -37,11 +32,6 @@ func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 
 // Handler returns an OIDC request handler.
 func (r *NoAuth) Handler() (h http.Handler) {
-	h = r.handler
-	return
-}
-
-// Delete api key.
-func (r *NoAuth) Delete(digest string) (err error) {
+	h = r.Builtin.Handler()
 	return
 }

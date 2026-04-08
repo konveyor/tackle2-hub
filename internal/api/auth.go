@@ -24,7 +24,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("apikeys"))
-	routeGroup.POST(api.AuthAPIKeyRoute, h.CreateKey)
+	routeGroup.POST(api.AuthAPIKeysRoute, h.CreateKey)
 	routeGroup.GET(api.AuthAPIKeysRoute, h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
@@ -97,10 +97,17 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 			})
 		return
 	}
+	m := &model.APIKey{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(m, "digest", key.Digest).Error
+	if err != nil {
+		_ = ctx.Error(err)
+
+	}
+	r.With(m)
 	r.Userid = ""         // redacted.
 	r.Password = ""       // redacted.
 	r.Secret = key.Secret // Plain text (user must save it).
-	r.Digest = key.Digest // Hash (for reference).
 	h.Respond(ctx, http.StatusCreated, r)
 }
 

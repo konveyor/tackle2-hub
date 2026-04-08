@@ -161,6 +161,11 @@ func main() {
 		}
 		metricsManager.Run(context.Background())
 	}
+	// Auth
+	auth.Hub, err = auth.New(db)
+	if err != nil {
+		return
+	}
 	// Web
 	router := gin.Default()
 	router.Use(
@@ -181,10 +186,6 @@ func main() {
 	// Auth
 	domain := auth.NewDomain(db)
 	err = domain.Seed()
-	if err != nil {
-		return
-	}
-	auth.Hub, err = auth.New(db)
 	if err != nil {
 		return
 	}
