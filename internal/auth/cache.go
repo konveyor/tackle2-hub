@@ -81,7 +81,7 @@ func (r *KeyCache) Get(keySecret string) (key APIKey, err error) {
 			}
 			return
 		}
-		key.User = m.User.UUID
+		key.User = m.User.Subject
 		unique := make(map[string]byte)
 		for _, u := range m.User.Roles {
 			for _, perm := range u.Permissions {

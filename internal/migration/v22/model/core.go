@@ -211,7 +211,7 @@ type Identity struct {
 
 type User struct {
 	Model
-	UUID     string `gorm:"<-:create;index;not null"`
+	Subject  string `gorm:"<-:create;index;not null"`
 	Userid   string `gorm:"<-:create;index;not null"`
 	Password string `gorm:"not null"` // hashed
 	Email    string `gorm:"index;not null"`

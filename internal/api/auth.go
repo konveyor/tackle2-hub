@@ -22,7 +22,7 @@ type AuthHandler struct {
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("auth.apikeys"))
+	routeGroup.Use(Required("apikeys"))
 	routeGroup.POST(api.AuthAPIKeyRoute, h.CreateKey)
 	routeGroup.GET(api.AuthAPIKeysRoute, h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
@@ -382,7 +382,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.UUID = uuid.New().String()
+	m.Subject = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
 	m.Password = secret.HashPassword(r.Password)
 	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error

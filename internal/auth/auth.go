@@ -65,7 +65,7 @@ func (r *AuthManager) Login(
 		return
 	}
 	r.appendScopes(session, user)
-	session.Subject = user.UUID
+	session.Subject = user.Subject
 	status = goidc.StatusSuccess
 	return
 }

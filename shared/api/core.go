@@ -168,7 +168,7 @@ type IdpIdentity struct {
 // User REST resource.
 type User struct {
 	Resource `yaml:",inline"`
-	UUID     string `json:"uuid"`
+	Subject  string `json:"subject"`
 	Userid   string `json:"userid" binding:"required"`
 	Password string `json:"password" binding:"required,max=72"`
 	Email    string `json:"email" binding:"required"`
