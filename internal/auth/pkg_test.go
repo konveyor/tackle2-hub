@@ -538,7 +538,11 @@ func TestRequestPermit(t *testing.T) {
 func TestNoAuthProvider(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	provider := &NoAuth{}
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	builtin, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	provider := NewNoAuth(builtin)
 
 	// Authenticate always succeeds (returns nil token, nil error)
 	request := &Request{Token: "any-token"}
@@ -553,23 +557,40 @@ func TestNoAuthProvider(t *testing.T) {
 	g.Expect(scope.Match("anything", "POST")).To(BeTrue())
 
 	// User returns fixed admin user
-	user := provider.User(token)
-	g.Expect(user).To(Equal("admin.noauth"))
+	userid := provider.User(token)
+	g.Expect(userid).To(Equal("admin.noauth"))
 
-	// UserKey and TaskKey return empty (no-op)
+	// Create test user.
+	user := &model.User{
+		Userid:   "testuser",
+		Password: secret.HashPassword("password"),
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		db.Delete(user)
+	})
+
 	kr := KeyRequest{
-		Userid:   "user-123",
-		Password: "password-123",
+		Userid:   user.Userid,
+		Password: "password",
 		Lifespan: time.Hour,
 	}
 	key, err := provider.Grant(kr)
 	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).To(BeEmpty())
+	g.Expect(key.Secret).ToNot(BeEmpty())
 
-	kr.TaskID = 1
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		db.Delete(task)
+	})
+
+	kr.TaskID = task.ID
 	key, err = provider.Grant(kr)
 	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).To(BeEmpty())
+	g.Expect(key.Secret).ToNot(BeEmpty())
 }
 
 // TestKeyRequestGrant tests the KeyRequest.Grant() method.
@@ -872,10 +893,14 @@ func TestBuiltinRevoke(t *testing.T) {
 func TestNoAuthDelete(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	provider := &NoAuth{}
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	builtin, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	provider := NewNoAuth(builtin)
 
 	// Delete should succeed (no-op)
-	err := provider.Delete("any-digest")
+	err = provider.Delete("any-digest")
 	g.Expect(err).To(BeNil())
 }
 

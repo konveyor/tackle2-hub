@@ -31,7 +31,7 @@ func New(db *gorm.DB) (p Provider, err error) {
 	if err != nil {
 		return
 	}
-	p = &NoAuth{*builtin}
+	p = NewNoAuth(builtin)
 	if Settings.Auth.Required {
 		p = builtin
 	}

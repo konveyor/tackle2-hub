@@ -83,6 +83,13 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if r.Expiration.IsZero() {
+		if r.Lifespan == 0 {
+			r.Lifespan = Settings.APIKey.Lifespan
+		}
+	} else {
+		r.Lifespan = int(r.Expiration.Sub(time.Now()) / time.Hour)
+	}
 	kr := auth.KeyRequest{
 		Userid:   r.Userid,
 		Password: r.Password,

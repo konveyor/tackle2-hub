@@ -6,9 +6,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// NewNoAuth return a provider.
+func NewNoAuth(builtin *Builtin) *NoAuth {
+	return &NoAuth{
+		Builtin: builtin,
+	}
+}
+
 // NoAuth provider always permits access.
 type NoAuth struct {
-	Builtin
+	*Builtin
 }
 
 // Authenticate the token

@@ -126,15 +126,16 @@ type Repository struct {
 
 // APIKey REST resource.
 type APIKey struct {
-	Resource `yaml:",inline"`
-	Userid   string `json:"userid,omitempty" yaml:"userid,omitempty"`
-	Password string `json:"password,omitempty" yaml:"password,omitempty"`
-	Digest   string `json:"digest,omitempty" yaml:"digest,omitempty"`
-	Secret   string `json:"secret,omitempty" yaml:"secret,omitempty"`
-	Lifespan int    `json:"lifespan,omitempty" yaml:"lifespan,omitempty"`
-	Expired  bool   `json:"expired,omitempty" yaml:"expired,omitempty"`
-	User     *Ref   `json:"user,omitempty" yaml:"user,omitempty"`
-	Task     *Ref   `json:"task,omitempty" yaml:"task,omitempty"`
+	Resource   `yaml:",inline"`
+	Userid     string    `json:"userid,omitempty" yaml:"userid,omitempty"`
+	Password   string    `json:"password,omitempty" yaml:"password,omitempty"`
+	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
+	Secret     string    `json:"secret,omitempty" yaml:"secret,omitempty"`
+	Lifespan   int       `json:"lifespan,omitempty" yaml:"lifespan,omitempty"`
+	Expiration time.Time `json:"expiration,omitempty" yaml:"expiration,omitempty"`
+	Expired    bool      `json:"expired,omitempty" yaml:"expired,omitempty"`
+	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
+	Task       *Ref      `json:"task,omitempty" yaml:"task,omitempty"`
 }
 
 // Addon REST resource.

@@ -10,21 +10,22 @@ import (
 
 // Environment variables
 const (
-	EnvAuthRequired     = "AUTH_REQUIRED"
-	EnvAPIKeySecret     = "API_KEY_SECRET"
-	EnvKeyCacheLifespan = "KEY_CACHE_LIFESPAN"
-	EnvIssuerURL        = "OIDC_ISSUER_URL"
-	EnvClientID         = "OIDC_CLIENT_ID"
-	EnvClientName       = "OIDC_CLIENT_NAME"
-	EnvClientSecret     = "OIDC_CLIENT_SECRET"
-	EnvKeyRotation      = "OIDC_KEY_ROTATION"
-	EnvIdpEnabled       = "IDP_ENABLED"
-	EnvIdpName          = "IDP_NAME"
-	EnvIdpIssuerURL     = "IDP_ISSUER_URL"
-	EnvIdpClientID      = "IDP_CLIENT_ID"
-	EnvIdpClientSecret  = "IDP_CLIENT_SECRET"
-	EnvIdpRedirectURI   = "IDP_REDIRECT_URI"
-	EnvIdpScopes        = "IDP_SCOPES"
+	EnvAuthRequired        = "AUTH_REQUIRED"
+	EnvAPIKeySecret        = "APIKEY_SECRET"
+	EnvAPIKeyLifespan      = "APIKEY_LIFESPAN"
+	EnvAPIKeyCacheLifespan = "APIKEY_CACHE_LIFESPAN"
+	EnvIssuerURL           = "OIDC_ISSUER_URL"
+	EnvClientID            = "OIDC_CLIENT_ID"
+	EnvClientName          = "OIDC_CLIENT_NAME"
+	EnvClientSecret        = "OIDC_CLIENT_SECRET"
+	EnvKeyRotation         = "OIDC_KEY_ROTATION"
+	EnvIdpEnabled          = "IDP_ENABLED"
+	EnvIdpName             = "IDP_NAME"
+	EnvIdpIssuerURL        = "IDP_ISSUER_URL"
+	EnvIdpClientID         = "IDP_CLIENT_ID"
+	EnvIdpClientSecret     = "IDP_CLIENT_SECRET"
+	EnvIdpRedirectURI      = "IDP_REDIRECT_URI"
+	EnvIdpScopes           = "IDP_SCOPES"
 )
 
 type Auth struct {
@@ -34,6 +35,7 @@ type Auth struct {
 	APIKey struct {
 		Secret        string
 		CacheLifespan time.Duration
+		Lifespan      int
 	}
 	// Token settings for builtin provider.
 	Token struct {
@@ -66,7 +68,8 @@ type Auth struct {
 func (r *Auth) Load() (err error) {
 	r.Required = env.GetBool(EnvAuthRequired, false)
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
-	r.APIKey.CacheLifespan = env.GetMinute(EnvKeyCacheLifespan, 2)
+	r.APIKey.CacheLifespan = env.GetMinute(EnvAPIKeyCacheLifespan, 2)
+	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 87600) // 10 year.
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	r.Client.ID = env.Get(EnvClientID, "main")
