@@ -279,22 +279,15 @@ func TestRefreshTokenFlow(t *testing.T) {
 func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create permission with custom scope
-	permission := api.Permission{
-		Name:  "Admin Access",
-		Scope: "admin",
-	}
-	err := client.Permission.Create(&permission)
+	permissions, err := client.Permission.List()
 	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Permission.Delete(permission.ID)
-	})
+	g.Expect(len(permissions)).To(BeNumerically(">", 0))
 
 	// Create role with permission
 	role := api.Role{
 		Name: "Admin Role",
 		Permissions: []api.Ref{
-			{ID: permission.ID, Name: permission.Name},
+			{ID: permissions[0].ID, Name: permissions[0].Name},
 		},
 	}
 	err = client.Role.Create(&role)
@@ -429,7 +422,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	g.Expect(scopes).To(ContainElement("openid"))
 	g.Expect(scopes).To(ContainElement("profile"))
 	g.Expect(scopes).To(ContainElement("email"))
-	g.Expect(scopes).To(ContainElement("admin")) // ← Injected scope from permission
+	g.Expect(scopes).To(ContainElement("addons:delete")) // ← Injected scope from permission
 
 	// Test using the access token with admin scope
 	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)

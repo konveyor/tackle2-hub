@@ -133,7 +133,7 @@ func (r *TokenManager) getUser(token *goidc.Token) (userid *uint, err error) {
 		return
 	}
 	user := &model.User{}
-	err = r.db.First(user, "uuid", token.Subject).Error
+	err = r.db.First(user, "subject", token.Subject).Error
 	if err != nil {
 		return
 	}

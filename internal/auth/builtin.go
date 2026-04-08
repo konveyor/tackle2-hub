@@ -342,9 +342,11 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	}
 	client := &goidc.Client{}
 	client.ID = Settings.Auth.Client.ID
+	client.IsPublic()
 	client.Name = Settings.Auth.Client.Name
-	client.Secret = Settings.Auth.Client.Secret
-	client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
+	// client.Secret = Settings.Auth.Client.Secret
+	// client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
+	client.TokenAuthnMethod = goidc.AuthnMethodNone
 	client.ScopeIDs = "openid profile email"
 	client.GrantTypes = []goidc.GrantType{
 		goidc.GrantClientCredentials,

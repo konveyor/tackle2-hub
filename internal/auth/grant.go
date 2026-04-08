@@ -170,7 +170,7 @@ func (r *GrantManager) orphaned(grant *model.Grant) (err error) {
 	var count int64
 	user := &model.User{}
 	db := r.db.Model(user)
-	db = db.Where("uuid", grant.Subject)
+	db = db.Where("subject", grant.Subject)
 	err = r.db.Count(&count).Error
 	if err != nil {
 		return
