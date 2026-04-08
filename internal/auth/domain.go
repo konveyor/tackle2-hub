@@ -7,9 +7,11 @@ import (
 	"io/fs"
 	"sort"
 
+	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
 )
@@ -37,10 +39,12 @@ func RegisterScope(scope string) {
 	registeredScopes[scope] = true
 }
 
+// NewDomain returns a domain.
 func NewDomain(db *gorm.DB) *Domain {
 	return &Domain{
 		DB:          db,
 		permByScope: make(map[string]uint),
+		roleByName:  make(map[string]uint),
 	}
 }
 
@@ -54,17 +58,26 @@ type Role struct {
 	} `yaml:"resources"`
 }
 
+// User used to read users.yaml.
+type User struct {
+	ID       uint     `yaml:"id"`
+	Userid   string   `yaml:"userid"`
+	Password string   `yaml:"password"`
+	Roles    []string `yaml:"roles"`
+}
+
 // Domain the RBAC domain.
 type Domain struct {
 	DB          *gorm.DB
 	permByScope map[string]uint
+	roleByName  map[string]uint
 }
 
-// Seed seeds both permissions and roles.
-// Discovers route scopes, seeds permissions, builds permission map, then seeds roles.
+// Seed seeds permissions, roles, and users.
 func (d *Domain) Seed() (err error) {
 	database.PK.Begin(d.DB, model.Permission{}, 1000)
 	database.PK.Begin(d.DB, model.Role{}, 1000)
+	database.PK.Begin(d.DB, model.User{}, 1000)
 	var resources []string
 	for scope := range registeredScopes {
 		resources = append(resources, scope)
@@ -75,6 +88,14 @@ func (d *Domain) Seed() (err error) {
 		return
 	}
 	err = d.seedRoles()
+	if err != nil {
+		return
+	}
+	err = d.buildRoleMap()
+	if err != nil {
+		return
+	}
+	err = d.seedUsers()
 	return
 }
 
@@ -263,6 +284,182 @@ func (d *Domain) buildRolePermissions(role Role) (perms []model.Permission, err 
 	for permID := range permMap {
 		perms = append(perms, model.Permission{
 			Model: model.Model{ID: permID},
+		})
+	}
+	return
+}
+
+// buildRoleMap reads all roles and builds name->ID map.
+func (d *Domain) buildRoleMap() (err error) {
+	var list []model.Role
+	err = d.DB.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	d.roleByName = make(map[string]uint)
+	for _, role := range list {
+		d.roleByName[role.Name] = role.ID
+	}
+	return
+}
+
+// seedUsers seeds users and their role associations from users.yaml.
+// Must be called after seedRoles to ensure role map is populated.
+// Preserves existing user IDs, deletes orphaned seeded users (ID < 1000),
+// and creates new users with static IDs from YAML.
+func (d *Domain) seedUsers() (err error) {
+	users, err := d.readUsers()
+	if err != nil {
+		return
+	}
+	err = d.DB.Transaction(
+		func(tx *gorm.DB) (err error) {
+			existing, err := d.readExistingUsers(tx)
+			if err != nil {
+				return
+			}
+			toDelete, toUpdate, toCreate := d.diffUsers(existing, users)
+			err = d.deleteUsers(tx, toDelete)
+			if err != nil {
+				return
+			}
+			for _, user := range toUpdate {
+				err = d.updateUser(tx, existing[user.Userid], user)
+				if err != nil {
+					return
+				}
+			}
+			for _, user := range toCreate {
+				err = d.createUser(tx, user)
+				if err != nil {
+					return
+				}
+			}
+			return
+		})
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// readUsers reads user definitions from users.yaml.
+func (d *Domain) readUsers() (users []User, err error) {
+	b, err := fs.ReadFile(seedDir, "users.yaml")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = yaml.Unmarshal(b, &users)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// readExistingUsers reads existing users from database.
+func (d *Domain) readExistingUsers(db *gorm.DB) (users map[string]model.User, err error) {
+	var list []model.User
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	users = make(map[string]model.User)
+	for _, u := range list {
+		users[u.Userid] = u
+	}
+	return
+}
+
+// diffUsers calculates which users to delete, update, or create.
+func (d *Domain) diffUsers(existing map[string]model.User, wanted []User) (
+	toDelete []uint, toUpdate []User, toCreate []User) {
+	wantedMap := make(map[string]User)
+	for _, user := range wanted {
+		wantedMap[user.Userid] = user
+	}
+	for userid, user := range existing {
+		if user.ID < 1000 {
+			if _, found := wantedMap[userid]; !found {
+				toDelete = append(toDelete, user.ID)
+			}
+		}
+	}
+	for _, user := range wanted {
+		if _, found := existing[user.Userid]; found {
+			toUpdate = append(toUpdate, user)
+		} else {
+			toCreate = append(toCreate, user)
+		}
+	}
+	return
+}
+
+// deleteUsers deletes users with the given IDs.
+func (d *Domain) deleteUsers(db *gorm.DB, ids []uint) (err error) {
+	if len(ids) == 0 {
+		return
+	}
+	err = db.Delete(&model.User{}, "id IN ?", ids).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// updateUser updates an existing user's role associations and password.
+func (d *Domain) updateUser(db *gorm.DB, existing model.User, user User) (err error) {
+	roles, err := d.buildUserRoles(user)
+	if err != nil {
+		return
+	}
+	err = db.Model(&existing).Association("Roles").Replace(roles)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// createUser creates a new user with roles.
+func (d *Domain) createUser(db *gorm.DB, user User) (err error) {
+	roles, err := d.buildUserRoles(user)
+	if err != nil {
+		return
+	}
+	m := &model.User{
+		Userid:   user.Userid,
+		Subject:  uuid.New().String(),
+		Password: secret.HashPassword(user.Password),
+	}
+	m.ID = user.ID
+	err = db.Create(m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.Model(m).Association("Roles").Replace(roles)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// buildUserRoles builds role list from a user definition.
+func (d *Domain) buildUserRoles(user User) (roles []model.Role, err error) {
+	roleMap := make(map[uint]bool)
+	for _, roleName := range user.Roles {
+		roleID, found := d.roleByName[roleName]
+		if !found {
+			Log.Info("Role not-found: " + roleName)
+			continue
+		}
+		roleMap[roleID] = true
+	}
+	for roleID := range roleMap {
+		roles = append(roles, model.Role{
+			Model: model.Model{ID: roleID},
 		})
 	}
 	return
