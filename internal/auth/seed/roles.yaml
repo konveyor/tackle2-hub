@@ -247,6 +247,30 @@
         - get
         - post
         - put
+    - name: apikeys
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: users
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: roles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: permissions
+      verbs:
+        - get
+    - name: idp.identifies
+      verbs:
+        - get
 - role: architect
   id: 2
   resources:

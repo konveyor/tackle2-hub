@@ -23,8 +23,8 @@ type AuthHandler struct {
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("apikeys"))
 	routeGroup.POST(api.AuthAPIKeysRoute, h.CreateKey)
+	routeGroup.Use(Required("apikeys"))
 	routeGroup.GET(api.AuthAPIKeysRoute, h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
