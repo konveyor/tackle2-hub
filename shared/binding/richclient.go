@@ -1,8 +1,6 @@
 package binding
 
 import (
-	"time"
-
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
@@ -82,7 +80,7 @@ func (r *RichClient) Login(user, password string) (err error) {
 	key := api.APIKey{
 		Userid:   user,
 		Password: password,
-		Lifespan: time.Hour * 24,
+		Lifespan: 720, // 30 days.
 	}
 	err = r.Client.Post(api.AuthAPIKeyRoute, &key)
 	if err != nil {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -85,7 +86,7 @@ func (h AuthHandler) CreateKey(ctx *gin.Context) {
 	kr := auth.KeyRequest{
 		Userid:   r.Userid,
 		Password: r.Password,
-		Lifespan: r.Lifespan,
+		Lifespan: time.Hour * time.Duration(r.Lifespan),
 	}
 	key, err := kr.Grant()
 	if err != nil {

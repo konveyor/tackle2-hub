@@ -23,7 +23,7 @@ type APIKey api.APIKey
 func (r *APIKey) With(m *model.APIKey) {
 	baseWith(&r.Resource, &m.Model)
 	r.Digest = m.Digest
-	r.Lifespan = time.Until(m.Expiration)
+	r.Lifespan = int(time.Until(m.Expiration) / time.Hour)
 	if m.User != nil {
 		r.User = &api.Ref{
 			ID:   m.User.ID,
