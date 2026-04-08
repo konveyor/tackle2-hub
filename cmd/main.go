@@ -124,12 +124,6 @@ func main() {
 		return
 	}
 	//
-	// Auth
-	auth.Hub, err = auth.New(db)
-	if err != nil {
-		return
-	}
-	//
 	// Task
 	taskManager := task.New(db, client)
 	taskManager.Run(context.Background())
@@ -183,5 +177,17 @@ func main() {
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
+	//
+	// Auth
+	domain := auth.NewDomain(db)
+	err = domain.Seed()
+	if err != nil {
+		return
+	}
+	auth.Hub, err = auth.New(db)
+	if err != nil {
+		return
+	}
+	//
 	err = router.Run()
 }

@@ -23,7 +23,7 @@ func TestUserKey(t *testing.T) {
 
 	// Create test user
 	user := &model.User{
-		UUID:     "test-uuid-123",
+		Subject:  "test-uuid-123",
 		Userid:   "testuser",
 		Password: secret.HashPassword("testpassword"),
 		Email:    "test@example.com",
@@ -454,7 +454,7 @@ func TestRequestPermit(t *testing.T) {
 
 	// Create user with specific permissions
 	user := &model.User{
-		UUID:     "user-123",
+		Subject:  "user-123",
 		Userid:   "testuser",
 		Password: secret.HashPassword("password"),
 		Email:    "test@example.com",
@@ -581,7 +581,7 @@ func TestKeyRequestGrant(t *testing.T) {
 
 	// Create test user
 	user := &model.User{
-		UUID:     "user-456",
+		Subject:  "user-456",
 		Userid:   "grantuser",
 		Password: secret.HashPassword("grantpassword"),
 		Email:    "grant@example.com",
@@ -708,7 +708,7 @@ func TestKeyCacheDelete(t *testing.T) {
 
 	// Create test user with permissions
 	user := &model.User{
-		UUID:     "cache-delete-user",
+		Subject:  "cache-delete-user",
 		Userid:   "cachedeleteuser",
 		Password: secret.HashPassword("password"),
 		Email:    "cachedelete@example.com",
@@ -783,7 +783,7 @@ func TestBuiltinDelete(t *testing.T) {
 
 	// Create test user with permissions
 	user := &model.User{
-		UUID:     "builtin-delete-user",
+		Subject:  "builtin-delete-user",
 		Userid:   "builtindeleteuser",
 		Password: secret.HashPassword("password"),
 		Email:    "builtindelete@example.com",

@@ -767,7 +767,9 @@ type Permission = resource.Permission
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
+// Automatically registers the scope for permission generation.
 func Required(scope string) func(*gin.Context) {
+	auth.RegisterScope(scope)
 	return func(ctx *gin.Context) {
 		rtx := RichContext(ctx)
 		token := ctx.GetHeader(Authorization)
