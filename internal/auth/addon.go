@@ -6,8 +6,8 @@ import (
 
 var Settings = &settings.Settings
 
-// AddonRole defines the addon scopes.
-var AddonRole = []string{
+// AddonScopes defines the addon scopes.
+var AddonScopes = []string{
 	"addons:get",
 	"analysis.profiles:get",
 	"applications:get",

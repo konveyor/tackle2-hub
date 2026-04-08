@@ -107,6 +107,8 @@ func (r *KeyCache) Get(keySecret string) (key APIKey, err error) {
 				Token: keySecret,
 			}
 			return
+		default:
+			key.Scopes = AddonScopes
 		}
 	}
 	r.bySecret[key.Secret] = key
