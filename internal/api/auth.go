@@ -65,10 +65,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.Use(Required("permissions"))
 	routeGroup.GET(api.PermissionsRoute, h.PermissionList)
 	routeGroup.GET(api.PermissionsRoute+"/", h.PermissionList)
-	routeGroup.POST(api.PermissionsRoute, h.PermissionCreate)
 	routeGroup.GET(api.PermissionRoute, h.PermissionGet)
-	routeGroup.PUT(api.PermissionRoute, h.PermissionUpdate)
-	routeGroup.DELETE(api.PermissionRoute, h.PermissionDelete)
 }
 
 // CreateKey godoc
@@ -573,6 +570,10 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 // @param role body api.Role true "Role data"
 func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
+	if id < 1000 {
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
 	r := &Role{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -608,6 +609,10 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 // @param id path int true "Role ID"
 func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
+	if id < 1000 {
+		h.Status(ctx, http.StatusBadRequest)
+		return
+	}
 	m := &model.Role{}
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
@@ -673,89 +678,6 @@ func (h AuthHandler) PermissionList(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
-}
-
-// PermissionCreate godoc
-// @summary Create a permission.
-// @description Create a permission.
-// @tags permissions
-// @accept json
-// @produce json
-// @success 201 {object} api.Permission
-// @router /permissions [post]
-// @param permission body api.Permission true "Permission data"
-func (h AuthHandler) PermissionCreate(ctx *gin.Context) {
-	r := &Permission{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	m := r.Model()
-	m.CreateUser = h.CurrentUser(ctx)
-	err = h.DB(ctx).Create(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r.With(m)
-
-	h.Respond(ctx, http.StatusCreated, r)
-}
-
-// PermissionUpdate godoc
-// @summary Update a permission.
-// @description Update a permission.
-// @tags permissions
-// @accept json
-// @success 204
-// @router /permissions/{id} [put]
-// @param id path int true "Permission ID"
-// @param permission body api.Permission true "Permission data"
-func (h AuthHandler) PermissionUpdate(ctx *gin.Context) {
-	id := h.pk(ctx)
-	r := &Permission{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	m := r.Model()
-	m.ID = id
-	m.UpdateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
-	db = db.Omit(clause.Associations)
-	err = db.Save(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	h.Status(ctx, http.StatusNoContent)
-}
-
-// PermissionDelete godoc
-// @summary Delete a permission.
-// @description Delete a permission.
-// @tags permissions
-// @success 204
-// @router /permissions/{id} [delete]
-// @param id path int true "Permission ID"
-func (h AuthHandler) PermissionDelete(ctx *gin.Context) {
-	id := h.pk(ctx)
-	m := &model.Permission{}
-	err := h.DB(ctx).First(m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Delete(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	h.Status(ctx, http.StatusNoContent)
 }
 
 // Auth REST Resources.

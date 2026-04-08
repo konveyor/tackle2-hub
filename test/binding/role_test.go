@@ -12,33 +12,16 @@ import (
 func TestRole(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create permissions for the role to reference
-	permission1 := &api.Permission{
-		Name:  "read:applications",
-		Scope: "applications:read",
-	}
-	err := client.Permission.Create(permission1)
+	permissions, err := client.Permission.List()
+	g.Expect(len(permissions)).Should(BeNumerically(">=", 2))
 	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Permission.Delete(permission1.ID)
-	})
-
-	permission2 := &api.Permission{
-		Name:  "write:applications",
-		Scope: "applications:write",
-	}
-	err = client.Permission.Create(permission2)
-	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Permission.Delete(permission2.ID)
-	})
 
 	// Define the role to create with permissions
 	role := &api.Role{
 		Name: "testrole",
 		Permissions: []api.Ref{
-			{ID: permission1.ID},
-			{ID: permission2.ID},
+			{ID: permissions[0].ID},
+			{ID: permissions[1].ID},
 		},
 	}
 
@@ -69,8 +52,8 @@ func TestRole(t *testing.T) {
 
 	// Verify permissions are associated
 	g.Expect(len(retrieved.Permissions)).To(Equal(2))
-	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permission1.ID, Name: permission1.Name}))
-	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permission2.ID, Name: permission2.Name}))
+	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permissions[0].ID, Name: permissions[0].Name}))
+	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permissions[1].ID, Name: permissions[1].Name}))
 
 	// UPDATE: Modify the role
 	role.Name = "updatedrole"

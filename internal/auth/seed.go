@@ -21,7 +21,7 @@ var (
 )
 
 var (
-	scopeRegistry = make(map[string]bool)
+	registeredScopes = make(map[string]bool)
 )
 
 func init() {
@@ -34,7 +34,7 @@ func init() {
 
 // RegisterScope registers a resource scope for permission generation.
 func RegisterScope(scope string) {
-	scopeRegistry[scope] = true
+	registeredScopes[scope] = true
 }
 
 func NewDomain(db *gorm.DB) *Domain {
@@ -66,7 +66,7 @@ func (d *Domain) Seed() (err error) {
 	database.PK.Begin(d.DB, model.Permission{}, 1000)
 	database.PK.Begin(d.DB, model.Role{}, 1000)
 	var resources []string
-	for scope := range scopeRegistry {
+	for scope := range registeredScopes {
 		resources = append(resources, scope)
 	}
 	sort.Strings(resources)
@@ -254,8 +254,8 @@ func (d *Domain) buildRolePermissions(role Role) (perms []model.Permission, err 
 			scope := resource.Name + ":" + verb
 			permID, found := d.permByScope[scope]
 			if !found {
-				err = &ScopeNotFound{scope}
-				return
+				Log.Info("Scope not-found: " + scope)
+				continue
 			}
 			permMap[permID] = true
 		}

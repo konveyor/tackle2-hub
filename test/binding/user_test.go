@@ -13,33 +13,16 @@ func TestUser(t *testing.T) {
 
 	password := "rosebud"
 
-	// Create permissions for roles
-	permission1 := &api.Permission{
-		Name:  "read:users",
-		Scope: "users:read",
-	}
-	err := client.Permission.Create(permission1)
+	permissions, err := client.Permission.List()
+	g.Expect(len(permissions)).Should(BeNumerically(">=", 2))
 	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Permission.Delete(permission1.ID)
-	})
-
-	permission2 := &api.Permission{
-		Name:  "write:users",
-		Scope: "users:write",
-	}
-	err = client.Permission.Create(permission2)
-	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.Permission.Delete(permission2.ID)
-	})
 
 	// Create roles for the user to reference
 	role1 := &api.Role{
 		Name: "admin",
 		Permissions: []api.Ref{
-			{ID: permission1.ID},
-			{ID: permission2.ID},
+			{ID: permissions[0].ID},
+			{ID: permissions[1].ID},
 		},
 	}
 	err = client.Role.Create(role1)
@@ -51,7 +34,7 @@ func TestUser(t *testing.T) {
 	role2 := &api.Role{
 		Name: "viewer",
 		Permissions: []api.Ref{
-			{ID: permission1.ID},
+			{ID: permissions[0].ID},
 		},
 	}
 	err = client.Role.Create(role2)
@@ -101,7 +84,7 @@ func TestUser(t *testing.T) {
 
 	// Verify basic fields
 	g.Expect(retrieved.Userid).To(Equal(user.Userid))
-	g.Expect(retrieved.UUID).ToNot(BeZero()) // assigned.
+	g.Expect(retrieved.Subject).ToNot(BeZero()) // assigned.
 	g.Expect(retrieved.Email).To(Equal(user.Email))
 
 	// Verify roles are associated
