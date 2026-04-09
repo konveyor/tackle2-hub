@@ -64,7 +64,7 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 // rotate returns a new RSA key as determined
 // by the rotation schedule.
 func (r *KeyManager) rotate(keyList []*model.RsaKey) (created []*model.RsaKey, err error) {
-	threshold := Settings.Auth.Key.Rotation
+	threshold := Settings.Key.Rotation
 	for _, key := range keyList {
 		age := time.Since(key.CreateTime)
 		if age < threshold {

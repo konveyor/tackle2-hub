@@ -80,6 +80,7 @@ func (r *AuthManager) appendScopes(session *goidc.AuthnSession, user *model.User
 	}
 	// Add scopes from user roles
 	for _, role := range user.Roles {
+		unique["role="+role.Name] = 0
 		for _, permission := range role.Permissions {
 			unique[permission.Scope] = 0
 		}
@@ -99,7 +100,7 @@ func (r *AuthManager) appendScopes(session *goidc.AuthnSession, user *model.User
 func (r *AuthManager) grantResources(session *goidc.AuthnSession) {
 	resources := session.Resources
 	if len(resources) == 0 {
-		issuer := Settings.Auth.IssuerURL
+		issuer := Settings.IssuerURL
 		if issuer == "" {
 			issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 		}
@@ -115,7 +116,7 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, se
 			Log.Error(err, "")
 		}
 	}()
-	issuer := Settings.Auth.IssuerURL
+	issuer := Settings.IssuerURL
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}

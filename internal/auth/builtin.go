@@ -128,7 +128,7 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 					err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 					return
 				}
-				secret = []byte(Settings.Auth.Token.Key)
+				secret = []byte(Settings.Token.Key)
 				return
 			},
 			jwt.WithoutClaimsValidation())
@@ -315,17 +315,15 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		},
 		authManager.Login,
 	)
-	issuer := Settings.Auth.IssuerURL
+	issuer := Settings.IssuerURL
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}
-	Log.Info("Provider configured", "issuer", issuer)
 	tokenOptions := func(
 		_ context.Context,
 		_ *goidc.Grant,
 		_ *goidc.Client) (options goidc.TokenOptions) {
-		// Use JWT tokens so the UI can inspect claims.
-		options = goidc.NewJWTTokenOptions(goidc.RS256, 300)
+		options = goidc.NewJWTTokenOptions(goidc.RS256, Settings.Token.RefreshLifespan)
 		return
 	}
 	// userInfoClaims returns user profile claims for the /userinfo endpoint.
@@ -365,6 +363,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			goidc.GrantRefreshToken,
 		),
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
+		provider.WithRefreshTokenLifetime(Settings.Token.Lifespan),
 		provider.WithTokenOptions(tokenOptions),
 		provider.WithTokenManager(tokenManager),
 		provider.WithGrantManager(grantManager),

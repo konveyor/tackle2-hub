@@ -10,23 +10,26 @@ import (
 
 // Environment variables
 const (
-	EnvAuthRequired        = "AUTH_REQUIRED"
-	EnvAPIKeySecret        = "APIKEY_SECRET"
-	EnvAPIKeyLifespan      = "APIKEY_LIFESPAN"
-	EnvAPIKeyCacheLifespan = "APIKEY_CACHE_LIFESPAN"
-	EnvIssuerURL           = "OIDC_ISSUER_URL"
-	EnvClientRedirectURIs  = "OIDC_CLIENT_REDIRECT_URIS"
-	EnvClientID            = "OIDC_CLIENT_ID"
-	EnvClientName          = "OIDC_CLIENT_NAME"
-	EnvClientSecret        = "OIDC_CLIENT_SECRET"
-	EnvKeyRotation         = "OIDC_KEY_ROTATION"
-	EnvIdpEnabled          = "IDP_ENABLED"
-	EnvIdpName             = "IDP_NAME"
-	EnvIdpIssuerURL        = "IDP_ISSUER_URL"
-	EnvIdpClientID         = "IDP_CLIENT_ID"
-	EnvIdpClientSecret     = "IDP_CLIENT_SECRET"
-	EnvIdpRedirectURI      = "IDP_REDIRECT_URI"
-	EnvIdpScopes           = "IDP_SCOPES"
+	EnvAuthRequired         = "AUTH_REQUIRED"
+	EnvAPIKeySecret         = "APIKEY_SECRET"
+	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
+	EnvAPIKeyCacheLifespan  = "APIKEY_CACHE_LIFESPAN"
+	EnvIssuerURL            = "OIDC_ISSUER_URL"
+	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
+	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
+	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
+	EnvClientRedirectURIs   = "OIDC_CLIENT_REDIRECT_URIS"
+	EnvClientID             = "OIDC_CLIENT_ID"
+	EnvClientName           = "OIDC_CLIENT_NAME"
+	EnvClientSecret         = "OIDC_CLIENT_SECRET"
+	EnvKeyRotation          = "OIDC_KEY_ROTATION"
+	EnvIdpEnabled           = "IDP_ENABLED"
+	EnvIdpName              = "IDP_NAME"
+	EnvIdpIssuerURL         = "IDP_ISSUER_URL"
+	EnvIdpClientID          = "IDP_CLIENT_ID"
+	EnvIdpClientSecret      = "IDP_CLIENT_SECRET"
+	EnvIdpRedirectURI       = "IDP_REDIRECT_URI"
+	EnvIdpScopes            = "IDP_SCOPES"
 )
 
 type Auth struct {
@@ -39,9 +42,10 @@ type Auth struct {
 		Lifespan      int
 	}
 	// Token settings for builtin provider.
-	// Deprecated.
 	Token struct {
-		Key string
+		Key             string // Deprecated.
+		Lifespan        int
+		RefreshLifespan int
 	}
 	// Key settings.
 	Key struct {
@@ -72,7 +76,10 @@ func (r *Auth) Load() (err error) {
 	r.Required = env.GetBool(EnvAuthRequired, false)
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
 	r.APIKey.CacheLifespan = env.GetMinute(EnvAPIKeyCacheLifespan, 2)
-	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 87600) // 10 year.
+	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 10*24*365) // hours: 10 years.
+	r.Token.Key = env.Get(EnvTokenKey, "tackle")
+	r.Token.Lifespan = env.GetInt(EnvTokenLifespan, 120)                      // seconds: 2 minutes.
+	r.Token.RefreshLifespan = env.GetInt(EnvRefreshTokenLifespan, 14*24*3600) // seconds: 14 days.
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	r.Client.ID = env.Get(EnvClientID, "main")
