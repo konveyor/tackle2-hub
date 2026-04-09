@@ -35,6 +35,7 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 		AuthCode:     grant.AuthCode,
 		Type:         string(grant.Type),
 		Scopes:       grant.Scopes,
+		Resources:    grant.Resources,
 		Expiration:   asTime(grant.ExpiresAtTimestamp),
 	}
 	err = secret.Encrypt(m)
@@ -139,6 +140,7 @@ func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
 		AuthCode:           m.AuthCode,
 		Type:               goidc.GrantType(m.Type),
 		Scopes:             m.Scopes,
+		Resources:          m.Resources,
 		ExpiresAtTimestamp: asInt(m.Expiration),
 	}
 	return

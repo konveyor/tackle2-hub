@@ -318,13 +318,13 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}
+	Log.Info("Provider configured", "issuer", issuer)
 	tokenOptions := func(
 		_ context.Context,
 		_ *goidc.Grant,
 		_ *goidc.Client) (options goidc.TokenOptions) {
-		// Use opaque tokens instead of JWTs for access tokens.
-		// The userinfo endpoint can look these up in the database.
-		options = goidc.NewOpaqueTokenOptions(300)
+		// Use JWT tokens so the UI can inspect claims.
+		options = goidc.NewJWTTokenOptions(goidc.RS256, 300)
 		return
 	}
 	// userInfoClaims returns user profile claims for the /userinfo endpoint.
@@ -335,7 +335,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		user := &model.User{}
 		err := db.First(user, "Subject", grant.Subject).Error
 		if err != nil {
-			Log.Error(err, "Failed to fetch user for userinfo", "subject", grant.Subject)
+			Log.Error(err, "")
 			return
 		}
 		claims[goidc.ClaimSubject] = user.Subject
@@ -369,7 +369,9 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		provider.WithGrantManager(grantManager),
 		provider.WithPolicies(authPolicy),
 		provider.WithUserInfoClaims(userInfoClaims),
+		provider.WithIDTokenSignatureAlgs(goidc.RS256),
 		provider.WithUserInfoSignatureAlgs(goidc.RS256),
+		provider.WithResourceIndicators(issuer),
 	)
 	if err != nil {
 		err = liberr.Wrap(err)

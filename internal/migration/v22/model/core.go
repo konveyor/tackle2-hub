@@ -260,6 +260,7 @@ type Grant struct {
 	AuthCode     string `gorm:"index"`
 	Type         string `gorm:"not null"`
 	Scopes       string
+	Resources    []string `gorm:"type:json;serializer:json"`
 	Expiration   time.Time
 }
 
@@ -271,6 +272,7 @@ type Token struct {
 	Type       string    `gorm:"not null"`
 	Subject    string    `gorm:"index"`
 	Scopes     string    `gorm:"not null"`
+	Resources  []string  `gorm:"type:json;serializer:json"`
 	Issued     time.Time `gorm:"not null"`
 	Expiration time.Time
 	Revoked    time.Time

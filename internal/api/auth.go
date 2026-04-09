@@ -30,8 +30,8 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
 	routeGroup.DELETE(api.AuthAPIKeyIDRoute, h.APIKeyDelete)
 	// OIDC routes.
-	h2 := auth.Hub.Handler()
-	h2 = http.StripPrefix(api.OIDCRoutes, h2)
+	baseHandler := auth.Hub.Handler()
+	h2 := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	routeGroup = e.Group(api.OIDCRoutes)
 	routeGroup.Any("/*path", gin.WrapH(h2))
 	// IdpIdentity routes

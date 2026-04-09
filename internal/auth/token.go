@@ -35,6 +35,7 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 		Subject:    token.Subject,
 		Type:       string(token.Type),
 		Scopes:     token.Scopes,
+		Resources:  token.Resources,
 		Issued:     asTime(token.CreatedAtTimestamp),
 		Expiration: asTime(token.ExpiresAtTimestamp),
 	}
@@ -75,6 +76,7 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 		Subject:            m.Subject,
 		Type:               goidc.TokenType(m.Type),
 		Scopes:             m.Scopes,
+		Resources:          m.Resources,
 		CreatedAtTimestamp: asInt(m.Issued),
 		ExpiresAtTimestamp: asInt(m.Expiration),
 	}

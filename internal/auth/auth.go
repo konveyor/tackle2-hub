@@ -65,20 +65,20 @@ func (r *AuthManager) Login(
 		return
 	}
 	r.appendScopes(session, user)
+	r.grantResources(session)
 	session.Subject = user.Subject
 	status = goidc.StatusSuccess
 	return
 }
 
-// appendScopes appends user scopes.
+// appendScopes grants requested scopes plus additional scopes from user roles.
 func (r *AuthManager) appendScopes(session *goidc.AuthnSession, user *model.User) {
-	if len(user.Roles) == 0 {
-		return
-	}
 	unique := make(map[string]byte)
+	// Start with requested scopes
 	for _, scope := range strings.Fields(session.Scopes) {
 		unique[scope] = 0
 	}
+	// Add scopes from user roles
 	for _, role := range user.Roles {
 		for _, permission := range role.Permissions {
 			unique[permission.Scope] = 0
@@ -91,6 +91,21 @@ func (r *AuthManager) appendScopes(session *goidc.AuthnSession, user *model.User
 	sort.Strings(scopes)
 	session.GrantedScopes = strings.Join(scopes, " ")
 	return
+}
+
+// grantResources grants resources for the token audience.
+// If the client requested specific resources, grant those.
+// Otherwise, grant the issuer URL as the default audience.
+func (r *AuthManager) grantResources(session *goidc.AuthnSession) {
+	resources := session.Resources
+	if len(resources) == 0 {
+		issuer := Settings.Auth.IssuerURL
+		if issuer == "" {
+			issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
+		}
+		resources = []string{issuer}
+	}
+	session.GrantResources(resources)
 }
 
 // renderPage renders the login page.

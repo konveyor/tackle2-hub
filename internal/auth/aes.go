@@ -104,8 +104,9 @@ func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
 
 // jwKey returns a goidc.JSONWebKey.
 func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
-	k2.Key = strconv.Itoa(int(id))
+	k2.KeyID = strconv.Itoa(int(id))
 	k2.Algorithm = "RS256"
+	k2.Use = "sig"
 	k2.Key = k
 	return
 }
