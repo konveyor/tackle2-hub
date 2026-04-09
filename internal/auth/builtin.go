@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/base64"
 	"errors"
 	"net/http"
@@ -104,7 +105,17 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 				return
 			}
-			key, err = p.keySet.Key(kid.(string))
+			jwk, lookupErr := p.keySet.Key(kid.(string))
+			if lookupErr != nil {
+				err = liberr.Wrap(lookupErr)
+				return
+			}
+			privateKey, cast := jwk.Key.(*rsa.PrivateKey)
+			if !cast {
+				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
+				return
+			}
+			key = &privateKey.PublicKey
 			return
 		},
 		jwt.WithoutClaimsValidation())
