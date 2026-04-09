@@ -134,16 +134,6 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 		jwtClaims[ClaimSub] = key.User
 		return
 	}
-	tokenMgr := NewTokenManager(p.db)
-	oidcToken, lookupErr := tokenMgr.Token(context.TODO(), bearer)
-	if lookupErr == nil {
-		jwToken = jwt.New(jwt.SigningMethodHS512)
-		jwtClaims := jwToken.Claims.(jwt.MapClaims)
-		jwtClaims[ClaimScope] = oidcToken.Scopes
-		jwtClaims[ClaimSub] = oidcToken.Subject
-		err = nil
-		return
-	}
 	err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 	return
 }

@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
 )
@@ -27,22 +27,21 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 			Log.Error(err, "")
 		}
 	}()
-	m := &model.Grant{
-		GrantId:      grant.ID,
-		ClientId:     grant.ClientID,
-		Subject:      grant.Subject,
-		RefreshToken: grant.RefreshToken,
-		AuthCode:     grant.AuthCode,
-		Type:         string(grant.Type),
-		Scopes:       grant.Scopes,
-		Resources:    grant.Resources,
-		Expiration:   asTime(grant.ExpiresAtTimestamp),
-	}
-	err = secret.Encrypt(m)
-	if err != nil {
+	m := &model.Grant{}
+	err = r.db.First(m, "GrantId", grant.ID).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		err = liberr.Wrap(err)
 		return
 	}
+	m.GrantId = grant.ID
+	m.ClientId = grant.ClientID
+	m.Subject = grant.Subject
+	m.RefreshToken = grant.RefreshToken
+	m.AuthCode = grant.AuthCode
+	m.Type = string(grant.Type)
+	m.Scopes = grant.Scopes
+	m.Resources = grant.Resources
+	m.Expiration = asTime(grant.ExpiresAtTimestamp)
 	err = r.db.Save(m).Error
 	return
 }
@@ -75,15 +74,8 @@ func (r *GrantManager) GrantByRefreshToken(_ context.Context, token string) (gra
 			Log.Error(err, "")
 		}
 	}()
-	m := &model.Grant{
-		RefreshToken: token,
-	}
-	err = secret.Encrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = r.db.First(m, "refreshToken", m.RefreshToken).Error
+	m := &model.Grant{}
+	err = r.db.First(m, "refreshToken", token).Error
 	if err != nil {
 		err = notFound(err)
 		return
@@ -127,11 +119,6 @@ func (r *GrantManager) DeleteByAuthCode(_ context.Context, authCode string) (err
 // grant returns a goidc.Grant using
 // the decrypted grant.
 func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
-	err = secret.Decrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	grant = &goidc.Grant{
 		ID:                 m.GrantId,
 		ClientID:           m.ClientId,
@@ -152,7 +139,7 @@ func (r *GrantManager) grant(m *model.Grant) (grant *goidc.Grant, err error) {
 // is updated to match the revocation timestamp.
 func (r *GrantManager) revoked(grant *model.Grant) (err error) {
 	tokenManager := NewTokenManager(r.db)
-	token, err := tokenManager.ByRefreshToken(grant.RefreshToken)
+	token, err := tokenManager.ByGrantId(grant.GrantId)
 	if err != nil {
 		return
 	}
@@ -169,12 +156,13 @@ func (r *GrantManager) orphaned(grant *model.Grant) (err error) {
 	if grant.Type != string(goidc.GrantAuthorizationCode) {
 		return
 	}
-	var count int64
+	count := int64(0)
 	user := &model.User{}
 	db := r.db.Model(user)
 	db = db.Where("subject", grant.Subject)
-	err = r.db.Count(&count).Error
+	err = db.Count(&count).Error
 	if err != nil {
+		err = notFound(err)
 		return
 	}
 	if count == 0 {

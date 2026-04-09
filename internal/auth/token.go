@@ -2,10 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
 )
@@ -28,24 +28,23 @@ func (r *TokenManager) Save(ctx context.Context, token *goidc.Token) (err error)
 			Log.Error(err, "")
 		}
 	}()
-	m := &model.Token{
-		TokenId:    token.ID,
-		GrantId:    token.GrantID,
-		ClientId:   token.ClientID,
-		Subject:    token.Subject,
-		Type:       string(token.Type),
-		Scopes:     token.Scopes,
-		Resources:  token.Resources,
-		Issued:     asTime(token.CreatedAtTimestamp),
-		Expiration: asTime(token.ExpiresAtTimestamp),
-	}
-	m.UserID, err = r.getUser(token)
-	if err != nil {
+	m := &model.Token{}
+	err = r.db.First(m, "TokenId", token.ID).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		err = liberr.Wrap(err)
 		return
 	}
-	err = secret.Encrypt(m)
+	m.TokenId = token.ID
+	m.GrantId = token.GrantID
+	m.ClientId = token.ClientID
+	m.Subject = token.Subject
+	m.Type = string(token.Type)
+	m.Scopes = token.Scopes
+	m.Resources = token.Resources
+	m.Issued = asTime(token.CreatedAtTimestamp)
+	m.Expiration = asTime(token.ExpiresAtTimestamp)
+	m.UserID, err = r.getUser(token)
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	err = r.db.Save(m).Error
@@ -65,10 +64,6 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 		err = notFound(err)
 		return
 	}
-	err = secret.Decrypt(m)
-	if err != nil {
-		return
-	}
 	token = &goidc.Token{
 		ID:                 m.TokenId,
 		GrantID:            m.GrantId,
@@ -83,9 +78,10 @@ func (r *TokenManager) Token(ctx context.Context, id string) (token *goidc.Token
 	return
 }
 
-// ByRefreshToken returns a grant by refresh token.
-func (r *TokenManager) ByRefreshToken(token string) (m *model.Token, err error) {
-	err = r.db.First(m, "refreshToken", token).Error
+// ByGrantId returns a grant by refresh token.
+func (r *TokenManager) ByGrantId(grantId string) (m *model.Token, err error) {
+	m = &model.Token{}
+	err = r.db.First(m, "grantId", grantId).Error
 	if err != nil {
 		err = notFound(err)
 		return
