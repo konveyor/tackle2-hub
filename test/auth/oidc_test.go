@@ -158,7 +158,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	body, _ := io.ReadAll(resp.Body)
 	html := string(body)
-	g.Expect(html).To(ContainSubstring("Tackle Hub Login"))
+	g.Expect(html).To(ContainSubstring("Tackle Login"))
 
 	// Extract CallbackID from form action
 	callbackID := extractCallbackID(html)

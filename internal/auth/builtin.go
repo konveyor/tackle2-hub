@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -340,6 +341,20 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	//
+	// Client
+	redirect := func() (permitted []string) {
+		p, err := url.Parse(issuer)
+		if err != nil {
+			return
+		}
+		permitted = append(
+			permitted,
+			Settings.Auth.Client.RedirectURI,
+			issuer+"/callback",
+			p.Host)
+		return
+	}
 	client := &goidc.Client{}
 	client.ID = Settings.Auth.Client.ID
 	client.IsPublic()
@@ -356,9 +371,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	client.ResponseTypes = []goidc.ResponseType{
 		goidc.ResponseTypeCode,
 	}
-	client.RedirectURIs = []string{
-		issuer + "/callback",
-	}
+	client.RedirectURIs = redirect()
 	err = builtin.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		err = liberr.Wrap(err)

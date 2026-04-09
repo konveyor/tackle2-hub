@@ -119,10 +119,10 @@ func (r *AuthManager) renderPage(writer http.ResponseWriter, _ *http.Request, se
     </style>
 </head>
 <body>
-    <h1>Tackle Hub Login</h1>
+    <h1>Tackle Login</h1>
     <form action="` + issuer + `/authorize/` + session.CallbackID + `" method="post">
         <div>
-            <label>Username:</label>
+            <label>Userid:</label>
             <input type="text" name="userid" required autofocus />
         </div>
         <div>
