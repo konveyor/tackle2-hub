@@ -15,7 +15,7 @@ const (
 	EnvAPIKeyLifespan      = "APIKEY_LIFESPAN"
 	EnvAPIKeyCacheLifespan = "APIKEY_CACHE_LIFESPAN"
 	EnvIssuerURL           = "OIDC_ISSUER_URL"
-	EnvClientRedirectURI   = "OIDC_CLIENT_REDIRECT_URI"
+	EnvClientRedirectURIs  = "OIDC_CLIENT_REDIRECT_URIS"
 	EnvClientID            = "OIDC_CLIENT_ID"
 	EnvClientName          = "OIDC_CLIENT_NAME"
 	EnvClientSecret        = "OIDC_CLIENT_SECRET"
@@ -51,10 +51,10 @@ type Auth struct {
 	IssuerURL string
 	// OIDC client settings.
 	Client struct {
-		ID          string
-		Name        string
-		Secret      string
-		RedirectURI string
+		ID           string
+		Name         string
+		Secret       string
+		RedirectURIs []string
 	}
 	// IDP (identity-provider) settings
 	Idp struct {
@@ -78,15 +78,19 @@ func (r *Auth) Load() (err error) {
 	r.Client.ID = env.Get(EnvClientID, "main")
 	r.Client.Name = env.Get(EnvClientName, "main")
 	r.Client.Secret = env.Get(EnvClientSecret, "tackle")
-	r.Client.RedirectURI, _ = os.LookupEnv(EnvClientRedirectURI)
+	s, found := os.LookupEnv(EnvClientRedirectURIs)
+	if found {
+		r.Client.RedirectURIs =
+			strings.Split(s, ",")
+	}
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
 	r.Idp.Name = env.Get(EnvIdpName, "tackle")
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)
 	r.Idp.ClientID, _ = os.LookupEnv(EnvIdpClientID)
 	r.Idp.ClientSecret, _ = os.LookupEnv(EnvIdpClientSecret)
 	r.Idp.RedirectURI, _ = os.LookupEnv(EnvIdpRedirectURI)
-	s, found := os.LookupEnv(EnvIdpScopes)
-	if found && s != "" {
+	s, found = os.LookupEnv(EnvIdpScopes)
+	if found {
 		r.Idp.Scopes = strings.Split(s, ",")
 	} else {
 		r.Idp.Scopes = []string{

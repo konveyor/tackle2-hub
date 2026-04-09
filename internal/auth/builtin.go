@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -343,17 +342,14 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	}
 	//
 	// Client
-	redirect := func() (permitted []string) {
-		p, err := url.Parse(issuer)
-		if err != nil {
-			return
+	redirectURIs := Settings.Auth.Client.RedirectURIs
+	if len(redirectURIs) == 0 {
+		// When not explicitly configured, allow callback to issuer for
+		// development/testing. Production deployments MUST set
+		// OIDC_CLIENT_REDIRECT_URIS to the UI callback URL.
+		redirectURIs = []string{
+			issuer + "/callback",
 		}
-		permitted = append(
-			permitted,
-			Settings.Auth.Client.RedirectURI,
-			issuer+"/callback",
-			p.Host)
-		return
 	}
 	client := &goidc.Client{}
 	client.ID = Settings.Auth.Client.ID
@@ -371,7 +367,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	client.ResponseTypes = []goidc.ResponseType{
 		goidc.ResponseTypeCode,
 	}
-	client.RedirectURIs = redirect()
+	client.RedirectURIs = redirectURIs
 	err = builtin.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		err = liberr.Wrap(err)

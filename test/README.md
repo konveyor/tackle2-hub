@@ -79,3 +79,26 @@ The chain.pem file can be downloaded with ```openssl``` command and imported. Ex
 # cp chain.pem /etc/pki/ca-trust/source/anchors/
 # update-ca-trust
 ```
+
+## OIDC Auth Tests
+
+The OIDC authorization code flow tests work out of the box in development mode. The Hub defaults to allowing callbacks to its own issuer URL (`{issuer}/callback`) when `OIDC_CLIENT_REDIRECT_URIS` is not set.
+
+```bash
+$ export DISCONNECTED=1
+$ make run
+```
+
+Then run the auth tests:
+```bash
+$ export HUB_BASE_URL=http://localhost:8080
+$ go test -v ./test/auth/
+```
+
+**For production deployments**, you **MUST** explicitly configure allowed redirect URIs to point to your UI:
+
+```bash
+$ export OIDC_CLIENT_REDIRECT_URIS="https://ui.example.com/auth/callback,https://ui-dev.example.com/auth/callback"
+```
+
+The `OIDC_CLIENT_REDIRECT_URIS` environment variable accepts a comma-separated list. The default (`{issuer}/callback`) is only suitable for development/testing where the Hub acts as both authorization server and client.
