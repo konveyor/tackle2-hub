@@ -275,7 +275,12 @@ func (d *Domain) buildRolePermissions(role Role) (perms []model.Permission, err 
 			scope := resource.Name + ":" + verb
 			permID, found := d.permByScope[scope]
 			if !found {
-				Log.Info("Scope not-found: " + scope)
+				Log.Info(
+					"Role has unknown scope.",
+					"name",
+					role.Name,
+					"scope",
+					scope)
 				continue
 			}
 			permMap[permID] = true

@@ -256,7 +256,8 @@ type Grant struct {
 	GrantId      string `gorm:"uniqueIndex;not null"`
 	ClientId     string `gorm:"index"`
 	Subject      string `gorm:"index"`
-	RefreshToken string `gorm:"index"`
+	TokenDigest  string `gorm:"uniqueIndex"`
+	RefreshToken string `secret:""`
 	AuthCode     string `gorm:"index"`
 	Type         string `gorm:"not null"`
 	Scopes       string

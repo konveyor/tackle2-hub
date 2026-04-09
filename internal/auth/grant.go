@@ -7,6 +7,7 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
 )
@@ -37,11 +38,17 @@ func (r *GrantManager) Save(_ context.Context, grant *goidc.Grant) (err error) {
 	m.ClientId = grant.ClientID
 	m.Subject = grant.Subject
 	m.RefreshToken = grant.RefreshToken
+	m.TokenDigest = secret.Hash(grant.RefreshToken)
 	m.AuthCode = grant.AuthCode
 	m.Type = string(grant.Type)
 	m.Scopes = grant.Scopes
 	m.Resources = grant.Resources
 	m.Expiration = asTime(grant.ExpiresAtTimestamp)
+	err = secret.Encrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	err = r.db.Save(m).Error
 	return
 }
@@ -57,6 +64,11 @@ func (r *GrantManager) Grant(_ context.Context, id string) (grant *goidc.Grant, 
 	err = r.db.First(m, "grantId", id).Error
 	if err != nil {
 		err = notFound(err)
+		return
+	}
+	err = secret.Decrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	grant, err = r.grant(m)
@@ -75,7 +87,8 @@ func (r *GrantManager) GrantByRefreshToken(_ context.Context, token string) (gra
 		}
 	}()
 	m := &model.Grant{}
-	err = r.db.First(m, "refreshToken", token).Error
+	digest := secret.Hash(token)
+	err = r.db.First(m, "tokenDigest", digest).Error
 	if err != nil {
 		err = notFound(err)
 		return
@@ -86,6 +99,11 @@ func (r *GrantManager) GrantByRefreshToken(_ context.Context, token string) (gra
 	}
 	err = r.orphaned(m)
 	if err != nil {
+		return
+	}
+	err = secret.Decrypt(m)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	grant, err = r.grant(m)

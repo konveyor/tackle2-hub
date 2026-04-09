@@ -105,9 +105,9 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 				return
 			}
-			jwk, lookupErr := p.keySet.Key(kid.(string))
-			if lookupErr != nil {
-				err = liberr.Wrap(lookupErr)
+			jwk, findErr := p.keySet.Key(kid.(string))
+			if findErr != nil {
+				err = liberr.Wrap(findErr)
 				return
 			}
 			privateKey, cast := jwk.Key.(*rsa.PrivateKey)
