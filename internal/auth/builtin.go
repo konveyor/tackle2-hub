@@ -132,7 +132,19 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
 		jwtClaims[ClaimScope] = strings.Join(key.Scopes, " ")
 		jwtClaims[ClaimSub] = key.User
+		return
 	}
+	tokenMgr := NewTokenManager(p.db)
+	oidcToken, lookupErr := tokenMgr.Token(context.TODO(), bearer)
+	if lookupErr == nil {
+		jwToken = jwt.New(jwt.SigningMethodHS512)
+		jwtClaims := jwToken.Claims.(jwt.MapClaims)
+		jwtClaims[ClaimScope] = oidcToken.Scopes
+		jwtClaims[ClaimSub] = oidcToken.Subject
+		err = nil
+		return
+	}
+	err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 	return
 }
 
@@ -310,7 +322,28 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		_ context.Context,
 		_ *goidc.Grant,
 		_ *goidc.Client) (options goidc.TokenOptions) {
-		options = goidc.NewJWTTokenOptions(goidc.RS256, 300)
+		// Use opaque tokens instead of JWTs for access tokens.
+		// The userinfo endpoint can look these up in the database.
+		options = goidc.NewOpaqueTokenOptions(300)
+		return
+	}
+	// userInfoClaims returns user profile claims for the /userinfo endpoint.
+	userInfoClaims := func(
+		_ context.Context,
+		grant *goidc.Grant) (claims map[string]any) {
+		claims = make(map[string]any)
+		user := &model.User{}
+		err := db.First(user, "Subject", grant.Subject).Error
+		if err != nil {
+			Log.Error(err, "Failed to fetch user for userinfo", "subject", grant.Subject)
+			return
+		}
+		claims[goidc.ClaimSubject] = user.Subject
+		claims[goidc.ClaimPreferredUsername] = user.Userid
+		if user.Email != "" {
+			claims[goidc.ClaimEmail] = user.Email
+			claims[goidc.ClaimEmailVerified] = true
+		}
 		return
 	}
 	builtin.openId, err = provider.New(
@@ -335,6 +368,8 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		provider.WithTokenManager(tokenManager),
 		provider.WithGrantManager(grantManager),
 		provider.WithPolicies(authPolicy),
+		provider.WithUserInfoClaims(userInfoClaims),
+		provider.WithUserInfoSignatureAlgs(goidc.RS256),
 	)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -373,5 +408,25 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+type Builder struct {
+	tokenManager *TokenManager
+	grantManager *GrantManager
+	authManager  *AuthManager
+	keyManager   *KeyManager
+}
+
+func (b *Builder) New(db *gorm.DB) (builtin *Builtin, err error) {
+	builtin = &Builtin{
+		keyCache: NewCache(db),
+		db:       db,
+	}
+	b.grantManager = NewGrantManager(db)
+	b.keyManager = NewKeyManager(db)
+	b.authManager = NewAuthManager(db)
+	b.tokenManager = NewTokenManager(db)
+	builtin.keySet, err = b.keyManager.KeySet()
 	return
 }
