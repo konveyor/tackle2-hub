@@ -34,7 +34,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	h2 := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	routeGroup = e.Group(api.OIDCRoutes)
 	routeGroup.Any("/*path", gin.WrapH(h2))
-	// IdpIdentity routes
+	// IdpIdentity routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
 	routeGroup.GET(api.IdpIdentitiesRoute, h.IdpIdentityList)
@@ -43,7 +43,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.IdpIdentityRoute, h.IdpIdentityGet)
 	routeGroup.PUT(api.IdpIdentityRoute, h.IdpIdentityUpdate)
 	routeGroup.DELETE(api.IdpIdentityRoute, h.IdpIdentityDelete)
-	// User routes
+	// User routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("users"), Transaction)
 	routeGroup.GET(api.UsersRoute, h.UserList)
@@ -52,7 +52,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UserRoute, h.UserGet)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
-	// Role routes
+	// Role routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
 	routeGroup.GET(api.RolesRoute, h.RoleList)

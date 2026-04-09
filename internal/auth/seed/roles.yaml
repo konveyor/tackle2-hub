@@ -271,6 +271,14 @@
     - name: idp.identifies
       verbs:
         - get
+    - name: grants
+      verbs:
+        - get
+        - delete
+    - name: tokens
+      verbs:
+        - get
+        - delete
 - role: architect
   id: 2
   resources:

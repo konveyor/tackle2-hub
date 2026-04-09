@@ -97,6 +97,15 @@ func (m *Manager) Iterate() {
 		&FileReaper{
 			DB: m.DB,
 		},
+		&KeyReaper{
+			DB: m.DB,
+		},
+		&GrantReaper{
+			DB: m.DB,
+		},
+		&TokenReaper{
+			DB: m.DB,
+		},
 	}
 	for _, r := range registered {
 		r.Run()
