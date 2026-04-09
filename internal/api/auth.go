@@ -67,6 +67,20 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.PermissionsRoute, h.PermissionList)
 	routeGroup.GET(api.PermissionsRoute+"/", h.PermissionList)
 	routeGroup.GET(api.PermissionRoute, h.PermissionGet)
+	// Grant routes
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("grants"))
+	routeGroup.GET(api.AuthGrantsRoute, h.GrantList)
+	routeGroup.GET(api.AuthGrantsRoute+"/", h.GrantList)
+	routeGroup.GET(api.AuthGrantRoute, h.GrantGet)
+	routeGroup.DELETE(api.AuthGrantRoute, h.GrantDelete)
+	// Token routes
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("tokens"))
+	routeGroup.GET(api.AuthTokensRoute, h.TokenList)
+	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
+	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
+	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
 }
 
 // CreateKey godoc
@@ -695,12 +709,166 @@ func (h AuthHandler) PermissionList(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, resources)
 }
 
+//
+// Grant handlers
+//
+
+// GrantGet godoc
+// @summary Get a grant by ID.
+// @description Get a grant by ID.
+// @tags grants
+// @produce json
+// @success 200 {object} api.Grant
+// @router /auth/grants/{id} [get]
+// @param id path int true "Grant ID"
+func (h AuthHandler) GrantGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Grant{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r := Grant{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// GrantList godoc
+// @summary List all grants.
+// @description List all grants.
+// @tags grants
+// @produce json
+// @success 200 {object} []api.Grant
+// @router /auth/grants [get]
+func (h AuthHandler) GrantList(ctx *gin.Context) {
+	var list []model.Grant
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resources := []Grant{}
+	for i := range list {
+		r := Grant{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// GrantDelete godoc
+// @summary Delete a grant.
+// @description Delete a grant.
+// @tags grants
+// @success 204
+// @router /auth/grants/{id} [delete]
+// @param id path int true "Grant ID"
+func (h AuthHandler) GrantDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Grant{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Delete(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+//
+// Token handlers
+//
+
+// TokenGet godoc
+// @summary Get a token by ID.
+// @description Get a token by ID.
+// @tags tokens
+// @produce json
+// @success 200 {object} api.Token
+// @router /auth/tokens/{id} [get]
+// @param id path int true "Token ID"
+func (h AuthHandler) TokenGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Token{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r := Token{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// TokenList godoc
+// @summary List all tokens.
+// @description List all tokens.
+// @tags tokens
+// @produce json
+// @success 200 {object} []api.Token
+// @router /auth/tokens [get]
+func (h AuthHandler) TokenList(ctx *gin.Context) {
+	var list []model.Token
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resources := []Token{}
+	for i := range list {
+		r := Token{}
+		r.With(&list[i])
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// TokenDelete godoc
+// @summary Delete a token.
+// @description Delete a token.
+// @tags tokens
+// @success 204
+// @router /auth/tokens/{id} [delete]
+// @param id path int true "Token ID"
+func (h AuthHandler) TokenDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Token{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Delete(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
 // Auth REST Resources.
 type APIKey = resource.APIKey
 type IdpIdentity = resource.IdpIdentity
 type User = resource.User
 type Role = resource.Role
 type Permission = resource.Permission
+type Grant = resource.Grant
+type Token = resource.Token
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

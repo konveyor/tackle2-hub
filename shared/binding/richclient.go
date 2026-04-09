@@ -44,6 +44,7 @@ type RichClient struct {
 	Dependency       Dependency
 	File             File
 	Generator        Generator
+	Grant            Grant
 	Identity         Identity
 	Import           _import.Import
 	JobFunction      JobFunction
@@ -65,6 +66,7 @@ type RichClient struct {
 	Task             task.Task
 	TaskGroup        taskgroup.TaskGroup
 	Ticket           Ticket
+	Token            Token
 	Tracker          Tracker
 	User             User
 	Role             Role
@@ -107,6 +109,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Dependency = Dependency{client: client}
 	r.File = File{client: client}
 	r.Generator = Generator{client: client}
+	r.Grant = Grant{client: client}
 	r.Identity = Identity{client: client}
 	r.Import = _import.New(client)
 	r.JobFunction = JobFunction{client: client}
@@ -128,6 +131,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Task = task.New(client)
 	r.TaskGroup = taskgroup.New(client)
 	r.Ticket = Ticket{client: client}
+	r.Token = Token{client: client}
 	r.Tracker = Tracker{client: client}
 	r.User = User{client: client}
 	r.Role = Role{client: client}

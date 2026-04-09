@@ -3656,3 +3656,114 @@ func TestAPIKey_WithTask(t *testing.T) {
 	// Verify user is nil (task key, not user key)
 	g.Expect(r.User).To(gomega.BeNil())
 }
+// TestGrant_With tests the Grant.With() method.
+func TestGrant_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Grant{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+			UpdateUser: "user2",
+			CreateTime: time.Now(),
+		},
+		GrantId:    "grant-123",
+		ClientId:   "client-456",
+		Subject:    "user-subject",
+		Type:       "authorization_code",
+		Scopes:     "openid profile email",
+		Resources:  []string{"http://localhost:8080/auth"},
+		Expiration: time.Now().Add(24 * time.Hour),
+	}
+
+	r := &Grant{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.CreateUser).To(gomega.Equal("user1"))
+	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
+	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
+	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
+	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
+	g.Expect(r.Type).To(gomega.Equal("authorization_code"))
+	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
+	g.Expect(r.Resources).To(gomega.Equal([]string{"http://localhost:8080/auth"}))
+	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
+}
+
+// TestToken_With tests the Token.With() method.
+func TestToken_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	userID := uint(5)
+	issued := time.Now()
+	expiration := issued.Add(5 * time.Minute)
+	revoked := issued.Add(3 * time.Minute)
+
+	m := &model.Token{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+			UpdateUser: "user2",
+			CreateTime: time.Now(),
+		},
+		TokenId:    "token-789",
+		ClientId:   "client-456",
+		GrantId:    "grant-123",
+		Type:       "access_token",
+		Subject:    "user-subject",
+		Scopes:     "openid profile email",
+		Resources:  []string{"http://localhost:8080/auth"},
+		Issued:     issued,
+		Expiration: expiration,
+		Revoked:    revoked,
+		UserID:     &userID,
+		User: &model.User{
+			Model:  model.Model{ID: 5},
+			Userid: "testuser",
+		},
+	}
+
+	r := &Token{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.CreateUser).To(gomega.Equal("user1"))
+	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
+	g.Expect(r.TokenId).To(gomega.Equal("token-789"))
+	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
+	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
+	g.Expect(r.Type).To(gomega.Equal("access_token"))
+	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
+	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
+	g.Expect(r.Resources).To(gomega.Equal([]string{"http://localhost:8080/auth"}))
+	g.Expect(r.Issued).To(gomega.Equal(issued))
+	g.Expect(r.Expiration).To(gomega.Equal(expiration))
+	g.Expect(r.Revoked).To(gomega.Equal(revoked))
+	g.Expect(r.User).ToNot(gomega.BeNil())
+	g.Expect(r.User.ID).To(gomega.Equal(uint(5)))
+}
+
+// TestToken_With_NilUser tests the Token.With() method with nil user.
+func TestToken_With_NilUser(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.Token{
+		Model: model.Model{ID: 1},
+		TokenId:    "token-789",
+		ClientId:   "client-456",
+		Type:       "client_credentials",
+		Subject:    "client-subject",
+		Scopes:     "applications:get",
+		Resources:  []string{"http://localhost:8080/auth"},
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(5 * time.Minute),
+		UserID:     nil,
+		User:       nil,
+	}
+
+	r := &Token{}
+	r.With(m)
+
+	g.Expect(r.User).To(gomega.BeNil())
+}

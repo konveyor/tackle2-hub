@@ -190,3 +190,31 @@ type Permission struct {
 	Name     string `json:"name" binding:"required"`
 	Scope    string `json:"scope" binding:"required"`
 }
+
+// Grant REST resource.
+type Grant struct {
+	Resource   `yaml:",inline"`
+	GrantId    string    `json:"grantId"`
+	ClientId   string    `json:"clientId"`
+	Subject    string    `json:"subject"`
+	Type       string    `json:"type"`
+	Scopes     string    `json:"scopes"`
+	Resources  []string  `json:"resources"`
+	Expiration time.Time `json:"expiration"`
+}
+
+// Token REST resource.
+type Token struct {
+	Resource   `yaml:",inline"`
+	TokenId    string    `json:"tokenId"`
+	ClientId   string    `json:"clientId"`
+	GrantId    string    `json:"grantId"`
+	Type       string    `json:"type"`
+	Subject    string    `json:"subject"`
+	Scopes     string    `json:"scopes"`
+	Resources  []string  `json:"resources"`
+	Issued     time.Time `json:"issued"`
+	Expiration time.Time `json:"expiration"`
+	Revoked    time.Time `json:"revoked,omitempty" yaml:"revoked,omitempty"`
+	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
+}
