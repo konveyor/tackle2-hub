@@ -300,6 +300,8 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		keyCache: NewCache(db),
 		db:       db,
 	}
+	//
+	// Managers
 	grantManager := NewGrantManager(db)
 	keyManager := NewKeyManager(db)
 	authManager := NewAuthManager(db)
@@ -308,6 +310,8 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	if err != nil {
 		return
 	}
+	//
+	// Auth policy
 	authPolicy := goidc.NewPolicy(
 		"main",
 		func(*http.Request, *goidc.Client, *goidc.AuthnSession) bool {
@@ -326,6 +330,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		options = goidc.NewJWTTokenOptions(goidc.RS256, Settings.Token.RefreshLifespan)
 		return
 	}
+	//
 	// userInfoClaims returns user profile claims for the /userinfo endpoint.
 	userInfoClaims := func(
 		_ context.Context,
@@ -345,6 +350,8 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		}
 		return
 	}
+	//
+	// Provider
 	builtin.openId, err = provider.New(
 		goidc.ProfileOpenID,
 		issuer,
@@ -363,7 +370,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			goidc.GrantRefreshToken,
 		),
 		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
-		provider.WithRefreshTokenLifetime(Settings.Token.Lifespan),
+		provider.WithRefreshTokenLifetime(Settings.Token.RefreshLifespan),
 		provider.WithTokenOptions(tokenOptions),
 		provider.WithTokenManager(tokenManager),
 		provider.WithGrantManager(grantManager),
@@ -392,10 +399,9 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	client.ID = Settings.Auth.Client.ID
 	client.IsPublic()
 	client.Name = Settings.Auth.Client.Name
-	// client.Secret = Settings.Auth.Client.Secret
-	// client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
-	client.TokenAuthnMethod = goidc.AuthnMethodNone
 	client.ScopeIDs = "openid profile email"
+	client.RedirectURIs = redirectURIs
+	client.TokenAuthnMethod = goidc.AuthnMethodNone
 	client.GrantTypes = []goidc.GrantType{
 		goidc.GrantClientCredentials,
 		goidc.GrantAuthorizationCode,
@@ -404,31 +410,14 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	client.ResponseTypes = []goidc.ResponseType{
 		goidc.ResponseTypeCode,
 	}
-	client.RedirectURIs = redirectURIs
+	if Settings.Auth.Client.Secret != "" {
+		client.Secret = Settings.Auth.Client.Secret
+		client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
+	}
 	err = builtin.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	return
-}
-
-type Builder struct {
-	tokenManager *TokenManager
-	grantManager *GrantManager
-	authManager  *AuthManager
-	keyManager   *KeyManager
-}
-
-func (b *Builder) New(db *gorm.DB) (builtin *Builtin, err error) {
-	builtin = &Builtin{
-		keyCache: NewCache(db),
-		db:       db,
-	}
-	b.grantManager = NewGrantManager(db)
-	b.keyManager = NewKeyManager(db)
-	b.authManager = NewAuthManager(db)
-	b.tokenManager = NewTokenManager(db)
-	builtin.keySet, err = b.keyManager.KeySet()
 	return
 }
