@@ -73,23 +73,27 @@ type Auth struct {
 }
 
 func (r *Auth) Load() (err error) {
+	// API-Key
 	r.Required = env.GetBool(EnvAuthRequired, false)
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
-	r.APIKey.CacheLifespan = env.GetMinute(EnvAPIKeyCacheLifespan, 2)
-	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 10*24*365) // hours: 10 years.
+	r.APIKey.CacheLifespan = env.GetMinute(EnvAPIKeyCacheLifespan, 5) // minutes: 5
+	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 10*24*365)      // hours: 10 years.
+	// Token
 	r.Token.Key = env.Get(EnvTokenKey, "tackle")
-	r.Token.Lifespan = env.GetInt(EnvTokenLifespan, 120)                      // seconds: 2 minutes.
+	r.Token.Lifespan = env.GetInt(EnvTokenLifespan, 300)                      // seconds: 5 minutes.
 	r.Token.RefreshLifespan = env.GetInt(EnvRefreshTokenLifespan, 14*24*3600) // seconds: 14 days.
+	// OIDC Provider
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-	r.Client.ID = env.Get(EnvClientID, "main")
-	r.Client.Name = env.Get(EnvClientName, "main")
-	r.Client.Secret = env.Get(EnvClientSecret, "tackle")
+	r.Client.ID = env.Get(EnvClientID, "frontend")
+	r.Client.Name = env.Get(EnvClientName, "frontend")
+	r.Client.Secret, _ = os.LookupEnv(EnvClientSecret)
 	s, found := os.LookupEnv(EnvClientRedirectURIs)
 	if found {
 		r.Client.RedirectURIs =
 			strings.Split(s, ",")
 	}
+	// Remote IDP Endpoint.
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
 	r.Idp.Name = env.Get(EnvIdpName, "tackle")
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)

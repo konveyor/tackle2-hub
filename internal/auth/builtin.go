@@ -327,7 +327,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		_ context.Context,
 		_ *goidc.Grant,
 		_ *goidc.Client) (options goidc.TokenOptions) {
-		options = goidc.NewJWTTokenOptions(goidc.RS256, Settings.Token.RefreshLifespan)
+		options = goidc.NewJWTTokenOptions(goidc.RS256, Settings.Token.Lifespan)
 		return
 	}
 	//
