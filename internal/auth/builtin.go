@@ -351,6 +351,20 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		return
 	}
 	//
+	// Logout handler and policy
+	logoutHandler := func(w http.ResponseWriter, r *http.Request, _ *goidc.LogoutSession) (err error) {
+		w.WriteHeader(http.StatusOK)
+		http.Redirect(w, r, issuer+"/authorize", http.StatusFound)
+		return
+	}
+	logoutPolicy := goidc.NewLogoutPolicy(
+		"main",
+		func(*http.Request, *goidc.LogoutSession) bool {
+			return true
+		},
+		authManager.Logout,
+	)
+	//
 	// Provider
 	builtin.openId, err = provider.New(
 		goidc.ProfileOpenID,
@@ -379,6 +393,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		provider.WithIDTokenSignatureAlgs(goidc.RS256),
 		provider.WithUserInfoSignatureAlgs(goidc.RS256),
 		provider.WithResourceIndicators(issuer),
+		provider.WithLogout(logoutHandler, logoutPolicy),
 	)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -401,6 +416,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	client.Name = Settings.Auth.Client.Name
 	client.ScopeIDs = "openid profile email"
 	client.RedirectURIs = redirectURIs
+	client.PostLogoutRedirectURIs = redirectURIs
 	client.TokenAuthnMethod = goidc.AuthnMethodNone
 	client.GrantTypes = []goidc.GrantType{
 		goidc.GrantClientCredentials,

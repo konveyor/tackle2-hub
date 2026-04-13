@@ -3656,6 +3656,7 @@ func TestAPIKey_WithTask(t *testing.T) {
 	// Verify user is nil (task key, not user key)
 	g.Expect(r.User).To(gomega.BeNil())
 }
+
 // TestGrant_With tests the Grant.With() method.
 func TestGrant_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -3749,7 +3750,7 @@ func TestToken_With_NilUser(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	m := &model.Token{
-		Model: model.Model{ID: 1},
+		Model:      model.Model{ID: 1},
 		TokenId:    "token-789",
 		ClientId:   "client-456",
 		Type:       "client_credentials",

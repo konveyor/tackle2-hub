@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sort"
@@ -67,6 +68,55 @@ func (r *AuthManager) Login(
 	r.appendScopes(session, user)
 	r.grantResources(session)
 	session.Subject = user.Subject
+	status = goidc.StatusSuccess
+	return
+}
+
+// Logout handles the logout flow by cleaning up grants and tokens.
+func (p *AuthManager) Logout(
+	_ http.ResponseWriter,
+	_ *http.Request,
+	session *goidc.LogoutSession) (status goidc.Status, err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "logout")
+		}
+	}()
+	if session.IDTokenHintClaims == nil {
+		status = goidc.StatusSuccess
+		return
+	}
+	subjectClaim, found := session.IDTokenHintClaims[goidc.ClaimSubject]
+	if !found {
+		status = goidc.StatusSuccess
+		return
+	}
+	subject, cast := subjectClaim.(string)
+	if !cast {
+		status = goidc.StatusSuccess
+		return
+	}
+	var grants []model.Grant
+	err = p.db.Find(&grants, "subject", subject).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	grantManager := NewGrantManager(p.db)
+	tokenManager := NewTokenManager(p.db)
+	for i := range grants {
+		grant := &grants[i]
+		err = grantManager.Delete(context.Background(), grant.GrantId)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = tokenManager.DeleteByGrantID(context.Background(), grant.GrantId)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
 	status = goidc.StatusSuccess
 	return
 }
