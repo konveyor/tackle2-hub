@@ -80,13 +80,13 @@ func (r *Auth) Load() (err error) {
 	r.APIKey.Lifespan = env.GetInt(EnvAPIKeyLifespan, 10*24*365)      // hours: 10 years.
 	// Token
 	r.Token.Key = env.Get(EnvTokenKey, "tackle")
-	r.Token.Lifespan = env.GetInt(EnvTokenLifespan, 300)                      // seconds: 5 minutes.
-	r.Token.RefreshLifespan = env.GetInt(EnvRefreshTokenLifespan, 14*24*3600) // seconds: 14 days.
+	r.Token.Lifespan = env.GetInt(EnvTokenLifespan, 300)                   // seconds: 5 minutes.
+	r.Token.RefreshLifespan = env.GetInt(EnvRefreshTokenLifespan, 48*3600) // seconds: 2 days.
 	// OIDC Provider
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-	r.Client.ID = env.Get(EnvClientID, "frontend")
-	r.Client.Name = env.Get(EnvClientName, "frontend")
+	r.Client.ID = env.Get(EnvClientID, "web-ui")
+	r.Client.Name = env.Get(EnvClientName, "Web UI")
 	r.Client.Secret, _ = os.LookupEnv(EnvClientSecret)
 	s, found := os.LookupEnv(EnvClientRedirectURIs)
 	if found {
