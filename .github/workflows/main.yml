@@ -96,3 +96,4 @@ jobs:
       tackle_hub: ttl.sh/konveyor-hub-${{ github.sha }}:2h
       api_hub_tests_ref: ${{ github.ref }}
       base_tag: release-0.7
+      api_tests_ref: ${{ github.base_ref || github.ref_name }}
