@@ -299,7 +299,7 @@ func (r *Storage) TerminateSession(
 		if err != nil {
 			return
 		}
-		err = r.deleteTokensByGrantID(ctx, grant.GrantId)
+		err = r.deleteTokensByGrantId(ctx, grant.GrantId)
 		if err != nil {
 			return
 		}
@@ -638,14 +638,14 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 	tokenId = r.genId()
 	expiration := time.Now().Add(
 		time.Duration(Settings.Token.RefreshLifespan) * time.Second)
-	userID, _ := r.userID(req.GetSubject())
+	userID, _ := r.userId(req.GetSubject())
 	refreshToken := r.genId()
 	digest := secret.Hash(refreshToken)
 	grantId, err := r.createGrant(ctx, authReq, refreshToken, digest)
 	if err != nil {
 		return "", err
 	}
-	authCode = r.authCodeByID(authReq.GetID())
+	authCode = r.authCodeById(authReq.GetID())
 	m := &model.Token{
 		TokenId:    tokenId,
 		GrantId:    grantId,
@@ -691,8 +691,8 @@ func (r *Storage) deleteToken(ctx context.Context, id string) (err error) {
 	return
 }
 
-// deleteTokensByGrantID deletes tokens by grant id.
-func (r *Storage) deleteTokensByGrantID(ctx context.Context, id string) (err error) {
+// deleteTokensByGrantId deletes tokens by grant id.
+func (r *Storage) deleteTokensByGrantId(ctx context.Context, id string) (err error) {
 	m := &model.Token{}
 	err = r.db.Delete(m, "grantId", id).Error
 	if err != nil {
@@ -768,7 +768,7 @@ func (r *Storage) deleteGrantByAuthCode(ctx context.Context, code string) (err e
 
 // revoked enforces token revocation.
 func (r *Storage) revoked(grant *model.Grant) (err error) {
-	token, err := r.tokenByGrantID(grant.GrantId)
+	token, err := r.tokenByGrantId(grant.GrantId)
 	if err != nil {
 		return
 	}
@@ -799,8 +799,8 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 	return
 }
 
-// tokenByGrantID returns a token by grant id.
-func (r *Storage) tokenByGrantID(grantId string) (m *model.Token, err error) {
+// tokenByGrantId returns a token by grant id.
+func (r *Storage) tokenByGrantId(grantId string) (m *model.Token, err error) {
 	m = &model.Token{}
 	err = r.db.First(m, "grantId", grantId).Error
 	if err != nil {
@@ -816,7 +816,7 @@ func (r *Storage) createGrant(
 	authReq op.AuthRequest,
 	refreshToken, digest string) (grantId string, err error) {
 	grantId = r.genId()
-	authCode := r.authCodeByID(authReq.GetID())
+	authCode := r.authCodeById(authReq.GetID())
 	err = r.createGrantDirect(
 		ctx,
 		grantId,
@@ -859,8 +859,8 @@ func (r *Storage) createGrantDirect(
 	return
 }
 
-// authCodeByID returns the auth code for an auth request.
-func (r *Storage) authCodeByID(id string) (code string) {
+// authCodeById returns the auth code for an auth request.
+func (r *Storage) authCodeById(id string) (code string) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	authReq, found := r.authReqs[id]
@@ -883,8 +883,8 @@ func (r *Storage) deleteAuthRequestByCode(ctx context.Context, code string) (err
 	return
 }
 
-// userID returns the user ID for the subject.
-func (r *Storage) userID(subject string) (id *uint, err error) {
+// userId returns the user ID for the subject.
+func (r *Storage) userId(subject string) (id *uint, err error) {
 	user := &model.User{}
 	err = r.db.First(user, "subject", subject).Error
 	if err != nil {
