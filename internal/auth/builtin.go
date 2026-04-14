@@ -88,8 +88,8 @@ func (p *Builtin) Handler() (h http.Handler) {
 func (p *Builtin) Login(
 	writer http.ResponseWriter,
 	request *http.Request,
-	authReqID string) (err error) {
-	err = p.storage.Login(writer, request, authReqID)
+	authReqId string) (err error) {
+	err = p.storage.Login(writer, request, authReqId)
 	return
 }
 

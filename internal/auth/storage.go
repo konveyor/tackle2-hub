@@ -102,7 +102,7 @@ func (r *Storage) ClientCredentials(
 // ClientCredentialsTokenRequest creates a token request for client credentials.
 func (r *Storage) ClientCredentialsTokenRequest(
 	ctx context.Context,
-	clientID string,
+	clientId string,
 	scopes []string) (req op.TokenRequest, err error) {
 	defer func() {
 		if err != nil {
@@ -110,9 +110,9 @@ func (r *Storage) ClientCredentialsTokenRequest(
 		}
 	}()
 	req = &TokenRequest{
-		grantID:  r.genId(),
-		clientID: clientID,
-		subject:  clientID,
+		grantId:  r.genId(),
+		clientId: clientId,
+		subject:  clientId,
 		scopes:   scopes,
 	}
 	return
@@ -128,16 +128,16 @@ func (r *Storage) CreateAuthRequest(
 			Log.Error(err, "create auth request failed")
 		}
 	}()
-	requestID := r.genId()
+	requestId := r.genId()
 	req = &AuthRequest{
-		AuthRequest: *authReq,
-		RequestID:   requestID,
-		Subject:     userID,
-		AuthTime:    time.Now(),
-		Expiration:  time.Now().Add(10 * time.Minute),
+		AuthRequest: authReq,
+		requestId:   requestId,
+		subject:     userID,
+		authTime:    time.Now(),
+		expiration:  time.Now().Add(10 * time.Minute),
 	}
 	r.mu.Lock()
-	r.authReqs[requestID] = req.(*AuthRequest)
+	r.authReqs[requestId] = req.(*AuthRequest)
 	r.mu.Unlock()
 	return
 }
@@ -171,14 +171,14 @@ func (r *Storage) AuthRequestByCode(
 		}
 	}()
 	r.mu.RLock()
-	requestID, found := r.authByCode[code]
+	requestId, found := r.authByCode[code]
 	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth code not found")
 		return
 	}
 	r.mu.RLock()
-	req, found = r.authReqs[requestID]
+	req, found = r.authReqs[requestId]
 	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
@@ -201,7 +201,7 @@ func (r *Storage) SaveAuthCode(ctx context.Context, id, code string) (err error)
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	authReq.AuthCode = code
+	authReq.authCode = code
 	r.authByCode[code] = id
 	return
 }
@@ -219,8 +219,8 @@ func (r *Storage) DeleteAuthRequest(ctx context.Context, id string) (err error) 
 	if !found {
 		return
 	}
-	if authReq.AuthCode != "" {
-		delete(r.authByCode, authReq.AuthCode)
+	if authReq.authCode != "" {
+		delete(r.authByCode, authReq.authCode)
 	}
 	delete(r.authReqs, id)
 	return
@@ -229,9 +229,9 @@ func (r *Storage) DeleteAuthRequest(ctx context.Context, id string) (err error) 
 // CreateAccessToken creates an access token.
 func (r *Storage) CreateAccessToken(
 	ctx context.Context,
-	req op.TokenRequest) (tokenID string, expiration time.Time, err error) {
+	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {
 	expiration = time.Now().Add(time.Duration(Settings.Token.Lifespan) * time.Second)
-	tokenID = r.genId()
+	tokenId = r.genId()
 	return
 }
 
@@ -270,8 +270,8 @@ func (r *Storage) TokenRequestByRefreshToken(
 		return
 	}
 	req = &TokenRequest{
-		grantID:  grant.GrantId,
-		clientID: grant.ClientId,
+		grantId:  grant.GrantId,
+		clientId: grant.ClientId,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
 	}
@@ -281,7 +281,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 // TerminateSession terminates a user session.
 func (r *Storage) TerminateSession(
 	ctx context.Context,
-	userID, clientID string) (err error) {
+	userID, clientId string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "terminate session failed")
@@ -310,7 +310,7 @@ func (r *Storage) TerminateSession(
 // RevokeToken revokes a token.
 func (r *Storage) RevokeToken(
 	ctx context.Context,
-	tokenOrTokenID, userID, clientID string) *oidc.Error {
+	tokenOrTokenID, userID, clientId string) *oidc.Error {
 	err := r.deleteToken(ctx, tokenOrTokenID)
 	if err != nil {
 		Log.Error(err, "revoke token failed")
@@ -341,7 +341,7 @@ func (r *Storage) KeySet(ctx context.Context) (keys []op.Key, err error) {
 // GetKeyByIDAndClientID retrieves a key.
 func (r *Storage) GetKeyByIDAndClientID(
 	ctx context.Context,
-	keyID, clientID string) (key *jose.JSONWebKey, err error) {
+	keyID, clientId string) (key *jose.JSONWebKey, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "key lookup failed")
@@ -377,7 +377,7 @@ func (r *Storage) Health(ctx context.Context) (err error) {
 // GetPrivateClaimsFromScopes returns private claims based on scopes.
 func (r *Storage) GetPrivateClaimsFromScopes(
 	ctx context.Context,
-	userID, clientID string,
+	userID, clientId string,
 	scopes []string) (claims map[string]any, err error) {
 	//
 	claims = make(map[string]any)
@@ -417,7 +417,7 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 func (r *Storage) SetUserinfoFromScopes(
 	ctx context.Context,
 	userinfo *oidc.UserInfo,
-	userID, clientID string,
+	userID, clientId string,
 	scopes []string) (err error) {
 	defer func() {
 		if err != nil {
@@ -434,7 +434,7 @@ func (r *Storage) SetUserinfoFromScopes(
 	userinfo.PreferredUsername = user.Userid
 	if user.Email != "" {
 		userinfo.Email = user.Email
-		userinfo.EmailVerified = oidc.Bool(true)
+		userinfo.EmailVerified = true
 	}
 	return
 }
@@ -443,7 +443,7 @@ func (r *Storage) SetUserinfoFromScopes(
 func (r *Storage) SetUserinfoFromToken(
 	ctx context.Context,
 	userinfo *oidc.UserInfo,
-	tokenID, subject, origin string) (err error) {
+	tokenId, subject, origin string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "set userinfo failed")
@@ -468,13 +468,13 @@ func (r *Storage) SetUserinfoFromToken(
 func (r *Storage) SetIntrospectionFromToken(
 	ctx context.Context,
 	introspection *oidc.IntrospectionResponse,
-	tokenID, subject, clientID string) (err error) {
+	tokenId, subject, clientId string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "set introspection failed")
 		}
 	}()
-	token, err := r.token(ctx, tokenID)
+	token, err := r.token(ctx, tokenId)
 	if err != nil {
 		return
 	}
@@ -490,7 +490,7 @@ func (r *Storage) SetIntrospectionFromToken(
 // GetRefreshTokenInfo retrieves refresh token info.
 func (r *Storage) GetRefreshTokenInfo(
 	ctx context.Context,
-	clientID, token string) (userID, tokenID string, err error) {
+	clientID, token string) (userID, tokenId string, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "get refresh token info failed")
@@ -501,7 +501,7 @@ func (r *Storage) GetRefreshTokenInfo(
 		return
 	}
 	userID = grant.Subject
-	tokenID = grant.RefreshToken
+	tokenId = grant.RefreshToken
 	return
 }
 
@@ -509,7 +509,7 @@ func (r *Storage) GetRefreshTokenInfo(
 func (r *Storage) Login(
 	writer http.ResponseWriter,
 	request *http.Request,
-	authReqID string) (err error) {
+	authReqId string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "login failed")
@@ -523,7 +523,7 @@ func (r *Storage) Login(
 	userid := request.PostFormValue("userid")
 	password := request.PostFormValue("password")
 	if userid == "" || password == "" {
-		err = r.renderPage(writer, request, authReqID)
+		err = r.renderPage(writer, request, authReqId)
 		return
 	}
 	user := &model.User{}
@@ -532,29 +532,29 @@ func (r *Storage) Login(
 	err = db.First(user, "userid", userid).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = r.renderPage(writer, request, authReqID)
+			err = r.renderPage(writer, request, authReqId)
 			err = nil
 		}
 		return
 	}
 	if !secret.MatchPassword(password, user.Password) {
-		err = r.renderPage(writer, request, authReqID)
+		err = r.renderPage(writer, request, authReqId)
 		return
 	}
 	r.mu.Lock()
-	authReq, found := r.authReqs[authReqID]
+	authReq, found := r.authReqs[authReqId]
 	r.mu.Unlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
 	r.mu.Lock()
-	authReq.Subject = user.Subject
-	authReq.AuthTime = time.Now()
-	authReq.IsDone = true
+	authReq.subject = user.Subject
+	authReq.authTime = time.Now()
+	authReq.done = true
 	r.mu.Unlock()
 	issuer := r.issuer()
-	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqID)
+	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqId)
 	http.Redirect(writer, request, callbackURL, http.StatusFound)
 	return
 }
@@ -563,7 +563,7 @@ func (r *Storage) Login(
 func (r *Storage) renderPage(
 	writer http.ResponseWriter,
 	_ *http.Request,
-	authReqID string) (err error) {
+	authReqId string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "render page failed")
@@ -606,7 +606,7 @@ func (r *Storage) renderPage(
 </head>
 <body>
     <h1>Tackle Login</h1>
-    <form action="` + issuer + `/login?authRequestID=` + authReqID + `" method="post">
+    <form action="` + issuer + `/login?authRequestID=` + authReqId + `" method="post">
         <div>
             <label>Userid:</label>
             <input type="text" name="userid" required autofocus />
@@ -629,26 +629,26 @@ func (r *Storage) renderPage(
 }
 
 // createRefreshToken creates a refresh token.
-func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (tokenID string, err error) {
+func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (tokenId string, err error) {
 	var authCode string
 	authReq, cast := req.(op.AuthRequest)
 	if !cast {
 		return
 	}
-	tokenID = r.genId()
+	tokenId = r.genId()
 	expiration := time.Now().Add(
 		time.Duration(Settings.Token.RefreshLifespan) * time.Second)
 	userID, _ := r.userID(req.GetSubject())
 	refreshToken := r.genId()
 	digest := secret.Hash(refreshToken)
-	grantID, err := r.createGrant(ctx, authReq, refreshToken, digest)
+	grantId, err := r.createGrant(ctx, authReq, refreshToken, digest)
 	if err != nil {
 		return "", err
 	}
 	authCode = r.authCodeByID(authReq.GetID())
 	m := &model.Token{
-		TokenId:    tokenID,
-		GrantId:    grantID,
+		TokenId:    tokenId,
+		GrantId:    grantId,
 		ClientId:   "",
 		Subject:    req.GetSubject(),
 		Type:       TokenTypeRefresh,
@@ -666,7 +666,7 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 	if authCode != "" {
 		err = r.deleteAuthRequestByCode(ctx, authCode)
 	}
-	tokenID = refreshToken
+	tokenId = refreshToken
 	return
 }
 
@@ -800,9 +800,9 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 }
 
 // tokenByGrantID returns a token by grant id.
-func (r *Storage) tokenByGrantID(grantID string) (m *model.Token, err error) {
+func (r *Storage) tokenByGrantID(grantId string) (m *model.Token, err error) {
 	m = &model.Token{}
-	err = r.db.First(m, "grantId", grantID).Error
+	err = r.db.First(m, "grantId", grantId).Error
 	if err != nil {
 		err = r.notFound(err)
 		return
@@ -814,12 +814,12 @@ func (r *Storage) tokenByGrantID(grantID string) (m *model.Token, err error) {
 func (r *Storage) createGrant(
 	ctx context.Context,
 	authReq op.AuthRequest,
-	refreshToken, digest string) (grantID string, err error) {
-	grantID = r.genId()
+	refreshToken, digest string) (grantId string, err error) {
+	grantId = r.genId()
 	authCode := r.authCodeByID(authReq.GetID())
 	err = r.createGrantDirect(
 		ctx,
-		grantID,
+		grantId,
 		authReq.GetClientID(),
 		authReq.GetSubject(),
 		authCode,
@@ -832,11 +832,11 @@ func (r *Storage) createGrant(
 // createGrantDirect creates a grant with explicit parameters.
 func (r *Storage) createGrantDirect(
 	ctx context.Context,
-	grantID, clientID, subject, authCode string,
+	grantId, clientID, subject, authCode string,
 	scopes []string,
 	refreshToken, digest string) (err error) {
 	m := &model.Grant{
-		GrantId:      grantID,
+		GrantId:      grantId,
 		ClientId:     clientID,
 		Subject:      subject,
 		TokenDigest:  digest,
@@ -865,7 +865,7 @@ func (r *Storage) authCodeByID(id string) (code string) {
 	defer r.mu.RUnlock()
 	authReq, found := r.authReqs[id]
 	if found {
-		code = authReq.AuthCode
+		code = authReq.authCode
 	}
 	return
 }
@@ -874,12 +874,12 @@ func (r *Storage) authCodeByID(id string) (code string) {
 func (r *Storage) deleteAuthRequestByCode(ctx context.Context, code string) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	requestID, found := r.authByCode[code]
+	requestId, found := r.authByCode[code]
 	if !found {
 		return
 	}
 	delete(r.authByCode, code)
-	delete(r.authReqs, requestID)
+	delete(r.authReqs, requestId)
 	return
 }
 
@@ -1017,7 +1017,6 @@ func (c *Client) IDTokenLifetime() (d time.Duration) {
 
 // DevMode returns whether dev mode is enabled.
 func (c *Client) DevMode() (b bool) {
-	b = false
 	return
 }
 
@@ -1043,7 +1042,6 @@ func (c *Client) IsScopeAllowed(scope string) (b bool) {
 
 // IDTokenUserinfoClaimsAssertion returns userinfo claims assertion setting.
 func (c *Client) IDTokenUserinfoClaimsAssertion() (b bool) {
-	b = false
 	return
 }
 
@@ -1055,18 +1053,18 @@ func (c *Client) ClockSkew() (d time.Duration) {
 
 // AuthRequest implements op.AuthRequest.
 type AuthRequest struct {
-	oidc.AuthRequest
-	RequestID  string
-	Subject    string
-	AuthCode   string
-	AuthTime   time.Time
-	Expiration time.Time
-	IsDone     bool
+	*oidc.AuthRequest
+	requestId  string
+	subject    string
+	authCode   string
+	authTime   time.Time
+	expiration time.Time
+	done       bool
 }
 
 // GetID returns the request ID.
 func (a *AuthRequest) GetID() (s string) {
-	s = a.RequestID
+	s = a.requestId
 	return
 }
 
@@ -1090,7 +1088,7 @@ func (a *AuthRequest) GetAudience() (aud []string) {
 
 // GetAuthTime returns the authentication time.
 func (a *AuthRequest) GetAuthTime() (t time.Time) {
-	t = a.AuthTime
+	t = a.authTime
 	return
 }
 
@@ -1157,20 +1155,20 @@ func (a *AuthRequest) GetState() (s string) {
 
 // GetSubject returns the subject.
 func (a *AuthRequest) GetSubject() (s string) {
-	s = a.Subject
+	s = a.subject
 	return
 }
 
 // Done returns whether the request is done.
 func (a *AuthRequest) Done() (b bool) {
-	b = a.IsDone
+	b = a.done
 	return
 }
 
 // TokenRequest implements op.RefreshTokenRequest.
 type TokenRequest struct {
-	grantID  string
-	clientID string
+	grantId  string
+	clientId string
 	subject  string
 	scopes   []string
 }
@@ -1183,7 +1181,7 @@ func (r *TokenRequest) GetAMR() (amr []string) {
 
 // GetAudience returns the audience.
 func (r *TokenRequest) GetAudience() (aud []string) {
-	aud = []string{r.clientID}
+	aud = []string{r.clientId}
 	return
 }
 
@@ -1195,7 +1193,7 @@ func (r *TokenRequest) GetAuthTime() (t time.Time) {
 
 // GetClientID returns the client ID.
 func (r *TokenRequest) GetClientID() (s string) {
-	s = r.clientID
+	s = r.clientId
 	return
 }
 
