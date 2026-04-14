@@ -386,6 +386,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		op.WithAllowInsecure(),
 		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
 		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
+		op.WithCustomEndSessionEndpoint(op.NewEndpoint("logout")),
 	)
 	if err != nil {
 		err = liberr.Wrap(err)
