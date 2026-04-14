@@ -855,7 +855,7 @@ func (r *Storage) createGrant(
 	grantId = r.genId()
 	expiration := time.Now().
 		Add(time.Duration(Settings.Token.RefreshLifespan) * time.Second)
-	scopes := strings.Join(authReq.GetScopes(), ",")
+	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
 	m := &model.Grant{
 		GrantId:     grantId,
