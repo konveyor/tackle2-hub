@@ -32,27 +32,9 @@ const (
 type Storage struct {
 	keySet     KeySet
 	db         *gorm.DB
-	authReqs   map[string]*AuthRequestData
+	authReqs   map[string]*AuthRequest
 	authByCode map[string]string
 	mu         sync.RWMutex
-}
-
-// AuthRequestData holds in-memory authorization request state.
-type AuthRequestData struct {
-	RequestID       string
-	ClientID        string
-	Subject         string
-	RedirectURI     string
-	Scopes          []string
-	ResponseType    string
-	CodeChallenge   string
-	ChallengeMethod string
-	AuthCode        string
-	State           string
-	Nonce           string
-	AuthTime        time.Time
-	Expiration      time.Time
-	Done            bool
 }
 
 // GetClientByClientID retrieves a client by ID.
@@ -128,7 +110,7 @@ func (r *Storage) ClientCredentialsTokenRequest(
 		}
 	}()
 	req = &TokenRequest{
-		grantID:  r.generateID(),
+		grantID:  r.genId(),
 		clientID: clientID,
 		subject:  clientID,
 		scopes:   scopes,
@@ -146,25 +128,17 @@ func (r *Storage) CreateAuthRequest(
 			Log.Error(err, "create auth request failed")
 		}
 	}()
-	requestID := r.generateID()
-	data := &AuthRequestData{
-		RequestID:       requestID,
-		ClientID:        authReq.ClientID,
-		Subject:         userID,
-		RedirectURI:     authReq.RedirectURI,
-		Scopes:          authReq.Scopes,
-		ResponseType:    string(authReq.ResponseType),
-		CodeChallenge:   authReq.CodeChallenge,
-		ChallengeMethod: string(authReq.CodeChallengeMethod),
-		State:           authReq.State,
-		Nonce:           authReq.Nonce,
-		AuthTime:        time.Now(),
-		Expiration:      time.Now().Add(10 * time.Minute),
+	requestID := r.genId()
+	req = &AuthRequest{
+		AuthRequest: *authReq,
+		RequestID:   requestID,
+		Subject:     userID,
+		AuthTime:    time.Now(),
+		Expiration:  time.Now().Add(10 * time.Minute),
 	}
 	r.mu.Lock()
-	r.authReqs[requestID] = data
+	r.authReqs[requestID] = req.(*AuthRequest)
 	r.mu.Unlock()
-	req = r.toAuthRequest(data, authReq)
 	return
 }
 
@@ -178,13 +152,12 @@ func (r *Storage) AuthRequestByID(
 		}
 	}()
 	r.mu.RLock()
-	data, found := r.authReqs[id]
+	req, found := r.authReqs[id]
 	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	req = r.toAuthRequest(data, nil)
 	return
 }
 
@@ -205,13 +178,12 @@ func (r *Storage) AuthRequestByCode(
 		return
 	}
 	r.mu.RLock()
-	data, found := r.authReqs[requestID]
+	req, found = r.authReqs[requestID]
 	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	req = r.toAuthRequest(data, nil)
 	return
 }
 
@@ -224,12 +196,12 @@ func (r *Storage) SaveAuthCode(ctx context.Context, id, code string) (err error)
 	}()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	data, found := r.authReqs[id]
+	authReq, found := r.authReqs[id]
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	data.AuthCode = code
+	authReq.AuthCode = code
 	r.authByCode[code] = id
 	return
 }
@@ -243,12 +215,12 @@ func (r *Storage) DeleteAuthRequest(ctx context.Context, id string) (err error) 
 	}()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	data, found := r.authReqs[id]
+	authReq, found := r.authReqs[id]
 	if !found {
 		return
 	}
-	if data.AuthCode != "" {
-		delete(r.authByCode, data.AuthCode)
+	if authReq.AuthCode != "" {
+		delete(r.authByCode, authReq.AuthCode)
 	}
 	delete(r.authReqs, id)
 	return
@@ -259,7 +231,7 @@ func (r *Storage) CreateAccessToken(
 	ctx context.Context,
 	req op.TokenRequest) (tokenID string, expiration time.Time, err error) {
 	expiration = time.Now().Add(time.Duration(Settings.Token.Lifespan) * time.Second)
-	tokenID = r.generateID()
+	tokenID = r.genId()
 	return
 }
 
@@ -570,16 +542,16 @@ func (r *Storage) Login(
 		return
 	}
 	r.mu.Lock()
-	data, found := r.authReqs[authReqID]
+	authReq, found := r.authReqs[authReqID]
 	r.mu.Unlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
 	r.mu.Lock()
-	data.Subject = user.Subject
-	data.AuthTime = time.Now()
-	data.Done = true
+	authReq.Subject = user.Subject
+	authReq.AuthTime = time.Now()
+	authReq.IsDone = true
 	r.mu.Unlock()
 	issuer := r.issuer()
 	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqID)
@@ -657,44 +629,44 @@ func (r *Storage) renderPage(
 }
 
 // createRefreshToken creates a refresh token.
-func (r *Storage) createRefreshToken(
-	ctx context.Context,
-	req op.TokenRequest) (tokenID string, err error) {
+func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (tokenID string, err error) {
 	var authCode string
-	if authReq, ok := req.(op.AuthRequest); ok {
-		tokenID = r.generateID()
-		expiration := time.Now().Add(
-			time.Duration(Settings.Token.RefreshLifespan) * time.Second)
-		userID, _ := r.userID(req.GetSubject())
-		refreshToken := r.generateID()
-		digest := secret.Hash(refreshToken)
-		grantID, err := r.createGrant(ctx, authReq, refreshToken, digest)
-		if err != nil {
-			return "", err
-		}
-		authCode = r.authCodeByID(authReq.GetID())
-		m := &model.Token{
-			TokenId:    tokenID,
-			GrantId:    grantID,
-			ClientId:   "",
-			Subject:    req.GetSubject(),
-			Type:       TokenTypeRefresh,
-			Scopes:     strings.Join(req.GetScopes(), " "),
-			Resources:  []string{},
-			Issued:     time.Now(),
-			Expiration: expiration,
-			UserID:     userID,
-		}
-		err = r.db.Create(m).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return "", err
-		}
-		if authCode != "" {
-			err = r.deleteAuthRequestByCode(ctx, authCode)
-		}
-		tokenID = refreshToken
+	authReq, cast := req.(op.AuthRequest)
+	if !cast {
+		return
 	}
+	tokenID = r.genId()
+	expiration := time.Now().Add(
+		time.Duration(Settings.Token.RefreshLifespan) * time.Second)
+	userID, _ := r.userID(req.GetSubject())
+	refreshToken := r.genId()
+	digest := secret.Hash(refreshToken)
+	grantID, err := r.createGrant(ctx, authReq, refreshToken, digest)
+	if err != nil {
+		return "", err
+	}
+	authCode = r.authCodeByID(authReq.GetID())
+	m := &model.Token{
+		TokenId:    tokenID,
+		GrantId:    grantID,
+		ClientId:   "",
+		Subject:    req.GetSubject(),
+		Type:       TokenTypeRefresh,
+		Scopes:     strings.Join(req.GetScopes(), " "),
+		Resources:  []string{},
+		Issued:     time.Now(),
+		Expiration: expiration,
+		UserID:     userID,
+	}
+	err = r.db.Create(m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return "", err
+	}
+	if authCode != "" {
+		err = r.deleteAuthRequestByCode(ctx, authCode)
+	}
+	tokenID = refreshToken
 	return
 }
 
@@ -843,7 +815,7 @@ func (r *Storage) createGrant(
 	ctx context.Context,
 	authReq op.AuthRequest,
 	refreshToken, digest string) (grantID string, err error) {
-	grantID = r.generateID()
+	grantID = r.genId()
 	authCode := r.authCodeByID(authReq.GetID())
 	err = r.createGrantDirect(
 		ctx,
@@ -891,9 +863,9 @@ func (r *Storage) createGrantDirect(
 func (r *Storage) authCodeByID(id string) (code string) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	data, found := r.authReqs[id]
+	authReq, found := r.authReqs[id]
 	if found {
-		code = data.AuthCode
+		code = authReq.AuthCode
 	}
 	return
 }
@@ -941,8 +913,8 @@ func (r *Storage) issuer() (s string) {
 	return
 }
 
-// generateID returns a new generated ID.
-func (r *Storage) generateID() (s string) {
+// genId returns a new generated ID.
+func (r *Storage) genId() (s string) {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	s = base64.RawURLEncoding.EncodeToString(b)
@@ -1081,38 +1053,20 @@ func (c *Client) ClockSkew() (d time.Duration) {
 	return
 }
 
-// toAuthRequest converts AuthRequestData to an AuthRequest wrapper.
-func (r *Storage) toAuthRequest(
-	data *AuthRequestData,
-	req *oidc.AuthRequest) (authReq *AuthRequest) {
-	if req == nil {
-		req = &oidc.AuthRequest{
-			ClientID:            data.ClientID,
-			RedirectURI:         data.RedirectURI,
-			Scopes:              data.Scopes,
-			ResponseType:        oidc.ResponseType(data.ResponseType),
-			CodeChallenge:       data.CodeChallenge,
-			CodeChallengeMethod: oidc.CodeChallengeMethod(data.ChallengeMethod),
-			State:               data.State,
-			Nonce:               data.Nonce,
-		}
-	}
-	authReq = &AuthRequest{
-		data:    data,
-		request: req,
-	}
-	return
-}
-
 // AuthRequest implements op.AuthRequest.
 type AuthRequest struct {
-	data    *AuthRequestData
-	request *oidc.AuthRequest
+	oidc.AuthRequest
+	RequestID  string
+	Subject    string
+	AuthCode   string
+	AuthTime   time.Time
+	Expiration time.Time
+	IsDone     bool
 }
 
 // GetID returns the request ID.
 func (a *AuthRequest) GetID() (s string) {
-	s = a.data.RequestID
+	s = a.RequestID
 	return
 }
 
@@ -1130,42 +1084,28 @@ func (a *AuthRequest) GetAMR() (amr []string) {
 
 // GetAudience returns the audience.
 func (a *AuthRequest) GetAudience() (aud []string) {
-	if a.request != nil {
-		aud = []string{a.request.ClientID}
-	} else {
-		aud = []string{a.data.ClientID}
-	}
+	aud = []string{a.ClientID}
 	return
 }
 
 // GetAuthTime returns the authentication time.
 func (a *AuthRequest) GetAuthTime() (t time.Time) {
-	t = a.data.AuthTime
+	t = a.AuthTime
 	return
 }
 
 // GetClientID returns the client ID.
 func (a *AuthRequest) GetClientID() (s string) {
-	if a.request != nil {
-		s = a.request.ClientID
-	} else {
-		s = a.data.ClientID
-	}
+	s = a.ClientID
 	return
 }
 
 // GetCodeChallenge returns the code challenge.
 func (a *AuthRequest) GetCodeChallenge() (challenge *oidc.CodeChallenge) {
-	var challengeStr string
-	if a.request != nil && a.request.CodeChallenge != "" {
-		challengeStr = a.request.CodeChallenge
-	} else if a.data.CodeChallenge != "" {
-		challengeStr = a.data.CodeChallenge
-	}
-	if challengeStr != "" {
+	if a.CodeChallenge != "" {
 		challenge = &oidc.CodeChallenge{
-			Challenge: challengeStr,
-			Method:    oidc.CodeChallengeMethodS256,
+			Challenge: a.CodeChallenge,
+			Method:    a.CodeChallengeMethod,
 		}
 	}
 	return
@@ -1173,30 +1113,20 @@ func (a *AuthRequest) GetCodeChallenge() (challenge *oidc.CodeChallenge) {
 
 // GetNonce returns the nonce.
 func (a *AuthRequest) GetNonce() (s string) {
-	if a.request != nil {
-		s = a.request.Nonce
-	} else {
-		s = a.data.Nonce
-	}
+	s = a.Nonce
 	return
 }
 
 // GetRedirectURI returns the redirect URI.
 func (a *AuthRequest) GetRedirectURI() (s string) {
-	if a.request != nil {
-		s = a.request.RedirectURI
-	} else {
-		s = a.data.RedirectURI
-	}
+	s = a.RedirectURI
 	return
 }
 
 // GetResponseType returns the response type.
 func (a *AuthRequest) GetResponseType() (t oidc.ResponseType) {
-	if a.request != nil {
-		t = a.request.ResponseType
-	} else if a.data.ResponseType != "" {
-		t = oidc.ResponseType(a.data.ResponseType)
+	if a.ResponseType != "" {
+		t = a.ResponseType
 	} else {
 		t = oidc.ResponseTypeCode
 	}
@@ -1211,10 +1141,8 @@ func (a *AuthRequest) GetResponseMode() (m oidc.ResponseMode) {
 
 // GetScopes returns the scopes.
 func (a *AuthRequest) GetScopes() (scopes []string) {
-	if a.request != nil {
-		scopes = a.request.Scopes
-	} else if len(a.data.Scopes) > 0 {
-		scopes = a.data.Scopes
+	if len(a.Scopes) > 0 {
+		scopes = a.Scopes
 	} else {
 		scopes = []string{"openid"}
 	}
@@ -1223,23 +1151,19 @@ func (a *AuthRequest) GetScopes() (scopes []string) {
 
 // GetState returns the state.
 func (a *AuthRequest) GetState() (s string) {
-	if a.request != nil {
-		s = a.request.State
-	} else {
-		s = a.data.State
-	}
+	s = a.State
 	return
 }
 
 // GetSubject returns the subject.
 func (a *AuthRequest) GetSubject() (s string) {
-	s = a.data.Subject
+	s = a.Subject
 	return
 }
 
 // Done returns whether the request is done.
 func (a *AuthRequest) Done() (b bool) {
-	b = a.data.Done
+	b = a.IsDone
 	return
 }
 
