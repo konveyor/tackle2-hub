@@ -38,8 +38,10 @@ func New(db *gorm.DB) (p Provider, err error) {
 
 // Provider provides RBAC.
 type Provider interface {
+	// Login begin OIDC auth.
+	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
 	// Grant the key request.
-	Grant(kr KeyRequest) (key APIKey, err error)
+	Grant(r KeyRequest) (key APIKey, err error)
 	// Delete api key.
 	Delete(digest string) (err error)
 	// Authenticate the request.

@@ -98,15 +98,8 @@ func TestClientCredentialsFlow(t *testing.T) {
 func TestAuthorizationCodeFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Get the issuer URL from discovery document
-	resp, err := http.Get(Settings.Addon.Hub.URL + api.OIDCRoutes + "/.well-known/openid-configuration")
-	g.Expect(err).To(BeNil())
-	defer resp.Body.Close()
-
-	var discovery map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&discovery)
-	g.Expect(err).To(BeNil())
-	issuer := discovery["issuer"].(string)
+	// Use the configured issuer URL (not from discovery, which may have different hostname)
+	issuer := Settings.Addon.Hub.URL + api.OIDCRoutes
 
 	// Create test user
 	user := api.User{
@@ -114,7 +107,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 		Email:    "oidc-test@example.com",
 		Password: "oidc-test-password",
 	}
-	err = client.User.Create(&user)
+	err := client.User.Create(&user)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
 		_ = client.User.Delete(user.ID)
@@ -151,7 +144,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 		"&code_challenge=" + challenge +
 		"&code_challenge_method=S256"
 
-	resp, err = httpClient.Get(authURL)
+	resp, err := httpClient.Get(authURL)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -334,15 +327,8 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 		_ = client.User.Delete(user.ID)
 	})
 
-	// Get issuer from discovery
-	resp, err := http.Get(Settings.Addon.Hub.URL + api.OIDCRoutes + "/.well-known/openid-configuration")
-	g.Expect(err).To(BeNil())
-	defer resp.Body.Close()
-
-	var discovery map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&discovery)
-	g.Expect(err).To(BeNil())
-	issuer := discovery["issuer"].(string)
+	// Use the configured issuer URL (not from discovery, which may have different hostname)
+	issuer := Settings.Addon.Hub.URL + api.OIDCRoutes
 
 	// Use plaintext password
 	username := user.Userid
@@ -373,7 +359,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 		"&code_challenge=" + challenge +
 		"&code_challenge_method=S256"
 
-	resp, err = httpClient.Get(authURL)
+	resp, err := httpClient.Get(authURL)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -464,17 +450,18 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	err = json.Unmarshal(payload, &claims)
 	g.Expect(err).To(BeNil())
 
-	// Verify scope claim contains both original scopes and injected "admin" scope
-	scopeStr, ok := claims["scope"].(string)
+	// Verify roles and permissions are in separate claims (the proper zitadel way)
+	rolesRaw, ok := claims["roles"].([]interface{})
 	g.Expect(ok).To(BeTrue())
+	g.Expect(len(rolesRaw)).To(BeNumerically(">", 0))
+	g.Expect(rolesRaw[0].(string)).To(Equal("Admin Role"))
 
-	scopes := strings.Fields(scopeStr)
-	g.Expect(scopes).To(ContainElement("openid"))
-	g.Expect(scopes).To(ContainElement("profile"))
-	g.Expect(scopes).To(ContainElement("email"))
-	g.Expect(scopes).To(ContainElement("addons:delete")) // ← Injected scope from permission
+	permissionsRaw, ok := claims["permissions"].([]interface{})
+	g.Expect(ok).To(BeTrue())
+	g.Expect(len(permissionsRaw)).To(BeNumerically(">", 0))
+	g.Expect(permissionsRaw).To(ContainElement("addons:delete"))
 
-	// Test using the access token with admin scope
+	// Test using the access token
 	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenResp.AccessToken)
 

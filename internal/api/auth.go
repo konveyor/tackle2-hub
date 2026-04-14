@@ -19,6 +19,23 @@ type AuthHandler struct {
 	BaseHandler
 }
 
+// responseRecorder captures response for logging.
+type responseRecorder struct {
+	http.ResponseWriter
+	statusCode int
+	body       []byte
+}
+
+func (r *responseRecorder) WriteHeader(statusCode int) {
+	r.statusCode = statusCode
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (r *responseRecorder) Write(b []byte) (int, error) {
+	r.body = append(r.body, b...)
+	return r.ResponseWriter.Write(b)
+}
+
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
@@ -29,17 +46,32 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
 	routeGroup.DELETE(api.AuthAPIKeyIDRoute, h.APIKeyDelete)
-	// OIDC routes.
+	// OIDC routes - mount provider handler with custom login and token alias
 	baseHandler := auth.Hub.Handler()
-	h2 := http.StripPrefix(api.OIDCRoutes, baseHandler)
-	routeGroup = e.Group(api.OIDCRoutes)
-	routeGroup.Any("/*path", func(ctx *gin.Context) {
+	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
+	e.Any(api.OIDCRoutes+"/*path", func(ctx *gin.Context) {
 		path := ctx.Param("path")
-		if path == "/login" {
+		switch path {
+		case "/login":
 			h.OIDCLogin(ctx)
-			return
+		case "/token":
+			// Rewrite /oidc/token to /oidc/oauth/token for backward compatibility
+			ctx.Request.URL.Path = api.OIDCRoutes + "/oauth/token"
+			Log.Info("Token request rewritten",
+				"originalPath", path,
+				"newPath", ctx.Request.URL.Path,
+				"grantType", ctx.PostForm("grant_type"))
+			// Capture response to log what's being returned
+			rec := &responseRecorder{ResponseWriter: ctx.Writer, statusCode: 200}
+			strippedHandler.ServeHTTP(rec, ctx.Request)
+			if rec.statusCode == 200 {
+				Log.Info("Token response",
+					"body", string(rec.body),
+					"grantType", ctx.PostForm("grant_type"))
+			}
+		default:
+			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 		}
-		gin.WrapH(h2)(ctx)
 	})
 	// IdpIdentity routes.
 	routeGroup = e.Group("/")
@@ -875,14 +907,7 @@ func (h AuthHandler) OIDCLogin(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "missing authRequestID")
 		return
 	}
-	provider, ok := auth.Hub.(interface {
-		Login(http.ResponseWriter, *http.Request, string) error
-	})
-	if !ok {
-		ctx.String(http.StatusInternalServerError, "login not supported")
-		return
-	}
-	err := provider.Login(ctx.Writer, ctx.Request, authReqID)
+	err := auth.Hub.Login(ctx.Writer, ctx.Request, authReqID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

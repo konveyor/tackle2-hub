@@ -362,9 +362,10 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		return
 	}
 	builtin.storage = &Storage{
-		db:       db,
-		keySet:   builtin.keySet,
-		authReqs: make(map[string]*AuthRequest),
+		db:         db,
+		keySet:     builtin.keySet,
+		authReqs:   make(map[string]*AuthRequestData),
+		authByCode: make(map[string]string),
 	}
 	issuer := Settings.IssuerURL
 	if issuer == "" {
