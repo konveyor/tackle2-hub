@@ -30,11 +30,11 @@ const (
 
 // Storage implements op.Storage for zitadel/oidc.
 type Storage struct {
+	mutex      sync.RWMutex
 	keySet     KeySet
 	db         *gorm.DB
 	authReqs   map[string]*AuthRequest
 	authByCode map[string]string
-	mu         sync.RWMutex
 }
 
 // GetClientByClientID retrieves a client by ID.
@@ -123,6 +123,8 @@ func (r *Storage) CreateAuthRequest(
 	ctx context.Context,
 	authReq *oidc.AuthRequest,
 	userID string) (req op.AuthRequest, err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "create auth request failed")
@@ -136,9 +138,7 @@ func (r *Storage) CreateAuthRequest(
 		authTime:    time.Now(),
 		expiration:  time.Now().Add(10 * time.Minute),
 	}
-	r.mu.Lock()
 	r.authReqs[requestId] = req.(*AuthRequest)
-	r.mu.Unlock()
 	return
 }
 
@@ -146,14 +146,14 @@ func (r *Storage) CreateAuthRequest(
 func (r *Storage) AuthRequestByID(
 	ctx context.Context,
 	id string) (req op.AuthRequest, err error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "auth request lookup failed", "id", id)
 		}
 	}()
-	r.mu.RLock()
 	req, found := r.authReqs[id]
-	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
@@ -165,21 +165,19 @@ func (r *Storage) AuthRequestByID(
 func (r *Storage) AuthRequestByCode(
 	ctx context.Context,
 	code string) (req op.AuthRequest, err error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "auth request by code failed")
 		}
 	}()
-	r.mu.RLock()
 	requestId, found := r.authByCode[code]
-	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth code not found")
 		return
 	}
-	r.mu.RLock()
 	req, found = r.authReqs[requestId]
-	r.mu.RUnlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
@@ -189,13 +187,13 @@ func (r *Storage) AuthRequestByCode(
 
 // SaveAuthCode stores the authorization code.
 func (r *Storage) SaveAuthCode(ctx context.Context, id, code string) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "save auth code failed")
 		}
 	}()
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	authReq, found := r.authReqs[id]
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
@@ -208,20 +206,18 @@ func (r *Storage) SaveAuthCode(ctx context.Context, id, code string) (err error)
 
 // DeleteAuthRequest deletes an auth request.
 func (r *Storage) DeleteAuthRequest(ctx context.Context, id string) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "delete auth request failed")
 		}
 	}()
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	authReq, found := r.authReqs[id]
 	if !found {
 		return
 	}
-	if authReq.authCode != "" {
-		delete(r.authByCode, authReq.authCode)
-	}
+	delete(r.authByCode, authReq.authCode)
 	delete(r.authReqs, id)
 	return
 }
@@ -510,6 +506,8 @@ func (r *Storage) Login(
 	writer http.ResponseWriter,
 	request *http.Request,
 	authReqId string) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "login failed")
@@ -541,18 +539,14 @@ func (r *Storage) Login(
 		err = r.renderPage(writer, request, authReqId)
 		return
 	}
-	r.mu.Lock()
 	authReq, found := r.authReqs[authReqId]
-	r.mu.Unlock()
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	r.mu.Lock()
 	authReq.subject = user.Subject
 	authReq.authTime = time.Now()
 	authReq.done = true
-	r.mu.Unlock()
 	issuer := r.issuer()
 	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqId)
 	http.Redirect(writer, request, callbackURL, http.StatusFound)
@@ -861,8 +855,8 @@ func (r *Storage) createGrantDirect(
 
 // authCodeById returns the auth code for an auth request.
 func (r *Storage) authCodeById(id string) (code string) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	authReq, found := r.authReqs[id]
 	if found {
 		code = authReq.authCode
@@ -872,8 +866,8 @@ func (r *Storage) authCodeById(id string) (code string) {
 
 // deleteAuthRequestByCode deletes auth request by code.
 func (r *Storage) deleteAuthRequestByCode(ctx context.Context, code string) (err error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	requestId, found := r.authByCode[code]
 	if !found {
 		return
