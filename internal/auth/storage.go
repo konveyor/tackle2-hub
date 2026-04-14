@@ -245,6 +245,10 @@ func (r *Storage) CreateAccessAndRefreshTokens(
 			Log.Error(err, "create tokens failed")
 		}
 	}()
+	err = r.injectScopes(req)
+	if err != nil {
+		return
+	}
 	accessTokenId, expiration, err = r.CreateAccessToken(ctx, req)
 	if err != nil {
 		return
@@ -369,7 +373,8 @@ func (r *Storage) Health(_ context.Context) (err error) {
 // GetPrivateClaimsFromScopes returns private claims based on scopes.
 func (r *Storage) GetPrivateClaimsFromScopes(
 	_ context.Context,
-	userID, clientId string,
+	userID string,
+	clientId string,
 	scopes []string) (claims map[string]any, err error) {
 	//
 	claims = make(map[string]any)
@@ -378,7 +383,6 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 	}
 	user := &model.User{}
 	db := r.db.Preload(clause.Associations)
-	db = db.Preload("Roles.Permissions")
 	err = db.First(user, "subject", userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -389,18 +393,11 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 		return
 	}
 	roleNames := make([]string, 0, len(user.Roles))
-	permissions := make([]string, 0)
 	for _, role := range user.Roles {
 		roleNames = append(roleNames, role.Name)
-		for _, permission := range role.Permissions {
-			permissions = append(permissions, permission.Scope)
-		}
 	}
 	if len(roleNames) > 0 {
 		claims["roles"] = roleNames
-	}
-	if len(permissions) > 0 {
-		claims["permissions"] = permissions
 	}
 	return
 }
@@ -409,7 +406,8 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 func (r *Storage) SetUserinfoFromScopes(
 	_ context.Context,
 	userinfo *oidc.UserInfo,
-	userId, clientId string,
+	userId string,
+	clientId string,
 	scopes []string) (err error) {
 	//
 	defer func() {
@@ -436,7 +434,10 @@ func (r *Storage) SetUserinfoFromScopes(
 func (r *Storage) SetUserinfoFromToken(
 	_ context.Context,
 	userinfo *oidc.UserInfo,
-	tokenId, subject, origin string) (err error) {
+	tokenId string,
+	subject string,
+	origin string) (err error) {
+	//
 	defer func() {
 		if err != nil {
 			Log.Error(err, "set userinfo failed")
@@ -461,7 +462,9 @@ func (r *Storage) SetUserinfoFromToken(
 func (r *Storage) SetIntrospectionFromToken(
 	ctx context.Context,
 	introspection *oidc.IntrospectionResponse,
-	tokenId, subject, clientId string) (err error) {
+	tokenId string,
+	subject string,
+	clientId string) (err error) {
 	//
 	defer func() {
 		if err != nil {
@@ -607,6 +610,47 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
 		err = liberr.Wrap(err)
 		return
 	}
+	return
+}
+
+// injectScopes adds user permissions as scopes to the token request.
+func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
+	userID := req.GetSubject()
+	if userID == "" {
+		return
+	}
+	tokenReq, cast := req.(*TokenRequest)
+	if !cast {
+		return
+	}
+	user := &model.User{}
+	db := r.db.Preload(clause.Associations)
+	db = db.Preload("Roles.Permissions")
+	err = db.First(user, "subject", userID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	userScopes := make([]string, 0)
+	for _, role := range user.Roles {
+		for _, permission := range role.Permissions {
+			userScopes = append(userScopes, permission.Scope)
+		}
+	}
+	scopes := append(req.GetScopes(), userScopes...)
+	scopeMap := make(map[string]bool)
+	uniqueScopes := make([]string, 0)
+	for _, scope := range scopes {
+		if !scopeMap[scope] {
+			uniqueScopes = append(uniqueScopes, scope)
+			scopeMap[scope] = true
+		}
+	}
+	tokenReq.SetCurrentScopes(uniqueScopes)
 	return
 }
 
@@ -831,9 +875,13 @@ func (r *Storage) createGrant(
 // createGrantDirect creates a grant with explicit parameters.
 func (r *Storage) createGrantDirect(
 	_ context.Context,
-	grantId, clientID, subject, authCode string,
+	grantId string,
+	clientID string,
+	subject string,
+	authCode string,
 	scopes []string,
-	refreshToken, digest string) (err error) {
+	refreshToken,
+	digest string) (err error) {
 	//
 	m := &model.Grant{
 		GrantId:      grantId,
