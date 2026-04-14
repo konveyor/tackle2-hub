@@ -97,3 +97,5 @@ jobs:
       api_hub_tests_ref: ${{ github.ref }}
       base_tag: release-0.7
       api_tests_ref: ${{ github.base_ref || github.ref_name }}
+      addon_analyzer: quay.io/konveyor/tackle2-addon-analyzer:release-0.7
+      addon_discovery: quay.io/konveyor/tackle2-addon-discovery:release-0.7
