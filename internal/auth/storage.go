@@ -28,7 +28,7 @@ const (
 	TokenTypeAuthCode = "authorization_code"
 )
 
-// Storage implements op.Storage for zitadel/oidc.
+// Storage implements op.Storage.
 type Storage struct {
 	mutex      sync.RWMutex
 	keySet     KeySet
@@ -669,7 +669,11 @@ func (r *Storage) token(ctx context.Context, id string) (m *model.Token, err err
 	m = &model.Token{}
 	err = r.db.First(m, "tokenId", id).Error
 	if err != nil {
-		err = r.notFound(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("token not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	return
@@ -702,7 +706,11 @@ func (r *Storage) grantByAuthCode(
 	m = &model.Grant{}
 	err = r.db.First(m, "authCode", code).Error
 	if err != nil {
-		err = r.notFound(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("grant not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	err = secret.Decrypt(m)
@@ -721,7 +729,11 @@ func (r *Storage) grantByRefreshToken(
 	m = &model.Grant{}
 	err = r.db.First(m, "tokenDigest", digest).Error
 	if err != nil {
-		err = r.notFound(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("grant not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	err = r.revoked(m)
@@ -784,7 +796,11 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 	db = db.Where("subject", grant.Subject)
 	err = db.Count(&count).Error
 	if err != nil {
-		err = r.notFound(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("user not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	if count == 0 {
@@ -798,7 +814,11 @@ func (r *Storage) tokenByGrantId(grantId string) (m *model.Token, err error) {
 	m = &model.Token{}
 	err = r.db.First(m, "grantId", grantId).Error
 	if err != nil {
-		err = r.notFound(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("token not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
 		return
 	}
 	return
@@ -912,20 +932,6 @@ func (r *Storage) genId() (s string) {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	s = base64.RawURLEncoding.EncodeToString(b)
-	return
-}
-
-// notFound returns op-specific not found error.
-// notFound maps gorm not found errors to OIDC InvalidGrant errors.
-func (r *Storage) notFound(err error) (e2 error) {
-	if err == nil {
-		return
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		e2 = oidc.ErrInvalidGrant().WithDescription("resource not found")
-	} else {
-		e2 = liberr.Wrap(err)
-	}
 	return
 }
 
