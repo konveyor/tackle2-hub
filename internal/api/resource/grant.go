@@ -16,6 +16,5 @@ func (r *Grant) With(m *model.Grant) {
 	r.Subject = m.Subject
 	r.Type = m.Type
 	r.Scopes = m.Scopes
-	r.Resources = m.Resources
 	r.Expiration = m.Expiration
 }

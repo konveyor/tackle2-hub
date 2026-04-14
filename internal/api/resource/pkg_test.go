@@ -3673,7 +3673,6 @@ func TestGrant_With(t *testing.T) {
 		Subject:    "user-subject",
 		Type:       "authorization_code",
 		Scopes:     "openid profile email",
-		Resources:  []string{"http://localhost:8080/auth"},
 		Expiration: time.Now().Add(24 * time.Hour),
 	}
 
@@ -3688,7 +3687,6 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Type).To(gomega.Equal("authorization_code"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
-	g.Expect(r.Resources).To(gomega.Equal([]string{"http://localhost:8080/auth"}))
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
 }
 
@@ -3714,7 +3712,6 @@ func TestToken_With(t *testing.T) {
 		Type:       "access_token",
 		Subject:    "user-subject",
 		Scopes:     "openid profile email",
-		Resources:  []string{"http://localhost:8080/auth"},
 		Issued:     issued,
 		Expiration: expiration,
 		Revoked:    revoked,
@@ -3737,7 +3734,6 @@ func TestToken_With(t *testing.T) {
 	g.Expect(r.Type).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
-	g.Expect(r.Resources).To(gomega.Equal([]string{"http://localhost:8080/auth"}))
 	g.Expect(r.Issued).To(gomega.Equal(issued))
 	g.Expect(r.Expiration).To(gomega.Equal(expiration))
 	g.Expect(r.Revoked).To(gomega.Equal(revoked))
@@ -3756,7 +3752,6 @@ func TestToken_With_NilUser(t *testing.T) {
 		Type:       "client_credentials",
 		Subject:    "client-subject",
 		Scopes:     "applications:get",
-		Resources:  []string{"http://localhost:8080/auth"},
 		Issued:     time.Now(),
 		Expiration: time.Now().Add(5 * time.Minute),
 		UserID:     nil,

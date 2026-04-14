@@ -199,7 +199,6 @@ type Grant struct {
 	Subject    string    `json:"subject"`
 	Type       string    `json:"type"`
 	Scopes     string    `json:"scopes"`
-	Resources  []string  `json:"resources"`
 	Expiration time.Time `json:"expiration"`
 }
 
@@ -212,7 +211,6 @@ type Token struct {
 	Type       string    `json:"type"`
 	Subject    string    `json:"subject"`
 	Scopes     string    `json:"scopes"`
-	Resources  []string  `json:"resources"`
 	Issued     time.Time `json:"issued"`
 	Expiration time.Time `json:"expiration"`
 	Revoked    time.Time `json:"revoked,omitempty" yaml:"revoked,omitempty"`

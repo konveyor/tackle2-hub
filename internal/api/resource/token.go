@@ -17,7 +17,6 @@ func (r *Token) With(m *model.Token) {
 	r.Type = m.Type
 	r.Subject = m.Subject
 	r.Scopes = m.Scopes
-	r.Resources = m.Resources
 	r.Issued = m.Issued
 	r.Expiration = m.Expiration
 	r.Revoked = m.Revoked

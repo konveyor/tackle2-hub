@@ -253,16 +253,14 @@ type RsaKey struct {
 
 type Grant struct {
 	Model
-	GrantId      string `gorm:"uniqueIndex;not null"`
-	ClientId     string `gorm:"index"`
-	Subject      string `gorm:"index"`
-	TokenDigest  string `gorm:"uniqueIndex"`
-	RefreshToken string `secret:""`
-	AuthCode     string `gorm:"index"`
-	Type         string `gorm:"not null"`
-	Scopes       string
-	Resources    []string `gorm:"type:json;serializer:json"`
-	Expiration   time.Time
+	GrantId     string `gorm:"uniqueIndex;not null"`
+	ClientId    string `gorm:"index"`
+	Subject     string `gorm:"index"`
+	TokenDigest string `gorm:"uniqueIndex"`
+	AuthCode    string `gorm:"index"`
+	Type        string `gorm:"not null"`
+	Scopes      string
+	Expiration  time.Time
 }
 
 type Token struct {
@@ -273,7 +271,6 @@ type Token struct {
 	Type       string    `gorm:"not null"`
 	Subject    string    `gorm:"index"`
 	Scopes     string    `gorm:"not null"`
-	Resources  []string  `gorm:"type:json;serializer:json"`
 	Issued     time.Time `gorm:"not null"`
 	Expiration time.Time
 	Revoked    time.Time

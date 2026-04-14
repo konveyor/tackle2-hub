@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	TokenTypeRefresh  = "refresh_token"
+	TokenTypeAccess   = "access_token"
 	TokenTypeAuthCode = "authorization_code"
 )
 
@@ -213,11 +213,41 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 // CreateAccessToken creates an access token.
 func (r *Storage) CreateAccessToken(
 	_ context.Context,
-	_ op.TokenRequest) (tokenId string, expiration time.Time, err error) {
+	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {
 	//
+	err = r.injectScopes(req)
+	if err != nil {
+		return
+	}
 	expiration = time.Now().Add(
 		time.Duration(Settings.Token.Lifespan) * time.Second)
 	tokenId = r.genId()
+	userID, _ := r.userId(req.GetSubject())
+	clientId := ""
+	grantId := ""
+	switch r := req.(type) {
+	case *TokenRequest:
+		clientId = r.clientId
+		grantId = r.grantId
+	case *AuthRequest:
+		clientId = r.ClientID
+	}
+	m := &model.Token{
+		TokenId:    tokenId,
+		GrantId:    grantId,
+		ClientId:   clientId,
+		Subject:    req.GetSubject(),
+		Type:       TokenTypeAccess,
+		Scopes:     strings.Join(req.GetScopes(), " "),
+		Issued:     time.Now(),
+		Expiration: expiration,
+		UserID:     userID,
+	}
+	err = r.db.Create(m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	return
 }
 
@@ -290,10 +320,10 @@ func (r *Storage) TerminateSession(ctx context.Context, userID, _ string) (err e
 		if err != nil {
 			return
 		}
-		err = r.deleteTokensByGrantId(ctx, grant.GrantId)
-		if err != nil {
-			return
-		}
+	}
+	err = r.deleteTokensBySubject(ctx, userID)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -310,7 +340,18 @@ func (r *Storage) RevokeToken(
 			Log.Error(errPtr, "")
 		}
 	}()
-	err := r.deleteToken(ctx, tokenRef)
+	digest := secret.Hash(tokenRef)
+	grant := &model.Grant{}
+	err := r.db.First(grant, "tokenDigest", digest).Error
+	if err == nil {
+		err = r.deleteGrant(ctx, grant.GrantId)
+		if err != nil {
+			errPtr = oidc.ErrServerError()
+			return
+		}
+		return
+	}
+	err = r.deleteToken(ctx, tokenRef)
 	if err != nil {
 		errPtr = oidc.ErrServerError()
 		return
@@ -510,7 +551,7 @@ func (r *Storage) GetRefreshTokenInfo(
 		return
 	}
 	userId = grant.Subject
-	tokenId = grant.RefreshToken
+	tokenId = token
 	return
 }
 
@@ -628,10 +669,6 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 	if userID == "" {
 		return
 	}
-	tokenReq, cast := req.(*TokenRequest)
-	if !cast {
-		return
-	}
 	user := &model.User{}
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("Roles.Permissions")
@@ -659,47 +696,37 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 			scopeMap[scope] = true
 		}
 	}
-	tokenReq.SetCurrentScopes(uniqueScopes)
+
+	// Handle different request types - both TokenRequest and AuthRequest need scope injection
+	switch r := req.(type) {
+	case *TokenRequest:
+		r.SetCurrentScopes(uniqueScopes)
+	case *AuthRequest:
+		r.Scopes = uniqueScopes
+	default:
+		//
+	}
 	return
 }
 
 // createRefreshToken creates a refresh token.
 func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (tokenId string, err error) {
-	var authCode string
 	authReq, cast := req.(op.AuthRequest)
 	if !cast {
 		return
 	}
-	tokenId = r.genId()
-	expiration := time.Now().Add(
-		time.Duration(Settings.Token.RefreshLifespan) * time.Second)
-	userID, _ := r.userId(req.GetSubject())
 	refreshToken := r.genId()
 	digest := secret.Hash(refreshToken)
-	grantId, err := r.createGrant(ctx, authReq, refreshToken, digest)
+	_, err = r.createGrant(ctx, authReq, digest)
 	if err != nil {
-		return "", err
+		return
 	}
-	authCode = r.authCodeById(authReq.GetID())
-	m := &model.Token{
-		TokenId:    tokenId,
-		GrantId:    grantId,
-		ClientId:   "",
-		Subject:    req.GetSubject(),
-		Type:       TokenTypeRefresh,
-		Scopes:     strings.Join(req.GetScopes(), " "),
-		Resources:  []string{},
-		Issued:     time.Now(),
-		Expiration: expiration,
-		UserID:     userID,
-	}
-	err = r.db.Create(m).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return "", err
-	}
+	authCode := r.authCodeById(authReq.GetID())
 	if authCode != "" {
 		err = r.deleteAuthRequestByCode(ctx, authCode)
+		if err != nil {
+			return
+		}
 	}
 	tokenId = refreshToken
 	return
@@ -730,10 +757,10 @@ func (r *Storage) deleteToken(_ context.Context, id string) (err error) {
 	return
 }
 
-// deleteTokensByGrantId deletes tokens by grant id.
-func (r *Storage) deleteTokensByGrantId(_ context.Context, id string) (err error) {
+// deleteTokensBySubject deletes all tokens for a subject.
+func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err error) {
 	m := &model.Token{}
-	err = r.db.Delete(m, "grantId", id).Error
+	err = r.db.Delete(m, "subject", subject).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -752,11 +779,6 @@ func (r *Storage) grantByAuthCode(_ context.Context, code string) (m *model.Gran
 		}
 		return
 	}
-	err = secret.Decrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }
 
@@ -773,17 +795,8 @@ func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model
 		}
 		return
 	}
-	err = r.revoked(m)
-	if err != nil {
-		return
-	}
 	err = r.orphaned(m)
 	if err != nil {
-		return
-	}
-	err = secret.Decrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	return
@@ -805,19 +818,6 @@ func (r *Storage) deleteGrantByAuthCode(_ context.Context, code string) (err err
 	err = r.db.Delete(m, "authCode", code).Error
 	if err != nil {
 		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// revoked enforces token revocation.
-func (r *Storage) revoked(grant *model.Grant) (err error) {
-	token, err := r.tokenByGrantId(grant.GrantId)
-	if err != nil {
-		return
-	}
-	if !token.Revoked.IsZero() {
-		grant.Expiration = token.Revoked
-		err = r.db.Save(grant).Error
 	}
 	return
 }
@@ -846,72 +846,31 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 	return
 }
 
-// tokenByGrantId returns a token by grant id.
-func (r *Storage) tokenByGrantId(grantId string) (m *model.Token, err error) {
-	m = &model.Token{}
-	err = r.db.First(m, "grantId", grantId).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = oidc.ErrInvalidGrant().WithDescription("token not found")
-		} else {
-			err = liberr.Wrap(err)
-		}
-		return
-	}
-	return
-}
-
 // createGrant creates a grant from an auth request.
 func (r *Storage) createGrant(
-	ctx context.Context,
+	_ context.Context,
 	authReq op.AuthRequest,
-	refreshToken, digest string) (grantId string, err error) {
+	digest string) (grantId string, err error) {
 	//
 	grantId = r.genId()
+	expiration := time.Now().
+		Add(time.Duration(Settings.Token.RefreshLifespan) * time.Second)
+	scopes := strings.Join(authReq.GetScopes(), ",")
 	authCode := r.authCodeById(authReq.GetID())
-	err = r.createGrantDirect(
-		ctx,
-		grantId,
-		authReq.GetClientID(),
-		authReq.GetSubject(),
-		authCode,
-		authReq.GetScopes(),
-		refreshToken,
-		digest)
-	return
-}
-
-// createGrantDirect creates a grant with explicit parameters.
-func (r *Storage) createGrantDirect(
-	_ context.Context,
-	grantId string,
-	clientID string,
-	subject string,
-	authCode string,
-	scopes []string,
-	refreshToken,
-	digest string) (err error) {
-	//
 	m := &model.Grant{
-		GrantId:      grantId,
-		ClientId:     clientID,
-		Subject:      subject,
-		TokenDigest:  digest,
-		RefreshToken: refreshToken,
-		AuthCode:     authCode,
-		Type:         TokenTypeAuthCode,
-		Scopes:       strings.Join(scopes, " "),
-		Resources:    []string{},
-		Expiration:   time.Now().Add(time.Duration(Settings.Token.RefreshLifespan) * time.Second),
-	}
-	err = secret.Encrypt(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+		GrantId:     grantId,
+		ClientId:    authReq.GetClientID(),
+		Subject:     authReq.GetSubject(),
+		TokenDigest: digest,
+		AuthCode:    authCode,
+		Type:        TokenTypeAuthCode,
+		Scopes:      scopes,
+		Expiration:  expiration,
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
 	}
 	return
 }
