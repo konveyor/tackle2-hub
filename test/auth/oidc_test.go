@@ -65,7 +65,7 @@ func TestClientCredentialsFlow(t *testing.T) {
 	form.Set("client_secret", Settings.Auth.Client.Secret)
 	form.Set("scope", "openid")
 
-	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
+	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/oauth/token", form)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -141,6 +141,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 
 	// Step 1: Request authorization (GET /authorize)
 	// Use the issuer URL for redirect_uri to match what's configured in the client
+	var loginURL string
 	redirectURI := issuer + "/callback"
 	authURL := issuer + "/authorize?" +
 		"client_id=" + Settings.Auth.Client.ID +
@@ -154,18 +155,29 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
-	// Should get login page
+	// Should get redirect to login page
+	g.Expect(resp.StatusCode).To(Equal(http.StatusFound))
+	loginURL = resp.Header.Get("Location")
+	g.Expect(loginURL).To(ContainSubstring("/login?authRequestID="))
+
+	// Follow redirect to get login page
+	resp, err = httpClient.Get(loginURL)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
 	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	body, _ := io.ReadAll(resp.Body)
 	html := string(body)
 	g.Expect(html).To(ContainSubstring("Tackle Login"))
 
-	// Extract CallbackID from form action
-	callbackID := extractCallbackID(html)
-	g.Expect(callbackID).NotTo(BeEmpty())
+	// Extract auth request ID from URL
+	parsedURL, err := url.Parse(loginURL)
+	g.Expect(err).To(BeNil())
+	authReqID := parsedURL.Query().Get("authRequestID")
+	g.Expect(authReqID).NotTo(BeEmpty())
 
-	// Step 2: Submit login form (POST /authorize/{callbackID})
-	loginURL := issuer + "/authorize/" + callbackID
+	// Step 2: Submit login form (POST /login?authRequestID=...)
+	loginURL = issuer + "/login?authRequestID=" + authReqID
 	loginForm := url.Values{}
 	loginForm.Set("userid", username)
 	loginForm.Set("password", password)
@@ -174,19 +186,30 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
-	// Should redirect to callback with authorization code (302 or 303)
+	// Should redirect to provider callback (302 or 303)
+	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
+	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
+	callbackLocation := resp.Header.Get("Location")
+	g.Expect(callbackLocation).To(ContainSubstring("/authorize/callback"))
+
+	// Follow redirect to callback to get authorization code
+	resp, err = httpClient.Get(callbackLocation)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	// Callback should redirect to client redirect_uri with code
 	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
 	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
 	location := resp.Header.Get("Location")
 	g.Expect(location).To(ContainSubstring("/callback?code="))
 
 	// Extract authorization code
-	parsedURL, err := url.Parse(location)
+	parsedURL, err = url.Parse(location)
 	g.Expect(err).To(BeNil())
 	code := parsedURL.Query().Get("code")
 	g.Expect(code).NotTo(BeEmpty())
 
-	// Step 3: Exchange code for tokens (POST /token)
+	// Step 3: Exchange code for tokens (POST /oauth/token)
 	tokenForm := url.Values{}
 	tokenForm.Set("grant_type", "authorization_code")
 	tokenForm.Set("code", code)
@@ -195,7 +218,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	tokenForm.Set("client_secret", Settings.Auth.Client.Secret)
 	tokenForm.Set("code_verifier", verifier)
 
-	resp, err = http.PostForm(issuer+"/token", tokenForm)
+	resp, err = http.PostForm(issuer+"/oauth/token", tokenForm)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -236,7 +259,7 @@ func TestRefreshTokenFlow(t *testing.T) {
 	form.Set("client_secret", Settings.Auth.Client.Secret)
 	form.Set("scope", "openid")
 
-	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
+	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/oauth/token", form)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -340,6 +363,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
 
 	// Step 1: Request authorization
+	var loginURL string
 	redirectURI := issuer + "/callback"
 	authURL := issuer + "/authorize?" +
 		"client_id=" + Settings.Auth.Client.ID +
@@ -353,15 +377,29 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
+	// Should get redirect to login page
+	g.Expect(resp.StatusCode).To(Equal(http.StatusFound))
+	loginURL = resp.Header.Get("Location")
+	g.Expect(loginURL).To(ContainSubstring("/login?authRequestID="))
+
+	// Follow redirect to get login page
+	resp, err = httpClient.Get(loginURL)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
 	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	body, _ := io.ReadAll(resp.Body)
 	html := string(body)
+	g.Expect(html).To(ContainSubstring("Tackle Login"))
 
-	callbackID := extractCallbackID(html)
-	g.Expect(callbackID).NotTo(BeEmpty())
+	// Extract auth request ID from URL
+	parsedURL, err := url.Parse(loginURL)
+	g.Expect(err).To(BeNil())
+	authReqID := parsedURL.Query().Get("authRequestID")
+	g.Expect(authReqID).NotTo(BeEmpty())
 
 	// Step 2: Submit login form
-	loginURL := issuer + "/authorize/" + callbackID
+	loginURL = issuer + "/login?authRequestID=" + authReqID
 	loginForm := url.Values{}
 	loginForm.Set("userid", username)
 	loginForm.Set("password", password)
@@ -370,11 +408,23 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
+	// Should redirect to provider callback
+	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
+	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
+	callbackLocation := resp.Header.Get("Location")
+	g.Expect(callbackLocation).To(ContainSubstring("/authorize/callback"))
+
+	// Follow redirect to callback to get authorization code
+	resp, err = httpClient.Get(callbackLocation)
+	g.Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	// Callback should redirect to client redirect_uri with code
 	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
 	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
 	location := resp.Header.Get("Location")
 
-	parsedURL, err := url.Parse(location)
+	parsedURL, err = url.Parse(location)
 	g.Expect(err).To(BeNil())
 	code := parsedURL.Query().Get("code")
 	g.Expect(code).NotTo(BeEmpty())
@@ -388,7 +438,7 @@ func TestAuthorizationCodeFlowWithRoles(t *testing.T) {
 	tokenForm.Set("client_secret", Settings.Auth.Client.Secret)
 	tokenForm.Set("code_verifier", verifier)
 
-	resp, err = http.PostForm(issuer+"/token", tokenForm)
+	resp, err = http.PostForm(issuer+"/oauth/token", tokenForm)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 

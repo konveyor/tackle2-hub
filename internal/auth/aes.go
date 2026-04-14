@@ -11,7 +11,6 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
 )
 
@@ -102,11 +101,11 @@ func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
 	return
 }
 
-// jwKey returns a goidc.JSONWebKey.
-func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 goidc.JSONWebKey) {
+// jwKey returns a JWK.
+func (r *KeyManager) jwKey(id uint, k *rsa.PrivateKey) (k2 JWK) {
 	k2.KeyID = strconv.Itoa(int(id))
 	k2.Algorithm = "RS256"
+	k2.PrivateKey = k
 	k2.Use = "sig"
-	k2.Key = k
 	return
 }

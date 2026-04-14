@@ -33,7 +33,14 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	baseHandler := auth.Hub.Handler()
 	h2 := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	routeGroup = e.Group(api.OIDCRoutes)
-	routeGroup.Any("/*path", gin.WrapH(h2))
+	routeGroup.Any("/*path", func(ctx *gin.Context) {
+		path := ctx.Param("path")
+		if path == "/login" {
+			h.OIDCLogin(ctx)
+			return
+		}
+		gin.WrapH(h2)(ctx)
+	})
 	// IdpIdentity routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
@@ -859,6 +866,27 @@ func (h AuthHandler) TokenDelete(ctx *gin.Context) {
 	}
 
 	h.Status(ctx, http.StatusNoContent)
+}
+
+// OIDCLogin handles the custom login page for OIDC flow.
+func (h AuthHandler) OIDCLogin(ctx *gin.Context) {
+	authReqID := ctx.Query("authRequestID")
+	if authReqID == "" {
+		ctx.String(http.StatusBadRequest, "missing authRequestID")
+		return
+	}
+	provider, ok := auth.Hub.(interface {
+		Login(http.ResponseWriter, *http.Request, string) error
+	})
+	if !ok {
+		ctx.String(http.StatusInternalServerError, "login not supported")
+		return
+	}
+	err := provider.Login(ctx.Writer, ctx.Request, authReqID)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 }
 
 // Auth REST Resources.

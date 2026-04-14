@@ -8,9 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
-	"github.com/luikyv/go-oidc/pkg/goidc"
 	"gorm.io/gorm"
 )
 
@@ -141,21 +139,6 @@ func (r *BaseScope) Match(resource string, method string) (b bool) {
 // String representations of the scope.
 func (r *BaseScope) String() (s string) {
 	s = strings.Join([]string{r.Resource, r.Method}, ":")
-	return
-}
-
-// notFound returns goidc.ErrNotFound when
-// err IsA gorm.ErrRecordNotFound.
-// Else, wrapped.
-func notFound(err error) (e2 error) {
-	if err == nil {
-		return
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		e2 = goidc.ErrNotFound
-	} else {
-		e2 = liberr.Wrap(err)
-	}
 	return
 }
 

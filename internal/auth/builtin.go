@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -10,30 +9,87 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/luikyv/go-oidc/pkg/goidc"
-	"github.com/luikyv/go-oidc/pkg/provider"
+	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
 )
 
-// KeySet alias.
-type KeySet = goidc.JSONWebKeySet
+// KeySet represents a JSON Web Key Set.
+type KeySet struct {
+	Keys []JWK
+}
 
-// Builtin
+// SigningKey returns the primary signing key.
+func (k *KeySet) SigningKey() (key op.SigningKey) {
+	if len(k.Keys) > 0 {
+		key = &k.Keys[0]
+	}
+	return
+}
+
+// Key returns a key by ID.
+func (k *KeySet) Key(id string) (jwk JWK, err error) {
+	for _, key := range k.Keys {
+		if key.KeyID == id {
+			jwk = key
+			return
+		}
+	}
+	err = errors.New("key not found")
+	return
+}
+
+// JWK represents a JSON Web Key.
+type JWK struct {
+	KeyID      string
+	Algorithm  string
+	Use        string
+	PrivateKey any
+}
+
+// SignatureAlgorithm returns the signature algorithm.
+func (j *JWK) SignatureAlgorithm() (s jose.SignatureAlgorithm) {
+	s = jose.SignatureAlgorithm(j.Algorithm)
+	return
+}
+
+// Key returns the private key.
+func (j *JWK) Key() any {
+	return j.PrivateKey
+}
+
+// ID returns the key ID.
+func (j *JWK) ID() (s string) {
+	s = j.KeyID
+	return
+}
+
+// Builtin provides OIDC authentication.
 type Builtin struct {
 	db       *gorm.DB
-	openId   *provider.Provider
+	provider op.OpenIDProvider
+	storage  *Storage
 	keyCache *KeyCache
 	keySet   KeySet
 }
 
 // Handler returns an http handler.
 func (p *Builtin) Handler() (h http.Handler) {
-	h = p.openId.Handler()
+	h = p.provider
+	return
+}
+
+// Login handles the custom login page.
+func (p *Builtin) Login(
+	writer http.ResponseWriter,
+	request *http.Request,
+	authReqID string) (err error) {
+	err = p.storage.Login(writer, request, authReqID)
 	return
 }
 
@@ -110,7 +166,7 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 				err = liberr.Wrap(findErr)
 				return
 			}
-			privateKey, cast := jwk.Key.(*rsa.PrivateKey)
+			privateKey, cast := jwk.Key().(*rsa.PrivateKey)
 			if !cast {
 				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 				return
@@ -300,137 +356,34 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		keyCache: NewCache(db),
 		db:       db,
 	}
-	//
-	// Managers
-	grantManager := NewGrantManager(db)
 	keyManager := NewKeyManager(db)
-	authManager := NewAuthManager(db)
-	tokenManager := NewTokenManager(db)
 	builtin.keySet, err = keyManager.KeySet()
 	if err != nil {
 		return
 	}
-	//
-	// Auth policy
-	authPolicy := goidc.NewPolicy(
-		"main",
-		func(*http.Request, *goidc.Client, *goidc.AuthnSession) bool {
-			return true
-		},
-		authManager.Login,
-	)
+	builtin.storage = &Storage{
+		db:       db,
+		keySet:   builtin.keySet,
+		authReqs: make(map[string]*AuthRequest),
+	}
 	issuer := Settings.IssuerURL
 	if issuer == "" {
 		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 	}
-	tokenOptions := func(
-		_ context.Context,
-		_ *goidc.Grant,
-		_ *goidc.Client) (options goidc.TokenOptions) {
-		options = goidc.NewJWTTokenOptions(goidc.RS256, Settings.Token.Lifespan)
-		return
+	config := &op.Config{
+		CodeMethodS256:          true,
+		AuthMethodPost:          true,
+		AuthMethodPrivateKeyJWT: false,
+		GrantTypeRefreshToken:   true,
+		RequestObjectSupported:  false,
+		DeviceAuthorization:     op.DeviceAuthorizationConfig{},
 	}
-	//
-	// userInfoClaims returns user profile claims for the /userinfo endpoint.
-	userInfoClaims := func(
-		_ context.Context,
-		grant *goidc.Grant) (claims map[string]any) {
-		claims = make(map[string]any)
-		user := &model.User{}
-		err := db.First(user, "Subject", grant.Subject).Error
-		if err != nil {
-			Log.Error(err, "")
-			return
-		}
-		claims[goidc.ClaimSubject] = user.Subject
-		claims[goidc.ClaimPreferredUsername] = user.Userid
-		if user.Email != "" {
-			claims[goidc.ClaimEmail] = user.Email
-			claims[goidc.ClaimEmailVerified] = true
-		}
-		return
-	}
-	//
-	// Logout handler and policy
-	logoutHandler := func(w http.ResponseWriter, r *http.Request, _ *goidc.LogoutSession) (err error) {
-		w.WriteHeader(http.StatusOK)
-		http.Redirect(w, r, issuer+"/authorize", http.StatusFound)
-		return
-	}
-	logoutPolicy := goidc.NewLogoutPolicy(
-		"main",
-		func(*http.Request, *goidc.LogoutSession) bool {
-			return true
-		},
-		authManager.Logout,
-	)
-	//
-	// Provider
-	builtin.openId, err = provider.New(
-		goidc.ProfileOpenID,
+	builtin.provider, err = op.NewOpenIDProvider(
 		issuer,
-		func(ctx context.Context) (keySet goidc.JSONWebKeySet, err error) {
-			keySet = builtin.keySet
-			return
-		},
-		provider.WithScopes(
-			goidc.ScopeOpenID,
-			goidc.ScopeProfile,
-			goidc.ScopeEmail,
-		),
-		provider.WithGrantTypes(
-			goidc.GrantClientCredentials,
-			goidc.GrantAuthorizationCode,
-			goidc.GrantRefreshToken,
-		),
-		provider.WithPKCERequired(goidc.CodeChallengeMethodSHA256),
-		provider.WithRefreshTokenLifetime(Settings.Token.RefreshLifespan),
-		provider.WithTokenOptions(tokenOptions),
-		provider.WithTokenManager(tokenManager),
-		provider.WithGrantManager(grantManager),
-		provider.WithPolicies(authPolicy),
-		provider.WithUserInfoClaims(userInfoClaims),
-		provider.WithIDTokenSignatureAlgs(goidc.RS256),
-		provider.WithUserInfoSignatureAlgs(goidc.RS256),
-		provider.WithResourceIndicators(issuer),
-		provider.WithLogout(logoutHandler, logoutPolicy),
+		config,
+		builtin.storage,
+		op.WithAllowInsecure(),
 	)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	//
-	// Client
-	redirectURIs := Settings.Auth.Client.RedirectURIs
-	if len(redirectURIs) == 0 {
-		// When not explicitly configured, allow callback to issuer for
-		// development/testing. Production deployments MUST set
-		// OIDC_CLIENT_REDIRECT_URIS to the UI callback URL.
-		redirectURIs = []string{
-			issuer + "/callback",
-		}
-	}
-	client := &goidc.Client{}
-	client.ID = Settings.Auth.Client.ID
-	client.IsPublic()
-	client.Name = Settings.Auth.Client.Name
-	client.ScopeIDs = "openid profile email"
-	client.RedirectURIs = redirectURIs
-	client.PostLogoutRedirectURIs = redirectURIs
-	client.TokenAuthnMethod = goidc.AuthnMethodNone
-	client.GrantTypes = []goidc.GrantType{
-		goidc.GrantClientCredentials,
-		goidc.GrantAuthorizationCode,
-		goidc.GrantRefreshToken,
-	}
-	client.ResponseTypes = []goidc.ResponseType{
-		goidc.ResponseTypeCode,
-	}
-	if Settings.Auth.Client.Secret != "" {
-		client.Secret = Settings.Auth.Client.Secret
-		client.TokenAuthnMethod = goidc.AuthnMethodSecretPost
-	}
-	err = builtin.openId.SaveClient(context.Background(), client)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
