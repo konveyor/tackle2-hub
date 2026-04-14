@@ -19,23 +19,6 @@ type AuthHandler struct {
 	BaseHandler
 }
 
-// responseRecorder captures response for logging.
-type responseRecorder struct {
-	http.ResponseWriter
-	statusCode int
-	body       []byte
-}
-
-func (r *responseRecorder) WriteHeader(statusCode int) {
-	r.statusCode = statusCode
-	r.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (r *responseRecorder) Write(b []byte) (int, error) {
-	r.body = append(r.body, b...)
-	return r.ResponseWriter.Write(b)
-}
-
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// APIKey routes
@@ -46,30 +29,14 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
 	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
 	routeGroup.DELETE(api.AuthAPIKeyIDRoute, h.APIKeyDelete)
-	// OIDC routes - mount provider handler with custom login and token alias
+	// OIDC routes - mount provider handler with custom login
 	baseHandler := auth.Hub.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	e.Any(api.OIDCRoutes+"/*path", func(ctx *gin.Context) {
 		path := ctx.Param("path")
-		switch path {
-		case "/login":
-			h.OIDCLogin(ctx)
-		case "/token":
-			// Rewrite /oidc/token to /oidc/oauth/token for backward compatibility
-			ctx.Request.URL.Path = api.OIDCRoutes + "/oauth/token"
-			Log.Info("Token request rewritten",
-				"originalPath", path,
-				"newPath", ctx.Request.URL.Path,
-				"grantType", ctx.PostForm("grant_type"))
-			// Capture response to log what's being returned
-			rec := &responseRecorder{ResponseWriter: ctx.Writer, statusCode: 200}
-			strippedHandler.ServeHTTP(rec, ctx.Request)
-			if rec.statusCode == 200 {
-				Log.Info("Token response",
-					"body", string(rec.body),
-					"grantType", ctx.PostForm("grant_type"))
-			}
-		default:
+		if path == "/login" {
+			h.Login(ctx)
+		} else {
 			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 		}
 	})
@@ -900,8 +867,8 @@ func (h AuthHandler) TokenDelete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
-// OIDCLogin handles the custom login page for OIDC flow.
-func (h AuthHandler) OIDCLogin(ctx *gin.Context) {
+// Login OIDC login.
+func (h AuthHandler) Login(ctx *gin.Context) {
 	authReqID := ctx.Query("authRequestID")
 	if authReqID == "" {
 		ctx.String(http.StatusBadRequest, "missing authRequestID")

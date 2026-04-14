@@ -62,9 +62,6 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 		secret:       Settings.Auth.Client.Secret,
 		redirectURIs: r.redirectURIs(),
 	}
-	Log.Info("Client config",
-		"clientID", c.id,
-		"redirectURIs", c.redirectURIs)
 	if clientId != c.id {
 		err = oidc.ErrInvalidClient().WithDescription("client not found")
 		return
@@ -179,16 +176,9 @@ func (r *Storage) AuthRequestByID(
 	data, found := r.authReqs[id]
 	r.mu.RUnlock()
 	if !found {
-		Log.Info("Auth request not found", "id", id)
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	Log.Info("Auth request retrieved",
-		"id", id,
-		"subject", data.Subject,
-		"done", data.Done,
-		"redirectURI", data.RedirectURI,
-		"clientID", data.ClientID)
 	req = r.toAuthRequest(data, nil)
 	return
 }
@@ -586,13 +576,8 @@ func (r *Storage) Login(
 	data.AuthTime = time.Now()
 	data.Done = true
 	r.mu.Unlock()
-	Log.Info("Login successful",
-		"authReqID", authReqID,
-		"subject", user.Subject,
-		"done", data.Done)
 	issuer := r.issuer()
 	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqID)
-	Log.Info("Redirecting to callback", "url", callbackURL)
 	http.Redirect(writer, request, callbackURL, http.StatusFound)
 	return
 }
@@ -1188,10 +1173,6 @@ func (a *AuthRequest) GetNonce() (s string) {
 	} else {
 		s = a.data.Nonce
 	}
-	Log.Info("GetNonce called",
-		"nonce", s,
-		"hasRequest", a.request != nil,
-		"dataRequestID", a.data.RequestID)
 	return
 }
 
