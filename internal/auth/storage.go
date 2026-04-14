@@ -23,6 +23,11 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	TokenTypeRefresh  = "refresh_token"
+	TokenTypeAuthCode = "authorization_code"
+)
+
 // Storage implements op.Storage for zitadel/oidc.
 type Storage struct {
 	keySet     KeySet
@@ -673,7 +678,7 @@ func (r *Storage) createRefreshToken(
 			GrantId:    grantID,
 			ClientId:   "",
 			Subject:    req.GetSubject(),
-			Type:       "refresh_token",
+			Type:       TokenTypeRefresh,
 			Scopes:     strings.Join(req.GetScopes(), " "),
 			Resources:  []string{},
 			Issued:     time.Now(),
@@ -804,7 +809,7 @@ func (r *Storage) revoked(grant *model.Grant) (err error) {
 
 // orphaned imposes grant expiration when the user cannot be found.
 func (r *Storage) orphaned(grant *model.Grant) (err error) {
-	if grant.Type != "authorization_code" {
+	if grant.Type != TokenTypeAuthCode {
 		return
 	}
 	count := int64(0)
@@ -865,7 +870,7 @@ func (r *Storage) createGrantDirect(
 		TokenDigest:  digest,
 		RefreshToken: refreshToken,
 		AuthCode:     authCode,
-		Type:         "authorization_code",
+		Type:         TokenTypeAuthCode,
 		Scopes:       strings.Join(scopes, " "),
 		Resources:    []string{},
 		Expiration:   time.Now().Add(time.Duration(Settings.Token.RefreshLifespan) * time.Second),
@@ -1307,7 +1312,7 @@ func (k *Key) Use() (s string) {
 
 // Key returns the public key for verification.
 func (k *Key) Key() (key any) {
-	if rsaKey, ok := k.jwk.PrivateKey.(*rsa.PrivateKey); ok {
+	if rsaKey, cast := k.jwk.PrivateKey.(*rsa.PrivateKey); cast {
 		key = &rsaKey.PublicKey
 	} else {
 		key = k.jwk.PrivateKey
