@@ -16,5 +16,6 @@ func (r *Grant) With(m *model.Grant) {
 	r.Subject = m.Subject
 	r.Type = m.Type
 	r.Scopes = m.Scopes
+	r.Authenticated = m.Authenticated
 	r.Expiration = m.Expiration
 }

@@ -303,7 +303,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 		clientId: grant.ClientId,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
-		authTime: grant.AuthTime,
+		authTime: grant.Authenticated,
 	}
 	return
 }
@@ -865,15 +865,15 @@ func (r *Storage) createGrant(
 	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
 	m := &model.Grant{
-		GrantId:     grantId,
-		ClientId:    authReq.GetClientID(),
-		Subject:     authReq.GetSubject(),
-		TokenDigest: digest,
-		AuthCode:    authCode,
-		Type:        TokenTypeAuthCode,
-		Scopes:      scopes,
-		Expiration:  expiration,
-		AuthTime:    authReq.GetAuthTime(),
+		GrantId:       grantId,
+		ClientId:      authReq.GetClientID(),
+		Subject:       authReq.GetSubject(),
+		TokenDigest:   digest,
+		AuthCode:      authCode,
+		Type:          TokenTypeAuthCode,
+		Scopes:        scopes,
+		Authenticated: authReq.GetAuthTime(),
+		Expiration:    expiration,
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
