@@ -28,7 +28,7 @@ const (
 	EnvIdpIssuerURL         = "IDP_ISSUER_URL"
 	EnvIdpClientID          = "IDP_CLIENT_ID"
 	EnvIdpClientSecret      = "IDP_CLIENT_SECRET"
-	EnvIdpRedirectURIs      = "IDP_REDIRECT_URIS"
+	EnvIdpRedirectURI       = "IDP_REDIRECT_URI"
 	EnvIdpScopes            = "IDP_SCOPES"
 )
 
@@ -67,7 +67,7 @@ type Auth struct {
 		IssuerURL    string
 		ClientID     string
 		ClientSecret string
-		RedirectURIs []string
+		RedirectURI  string
 		Scopes       []string
 	}
 }
@@ -99,10 +99,7 @@ func (r *Auth) Load() (err error) {
 	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)
 	r.Idp.ClientID, _ = os.LookupEnv(EnvIdpClientID)
 	r.Idp.ClientSecret, _ = os.LookupEnv(EnvIdpClientSecret)
-	s, found = os.LookupEnv(EnvIdpRedirectURIs)
-	if found {
-		r.Idp.RedirectURIs = strings.Split(s, ",")
-	}
+	r.Idp.RedirectURI, _ = os.LookupEnv(EnvIdpRedirectURI)
 	s, found = os.LookupEnv(EnvIdpScopes)
 	if found {
 		r.Idp.Scopes = strings.Split(s, ",")

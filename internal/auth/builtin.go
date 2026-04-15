@@ -390,7 +390,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			Settings.Auth.Idp.IssuerURL,
 			Settings.Auth.Idp.ClientID,
 			Settings.Auth.Idp.ClientSecret,
-			strings.Join(Settings.Auth.Idp.RedirectURIs, " "),
+			Settings.Auth.Idp.RedirectURI,
 			Settings.Auth.Idp.Scopes,
 		)
 		if err != nil {

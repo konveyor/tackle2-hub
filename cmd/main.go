@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"runtime/debug"
 	"syscall"
@@ -66,6 +67,12 @@ func Setup() (db *gorm.DB, err error) {
 // buildScheme adds CRDs to the k8s scheme.
 func buildScheme() (err error) {
 	err = crd.AddToScheme(scheme.Scheme)
+	return
+}
+
+// port returns the API port.
+func port() (port string) {
+	port = fmt.Sprintf(":%d", Settings.API.Port)
 	return
 }
 
@@ -190,5 +197,5 @@ func main() {
 		return
 	}
 	//
-	err = router.Run()
+	err = router.Run(port())
 }

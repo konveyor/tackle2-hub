@@ -11,6 +11,7 @@ import (
 const (
 	EnvNamespace               = "NAMESPACE"
 	EnvBuild                   = "BUILD"
+	EnvAPIPort                 = "API_PORT"
 	EnvDbPath                  = "DB_PATH"
 	EnvDbMaxCon                = "DB_MAX_CONNECTION"
 	EnvDbSeedPath              = "DB_SEED_PATH"
@@ -55,6 +56,10 @@ type Hub struct {
 	Build string
 	// k8s namespace.
 	Namespace string
+	// API settings.
+	API struct {
+		Port int
+	}
 	// DB settings.
 	DB struct {
 		Path          string
@@ -147,7 +152,13 @@ func (r *Hub) Load() (err error) {
 	if !found {
 		r.DB.Path = "/tmp/tackle.db"
 	}
-	s, found := os.LookupEnv(EnvDbMaxCon)
+	s, found := os.LookupEnv(EnvAPIPort)
+	if found {
+		r.API.Port, err = strconv.Atoi(s)
+	} else {
+		r.API.Port = 8080
+	}
+	s, found = os.LookupEnv(EnvDbMaxCon)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.DB.MaxConnection = n

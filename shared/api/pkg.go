@@ -187,9 +187,8 @@ const (
 
 // Routes - Identities
 const (
-	IdentitiesRoute = "/identities"
-	IdentityRoute   = IdentitiesRoute + "/:" + ID
-
+	IdentitiesRoute    = "/identities"
+	IdentityRoute      = IdentitiesRoute + "/:" + ID
 	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
@@ -207,9 +206,7 @@ const (
 // Routes - External IdP
 const (
 	IdpRoute           = "/idp"
-	IdpLoginRoute      = IdpRoute + "/login"
-	IdpCallbackRoute   = IdpRoute + "/callback"
-	IdpIdentitiesRoute = IdpRoute + "/identities"
+	IdpIdentitiesRoute = AuthRoute + "/identities"
 	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
 )
 
