@@ -538,7 +538,7 @@ func (r *Storage) SetIntrospectionFromToken(
 	expiration := int(token.Expiration.Unix())
 	introspection.Active = expiration > int(time.Now().Unix())
 	introspection.Scope = strings.Fields(token.Scopes)
-	//introspection.ClientID = token.ClientId
+	introspection.ClientID = Settings.Auth.Client.ID
 	introspection.Subject = token.Subject
 	introspection.Expiration = oidc.FromTime(token.Expiration)
 	return
