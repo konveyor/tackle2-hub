@@ -219,19 +219,23 @@ func (r *Storage) CreateAccessToken(
 	if err != nil {
 		return
 	}
-	expiration = time.Now().Add(
-		time.Duration(Settings.Token.Lifespan) * time.Second)
 	tokenId = r.genId()
-	userID, _ := r.userId(req.GetSubject())
+	userId, _ := r.userId(req.GetSubject())
 	clientId := ""
 	grantId := ""
+	expiration = time.Now().Add(
+		time.Duration(Settings.Token.Lifespan) * time.Second)
+	// kind
 	switch r := req.(type) {
-	case *TokenRequest:
+	case *TokenRequest: // refresh
 		clientId = r.clientId
 		grantId = r.grantId
-	case *AuthRequest:
+	case *AuthRequest: // login
 		clientId = r.ClientID
+	default:
+		return
 	}
+	// token
 	m := &model.Token{
 		Kind:       AccessToken,
 		TokenId:    tokenId,
@@ -241,7 +245,7 @@ func (r *Storage) CreateAccessToken(
 		Scopes:     strings.Join(req.GetScopes(), " "),
 		Issued:     time.Now(),
 		Expiration: expiration,
-		UserID:     userID,
+		UserID:     userId,
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
