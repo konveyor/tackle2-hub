@@ -261,6 +261,7 @@ type Grant struct {
 	Type        string `gorm:"not null"`
 	Scopes      string
 	Expiration  time.Time
+	AuthTime    time.Time
 }
 
 type Token struct {

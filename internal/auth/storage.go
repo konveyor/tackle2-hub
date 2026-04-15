@@ -198,7 +198,7 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
-			Log.Error(err, "delete auth request failed")
+			Log.Error(err, "")
 		}
 	}()
 	authReq, found := r.authReqs[id]
@@ -303,6 +303,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 		clientId: grant.ClientId,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
+		authTime: grant.AuthTime,
 	}
 	return
 }
@@ -872,6 +873,7 @@ func (r *Storage) createGrant(
 		Type:        TokenTypeAuthCode,
 		Scopes:      scopes,
 		Expiration:  expiration,
+		AuthTime:    authReq.GetAuthTime(),
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -1179,6 +1181,7 @@ type TokenRequest struct {
 	clientId string
 	subject  string
 	scopes   []string
+	authTime time.Time
 }
 
 // GetAMR returns the AMR.
@@ -1195,7 +1198,7 @@ func (r *TokenRequest) GetAudience() (aud []string) {
 
 // GetAuthTime returns the authentication time.
 func (r *TokenRequest) GetAuthTime() (t time.Time) {
-	t = time.Now()
+	t = r.authTime
 	return
 }
 
