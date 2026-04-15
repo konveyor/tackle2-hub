@@ -270,7 +270,6 @@ type Token struct {
 	TokenId    string    `gorm:"uniqueIndex;not null"`
 	ClientId   string    `gorm:"index;not null"`
 	GrantId    string    `gorm:"index"`
-	Digest     string    `gorm:"index"`
 	Subject    string    `gorm:"index"`
 	Scopes     string    `gorm:"not null"`
 	Issued     time.Time `gorm:"not null"`
