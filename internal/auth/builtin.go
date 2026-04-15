@@ -379,10 +379,10 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		RequestObjectSupported:  false,
 		DeviceAuthorization:     op.DeviceAuthorizationConfig{},
 	}
-	builtin.provider, err = op.NewOpenIDProvider(
-		issuer,
+	builtin.provider, err = op.NewProvider(
 		config,
 		builtin.storage,
+		op.StaticIssuer(issuer),
 		op.WithAllowInsecure(),
 		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
 		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
