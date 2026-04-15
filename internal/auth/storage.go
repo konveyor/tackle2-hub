@@ -848,7 +848,6 @@ func (r *Storage) createGrant(
 		Scopes:       scopes,
 		Issued:       authReq.GetAuthTime(),
 		Expiration:   expiration,
-		ClientID:     r.clientId(authReq.GetClientID()),
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -912,11 +911,6 @@ func (r *Storage) grantAuthId(id uint) (authId string) {
 		return
 	}
 	authId = m.AuthId
-	return
-}
-
-// clientId returns the client ID by authId.
-func (r *Storage) clientId(authId string) (id *uint) {
 	return
 }
 

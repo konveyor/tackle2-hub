@@ -17,9 +17,3 @@ type User struct {
 	Password string   `yaml:"password"`
 	Roles    []string `yaml:"roles"`
 }
-
-// Client used to read client.yaml.
-type Client struct {
-	ID     uint   `yaml:"id"`
-	AuthId string `yaml:"authId"`
-}

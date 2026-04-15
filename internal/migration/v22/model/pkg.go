@@ -59,7 +59,6 @@ func All() []any {
 		Assessment{},
 		Archetype{},
 		ProfileGenerator{},
-		Client{},
 		IdpIdentity{},
 		Permission{},
 		Role{},

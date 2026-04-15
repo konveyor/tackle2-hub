@@ -261,8 +261,6 @@ type Grant struct {
 	Scopes       string
 	Issued       time.Time
 	Expiration   time.Time
-	ClientID     *uint   `gorm:"index"`
-	Client       *Client `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Token struct {
@@ -281,11 +279,6 @@ type Token struct {
 	User       *User  `gorm:"constraint:OnDelete:CASCADE"`
 	TaskID     *uint  `gorm:"index"`
 	Task       *Task  `gorm:"constraint:OnDelete:CASCADE"`
-}
-
-type Client struct {
-	Model
-	AuthId string `gorm:"uniqueIndex;not null"`
 }
 
 //
