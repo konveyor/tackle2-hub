@@ -457,6 +457,14 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 	if len(roles) > 0 {
 		claims["roles"] = roles
 	}
+
+	// Add scopes to JWT claims
+	// The scopes parameter already contains both standard OAuth scopes (openid, offline_access)
+	// and our injected permission scopes from injectScopes()
+	if len(scopes) > 0 {
+		claims[ClaimScope] = strings.Join(scopes, " ")
+	}
+
 	return
 }
 
@@ -774,21 +782,6 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 	return
 }
 
-// grantByAuthCode returns a grant by auth code.
-func (r *Storage) grantByAuthCode(_ context.Context, code string) (m *model.Grant, err error) {
-	m = &model.Grant{}
-	err = r.db.First(m, "authCode", code).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = oidc.ErrInvalidGrant().WithDescription("grant not found")
-		} else {
-			err = liberr.Wrap(err)
-		}
-		return
-	}
-	return
-}
-
 // grantByRefreshToken returns a grant by refresh token.
 func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model.Grant, err error) {
 	digest := secret.Hash(token)
@@ -813,16 +806,6 @@ func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model
 func (r *Storage) deleteGrant(_ context.Context, id string) (err error) {
 	m := &model.Grant{}
 	err = r.db.Delete(m, "grantId", id).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// deleteGrantByAuthCode deletes a grant by auth code.
-func (r *Storage) deleteGrantByAuthCode(_ context.Context, code string) (err error) {
-	m := &model.Grant{}
-	err = r.db.Delete(m, "authCode", code).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
