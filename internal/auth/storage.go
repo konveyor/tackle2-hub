@@ -105,7 +105,7 @@ func (r *Storage) ClientCredentialsTokenRequest(
 	clientId string,
 	scopes []string) (req op.TokenRequest, err error) {
 	//
-	req = &TokenRequest{
+	req = &RefreshRequest{
 		grantId:  r.genId(),
 		clientId: clientId,
 		subject:  clientId,
@@ -225,17 +225,15 @@ func (r *Storage) CreateAccessToken(
 	grantId := ""
 	expiration = time.Now().Add(
 		time.Duration(Settings.Token.Lifespan) * time.Second)
-	// kind
 	switch r := req.(type) {
-	case *TokenRequest: // refresh
+	case *RefreshRequest:
 		clientId = r.clientId
 		grantId = r.grantId
-	case *AuthRequest: // login
+	case *AuthRequest:
 		clientId = r.ClientID
 	default:
 		return
 	}
-	// token
 	m := &model.Token{
 		Kind:       AccessToken,
 		TokenId:    tokenId,
@@ -302,7 +300,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 	if err != nil {
 		return
 	}
-	req = &TokenRequest{
+	req = &RefreshRequest{
 		grantId:  grant.GrantId,
 		clientId: grant.ClientId,
 		subject:  grant.Subject,
@@ -715,10 +713,8 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 			scopeMap[scope] = true
 		}
 	}
-
-	// Handle different request types - both TokenRequest and AuthRequest need scope injection
 	switch r := req.(type) {
-	case *TokenRequest:
+	case *RefreshRequest:
 		r.SetCurrentScopes(uniqueScopes)
 	case *AuthRequest:
 		r.Scopes = uniqueScopes
@@ -1162,8 +1158,8 @@ func (a *AuthRequest) Done() (b bool) {
 	return
 }
 
-// TokenRequest implements op.RefreshTokenRequest.
-type TokenRequest struct {
+// RefreshRequest implements op.RefreshTokenRequest.
+type RefreshRequest struct {
 	grantId  string
 	clientId string
 	subject  string
@@ -1172,43 +1168,43 @@ type TokenRequest struct {
 }
 
 // GetAMR returns the AMR.
-func (r *TokenRequest) GetAMR() (amr []string) {
+func (r *RefreshRequest) GetAMR() (amr []string) {
 	amr = []string{"pwd"}
 	return
 }
 
 // GetAudience returns the audience.
-func (r *TokenRequest) GetAudience() (aud []string) {
+func (r *RefreshRequest) GetAudience() (aud []string) {
 	aud = []string{r.clientId}
 	return
 }
 
 // GetAuthTime returns the authentication time.
-func (r *TokenRequest) GetAuthTime() (t time.Time) {
+func (r *RefreshRequest) GetAuthTime() (t time.Time) {
 	t = r.authTime
 	return
 }
 
 // GetClientID returns the client ID.
-func (r *TokenRequest) GetClientID() (s string) {
+func (r *RefreshRequest) GetClientID() (s string) {
 	s = r.clientId
 	return
 }
 
 // GetScopes returns the scopes.
-func (r *TokenRequest) GetScopes() (scopes []string) {
+func (r *RefreshRequest) GetScopes() (scopes []string) {
 	scopes = r.scopes
 	return
 }
 
 // GetSubject returns the subject.
-func (r *TokenRequest) GetSubject() (s string) {
+func (r *RefreshRequest) GetSubject() (s string) {
 	s = r.subject
 	return
 }
 
 // SetCurrentScopes sets the current scopes.
-func (r *TokenRequest) SetCurrentScopes(scopes []string) {
+func (r *RefreshRequest) SetCurrentScopes(scopes []string) {
 	r.scopes = scopes
 	return
 }
