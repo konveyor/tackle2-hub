@@ -194,10 +194,10 @@ type Permission struct {
 // Grant REST resource.
 type Grant struct {
 	Resource      `yaml:",inline"`
+	Kind          string    `json:"kind"`
 	GrantId       string    `json:"grantId"`
 	ClientId      string    `json:"clientId"`
 	Subject       string    `json:"subject"`
-	Type          string    `json:"type"`
 	Scopes        string    `json:"scopes"`
 	Authenticated time.Time `json:"authenticated"`
 	Expiration    time.Time `json:"expiration"`
@@ -206,10 +206,10 @@ type Grant struct {
 // Token REST resource.
 type Token struct {
 	Resource   `yaml:",inline"`
+	Kind       string    `json:"kind"`
 	TokenId    string    `json:"tokenId"`
 	ClientId   string    `json:"clientId"`
 	GrantId    string    `json:"grantId"`
-	Type       string    `json:"type"`
 	Subject    string    `json:"subject"`
 	Scopes     string    `json:"scopes"`
 	Issued     time.Time `json:"issued"`

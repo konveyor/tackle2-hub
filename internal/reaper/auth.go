@@ -122,8 +122,8 @@ func (r *GrantReaper) Run() {
 					grant.ID,
 					"grant",
 					grant.GrantId,
-					"token",
-					grant.TokenDigest)
+					"refreshToken",
+					grant.RefreshToken)
 			}
 			return
 		})

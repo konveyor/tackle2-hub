@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	TokenTypeAccess   = "access_token"
-	TokenTypeAuthCode = "authorization_code"
+	AccessToken = "access"
+	AuthCode    = "authCode"
 )
 
 // Storage implements op.Storage.
@@ -233,11 +233,11 @@ func (r *Storage) CreateAccessToken(
 		clientId = r.ClientID
 	}
 	m := &model.Token{
+		Kind:       AccessToken,
 		TokenId:    tokenId,
 		GrantId:    grantId,
 		ClientId:   clientId,
 		Subject:    req.GetSubject(),
-		Type:       TokenTypeAccess,
 		Scopes:     strings.Join(req.GetScopes(), " "),
 		Issued:     time.Now(),
 		Expiration: expiration,
@@ -731,8 +731,7 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 		return
 	}
 	refreshToken := r.genId()
-	digest := secret.Hash(refreshToken)
-	_, err = r.createGrant(ctx, authReq, digest)
+	_, err = r.createGrant(ctx, authReq, refreshToken)
 	if err != nil {
 		return
 	}
@@ -784,10 +783,9 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 
 // grantByRefreshToken returns a grant by refresh token.
 func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model.Grant, err error) {
-	digest := secret.Hash(token)
 	m = &model.Grant{}
 	db := r.db.Where("expiration > ?", time.Now())
-	db = db.Where("tokenDigest", digest)
+	db = db.Where("refreshToken", secret.Hash(token))
 	err = db.First(m).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -816,7 +814,7 @@ func (r *Storage) deleteGrant(_ context.Context, id string) (err error) {
 
 // orphaned imposes grant expiration when the user cannot be found.
 func (r *Storage) orphaned(grant *model.Grant) (err error) {
-	if grant.Type != TokenTypeAuthCode {
+	if grant.Kind != AuthCode {
 		return
 	}
 	count := int64(0)
@@ -842,7 +840,7 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 func (r *Storage) createGrant(
 	_ context.Context,
 	authReq op.AuthRequest,
-	digest string) (grantId string, err error) {
+	refreshToken string) (grantId string, err error) {
 	//
 	grantId = r.genId()
 	expiration := time.Now().
@@ -850,12 +848,12 @@ func (r *Storage) createGrant(
 	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
 	m := &model.Grant{
+		Kind:          AuthCode,
 		GrantId:       grantId,
 		ClientId:      authReq.GetClientID(),
 		Subject:       authReq.GetSubject(),
-		TokenDigest:   digest,
+		RefreshToken:  secret.Hash(refreshToken),
 		AuthCode:      authCode,
-		Type:          TokenTypeAuthCode,
 		Scopes:        scopes,
 		Authenticated: authReq.GetAuthTime(),
 		Expiration:    expiration,

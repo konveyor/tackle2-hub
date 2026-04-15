@@ -1212,7 +1212,7 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	token := &model.Token{
 		TokenId:    "test-token-future",
 		ClientId:   "client-1",
-		Type:       "access",
+		Kind:       "access",
 		Scopes:     "read write",
 		Issued:     time.Now(),
 		Expiration: futureTime,
@@ -1243,7 +1243,7 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	token := &model.Token{
 		TokenId:    "test-token-grace",
 		ClientId:   "client-1",
-		Type:       "access",
+		Kind:       "access",
 		Scopes:     "read",
 		Issued:     time.Now().Add(-1 * time.Hour),
 		Expiration: expiredTime,
@@ -1275,7 +1275,7 @@ func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 		TokenId:    "test-token-expired",
 		ClientId:   "client-1",
 		GrantId:    "grant-1",
-		Type:       "refresh",
+		Kind:       "refresh",
 		Scopes:     "read write",
 		Issued:     time.Now().Add(-3 * time.Hour),
 		Expiration: expiredTime,
@@ -1306,7 +1306,7 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	futureToken := &model.Token{
 		TokenId:    "future-token",
 		ClientId:   "client-1",
-		Type:       "access",
+		Kind:       "access",
 		Scopes:     "read",
 		Issued:     now,
 		Expiration: now.Add(2 * time.Hour),
@@ -1314,7 +1314,7 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	graceToken := &model.Token{
 		TokenId:    "grace-token",
 		ClientId:   "client-2",
-		Type:       "access",
+		Kind:       "access",
 		Scopes:     "write",
 		Issued:     now.Add(-1 * time.Hour),
 		Expiration: now.Add(-30 * time.Minute),
@@ -1322,7 +1322,7 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	expiredToken1 := &model.Token{
 		TokenId:    "expired-token-1",
 		ClientId:   "client-3",
-		Type:       "refresh",
+		Kind:       "refresh",
 		Scopes:     "read write",
 		Issued:     now.Add(-3 * time.Hour),
 		Expiration: now.Add(-2 * time.Hour),
@@ -1330,7 +1330,7 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	expiredToken2 := &model.Token{
 		TokenId:    "expired-token-2",
 		ClientId:   "client-4",
-		Type:       "access",
+		Kind:       "access",
 		Scopes:     "read",
 		Issued:     now.Add(-4 * time.Hour),
 		Expiration: now.Add(-3 * time.Hour),
@@ -1379,11 +1379,11 @@ func TestGrantReaper_NotExpired(t *testing.T) {
 	// Create grant that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
 	grant := &model.Grant{
-		GrantId:     "test-grant-future",
-		ClientId:    "client-1",
-		TokenDigest: "digest-future",
-		Type:        "authorization_code",
-		Expiration:  futureTime,
+		GrantId:      "test-grant-future",
+		ClientId:     "client-1",
+		RefreshToken: "digest-future",
+		Kind:         "authorization_code",
+		Expiration:   futureTime,
 	}
 	err = db.Create(grant).Error
 	g.Expect(err).To(gomega.BeNil())
@@ -1409,11 +1409,11 @@ func TestGrantReaper_WithinGracePeriod(t *testing.T) {
 	// Create grant expired 30 minutes ago (within 1-hour grace period)
 	expiredTime := time.Now().Add(-30 * time.Minute)
 	grant := &model.Grant{
-		GrantId:     "test-grant-grace",
-		ClientId:    "client-1",
-		TokenDigest: "digest-grace",
-		Type:        "authorization_code",
-		Expiration:  expiredTime,
+		GrantId:      "test-grant-grace",
+		ClientId:     "client-1",
+		RefreshToken: "digest-grace",
+		Kind:         "authorization_code",
+		Expiration:   expiredTime,
 	}
 	err = db.Create(grant).Error
 	g.Expect(err).To(gomega.BeNil())
@@ -1439,12 +1439,12 @@ func TestGrantReaper_ExpiredPastGracePeriod(t *testing.T) {
 	// Create grant expired 2 hours ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Hour)
 	grant := &model.Grant{
-		GrantId:     "test-grant-expired",
-		ClientId:    "client-1",
-		Subject:     "user-1",
-		TokenDigest: "digest-expired",
-		Type:        "authorization_code",
-		Expiration:  expiredTime,
+		GrantId:      "test-grant-expired",
+		ClientId:     "client-1",
+		Subject:      "user-1",
+		RefreshToken: "digest-expired",
+		Kind:         "authorization_code",
+		Expiration:   expiredTime,
 	}
 	err = db.Create(grant).Error
 	g.Expect(err).To(gomega.BeNil())
@@ -1470,32 +1470,32 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 	// Create multiple grants with different expiration times
 	now := time.Now()
 	futureGrant := &model.Grant{
-		GrantId:     "future-grant",
-		ClientId:    "client-1",
-		TokenDigest: "digest-1",
-		Type:        "authorization_code",
-		Expiration:  now.Add(2 * time.Hour),
+		GrantId:      "future-grant",
+		ClientId:     "client-1",
+		RefreshToken: "digest-1",
+		Kind:         "authorization_code",
+		Expiration:   now.Add(2 * time.Hour),
 	}
 	graceGrant := &model.Grant{
-		GrantId:     "grace-grant",
-		ClientId:    "client-2",
-		TokenDigest: "digest-2",
-		Type:        "authorization_code",
-		Expiration:  now.Add(-30 * time.Minute),
+		GrantId:      "grace-grant",
+		ClientId:     "client-2",
+		RefreshToken: "digest-2",
+		Kind:         "authorization_code",
+		Expiration:   now.Add(-30 * time.Minute),
 	}
 	expiredGrant1 := &model.Grant{
-		GrantId:     "expired-grant-1",
-		ClientId:    "client-3",
-		TokenDigest: "digest-3",
-		Type:        "authorization_code",
-		Expiration:  now.Add(-2 * time.Hour),
+		GrantId:      "expired-grant-1",
+		ClientId:     "client-3",
+		RefreshToken: "digest-3",
+		Kind:         "authorization_code",
+		Expiration:   now.Add(-2 * time.Hour),
 	}
 	expiredGrant2 := &model.Grant{
-		GrantId:     "expired-grant-2",
-		ClientId:    "client-4",
-		TokenDigest: "digest-4",
-		Type:        "refresh_token",
-		Expiration:  now.Add(-3 * time.Hour),
+		GrantId:      "expired-grant-2",
+		ClientId:     "client-4",
+		RefreshToken: "digest-4",
+		Kind:         "refresh_token",
+		Expiration:   now.Add(-3 * time.Hour),
 	}
 
 	err = db.Create(futureGrant).Error

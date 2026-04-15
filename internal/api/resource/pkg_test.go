@@ -3671,7 +3671,7 @@ func TestGrant_With(t *testing.T) {
 		GrantId:    "grant-123",
 		ClientId:   "client-456",
 		Subject:    "user-subject",
-		Type:       "authorization_code",
+		Kind:       "authorization_code",
 		Scopes:     "openid profile email",
 		Expiration: time.Now().Add(24 * time.Hour),
 	}
@@ -3685,7 +3685,7 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
 	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
-	g.Expect(r.Type).To(gomega.Equal("authorization_code"))
+	g.Expect(r.Kind).To(gomega.Equal("authorization_code"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
 }
@@ -3709,7 +3709,7 @@ func TestToken_With(t *testing.T) {
 		TokenId:    "token-789",
 		ClientId:   "client-456",
 		GrantId:    "grant-123",
-		Type:       "access_token",
+		Kind:       "access_token",
 		Subject:    "user-subject",
 		Scopes:     "openid profile email",
 		Issued:     issued,
@@ -3731,7 +3731,7 @@ func TestToken_With(t *testing.T) {
 	g.Expect(r.TokenId).To(gomega.Equal("token-789"))
 	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
 	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
-	g.Expect(r.Type).To(gomega.Equal("access_token"))
+	g.Expect(r.Kind).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
 	g.Expect(r.Issued).To(gomega.Equal(issued))
@@ -3749,7 +3749,7 @@ func TestToken_With_NilUser(t *testing.T) {
 		Model:      model.Model{ID: 1},
 		TokenId:    "token-789",
 		ClientId:   "client-456",
-		Type:       "client_credentials",
+		Kind:       "client_credentials",
 		Subject:    "client-subject",
 		Scopes:     "applications:get",
 		Issued:     time.Now(),

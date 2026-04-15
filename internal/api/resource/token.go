@@ -11,10 +11,10 @@ type Token api.Token
 // With converts model to REST resource.
 func (r *Token) With(m *model.Token) {
 	baseWith(&r.Resource, &m.Model)
+	r.Kind = m.Kind
 	r.TokenId = m.TokenId
 	r.ClientId = m.ClientId
 	r.GrantId = m.GrantId
-	r.Type = m.Type
 	r.Subject = m.Subject
 	r.Scopes = m.Scopes
 	r.Issued = m.Issued
