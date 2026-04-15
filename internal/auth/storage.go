@@ -294,7 +294,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 	}
 	req = &RefreshRequest{
 		grantId:  grant.AuthId,
-		clientId: grant.AuthId,
+		clientId: Settings.Auth.Client.ID,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
 		issued:   grant.Issued,

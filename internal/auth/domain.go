@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
@@ -46,24 +47,6 @@ func NewDomain(db *gorm.DB) *Domain {
 		permByScope: make(map[string]uint),
 		roleByName:  make(map[string]uint),
 	}
-}
-
-// Role use to read roles.yaml.
-type Role struct {
-	ID        uint   `yaml:"id"`
-	Name      string `yaml:"role"`
-	Resources []struct {
-		Name  string   `yaml:"name"`
-		Verbs []string `yaml:"verbs"`
-	} `yaml:"resources"`
-}
-
-// User used to read users.yaml.
-type User struct {
-	ID       uint     `yaml:"id"`
-	Userid   string   `yaml:"userid"`
-	Password string   `yaml:"password"`
-	Roles    []string `yaml:"roles"`
 }
 
 // Domain the RBAC domain.
@@ -168,7 +151,7 @@ func (d *Domain) seedRoles() (err error) {
 }
 
 // readRoles reads role definitions from roles.yaml.
-func (d *Domain) readRoles() (roles []Role, err error) {
+func (d *Domain) readRoles() (roles []seed.Role, err error) {
 	b, err := fs.ReadFile(seedDir, "roles.yaml")
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -197,9 +180,9 @@ func (d *Domain) readExistingRoles(db *gorm.DB) (roles map[string]model.Role, er
 }
 
 // diffRoles calculates which roles to delete, update, or create.
-func (d *Domain) diffRoles(existing map[string]model.Role, wanted []Role) (
-	toDelete []uint, toUpdate []Role, toCreate []Role) {
-	wantedMap := make(map[string]Role)
+func (d *Domain) diffRoles(existing map[string]model.Role, wanted []seed.Role) (
+	toDelete []uint, toUpdate []seed.Role, toCreate []seed.Role) {
+	wantedMap := make(map[string]seed.Role)
 	for _, role := range wanted {
 		wantedMap[role.Name] = role
 	}
@@ -233,7 +216,7 @@ func (d *Domain) deleteRoles(db *gorm.DB, ids []uint) (err error) {
 }
 
 // updateRole updates an existing role's permission associations.
-func (d *Domain) updateRole(db *gorm.DB, existing model.Role, role Role) (err error) {
+func (d *Domain) updateRole(db *gorm.DB, existing model.Role, role seed.Role) (err error) {
 	perms, err := d.buildRolePermissions(role)
 	if err != nil {
 		return
@@ -246,7 +229,7 @@ func (d *Domain) updateRole(db *gorm.DB, existing model.Role, role Role) (err er
 }
 
 // createRole creates a new role with permissions.
-func (d *Domain) createRole(db *gorm.DB, role Role) (err error) {
+func (d *Domain) createRole(db *gorm.DB, role seed.Role) (err error) {
 	perms, err := d.buildRolePermissions(role)
 	if err != nil {
 		return
@@ -268,7 +251,7 @@ func (d *Domain) createRole(db *gorm.DB, role Role) (err error) {
 }
 
 // buildRolePermissions builds permission list from a role definition.
-func (d *Domain) buildRolePermissions(role Role) (perms []model.Permission, err error) {
+func (d *Domain) buildRolePermissions(role seed.Role) (perms []model.Permission, err error) {
 	permMap := make(map[uint]bool)
 	for _, resource := range role.Resources {
 		for _, verb := range resource.Verbs {
@@ -350,7 +333,7 @@ func (d *Domain) seedUsers() (err error) {
 }
 
 // readUsers reads user definitions from users.yaml.
-func (d *Domain) readUsers() (users []User, err error) {
+func (d *Domain) readUsers() (users []seed.User, err error) {
 	b, err := fs.ReadFile(seedDir, "users.yaml")
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -379,9 +362,9 @@ func (d *Domain) readExistingUsers(db *gorm.DB) (users map[string]model.User, er
 }
 
 // diffUsers calculates which users to delete, update, or create.
-func (d *Domain) diffUsers(existing map[string]model.User, wanted []User) (
-	toDelete []uint, toUpdate []User, toCreate []User) {
-	wantedMap := make(map[string]User)
+func (d *Domain) diffUsers(existing map[string]model.User, wanted []seed.User) (
+	toDelete []uint, toUpdate []seed.User, toCreate []seed.User) {
+	wantedMap := make(map[string]seed.User)
 	for _, user := range wanted {
 		wantedMap[user.Userid] = user
 	}
@@ -415,7 +398,7 @@ func (d *Domain) deleteUsers(db *gorm.DB, ids []uint) (err error) {
 }
 
 // updateUser updates an existing user's role associations and password.
-func (d *Domain) updateUser(db *gorm.DB, existing model.User, user User) (err error) {
+func (d *Domain) updateUser(db *gorm.DB, existing model.User, user seed.User) (err error) {
 	roles, err := d.buildUserRoles(user)
 	if err != nil {
 		return
@@ -428,7 +411,7 @@ func (d *Domain) updateUser(db *gorm.DB, existing model.User, user User) (err er
 }
 
 // createUser creates a new user with roles.
-func (d *Domain) createUser(db *gorm.DB, user User) (err error) {
+func (d *Domain) createUser(db *gorm.DB, user seed.User) (err error) {
 	roles, err := d.buildUserRoles(user)
 	if err != nil {
 		return
@@ -452,7 +435,7 @@ func (d *Domain) createUser(db *gorm.DB, user User) (err error) {
 }
 
 // buildUserRoles builds role list from a user definition.
-func (d *Domain) buildUserRoles(user User) (roles []model.Role, err error) {
+func (d *Domain) buildUserRoles(user seed.User) (roles []model.Role, err error) {
 	roleMap := make(map[uint]bool)
 	for _, roleName := range user.Roles {
 		roleID, found := d.roleByName[roleName]
