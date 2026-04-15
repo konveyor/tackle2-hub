@@ -9,7 +9,14 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
+)
+
+const (
+	KindAccessToken = "access"
+	KindAuthCode    = "authCode"
+	KindAPIKey      = "apiKey"
 )
 
 var (
@@ -41,9 +48,9 @@ type Provider interface {
 	// Login begin OIDC auth.
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
 	// Grant the key request.
-	Grant(r KeyRequest) (key APIKey, err error)
-	// Delete api key.
-	Delete(digest string) (err error)
+	Grant(req TokenRequest) (token Token, err error)
+	// Revoke a token.
+	Revoke(tokenId uint) (err error)
 	// Authenticate the request.
 	Authenticate(r *Request) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.
@@ -52,15 +59,6 @@ type Provider interface {
 	User(jwToken *jwt.Token) (user string)
 	// Handler returns an OIDC handler.
 	Handler() (h http.Handler)
-}
-
-// APIKey authentication key.
-type APIKey struct {
-	User       string
-	Digest     string
-	Secret     string
-	Scopes     []string
-	Expiration time.Time
 }
 
 // JWT Claims - Standard claims.
@@ -129,6 +127,15 @@ func (r *BaseScope) With(s string) {
 		r.Method = part[1]
 	}
 	return
+}
+
+// Grant alias.
+type Grant = model.Grant
+
+// Token alias.
+type Token struct {
+	model.Token
+	Secret string `gorm:"-"`
 }
 
 // Match returns whether the scope is a match.

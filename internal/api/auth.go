@@ -21,15 +21,10 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	// APIKey routes
+	// Tokens routes
 	routeGroup := e.Group("/")
-	routeGroup.POST(api.AuthAPIKeysRoute, h.CreateKey)
-	routeGroup.Use(Required("apikeys"))
-	routeGroup.GET(api.AuthAPIKeysRoute, h.APIKeyList)
-	routeGroup.GET(api.AuthAPIKeysRoute+"/", h.APIKeyList)
-	routeGroup.GET(api.AuthAPIKeyIDRoute, h.APIKeyGet)
-	routeGroup.DELETE(api.AuthAPIKeyIDRoute, h.APIKeyDelete)
-	// OIDC routes - mount provider handler with custom login
+	routeGroup.POST(api.AuthTokensRoute, h.TokenCreate)
+	// OIDC routes
 	baseHandler := auth.Hub.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	e.Any(api.OIDCRoutes+"/*path", func(ctx *gin.Context) {
@@ -87,127 +82,6 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
-}
-
-// CreateKey godoc
-// @summary CreateKey create an API key.
-// @description CreateKey create an API key.
-// @tags auth
-// @produce json
-// @success 201 {object} api.APIKey
-// @router /auth/apikey [post]
-func (h AuthHandler) CreateKey(ctx *gin.Context) {
-	r := &APIKey{}
-	err := h.Bind(ctx, r)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	if r.Expiration.IsZero() {
-		if r.Lifespan == 0 {
-			r.Lifespan = Settings.APIKey.Lifespan
-		}
-	} else {
-		r.Lifespan = int(r.Expiration.Sub(time.Now()) / time.Hour)
-	}
-	kr := auth.KeyRequest{
-		Userid:   r.Userid,
-		Password: r.Password,
-		Lifespan: time.Hour * time.Duration(r.Lifespan),
-	}
-	key, err := kr.Grant()
-	if err != nil {
-		h.Respond(ctx,
-			http.StatusUnauthorized,
-			gin.H{
-				"error": err.Error(),
-			})
-		return
-	}
-	m := &model.APIKey{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	err = db.First(m, "digest", key.Digest).Error
-	if err != nil {
-		_ = ctx.Error(err)
-
-	}
-	r.With(m)
-	r.Userid = ""         // redacted.
-	r.Password = ""       // redacted.
-	r.Secret = key.Secret // Plain text (user must save it).
-	h.Respond(ctx, http.StatusCreated, r)
-}
-
-// APIKeyGet godoc
-// @summary Get an API key by ID.
-// @description Get an API key by ID.
-// @tags apikeys
-// @produce json
-// @success 200 {object} api.APIKey
-// @router /auth/apikeys/{id} [get]
-// @param id path int true "APIKey ID"
-func (h AuthHandler) APIKeyGet(ctx *gin.Context) {
-	id := h.pk(ctx)
-	m := &model.APIKey{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	err := db.First(m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	r := APIKey{}
-	r.With(m)
-	h.Respond(ctx, http.StatusOK, r)
-}
-
-// APIKeyList godoc
-// @summary List all API keys.
-// @description List all API keys.
-// @tags apikeys
-// @produce json
-// @success 200 {object} []api.APIKey
-// @router /auth/apikeys [get]
-func (h AuthHandler) APIKeyList(ctx *gin.Context) {
-	var list []model.APIKey
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	err := db.Find(&list).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	resources := []APIKey{}
-	for i := range list {
-		r := APIKey{}
-		r.With(&list[i])
-		resources = append(resources, r)
-	}
-
-	h.Respond(ctx, http.StatusOK, resources)
-}
-
-// APIKeyDelete godoc
-// @summary Delete an API key.
-// @description Delete an API key.
-// @tags apikeys
-// @success 204
-// @router /auth/apikeys/{id} [delete]
-// @param id path int true "APIKey ID"
-func (h AuthHandler) APIKeyDelete(ctx *gin.Context) {
-	id := h.pk(ctx)
-	m := &model.APIKey{}
-	err := h.DB(ctx).First(m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = auth.Hub.Delete(m.Digest)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	h.Status(ctx, http.StatusNoContent)
 }
 
 //
@@ -795,6 +669,57 @@ func (h AuthHandler) GrantDelete(ctx *gin.Context) {
 // Token handlers
 //
 
+// TokenCreate godoc
+// @summary TokenCreate create a token.
+// @description TokenCreate create a token.
+// @tags auth
+// @produce json
+// @success 201 {object} api.Token
+// @router /auth/tokens [post]
+func (h AuthHandler) TokenCreate(ctx *gin.Context) {
+	r := &TokenRequest{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if r.Expiration.IsZero() {
+		if r.Lifespan == 0 {
+			r.Lifespan = Settings.APIKey.Lifespan
+		}
+	} else {
+		r.Lifespan = int(r.Expiration.Sub(time.Now()) / time.Hour)
+	}
+	req := auth.TokenRequest{
+		Userid:   r.Userid,
+		Password: r.Password,
+		Lifespan: time.Hour * time.Duration(r.Lifespan),
+	}
+	token, err := req.Grant()
+	if err != nil {
+		h.Respond(ctx,
+			http.StatusUnauthorized,
+			gin.H{
+				"error": err.Error(),
+			})
+		return
+	}
+	m := &model.Token{}
+	m.ID = token.ID
+	err = h.DB(ctx).Find(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r2 := Token{}
+	r2.With(m)
+	r.Token = api.Token(r2)
+	r.Secret = token.Secret
+	r.Password = "" // redacted
+
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
 // TokenGet godoc
 // @summary Get a token by ID.
 // @description Get a token by ID.
@@ -882,13 +807,13 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 }
 
 // Auth REST Resources.
-type APIKey = resource.APIKey
 type IdpIdentity = resource.IdpIdentity
 type User = resource.User
 type Role = resource.Role
 type Permission = resource.Permission
 type Grant = resource.Grant
 type Token = resource.Token
+type TokenRequest api.TokenRequest
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.

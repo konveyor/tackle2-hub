@@ -11,6 +11,13 @@ import (
 func TestToken(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	req := &api.TokenRequest{}
+	err := client.Token.Create(req)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Token.Delete(req.ID)
+	})
+
 	// GET: List tokens
 	list, err := client.Token.List()
 	g.Expect(err).To(BeNil())
@@ -24,10 +31,8 @@ func TestToken(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.ID).To(Equal(firstToken.ID))
-	g.Expect(retrieved.TokenId).To(Equal(firstToken.TokenId))
-	g.Expect(retrieved.ClientId).To(Equal(firstToken.ClientId))
-	g.Expect(retrieved.GrantId).To(Equal(firstToken.GrantId))
-	g.Expect(retrieved.Type).To(Equal(firstToken.Type))
+	g.Expect(retrieved.AuthId).To(Equal(firstToken.AuthId))
+	g.Expect(retrieved.Kind).To(Equal(firstToken.Kind))
 	g.Expect(retrieved.Subject).To(Equal(firstToken.Subject))
 
 	// DELETE: Remove the token

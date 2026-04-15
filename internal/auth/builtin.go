@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
-	"encoding/base64"
 	"errors"
 	"net/http"
 	"strings"
@@ -44,7 +42,7 @@ func (k *KeySet) Key(id string) (jwk JWK, err error) {
 	return
 }
 
-// JWK represents a JSON Web Key.
+// JWK a JSON Web Key.
 type JWK struct {
 	KeyID      string
 	Algorithm  string
@@ -71,11 +69,11 @@ func (j *JWK) ID() (s string) {
 
 // Builtin provides OIDC authentication.
 type Builtin struct {
-	db       *gorm.DB
-	provider op.OpenIDProvider
-	storage  *Storage
-	keyCache *KeyCache
-	keySet   KeySet
+	db         *gorm.DB
+	provider   op.OpenIDProvider
+	tokenCache *TokenCache
+	storage    *Storage
+	keySet     KeySet
 }
 
 // Handler returns an http handler.
@@ -94,46 +92,39 @@ func (p *Builtin) Login(
 }
 
 // Grant the key request.
-func (p *Builtin) Grant(kr KeyRequest) (key APIKey, err error) {
-	key, err = p.genKey(kr.Lifespan)
-	if err != nil {
-		return
-	}
-	m := &model.APIKey{
-		Expiration: key.Expiration,
-		Digest:     key.Digest,
-	}
-	if kr.TaskID > 0 {
+func (p *Builtin) Grant(req TokenRequest) (m Token, err error) {
+	m = p.newToken(req)
+	if req.TaskID > 0 {
 		task := &model.Task{}
-		err = p.db.First(task, kr.TaskID).Error
+		err = p.db.First(task, req.TaskID).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
 		m.TaskID = &task.ID
 	}
-	if kr.Userid != "" {
+	if req.Userid != "" {
 		user := &model.User{}
-		err = p.db.First(user, "Userid", kr.Userid).Error
+		err = p.db.First(user, "Userid", req.Userid).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				err = &NotAuthenticated{
-					Token: kr.Userid,
+					Token: req.Userid,
 				}
 			} else {
 				err = liberr.Wrap(err)
 			}
 			return
 		}
-		if !secret.MatchPassword(kr.Password, user.Password) {
+		if !secret.MatchPassword(req.Password, user.Password) {
 			err = &NotAuthenticated{
-				Token: kr.Userid,
+				Token: req.Userid,
 			}
 			return
 		}
 		m.UserID = &user.ID
 	}
-	err = p.db.Create(m).Error
+	err = p.db.Create(&m).Error
 	return
 }
 
@@ -193,28 +184,24 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 		err = p.validToken(jwToken)
 		return
 	}
-	key, err := p.keyCache.Get(bearer)
+	token, err := p.tokenCache.Get(bearer)
 	if err == nil {
 		jwToken = jwt.New(jwt.SigningMethodHS512)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
-		jwtClaims[ClaimScope] = strings.Join(key.Scopes, " ")
-		jwtClaims[ClaimSub] = key.User
+		jwtClaims[ClaimScope] = token.Scopes
+		jwtClaims[ClaimSub] = token.Subject
 		return
 	}
 	err = liberr.Wrap(&NotAuthenticated{Token: bearer})
 	return
 }
 
-// Revoke an access token.
-func (p *Builtin) Revoke(token *jwt.Token) (err error) {
-	return
-}
-
-// Delete an api key
-func (p *Builtin) Delete(digest string) (err error) {
-	p.keyCache.Delete(digest)
-	m := &model.APIKey{}
-	err = p.db.Delete(m, "digest", digest).Error
+// Revoke a token.
+func (p *Builtin) Revoke(tokenId uint) (err error) {
+	p.tokenCache.Delete(tokenId)
+	m := &model.Task{}
+	m.ID = tokenId
+	err = p.db.Delete(m).Error
 	return
 }
 
@@ -334,27 +321,21 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 	return
 }
 
-// genKey returns a new generated key.
-func (p *Builtin) genKey(lifespan time.Duration) (key APIKey, err error) {
-	prefix := "apikey_"
-	b := make([]byte, 32)
-	_, err = rand.Read(b)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	generated := base64.RawURLEncoding.EncodeToString(b)
-	key.Secret = prefix + generated
-	key.Digest = secret.Hash(key.Secret)
-	key.Expiration = time.Now().Add(lifespan)
+// newToken returns a new token.
+func (p *Builtin) newToken(req TokenRequest) (token Token) {
+	token.Kind = KindAPIKey
+	token.AuthId = p.storage.genId()
+	token.Secret = p.storage.genId()
+	token.Digest = secret.Hash(token.Secret)
+	token.Expiration = time.Now().Add(req.Lifespan)
 	return
 }
 
 // NewBuiltin returns a configured provider.
 func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin = &Builtin{
-		keyCache: NewCache(db),
-		db:       db,
+		tokenCache: NewCache(db),
+		db:         db,
 	}
 	keyManager := NewKeyManager(db)
 	builtin.keySet, err = keyManager.KeySet()

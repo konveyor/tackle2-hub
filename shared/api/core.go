@@ -124,20 +124,6 @@ type Repository struct {
 	Path   string `json:"path"`
 }
 
-// APIKey REST resource.
-type APIKey struct {
-	Resource   `yaml:",inline"`
-	Userid     string    `json:"userid,omitempty" yaml:"userid,omitempty"`
-	Password   string    `json:"password,omitempty" yaml:"password,omitempty"`
-	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
-	Secret     string    `json:"secret,omitempty" yaml:"secret,omitempty"`
-	Lifespan   int       `json:"lifespan,omitempty" yaml:"lifespan,omitempty"`
-	Expiration time.Time `json:"expiration,omitempty" yaml:"expiration,omitempty"`
-	Expired    bool      `json:"expired,omitempty" yaml:"expired,omitempty"`
-	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
-	Task       *Ref      `json:"task,omitempty" yaml:"task,omitempty"`
-}
-
 // Addon REST resource.
 type Addon struct {
 	Name       string        `json:"name"`
@@ -193,27 +179,35 @@ type Permission struct {
 
 // Grant REST resource.
 type Grant struct {
-	Resource      `yaml:",inline"`
-	Kind          string    `json:"kind"`
-	GrantId       string    `json:"grantId"`
-	ClientId      string    `json:"clientId"`
-	Subject       string    `json:"subject"`
-	Scopes        string    `json:"scopes"`
-	Authenticated time.Time `json:"authenticated"`
-	Expiration    time.Time `json:"expiration"`
+	Resource   `yaml:",inline"`
+	Kind       string    `json:"kind"`
+	AuthId     string    `json:"authId"`
+	Subject    string    `json:"subject"`
+	Scopes     string    `json:"scopes"`
+	Issued     time.Time `json:"issued"`
+	Expiration time.Time `json:"expiration"`
+	Client     Ref       `json:"client"`
 }
 
 // Token REST resource.
 type Token struct {
 	Resource   `yaml:",inline"`
 	Kind       string    `json:"kind"`
-	TokenId    string    `json:"tokenId"`
-	ClientId   string    `json:"clientId"`
-	GrantId    string    `json:"grantId"`
-	Subject    string    `json:"subject"`
-	Scopes     string    `json:"scopes"`
-	Issued     time.Time `json:"issued"`
-	Expiration time.Time `json:"expiration"`
-	Revoked    time.Time `json:"revoked,omitempty" yaml:"revoked,omitempty"`
-	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
+	AuthId     string    `json:"authId,omitempty" yaml:"authId,omitempty"`
+	Subject    string    `json:"subject,omitempty" yaml:",omitempty"`
+	Scopes     string    `json:"scopes,omitempty" yaml:",omitempty"`
+	Issued     time.Time `json:"issued,omitempty" yaml:",omitempty"`
+	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Lifespan   int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Grant      *Ref      `json:"grant" yaml:"grant,omitempty" yaml:",omitempty"`
+	Task       *Ref      `json:"task,omitempty" yaml:"task,omitempty" yaml:",omitempty"`
+	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty" yaml:",omitempty"`
+}
+
+// TokenRequest REST resource.
+type TokenRequest struct {
+	Token    `yaml:",inline"`
+	Userid   string `json:"userid,omitempty" yaml:"userid,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
+	Secret   string `json:"secret,omitempty" yaml:"secret,omitempty"`
 }

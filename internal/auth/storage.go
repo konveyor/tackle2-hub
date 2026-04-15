@@ -23,11 +23,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const (
-	AccessToken = "access"
-	AuthCode    = "authCode"
-)
-
 // Storage implements op.Storage.
 type Storage struct {
 	mutex      sync.RWMutex
@@ -127,7 +122,7 @@ func (r *Storage) CreateAuthRequest(
 		AuthRequest: authReq,
 		requestId:   requestId,
 		subject:     userID,
-		authTime:    time.Now(),
+		issued:      time.Now(),
 		expiration:  time.Now().Add(10 * time.Minute),
 	}
 	r.authReqs[requestId] = req.(*AuthRequest)
@@ -220,29 +215,26 @@ func (r *Storage) CreateAccessToken(
 		return
 	}
 	tokenId = r.genId()
-	userId, _ := r.userId(req.GetSubject())
-	clientId := ""
+	userId := r.userId(req.GetSubject())
 	grantId := ""
 	expiration = time.Now().Add(
 		time.Duration(Settings.Token.Lifespan) * time.Second)
 	switch r := req.(type) {
 	case *RefreshRequest:
-		clientId = r.clientId
 		grantId = r.grantId
 	case *AuthRequest:
-		clientId = r.ClientID
+		//
 	default:
 		return
 	}
 	m := &model.Token{
-		Kind:       AccessToken,
-		TokenId:    tokenId,
-		GrantId:    grantId,
-		ClientId:   clientId,
+		Kind:       KindAccessToken,
+		AuthId:     tokenId,
 		Subject:    req.GetSubject(),
 		Scopes:     strings.Join(req.GetScopes(), " "),
 		Issued:     time.Now(),
 		Expiration: expiration,
+		GrantID:    r.grantId(grantId),
 		UserID:     userId,
 	}
 	err = r.db.Create(m).Error
@@ -301,11 +293,11 @@ func (r *Storage) TokenRequestByRefreshToken(
 		return
 	}
 	req = &RefreshRequest{
-		grantId:  grant.GrantId,
-		clientId: grant.ClientId,
+		grantId:  grant.AuthId,
+		clientId: grant.AuthId,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
-		authTime: grant.Authenticated,
+		issued:   grant.Issued,
 	}
 	return
 }
@@ -325,7 +317,7 @@ func (r *Storage) TerminateSession(ctx context.Context, userID, _ string) (err e
 	}
 	for i := range grants {
 		grant := &grants[i]
-		err = r.deleteGrant(ctx, grant.GrantId)
+		err = r.deleteGrant(ctx, grant.AuthId)
 		if err != nil {
 			return
 		}
@@ -353,7 +345,7 @@ func (r *Storage) RevokeToken(
 	grant := &model.Grant{}
 	err := r.db.First(grant, "tokenDigest", digest).Error
 	if err == nil {
-		err = r.deleteGrant(ctx, grant.GrantId)
+		err = r.deleteGrant(ctx, grant.AuthId)
 		if err != nil {
 			errPtr = oidc.ErrServerError()
 			return
@@ -546,7 +538,7 @@ func (r *Storage) SetIntrospectionFromToken(
 	expiration := int(token.Expiration.Unix())
 	introspection.Active = expiration > int(time.Now().Unix())
 	introspection.Scope = strings.Fields(token.Scopes)
-	introspection.ClientID = token.ClientId
+	//introspection.ClientID = token.ClientId
 	introspection.Subject = token.Subject
 	introspection.Expiration = oidc.FromTime(token.Expiration)
 	return
@@ -611,7 +603,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 		return
 	}
 	authReq.subject = user.Subject
-	authReq.authTime = time.Now()
+	authReq.issued = time.Now()
 	authReq.done = true
 	issuer := r.issuer()
 	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqId)
@@ -805,7 +797,7 @@ func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model
 // deleteGrant deletes a grant by id.
 func (r *Storage) deleteGrant(_ context.Context, id string) (err error) {
 	m := &model.Grant{}
-	err = r.db.Delete(m, "grantId", id).Error
+	err = r.db.Delete(m, "authId", id).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -814,7 +806,7 @@ func (r *Storage) deleteGrant(_ context.Context, id string) (err error) {
 
 // orphaned imposes grant expiration when the user cannot be found.
 func (r *Storage) orphaned(grant *model.Grant) (err error) {
-	if grant.Kind != AuthCode {
+	if grant.Kind != KindAuthCode {
 		return
 	}
 	count := int64(0)
@@ -848,15 +840,15 @@ func (r *Storage) createGrant(
 	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
 	m := &model.Grant{
-		Kind:          AuthCode,
-		GrantId:       grantId,
-		ClientId:      authReq.GetClientID(),
-		Subject:       authReq.GetSubject(),
-		RefreshToken:  secret.Hash(refreshToken),
-		AuthCode:      authCode,
-		Scopes:        scopes,
-		Authenticated: authReq.GetAuthTime(),
-		Expiration:    expiration,
+		Kind:         KindAuthCode,
+		AuthId:       grantId,
+		Subject:      authReq.GetSubject(),
+		RefreshToken: secret.Hash(refreshToken),
+		AuthCode:     authCode,
+		Scopes:       scopes,
+		Issued:       authReq.GetAuthTime(),
+		Expiration:   expiration,
+		ClientID:     r.clientId(authReq.GetClientID()),
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -890,14 +882,41 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 	return
 }
 
-// userId returns the user ID for the subject.
-func (r *Storage) userId(subject string) (id *uint, err error) {
-	user := &model.User{}
-	err = r.db.First(user, "subject", subject).Error
+// userId returns the user ID by subject.
+func (r *Storage) userId(subject string) (id *uint) {
+	m := &model.User{}
+	err := r.db.First(m, "subject", subject).Error
 	if err != nil {
 		return
 	}
-	id = &user.ID
+	id = &m.ID
+	return
+}
+
+// grantId returns the grant ID by authId.
+func (r *Storage) grantId(authId string) (id *uint) {
+	m := &model.Grant{}
+	err := r.db.First(m, "authId", authId).Error
+	if err != nil {
+		return
+	}
+	id = &m.ID
+	return
+}
+
+// grantId returns the grant authID by id.
+func (r *Storage) grantAuthId(id uint) (authId string) {
+	m := &model.Grant{}
+	err := r.db.First(m, id).Error
+	if err != nil {
+		return
+	}
+	authId = m.AuthId
+	return
+}
+
+// clientId returns the client ID by authId.
+func (r *Storage) clientId(authId string) (id *uint) {
 	return
 }
 
@@ -1050,7 +1069,7 @@ type AuthRequest struct {
 	requestId  string
 	subject    string
 	authCode   string
-	authTime   time.Time
+	issued     time.Time
 	expiration time.Time
 	done       bool
 }
@@ -1081,7 +1100,7 @@ func (a *AuthRequest) GetAudience() (aud []string) {
 
 // GetAuthTime returns the authentication time.
 func (a *AuthRequest) GetAuthTime() (t time.Time) {
-	t = a.authTime
+	t = a.issued
 	return
 }
 
@@ -1164,7 +1183,7 @@ type RefreshRequest struct {
 	clientId string
 	subject  string
 	scopes   []string
-	authTime time.Time
+	issued   time.Time
 }
 
 // GetAMR returns the AMR.
@@ -1181,7 +1200,7 @@ func (r *RefreshRequest) GetAudience() (aud []string) {
 
 // GetAuthTime returns the authentication time.
 func (r *RefreshRequest) GetAuthTime() (t time.Time) {
-	t = r.authTime
+	t = r.issued
 	return
 }
 

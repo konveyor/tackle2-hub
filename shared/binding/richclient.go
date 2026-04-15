@@ -32,7 +32,6 @@ type RichClient struct {
 	Client RestClient
 	// API namespaces.
 	Addon            Addon
-	APIKey           APIKey
 	Analysis         analysis.Analysis
 	AnalysisProfile  AnalysisProfile
 	Application      application.Application
@@ -80,16 +79,15 @@ func (r *RichClient) Use(client RestClient) {
 
 // Login set token.
 func (r *RichClient) Login(user, password string) (err error) {
-	key := api.APIKey{
-		Userid:   user,
-		Password: password,
-		Lifespan: 720, // 30 days.
-	}
-	err = r.Client.Post(api.AuthAPIKeysRoute, &key)
+	req := api.TokenRequest{}
+	req.Userid = user
+	req.Password = password
+	req.Lifespan = 720 // 30 days.
+	err = r.Token.Create(&req)
 	if err != nil {
 		return
 	}
-	r.Client.Use(key.Secret)
+	r.Client.Use(req.Secret)
 	return
 }
 
@@ -97,7 +95,6 @@ func (r *RichClient) Login(user, password string) (err error) {
 func (r *RichClient) build(client RestClient) {
 	r.Client = client
 	r.Addon = Addon{client: client}
-	r.APIKey = APIKey{client: client}
 	r.Analysis = analysis.New(client)
 	r.AnalysisProfile = AnalysisProfile{client: client}
 	r.Application = application.New(client)

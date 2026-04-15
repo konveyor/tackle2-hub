@@ -66,8 +66,10 @@ type Result struct {
 	Scopes        []Scope
 }
 
-// KeyRequest APIKey grant request.
-type KeyRequest struct {
+// TokenRequest token grant request.
+type TokenRequest struct {
+	// Kind of token.
+	Kind string
 	// Userid used to authenticate a user.
 	Userid string
 	// Password used to authenticate the user.
@@ -78,8 +80,8 @@ type KeyRequest struct {
 	Lifespan time.Duration
 }
 
-// Grant returns a new APIKey.
-func (r KeyRequest) Grant() (key APIKey, err error) {
-	key, err = Hub.Grant(r)
+// Grant returns a new token.
+func (r TokenRequest) Grant() (token Token, err error) {
+	token, err = Hub.Grant(r)
 	return
 }

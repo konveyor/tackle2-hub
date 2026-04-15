@@ -253,40 +253,39 @@ type RsaKey struct {
 
 type Grant struct {
 	Model
-	Kind          string `gorm:"not null"`
-	GrantId       string `gorm:"uniqueIndex;not null"`
-	ClientId      string `gorm:"index"`
-	Subject       string `gorm:"index"`
-	RefreshToken  string `gorm:"uniqueIndex"` // digest
-	AuthCode      string `gorm:"index"`
-	Scopes        string
-	Authenticated time.Time
-	Expiration    time.Time
+	Kind         string `gorm:"not null"`
+	AuthId       string `gorm:"uniqueIndex;not null"`
+	Subject      string `gorm:"index"`
+	RefreshToken string `gorm:"uniqueIndex"` // digest
+	AuthCode     string `gorm:"index"`
+	Scopes       string
+	Issued       time.Time
+	Expiration   time.Time
+	ClientID     *uint   `gorm:"index"`
+	Client       *Client `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Token struct {
 	Model
 	Kind       string    `gorm:"not null"`
-	TokenId    string    `gorm:"uniqueIndex;not null"`
-	ClientId   string    `gorm:"index;not null"`
-	GrantId    string    `gorm:"index"`
+	AuthId     string    `gorm:"uniqueIndex;not null"`
 	Subject    string    `gorm:"index"`
+	Digest     string    `gorm:"index"`
 	Scopes     string    `gorm:"not null"`
 	Issued     time.Time `gorm:"not null"`
 	Expiration time.Time
 	Revoked    time.Time
-	UserID     *uint `gorm:"index"`
-	User       *User `gorm:"constraint:OnDelete:CASCADE"`
+	GrantID    *uint  `gorm:"index"`
+	Grant      *Grant `gorm:"constraint:OnDelete:CASCADE"`
+	UserID     *uint  `gorm:"index"`
+	User       *User  `gorm:"constraint:OnDelete:CASCADE"`
+	TaskID     *uint  `gorm:"index"`
+	Task       *Task  `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-type APIKey struct {
+type Client struct {
 	Model
-	Digest     string `gorm:"uniqueIndex;not null"`
-	Expiration time.Time
-	UserID     *uint `gorm:"index"`
-	User       *User `gorm:"constraint:OnDelete:CASCADE"`
-	TaskID     *uint `gorm:"index"`
-	Task       *Task `gorm:"constraint:OnDelete:CASCADE"`
+	AuthId string `gorm:"uniqueIndex;not null"`
 }
 
 //

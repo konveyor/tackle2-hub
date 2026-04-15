@@ -97,9 +97,6 @@ func (m *Manager) Iterate() {
 		&FileReaper{
 			DB: m.DB,
 		},
-		&KeyReaper{
-			DB: m.DB,
-		},
 		&GrantReaper{
 			DB: m.DB,
 		},

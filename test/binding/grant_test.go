@@ -29,10 +29,9 @@ func TestGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.ID).To(Equal(firstGrant.ID))
-	g.Expect(retrieved.GrantId).To(Equal(firstGrant.GrantId))
-	g.Expect(retrieved.ClientId).To(Equal(firstGrant.ClientId))
+	g.Expect(retrieved.AuthId).To(Equal(firstGrant.AuthId))
 	g.Expect(retrieved.Subject).To(Equal(firstGrant.Subject))
-	g.Expect(retrieved.Type).To(Equal(firstGrant.Type))
+	g.Expect(retrieved.Kind).To(Equal(firstGrant.Kind))
 
 	// DELETE: Remove the grant
 	err = client.Grant.Delete(firstGrant.ID)

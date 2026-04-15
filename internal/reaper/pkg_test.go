@@ -1061,145 +1061,6 @@ func TestGroupReaper_ReadyStateWithTasks(t *testing.T) {
 	g.Expect(len(g1.Tasks)).To(gomega.Equal(1))
 }
 
-// TestKeyReaper_NotExpired tests that non-expired API keys are not deleted.
-func TestKeyReaper_NotExpired(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	db, err := setupDB()
-	g.Expect(err).To(gomega.BeNil())
-
-	// Create API key that expires in the future
-	futureTime := time.Now().Add(2 * time.Hour)
-	key := &model.APIKey{
-		Digest:     "test-digest-future",
-		Expiration: futureTime,
-	}
-	err = db.Create(key).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Run reaper
-	reaper := &KeyReaper{DB: db}
-	reaper.Run()
-
-	// Verify key was NOT deleted
-	var k model.APIKey
-	err = db.First(&k, key.ID).Error
-	g.Expect(err).To(gomega.BeNil())
-	g.Expect(k.ID).To(gomega.Equal(key.ID))
-}
-
-// TestKeyReaper_WithinGracePeriod tests that keys expired less than 1 hour are not deleted.
-func TestKeyReaper_WithinGracePeriod(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	db, err := setupDB()
-	g.Expect(err).To(gomega.BeNil())
-
-	// Create API key expired 30 minutes ago (within 1-hour grace period)
-	expiredTime := time.Now().Add(-30 * time.Minute)
-	key := &model.APIKey{
-		Digest:     "test-digest-grace",
-		Expiration: expiredTime,
-	}
-	err = db.Create(key).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Run reaper
-	reaper := &KeyReaper{DB: db}
-	reaper.Run()
-
-	// Verify key was NOT deleted (still in grace period)
-	var k model.APIKey
-	err = db.First(&k, key.ID).Error
-	g.Expect(err).To(gomega.BeNil())
-	g.Expect(k.ID).To(gomega.Equal(key.ID))
-}
-
-// TestKeyReaper_ExpiredPastGracePeriod tests that keys expired more than 1 hour are deleted.
-func TestKeyReaper_ExpiredPastGracePeriod(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	db, err := setupDB()
-	g.Expect(err).To(gomega.BeNil())
-
-	// Create API key expired 2 hours ago (past grace period)
-	expiredTime := time.Now().Add(-2 * time.Hour)
-	key := &model.APIKey{
-		Digest:     "test-digest-expired",
-		Expiration: expiredTime,
-	}
-	err = db.Create(key).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Run reaper
-	reaper := &KeyReaper{DB: db}
-	reaper.Run()
-
-	// Verify key was deleted
-	var k model.APIKey
-	err = db.First(&k, key.ID).Error
-	g.Expect(err).NotTo(gomega.BeNil())
-	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
-}
-
-// TestKeyReaper_MultipleKeys tests deletion of multiple expired keys.
-func TestKeyReaper_MultipleKeys(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	db, err := setupDB()
-	g.Expect(err).To(gomega.BeNil())
-
-	// Create multiple API keys with different expiration times
-	futureKey := &model.APIKey{
-		Digest:     "future-key",
-		Expiration: time.Now().Add(2 * time.Hour),
-	}
-	graceKey := &model.APIKey{
-		Digest:     "grace-key",
-		Expiration: time.Now().Add(-30 * time.Minute),
-	}
-	expiredKey1 := &model.APIKey{
-		Digest:     "expired-key-1",
-		Expiration: time.Now().Add(-2 * time.Hour),
-	}
-	expiredKey2 := &model.APIKey{
-		Digest:     "expired-key-2",
-		Expiration: time.Now().Add(-3 * time.Hour),
-	}
-
-	err = db.Create(futureKey).Error
-	g.Expect(err).To(gomega.BeNil())
-	err = db.Create(graceKey).Error
-	g.Expect(err).To(gomega.BeNil())
-	err = db.Create(expiredKey1).Error
-	g.Expect(err).To(gomega.BeNil())
-	err = db.Create(expiredKey2).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Run reaper
-	reaper := &KeyReaper{DB: db}
-	reaper.Run()
-
-	// Verify future key still exists
-	var k1 model.APIKey
-	err = db.First(&k1, futureKey.ID).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Verify grace period key still exists
-	var k2 model.APIKey
-	err = db.First(&k2, graceKey.ID).Error
-	g.Expect(err).To(gomega.BeNil())
-
-	// Verify expired keys were deleted
-	var k3 model.APIKey
-	err = db.First(&k3, expiredKey1.ID).Error
-	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
-
-	var k4 model.APIKey
-	err = db.First(&k4, expiredKey2.ID).Error
-	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
-}
-
 // TestTokenReaper_NotExpired tests that non-expired tokens are not deleted.
 func TestTokenReaper_NotExpired(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -1210,8 +1071,6 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	// Create token that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
 	token := &model.Token{
-		TokenId:    "test-token-future",
-		ClientId:   "client-1",
 		Kind:       "access",
 		Scopes:     "read write",
 		Issued:     time.Now(),
@@ -1241,8 +1100,6 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	// Create token expired 30 minutes ago (within 1-hour grace period)
 	expiredTime := time.Now().Add(-30 * time.Minute)
 	token := &model.Token{
-		TokenId:    "test-token-grace",
-		ClientId:   "client-1",
 		Kind:       "access",
 		Scopes:     "read",
 		Issued:     time.Now().Add(-1 * time.Hour),
@@ -1272,9 +1129,6 @@ func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 	// Create token expired 2 hours ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Hour)
 	token := &model.Token{
-		TokenId:    "test-token-expired",
-		ClientId:   "client-1",
-		GrantId:    "grant-1",
 		Kind:       "refresh",
 		Scopes:     "read write",
 		Issued:     time.Now().Add(-3 * time.Hour),
@@ -1304,33 +1158,29 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	// Create multiple tokens with different expiration times
 	now := time.Now()
 	futureToken := &model.Token{
-		TokenId:    "future-token",
-		ClientId:   "client-1",
 		Kind:       "access",
+		AuthId:     "a",
 		Scopes:     "read",
 		Issued:     now,
 		Expiration: now.Add(2 * time.Hour),
 	}
 	graceToken := &model.Token{
-		TokenId:    "grace-token",
-		ClientId:   "client-2",
 		Kind:       "access",
+		AuthId:     "b",
 		Scopes:     "write",
 		Issued:     now.Add(-1 * time.Hour),
 		Expiration: now.Add(-30 * time.Minute),
 	}
 	expiredToken1 := &model.Token{
-		TokenId:    "expired-token-1",
-		ClientId:   "client-3",
 		Kind:       "refresh",
+		AuthId:     "c",
 		Scopes:     "read write",
 		Issued:     now.Add(-3 * time.Hour),
 		Expiration: now.Add(-2 * time.Hour),
 	}
 	expiredToken2 := &model.Token{
-		TokenId:    "expired-token-2",
-		ClientId:   "client-4",
 		Kind:       "access",
+		AuthId:     "d",
 		Scopes:     "read",
 		Issued:     now.Add(-4 * time.Hour),
 		Expiration: now.Add(-3 * time.Hour),
@@ -1379,8 +1229,6 @@ func TestGrantReaper_NotExpired(t *testing.T) {
 	// Create grant that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
 	grant := &model.Grant{
-		GrantId:      "test-grant-future",
-		ClientId:     "client-1",
 		RefreshToken: "digest-future",
 		Kind:         "authorization_code",
 		Expiration:   futureTime,
@@ -1409,8 +1257,6 @@ func TestGrantReaper_WithinGracePeriod(t *testing.T) {
 	// Create grant expired 30 minutes ago (within 1-hour grace period)
 	expiredTime := time.Now().Add(-30 * time.Minute)
 	grant := &model.Grant{
-		GrantId:      "test-grant-grace",
-		ClientId:     "client-1",
 		RefreshToken: "digest-grace",
 		Kind:         "authorization_code",
 		Expiration:   expiredTime,
@@ -1439,8 +1285,6 @@ func TestGrantReaper_ExpiredPastGracePeriod(t *testing.T) {
 	// Create grant expired 2 hours ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Hour)
 	grant := &model.Grant{
-		GrantId:      "test-grant-expired",
-		ClientId:     "client-1",
 		Subject:      "user-1",
 		RefreshToken: "digest-expired",
 		Kind:         "authorization_code",
@@ -1470,29 +1314,25 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 	// Create multiple grants with different expiration times
 	now := time.Now()
 	futureGrant := &model.Grant{
-		GrantId:      "future-grant",
-		ClientId:     "client-1",
+		AuthId:       "a",
 		RefreshToken: "digest-1",
 		Kind:         "authorization_code",
 		Expiration:   now.Add(2 * time.Hour),
 	}
 	graceGrant := &model.Grant{
-		GrantId:      "grace-grant",
-		ClientId:     "client-2",
+		AuthId:       "b",
 		RefreshToken: "digest-2",
 		Kind:         "authorization_code",
 		Expiration:   now.Add(-30 * time.Minute),
 	}
 	expiredGrant1 := &model.Grant{
-		GrantId:      "expired-grant-1",
-		ClientId:     "client-3",
+		AuthId:       "c",
 		RefreshToken: "digest-3",
 		Kind:         "authorization_code",
 		Expiration:   now.Add(-2 * time.Hour),
 	}
 	expiredGrant2 := &model.Grant{
-		GrantId:      "expired-grant-2",
-		ClientId:     "client-4",
+		AuthId:       "d",
 		RefreshToken: "digest-4",
 		Kind:         "refresh_token",
 		Expiration:   now.Add(-3 * time.Hour),
@@ -1557,7 +1397,6 @@ func setupDB() (db *gorm.DB, err error) {
 		&model.Rule{},
 		&model.Target{},
 		&model.AnalysisProfile{},
-		&model.APIKey{},
 		&model.Token{},
 		&model.Grant{},
 	)

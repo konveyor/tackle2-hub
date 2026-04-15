@@ -59,6 +59,7 @@ func All() []any {
 		Assessment{},
 		Archetype{},
 		ProfileGenerator{},
+		Client{},
 		IdpIdentity{},
 		Permission{},
 		Role{},
@@ -66,6 +67,5 @@ func All() []any {
 		Token{},
 		RsaKey{},
 		Grant{},
-		APIKey{},
 	}
 }

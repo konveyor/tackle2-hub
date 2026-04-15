@@ -3578,85 +3578,6 @@ func TestPermission_Model(t *testing.T) {
 	g.Expect(m.Scope).To(gomega.Equal("applications"))
 }
 
-// TestAPIKey_With tests the APIKey.With() method and verifies secret is not exposed.
-func TestAPIKey_With(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	userID := uint(5)
-	m := &model.APIKey{
-		Model: model.Model{
-			ID:         1,
-			CreateUser: "admin",
-			UpdateUser: "admin",
-			CreateTime: time.Now(),
-		},
-		Digest:     "hashed-secret-value",
-		Expiration: time.Now().Add(24 * time.Hour),
-		UserID:     &userID,
-		User: &model.User{
-			Model:   model.Model{ID: 5},
-			Subject: "user-uuid",
-			Userid:  "testuser",
-			Email:   "test@example.com",
-		},
-	}
-
-	r := &APIKey{}
-	r.With(m)
-
-	// Verify digest is set
-	g.Expect(r.Digest).To(gomega.Equal("hashed-secret-value"))
-
-	// Verify secret is NOT set (should remain empty for security)
-	g.Expect(r.Secret).To(gomega.BeEmpty())
-
-	// Verify user reference is set
-	g.Expect(r.User).ToNot(gomega.BeNil())
-	g.Expect(r.User.ID).To(gomega.Equal(uint(5)))
-	g.Expect(r.User.Name).To(gomega.Equal("testuser"))
-
-	// Verify lifespan is calculated as duration
-	g.Expect(r.Lifespan).To(gomega.BeNumerically(">", 0))
-}
-
-// TestAPIKey_WithTask tests the APIKey.With() method with a task reference.
-func TestAPIKey_WithTask(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	taskID := uint(10)
-	m := &model.APIKey{
-		Model: model.Model{
-			ID:         2,
-			CreateUser: "system",
-			CreateTime: time.Now(),
-		},
-		Digest:     "hashed-task-secret",
-		Expiration: time.Now().Add(1 * time.Hour),
-		TaskID:     &taskID,
-		Task: &model.Task{
-			Model: model.Model{ID: 10},
-			Name:  "migration-task",
-		},
-	}
-
-	r := &APIKey{}
-	r.With(m)
-
-	// Verify digest is set
-	g.Expect(r.Digest).To(gomega.Equal("hashed-task-secret"))
-
-	// Verify secret is NOT set
-	g.Expect(r.Secret).To(gomega.BeEmpty())
-
-	// Verify task reference is set
-	g.Expect(r.Task).ToNot(gomega.BeNil())
-	g.Expect(r.Task.ID).To(gomega.Equal(uint(10)))
-	g.Expect(r.Task.Name).To(gomega.Equal("migration-task"))
-
-	// Verify user is nil (task key, not user key)
-	g.Expect(r.User).To(gomega.BeNil())
-}
-
 // TestGrant_With tests the Grant.With() method.
 func TestGrant_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -3668,8 +3589,6 @@ func TestGrant_With(t *testing.T) {
 			UpdateUser: "user2",
 			CreateTime: time.Now(),
 		},
-		GrantId:    "grant-123",
-		ClientId:   "client-456",
 		Subject:    "user-subject",
 		Kind:       "authorization_code",
 		Scopes:     "openid profile email",
@@ -3682,8 +3601,6 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.CreateUser).To(gomega.Equal("user1"))
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
-	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
-	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Kind).To(gomega.Equal("authorization_code"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
@@ -3706,9 +3623,6 @@ func TestToken_With(t *testing.T) {
 			UpdateUser: "user2",
 			CreateTime: time.Now(),
 		},
-		TokenId:    "token-789",
-		ClientId:   "client-456",
-		GrantId:    "grant-123",
 		Kind:       "access_token",
 		Subject:    "user-subject",
 		Scopes:     "openid profile email",
@@ -3728,15 +3642,11 @@ func TestToken_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.CreateUser).To(gomega.Equal("user1"))
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
-	g.Expect(r.TokenId).To(gomega.Equal("token-789"))
-	g.Expect(r.ClientId).To(gomega.Equal("client-456"))
-	g.Expect(r.GrantId).To(gomega.Equal("grant-123"))
 	g.Expect(r.Kind).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
 	g.Expect(r.Issued).To(gomega.Equal(issued))
 	g.Expect(r.Expiration).To(gomega.Equal(expiration))
-	g.Expect(r.Revoked).To(gomega.Equal(revoked))
 	g.Expect(r.User).ToNot(gomega.BeNil())
 	g.Expect(r.User.ID).To(gomega.Equal(uint(5)))
 }
@@ -3747,8 +3657,6 @@ func TestToken_With_NilUser(t *testing.T) {
 
 	m := &model.Token{
 		Model:      model.Model{ID: 1},
-		TokenId:    "token-789",
-		ClientId:   "client-456",
 		Kind:       "client_credentials",
 		Subject:    "client-subject",
 		Scopes:     "applications:get",

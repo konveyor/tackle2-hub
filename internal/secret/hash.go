@@ -4,18 +4,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	hmacPrefix   = "hmac-sha256:"
-	bcryptPrefix = "bcrypt:"
-)
-
 // Hash hashes a password using hmac-sha256 and wraps it in URL-safe base64.
-// Returns the encoded hmac-sha256 hash with prefix, or the input unchanged if already hashed.
+// Returns the encoded hmac-sha256 digest, or the input unchanged if already hashed.
 func Hash(secret string) (hashed string) {
 	if len(secret) == 0 || isHashed(secret) {
 		hashed = secret
@@ -25,20 +19,15 @@ func Hash(secret string) (hashed string) {
 	h.Write([]byte(secret))
 	digest := h.Sum(nil)
 	hashed = base64.URLEncoding.EncodeToString(digest)
-	hashed = hmacPrefix + hashed
 	return
 }
 
-// isHashed returns true when already hashed.
+// isHashed s true when already hashed.
 func isHashed(s string) (hashed bool) {
-	if !strings.HasPrefix(s, hmacPrefix) {
+	if len(s) != 44 {
 		return
 	}
-	encoded := strings.TrimPrefix(s, hmacPrefix)
-	if len(encoded) != 44 {
-		return
-	}
-	decoded, err := base64.URLEncoding.DecodeString(encoded)
+	decoded, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
 		return
 	}
@@ -48,11 +37,7 @@ func isHashed(s string) (hashed bool) {
 
 // isHashedPassword returns true when already in bcrypt hashed format.
 func isHashedPassword(s string) (hashed bool) {
-	if !strings.HasPrefix(s, bcryptPrefix) {
-		return
-	}
-	encoded := strings.TrimPrefix(s, bcryptPrefix)
-	decoded, err := base64.URLEncoding.DecodeString(encoded)
+	decoded, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
 		return
 	}
@@ -62,7 +47,7 @@ func isHashedPassword(s string) (hashed bool) {
 }
 
 // HashPassword hashes a password using bcrypt and wraps it in URL-safe base64.
-// Returns the encoded bcrypt hash with prefix, or the input unchanged if already hashed.
+// Returns the encoded bcrypt digest, or the input unchanged if already hashed.
 // Passwords longer than 72 bytes are truncated to 72 bytes due to bcrypt limitations.
 func HashPassword(password string) (hashed string) {
 	if len(password) == 0 {
@@ -81,19 +66,14 @@ func HashPassword(password string) (hashed string) {
 	if err != nil {
 		return
 	}
-	encoded := base64.URLEncoding.EncodeToString(digest)
-	hashed = bcryptPrefix + encoded
+	hashed = base64.URLEncoding.EncodeToString(digest)
 	return
 }
 
 // MatchPassword compares a plaintext password against an encoded bcrypt hash.
 // Returns true if the password matches the hash.
 func MatchPassword(password string, hashed string) (matched bool) {
-	if !strings.HasPrefix(hashed, bcryptPrefix) {
-		return
-	}
-	encoded := strings.TrimPrefix(hashed, bcryptPrefix)
-	digest, err := base64.URLEncoding.DecodeString(encoded)
+	digest, err := base64.URLEncoding.DecodeString(hashed)
 	if err != nil {
 		return
 	}

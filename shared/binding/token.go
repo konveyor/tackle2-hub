@@ -9,6 +9,12 @@ type Token struct {
 	client RestClient
 }
 
+// Create a RuleSet.
+func (h Token) Create(r *api.TokenRequest) (err error) {
+	err = h.client.Post(api.AuthTokensRoute, r)
+	return
+}
+
 // Get a Token by ID.
 func (h Token) Get(id uint) (r *api.Token, err error) {
 	r = &api.Token{}

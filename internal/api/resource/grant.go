@@ -12,10 +12,8 @@ type Grant api.Grant
 func (r *Grant) With(m *model.Grant) {
 	baseWith(&r.Resource, &m.Model)
 	r.Kind = m.Kind
-	r.GrantId = m.GrantId
-	r.ClientId = m.ClientId
 	r.Subject = m.Subject
 	r.Scopes = m.Scopes
-	r.Authenticated = m.Authenticated
+	r.Issued = m.Issued
 	r.Expiration = m.Expiration
 }

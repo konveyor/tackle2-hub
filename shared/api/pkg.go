@@ -127,13 +127,11 @@ const (
 
 // Routes - Auth
 const (
-	AuthRoute         = "/auth"
-	AuthAPIKeysRoute  = AuthRoute + "/apikeys"
-	AuthAPIKeyIDRoute = AuthAPIKeysRoute + "/:" + ID
-	AuthGrantsRoute   = AuthRoute + "/grants"
-	AuthGrantRoute    = AuthGrantsRoute + "/:" + ID
-	AuthTokensRoute   = AuthRoute + "/tokens"
-	AuthTokenRoute    = AuthTokensRoute + "/:" + ID
+	AuthRoute       = "/auth"
+	AuthGrantsRoute = AuthRoute + "/grants"
+	AuthGrantRoute  = AuthGrantsRoute + "/:" + ID
+	AuthTokensRoute = AuthRoute + "/tokens"
+	AuthTokenRoute  = AuthTokensRoute + "/:" + ID
 )
 
 // Routes - Batch

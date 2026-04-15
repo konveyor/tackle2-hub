@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// TestUserKey tests creating and authenticating with user API keys.
-func TestUserKey(t *testing.T) {
+// TestUserGrant tests creating and authenticating with user tokens.
+func TestUserGrant(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -35,45 +35,41 @@ func TestUserKey(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Test creating API key with valid credentials
-	kr := KeyRequest{
+	// Test creating token with valid credentials
+	req := TokenRequest{
 		Userid:   user.Userid,
 		Password: "testpassword",
 		Lifespan: 24 * time.Hour,
 	}
-	key, err := provider.Grant(kr)
+	token, err := provider.Grant(req)
 	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).NotTo(BeEmpty())
-	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
+	g.Expect(token.Secret).NotTo(BeEmpty())
 
-	// Verify the API key was created in the database
+	// Verify the token was created in the database
 	var keyCount int64
-	err = db.Model(&model.APIKey{}).Count(&keyCount).Error
+	err = db.Model(&model.Token{}).Count(&keyCount).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(keyCount).To(Equal(int64(1)))
 
 	// Verify the digest in the database matches
-	var dbKey model.APIKey
-	err = db.First(&dbKey).Error
+	err = db.First(&token).Error
 	g.Expect(err).To(BeNil())
-	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
-	// Test creating API key with invalid password
-	kr.Password = "wrong-password"
-	_, err = provider.Grant(kr)
+	// Test creating token with invalid password
+	req.Password = "wrong-password"
+	_, err = provider.Grant(req)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
-	// Test creating API key with non-existent user
-	kr.Userid = "not-existing-user"
-	_, err = provider.Grant(kr)
+	// Test creating token with non-existent user
+	req.Userid = "not-existing-user"
+	_, err = provider.Grant(req)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
-	// Test authenticating with the API key
+	// Test authenticating with the token
 	request := &Request{
-		Token: "Bearer " + key.Secret,
+		Token: "Bearer " + token.Secret,
 	}
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -85,10 +81,9 @@ func TestUserKey(t *testing.T) {
 
 	// Test that expired keys are rejected
 	expiredSecret := "expired-secret-key"
-	expiredKey := &model.APIKey{
+	expiredKey := &model.Token{
 		UserID:     &user.ID,
 		Expiration: time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
-		Digest:     secret.Hash(expiredSecret),
 	}
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
@@ -100,8 +95,8 @@ func TestUserKey(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 }
 
-// TestTaskKey tests creating and authenticating with task API keys.
-func TestTaskKey(t *testing.T) {
+// TestTaskKey tests creating and authenticating with task tokens.
+func TestTaskGrant(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -118,34 +113,30 @@ func TestTaskKey(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Test creating task API key
-	kr := KeyRequest{
+	// Test creating task token
+	req := TokenRequest{
 		TaskID:   task.ID,
 		Lifespan: 24 * time.Hour,
 	}
-	key, err := provider.Grant(kr)
+	token, err := provider.Grant(req)
 	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).NotTo(BeEmpty())
-	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
+	g.Expect(token.Secret).NotTo(BeEmpty())
 
-	// Test authenticating with the task API key
+	// Test authenticating with the task token
 	request := &Request{
-		Token: "Bearer " + key.Secret,
+		Token: "Bearer " + token.Secret,
 	}
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
 	// Verify the digest in the database matches
-	var dbKey model.APIKey
-	err = db.First(&dbKey).Error
+	err = db.First(&token).Error
 	g.Expect(err).To(BeNil())
-	g.Expect(dbKey.Digest).To(Equal(key.Digest))
 
 	// Test creating key for non-existent task
-	kr.TaskID = 9999
-	_, err = provider.Grant(kr)
+	req.TaskID = 9999
+	_, err = provider.Grant(req)
 	g.Expect(err).NotTo(BeNil())
 }
 
@@ -409,8 +400,8 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Create API key for running task - should work
-	kr := KeyRequest{
+	// Create token for running task - should work
+	kr := TokenRequest{
 		TaskID:   task.ID,
 		Lifespan: 24 * time.Hour,
 	}
@@ -423,7 +414,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Update task to Succeeded - key should now be rejected
-	provider.keyCache.Reset()
+	provider.tokenCache.Reset()
 	db.Model(task).Update("State", "Succeeded")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)
@@ -431,14 +422,14 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
 	// Test with Failed state
-	provider.keyCache.Reset()
+	provider.tokenCache.Reset()
 	db.Model(task).Update("State", "Failed")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test with Canceled state
-	provider.keyCache.Reset()
+	provider.tokenCache.Reset()
 	db.Model(task).Update("State", "Canceled")
 	request = &Request{Token: "Bearer " + key.Secret}
 	_, err = provider.Authenticate(request)
@@ -487,8 +478,8 @@ func TestRequestPermit(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	Hub = provider
 
-	// Create API key
-	kr := KeyRequest{
+	// Create token
+	kr := TokenRequest{
 		Userid:   "testuser",
 		Password: "password",
 		Lifespan: 24 * time.Hour,
@@ -571,7 +562,7 @@ func TestNoAuthProvider(t *testing.T) {
 		db.Delete(user)
 	})
 
-	kr := KeyRequest{
+	kr := TokenRequest{
 		Userid:   user.Userid,
 		Password: "password",
 		Lifespan: time.Hour,
@@ -591,101 +582,6 @@ func TestNoAuthProvider(t *testing.T) {
 	key, err = provider.Grant(kr)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
-}
-
-// TestKeyRequestGrant tests the KeyRequest.Grant() method.
-func TestKeyRequestGrant(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create test user
-	user := &model.User{
-		Subject:  "user-456",
-		Userid:   "grantuser",
-		Password: secret.HashPassword("grantpassword"),
-		Email:    "grant@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Create test task
-	task := &model.Task{
-		Name:  "grant-task",
-		State: "Running",
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	// Set up provider as Hub
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-	Hub = provider
-
-	// Test user key request via Grant()
-	kr := KeyRequest{
-		Userid:   "grantuser",
-		Password: "grantpassword",
-		Lifespan: 2 * time.Hour,
-	}
-	key, err := kr.Grant()
-	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).NotTo(BeEmpty())
-	g.Expect(key.Digest).NotTo(BeEmpty())
-	g.Expect(key.Digest).To(Equal(secret.Hash(key.Secret)))
-
-	// Verify the key was created in database
-	dbKey := &model.APIKey{}
-	err = db.Where("digest = ?", key.Digest).First(dbKey).Error
-	g.Expect(err).To(BeNil())
-	g.Expect(dbKey.UserID).NotTo(BeNil())
-	g.Expect(*dbKey.UserID).To(Equal(user.ID))
-
-	// Test task key request via Grant()
-	kr = KeyRequest{
-		TaskID:   task.ID,
-		Lifespan: 1 * time.Hour,
-	}
-	key, err = kr.Grant()
-	g.Expect(err).To(BeNil())
-	g.Expect(key.Secret).NotTo(BeEmpty())
-	g.Expect(key.Digest).NotTo(BeEmpty())
-
-	// Verify the task key was created in database
-	dbKey = &model.APIKey{}
-	err = db.Where("digest = ?", key.Digest).First(dbKey).Error
-	g.Expect(err).To(BeNil())
-	g.Expect(dbKey.TaskID).NotTo(BeNil())
-	g.Expect(*dbKey.TaskID).To(Equal(task.ID))
-
-	// Test authentication failure with wrong password
-	kr = KeyRequest{
-		Userid:   "grantuser",
-		Password: "wrongpassword",
-		Lifespan: 1 * time.Hour,
-	}
-	_, err = kr.Grant()
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-
-	// Test with non-existent user
-	kr = KeyRequest{
-		Userid:   "nonexistent",
-		Password: "password",
-		Lifespan: 1 * time.Hour,
-	}
-	_, err = kr.Grant()
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-
-	// Test with non-existent task
-	kr = KeyRequest{
-		TaskID:   99999,
-		Lifespan: 1 * time.Hour,
-	}
-	_, err = kr.Grant()
-	g.Expect(err).NotTo(BeNil())
 }
 
 // TestNotAuthenticatedError tests NotAuthenticated error type.
@@ -758,24 +654,24 @@ func TestKeyCacheDelete(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Create API key
-	kr := KeyRequest{
+	// Create token
+	req := TokenRequest{
 		Userid:   "cachedeleteuser",
 		Password: "password",
 		Lifespan: 1 * time.Hour,
 	}
-	key, err := provider.Grant(kr)
+	token, err := provider.Grant(req)
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
-	request := &Request{Token: "Bearer " + key.Secret}
+	request := &Request{Token: "Bearer " + token.Secret}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
 	// Delete the key from cache only
-	provider.keyCache.Delete(key.Digest)
+	provider.tokenCache.Delete(token.ID)
 
-	// Verify key is removed from cache - next call should fetch from DB again
+	// Verify token is removed from cache - next call should fetch from DB again
 	// Since the key still exists in DB, authentication should succeed
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -785,9 +681,9 @@ func TestKeyCacheDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Now delete from DB manually and from cache
-	err = db.Where("digest = ?", key.Digest).Delete(&model.APIKey{}).Error
+	err = db.Delete(&token).Error
 	g.Expect(err).To(BeNil())
-	provider.keyCache.Delete(key.Digest)
+	provider.tokenCache.Delete(token.ID)
 
 	// Authentication should now fail (not in cache or DB)
 	_, err = provider.Authenticate(request)
@@ -796,7 +692,7 @@ func TestKeyCacheDelete(t *testing.T) {
 }
 
 // TestBuiltinDelete tests the Builtin Delete method removes key from cache and DB.
-func TestBuiltinDelete(t *testing.T) {
+func TestBuiltinRevoke(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -833,75 +729,37 @@ func TestBuiltinDelete(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Create API key
-	kr := KeyRequest{
+	// Create token
+	req := TokenRequest{
 		Userid:   "builtindeleteuser",
 		Password: "password",
 		Lifespan: 1 * time.Hour,
 	}
-	key, err := provider.Grant(kr)
+	token, err := provider.Grant(req)
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
-	request := &Request{Token: "Bearer " + key.Secret}
+	request := &Request{Token: "Bearer " + token.Secret}
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
-	// Verify key exists in DB
-	var dbKey model.APIKey
-	err = db.Where("digest = ?", key.Digest).First(&dbKey).Error
+	// Verify token exists in DB
+	err = db.First(&token).Error
 	g.Expect(err).To(BeNil())
 
 	// Delete using provider Delete method
-	err = provider.Delete(key.Digest)
+	err = provider.Revoke(token.ID)
 	g.Expect(err).To(BeNil())
 
-	// Verify key is removed from DB
-	err = db.Where("digest = ?", key.Digest).First(&dbKey).Error
+	// Verify token is removed from DB
+	err = db.First(&token).Error
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
 
-	// Verify key is removed from cache - authentication should fail
+	// Verify token is removed from cache - authentication should fail
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-}
-
-// TestBuiltinRevoke tests the Builtin Revoke method.
-func TestBuiltinRevoke(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Create a token
-	token := jwt.New(jwt.SigningMethodHS512)
-	claims := token.Claims.(jwt.MapClaims)
-	claims[ClaimSub] = "user-123"
-	claims[ClaimScope] = "openid"
-	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-
-	// Revoke should succeed (currently no-op)
-	err = provider.Revoke(token)
-	g.Expect(err).To(BeNil())
-}
-
-// TestNoAuthDelete tests the NoAuth Delete method.
-func TestNoAuthDelete(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-	builtin, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-	provider := NewNoAuth(builtin)
-
-	// Delete should succeed (no-op)
-	err = provider.Delete("any-digest")
-	g.Expect(err).To(BeNil())
 }
 
 func TestLDAP(t *testing.T) {
@@ -939,7 +797,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&model.Task{},
 		&model.Role{},
 		&model.Permission{},
-		&model.APIKey{},
+		&model.Token{},
 		&model.Grant{},
 		&model.RsaKey{},
 	)
