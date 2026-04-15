@@ -741,7 +741,7 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 // token returns a token by id.
 func (r *Storage) token(_ context.Context, id string) (m *model.Token, err error) {
 	m = &model.Token{}
-	err = r.db.First(m, "tokenId", id).Error
+	err = r.db.First(m, "authId", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = oidc.ErrInvalidGrant().WithDescription("token not found")
@@ -756,7 +756,7 @@ func (r *Storage) token(_ context.Context, id string) (m *model.Token, err error
 // deleteToken deletes a token by id.
 func (r *Storage) deleteToken(_ context.Context, id string) (err error) {
 	m := &model.Token{}
-	err = r.db.Delete(m, "tokenId", id).Error
+	err = r.db.Delete(m, "authId", id).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
