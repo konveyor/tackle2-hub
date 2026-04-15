@@ -343,7 +343,7 @@ func (r *Storage) RevokeToken(
 	}()
 	digest := secret.Hash(tokenRef)
 	grant := &model.Grant{}
-	err := r.db.First(grant, "tokenDigest", digest).Error
+	err := r.db.First(grant, "refreshToken", digest).Error
 	if err == nil {
 		err = r.deleteGrant(ctx, grant.AuthId)
 		if err != nil {
