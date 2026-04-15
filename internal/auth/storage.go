@@ -275,6 +275,12 @@ func (r *Storage) CreateAccessAndRefreshTokens(
 		return
 	}
 	refreshToken, err = r.createRefreshToken(ctx, req)
+	if err != nil {
+		return
+	}
+	if refreshToken == "" {
+		refreshToken = currentRefresh
+	}
 	return
 }
 
