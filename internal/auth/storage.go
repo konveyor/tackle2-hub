@@ -786,7 +786,9 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *model.Grant, err error) {
 	digest := secret.Hash(token)
 	m = &model.Grant{}
-	err = r.db.First(m, "tokenDigest", digest).Error
+	db := r.db.Where("expiration > ?", time.Now())
+	db = db.Where("tokenDigest", digest)
+	err = db.First(m).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = oidc.ErrInvalidGrant().WithDescription("grant not found")
@@ -831,7 +833,7 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 		return
 	}
 	if count == 0 {
-		grant.Expiration = time.Now().UTC()
+		grant.Expiration = time.Now()
 	}
 	return
 }
