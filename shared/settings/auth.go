@@ -47,7 +47,7 @@ type Auth struct {
 		Lifespan        int
 		RefreshLifespan int
 	}
-	// Key settings.
+	// RSaKey settings.
 	Key struct {
 		Rotation time.Duration
 	}

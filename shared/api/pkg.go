@@ -195,15 +195,22 @@ const (
 
 // Routes - OIDC
 const (
-	OIDCRoutes         = "/oidc"
-	IdpIdentitiesRoute = "/idpidentities"
+	OIDCRoutes       = "/oidc"
+	UsersRoute       = "/users"
+	UserRoute        = UsersRoute + "/:" + ID
+	RolesRoute       = "/roles"
+	RoleRoute        = RolesRoute + "/:" + ID
+	PermissionsRoute = "/permissions"
+	PermissionRoute  = PermissionsRoute + "/:" + ID
+)
+
+// Routes - External IdP
+const (
+	IdpRoute           = "/idp"
+	IdpLoginRoute      = IdpRoute + "/login"
+	IdpCallbackRoute   = IdpRoute + "/callback"
+	IdpIdentitiesRoute = IdpRoute + "/identities"
 	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
-	UsersRoute         = "/users"
-	UserRoute          = UsersRoute + "/:" + ID
-	RolesRoute         = "/roles"
-	RoleRoute          = RolesRoute + "/:" + ID
-	PermissionsRoute   = "/permissions"
-	PermissionRoute    = PermissionsRoute + "/:" + ID
 )
 
 // Routes - Imports

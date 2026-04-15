@@ -24,17 +24,29 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// Tokens routes
 	routeGroup := e.Group("/")
 	routeGroup.POST(api.AuthTokensRoute, h.TokenCreate)
-	// OIDC routes
+	// OIDC routes (hub as provider)
 	baseHandler := auth.Hub.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
-	e.Any(api.OIDCRoutes+"/*path", func(ctx *gin.Context) {
-		path := ctx.Param("path")
-		if path == "/login" {
-			h.Login(ctx)
-		} else {
-			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
-		}
-	})
+	e.Any(
+		api.OIDCRoutes+"/*path",
+		func(ctx *gin.Context) {
+			path := ctx.Param("path")
+			if path == "/login" {
+				h.Login(ctx)
+			} else {
+				strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
+			}
+		})
+	// IdP routes
+	if Settings.Auth.Idp.Enabled {
+		idpHandler := auth.Hub.IdpHandler()
+		strippedIdpHandler := http.StripPrefix(api.IdpRoute, idpHandler)
+		e.Any(
+			api.IdpRoute+"/*path",
+			func(ctx *gin.Context) {
+				strippedIdpHandler.ServeHTTP(ctx.Writer, ctx.Request)
+			})
+	}
 	// IdpIdentity routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
@@ -94,7 +106,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 // @tags idpidentities
 // @produce json
 // @success 200 {object} api.IdpIdentity
-// @router /idpidentities/{id} [get]
+// @router /idp/identities/{id} [get]
 // @param id path int true "IdpIdentity ID"
 func (h AuthHandler) IdpIdentityGet(ctx *gin.Context) {
 	id := h.pk(ctx)
@@ -117,7 +129,7 @@ func (h AuthHandler) IdpIdentityGet(ctx *gin.Context) {
 // @tags idpidentities
 // @produce json
 // @success 200 {object} []api.IdpIdentity
-// @router /idpidentities [get]
+// @router /idp/identities [get]
 func (h AuthHandler) IdpIdentityList(ctx *gin.Context) {
 	var list []model.IdpIdentity
 	db := h.preLoad(h.DB(ctx), clause.Associations)
@@ -143,7 +155,7 @@ func (h AuthHandler) IdpIdentityList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} api.IdpIdentity
-// @router /idpidentities [post]
+// @router /idp/identities [post]
 // @param idpidentity body api.IdpIdentity true "IdpIdentity data"
 func (h AuthHandler) IdpIdentityCreate(ctx *gin.Context) {
 	r := &IdpIdentity{}
@@ -170,7 +182,7 @@ func (h AuthHandler) IdpIdentityCreate(ctx *gin.Context) {
 // @tags idpidentities
 // @accept json
 // @success 204
-// @router /idpidentities/{id} [put]
+// @router /idp/identities/{id} [put]
 // @param id path int true "IdpIdentity ID"
 // @param idpidentity body api.IdpIdentity true "IdpIdentity data"
 func (h AuthHandler) IdpIdentityUpdate(ctx *gin.Context) {
@@ -200,7 +212,7 @@ func (h AuthHandler) IdpIdentityUpdate(ctx *gin.Context) {
 // @description Delete an IDP identity.
 // @tags idpidentities
 // @success 204
-// @router /idpidentities/{id} [delete]
+// @router /idp/identities/{id} [delete]
 // @param id path int true "IdpIdentity ID"
 func (h AuthHandler) IdpIdentityDelete(ctx *gin.Context) {
 	id := h.pk(ctx)

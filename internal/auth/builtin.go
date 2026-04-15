@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rsa"
 	"errors"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
 )
@@ -71,6 +73,7 @@ func (j *JWK) ID() (s string) {
 type Builtin struct {
 	db         *gorm.DB
 	provider   op.OpenIDProvider
+	idpHandler *IdpHandler
 	tokenCache *TokenCache
 	storage    *Storage
 	keySet     KeySet
@@ -79,6 +82,12 @@ type Builtin struct {
 // Handler returns an http handler.
 func (p *Builtin) Handler() (h http.Handler) {
 	h = p.provider
+	return
+}
+
+// IdpHandler returns the IdP federation handler.
+func (p *Builtin) IdpHandler() (h *IdpHandler) {
+	h = p.idpHandler
 	return
 }
 
@@ -372,6 +381,27 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
+	}
+	// Initialize RP client and IdpHandler if external IdP is enabled
+	if Settings.Auth.Idp.Enabled {
+		var rpClient rp.RelyingParty
+		rpClient, err = rp.NewRelyingPartyOIDC(
+			context.Background(),
+			Settings.Auth.Idp.IssuerURL,
+			Settings.Auth.Idp.ClientID,
+			Settings.Auth.Idp.ClientSecret,
+			Settings.Auth.Idp.RedirectURI,
+			Settings.Auth.Idp.Scopes,
+		)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		builtin.idpHandler = &IdpHandler{
+			rpClient: rpClient,
+			db:       db,
+			storage:  builtin.storage,
+		}
 	}
 	return
 }

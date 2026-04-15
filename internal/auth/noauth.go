@@ -42,3 +42,9 @@ func (r *NoAuth) Handler() (h http.Handler) {
 	h = r.Builtin.Handler()
 	return
 }
+
+// IdpHandler returns the external IdP handler.
+func (r *NoAuth) IdpHandler() (h *IdpHandler) {
+	h = r.Builtin.IdpHandler()
+	return
+}
