@@ -212,7 +212,7 @@ type Identity struct {
 type User struct {
 	Model
 	Subject  string `gorm:"<-:create;index;not null"`
-	Userid   string `gorm:"<-:create;index;not null"`
+	Userid   string `gorm:"<-:create;uniqueIndex;not null"`
 	Password string `gorm:"not null"` // hashed
 	Email    string `gorm:"index;not null"`
 	Roles    []Role `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
