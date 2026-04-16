@@ -16,7 +16,7 @@ import (
 const (
 	KindAccessToken = "access"
 	KindAuthCode    = "authCode"
-	KindAPIKey      = "apiKey"
+	KindAPIKey      = "apikey"
 )
 
 var (

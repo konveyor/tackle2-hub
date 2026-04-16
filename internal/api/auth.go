@@ -679,7 +679,7 @@ func (h AuthHandler) GrantDelete(ctx *gin.Context) {
 
 // TokenCreate godoc
 // @summary TokenCreate create a token.
-// @description TokenCreate create a token.
+// @description TokenCreate create an (apikey) token.
 // @tags auth
 // @produce json
 // @success 201 {object} api.Token
@@ -699,6 +699,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 		r.Lifespan = int(r.Expiration.Sub(time.Now()) / time.Hour)
 	}
 	req := auth.TokenRequest{
+		Kind:     auth.KindAPIKey,
 		Userid:   r.Userid,
 		Password: r.Password,
 		Lifespan: time.Hour * time.Duration(r.Lifespan),
