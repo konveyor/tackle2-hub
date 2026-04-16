@@ -40,12 +40,8 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// IdP routes
 	if Settings.Auth.Idp.Enabled {
 		idpHandler := auth.Hub.IdpHandler()
-		strippedIdpHandler := http.StripPrefix(api.IdpRoute, idpHandler)
-		e.Any(
-			api.IdpRoute+"/*path",
-			func(ctx *gin.Context) {
-				strippedIdpHandler.ServeHTTP(ctx.Writer, ctx.Request)
-			})
+		e.GET(api.IdpRoute+"/login", idpHandler.Login)
+		e.GET(api.IdpRoute+"/callback", idpHandler.LoginFinished)
 	}
 	// IdpIdentity routes.
 	routeGroup = e.Group("/")
