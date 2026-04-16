@@ -11,7 +11,7 @@ type IdpIdentity api.IdpIdentity
 // With converts model to REST resource.
 func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	baseWith(&r.Resource, &m.Model)
-	r.Provider = m.Provider
+	r.Issuer = m.Issuer
 	r.Subject = m.Subject
 	r.Userid = m.Userid
 	r.Email = m.Email
@@ -26,7 +26,7 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 // Model converts REST resource to model.
 func (r *IdpIdentity) Model() (m *model.IdpIdentity) {
 	m = &model.IdpIdentity{
-		Provider:          r.Provider,
+		Issuer:            r.Issuer,
 		Subject:           r.Subject,
 		Userid:            r.Userid,
 		Email:             r.Email,

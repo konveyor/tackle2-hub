@@ -144,7 +144,7 @@ type Extension struct {
 // IdpIdentity REST resource.
 type IdpIdentity struct {
 	Resource          `yaml:",inline"`
-	Provider          string    `json:"provider" binding:"required"`
+	Issuer            string    `json:"issuer" binding:"required"`
 	Subject           string    `json:"subject" binding:"required"`
 	Userid            string    `json:"userid"`
 	Email             string    `json:"email"`

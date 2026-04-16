@@ -236,7 +236,7 @@ type Permission struct {
 
 type IdpIdentity struct {
 	Model
-	Provider          string    `gorm:"not null"`
+	Issuer            string    `gorm:"not null"`
 	Subject           string    `gorm:"not null"`
 	RefreshToken      string    `gorm:"not null" secret:""`
 	Expiration        time.Time `gorm:"index"`

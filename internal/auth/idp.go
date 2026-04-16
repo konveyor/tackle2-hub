@@ -259,7 +259,7 @@ func (h *IdpHandler) createIdpIdentity(
 	}
 
 	idpIdentity = &model.IdpIdentity{
-		Provider:          Settings.Auth.Idp.Name,
+		Issuer:            Settings.Auth.Idp.Name,
 		Subject:           userInfo.Subject,
 		Userid:            userid,
 		Email:             email,
