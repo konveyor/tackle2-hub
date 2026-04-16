@@ -691,18 +691,17 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if r.Lifespan == 0 {
+		r.Lifespan = Settings.APIKey.Lifespan
+	}
 	if r.Expiration.IsZero() {
-		if r.Lifespan == 0 {
-			r.Lifespan = Settings.APIKey.Lifespan
-		}
-	} else {
-		r.Lifespan = int(r.Expiration.Sub(time.Now()) / time.Hour)
+		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
 	}
 	req := auth.TokenRequest{
 		Kind:     auth.KindAPIKey,
 		Userid:   r.Userid,
 		Password: r.Password,
-		Lifespan: time.Hour * time.Duration(r.Lifespan),
+		Lifespan: time.Until(r.Expiration),
 	}
 	token, err := req.Grant()
 	if err != nil {
