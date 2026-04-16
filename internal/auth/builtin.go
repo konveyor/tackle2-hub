@@ -224,7 +224,7 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 // Revoke a token.
 func (p *Builtin) Revoke(tokenId uint) (err error) {
 	p.tokenCache.Delete(tokenId)
-	m := &model.Task{}
+	m := &model.Token{}
 	m.ID = tokenId
 	err = p.db.Delete(m).Error
 	return

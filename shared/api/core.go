@@ -194,17 +194,18 @@ type Grant struct {
 
 // Token REST resource.
 type Token struct {
-	Resource   `yaml:",inline"`
-	Kind       string    `json:"kind"`
-	AuthId     string    `json:"authId,omitempty" yaml:"authId,omitempty"`
-	Subject    string    `json:"subject,omitempty" yaml:",omitempty"`
-	Scopes     string    `json:"scopes,omitempty" yaml:",omitempty"`
-	Issued     time.Time `json:"issued,omitempty" yaml:",omitempty"`
-	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
-	Lifespan   int       `json:"lifespan,omitempty" yaml:",omitempty"`
-	Grant      *Ref      `json:"grant" yaml:"grant,omitempty" yaml:",omitempty"`
-	Task       *Ref      `json:"task,omitempty" yaml:"task,omitempty" yaml:",omitempty"`
-	User       *Ref      `json:"user,omitempty" yaml:"user,omitempty" yaml:",omitempty"`
+	Resource    `yaml:",inline"`
+	Kind        string    `json:"kind"`
+	AuthId      string    `json:"authId,omitempty" yaml:"authId,omitempty"`
+	Subject     string    `json:"subject,omitempty" yaml:",omitempty"`
+	Scopes      string    `json:"scopes,omitempty" yaml:",omitempty"`
+	Issued      time.Time `json:"issued,omitempty" yaml:",omitempty"`
+	Expiration  time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Lifespan    int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Grant       *Ref      `json:"grant,omitempty" yaml:"grant,omitempty"`
+	Task        *Ref      `json:"task,omitempty" yaml:"task,omitempty"`
+	User        *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
+	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:"idpIdentity,omitempty"`
 }
 
 // TokenRequest REST resource.
