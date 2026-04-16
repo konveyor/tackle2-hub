@@ -184,7 +184,7 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find or create IdP identity
-	idpIdentity, err := h.findOrCreateIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
+	idpIdentity, err := h.ensureIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
 	if err != nil {
 		Log.Error(err, "IdP identity creation/update failed")
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
@@ -202,29 +202,22 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// findOrCreateIdpIdentity finds existing identity or creates new one from IdP userinfo.
-func (h *IdpHandler) findOrCreateIdpIdentity(
+// ensureIdpIdentity finds existing identity or creates new one from IdP userinfo.
+func (h *IdpHandler) ensureIdpIdentity(
 	ctx context.Context,
 	userInfo *oidc.UserInfo,
 	tokens *oidc.Tokens[*oidc.IDTokenClaims],
 	accessTokenClaims map[string]any) (idpIdentity *model.IdpIdentity, err error) {
 	//
 	idpIdentity = &model.IdpIdentity{}
-	result := h.db.First(
-		idpIdentity,
-		"Provider = ? AND Subject = ?",
-		Settings.Auth.Idp.Name,
-		userInfo.Subject,
-	)
-
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		// First time login - create identity
+	err = h.db.First(idpIdentity, "subject", userInfo.Subject).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		idpIdentity, err = h.createIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
 		if err != nil {
 			return
 		}
-	} else if result.Error != nil {
-		err = liberr.Wrap(result.Error)
+	} else if err != nil {
+		err = liberr.Wrap(err)
 		return
 	} else {
 		// Returning user - update identity
