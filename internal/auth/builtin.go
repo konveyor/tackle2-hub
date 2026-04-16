@@ -19,53 +19,69 @@ import (
 	"gorm.io/gorm"
 )
 
-// KeySet represents a JSON Web Key Set.
-type KeySet struct {
-	Keys []JWK
-}
-
-// SigningKey returns the primary signing key.
-func (k *KeySet) SigningKey() (key op.SigningKey) {
-	if len(k.Keys) > 0 {
-		key = &k.Keys[0]
+// NewBuiltin returns a configured provider.
+func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
+	builtin = &Builtin{
+		tokenCache: NewCache(db),
+		db:         db,
 	}
-	return
-}
-
-// Key returns a key by ID.
-func (k *KeySet) Key(id string) (jwk JWK, err error) {
-	for _, key := range k.Keys {
-		if key.KeyID == id {
-			jwk = key
+	keyManager := NewKeyManager(db)
+	builtin.keySet, err = keyManager.KeySet()
+	if err != nil {
+		return
+	}
+	builtin.storage = &Storage{
+		db:         db,
+		keySet:     builtin.keySet,
+		authReqs:   make(map[string]*AuthRequest),
+		authByCode: make(map[string]string),
+	}
+	issuer := Settings.IssuerURL
+	if issuer == "" {
+		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
+	}
+	config := &op.Config{
+		CodeMethodS256:          true,
+		AuthMethodPost:          true,
+		AuthMethodPrivateKeyJWT: false,
+		GrantTypeRefreshToken:   true,
+		RequestObjectSupported:  false,
+		DeviceAuthorization:     op.DeviceAuthorizationConfig{},
+	}
+	builtin.provider, err = op.NewProvider(
+		config,
+		builtin.storage,
+		op.StaticIssuer(issuer),
+		op.WithAllowInsecure(),
+		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
+		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
+		op.WithCustomEndSessionEndpoint(op.NewEndpoint("logout")),
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	// Initialize RP client and IdpHandler if external IdP is enabled
+	if Settings.Auth.Idp.Enabled {
+		var rpClient rp.RelyingParty
+		rpClient, err = rp.NewRelyingPartyOIDC(
+			context.Background(),
+			Settings.Auth.Idp.IssuerURL,
+			Settings.Auth.Idp.ClientID,
+			Settings.Auth.Idp.ClientSecret,
+			Settings.Auth.Idp.RedirectURI,
+			Settings.Auth.Idp.Scopes,
+		)
+		if err != nil {
+			err = liberr.Wrap(err)
 			return
 		}
+		builtin.idpHandler = &IdpHandler{
+			rpClient: rpClient,
+			db:       db,
+			storage:  builtin.storage,
+		}
 	}
-	err = errors.New("key not found")
-	return
-}
-
-// JWK a JSON Web Key.
-type JWK struct {
-	KeyID      string
-	Algorithm  string
-	Use        string
-	PrivateKey any
-}
-
-// SignatureAlgorithm returns the signature algorithm.
-func (j *JWK) SignatureAlgorithm() (s jose.SignatureAlgorithm) {
-	s = jose.SignatureAlgorithm(j.Algorithm)
-	return
-}
-
-// Key returns the private key.
-func (j *JWK) Key() any {
-	return j.PrivateKey
-}
-
-// ID returns the key ID.
-func (j *JWK) ID() (s string) {
-	s = j.KeyID
 	return
 }
 
@@ -340,68 +356,52 @@ func (p *Builtin) newToken(req TokenRequest) (token Token) {
 	return
 }
 
-// NewBuiltin returns a configured provider.
-func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
-	builtin = &Builtin{
-		tokenCache: NewCache(db),
-		db:         db,
+// KeySet represents a JSON Web Key Set.
+type KeySet struct {
+	Keys []JWK
+}
+
+// SigningKey returns the primary signing key.
+func (k *KeySet) SigningKey() (key op.SigningKey) {
+	if len(k.Keys) > 0 {
+		key = &k.Keys[0]
 	}
-	keyManager := NewKeyManager(db)
-	builtin.keySet, err = keyManager.KeySet()
-	if err != nil {
-		return
-	}
-	builtin.storage = &Storage{
-		db:         db,
-		keySet:     builtin.keySet,
-		authReqs:   make(map[string]*AuthRequest),
-		authByCode: make(map[string]string),
-	}
-	issuer := Settings.IssuerURL
-	if issuer == "" {
-		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
-	}
-	config := &op.Config{
-		CodeMethodS256:          true,
-		AuthMethodPost:          true,
-		AuthMethodPrivateKeyJWT: false,
-		GrantTypeRefreshToken:   true,
-		RequestObjectSupported:  false,
-		DeviceAuthorization:     op.DeviceAuthorizationConfig{},
-	}
-	builtin.provider, err = op.NewProvider(
-		config,
-		builtin.storage,
-		op.StaticIssuer(issuer),
-		op.WithAllowInsecure(),
-		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
-		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
-		op.WithCustomEndSessionEndpoint(op.NewEndpoint("logout")),
-	)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	// Initialize RP client and IdpHandler if external IdP is enabled
-	if Settings.Auth.Idp.Enabled {
-		var rpClient rp.RelyingParty
-		rpClient, err = rp.NewRelyingPartyOIDC(
-			context.Background(),
-			Settings.Auth.Idp.IssuerURL,
-			Settings.Auth.Idp.ClientID,
-			Settings.Auth.Idp.ClientSecret,
-			Settings.Auth.Idp.RedirectURI,
-			Settings.Auth.Idp.Scopes,
-		)
-		if err != nil {
-			err = liberr.Wrap(err)
+	return
+}
+
+// Key returns a key by ID.
+func (k *KeySet) Key(id string) (jwk JWK, err error) {
+	for _, key := range k.Keys {
+		if key.KeyID == id {
+			jwk = key
 			return
 		}
-		builtin.idpHandler = &IdpHandler{
-			rpClient: rpClient,
-			db:       db,
-			storage:  builtin.storage,
-		}
 	}
+	err = errors.New("key not found")
+	return
+}
+
+// JWK a JSON Web Key.
+type JWK struct {
+	KeyID      string
+	Algorithm  string
+	Use        string
+	PrivateKey any
+}
+
+// SignatureAlgorithm returns the signature algorithm.
+func (j *JWK) SignatureAlgorithm() (s jose.SignatureAlgorithm) {
+	s = jose.SignatureAlgorithm(j.Algorithm)
+	return
+}
+
+// Key returns the private key.
+func (j *JWK) Key() any {
+	return j.PrivateKey
+}
+
+// ID returns the key ID.
+func (j *JWK) ID() (s string) {
+	s = j.KeyID
 	return
 }
