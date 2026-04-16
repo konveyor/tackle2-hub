@@ -32,6 +32,16 @@ type Storage struct {
 	authByCode map[string]string
 }
 
+// Subject represents a resolved subject (User or IdpIdentity).
+type Subject struct {
+	name          string
+	email         string
+	roles         []string
+	scopes        []string
+	userId        *uint
+	idpIdentityId *uint
+}
+
 // GetClientByClientID retrieves a client by ID.
 func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (client op.Client, err error) {
 	defer func() {
@@ -216,8 +226,12 @@ func (r *Storage) CreateAccessToken(
 	}
 	tokenId = r.genId()
 	subject := req.GetSubject()
-	userId := r.userId(subject)
-	idpIdentityId := r.idpIdentityId(subject)
+	s, err := r.findSubject(subject)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+		}
+	}
 	grantId := ""
 	expiration = time.Now().Add(
 		time.Duration(Settings.Token.Lifespan) * time.Second)
@@ -230,15 +244,17 @@ func (r *Storage) CreateAccessToken(
 		return
 	}
 	m := &model.Token{
-		Kind:          KindAccessToken,
-		AuthId:        tokenId,
-		Subject:       subject,
-		Scopes:        strings.Join(req.GetScopes(), " "),
-		Issued:        time.Now(),
-		Expiration:    expiration,
-		GrantID:       r.grantId(grantId),
-		UserID:        userId,
-		IdpIdentityID: idpIdentityId,
+		Kind:       KindAccessToken,
+		AuthId:     tokenId,
+		Subject:    subject,
+		Scopes:     strings.Join(req.GetScopes(), " "),
+		Issued:     time.Now(),
+		Expiration: expiration,
+		GrantID:    r.grantId(grantId),
+	}
+	if s != nil {
+		m.UserID = s.userId
+		m.IdpIdentityID = s.idpIdentityId
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -437,42 +453,7 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 		return
 	}
 
-	// Check if this is a federated user
-	if strings.HasPrefix(userID, "idp:") {
-		// Extract provider and subject from hub subject (format: "idp:provider:subject")
-		parts := strings.SplitN(userID, ":", 3)
-		if len(parts) != 3 {
-			return
-		}
-		provider := parts[1]
-		idpSubject := parts[2]
-
-		// Find IdP identity directly
-		var idpIdentity model.IdpIdentity
-		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = nil
-			} else {
-				err = liberr.Wrap(err)
-			}
-			return
-		}
-
-		// Use IdP scopes and roles directly
-		if idpIdentity.Roles != "" {
-			claims["roles"] = strings.Fields(idpIdentity.Roles)
-		}
-		if idpIdentity.Scopes != "" {
-			claims[ClaimScope] = idpIdentity.Scopes
-		}
-		return
-	}
-
-	// Local user - lookup User and compute roles and scopes from database
-	user := &model.User{}
-	db := r.db.Preload(clause.Associations)
-	err = db.First(user, "subject", userID).Error
+	s, err := r.findSubject(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil
@@ -481,13 +462,13 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 		}
 		return
 	}
-
-	roles := make([]string, 0, len(user.Roles))
-	for _, role := range user.Roles {
-		roles = append(roles, role.Name)
+	if s == nil {
+		return
 	}
-	if len(roles) > 0 {
-		claims["roles"] = roles
+
+	// Add roles
+	if len(s.roles) > 0 {
+		claims["roles"] = s.roles
 	}
 
 	// Add scopes to JWT claims
@@ -514,45 +495,16 @@ func (r *Storage) SetUserinfoFromScopes(
 		}
 	}()
 
-	// Check if this is a federated user
-	if strings.HasPrefix(userId, "idp:") {
-		// Extract provider and subject from hub subject (format: "idp:provider:subject")
-		parts := strings.SplitN(userId, ":", 3)
-		if len(parts) != 3 {
-			err = liberr.New("invalid federated subject format")
-			return
-		}
-		provider := parts[1]
-		idpSubject := parts[2]
-
-		// Find IdP identity
-		var idpIdentity model.IdpIdentity
-		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-
-		userinfo.Subject = userId
-		userinfo.PreferredUsername = idpIdentity.Userid
-		if idpIdentity.Email != "" {
-			userinfo.Email = idpIdentity.Email
-			userinfo.EmailVerified = true
-		}
-		return
-	}
-
-	// Local user - lookup User record
-	user := &model.User{}
-	err = r.db.First(user, "subject", userId).Error
+	s, err := r.findSubject(userId)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	userinfo.Subject = user.Subject
-	userinfo.PreferredUsername = user.Userid
-	if user.Email != "" {
-		userinfo.Email = user.Email
+
+	userinfo.Subject = userId
+	userinfo.PreferredUsername = s.name
+	if s.email != "" {
+		userinfo.Email = s.email
 		userinfo.EmailVerified = true
 	}
 	return
@@ -572,45 +524,19 @@ func (r *Storage) SetUserinfoFromToken(
 		}
 	}()
 
-	// Check if this is a federated user
-	if strings.HasPrefix(subject, "idp:") {
-		// Extract provider and subject from hub subject (format: "idp:provider:subject")
-		parts := strings.SplitN(subject, ":", 3)
-		if len(parts) != 3 {
-			err = liberr.New("invalid federated subject format")
-			return
-		}
-		provider := parts[1]
-		idpSubject := parts[2]
-
-		// Find IdP identity
-		var idpIdentity model.IdpIdentity
-		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-
-		userinfo.Subject = subject
-		userinfo.PreferredUsername = idpIdentity.Userid
-		if idpIdentity.Email != "" {
-			userinfo.Email = idpIdentity.Email
-			userinfo.EmailVerified = true
-		}
-		return
-	}
-
-	// Local user - lookup User record
-	user := &model.User{}
-	err = r.db.First(user, "subject", subject).Error
+	s, err := r.findSubject(subject)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	userinfo.Subject = user.Subject
-	userinfo.PreferredUsername = user.Userid
-	if user.Email != "" {
-		userinfo.Email = user.Email
+	if s == nil {
+		return
+	}
+
+	userinfo.Subject = subject
+	userinfo.PreferredUsername = s.name
+	if s.email != "" {
+		userinfo.Email = s.email
 		userinfo.EmailVerified = true
 	}
 	return
@@ -790,16 +716,13 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
 	return
 }
 
-// injectScopes adds user permissions as scopes to the token request.
+// injectScopes adds user/identity permissions as scopes to the token request.
 func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
-	userID := req.GetSubject()
-	if userID == "" {
+	subject := req.GetSubject()
+	if subject == "" {
 		return
 	}
-	user := &model.User{}
-	db := r.db.Preload(clause.Associations)
-	db = db.Preload("Roles.Permissions")
-	err = db.First(user, "subject", userID).Error
+	s, err := r.findSubject(subject)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil
@@ -808,13 +731,10 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 		}
 		return
 	}
-	userScopes := make([]string, 0)
-	for _, role := range user.Roles {
-		for _, permission := range role.Permissions {
-			userScopes = append(userScopes, permission.Scope)
-		}
+	if s == nil {
+		return
 	}
-	scopes := append(req.GetScopes(), userScopes...)
+	scopes := append(req.GetScopes(), s.scopes...)
 	scopeMap := make(map[string]bool)
 	uniqueScopes := make([]string, 0)
 	for _, scope := range scopes {
@@ -999,36 +919,46 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 	return
 }
 
-// userId returns the user ID by subject.
-func (r *Storage) userId(subject string) (id *uint) {
-	m := &model.User{}
-	err := r.db.First(m, "subject", subject).Error
+// findSubject finds and resolves a subject to User or IdpIdentity.
+func (r *Storage) findSubject(subject string) (s *Subject, err error) {
+	user := &model.User{}
+	db := r.db.Preload(clause.Associations).Preload("Roles.Permissions")
+	err = db.First(user, "subject", subject).Error
+	if err == nil {
+		s = &Subject{
+			name:   user.Userid,
+			email:  user.Email,
+			userId: &user.ID,
+			roles:  make([]string, 0),
+			scopes: make([]string, 0),
+		}
+		for _, role := range user.Roles {
+			s.roles = append(s.roles, role.Name)
+			// Extract permission scopes
+			for _, permission := range role.Permissions {
+				s.scopes = append(s.scopes, permission.Scope)
+			}
+		}
+		return
+	}
+	idpIdentity := &model.IdpIdentity{}
+	err = r.db.First(idpIdentity, "subject", subject).Error
 	if err != nil {
 		return
 	}
-	id = &m.ID
-	return
-}
-
-// idpIdentityId returns the IdP identity ID by subject.
-func (r *Storage) idpIdentityId(subject string) (id *uint) {
-	if !strings.HasPrefix(subject, "idp:") {
-		return
+	s = &Subject{
+		name:          idpIdentity.Userid,
+		email:         idpIdentity.Email,
+		idpIdentityId: &idpIdentity.ID,
+		roles:         make([]string, 0),
+		scopes:        make([]string, 0),
 	}
-	// Extract IdP subject from hub subject (format: "idp:provider:subject")
-	parts := strings.SplitN(subject, ":", 3)
-	if len(parts) != 3 {
-		return
+	if idpIdentity.Roles != "" {
+		s.roles = strings.Fields(idpIdentity.Roles)
 	}
-	provider := parts[1]
-	idpSubject := parts[2]
-
-	m := &model.IdpIdentity{}
-	err := r.db.First(m, "Provider = ? AND Subject = ?", provider, idpSubject).Error
-	if err != nil {
-		return
+	if idpIdentity.Scopes != "" {
+		s.scopes = strings.Fields(idpIdentity.Scopes)
 	}
-	id = &m.ID
 	return
 }
 

@@ -385,8 +385,8 @@ func (h *IdpHandler) issueHubTokens(
 	var state string
 	var requestID string
 
-	// Build subject from IdP identity
-	subject := h.idpSubject(idpIdentity.Subject)
+	// Use external IdP subject directly
+	subject := idpIdentity.Subject
 
 	if authRequestID != "" {
 		// Complete existing OIDC authorization request
@@ -443,12 +443,6 @@ func (h *IdpHandler) issueHubTokens(
 
 	// Redirect to UI
 	http.Redirect(w, r, redirectURL, http.StatusFound)
-	return
-}
-
-// idpSubject builds the hub subject from IdP subject.
-func (h *IdpHandler) idpSubject(subject string) (s string) {
-	s = fmt.Sprintf("idp:%s:%s", Settings.Auth.Idp.Name, subject)
 	return
 }
 
