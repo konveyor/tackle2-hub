@@ -513,6 +513,36 @@ func (r *Storage) SetUserinfoFromScopes(
 			Log.Error(err, "")
 		}
 	}()
+
+	// Check if this is a federated user
+	if strings.HasPrefix(userId, "idp:") {
+		// Extract provider and subject from hub subject (format: "idp:provider:subject")
+		parts := strings.SplitN(userId, ":", 3)
+		if len(parts) != 3 {
+			err = liberr.New("invalid federated subject format")
+			return
+		}
+		provider := parts[1]
+		idpSubject := parts[2]
+
+		// Find IdP identity
+		var idpIdentity model.IdpIdentity
+		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+
+		userinfo.Subject = userId
+		userinfo.PreferredUsername = idpIdentity.Userid
+		if idpIdentity.Email != "" {
+			userinfo.Email = idpIdentity.Email
+			userinfo.EmailVerified = true
+		}
+		return
+	}
+
+	// Local user - lookup User record
 	user := &model.User{}
 	err = r.db.First(user, "subject", userId).Error
 	if err != nil {
@@ -541,6 +571,36 @@ func (r *Storage) SetUserinfoFromToken(
 			Log.Error(err, "")
 		}
 	}()
+
+	// Check if this is a federated user
+	if strings.HasPrefix(subject, "idp:") {
+		// Extract provider and subject from hub subject (format: "idp:provider:subject")
+		parts := strings.SplitN(subject, ":", 3)
+		if len(parts) != 3 {
+			err = liberr.New("invalid federated subject format")
+			return
+		}
+		provider := parts[1]
+		idpSubject := parts[2]
+
+		// Find IdP identity
+		var idpIdentity model.IdpIdentity
+		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+
+		userinfo.Subject = subject
+		userinfo.PreferredUsername = idpIdentity.Userid
+		if idpIdentity.Email != "" {
+			userinfo.Email = idpIdentity.Email
+			userinfo.EmailVerified = true
+		}
+		return
+	}
+
+	// Local user - lookup User record
 	user := &model.User{}
 	err = r.db.First(user, "subject", subject).Error
 	if err != nil {

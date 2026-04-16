@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
@@ -174,8 +175,16 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse access token to extract claims
+	accessTokenClaims, err := h.parseAccessToken(tokens.AccessToken)
+	if err != nil {
+		Log.Error(err, "access token parsing failed")
+		http.Error(w, "authentication failed", http.StatusInternalServerError)
+		return
+	}
+
 	// Find or create IdP identity
-	idpIdentity, err := h.findOrCreateIdpIdentity(ctx, userInfo, tokens)
+	idpIdentity, err := h.findOrCreateIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
 	if err != nil {
 		Log.Error(err, "IdP identity creation/update failed")
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
@@ -197,7 +206,8 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 func (h *IdpHandler) findOrCreateIdpIdentity(
 	ctx context.Context,
 	userInfo *oidc.UserInfo,
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (idpIdentity *model.IdpIdentity, err error) {
+	tokens *oidc.Tokens[*oidc.IDTokenClaims],
+	accessTokenClaims map[string]any) (idpIdentity *model.IdpIdentity, err error) {
 	//
 	idpIdentity = &model.IdpIdentity{}
 	result := h.db.First(
@@ -209,7 +219,7 @@ func (h *IdpHandler) findOrCreateIdpIdentity(
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		// First time login - create identity
-		idpIdentity, err = h.createIdpIdentity(ctx, userInfo, tokens)
+		idpIdentity, err = h.createIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
 		if err != nil {
 			return
 		}
@@ -218,7 +228,7 @@ func (h *IdpHandler) findOrCreateIdpIdentity(
 		return
 	} else {
 		// Returning user - update identity
-		err = h.updateIdpIdentity(ctx, idpIdentity, tokens, userInfo)
+		err = h.updateIdpIdentity(ctx, idpIdentity, tokens, userInfo, accessTokenClaims)
 		if err != nil {
 			return
 		}
@@ -231,7 +241,8 @@ func (h *IdpHandler) findOrCreateIdpIdentity(
 func (h *IdpHandler) createIdpIdentity(
 	ctx context.Context,
 	userInfo *oidc.UserInfo,
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (idpIdentity *model.IdpIdentity, err error) {
+	tokens *oidc.Tokens[*oidc.IDTokenClaims],
+	accessTokenClaims map[string]any) (idpIdentity *model.IdpIdentity, err error) {
 	//
 	// Extract user details from userinfo
 	email := userInfo.Email
@@ -244,8 +255,8 @@ func (h *IdpHandler) createIdpIdentity(
 		userid = userInfo.Subject
 	}
 
-	// Extract scopes and roles from IdP token
-	scopes, roles := h.extractClaimsFromToken(tokens)
+	// Extract scopes and roles from access token
+	scopes, roles := h.extractClaimsFromAccessToken(accessTokenClaims)
 
 	// Create IdpIdentity
 	expiration := time.Now().Add(
@@ -283,7 +294,8 @@ func (h *IdpHandler) updateIdpIdentity(
 	ctx context.Context,
 	idpIdentity *model.IdpIdentity,
 	tokens *oidc.Tokens[*oidc.IDTokenClaims],
-	userInfo *oidc.UserInfo) (err error) {
+	userInfo *oidc.UserInfo,
+	accessTokenClaims map[string]any) (err error) {
 	//
 	// Update user details from userinfo
 	if userInfo.Email != "" {
@@ -293,8 +305,8 @@ func (h *IdpHandler) updateIdpIdentity(
 		idpIdentity.Userid = userInfo.PreferredUsername
 	}
 
-	// Extract scopes and roles from IdP token
-	scopes, roles := h.extractClaimsFromToken(tokens)
+	// Extract scopes and roles from access token
+	scopes, roles := h.extractClaimsFromAccessToken(accessTokenClaims)
 
 	// Update tokens, timestamps, and claims
 	idpIdentity.RefreshToken = tokens.RefreshToken
@@ -316,11 +328,10 @@ func (h *IdpHandler) updateIdpIdentity(
 	return
 }
 
-// extractClaimsFromToken extracts scopes and roles from IdP token.
-func (h *IdpHandler) extractClaimsFromToken(
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (scopes string, roles string) {
+// extractClaimsFromAccessToken extracts scopes and roles from access token claims.
+func (h *IdpHandler) extractClaimsFromAccessToken(
+	claims map[string]any) (scopes string, roles string) {
 	//
-	claims := tokens.IDTokenClaims.Claims
 	if claims == nil {
 		return
 	}
@@ -334,12 +345,6 @@ func (h *IdpHandler) extractClaimsFromToken(
 	if roleClaim, found := claims["roles"]; found {
 		roles = h.stringFromClaim(roleClaim)
 	}
-
-	Log.Info(
-		"Extracted claims from IdP token",
-		"subject", tokens.IDTokenClaims.GetSubject(),
-		"scopes", scopes,
-		"roles", roles)
 
 	return
 }
@@ -452,5 +457,28 @@ func (h *IdpHandler) generateState() (state string) {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 	state = base64.URLEncoding.EncodeToString(b)
+	return
+}
+
+// parseAccessToken parses the access token JWT and returns the claims.
+func (h *IdpHandler) parseAccessToken(accessToken string) (claims map[string]any, err error) {
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
+	token, _, err := parser.ParseUnverified(accessToken, jwt.MapClaims{})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
+	mapClaims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		err = liberr.New("invalid token claims type")
+		return
+	}
+
+	claims = make(map[string]any)
+	for k, v := range mapClaims {
+		claims[k] = v
+	}
+
 	return
 }
