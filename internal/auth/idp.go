@@ -212,7 +212,7 @@ func (h *IdpHandler) ensureIdpIdentity(
 	idpIdentity = &model.IdpIdentity{}
 	err = h.db.First(idpIdentity, "subject", userInfo.Subject).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		idpIdentity, err = h.createIdpIdentity(ctx, userInfo, tokens, accessTokenClaims)
+		idpIdentity, err = h.createIdpIdentity(userInfo, tokens, accessTokenClaims)
 		if err != nil {
 			return
 		}
@@ -221,7 +221,7 @@ func (h *IdpHandler) ensureIdpIdentity(
 		return
 	} else {
 		// Returning user - update identity
-		err = h.updateIdpIdentity(ctx, idpIdentity, tokens, userInfo, accessTokenClaims)
+		err = h.updateIdpIdentity(idpIdentity, tokens, userInfo, accessTokenClaims)
 		if err != nil {
 			return
 		}
@@ -232,7 +232,6 @@ func (h *IdpHandler) ensureIdpIdentity(
 
 // createIdpIdentity creates a new IdpIdentity for first-time login.
 func (h *IdpHandler) createIdpIdentity(
-	ctx context.Context,
 	userInfo *oidc.UserInfo,
 	tokens *oidc.Tokens[*oidc.IDTokenClaims],
 	accessTokenClaims map[string]any) (idpIdentity *model.IdpIdentity, err error) {
@@ -284,7 +283,6 @@ func (h *IdpHandler) createIdpIdentity(
 
 // updateIdpIdentity updates an existing IdpIdentity with new tokens and userinfo.
 func (h *IdpHandler) updateIdpIdentity(
-	ctx context.Context,
 	idpIdentity *model.IdpIdentity,
 	tokens *oidc.Tokens[*oidc.IDTokenClaims],
 	userInfo *oidc.UserInfo,

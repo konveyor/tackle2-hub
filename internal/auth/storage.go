@@ -32,16 +32,6 @@ type Storage struct {
 	authByCode map[string]string
 }
 
-// Subject represents a resolved subject (User or IdpIdentity).
-type Subject struct {
-	name          string
-	email         string
-	roles         []string
-	scopes        []string
-	userId        *uint
-	idpIdentityId *uint
-}
-
 // GetClientByClientID retrieves a client by ID.
 func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (client op.Client, err error) {
 	defer func() {
@@ -1323,4 +1313,14 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
+}
+
+// Subject represents a resolved subject (User or IdpIdentity).
+type Subject struct {
+	name          string
+	email         string
+	roles         []string
+	scopes        []string
+	userId        *uint
+	idpIdentityId *uint
 }
