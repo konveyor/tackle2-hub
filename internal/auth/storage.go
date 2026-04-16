@@ -580,54 +580,123 @@ func (r *Storage) GetRefreshTokenInfo(
 
 // Login handles the authentication flow.
 func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authReqId string) (err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
 		}
 	}()
-	err = request.ParseForm()
+	login := &Login{
+		storage:   r,
+		writer:    writer,
+		request:   request,
+		authReqId: authReqId,
+	}
+	err = login.complete()
+	return
+}
+
+//
+// Login
+//
+
+// Login represents the state of a user login flow.
+type Login struct {
+	storage   *Storage
+	writer    http.ResponseWriter
+	request   *http.Request
+	authReqId string
+
+	userid   string
+	password string
+	user     *model.User
+	authReq  *AuthRequest
+}
+
+// complete handles the login form submission and authentication.
+func (r *Login) complete() (err error) {
+	err = r.parseCredentials()
+	if err != nil {
+		return
+	}
+
+	if r.userid == "" || r.password == "" {
+		err = r.renderPage()
+		return
+	}
+
+	err = r.authenticateUser()
+	if err != nil {
+		return
+	}
+
+	err = r.updateAuthRequest()
+	if err != nil {
+		return
+	}
+
+	r.redirect()
+	return
+}
+
+// parseCredentials extracts credentials from the form.
+func (r *Login) parseCredentials() (err error) {
+	err = r.request.ParseForm()
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	userid := request.PostFormValue("userid")
-	password := request.PostFormValue("password")
-	if userid == "" || password == "" {
-		err = r.renderPage(writer, request, authReqId)
-		return
-	}
-	user := &model.User{}
-	err = r.db.First(user, "userid", userid).Error
+	r.userid = r.request.PostFormValue("userid")
+	r.password = r.request.PostFormValue("password")
+	return
+}
+
+// authenticateUser validates user credentials.
+func (r *Login) authenticateUser() (err error) {
+	r.user = &model.User{}
+	err = r.storage.db.First(r.user, "userid", r.userid).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = r.renderPage(writer, request, authReqId)
+			err = r.renderPage()
 			err = nil
 		}
 		return
 	}
-	if !secret.MatchPassword(password, user.Password) {
-		err = r.renderPage(writer, request, authReqId)
+
+	if !secret.MatchPassword(r.password, r.user.Password) {
+		err = r.renderPage()
 		return
 	}
-	authReq, found := r.authReqs[authReqId]
+	return
+}
+
+// updateAuthRequest updates the auth request with authenticated user.
+func (r *Login) updateAuthRequest() (err error) {
+	r.storage.mutex.Lock()
+	defer r.storage.mutex.Unlock()
+
+	var found bool
+	r.authReq, found = r.storage.authReqs[r.authReqId]
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("auth request not found")
 		return
 	}
-	authReq.subject = user.Subject
-	authReq.issued = time.Now()
-	authReq.done = true
-	issuer := r.issuer()
-	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, authReqId)
-	http.Redirect(writer, request, callbackURL, http.StatusFound)
+
+	r.authReq.subject = r.user.Subject
+	r.authReq.issued = time.Now()
+	r.authReq.done = true
 	return
 }
 
+// redirect redirects to the authorization callback.
+func (r *Login) redirect() {
+	issuer := r.storage.issuer()
+	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, r.authReqId)
+	http.Redirect(r.writer, r.request, callbackURL, http.StatusFound)
+}
+
 // renderPage renders the login page.
-func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authReqId string) (err error) {
-	issuer := r.issuer()
+func (r *Login) renderPage() (err error) {
+	issuer := r.storage.issuer()
 
 	// Build external IdP button HTML if enabled
 	idpButton := ""
@@ -635,7 +704,7 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
 		idpButton = `
         <div style="margin-top: 20px; text-align: center;">
             <div style="margin: 20px 0; color: #999;">- OR -</div>
-            <a href="/idp/login?authRequestID=` + authReqId + `" style="
+            <a href="/idp/login?authRequestID=` + r.authReqId + `" style="
                 display: block;
                 background: #28a745;
                 color: white;
@@ -684,7 +753,7 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
 </head>
 <body>
     <h1>Tackle Login</h1>
-    <form action="` + issuer + `/login?authRequestID=` + authReqId + `" method="post">
+    <form action="` + issuer + `/login?authRequestID=` + r.authReqId + `" method="post">
         <div>
             <label>Userid:</label>
             <input type="text" name="userid" required autofocus />
@@ -697,8 +766,8 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
     </form>` + idpButton + `
 </body>
 </html>`
-	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, err = writer.Write([]byte(html))
+	r.writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, err = r.writer.Write([]byte(html))
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -911,44 +980,25 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 
 // findSubject finds and resolves a subject to User or IdpIdentity.
 func (r *Storage) findSubject(subject string) (s *Subject, err error) {
+	s = &Subject{}
+
+	// Try User first
 	user := &model.User{}
 	db := r.db.Preload(clause.Associations).Preload("Roles.Permissions")
 	err = db.First(user, "subject", subject).Error
 	if err == nil {
-		s = &Subject{
-			name:   user.Userid,
-			email:  user.Email,
-			userId: &user.ID,
-			roles:  make([]string, 0),
-			scopes: make([]string, 0),
-		}
-		for _, role := range user.Roles {
-			s.roles = append(s.roles, role.Name)
-			// Extract permission scopes
-			for _, permission := range role.Permissions {
-				s.scopes = append(s.scopes, permission.Scope)
-			}
-		}
+		s.With(user)
 		return
 	}
+
+	// Fallback to IdpIdentity
 	idpIdentity := &model.IdpIdentity{}
 	err = r.db.First(idpIdentity, "subject", subject).Error
 	if err != nil {
 		return
 	}
-	s = &Subject{
-		name:          idpIdentity.Userid,
-		email:         idpIdentity.Email,
-		idpIdentityId: &idpIdentity.ID,
-		roles:         make([]string, 0),
-		scopes:        make([]string, 0),
-	}
-	if idpIdentity.Roles != "" {
-		s.roles = strings.Fields(idpIdentity.Roles)
-	}
-	if idpIdentity.Scopes != "" {
-		s.scopes = strings.Fields(idpIdentity.Scopes)
-	}
+
+	s.WithIdentity(idpIdentity)
 	return
 }
 
@@ -1323,4 +1373,46 @@ type Subject struct {
 	scopes        []string
 	userId        *uint
 	idpIdentityId *uint
+}
+
+// With populates Subject from a User model.
+func (r *Subject) With(user *model.User) {
+	r.name = user.Userid
+	r.email = user.Email
+	r.userId = &user.ID
+	r.roles = make([]string, 0)
+	r.scopes = make([]string, 0)
+
+	for _, role := range user.Roles {
+		r.roles = append(r.roles, role.Name)
+		for _, permission := range role.Permissions {
+			r.scopes = append(r.scopes, permission.Scope)
+		}
+	}
+}
+
+// WithIdentity populates Subject from an IdpIdentity model.
+func (r *Subject) WithIdentity(idp *model.IdpIdentity) {
+	r.name = idp.Userid
+	r.email = idp.Email
+	r.idpIdentityId = &idp.ID
+	r.roles = make([]string, 0)
+	r.scopes = make([]string, 0)
+
+	if idp.Roles != "" {
+		r.roles = strings.Fields(idp.Roles)
+	}
+	if idp.Scopes != "" {
+		r.scopes = strings.Fields(idp.Scopes)
+	}
+}
+
+// IsUser returns true if this subject is a User.
+func (r *Subject) IsUser() bool {
+	return r.userId != nil
+}
+
+// IsIdentity returns true if this subject is an IdpIdentity.
+func (r *Subject) IsIdentity() bool {
+	return r.idpIdentityId != nil
 }
