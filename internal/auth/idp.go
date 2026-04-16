@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -42,6 +43,9 @@ func (h *IdpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // login initiates the external IdP authentication flow.
 func (h *IdpHandler) login(w http.ResponseWriter, r *http.Request) {
+	// Get authRequestID from query parameter (if present)
+	authRequestID := r.URL.Query().Get("authRequestID")
+
 	// Generate state and code verifier for PKCE
 	state := h.generateState()
 	codeVerifier := h.generateState()
@@ -71,6 +75,18 @@ func (h *IdpHandler) login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	// Store authRequestID if present (for completing OIDC flow)
+	if authRequestID != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "idp_auth_request",
+			Value:    authRequestID,
+			Path:     "/",
+			MaxAge:   600, // 10 minutes
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
 	// Redirect to external IdP
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
@@ -94,6 +110,12 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get authRequestID from cookie (if present)
+	var authRequestID string
+	if authReqCookie, err := r.Cookie("idp_auth_request"); err == nil {
+		authRequestID = authReqCookie.Value
+	}
+
 	// Clear cookies
 	http.SetCookie(w, &http.Cookie{
 		Name:   "idp_state",
@@ -102,6 +124,11 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:   "idp_verifier",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:   "idp_auth_request",
 		Path:   "/",
 		MaxAge: -1,
 	})
@@ -147,16 +174,18 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find or create user
-	user, err := h.findOrCreateUser(ctx, userInfo, tokens)
+	// Find or create IdP identity
+	idpIdentity, err := h.findOrCreateIdpIdentity(ctx, userInfo, tokens)
 	if err != nil {
-		Log.Error(err, "user creation/update failed")
+		Log.Error(err, "IdP identity creation/update failed")
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
 		return
 	}
 
-	// Issue hub tokens
-	err = h.issueHubTokens(ctx, w, r, user)
+	Log.Info("External IdP authentication successful", "subject", idpIdentity.Subject)
+
+	// Issue hub tokens (complete OIDC flow)
+	err = h.issueHubTokens(ctx, w, r, idpIdentity, authRequestID)
 	if err != nil {
 		Log.Error(err, "token issuance failed")
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
@@ -164,23 +193,23 @@ func (h *IdpHandler) callback(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// findOrCreateUser finds existing user or creates new one from IdP userinfo.
-func (h *IdpHandler) findOrCreateUser(
+// findOrCreateIdpIdentity finds existing identity or creates new one from IdP userinfo.
+func (h *IdpHandler) findOrCreateIdpIdentity(
 	ctx context.Context,
 	userInfo *oidc.UserInfo,
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (user *model.User, err error) {
+	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (idpIdentity *model.IdpIdentity, err error) {
 	//
-	var idpIdentity model.IdpIdentity
+	idpIdentity = &model.IdpIdentity{}
 	result := h.db.First(
-		&idpIdentity,
-		"provider = ? AND subject = ?",
+		idpIdentity,
+		"Provider = ? AND Subject = ?",
 		Settings.Auth.Idp.Name,
 		userInfo.Subject,
 	)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		// First time login - create user and identity
-		user, err = h.createUser(ctx, userInfo, tokens)
+		// First time login - create identity
+		idpIdentity, err = h.createIdpIdentity(ctx, userInfo, tokens)
 		if err != nil {
 			return
 		}
@@ -189,16 +218,8 @@ func (h *IdpHandler) findOrCreateUser(
 		return
 	} else {
 		// Returning user - update identity
-		err = h.updateIdpIdentity(ctx, &idpIdentity, tokens)
+		err = h.updateIdpIdentity(ctx, idpIdentity, tokens, userInfo)
 		if err != nil {
-			return
-		}
-
-		// Load the user
-		user = &model.User{}
-		err = h.db.First(user, idpIdentity.UserID).Error
-		if err != nil {
-			err = liberr.Wrap(err)
 			return
 		}
 	}
@@ -206,11 +227,11 @@ func (h *IdpHandler) findOrCreateUser(
 	return
 }
 
-// createUser creates a new user and IdpIdentity for first-time login.
-func (h *IdpHandler) createUser(
+// createIdpIdentity creates a new IdpIdentity for first-time login.
+func (h *IdpHandler) createIdpIdentity(
 	ctx context.Context,
 	userInfo *oidc.UserInfo,
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (user *model.User, err error) {
+	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (idpIdentity *model.IdpIdentity, err error) {
 	//
 	// Extract user details from userinfo
 	email := userInfo.Email
@@ -223,20 +244,8 @@ func (h *IdpHandler) createUser(
 		userid = userInfo.Subject
 	}
 
-	// Create user
-	user = &model.User{
-		Subject:  h.idpSubject(userInfo.Subject),
-		Userid:   userid,
-		Email:    email,
-		Password: h.generateState(), // Random password (won't be used)
-	}
-	user.CreateUser = "system"
-
-	err = h.db.Create(user).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
+	// Extract scopes and roles from IdP token
+	scopes, roles := h.extractClaimsFromToken(tokens)
 
 	// Create IdpIdentity
 	expiration := time.Now().Add(
@@ -246,14 +255,17 @@ func (h *IdpHandler) createUser(
 		expiration = tokens.Expiry
 	}
 
-	idpIdentity := &model.IdpIdentity{
+	idpIdentity = &model.IdpIdentity{
 		Provider:          Settings.Auth.Idp.Name,
 		Subject:           userInfo.Subject,
+		Userid:            userid,
+		Email:             email,
 		RefreshToken:      tokens.RefreshToken,
 		Expiration:        expiration,
 		LastAuthenticated: time.Now(),
 		LastRefreshed:     time.Now(),
-		UserID:            user.ID,
+		Scopes:            scopes,
+		Roles:             roles,
 	}
 	idpIdentity.CreateUser = "system"
 
@@ -266,19 +278,33 @@ func (h *IdpHandler) createUser(
 	return
 }
 
-// updateIdpIdentity updates an existing IdpIdentity with new tokens.
+// updateIdpIdentity updates an existing IdpIdentity with new tokens and userinfo.
 func (h *IdpHandler) updateIdpIdentity(
 	ctx context.Context,
 	idpIdentity *model.IdpIdentity,
-	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (err error) {
+	tokens *oidc.Tokens[*oidc.IDTokenClaims],
+	userInfo *oidc.UserInfo) (err error) {
 	//
-	// Update tokens and timestamps
+	// Update user details from userinfo
+	if userInfo.Email != "" {
+		idpIdentity.Email = userInfo.Email
+	}
+	if userInfo.PreferredUsername != "" {
+		idpIdentity.Userid = userInfo.PreferredUsername
+	}
+
+	// Extract scopes and roles from IdP token
+	scopes, roles := h.extractClaimsFromToken(tokens)
+
+	// Update tokens, timestamps, and claims
 	idpIdentity.RefreshToken = tokens.RefreshToken
 	if tokens.Expiry.After(time.Now()) {
 		idpIdentity.Expiration = tokens.Expiry
 	}
 	idpIdentity.LastAuthenticated = time.Now()
 	idpIdentity.LastRefreshed = time.Now()
+	idpIdentity.Scopes = scopes
+	idpIdentity.Roles = roles
 	idpIdentity.UpdateUser = "system"
 
 	err = h.db.Save(idpIdentity).Error
@@ -290,36 +316,113 @@ func (h *IdpHandler) updateIdpIdentity(
 	return
 }
 
+// extractClaimsFromToken extracts scopes and roles from IdP token.
+func (h *IdpHandler) extractClaimsFromToken(
+	tokens *oidc.Tokens[*oidc.IDTokenClaims]) (scopes string, roles string) {
+	//
+	claims := tokens.IDTokenClaims.Claims
+	if claims == nil {
+		return
+	}
+
+	// Extract scopes
+	if scopeClaim, found := claims["scope"]; found {
+		scopes = h.stringFromClaim(scopeClaim)
+	}
+
+	// Extract roles
+	if roleClaim, found := claims["roles"]; found {
+		roles = h.stringFromClaim(roleClaim)
+	}
+
+	Log.Info(
+		"Extracted claims from IdP token",
+		"subject", tokens.IDTokenClaims.GetSubject(),
+		"scopes", scopes,
+		"roles", roles)
+
+	return
+}
+
+// stringFromClaim converts a claim value to space-separated string.
+func (h *IdpHandler) stringFromClaim(claimValue any) (result string) {
+	var values []string
+
+	switch v := claimValue.(type) {
+	case []interface{}:
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				values = append(values, s)
+			}
+		}
+	case []string:
+		values = v
+	case string:
+		// Already space-separated or single value
+		return v
+	default:
+		Log.Info("Unexpected claim type", "type", fmt.Sprintf("%T", claimValue))
+		return
+	}
+
+	return strings.Join(values, " ")
+}
+
 // issueHubTokens creates a hub OIDC session and redirects to UI.
 func (h *IdpHandler) issueHubTokens(
 	ctx context.Context,
 	w http.ResponseWriter,
 	r *http.Request,
-	user *model.User) (err error) {
+	idpIdentity *model.IdpIdentity,
+	authRequestID string) (err error) {
 	//
-	// Create an authorization request in hub's OP
-	authReq := &oidc.AuthRequest{
-		ClientID:     Settings.Auth.Client.ID,
-		RedirectURI:  Settings.Auth.Client.RedirectURIs[0],
-		Scopes:       []string{"openid", "profile", "email"},
-		ResponseType: oidc.ResponseTypeCode,
-		State:        h.generateState(),
-	}
+	var redirectURI string
+	var state string
+	var requestID string
 
-	// Create the auth request in storage
-	req, err := h.storage.CreateAuthRequest(
-		ctx,
-		authReq,
-		user.Subject,
-	)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+	// Build subject from IdP identity
+	subject := h.idpSubject(idpIdentity.Subject)
+
+	if authRequestID != "" {
+		// Complete existing OIDC authorization request
+		authReq, err := h.storage.AuthRequestByID(ctx, authRequestID)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return err
+		}
+
+		// Update the auth request with the authenticated user
+		if ar, ok := authReq.(*AuthRequest); ok {
+			ar.subject = subject
+		}
+
+		redirectURI = authReq.GetRedirectURI()
+		state = authReq.GetState()
+		requestID = authRequestID
+	} else {
+		// Create a new authorization request (standalone IdP login)
+		authReq := &oidc.AuthRequest{
+			ClientID:     Settings.Auth.Client.ID,
+			RedirectURI:  Settings.Auth.Client.RedirectURIs[0],
+			Scopes:       []string{"openid", "profile", "email"},
+			ResponseType: oidc.ResponseTypeCode,
+			State:        h.generateState(),
+		}
+
+		req, err := h.storage.CreateAuthRequest(ctx, authReq, subject)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return err
+		}
+
+		redirectURI = authReq.RedirectURI
+		state = authReq.State
+		requestID = req.GetID()
 	}
 
 	// Generate authorization code
 	code := h.generateState()
-	err = h.storage.SaveAuthCode(ctx, req.GetID(), code)
+	err = h.storage.SaveAuthCode(ctx, requestID, code)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -328,9 +431,9 @@ func (h *IdpHandler) issueHubTokens(
 	// Build redirect URL with code
 	redirectURL := fmt.Sprintf(
 		"%s?code=%s&state=%s",
-		authReq.RedirectURI,
+		redirectURI,
 		code,
-		authReq.State,
+		state,
 	)
 
 	// Redirect to UI

@@ -242,8 +242,10 @@ type IdpIdentity struct {
 	Expiration        time.Time `gorm:"index"`
 	LastAuthenticated time.Time
 	LastRefreshed     time.Time
-	UserID            uint `gorm:"index"`
-	User              User `gorm:"constraint:OnDelete:CASCADE"`
+	Scopes            string
+	Roles             string
+	Userid            string
+	Email             string
 }
 
 type RsaKey struct {
@@ -265,20 +267,22 @@ type Grant struct {
 
 type Token struct {
 	Model
-	Kind       string    `gorm:"not null"`
-	AuthId     string    `gorm:"uniqueIndex;not null"`
-	Subject    string    `gorm:"index"`
-	Digest     string    `gorm:"index"`
-	Scopes     string    `gorm:"not null"`
-	Issued     time.Time `gorm:"not null"`
-	Expiration time.Time
-	Revoked    time.Time
-	GrantID    *uint  `gorm:"index"`
-	Grant      *Grant `gorm:"constraint:OnDelete:CASCADE"`
-	UserID     *uint  `gorm:"index"`
-	User       *User  `gorm:"constraint:OnDelete:CASCADE"`
-	TaskID     *uint  `gorm:"index"`
-	Task       *Task  `gorm:"constraint:OnDelete:CASCADE"`
+	Kind          string    `gorm:"not null"`
+	AuthId        string    `gorm:"uniqueIndex;not null"`
+	Subject       string    `gorm:"index"`
+	Digest        string    `gorm:"index"`
+	Scopes        string    `gorm:"not null"`
+	Issued        time.Time `gorm:"not null"`
+	Expiration    time.Time
+	Revoked       time.Time
+	GrantID       *uint        `gorm:"index"`
+	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
+	UserID        *uint        `gorm:"index"`
+	User          *User        `gorm:"constraint:OnDelete:CASCADE"`
+	IdpIdentityID *uint        `gorm:"index"`
+	IdpIdentity   *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
+	TaskID        *uint        `gorm:"index"`
+	Task          *Task        `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 //

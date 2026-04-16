@@ -146,11 +146,14 @@ type IdpIdentity struct {
 	Resource          `yaml:",inline"`
 	Provider          string    `json:"provider" binding:"required"`
 	Subject           string    `json:"subject" binding:"required"`
+	Userid            string    `json:"userid"`
+	Email             string    `json:"email"`
 	RefreshToken      string    `json:"refreshToken" binding:"required"`
 	Expiration        time.Time `json:"expiration"`
 	LastAuthenticated time.Time `json:"lastAuthenticated"`
 	LastRefreshed     time.Time `json:"lastRefreshed"`
-	User              *Ref      `json:"user" binding:"required"`
+	Scopes            string    `json:"scopes"`
+	Roles             string    `json:"roles"`
 }
 
 // User REST resource.

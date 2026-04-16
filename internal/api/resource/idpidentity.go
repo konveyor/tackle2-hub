@@ -13,11 +13,14 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	baseWith(&r.Resource, &m.Model)
 	r.Provider = m.Provider
 	r.Subject = m.Subject
+	r.Userid = m.Userid
+	r.Email = m.Email
 	r.RefreshToken = m.RefreshToken
 	r.Expiration = m.Expiration
 	r.LastAuthenticated = m.LastAuthenticated
 	r.LastRefreshed = m.LastRefreshed
-	r.User = &Ref{ID: m.UserID, Name: m.User.Userid}
+	r.Scopes = m.Scopes
+	r.Roles = m.Roles
 }
 
 // Model converts REST resource to model.
@@ -25,14 +28,15 @@ func (r *IdpIdentity) Model() (m *model.IdpIdentity) {
 	m = &model.IdpIdentity{
 		Provider:          r.Provider,
 		Subject:           r.Subject,
+		Userid:            r.Userid,
+		Email:             r.Email,
 		RefreshToken:      r.RefreshToken,
 		Expiration:        r.Expiration,
 		LastAuthenticated: r.LastAuthenticated,
 		LastRefreshed:     r.LastRefreshed,
+		Scopes:            r.Scopes,
+		Roles:             r.Roles,
 	}
 	m.ID = r.ID
-	if r.User != nil {
-		m.UserID = r.User.ID
-	}
 	return
 }

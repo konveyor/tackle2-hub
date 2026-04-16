@@ -215,7 +215,9 @@ func (r *Storage) CreateAccessToken(
 		return
 	}
 	tokenId = r.genId()
-	userId := r.userId(req.GetSubject())
+	subject := req.GetSubject()
+	userId := r.userId(subject)
+	idpIdentityId := r.idpIdentityId(subject)
 	grantId := ""
 	expiration = time.Now().Add(
 		time.Duration(Settings.Token.Lifespan) * time.Second)
@@ -228,14 +230,15 @@ func (r *Storage) CreateAccessToken(
 		return
 	}
 	m := &model.Token{
-		Kind:       KindAccessToken,
-		AuthId:     tokenId,
-		Subject:    req.GetSubject(),
-		Scopes:     strings.Join(req.GetScopes(), " "),
-		Issued:     time.Now(),
-		Expiration: expiration,
-		GrantID:    r.grantId(grantId),
-		UserID:     userId,
+		Kind:          KindAccessToken,
+		AuthId:        tokenId,
+		Subject:       subject,
+		Scopes:        strings.Join(req.GetScopes(), " "),
+		Issued:        time.Now(),
+		Expiration:    expiration,
+		GrantID:       r.grantId(grantId),
+		UserID:        userId,
+		IdpIdentityID: idpIdentityId,
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -433,6 +436,40 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 	if userID == "" {
 		return
 	}
+
+	// Check if this is a federated user
+	if strings.HasPrefix(userID, "idp:") {
+		// Extract provider and subject from hub subject (format: "idp:provider:subject")
+		parts := strings.SplitN(userID, ":", 3)
+		if len(parts) != 3 {
+			return
+		}
+		provider := parts[1]
+		idpSubject := parts[2]
+
+		// Find IdP identity directly
+		var idpIdentity model.IdpIdentity
+		err = r.db.First(&idpIdentity, "Provider = ? AND Subject = ?", provider, idpSubject).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err = nil
+			} else {
+				err = liberr.Wrap(err)
+			}
+			return
+		}
+
+		// Use IdP scopes and roles directly
+		if idpIdentity.Roles != "" {
+			claims["roles"] = strings.Fields(idpIdentity.Roles)
+		}
+		if idpIdentity.Scopes != "" {
+			claims[ClaimScope] = idpIdentity.Scopes
+		}
+		return
+	}
+
+	// Local user - lookup User and compute roles and scopes from database
 	user := &model.User{}
 	db := r.db.Preload(clause.Associations)
 	err = db.First(user, "subject", userID).Error
@@ -444,6 +481,7 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 		}
 		return
 	}
+
 	roles := make([]string, 0, len(user.Roles))
 	for _, role := range user.Roles {
 		roles = append(roles, role.Name)
@@ -614,6 +652,25 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 // renderPage renders the login page.
 func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authReqId string) (err error) {
 	issuer := r.issuer()
+
+	// Build external IdP button HTML if enabled
+	idpButton := ""
+	if Settings.Auth.Idp.Enabled {
+		idpButton = `
+        <div style="margin-top: 20px; text-align: center;">
+            <div style="margin: 20px 0; color: #999;">- OR -</div>
+            <a href="/idp/login?authRequestID=` + authReqId + `" style="
+                display: block;
+                background: #28a745;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 3px;
+                text-align: center;
+            ">Login with ` + Settings.Auth.Idp.Name + `</a>
+        </div>`
+	}
+
 	html := `<!DOCTYPE html>
 <html>
 <head>
@@ -646,6 +703,7 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
             width: 100%;
         }
         button:hover { background: #0056b3; }
+        a:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -660,7 +718,7 @@ func (r *Storage) renderPage(writer http.ResponseWriter, _ *http.Request, authRe
             <input type="password" name="password" required />
         </div>
         <button type="submit">Login</button>
-    </form>
+    </form>` + idpButton + `
 </body>
 </html>`
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -885,6 +943,28 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 func (r *Storage) userId(subject string) (id *uint) {
 	m := &model.User{}
 	err := r.db.First(m, "subject", subject).Error
+	if err != nil {
+		return
+	}
+	id = &m.ID
+	return
+}
+
+// idpIdentityId returns the IdP identity ID by subject.
+func (r *Storage) idpIdentityId(subject string) (id *uint) {
+	if !strings.HasPrefix(subject, "idp:") {
+		return
+	}
+	// Extract IdP subject from hub subject (format: "idp:provider:subject")
+	parts := strings.SplitN(subject, ":", 3)
+	if len(parts) != 3 {
+		return
+	}
+	provider := parts[1]
+	idpSubject := parts[2]
+
+	m := &model.IdpIdentity{}
+	err := r.db.First(m, "Provider = ? AND Subject = ?", provider, idpSubject).Error
 	if err != nil {
 		return
 	}

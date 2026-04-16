@@ -3334,11 +3334,6 @@ func TestIdpIdentity_With(t *testing.T) {
 		Expiration:        expiration,
 		LastAuthenticated: lastAuth,
 		LastRefreshed:     lastRefresh,
-		UserID:            100,
-		User: model.User{
-			Model:  model.Model{ID: 100},
-			Userid: "testuser",
-		},
 	}
 
 	r := &IdpIdentity{}
@@ -3351,9 +3346,6 @@ func TestIdpIdentity_With(t *testing.T) {
 	g.Expect(r.Expiration).To(gomega.Equal(expiration))
 	g.Expect(r.LastAuthenticated).To(gomega.Equal(lastAuth))
 	g.Expect(r.LastRefreshed).To(gomega.Equal(lastRefresh))
-	g.Expect(r.User).ToNot(gomega.BeNil())
-	g.Expect(r.User.ID).To(gomega.Equal(uint(100)))
-	g.Expect(r.User.Name).To(gomega.Equal("testuser"))
 }
 
 // TestIdpIdentity_Model tests the IdpIdentity.Model() method
@@ -3372,7 +3364,6 @@ func TestIdpIdentity_Model(t *testing.T) {
 		Expiration:        expiration,
 		LastAuthenticated: lastAuth,
 		LastRefreshed:     lastRefresh,
-		User:              &Ref{ID: 100, Name: "testuser"},
 	}
 
 	m := r.Model()
@@ -3384,7 +3375,6 @@ func TestIdpIdentity_Model(t *testing.T) {
 	g.Expect(m.Expiration).To(gomega.Equal(expiration))
 	g.Expect(m.LastAuthenticated).To(gomega.Equal(lastAuth))
 	g.Expect(m.LastRefreshed).To(gomega.Equal(lastRefresh))
-	g.Expect(m.UserID).To(gomega.Equal(uint(100)))
 }
 
 // TestUser_With tests the User.With() method
