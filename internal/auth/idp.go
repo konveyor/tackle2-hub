@@ -3,7 +3,6 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 //
@@ -135,33 +135,26 @@ func (f *IdpLogin) complete() {
 		_ = f.ctx.Error(err)
 		return
 	}
-
 	err = f.exchangeCode()
 	if err != nil {
 		_ = f.ctx.Error(err)
 		return
 	}
-
 	err = f.fetchUserInfo()
 	if err != nil {
 		_ = f.ctx.Error(err)
 		return
 	}
-
 	err = f.parseAccessToken()
 	if err != nil {
 		_ = f.ctx.Error(err)
 		return
 	}
-
 	err = f.ensureIdentity()
 	if err != nil {
 		_ = f.ctx.Error(err)
 		return
 	}
-
-	Log.Info("External IdP authentication successful", "subject", f.idpIdentity.Subject)
-
 	err = f.issueTokens()
 	if err != nil {
 		_ = f.ctx.Error(err)
@@ -256,30 +249,35 @@ func (f *IdpLogin) parseAccessToken() (err error) {
 	return
 }
 
-// ensureIdentity finds existing identity or creates new one from IdP userinfo.
+// ensureIdentity ensures the identity created/updated.
 func (f *IdpLogin) ensureIdentity() (err error) {
-	f.idpIdentity = &model.IdpIdentity{}
-	err = f.handler.db.First(f.idpIdentity, "subject", f.userInfo.Subject).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		err = f.createIdentity()
-		if err != nil {
-			return
-		}
-	} else if err != nil {
+	f.idpIdentity = f.buildIdentity()
+	db := f.handler.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "subject"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"refreshToken",
+			"expiration",
+			"lastAuthenticated",
+			"lastRefreshed",
+			"scopes",
+			"roles",
+			"userId",
+			"email",
+			"updateUser",
+		}),
+	})
+	err = db.Create(f.idpIdentity).Error
+	if err != nil {
 		err = liberr.Wrap(err)
 		return
-	} else {
-		err = f.updateIdentity()
-		if err != nil {
-			return
-		}
 	}
 	return
 }
 
-// createIdentity creates a new IdpIdentity for first-time login.
-func (f *IdpLogin) createIdentity() (err error) {
-	// Extract user details from userinfo
+// buildIdentity builds an IdpIdentity from userinfo and tokens.
+func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 	email := f.userInfo.Email
 	if email == "" {
 		email = fmt.Sprintf("%s@external", f.userInfo.Subject)
@@ -290,10 +288,8 @@ func (f *IdpLogin) createIdentity() (err error) {
 		userid = f.userInfo.Subject
 	}
 
-	// Extract scopes and roles from access token
 	scopes, roles := f.extractClaims()
 
-	// Create IdpIdentity
 	expiration := time.Now().Add(
 		time.Duration(Settings.Auth.Token.RefreshLifespan) * time.Second,
 	)
@@ -301,7 +297,7 @@ func (f *IdpLogin) createIdentity() (err error) {
 		expiration = f.tokens.Expiry
 	}
 
-	f.idpIdentity = &model.IdpIdentity{
+	idpIdentity = &model.IdpIdentity{
 		Issuer:            Settings.Auth.Idp.Name,
 		Subject:           f.userInfo.Subject,
 		Userid:            userid,
@@ -313,45 +309,9 @@ func (f *IdpLogin) createIdentity() (err error) {
 		Scopes:            scopes,
 		Roles:             roles,
 	}
-	f.idpIdentity.CreateUser = "system"
+	idpIdentity.CreateUser = "system"
+	idpIdentity.UpdateUser = "system"
 
-	err = f.handler.db.Create(f.idpIdentity).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	return
-}
-
-// updateIdentity updates an existing IdpIdentity with new tokens and userinfo.
-func (f *IdpLogin) updateIdentity() (err error) {
-	// Update user details from userinfo
-	if f.userInfo.Email != "" {
-		f.idpIdentity.Email = f.userInfo.Email
-	}
-	if f.userInfo.PreferredUsername != "" {
-		f.idpIdentity.Userid = f.userInfo.PreferredUsername
-	}
-
-	// Extract scopes and roles from access token
-	scopes, roles := f.extractClaims()
-
-	// Update tokens, timestamps, and claims
-	f.idpIdentity.RefreshToken = f.tokens.RefreshToken
-	if f.tokens.Expiry.After(time.Now()) {
-		f.idpIdentity.Expiration = f.tokens.Expiry
-	}
-	f.idpIdentity.LastAuthenticated = time.Now()
-	f.idpIdentity.LastRefreshed = time.Now()
-	f.idpIdentity.Scopes = scopes
-	f.idpIdentity.Roles = roles
-	f.idpIdentity.UpdateUser = "system"
-
-	err = f.handler.db.Save(f.idpIdentity).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }
 
@@ -458,7 +418,10 @@ func (f *IdpLogin) stringFromClaim(claimValue any) (result string) {
 		// Already space-separated or single value
 		return v
 	default:
-		Log.Info("Unexpected claim type", "type", fmt.Sprintf("%T", claimValue))
+		Log.Info(
+			"Unexpected claim type",
+			"type",
+			fmt.Sprintf("%T", claimValue))
 		return
 	}
 
