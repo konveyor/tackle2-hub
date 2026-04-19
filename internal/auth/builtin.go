@@ -116,7 +116,7 @@ func (p *Builtin) Login(
 	return
 }
 
-// Grant the key request.
+// Grant the token request.
 func (p *Builtin) Grant(req TokenRequest) (m Token, err error) {
 	m = p.newToken(req)
 	if req.TaskID > 0 {

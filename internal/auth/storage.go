@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1047,7 +1047,7 @@ func (r *Storage) issuer() (s string) {
 func (r *Storage) genId() (s string) {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
-	s = base64.RawURLEncoding.EncodeToString(b)
+	s = hex.EncodeToString(b)
 	return
 }
 
