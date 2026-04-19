@@ -247,12 +247,6 @@
         - get
         - post
         - put
-    - name: apikeys
-      verbs:
-        - delete
-        - get
-        - post
-        - put
     - name: users
       verbs:
         - delete
@@ -268,7 +262,7 @@
     - name: permissions
       verbs:
         - get
-    - name: idp.identifies
+    - name: idp.identities
       verbs:
         - get
     - name: grants
