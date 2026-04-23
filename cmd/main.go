@@ -169,7 +169,7 @@ func main() {
 		metricsManager.Run(context.Background())
 	}
 	// Auth
-	auth.Hub, err = auth.New(db)
+	auth.IdP, err = auth.New(db)
 	if err != nil {
 		return
 	}

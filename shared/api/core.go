@@ -208,10 +208,9 @@ type Token struct {
 	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:"idpIdentity,omitempty"`
 }
 
-// TokenRequest REST resource.
-type TokenRequest struct {
-	Token    `yaml:",inline"`
-	Userid   string `json:"userid,omitempty" yaml:"userid,omitempty"`
-	Password string `json:"password,omitempty" yaml:"password,omitempty"`
-	Secret   string `json:"secret,omitempty" yaml:"secret,omitempty"`
+// PAT REST resource.
+type PAT struct {
+	Lifespan   int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Token      string    `json:"token,omitempty" yaml:",omitempty"`
 }

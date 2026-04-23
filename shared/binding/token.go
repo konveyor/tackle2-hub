@@ -10,7 +10,7 @@ type Token struct {
 }
 
 // Create an (apikey) Token.
-func (h Token) Create(r *api.TokenRequest) (err error) {
+func (h Token) Create(r *api.PAT) (err error) {
 	err = h.client.Post(api.AuthTokensRoute, r)
 	return
 }

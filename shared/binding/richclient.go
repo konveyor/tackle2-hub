@@ -2,7 +2,6 @@ package binding
 
 import (
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/shared/binding/archetype"
@@ -75,20 +74,6 @@ type RichClient struct {
 // Use login.
 func (r *RichClient) Use(client RestClient) {
 	r.build(client)
-}
-
-// Login set token.
-func (r *RichClient) Login(user, password string) (err error) {
-	req := api.TokenRequest{}
-	req.Userid = user
-	req.Password = password
-	req.Lifespan = 720 // 30 days.
-	err = r.Token.Create(&req)
-	if err != nil {
-		return
-	}
-	r.Client.Use(req.Secret)
-	return
 }
 
 // build the handlers.

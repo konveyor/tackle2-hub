@@ -22,12 +22,12 @@ const (
 var (
 	// Log logger.
 	Log = logr.New("auth", Settings.Log.Auth)
-	// Hub provider.
-	Hub Provider
+	// IdP provider.
+	IdP Provider
 )
 
 func init() {
-	Hub = &NoAuth{}
+	IdP = &NoAuth{}
 }
 
 // New returns an auth provider.
@@ -47,8 +47,10 @@ func New(db *gorm.DB) (p Provider, err error) {
 type Provider interface {
 	// Login begin OIDC auth.
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
-	// Grant the key request.
-	Grant(req TokenRequest) (token Token, err error)
+	// NewPAT creates a new personal access token.
+	NewPAT(subject string, lifespan time.Duration) (token Token, err error)
+	// NewTaskToken creates a new api-key.
+	NewTaskToken(taskId uint) (token Token, err error)
 	// Revoke a token.
 	Revoke(tokenId uint) (err error)
 	// Authenticate the request.

@@ -271,6 +271,7 @@
         - delete
     - name: tokens
       verbs:
+        - post
         - get
         - delete
 - role: architect
@@ -503,6 +504,9 @@
     - name: questionnaires
       verbs:
         - get
+    - name: tokens
+      verbs:
+        - post
 - role: migrator
   id: 3
   resources:
@@ -646,6 +650,9 @@
     - name: questionnaires
       verbs:
         - get
+    - name: tokens
+      verbs:
+        - post
 - role: project-manager
   id: 4
   resources:
@@ -779,3 +786,6 @@
     - name: questionnaires
       verbs:
         - get
+    - name: tokens
+      verbs:
+        - post

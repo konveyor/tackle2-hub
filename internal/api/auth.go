@@ -21,11 +21,8 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	// Tokens routes
-	routeGroup := e.Group("/")
-	routeGroup.POST(api.AuthTokensRoute, h.TokenCreate)
 	// OIDC routes (hub as provider)
-	baseHandler := auth.Hub.Handler()
+	baseHandler := auth.IdP.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	e.Any(
 		api.OIDCRoutes+"/*path",
@@ -39,12 +36,12 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 		})
 	// IdP routes
 	if Settings.Auth.Idp.Enabled {
-		idpHandler := auth.Hub.IdpHandler()
+		idpHandler := auth.IdP.IdpHandler()
 		e.GET(api.IdpRoute+"/login", idpHandler.Login)
 		e.GET(api.IdpRoute+"/callback", idpHandler.LoginFinished)
 	}
 	// IdpIdentity routes.
-	routeGroup = e.Group("/")
+	routeGroup := e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
 	routeGroup.GET(api.IdpIdentitiesRoute, h.IdpIdentityList)
 	routeGroup.GET(api.IdpIdentitiesRoute+"/", h.IdpIdentityList)
@@ -86,6 +83,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// Token routes
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("tokens"))
+	routeGroup.POST(api.AuthTokensRoute, h.TokenCreate)
 	routeGroup.GET(api.AuthTokensRoute, h.TokenList)
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
@@ -685,7 +683,7 @@ func (h AuthHandler) GrantDelete(ctx *gin.Context) {
 // @success 201 {object} api.Token
 // @router /auth/tokens [post]
 func (h AuthHandler) TokenCreate(ctx *gin.Context) {
-	r := &TokenRequest{}
+	r := &PAT{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -697,13 +695,9 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	if r.Expiration.IsZero() {
 		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
 	}
-	req := auth.TokenRequest{
-		Kind:     auth.KindAPIKey,
-		Userid:   r.Userid,
-		Password: r.Password,
-		Lifespan: time.Until(r.Expiration),
-	}
-	token, err := req.Grant()
+	subject := h.CurrentUser(ctx)
+	lifespan := time.Until(r.Expiration)
+	token, err := auth.IdP.NewPAT(subject, lifespan)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -712,18 +706,8 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 			})
 		return
 	}
-	m := &model.Token{}
-	m.ID = token.ID
-	err = h.DB(ctx).Find(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r2 := Token{}
-	r2.With(m)
-	r.Token = api.Token(r2)
-	r.Secret = token.Secret
-	r.Password = "" // redacted
+
+	r.Token = token.Secret
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -807,7 +791,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "missing authRequestID")
 		return
 	}
-	err := auth.Hub.Login(ctx.Writer, ctx.Request, authReqID)
+	err := auth.IdP.Login(ctx.Writer, ctx.Request, authReqID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -821,7 +805,7 @@ type Role = resource.Role
 type Permission = resource.Permission
 type Grant = resource.Grant
 type Token = resource.Token
-type TokenRequest api.TokenRequest
+type PAT api.PAT
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
@@ -830,13 +814,13 @@ func Required(scope string) func(*gin.Context) {
 	auth.RegisterScope(scope)
 	return func(ctx *gin.Context) {
 		rtx := RichContext(ctx)
-		token := ctx.GetHeader(Authorization)
+		header := ctx.GetHeader(Authorization)
 		request := &auth.Request{
-			Token:  token,
 			Scope:  scope,
 			Method: ctx.Request.Method,
 			DB:     rtx.DB,
 		}
+		request.With(header)
 		result, err := request.Permit()
 		if err != nil {
 			ctx.AbortWithStatus(http.StatusInternalServerError)

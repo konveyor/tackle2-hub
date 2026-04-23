@@ -116,108 +116,50 @@ func (p *Builtin) Login(
 	return
 }
 
-// Grant the token request.
-func (p *Builtin) Grant(req TokenRequest) (m Token, err error) {
-	m = p.newToken(req)
-	if req.TaskID > 0 {
-		task := &model.Task{}
-		err = p.db.First(task, req.TaskID).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		m.TaskID = &task.ID
+// NewPAT create a new personal access token.
+func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err error) {
+	m = p.newToken(lifespan)
+	user := &model.User{}
+	err = p.db.First(user, "subject", subject).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
-	if req.Userid != "" {
-		user := &model.User{}
-		err = p.db.First(user, "Userid", req.Userid).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = &NotAuthenticated{
-					Token: req.Userid,
-				}
-			} else {
-				err = liberr.Wrap(err)
-			}
-			return
-		}
-		if !secret.MatchPassword(req.Password, user.Password) {
-			err = &NotAuthenticated{
-				Token: req.Userid,
-			}
-			return
-		}
-		m.UserID = &user.ID
-	}
+	m.UserID = &user.ID
 	err = p.db.Create(&m).Error
 	return
 }
 
-// Authenticate a web request.
+// NewTaskToken create a new task api-key.
+func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
+	m = p.newToken(0)
+	task := &model.Task{}
+	err = p.db.First(task, taskId).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	m.TaskID = &task.ID
+	err = p.db.Create(&m).Error
+	return
+}
+
+// Authenticate the user making the web request.
 func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
 			Log.V(2).Info("[builtin] " + err.Error())
 		}
 	}()
-	bearer, err := p.extractBearer(request)
-	if err != nil {
+	if request.Token != "" {
+		jwToken, err = p.authToken(request.Token)
 		return
 	}
-	jwToken, err = jwt.Parse(
-		bearer,
-		func(jwToken *jwt.Token) (key any, err error) {
-			_, cast := jwToken.Method.(*jwt.SigningMethodRSA)
-			if !cast {
-				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
-				return
-			}
-			kid, found := jwToken.Header["kid"]
-			if !found {
-				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
-				return
-			}
-			jwk, findErr := p.keySet.Key(kid.(string))
-			if findErr != nil {
-				err = liberr.Wrap(findErr)
-				return
-			}
-			privateKey, cast := jwk.Key().(*rsa.PrivateKey)
-			if !cast {
-				err = liberr.Wrap(&NotAuthenticated{Token: bearer})
-				return
-			}
-			key = &privateKey.PublicKey
-			return
-		},
-		jwt.WithoutClaimsValidation())
-	if err != nil {
-		jwToken, err = jwt.Parse(
-			bearer,
-			func(jwToken *jwt.Token) (secret any, err error) {
-				_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
-				if !cast {
-					err = liberr.Wrap(&NotAuthenticated{Token: bearer})
-					return
-				}
-				secret = []byte(Settings.Token.Key)
-				return
-			},
-			jwt.WithoutClaimsValidation())
-	}
-	if err == nil {
-		err = p.validToken(jwToken)
+	if request.Userid != "" {
+		jwToken, err = p.authUser(request.Userid, request.Password)
 		return
 	}
-	token, err := p.tokenCache.Get(bearer)
-	if err == nil {
-		jwToken = jwt.New(jwt.SigningMethodHS512)
-		jwtClaims := jwToken.Claims.(jwt.MapClaims)
-		jwtClaims[ClaimScope] = token.Scopes
-		jwtClaims[ClaimSub] = token.Subject
-		return
-	}
-	err = liberr.Wrap(&NotAuthenticated{Token: bearer})
+	err = liberr.Wrap(&NotAuthenticated{})
 	return
 }
 
@@ -252,17 +194,6 @@ func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 				scope)
 		}
 	}
-	return
-}
-
-// extractBearer returns the token
-func (p *Builtin) extractBearer(request *Request) (bearer string, err error) {
-	splitToken := strings.Fields(request.Token)
-	if len(splitToken) != 2 || strings.ToLower(splitToken[0]) != "bearer" {
-		err = liberr.Wrap(&NotValid{Token: request.Token})
-		return
-	}
-	bearer = splitToken[1]
 	return
 }
 
@@ -346,16 +277,6 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 	return
 }
 
-// newToken returns a new token.
-func (p *Builtin) newToken(req TokenRequest) (token Token) {
-	token.Kind = KindAPIKey
-	token.AuthId = p.storage.genId()
-	token.Secret = p.storage.genId()
-	token.Digest = secret.Hash(token.Secret)
-	token.Expiration = time.Now().Add(req.Lifespan)
-	return
-}
-
 // KeySet represents a JSON Web Key Set.
 type KeySet struct {
 	Keys []JWK
@@ -378,6 +299,119 @@ func (k *KeySet) Key(id string) (jwk JWK, err error) {
 		}
 	}
 	err = errors.New("key not found")
+	return
+}
+
+// authToken authenticate the token.
+func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
+	defer func() {
+		if errors.Is(err, &NotValid{}) {
+			Log.V(2).Info("[builtin] " + err.Error())
+		}
+	}()
+	jwToken, err = jwt.Parse(
+		token,
+		func(jwToken *jwt.Token) (key any, err error) {
+			_, cast := jwToken.Method.(*jwt.SigningMethodRSA)
+			if !cast {
+				err = liberr.Wrap(&NotAuthenticated{Token: token})
+				return
+			}
+			kid, found := jwToken.Header["kid"]
+			if !found {
+				err = liberr.Wrap(&NotAuthenticated{Token: token})
+				return
+			}
+			jwk, findErr := p.keySet.Key(kid.(string))
+			if findErr != nil {
+				err = liberr.Wrap(findErr)
+				return
+			}
+			privateKey, cast := jwk.Key().(*rsa.PrivateKey)
+			if !cast {
+				err = liberr.Wrap(&NotAuthenticated{Token: token})
+				return
+			}
+			key = &privateKey.PublicKey
+			return
+		},
+		jwt.WithoutClaimsValidation())
+	if err != nil {
+		jwToken, err = jwt.Parse(
+			token,
+			func(jwToken *jwt.Token) (secret any, err error) {
+				_, cast := jwToken.Method.(*jwt.SigningMethodHMAC)
+				if !cast {
+					err = liberr.Wrap(&NotAuthenticated{Token: token})
+					return
+				}
+				secret = []byte(Settings.Token.Key)
+				return
+			},
+			jwt.WithoutClaimsValidation())
+	}
+	if err == nil {
+		err = p.validToken(jwToken)
+		return
+	}
+	pat, err := p.tokenCache.Get(token)
+	if err == nil {
+		jwToken = jwt.New(jwt.SigningMethodHS512)
+		jwtClaims := jwToken.Claims.(jwt.MapClaims)
+		jwtClaims[ClaimScope] = pat.Scopes
+		jwtClaims[ClaimSub] = pat.Subject
+		return
+	}
+	err = liberr.Wrap(&NotAuthenticated{Token: token})
+	return
+}
+
+// authUser authenticate the user.
+func (p *Builtin) authUser(userid, password string) (jwToken *jwt.Token, err error) {
+	user := &model.User{}
+	db := p.db.Preload("Roles")
+	db = db.Preload("Roles.Permissions")
+	err = db.First(user, "Userid", userid).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = &NotAuthenticated{
+				Token: userid,
+			}
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	if !secret.MatchPassword(password, user.Password) {
+		err = &NotAuthenticated{
+			Token: userid,
+		}
+		return
+	}
+	unique := make(map[string]bool)
+	scopes := make([]string, 0)
+	for _, u := range user.Roles {
+		for _, perm := range u.Permissions {
+			if !unique[perm.Scope] {
+				scopes = append(scopes, perm.Scope)
+			}
+			unique[perm.Scope] = true
+		}
+	}
+	jwToken = jwt.New(jwt.SigningMethodRS256)
+	jwtClaims := jwToken.Claims.(jwt.MapClaims)
+	jwtClaims[ClaimSub] = user.Subject
+	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
+	return
+}
+
+// newToken returns a new token.
+func (p *Builtin) newToken(lifespan time.Duration) (token Token) {
+	token.Kind = KindAPIKey
+	token.AuthId = p.storage.genId()
+	token.Secret = p.storage.genId()
+	token.Digest = secret.Hash(token.Secret)
+	token.Expiration = time.Now().Add(lifespan)
 	return
 }
 

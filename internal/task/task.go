@@ -681,10 +681,7 @@ func (r *Task) propagateEnv(addon, extension *core.Container) {
 
 // secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret) {
-	req := auth.TokenRequest{
-		TaskID: r.Task.ID,
-	}
-	token, _ := req.Grant()
+	token, _ := auth.IdP.NewTaskToken(r.ID)
 	secret = core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,

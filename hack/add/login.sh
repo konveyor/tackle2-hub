@@ -8,10 +8,9 @@ lifespan="${3:-24}"
 curl -Ss -k -X POST ${host}/auth/tokens \
   -H 'Content-Type:application/x-yaml' \
   -H 'Accept:application/x-yaml' \
+  -u ${user}:${password} \
   -d \
 "
-userid: ${user}
-password: ${password}
 lifespan: ${lifespan}
 "
 
