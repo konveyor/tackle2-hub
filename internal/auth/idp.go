@@ -62,8 +62,8 @@ func (h *IdpHandler) parseAccessToken(accessToken string) (claims map[string]any
 		return
 	}
 
-	mapClaims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
+	mapClaims, cast := token.Claims.(jwt.MapClaims)
+	if !cast {
 		err = liberr.New("invalid token claims type")
 		return
 	}
@@ -348,7 +348,7 @@ func (f *IdpLogin) issueTokens() (err error) {
 		}
 
 		// Update the auth request with the authenticated user
-		if ar, ok := authReq.(*AuthRequest); ok {
+		if ar, cast := authReq.(*AuthRequest); cast {
 			ar.subject = subject
 		}
 
