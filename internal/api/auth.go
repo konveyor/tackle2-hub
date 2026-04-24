@@ -819,6 +819,7 @@ func Required(scope string) func(*gin.Context) {
 			Scope:  scope,
 			Method: ctx.Request.Method,
 			DB:     rtx.DB,
+			CTX:    ctx,
 		}
 		request.With(header)
 		result, err := request.Permit()

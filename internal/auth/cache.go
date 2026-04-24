@@ -53,8 +53,6 @@ func (r *Cache) GetPAT(token string) (m Token, err error) {
 		Settings.Auth.APIKey.CacheLifespan {
 		r.reset()
 	}
-	//
-	// Fetch
 	digest := secret.Hash(token)
 	m, found := r.byDigest[digest]
 	if found {
@@ -72,6 +70,11 @@ func (r *Cache) GetPAT(token string) (m Token, err error) {
 		err = &NotAuthenticated{}
 		return
 	}
+	err = r.put(digest, m)
+	return
+}
+
+func (r *Cache) put(digest string, m Token) (err error) {
 	//
 	// PAT owned by a user.
 	if m.User != nil {

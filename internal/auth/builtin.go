@@ -156,18 +156,18 @@ func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 }
 
 // Authenticate the user making the web request.
-func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error) {
+func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
 			Log.V(2).Info("[builtin] " + err.Error())
 		}
 	}()
-	if request.Token != "" {
-		jwToken, err = p.authToken(request.Token)
+	if req.Token != "" {
+		jwToken, err = p.authToken(req)
 		return
 	}
-	if request.Userid != "" {
-		jwToken, err = p.authUser(request.Userid, request.Password)
+	if req.Userid != "" {
+		jwToken, err = p.authUser(req)
 		return
 	}
 	err = liberr.Wrap(&NotAuthenticated{})
@@ -314,12 +314,13 @@ func (k *KeySet) Key(id string) (jwk JWK, err error) {
 }
 
 // authToken authenticate the token.
-func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
+func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
 			Log.V(2).Info("[builtin] " + err.Error())
 		}
 	}()
+	token := req.Token
 	//
 	// RSA Token.
 	jwToken, err = jwt.Parse(
@@ -371,20 +372,50 @@ func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
 	}
 	//
 	// PAT/api-key.
-	pat, err := p.cache.GetPAT(token)
+	jwToken, err = p.authPAT(req)
 	if err == nil {
-		jwToken = jwt.New(jwt.SigningMethodHS512)
-		jwtClaims := jwToken.Claims.(jwt.MapClaims)
-		jwtClaims[ClaimScope] = pat.Scopes
-		jwtClaims[ClaimSub] = pat.Subject
 		return
 	}
 	err = liberr.Wrap(&NotAuthenticated{Token: token})
 	return
 }
 
+// authPAT authenticate the PAT.
+func (p *Builtin) authPAT(req *Request) (jwToken *jwt.Token, err error) {
+	token, err := p.cache.GetPAT(req.Token)
+	if err != nil {
+		err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
+		return
+	}
+	id := token.IdpIdentity
+	if id != nil && id.Expiration.Before(time.Now()) {
+		flow := &IdpLogin{
+			handler: p.idpHandler,
+			ctx:     req.CTX,
+		}
+		err = flow.RefreshIdentity(id)
+		if err != nil {
+			err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
+			return
+		}
+		p.cache.Delete(token.ID)
+		token, err = p.cache.GetPAT(req.Token)
+		if err != nil {
+			err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
+			return
+		}
+	}
+	jwToken = jwt.New(jwt.SigningMethodHS512)
+	jwtClaims := jwToken.Claims.(jwt.MapClaims)
+	jwtClaims[ClaimScope] = token.Scopes
+	jwtClaims[ClaimSub] = token.Subject
+	return
+}
+
 // authUser authenticate the user.
-func (p *Builtin) authUser(userid, password string) (jwToken *jwt.Token, err error) {
+func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
+	userid := req.Userid
+	password := req.Password
 	user := &model.User{}
 	db := p.db.Preload("Roles")
 	db = db.Preload("Roles.Permissions")
