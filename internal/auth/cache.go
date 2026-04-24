@@ -12,15 +12,15 @@ import (
 )
 
 // NewCache returns a cache.
-func NewCache(db *gorm.DB) (cache *TokenCache) {
-	cache = &TokenCache{db: db}
+func NewCache(db *gorm.DB) (cache *Cache) {
+	cache = &Cache{db: db}
 	cache.reset()
 	return
 }
 
-// TokenCache provides an Token cache.
+// Cache caches resources.
 // Tokens are cached to mitigate DB pressure during heavy loads.
-type TokenCache struct {
+type Cache struct {
 	db        *gorm.DB
 	mutex     sync.RWMutex
 	byId      map[uint]Token
@@ -28,14 +28,14 @@ type TokenCache struct {
 	resetLast time.Time
 }
 
-func (r *TokenCache) Reset() {
+func (r *Cache) Reset() {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.reset()
 }
 
 // Delete a token by id.
-func (r *TokenCache) Delete(id uint) {
+func (r *Cache) Delete(id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	token, found := r.byId[id]
@@ -45,15 +45,17 @@ func (r *TokenCache) Delete(id uint) {
 	}
 }
 
-// Get returns a token by secret.
-func (r *TokenCache) Get(tokenSecret string) (m Token, err error) {
+// GetPAT returns a PAT.
+func (r *Cache) GetPAT(token string) (m Token, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if time.Since(r.resetLast) >
 		Settings.Auth.APIKey.CacheLifespan {
 		r.reset()
 	}
-	digest := secret.Hash(tokenSecret)
+	//
+	// Fetch
+	digest := secret.Hash(token)
 	m, found := r.byDigest[digest]
 	if found {
 		return
@@ -64,13 +66,15 @@ func (r *TokenCache) Get(tokenSecret string) (m Token, err error) {
 	db = db.Preload("User.Roles.Permissions")
 	db = db.Where("digest", digest)
 	db = db.Where("expiration > ?", time.Now())
-
+	db = db.Where("kind", KindAPIKey)
 	err = db.First(&m).Error
 	if err != nil {
 		err = &NotAuthenticated{}
 		return
 	}
-	if m.UserID != nil {
+	//
+	// PAT owned by a user.
+	if m.User != nil {
 		if m.User == nil {
 			err = &NotAuthenticated{}
 			return
@@ -88,7 +92,8 @@ func (r *TokenCache) Get(tokenSecret string) (m Token, err error) {
 		}
 		m.Scopes = strings.Join(scopes, " ")
 	}
-	if m.TaskID != nil {
+	// API-Key owned by task.
+	if m.Task != nil {
 		if m.Task == nil {
 			err = &NotAuthenticated{}
 			return
@@ -103,12 +108,18 @@ func (r *TokenCache) Get(tokenSecret string) (m Token, err error) {
 			strings.Join(AddonScopes, " ")
 		}
 	}
+	//
+	// PAT owned by a (remote) IdP identity.
+	if m.IdpIdentity != nil {
+		m.Scopes = m.IdpIdentity.Scopes
+	}
+	// Add to the cache.
 	r.byId[m.ID] = m
 	r.byDigest[digest] = m
 	return
 }
 
-func (r *TokenCache) reset() {
+func (r *Cache) reset() {
 	r.byId = make(map[uint]Token)
 	r.byDigest = make(map[string]Token)
 	r.resetLast = time.Now()

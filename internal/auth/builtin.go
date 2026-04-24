@@ -22,8 +22,8 @@ import (
 // NewBuiltin returns a configured provider.
 func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin = &Builtin{
-		tokenCache: NewCache(db),
-		db:         db,
+		cache: NewCache(db),
+		db:    db,
 	}
 	keyManager := NewKeyManager(db)
 	builtin.keySet, err = keyManager.KeySet()
@@ -90,7 +90,7 @@ type Builtin struct {
 	db         *gorm.DB
 	provider   op.OpenIDProvider
 	idpHandler *IdpHandler
-	tokenCache *TokenCache
+	cache      *Cache
 	storage    *Storage
 	keySet     KeySet
 }
@@ -118,15 +118,26 @@ func (p *Builtin) Login(
 
 // NewPAT create a new personal access token.
 func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err error) {
+	defer func() {
+		if err != nil {
+			err = liberr.Wrap(err)
+		}
+	}()
 	m = p.newToken(lifespan)
 	user := &model.User{}
 	err = p.db.First(user, "subject", subject).Error
-	if err != nil {
-		err = liberr.Wrap(err)
+	if err == nil {
+		m.UserID = &user.ID
+		err = p.db.Create(&m).Error
 		return
 	}
-	m.UserID = &user.ID
-	err = p.db.Create(&m).Error
+	idpId := &model.IdpIdentity{}
+	err = p.db.First(idpId, "subject", subject).Error
+	if err == nil {
+		m.IdpIdentityID = &idpId.ID
+		err = p.db.Create(&m).Error
+		return
+	}
 	return
 }
 
@@ -165,7 +176,7 @@ func (p *Builtin) Authenticate(request *Request) (jwToken *jwt.Token, err error)
 
 // Revoke a token.
 func (p *Builtin) Revoke(tokenId uint) (err error) {
-	p.tokenCache.Delete(tokenId)
+	p.cache.Delete(tokenId)
 	m := &model.Token{}
 	m.ID = tokenId
 	err = p.db.Delete(m).Error
@@ -309,6 +320,8 @@ func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
 			Log.V(2).Info("[builtin] " + err.Error())
 		}
 	}()
+	//
+	// RSA Token.
 	jwToken, err = jwt.Parse(
 		token,
 		func(jwToken *jwt.Token) (key any, err error) {
@@ -336,6 +349,8 @@ func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
 			return
 		},
 		jwt.WithoutClaimsValidation())
+	//
+	// Legacy HMAC token.
 	if err != nil {
 		jwToken, err = jwt.Parse(
 			token,
@@ -354,7 +369,9 @@ func (p *Builtin) authToken(token string) (jwToken *jwt.Token, err error) {
 		err = p.validToken(jwToken)
 		return
 	}
-	pat, err := p.tokenCache.Get(token)
+	//
+	// PAT/api-key.
+	pat, err := p.cache.GetPAT(token)
 	if err == nil {
 		jwToken = jwt.New(jwt.SigningMethodHS512)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
