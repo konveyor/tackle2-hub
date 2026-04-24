@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -139,7 +140,7 @@ func (f *IdpLogin) complete() {
 		_ = f.ctx.Error(err)
 		return
 	}
-	err = f.fetchUserInfo()
+	err = f.fetchUserInfo(f.ctx.Request.Context())
 	if err != nil {
 		_ = f.ctx.Error(err)
 		return
@@ -223,9 +224,9 @@ func (f *IdpLogin) exchangeCode() (err error) {
 }
 
 // fetchUserInfo fetches user info from the IdP.
-func (f *IdpLogin) fetchUserInfo() (err error) {
+func (f *IdpLogin) fetchUserInfo(ctx context.Context) (err error) {
 	f.userInfo, err = rp.Userinfo[*oidc.UserInfo](
-		f.ctx.Request.Context(),
+		ctx,
 		f.tokens.AccessToken,
 		f.tokens.TokenType,
 		f.tokens.IDTokenClaims.GetSubject(),
@@ -241,10 +242,6 @@ func (f *IdpLogin) fetchUserInfo() (err error) {
 // parseAccessToken parses the access token to extract claims.
 func (f *IdpLogin) parseAccessToken() (err error) {
 	f.accessTokenClaims, err = f.handler.parseAccessToken(f.tokens.AccessToken)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	return
 }
 
@@ -345,7 +342,6 @@ func (f *IdpLogin) issueTokens() (err error) {
 		// Complete existing OIDC authorization request
 		authReq, err := f.handler.storage.AuthRequestByID(f.ctx.Request.Context(), f.authRequestID)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return err
 		}
 
@@ -369,7 +365,6 @@ func (f *IdpLogin) issueTokens() (err error) {
 
 		req, err := f.handler.storage.CreateAuthRequest(f.ctx.Request.Context(), authReq, subject)
 		if err != nil {
-			err = liberr.Wrap(err)
 			return err
 		}
 
@@ -382,7 +377,6 @@ func (f *IdpLogin) issueTokens() (err error) {
 	code := f.genState()
 	err = f.handler.storage.SaveAuthCode(f.ctx.Request.Context(), requestID, code)
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 
@@ -422,6 +416,32 @@ func (f *IdpLogin) asString(claim any) (s string) {
 		return
 	}
 	s = strings.Join(values, " ")
+	return
+}
+
+// RefreshIdentity refreshes an IdpIdentity using its refresh token.
+func (f *IdpLogin) RefreshIdentity() (err error) {
+	f.tokens, err = rp.RefreshTokens[*oidc.IDTokenClaims](
+		context.Background(),
+		f.handler.rpClient,
+		f.idpIdentity.RefreshToken,
+		"",
+		"",
+	)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = f.fetchUserInfo(context.Background())
+	if err != nil {
+		return
+	}
+	err = f.parseAccessToken()
+	if err != nil {
+		return
+	}
+	f.idpIdentity = f.buildIdentity()
+	err = f.ensureIdentity()
 	return
 }
 

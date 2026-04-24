@@ -81,6 +81,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			db:       db,
 			storage:  builtin.storage,
 		}
+		builtin.storage.idpHandler = builtin.idpHandler
 	}
 	return
 }

@@ -30,6 +30,7 @@ type Storage struct {
 	db         *gorm.DB
 	authReqs   map[string]*AuthRequest
 	authByCode map[string]string
+	idpHandler *IdpHandler
 }
 
 // GetClientByClientID retrieves a client by ID.
@@ -243,7 +244,7 @@ func (r *Storage) CreateAccessToken(
 	}
 	if s != nil {
 		m.UserID = s.userId
-		m.IdpIdentityID = s.idpIdentityId
+		m.IdpIdentityID = s.identityId
 	}
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -306,6 +307,10 @@ func (r *Storage) TokenRequestByRefreshToken(
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
 		issued:   grant.Issued,
+	}
+	err = r.refreshIdentity(req)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -834,6 +839,27 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 	return
 }
 
+// refreshIdentity refreshes the Idp identity.
+func (r *Storage) refreshIdentity(req op.RefreshTokenRequest) (err error) {
+	subject := req.GetSubject()
+	s, err := r.findSubject(subject)
+	if err != nil {
+		return
+	}
+	if !s.IsIdentity() {
+		return
+	}
+	login := &IdpLogin{
+		handler:     r.idpHandler,
+		idpIdentity: s.identity,
+	}
+	err = login.RefreshIdentity()
+	if err != nil {
+		return
+	}
+	return
+}
+
 // token returns a token by id.
 func (r *Storage) token(_ context.Context, id string) (m *model.Token, err error) {
 	m = &model.Token{}
@@ -979,8 +1005,6 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 // findSubject finds and resolves a subject to User or IdpIdentity.
 func (r *Storage) findSubject(subject string) (s *Subject, err error) {
 	s = &Subject{}
-
-	// Try User first
 	user := &model.User{}
 	db := r.db.Preload(clause.Associations).Preload("Roles.Permissions")
 	err = db.First(user, "subject", subject).Error
@@ -988,15 +1012,12 @@ func (r *Storage) findSubject(subject string) (s *Subject, err error) {
 		s.With(user)
 		return
 	}
-
-	// Fallback to IdpIdentity
 	idpIdentity := &model.IdpIdentity{}
 	err = r.db.First(idpIdentity, "subject", subject).Error
-	if err != nil {
+	if err == nil {
+		s.WithIdentity(idpIdentity)
 		return
 	}
-
-	s.WithIdentity(idpIdentity)
 	return
 }
 
@@ -1365,22 +1386,22 @@ func (k *Key) ID() (s string) {
 
 // Subject represents a resolved subject (User or IdpIdentity).
 type Subject struct {
-	name          string
-	email         string
-	roles         []string
-	scopes        []string
-	userId        *uint
-	idpIdentityId *uint
+	name       string
+	email      string
+	roles      []string
+	scopes     []string
+	userId     *uint
+	identityId *uint
+	user       *model.User
+	identity   *model.IdpIdentity
 }
 
 // With populates Subject from a User model.
 func (r *Subject) With(user *model.User) {
+	r.userId = &user.ID
+	r.user = user
 	r.name = user.Userid
 	r.email = user.Email
-	r.userId = &user.ID
-	r.roles = make([]string, 0)
-	r.scopes = make([]string, 0)
-
 	for _, role := range user.Roles {
 		r.roles = append(r.roles, role.Name)
 		for _, permission := range role.Permissions {
@@ -1391,11 +1412,10 @@ func (r *Subject) With(user *model.User) {
 
 // WithIdentity populates Subject from an IdpIdentity model.
 func (r *Subject) WithIdentity(idp *model.IdpIdentity) {
+	r.identityId = &idp.ID
+	r.identity = idp
 	r.name = idp.Userid
 	r.email = idp.Email
-	r.idpIdentityId = &idp.ID
-	r.roles = make([]string, 0)
-	r.scopes = make([]string, 0)
 
 	if idp.Roles != "" {
 		r.roles = strings.Fields(idp.Roles)
@@ -1412,5 +1432,5 @@ func (r *Subject) IsUser() bool {
 
 // IsIdentity returns true if this subject is an IdpIdentity.
 func (r *Subject) IsIdentity() bool {
-	return r.idpIdentityId != nil
+	return r.identityId != nil
 }
