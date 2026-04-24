@@ -142,6 +142,16 @@ type Token struct {
 	Secret string `gorm:"-"`
 }
 
+// hasExpiredIdentity returns true when the token references and expired IpP identity.
+func (t *Token) hasExpiredIdentity() (expired bool) {
+	id := t.IdpIdentity
+	if id == nil {
+		return
+	}
+	expired = id.Expiration.Before(time.Now())
+	return
+}
+
 // Match returns whether the scope is a match.
 func (r *BaseScope) Match(resource string, method string) (b bool) {
 	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&

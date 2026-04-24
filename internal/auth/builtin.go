@@ -387,13 +387,12 @@ func (p *Builtin) authPAT(req *Request) (jwToken *jwt.Token, err error) {
 		err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
 		return
 	}
-	id := token.IdpIdentity
-	if id != nil && id.Expiration.Before(time.Now()) {
+	if token.hasExpiredIdentity() {
 		flow := &IdpLogin{
 			handler: p.idpHandler,
 			ctx:     req.CTX,
 		}
-		err = flow.RefreshIdentity(id)
+		err = flow.RefreshIdentity(token.IdpIdentity)
 		if err != nil {
 			err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
 			return

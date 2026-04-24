@@ -90,8 +90,10 @@ func (r *Auth) Load() (err error) {
 	r.Client.Secret, _ = os.LookupEnv(EnvClientSecret)
 	s, found := os.LookupEnv(EnvClientRedirectURIs)
 	if found {
-		r.Client.RedirectURIs =
-			strings.Split(s, ",")
+		r.Client.RedirectURIs = strings.Split(s, ",")
+		for i := range r.Client.RedirectURIs {
+			r.Client.RedirectURIs[i] = strings.TrimSpace(r.Client.RedirectURIs[i])
+		}
 	}
 	// Remote IDP Endpoint.
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
@@ -103,8 +105,12 @@ func (r *Auth) Load() (err error) {
 	s, found = os.LookupEnv(EnvIdpScopes)
 	if found {
 		r.Idp.Scopes = strings.Split(s, ",")
+		for i := range r.Idp.Scopes {
+			r.Idp.Scopes[i] = strings.TrimSpace(r.Idp.Scopes[i])
+		}
 	} else {
 		r.Idp.Scopes = []string{
+			"offline_access",
 			"openid",
 			"profile",
 			"email",
