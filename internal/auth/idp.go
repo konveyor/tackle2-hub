@@ -256,6 +256,7 @@ func (f *IdpLogin) ensureIdentity() (err error) {
 			{Name: "subject"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
+			"refreshToken",
 			"expiration",
 			"lastAuthenticated",
 			"lastRefreshed",
@@ -299,6 +300,7 @@ func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 		Subject:           f.userInfo.Subject,
 		Userid:            userid,
 		Email:             email,
+		RefreshToken:      f.tokens.RefreshToken,
 		Expiration:        expiration,
 		LastAuthenticated: time.Now(),
 		LastRefreshed:     time.Now(),

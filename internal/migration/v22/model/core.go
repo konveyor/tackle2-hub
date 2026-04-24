@@ -238,6 +238,7 @@ type IdpIdentity struct {
 	Model
 	Issuer            string    `gorm:"not null"`
 	Subject           string    `gorm:"uniqueIndex;not null"`
+	RefreshToken      string    `gorm:"not null" secret:""`
 	Expiration        time.Time `gorm:"index"`
 	LastAuthenticated time.Time
 	LastRefreshed     time.Time
