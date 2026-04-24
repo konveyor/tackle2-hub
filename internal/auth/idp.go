@@ -91,8 +91,7 @@ type IdpLogin struct {
 	tokens            *oidc.Tokens[*oidc.IDTokenClaims]
 	userInfo          *oidc.UserInfo
 	accessTokenClaims map[string]any
-
-	idpIdentity *model.IdpIdentity
+	idpIdentity       *model.IdpIdentity
 }
 
 // begin initiates the external IdP authentication flow.
@@ -101,8 +100,8 @@ func (f *IdpLogin) begin() {
 	f.authRequestID = f.ctx.Query("authRequestID")
 
 	// Generate state and code verifier for PKCE
-	f.state = f.generateState()
-	f.codeVerifier = f.generateState()
+	f.state = f.genState()
+	f.codeVerifier = f.genState()
 
 	// Build authorization URL with PKCE
 	authURL := rp.AuthURL(
@@ -280,7 +279,7 @@ func (f *IdpLogin) ensureIdentity() (err error) {
 func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 	email := f.userInfo.Email
 	if email == "" {
-		email = fmt.Sprintf("%s@external", f.userInfo.Subject)
+		email = fmt.Sprintf("%s@unknown", f.userInfo.Subject)
 	}
 
 	userid := f.userInfo.PreferredUsername
@@ -323,12 +322,12 @@ func (f *IdpLogin) extractClaims() (scopes string, roles string) {
 
 	// Extract scopes
 	if scopeClaim, found := f.accessTokenClaims["scope"]; found {
-		scopes = f.stringFromClaim(scopeClaim)
+		scopes = f.asString(scopeClaim)
 	}
 
 	// Extract roles
 	if roleClaim, found := f.accessTokenClaims["roles"]; found {
-		roles = f.stringFromClaim(roleClaim)
+		roles = f.asString(roleClaim)
 	}
 
 	return
@@ -366,7 +365,7 @@ func (f *IdpLogin) issueTokens() (err error) {
 			RedirectURI:  Settings.Auth.Client.RedirectURIs[0],
 			Scopes:       []string{"openid", "profile", "email"},
 			ResponseType: oidc.ResponseTypeCode,
-			State:        f.generateState(),
+			State:        f.genState(),
 		}
 
 		req, err := f.handler.storage.CreateAuthRequest(f.ctx.Request.Context(), authReq, subject)
@@ -381,7 +380,7 @@ func (f *IdpLogin) issueTokens() (err error) {
 	}
 
 	// Generate authorization code
-	code := f.generateState()
+	code := f.genState()
 	err = f.handler.storage.SaveAuthCode(f.ctx.Request.Context(), requestID, code)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -401,14 +400,13 @@ func (f *IdpLogin) issueTokens() (err error) {
 	return
 }
 
-// stringFromClaim converts a claim value to space-separated string.
-func (f *IdpLogin) stringFromClaim(claimValue any) (result string) {
+// asString converts a claim value to space-separated string.
+func (f *IdpLogin) asString(claim any) (s string) {
 	var values []string
-
-	switch v := claimValue.(type) {
+	switch v := claim.(type) {
 	case []interface{}:
 		for _, item := range v {
-			if s, ok := item.(string); ok {
+			if s, cast := item.(string); cast {
 				values = append(values, s)
 			}
 		}
@@ -421,15 +419,15 @@ func (f *IdpLogin) stringFromClaim(claimValue any) (result string) {
 		Log.Info(
 			"Unexpected claim type",
 			"type",
-			fmt.Sprintf("%T", claimValue))
+			fmt.Sprintf("%T", claim))
 		return
 	}
-
-	return strings.Join(values, " ")
+	s = strings.Join(values, " ")
+	return
 }
 
-// generateState generates a random state string.
-func (f *IdpLogin) generateState() (state string) {
+// genState generates a random state string.
+func (f *IdpLogin) genState() (state string) {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 	state = base64.URLEncoding.EncodeToString(b)
