@@ -15,6 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
+	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -340,9 +341,10 @@ func (f *IdpLogin) issueTokens() (err error) {
 
 	if f.authRequestID != "" {
 		// Complete existing OIDC authorization request
-		authReq, err := f.handler.storage.AuthRequestByID(f.ctx.Request.Context(), f.authRequestID)
+		var authReq op.AuthRequest
+		authReq, err = f.handler.storage.AuthRequestByID(f.ctx.Request.Context(), f.authRequestID)
 		if err != nil {
-			return err
+			return
 		}
 
 		// Update the auth request with the authenticated user
@@ -355,7 +357,9 @@ func (f *IdpLogin) issueTokens() (err error) {
 		requestID = f.authRequestID
 	} else {
 		// Create a new authorization request (standalone IdP login)
-		authReq := &oidc.AuthRequest{
+		var authReq *oidc.AuthRequest
+		var req op.AuthRequest
+		authReq = &oidc.AuthRequest{
 			ClientID:     Settings.Auth.Client.ID,
 			RedirectURI:  Settings.Auth.Client.RedirectURIs[0],
 			Scopes:       []string{"openid", "profile", "email"},
@@ -363,9 +367,9 @@ func (f *IdpLogin) issueTokens() (err error) {
 			State:        f.genState(),
 		}
 
-		req, err := f.handler.storage.CreateAuthRequest(f.ctx.Request.Context(), authReq, subject)
+		req, err = f.handler.storage.CreateAuthRequest(f.ctx.Request.Context(), authReq, subject)
 		if err != nil {
-			return err
+			return
 		}
 
 		redirectURI = authReq.RedirectURI

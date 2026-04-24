@@ -857,6 +857,9 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest) (err error) {
 	if err != nil {
 		return
 	}
+	Log.Info("IDP-IDENTITY REFRESHED",
+		"refreshToken",
+		s.identity.RefreshToken)
 	return
 }
 
