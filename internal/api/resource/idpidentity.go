@@ -15,7 +15,6 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	r.Subject = m.Subject
 	r.Userid = m.Userid
 	r.Email = m.Email
-	r.RefreshToken = m.RefreshToken
 	r.Expiration = m.Expiration
 	r.LastAuthenticated = m.LastAuthenticated
 	r.LastRefreshed = m.LastRefreshed
@@ -30,7 +29,6 @@ func (r *IdpIdentity) Model() (m *model.IdpIdentity) {
 		Subject:           r.Subject,
 		Userid:            r.Userid,
 		Email:             r.Email,
-		RefreshToken:      r.RefreshToken,
 		Expiration:        r.Expiration,
 		LastAuthenticated: r.LastAuthenticated,
 		LastRefreshed:     r.LastRefreshed,

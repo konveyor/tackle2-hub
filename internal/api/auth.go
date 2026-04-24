@@ -690,7 +690,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 		return
 	}
 	if r.Lifespan == 0 {
-		r.Lifespan = Settings.APIKey.Lifespan
+		r.Lifespan = int(Settings.APIKey.Lifespan.Hours())
 	}
 	if r.Expiration.IsZero() {
 		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)

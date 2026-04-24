@@ -35,13 +35,8 @@ func TestUserGrant(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Test creating token with valid credentials
-	req := TokenRequest{
-		Userid:   user.Userid,
-		Password: "testpassword",
-		Lifespan: 24 * time.Hour,
-	}
-	token, err := provider.Grant(req)
+	// Test creating token with valid subject
+	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 
@@ -55,22 +50,13 @@ func TestUserGrant(t *testing.T) {
 	err = db.First(&token).Error
 	g.Expect(err).To(BeNil())
 
-	// Test creating token with invalid password
-	req.Password = "wrong-password"
-	_, err = provider.Grant(req)
+	// Test creating token with non-existent subject
+	_, err = provider.NewPAT("non-existent-subject", 24*time.Hour)
 	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-
-	// Test creating token with non-existent user
-	req.Userid = "not-existing-user"
-	_, err = provider.Grant(req)
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
 	// Test authenticating with the token
-	request := &Request{
-		Token: "Bearer " + token.Secret,
-	}
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
@@ -88,9 +74,8 @@ func TestUserGrant(t *testing.T) {
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
 
-	request = &Request{
-		Token: "Bearer " + expiredSecret,
-	}
+	request = &Request{}
+	request.With("Bearer " + expiredSecret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 }
@@ -114,18 +99,13 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
-	req := TokenRequest{
-		TaskID:   task.ID,
-		Lifespan: 24 * time.Hour,
-	}
-	token, err := provider.Grant(req)
+	token, err := provider.NewTaskToken(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 
 	// Test authenticating with the task token
-	request := &Request{
-		Token: "Bearer " + token.Secret,
-	}
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
@@ -135,8 +115,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating key for non-existent task
-	req.TaskID = 9999
-	_, err = provider.Grant(req)
+	_, err = provider.NewTaskToken(9999)
 	g.Expect(err).NotTo(BeNil())
 }
 
@@ -166,9 +145,8 @@ func TestJWTAuthentication(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test authenticating with valid JWT
-	request := &Request{
-		Token: "Bearer " + tokenString,
-	}
+	request := &Request{}
+	request.With("Bearer " + tokenString)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
@@ -189,9 +167,8 @@ func TestJWTAuthentication(t *testing.T) {
 	expiredTokenString, err := expiredToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{
-		Token: "Bearer " + expiredTokenString,
-	}
+	request = &Request{}
+	request.With("Bearer " + expiredTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("expired"))
@@ -205,9 +182,8 @@ func TestJWTAuthentication(t *testing.T) {
 	noSubTokenString, err := noSubToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{
-		Token: "Bearer " + noSubTokenString,
-	}
+	request = &Request{}
+	request.With("Bearer " + noSubTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("User not specified"))
@@ -221,9 +197,8 @@ func TestJWTAuthentication(t *testing.T) {
 	noScopeTokenString, err := noScopeToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{
-		Token: "Bearer " + noScopeTokenString,
-	}
+	request = &Request{}
+	request.With("Bearer " + noScopeTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("Scope not specified"))
@@ -303,30 +278,26 @@ func TestInvalidBearerToken(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test missing "Bearer" prefix
-	request := &Request{
-		Token: "invalid-token-without-bearer",
-	}
+	request := &Request{}
+	request.With("invalid-token-without-bearer")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test empty token
-	request = &Request{
-		Token: "",
-	}
+	request = &Request{}
+	request.With("")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
-	// Test malformed bearer token
-	request = &Request{
-		Token: "Bearer",
-	}
+	// Test malformed bearer token (missing token value)
+	request = &Request{}
+	request.With("Bearer")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test invalid JWT
-	request = &Request{
-		Token: "Bearer invalid.jwt.token",
-	}
+	request = &Request{}
+	request.With("Bearer invalid.jwt.token")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 }
@@ -401,37 +372,37 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for running task - should work
-	kr := TokenRequest{
-		TaskID:   task.ID,
-		Lifespan: 24 * time.Hour,
-	}
-	key, err := provider.Grant(kr)
+	key, err := provider.NewTaskToken(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with key - should work
-	request := &Request{Token: "Bearer " + key.Secret}
+	request := &Request{}
+	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
 	// Update task to Succeeded - key should now be rejected
-	provider.tokenCache.Reset()
+	provider.cache.Reset()
 	db.Model(task).Update("State", "Succeeded")
-	request = &Request{Token: "Bearer " + key.Secret}
+	request = &Request{}
+	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 
 	// Test with Failed state
-	provider.tokenCache.Reset()
+	provider.cache.Reset()
 	db.Model(task).Update("State", "Failed")
-	request = &Request{Token: "Bearer " + key.Secret}
+	request = &Request{}
+	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test with Canceled state
-	provider.tokenCache.Reset()
+	provider.cache.Reset()
 	db.Model(task).Update("State", "Canceled")
-	request = &Request{Token: "Bearer " + key.Secret}
+	request = &Request{}
+	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 }
@@ -476,24 +447,19 @@ func TestRequestPermit(t *testing.T) {
 	// Set up provider
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
-	Hub = provider
+	IdP = provider
 
 	// Create token
-	kr := TokenRequest{
-		Userid:   "testuser",
-		Password: "password",
-		Lifespan: 24 * time.Hour,
-	}
-	key, err := provider.Grant(kr)
+	key, err := provider.NewPAT(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Test authenticated and authorized (matching scope)
 	request := &Request{
-		Token:  "Bearer " + key.Secret,
 		Scope:  "applications",
 		Method: "GET",
 		DB:     db,
 	}
+	request.With("Bearer " + key.Secret)
 	result, err := request.Permit()
 	g.Expect(err).To(BeNil())
 	g.Expect(result.Authenticated).To(BeTrue())
@@ -502,11 +468,11 @@ func TestRequestPermit(t *testing.T) {
 
 	// Test authenticated but not authorized (wrong method)
 	request = &Request{
-		Token:  "Bearer " + key.Secret,
 		Scope:  "applications",
 		Method: "POST",
 		DB:     db,
 	}
+	request.With("Bearer " + key.Secret)
 	result, err = request.Permit()
 	g.Expect(err).To(BeNil())
 	g.Expect(result.Authenticated).To(BeTrue())
@@ -514,11 +480,11 @@ func TestRequestPermit(t *testing.T) {
 
 	// Test not authenticated (invalid token)
 	request = &Request{
-		Token:  "Bearer invalid-token",
 		Scope:  "applications",
 		Method: "GET",
 		DB:     db,
 	}
+	request.With("Bearer invalid-token")
 	result, err = request.Permit()
 	g.Expect(err).To(BeNil())
 	g.Expect(result.Authenticated).To(BeFalse())
@@ -536,7 +502,8 @@ func TestNoAuthProvider(t *testing.T) {
 	provider := NewNoAuth(builtin)
 
 	// Authenticate always succeeds (returns nil token, nil error)
-	request := &Request{Token: "any-token"}
+	request := &Request{}
+	request.With("Bearer any-token")
 	token, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
@@ -553,8 +520,10 @@ func TestNoAuthProvider(t *testing.T) {
 
 	// Create test user.
 	user := &model.User{
+		Subject:  "noauth-test-subject",
 		Userid:   "testuser",
 		Password: secret.HashPassword("password"),
+		Email:    "noauth@example.com",
 	}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
@@ -562,12 +531,7 @@ func TestNoAuthProvider(t *testing.T) {
 		db.Delete(user)
 	})
 
-	kr := TokenRequest{
-		Userid:   user.Userid,
-		Password: "password",
-		Lifespan: time.Hour,
-	}
-	key, err := provider.Grant(kr)
+	key, err := provider.NewPAT(user.Subject, time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 
@@ -578,8 +542,7 @@ func TestNoAuthProvider(t *testing.T) {
 		db.Delete(task)
 	})
 
-	kr.TaskID = task.ID
-	key, err = provider.Grant(kr)
+	key, err = provider.NewTaskToken(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 }
@@ -655,21 +618,17 @@ func TestKeyCacheDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token
-	req := TokenRequest{
-		Userid:   "cachedeleteuser",
-		Password: "password",
-		Lifespan: 1 * time.Hour,
-	}
-	token, err := provider.Grant(req)
+	token, err := provider.NewPAT(user.Subject, 1*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
-	request := &Request{Token: "Bearer " + token.Secret}
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
 	// Delete the key from cache only
-	provider.tokenCache.Delete(token.ID)
+	provider.cache.Delete(token.ID)
 
 	// Verify token is removed from cache - next call should fetch from DB again
 	// Since the key still exists in DB, authentication should succeed
@@ -683,7 +642,7 @@ func TestKeyCacheDelete(t *testing.T) {
 	// Now delete from DB manually and from cache
 	err = db.Delete(&token).Error
 	g.Expect(err).To(BeNil())
-	provider.tokenCache.Delete(token.ID)
+	provider.cache.Delete(token.ID)
 
 	// Authentication should now fail (not in cache or DB)
 	_, err = provider.Authenticate(request)
@@ -730,16 +689,12 @@ func TestBuiltinRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token
-	req := TokenRequest{
-		Userid:   "builtindeleteuser",
-		Password: "password",
-		Lifespan: 1 * time.Hour,
-	}
-	token, err := provider.Grant(req)
+	token, err := provider.NewPAT(user.Subject, 1*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
-	request := &Request{Token: "Bearer " + token.Secret}
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
@@ -800,6 +755,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&model.Token{},
 		&model.Grant{},
 		&model.RsaKey{},
+		&model.IdpIdentity{},
 	)
 	return
 }

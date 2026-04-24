@@ -133,7 +133,8 @@ func (r *Cache) putPAT(digest string, m *Token) (err error) {
 			}
 			return
 		default:
-			strings.Join(AddonScopes, " ")
+			m.Scopes = strings.Join(AddonScopes, " ")
+			m.Subject = "task:" + id
 		}
 		return
 	}

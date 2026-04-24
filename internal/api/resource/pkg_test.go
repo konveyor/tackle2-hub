@@ -3330,7 +3330,6 @@ func TestIdpIdentity_With(t *testing.T) {
 		},
 		Issuer:            "google",
 		Subject:           "user@example.com",
-		RefreshToken:      "refresh-token-xyz",
 		Expiration:        expiration,
 		LastAuthenticated: lastAuth,
 		LastRefreshed:     lastRefresh,
@@ -3342,7 +3341,6 @@ func TestIdpIdentity_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Issuer).To(gomega.Equal("google"))
 	g.Expect(r.Subject).To(gomega.Equal("user@example.com"))
-	g.Expect(r.RefreshToken).To(gomega.Equal("refresh-token-xyz"))
 	g.Expect(r.Expiration).To(gomega.Equal(expiration))
 	g.Expect(r.LastAuthenticated).To(gomega.Equal(lastAuth))
 	g.Expect(r.LastRefreshed).To(gomega.Equal(lastRefresh))
@@ -3360,7 +3358,6 @@ func TestIdpIdentity_Model(t *testing.T) {
 		Resource:          Resource{ID: 1},
 		Issuer:            "google",
 		Subject:           "user@example.com",
-		RefreshToken:      "refresh-token-xyz",
 		Expiration:        expiration,
 		LastAuthenticated: lastAuth,
 		LastRefreshed:     lastRefresh,
@@ -3371,7 +3368,6 @@ func TestIdpIdentity_Model(t *testing.T) {
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Issuer).To(gomega.Equal("google"))
 	g.Expect(m.Subject).To(gomega.Equal("user@example.com"))
-	g.Expect(m.RefreshToken).To(gomega.Equal("refresh-token-xyz"))
 	g.Expect(m.Expiration).To(gomega.Equal(expiration))
 	g.Expect(m.LastAuthenticated).To(gomega.Equal(lastAuth))
 	g.Expect(m.LastRefreshed).To(gomega.Equal(lastRefresh))

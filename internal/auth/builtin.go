@@ -427,6 +427,9 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 
 // newToken returns a new token.
 func (p *Builtin) newToken(lifespan time.Duration) (token Token) {
+	if lifespan == 0 {
+		lifespan = Settings.APIKey.Lifespan
+	}
 	token.Kind = KindAPIKey
 	token.AuthId = p.storage.genId()
 	token.Secret = p.storage.genId()

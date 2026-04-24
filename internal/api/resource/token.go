@@ -19,7 +19,7 @@ func (r *Token) With(m *model.Token) {
 	r.Scopes = m.Scopes
 	r.Issued = m.Issued
 	r.Expiration = m.Expiration
-	r.Lifespan = int(time.Until(r.Expiration) / time.Hour)
+	r.Lifespan = int(time.Until(r.Expiration).Hours())
 	r.Grant = refPtr(m.GrantID, m.Grant)
 	r.Task = refPtr(m.TaskID, m.Task)
 	r.User = refPtr(m.UserID, m.User)

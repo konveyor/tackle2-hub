@@ -256,7 +256,6 @@ func (f *IdpLogin) ensureIdentity() (err error) {
 			{Name: "subject"},
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"refreshToken",
 			"expiration",
 			"lastAuthenticated",
 			"lastRefreshed",
@@ -289,9 +288,8 @@ func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 
 	scopes, roles := f.extractClaims()
 
-	expiration := time.Now().Add(
-		time.Duration(Settings.Auth.Token.RefreshLifespan) * time.Second,
-	)
+	expiration := time.Now().Add(Settings.Auth.Token.RefreshLifespan)
+
 	if f.tokens.Expiry.After(time.Now()) {
 		expiration = f.tokens.Expiry
 	}
@@ -301,7 +299,6 @@ func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 		Subject:           f.userInfo.Subject,
 		Userid:            userid,
 		Email:             email,
-		RefreshToken:      f.tokens.RefreshToken,
 		Expiration:        expiration,
 		LastAuthenticated: time.Now(),
 		LastRefreshed:     time.Now(),

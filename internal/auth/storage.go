@@ -223,8 +223,7 @@ func (r *Storage) CreateAccessToken(
 		}
 	}
 	grantId := ""
-	expiration = time.Now().Add(
-		time.Duration(Settings.Token.Lifespan) * time.Second)
+	expiration = time.Now().Add(Settings.Token.Lifespan)
 	switch r := req.(type) {
 	case *RefreshRequest:
 		grantId = r.grantId
@@ -932,8 +931,7 @@ func (r *Storage) createGrant(
 	refreshToken string) (grantId string, err error) {
 	//
 	grantId = r.genId()
-	expiration := time.Now().
-		Add(time.Duration(Settings.Token.RefreshLifespan) * time.Second)
+	expiration := time.Now().Add(Settings.Token.RefreshLifespan)
 	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
 	m := &model.Grant{
@@ -1127,7 +1125,7 @@ func (c *Client) AccessTokenType() (t op.AccessTokenType) {
 
 // IDTokenLifetime returns the ID token lifetime.
 func (c *Client) IDTokenLifetime() (d time.Duration) {
-	d = time.Duration(Settings.Token.Lifespan) * time.Second
+	d = Settings.Token.Lifespan
 	return
 }
 

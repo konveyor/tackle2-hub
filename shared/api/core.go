@@ -148,7 +148,6 @@ type IdpIdentity struct {
 	Subject           string    `json:"subject" binding:"required"`
 	Userid            string    `json:"userid"`
 	Email             string    `json:"email"`
-	RefreshToken      string    `json:"refreshToken" binding:"required"`
 	Expiration        time.Time `json:"expiration"`
 	LastAuthenticated time.Time `json:"lastAuthenticated"`
 	LastRefreshed     time.Time `json:"lastRefreshed"`
