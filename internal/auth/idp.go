@@ -161,31 +161,6 @@ func (f *IdpLogin) complete() {
 	}
 }
 
-// RefreshIdentity refreshes an expired IdpIdentity using its refresh token.
-func (f *IdpLogin) RefreshIdentity(idpIdentity *model.IdpIdentity) (err error) {
-	f.tokens, err = rp.RefreshTokens[*oidc.IDTokenClaims](
-		f.ctx.Request.Context(),
-		f.handler.rpClient,
-		idpIdentity.RefreshToken,
-		"",
-		"",
-	)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = f.fetchUserInfo()
-	if err != nil {
-		return
-	}
-	err = f.parseAccessToken()
-	if err != nil {
-		return
-	}
-	err = f.ensureIdentity()
-	return
-}
-
 // validate validates the callback request and extracts flow state.
 func (f *IdpLogin) validate() (err error) {
 	// Validate state (CSRF protection)

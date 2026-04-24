@@ -372,42 +372,15 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	}
 	//
 	// PAT/api-key.
-	jwToken, err = p.authPAT(req)
+	pat, err := p.cache.GetPAT(req.Token)
 	if err == nil {
+		jwToken = jwt.New(jwt.SigningMethodHS512)
+		jwtClaims := jwToken.Claims.(jwt.MapClaims)
+		jwtClaims[ClaimScope] = pat.Scopes
+		jwtClaims[ClaimSub] = pat.Subject
 		return
 	}
 	err = liberr.Wrap(&NotAuthenticated{Token: token})
-	return
-}
-
-// authPAT authenticate the PAT.
-func (p *Builtin) authPAT(req *Request) (jwToken *jwt.Token, err error) {
-	token, err := p.cache.GetPAT(req.Token)
-	if err != nil {
-		err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
-		return
-	}
-	if token.hasExpiredIdentity() {
-		flow := &IdpLogin{
-			handler: p.idpHandler,
-			ctx:     req.CTX,
-		}
-		err = flow.RefreshIdentity(token.IdpIdentity)
-		if err != nil {
-			err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
-			return
-		}
-		p.cache.Delete(token.ID)
-		token, err = p.cache.GetPAT(req.Token)
-		if err != nil {
-			err = liberr.Wrap(&NotAuthenticated{Token: req.Token})
-			return
-		}
-	}
-	jwToken = jwt.New(jwt.SigningMethodHS512)
-	jwtClaims := jwToken.Claims.(jwt.MapClaims)
-	jwtClaims[ClaimScope] = token.Scopes
-	jwtClaims[ClaimSub] = token.Subject
 	return
 }
 
