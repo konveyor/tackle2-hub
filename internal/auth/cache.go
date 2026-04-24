@@ -24,8 +24,8 @@ func NewCache(db *gorm.DB) (cache *Cache) {
 type Cache struct {
 	db        *gorm.DB
 	mutex     sync.RWMutex
-	byId      map[uint]Token
-	byDigest  map[string]Token
+	byId      map[uint]*Token
+	byDigest  map[string]*Token
 	resetLast time.Time
 }
 
@@ -47,7 +47,7 @@ func (r *Cache) Delete(id uint) {
 }
 
 // GetPAT returns a PAT.
-func (r *Cache) GetPAT(token string) (m Token, err error) {
+func (r *Cache) GetPAT(token string) (m *Token, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if time.Since(r.resetLast) >
@@ -59,7 +59,7 @@ func (r *Cache) GetPAT(token string) (m Token, err error) {
 	if found {
 		return
 	}
-	m = Token{}
+	m = &Token{}
 	db := r.db.Preload(clause.Associations)
 	db = db.Preload("User.Roles")
 	db = db.Preload("User.Roles.Permissions")
@@ -73,13 +73,15 @@ func (r *Cache) GetPAT(token string) (m Token, err error) {
 			Id:       token,
 		}
 		return
+	} else {
+		found = true
 	}
 	err = r.putPAT(digest, m)
 	return
 }
 
 // putPAT adds the token to the cache with inherited scopes.
-func (r *Cache) putPAT(digest string, m Token) (err error) {
+func (r *Cache) putPAT(digest string, m *Token) (err error) {
 	defer func() {
 		if err == nil {
 			r.byId[m.ID] = m
@@ -138,13 +140,14 @@ func (r *Cache) putPAT(digest string, m Token) (err error) {
 	//
 	// PAT owned by a (remote) IdP identity.
 	if m.IdpIdentity != nil {
+		m.Subject = m.IdpIdentity.Subject
 		m.Scopes = m.IdpIdentity.Scopes
 	}
 	return
 }
 
 func (r *Cache) reset() {
-	r.byId = make(map[uint]Token)
-	r.byDigest = make(map[string]Token)
+	r.byId = make(map[uint]*Token)
+	r.byDigest = make(map[string]*Token)
 	r.resetLast = time.Now()
 }
