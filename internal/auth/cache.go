@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -67,19 +68,33 @@ func (r *Cache) GetPAT(token string) (m Token, err error) {
 	db = db.Where("kind", KindAPIKey)
 	err = db.First(&m).Error
 	if err != nil {
-		err = &NotAuthenticated{}
+		err = &NotFound{
+			Resource: "PAT",
+			Id:       token,
+		}
 		return
 	}
-	err = r.put(digest, m)
+	err = r.putPAT(digest, m)
 	return
 }
 
-func (r *Cache) put(digest string, m Token) (err error) {
+// putPAT adds the token to the cache with inherited scopes.
+func (r *Cache) putPAT(digest string, m Token) (err error) {
+	defer func() {
+		if err == nil {
+			r.byId[m.ID] = m
+			r.byDigest[digest] = m
+		}
+	}()
 	//
 	// PAT owned by a user.
-	if m.User != nil {
+	if m.UserID != nil {
+		id := strconv.Itoa(int(*m.UserID))
 		if m.User == nil {
-			err = &NotAuthenticated{}
+			err = &NotFound{
+				Resource: "User",
+				Id:       id,
+			}
 			return
 		}
 		m.Subject = m.User.Subject
@@ -94,31 +109,37 @@ func (r *Cache) put(digest string, m Token) (err error) {
 			}
 		}
 		m.Scopes = strings.Join(scopes, " ")
+		return
 	}
 	// API-Key owned by task.
-	if m.Task != nil {
+	if m.TaskID != nil {
+		id := strconv.Itoa(int(*m.TaskID))
 		if m.Task == nil {
-			err = &NotAuthenticated{}
+			err = &NotFound{
+				Resource: "Task",
+				Id:       id,
+			}
 			return
 		}
 		switch m.Task.State {
 		case task.Succeeded,
 			task.Failed,
 			task.Canceled:
-			err = &NotAuthenticated{}
+			err = &NotFound{
+				Resource: "Task",
+				Id:       id,
+			}
 			return
 		default:
 			strings.Join(AddonScopes, " ")
 		}
+		return
 	}
 	//
 	// PAT owned by a (remote) IdP identity.
 	if m.IdpIdentity != nil {
 		m.Scopes = m.IdpIdentity.Scopes
 	}
-	// Add to the cache.
-	r.byId[m.ID] = m
-	r.byDigest[digest] = m
 	return
 }
 
