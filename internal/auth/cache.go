@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/task"
 	"gorm.io/gorm"
@@ -22,11 +25,16 @@ func NewCache(db *gorm.DB) (cache *Cache) {
 // Cache caches resources.
 // Tokens are cached to mitigate DB pressure during heavy loads.
 type Cache struct {
-	db        *gorm.DB
-	mutex     sync.RWMutex
-	byId      map[uint]*Token
-	byDigest  map[string]*Token
-	resetLast time.Time
+	db            *gorm.DB
+	mutex         sync.RWMutex
+	permById      map[uint]*Permission
+	roleById      map[uint]*Role
+	userById      map[uint]*User
+	taskById      map[uint]*Task
+	identById     map[uint]*model.IdpIdentity
+	tokenById     map[uint]*Token
+	tokenByDigest map[string]*Token
+	refreshed     time.Time
 }
 
 func (r *Cache) Reset() {
@@ -35,120 +43,290 @@ func (r *Cache) Reset() {
 	r.reset()
 }
 
-// Delete a token by id.
-func (r *Cache) Delete(id uint) {
+func (r *Cache) Refresh() (err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	token, found := r.byId[id]
-	if found {
-		delete(r.byDigest, token.Digest)
-		delete(r.byId, id)
-	}
-}
-
-// GetPAT returns a PAT.
-func (r *Cache) GetPAT(token string) (m *Token, err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	if time.Since(r.resetLast) >
-		Settings.Auth.APIKey.CacheLifespan {
-		r.reset()
-	}
-	digest := secret.Hash(token)
-	m, found := r.byDigest[digest]
-	if found {
-		return
-	}
-	m = &Token{}
-	db := r.db.Preload(clause.Associations)
-	db = db.Preload("User.Roles")
-	db = db.Preload("User.Roles.Permissions")
-	db = db.Where("digest", digest)
-	db = db.Where("expiration > ?", time.Now())
-	db = db.Where("kind", KindAPIKey)
-	err = db.First(&m).Error
-	if err != nil {
-		err = &NotFound{
-			Resource: "PAT",
-			Id:       token,
-		}
-		return
-	} else {
-		found = true
-	}
-	err = r.putPAT(digest, m)
+	err = r.refresh()
 	return
 }
 
-// putPAT adds the token to the cache with inherited scopes.
-func (r *Cache) putPAT(digest string, m *Token) (err error) {
-	defer func() {
-		if err == nil {
-			r.byId[m.ID] = m
-			r.byDigest[digest] = m
+func (r *Cache) RoleSaved(m *Role) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.roleById[m.ID] = m
+}
+
+func (r *Cache) RoleDeleted(id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.roleById, id)
+}
+
+func (r *Cache) UserSaved(m *User) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.userById[m.ID] = m
+}
+
+func (r *Cache) UserDeleted(id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.userById, id)
+}
+
+func (r *Cache) TaskSaved(m *Task) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.taskById[m.ID] = m
+}
+
+func (r *Cache) TaskDeleted(id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.taskById, id)
+}
+
+func (r *Cache) IdentitySaved(m *model.IdpIdentity) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.identById[m.ID] = m
+}
+
+func (r *Cache) IdentityDeleted(id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.identById, id)
+}
+
+func (r *Cache) TokenSaved(m *Token) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.tokenById[m.ID] = m
+	r.tokenByDigest[m.Digest] = m
+}
+
+func (r *Cache) TokenDeleted(id uint) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	token, found := r.tokenById[id]
+	if found {
+		delete(r.tokenByDigest, token.Digest)
+		delete(r.tokenById, id)
+	}
+}
+
+// GetToken returns a PAT.
+func (r *Cache) GetToken(token string) (m *Token, err error) {
+	var needsRefresh bool
+	func() {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
+		if !needsRefresh {
+			m, err = r.getToken(token)
+			if errors.Is(err, &NotFound{}) {
+				needsRefresh = true
+			}
 		}
 	}()
-	//
-	// PAT owned by a user.
-	if m.UserID != nil {
-		id := strconv.Itoa(int(*m.UserID))
-		if m.User == nil {
-			err = &NotFound{
-				Resource: "User",
-				Id:       id,
+	if needsRefresh {
+		func() {
+			r.mutex.Lock()
+			defer r.mutex.Unlock()
+			err = r.refresh()
+		}()
+		func() {
+			r.mutex.RLock()
+			defer r.mutex.RUnlock()
+			if err == nil {
+				m, err = r.getToken(token)
 			}
-			return
-		}
-		m.Subject = m.User.Subject
-		unique := make(map[string]bool)
-		scopes := make([]string, 0)
-		for _, u := range m.User.Roles {
-			for _, perm := range u.Permissions {
-				if !unique[perm.Scope] {
-					scopes = append(scopes, perm.Scope)
-				}
-				unique[perm.Scope] = true
-			}
-		}
-		m.Scopes = strings.Join(scopes, " ")
-		return
-	}
-	// API-Key owned by task.
-	if m.TaskID != nil {
-		id := strconv.Itoa(int(*m.TaskID))
-		if m.Task == nil {
-			err = &NotFound{
-				Resource: "Task",
-				Id:       id,
-			}
-			return
-		}
-		switch m.Task.State {
-		case task.Succeeded,
-			task.Failed,
-			task.Canceled:
-			err = &NotFound{
-				Resource: "Task",
-				Id:       id,
-			}
-			return
-		default:
-			m.Scopes = strings.Join(AddonScopes, " ")
-			m.Subject = "task:" + id
-		}
-		return
-	}
-	//
-	// PAT owned by a (remote) IdP identity.
-	if m.IdpIdentity != nil {
-		m.Subject = m.IdpIdentity.Subject
-		m.Scopes = m.IdpIdentity.Scopes
+		}()
 	}
 	return
 }
 
 func (r *Cache) reset() {
-	r.byId = make(map[uint]*Token)
-	r.byDigest = make(map[string]*Token)
-	r.resetLast = time.Now()
+	r.permById = make(map[uint]*Permission)
+	r.roleById = make(map[uint]*Role)
+	r.userById = make(map[uint]*User)
+	r.taskById = make(map[uint]*Task)
+	r.tokenById = make(map[uint]*Token)
+	r.identById = make(map[uint]*model.IdpIdentity)
+	r.tokenByDigest = make(map[string]*Token)
 }
+
+func (r *Cache) refresh() (err error) {
+	r.reset()
+	err = r.getPerms()
+	if err != nil {
+		return
+	}
+	err = r.getRoles()
+	if err != nil {
+		return
+	}
+	err = r.getUsers()
+	if err != nil {
+		return
+	}
+	err = r.getTasks()
+	if err != nil {
+		return
+	}
+	err = r.getIdentities()
+	if err != nil {
+		return
+	}
+	err = r.getTokens()
+	if err != nil {
+		return
+	}
+	r.refreshed = time.Now()
+	return
+}
+
+func (r *Cache) getPerms() (err error) {
+	list := make([]*Permission, 0)
+	err = r.db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.permById[m.ID] = m
+	}
+	return
+}
+
+func (r *Cache) getRoles() (err error) {
+	list := make([]*Role, 0)
+	db := r.db.Preload(clause.Associations)
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.roleById[m.ID] = m
+	}
+	return
+}
+
+func (r *Cache) getUsers() (err error) {
+	list := make([]*User, 0)
+	db := r.db.Preload(clause.Associations)
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.userById[m.ID] = m
+	}
+	return
+}
+
+func (r *Cache) getTasks() (err error) {
+	list := make([]*Task, 0)
+	err = r.db.Find(
+		&list,
+		"state IN ?",
+		[]string{
+			task.Pending,
+			task.Running,
+		}).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.taskById[m.ID] = m
+	}
+	return
+}
+
+func (r *Cache) getIdentities() (err error) {
+	list := make([]*model.IdpIdentity, 0)
+	err = r.db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.identById[m.ID] = m
+	}
+	return
+}
+
+func (r *Cache) getTokens() (err error) {
+	list := []*Token{}
+	db := r.db.Preload(clause.Associations)
+	db = db.Where("kind", KindAPIKey)
+	db = db.Where("expiration > ?", time.Now())
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.tokenById[m.ID] = m
+		r.tokenByDigest[m.Digest] = m
+	}
+	return
+}
+
+// getToken returns a PAT.
+func (r *Cache) getToken(token string) (m *Token, err error) {
+	m, found := r.tokenByDigest[secret.Hash(token)]
+	if !found {
+		err = &NotFound{
+			Resource: "token",
+			Id:       token,
+		}
+		return
+	}
+	// user binding.
+	if m.UserID != nil {
+		user, found := r.userById[*m.UserID]
+		if !found {
+			err = &NotFound{
+				Resource: "user",
+				Id:       strconv.Itoa(int(*m.UserID)),
+			}
+			return
+		}
+		m.Scopes = strings.Join(user.scopes(), " ")
+		return
+	}
+	// task binding.
+	if m.TaskID != nil {
+		_, found := r.taskById[*m.TaskID]
+		if !found {
+			err = &NotFound{
+				Resource: "task",
+				Id:       strconv.Itoa(int(*m.TaskID)),
+			}
+			return
+		}
+		m.Scopes = strings.Join(AddonScopes, " ")
+		return
+	}
+	// IdP identity binding.
+	if m.IdpIdentityID != nil {
+		identity, found := r.identById[*m.IdpIdentityID]
+		if !found {
+			err = &NotFound{
+				Resource: "identity",
+				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
+			}
+			return
+		}
+		m.Scopes = identity.Scopes
+		return
+	}
+	return
+}
+
+// Task alias.
+type Task = model.Task

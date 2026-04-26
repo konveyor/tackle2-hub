@@ -13,7 +13,7 @@ const (
 	EnvAuthRequired         = "AUTH_REQUIRED"
 	EnvAPIKeySecret         = "APIKEY_SECRET"
 	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
-	EnvAPIKeyCacheLifespan  = "APIKEY_CACHE_LIFESPAN"
+	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
 	EnvIssuerURL            = "OIDC_ISSUER_URL"
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
@@ -35,11 +35,12 @@ const (
 type Auth struct {
 	// Auth required
 	Required bool
+	// Cache
+	CacheLifespan time.Duration
 	// APIKey settings.
 	APIKey struct {
-		Secret        string
-		CacheLifespan time.Duration
-		Lifespan      time.Duration
+		Secret   string
+		Lifespan time.Duration
 	}
 	// Token settings for builtin provider.
 	Token struct {
@@ -75,13 +76,13 @@ type Auth struct {
 func (r *Auth) Load() (err error) {
 	// API-Key
 	r.Required = env.GetBool(EnvAuthRequired, false)
+	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 1) // minute: 1.
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
-	r.APIKey.CacheLifespan = env.GetMinute(EnvAPIKeyCacheLifespan, 5) // minutes: 5
-	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365)     // hours: 10 years.
+	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365) // hour: 10 years.
 	// Token
 	r.Token.Key = env.Get(EnvTokenKey, "tackle")
-	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // seconds: 5 minutes.
-	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // seconds: 2 days.
+	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // second: 5 minutes.
+	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
 	// OIDC Provider
 	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)

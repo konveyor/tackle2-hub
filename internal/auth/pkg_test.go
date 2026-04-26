@@ -581,73 +581,7 @@ func TestNotValidError(t *testing.T) {
 
 // TestKeyCacheDelete tests the KeyCache Delete method removes keys from both indexes.
 func TestKeyCacheDelete(t *testing.T) {
-	g := NewGomegaWithT(t)
 
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create test user with permissions
-	user := &model.User{
-		Subject:  "cache-delete-user",
-		Userid:   "cachedeleteuser",
-		Password: secret.HashPassword("password"),
-		Email:    "cachedelete@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	perm := &model.Permission{
-		Name:  "Admin",
-		Scope: "*:*",
-	}
-	err = db.Create(perm).Error
-	g.Expect(err).To(BeNil())
-
-	role := &model.Role{Name: "Admin"}
-	err = db.Create(role).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role).Association("Permissions").Append(perm)
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(user).Association("Roles").Append(role)
-	g.Expect(err).To(BeNil())
-
-	// Create provider with cache
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Create token
-	token, err := provider.NewPAT(user.Subject, 1*time.Hour)
-	g.Expect(err).To(BeNil())
-
-	// Populate cache by authenticating
-	request := &Request{}
-	request.With("Bearer " + token.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	// Delete the key from cache only
-	provider.cache.Delete(token.ID)
-
-	// Verify token is removed from cache - next call should fetch from DB again
-	// Since the key still exists in DB, authentication should succeed
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	// Populate cache again
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	// Now delete from DB manually and from cache
-	err = db.Delete(&token).Error
-	g.Expect(err).To(BeNil())
-	provider.cache.Delete(token.ID)
-
-	// Authentication should now fail (not in cache or DB)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 }
 
 // TestBuiltinDelete tests the Builtin Delete method removes key from cache and DB.

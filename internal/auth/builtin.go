@@ -21,8 +21,13 @@ import (
 
 // NewBuiltin returns a configured provider.
 func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
+	cache := NewCache(db)
+	err = cache.Refresh()
+	if err != nil {
+		return
+	}
 	builtin = &Builtin{
-		cache: NewCache(db),
+		cache: cache,
 		db:    db,
 	}
 	keyManager := NewKeyManager(db)
@@ -80,6 +85,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			rpClient: rpClient,
 			db:       db,
 			storage:  builtin.storage,
+			cache:    cache,
 		}
 		builtin.storage.idpHandler = builtin.idpHandler
 	}
@@ -108,6 +114,11 @@ func (p *Builtin) IdpHandler() (h *IdpHandler) {
 	return
 }
 
+// Cache returns the provider cache.
+func (p *Builtin) Cache() *Cache {
+	return p.cache
+}
+
 // Login handles the custom login page.
 func (p *Builtin) Login(
 	writer http.ResponseWriter,
@@ -124,19 +135,25 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 			err = liberr.Wrap(err)
 		}
 	}()
+	defer func() {
+		if err == nil {
+			err = p.db.Save(&m).Error
+			if err == nil {
+				p.cache.TokenSaved(&m)
+			}
+		}
+	}()
 	m = p.newToken(lifespan)
 	user := &model.User{}
 	err = p.db.First(user, "subject", subject).Error
 	if err == nil {
 		m.UserID = &user.ID
-		err = p.db.Create(&m).Error
 		return
 	}
 	idpId := &model.IdpIdentity{}
 	err = p.db.First(idpId, "subject", subject).Error
 	if err == nil {
 		m.IdpIdentityID = &idpId.ID
-		err = p.db.Create(&m).Error
 		return
 	}
 	return
@@ -145,7 +162,7 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 // NewTaskToken create a new task api-key.
 func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 	m = p.newToken(0)
-	task := &model.Task{}
+	task := &Task{}
 	err = p.db.First(task, taskId).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -153,6 +170,11 @@ func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 	}
 	m.TaskID = &task.ID
 	err = p.db.Create(&m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	p.cache.TokenSaved(&m)
 	return
 }
 
@@ -177,7 +199,7 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 
 // Revoke a token.
 func (p *Builtin) Revoke(tokenId uint) (err error) {
-	p.cache.Delete(tokenId)
+	p.cache.TokenDeleted(tokenId)
 	m := &model.Token{}
 	m.ID = tokenId
 	err = p.db.Delete(m).Error
@@ -373,7 +395,7 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	}
 	//
 	// PAT/api-key.
-	pat, err := p.cache.GetPAT(req.Token)
+	pat, err := p.cache.GetToken(req.Token)
 	if err == nil {
 		jwToken = jwt.New(jwt.SigningMethodHS512)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)

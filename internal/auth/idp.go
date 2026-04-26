@@ -29,6 +29,7 @@ type IdpHandler struct {
 	rpClient rp.RelyingParty
 	db       *gorm.DB
 	storage  *Storage
+	cache    *Cache
 }
 
 // Login initiates the external IdP authentication flow.
@@ -74,6 +75,11 @@ func (h *IdpHandler) parseAccessToken(accessToken string) (claims map[string]any
 	}
 
 	return
+}
+
+// identitySaved notification the Idp identity has been saved.
+func (h *IdpHandler) identitySaved(m *model.IdpIdentity) {
+	h.cache.IdentitySaved(m)
 }
 
 //
@@ -270,6 +276,7 @@ func (f *IdpLogin) ensureIdentity() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
+	f.handler.identitySaved(f.idpIdentity)
 	return
 }
 
