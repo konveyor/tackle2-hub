@@ -145,17 +145,16 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 		}
 	}()
 	m = p.newToken(lifespan)
-	user := &model.User{}
-	err = p.db.First(user, "subject", subject).Error
-	if err == nil {
-		m.UserID = &user.ID
+	s, err := p.cache.FindSubject(subject)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
-	idpId := &Identity{}
-	err = p.db.First(idpId, "subject", subject).Error
-	if err == nil {
-		m.IdpIdentityID = &idpId.ID
-		return
+	if s.IsUser() {
+		m.UserID = s.userId
+	}
+	if s.IsIdentity() {
+		m.IdpIdentityID = s.identityId
 	}
 	return
 }
@@ -163,8 +162,7 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 // NewTaskToken create a new task api-key.
 func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 	m = p.newToken(0)
-	task := &Task{}
-	err = p.db.First(task, taskId).Error
+	task, err := p.cache.GetTask(taskId)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -412,12 +410,9 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	userid := req.Userid
 	password := req.Password
-	user := &model.User{}
-	db := p.db.Preload("Roles")
-	db = db.Preload("Roles.Permissions")
-	err = db.First(user, "Userid", userid).Error
+	user, err := p.cache.FindUserByUserid(userid)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, &NotFound{}) {
 			err = &NotAuthenticated{
 				Token: userid,
 			}

@@ -656,15 +656,15 @@ func (r *Login) parseCredentials() (err error) {
 
 // authenticateUser validates user credentials.
 func (r *Login) authenticateUser() (err error) {
-	r.user = &model.User{}
-	err = r.storage.db.First(r.user, "userid", r.userid).Error
+	user, err := r.storage.cache.FindUserByUserid(r.userid)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, &NotFound{}) {
 			err = r.renderPage()
 			err = nil
 		}
 		return
 	}
+	r.user = (*model.User)(user)
 
 	if !secret.MatchPassword(r.password, r.user.Password) {
 		err = r.renderPage()
@@ -931,21 +931,15 @@ func (r *Storage) orphaned(grant *model.Grant) (err error) {
 	if grant.Kind != KindAuthCode {
 		return
 	}
-	count := int64(0)
-	user := &model.User{}
-	db := r.db.Model(user)
-	db = db.Where("subject", grant.Subject)
-	err = db.Count(&count).Error
+	_, err = r.cache.FindSubject(grant.Subject)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = oidc.ErrInvalidGrant().WithDescription("user not found")
+		if errors.Is(err, &NotFound{}) {
+			grant.Expiration = time.Now()
+			err = nil
 		} else {
 			err = liberr.Wrap(err)
 		}
 		return
-	}
-	if count == 0 {
-		grant.Expiration = time.Now()
 	}
 	return
 }

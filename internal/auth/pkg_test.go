@@ -538,7 +538,9 @@ func TestNoAuthProvider(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 
-	task := &model.Task{}
+	task := &model.Task{
+		State: "Pending",
+	}
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
@@ -1792,6 +1794,278 @@ func TestStorageFindSubject(t *testing.T) {
 	// Find non-existent subject
 	_, err = storage.findSubject("non-existent")
 	g.Expect(err).NotTo(BeNil())
+}
+
+// TestCacheFindUserByUserid tests finding user by userid field.
+func TestCacheFindUserByUserid(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test user
+	user := &model.User{
+		Subject:  "userid-test-subject",
+		Userid:   "testuserid",
+		Password: secret.HashPassword("password"),
+		Email:    "userid@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Find by userid
+	found, err := provider.cache.FindUserByUserid("testuserid")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.Subject).To(Equal("userid-test-subject"))
+	g.Expect(found.Email).To(Equal("userid@example.com"))
+
+	// Find non-existent userid
+	_, err = provider.cache.FindUserByUserid("nonexistent")
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("user"))
+}
+
+// TestCacheFindUserByUseridAutoRefresh tests refresh-on-miss for userid lookup.
+func TestCacheFindUserByUseridAutoRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create user after cache initialization
+	user := &model.User{
+		Subject:  "new-userid-subject",
+		Userid:   "newuserid",
+		Password: secret.HashPassword("password"),
+		Email:    "newuserid@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// FindUserByUserid should trigger refresh and find the new user
+	found, err := provider.cache.FindUserByUserid("newuserid")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.Subject).To(Equal("new-userid-subject"))
+}
+
+// TestCacheFindUserByUseridTimeRefresh tests time-based refresh for userid lookup.
+func TestCacheFindUserByUseridTimeRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Save original cache lifespan and restore after test
+	originalLifespan := Settings.CacheLifespan
+	defer func() {
+		Settings.CacheLifespan = originalLifespan
+	}()
+
+	// Set very short cache lifespan
+	Settings.CacheLifespan = 100 * time.Millisecond
+
+	user := &model.User{
+		Subject:  "time-userid-subject",
+		Userid:   "timeuserid",
+		Password: secret.HashPassword("password"),
+		Email:    "timeuserid@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Find successfully (cache is fresh)
+	found, err := provider.cache.FindUserByUserid("timeuserid")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Subject).To(Equal("time-userid-subject"))
+
+	// Wait for cache to expire
+	time.Sleep(150 * time.Millisecond)
+
+	// Create new user while cache is stale
+	newUser := &model.User{
+		Subject:  "new-time-userid-subject",
+		Userid:   "newtimeuserid",
+		Password: secret.HashPassword("password"),
+		Email:    "newtimeuserid@example.com",
+	}
+	err = db.Create(newUser).Error
+	g.Expect(err).To(BeNil())
+
+	// FindUserByUserid should trigger time-based refresh
+	found, err = provider.cache.FindUserByUserid("newtimeuserid")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Subject).To(Equal("new-time-userid-subject"))
+}
+
+// TestCacheGetTask tests finding task by ID.
+func TestCacheGetTask(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test task
+	task := &model.Task{
+		Name:  "cache-test-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Get task by ID
+	found, err := provider.cache.GetTask(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.Name).To(Equal("cache-test-task"))
+	g.Expect(found.State).To(Equal("Running"))
+
+	// Get non-existent task
+	_, err = provider.cache.GetTask(9999)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("task"))
+}
+
+// TestCacheGetTaskAutoRefresh tests refresh-on-miss for task lookup.
+func TestCacheGetTaskAutoRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create task after cache initialization
+	task := &model.Task{
+		Name:  "new-cache-task",
+		State: "Pending",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	// GetTask should trigger refresh and find the new task
+	found, err := provider.cache.GetTask(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.Name).To(Equal("new-cache-task"))
+}
+
+// TestCacheGetTaskTimeRefresh tests time-based refresh for task lookup.
+func TestCacheGetTaskTimeRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Save original cache lifespan and restore after test
+	originalLifespan := Settings.CacheLifespan
+	defer func() {
+		Settings.CacheLifespan = originalLifespan
+	}()
+
+	// Set very short cache lifespan
+	Settings.CacheLifespan = 100 * time.Millisecond
+
+	task := &model.Task{
+		Name:  "time-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Get successfully (cache is fresh)
+	found, err := provider.cache.GetTask(task.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Name).To(Equal("time-task"))
+
+	// Wait for cache to expire
+	time.Sleep(150 * time.Millisecond)
+
+	// Create new task while cache is stale
+	newTask := &model.Task{
+		Name:  "new-time-task",
+		State: "Pending",
+	}
+	err = db.Create(newTask).Error
+	g.Expect(err).To(BeNil())
+
+	// GetTask should trigger time-based refresh
+	found, err = provider.cache.GetTask(newTask.ID)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Name).To(Equal("new-time-task"))
+}
+
+// TestCacheUserByUseridMaps tests that all userid maps are maintained.
+func TestCacheUserByUseridMaps(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Create user
+	user := &User{
+		Model:    model.Model{ID: 555},
+		Subject:  "map-test-subject",
+		Userid:   "maptestuser",
+		Email:    "maptest@example.com",
+		Password: secret.HashPassword("password"),
+	}
+
+	// Save to cache
+	cache.UserSaved(user)
+
+	// Verify it's in all three maps
+	cache.mutex.RLock()
+	userById, foundById := cache.userById[555]
+	userBySubject, foundBySubject := cache.userBySubject["map-test-subject"]
+	userByUserid, foundByUserid := cache.userByUserid["maptestuser"]
+	cache.mutex.RUnlock()
+
+	g.Expect(foundById).To(BeTrue())
+	g.Expect(foundBySubject).To(BeTrue())
+	g.Expect(foundByUserid).To(BeTrue())
+	g.Expect(userById.Userid).To(Equal("maptestuser"))
+	g.Expect(userBySubject.Userid).To(Equal("maptestuser"))
+	g.Expect(userByUserid.Subject).To(Equal("map-test-subject"))
+
+	// Delete user
+	cache.UserDeleted(555)
+
+	// Verify removed from all three maps
+	cache.mutex.RLock()
+	_, foundById = cache.userById[555]
+	_, foundBySubject = cache.userBySubject["map-test-subject"]
+	_, foundByUserid = cache.userByUserid["maptestuser"]
+	cache.mutex.RUnlock()
+
+	g.Expect(foundById).To(BeFalse())
+	g.Expect(foundBySubject).To(BeFalse())
+	g.Expect(foundByUserid).To(BeFalse())
 }
 
 // setupTestDB creates an in-memory SQLite database for testing.

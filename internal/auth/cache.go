@@ -32,6 +32,7 @@ type Cache struct {
 	roleById       map[uint]*Role
 	userById       map[uint]*User
 	userBySubject  map[string]*User
+	userByUserid   map[string]*User
 	taskById       map[uint]*Task
 	identById      map[uint]*Identity
 	identBySubject map[string]*Identity
@@ -68,8 +69,9 @@ func (r *Cache) RoleDeleted(id uint) {
 func (r *Cache) UserSaved(m *User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.userBySubject[m.Subject] = m
 	r.userById[m.ID] = m
+	r.userBySubject[m.Subject] = m
+	r.userByUserid[m.Userid] = m
 }
 
 func (r *Cache) UserDeleted(id uint) {
@@ -78,6 +80,7 @@ func (r *Cache) UserDeleted(id uint) {
 	m, found := r.userById[id]
 	if found {
 		delete(r.userBySubject, m.Subject)
+		delete(r.userByUserid, m.Userid)
 		delete(r.userById, id)
 	}
 }
@@ -197,11 +200,88 @@ func (r *Cache) FindSubject(subject string) (m *Subject, err error) {
 	return
 }
 
+// FindUserByUserid returns a user by userid.
+func (r *Cache) FindUserByUserid(userid string) (m *User, err error) {
+	var needsRefresh bool
+	var found bool
+	func() {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
+		if !needsRefresh {
+			m, found = r.userByUserid[userid]
+			if !found {
+				needsRefresh = true
+			}
+		}
+	}()
+	if needsRefresh {
+		func() {
+			r.mutex.Lock()
+			defer r.mutex.Unlock()
+			err = r.refresh()
+		}()
+		func() {
+			r.mutex.RLock()
+			defer r.mutex.RUnlock()
+			if err == nil {
+				m, found = r.userByUserid[userid]
+			}
+		}()
+	}
+	if !found {
+		err = &NotFound{
+			Resource: "user",
+			Id:       userid,
+		}
+	}
+	return
+}
+
+// GetTask returns a task by ID.
+func (r *Cache) GetTask(id uint) (m *Task, err error) {
+	var needsRefresh bool
+	var found bool
+	func() {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
+		if !needsRefresh {
+			m, found = r.taskById[id]
+			if !found {
+				needsRefresh = true
+			}
+		}
+	}()
+	if needsRefresh {
+		func() {
+			r.mutex.Lock()
+			defer r.mutex.Unlock()
+			err = r.refresh()
+		}()
+		func() {
+			r.mutex.RLock()
+			defer r.mutex.RUnlock()
+			if err == nil {
+				m, found = r.taskById[id]
+			}
+		}()
+	}
+	if !found {
+		err = &NotFound{
+			Resource: "task",
+			Id:       strconv.Itoa(int(id)),
+		}
+	}
+	return
+}
+
 func (r *Cache) reset() {
 	r.permById = make(map[uint]*Permission)
 	r.roleById = make(map[uint]*Role)
 	r.userById = make(map[uint]*User)
 	r.userBySubject = make(map[string]*User)
+	r.userByUserid = make(map[string]*User)
 	r.taskById = make(map[uint]*Task)
 	r.tokenById = make(map[uint]*Token)
 	r.identById = make(map[uint]*Identity)
@@ -277,6 +357,7 @@ func (r *Cache) getUsers() (err error) {
 	for _, m := range list {
 		r.userById[m.ID] = m
 		r.userBySubject[m.Subject] = m
+		r.userByUserid[m.Userid] = m
 	}
 	return
 }
