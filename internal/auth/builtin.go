@@ -40,6 +40,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		keySet:     builtin.keySet,
 		authReqs:   make(map[string]*AuthRequest),
 		authByCode: make(map[string]string),
+		cache:      cache,
 	}
 	issuer := Settings.IssuerURL
 	if issuer == "" {

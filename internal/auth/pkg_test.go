@@ -1378,6 +1378,422 @@ func TestTaskStateFiltering(t *testing.T) {
 	g.Expect(foundCanceled).To(BeFalse())
 }
 
+// TestCacheFindSubject tests finding subjects (users and identities) by subject string.
+func TestCacheFindSubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test user with roles and permissions
+	perm := &model.Permission{
+		Name:  "Read Apps",
+		Scope: "applications:GET",
+	}
+	err = db.Create(perm).Error
+	g.Expect(err).To(BeNil())
+
+	role := &model.Role{
+		Name: "AppReader",
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role).Association("Permissions").Append(perm)
+	g.Expect(err).To(BeNil())
+
+	user := &model.User{
+		Subject:  "user-subject-123",
+		Userid:   "testuser",
+		Password: secret.HashPassword("password"),
+		Email:    "user@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(user).Association("Roles").Append(role)
+	g.Expect(err).To(BeNil())
+
+	// Create test IdP identity
+	identity := &Identity{
+		Issuer:       "https://idp.example.com",
+		Subject:      "idp-subject-456",
+		RefreshToken: "refresh-token",
+		Expiration:   time.Now().Add(24 * time.Hour),
+		Scopes:       "openid profile email",
+		Roles:        "admin developer",
+		Userid:       "idpuser",
+		Email:        "idp@example.com",
+	}
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Test finding user by subject
+	subject, err := provider.cache.FindSubject(user.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsUser()).To(BeTrue())
+	g.Expect(subject.IsIdentity()).To(BeFalse())
+	g.Expect(subject.name).To(Equal("testuser"))
+	g.Expect(subject.email).To(Equal("user@example.com"))
+	g.Expect(subject.roles).To(ContainElement("AppReader"))
+	g.Expect(subject.scopes).To(ContainElement("applications:GET"))
+
+	// Test finding identity by subject
+	subject, err = provider.cache.FindSubject(identity.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsUser()).To(BeFalse())
+	g.Expect(subject.IsIdentity()).To(BeTrue())
+	g.Expect(subject.name).To(Equal("idpuser"))
+	g.Expect(subject.email).To(Equal("idp@example.com"))
+	g.Expect(subject.roles).To(ContainElement("admin"))
+	g.Expect(subject.roles).To(ContainElement("developer"))
+	g.Expect(subject.scopes).To(ContainElement("openid"))
+	g.Expect(subject.scopes).To(ContainElement("profile"))
+	g.Expect(subject.scopes).To(ContainElement("email"))
+}
+
+// TestCacheFindSubjectNotFound tests NotFound error when subject doesn't exist.
+func TestCacheFindSubjectNotFound(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Try to find non-existent subject
+	_, err = provider.cache.FindSubject("non-existent-subject")
+	g.Expect(err).NotTo(BeNil())
+
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("subject"))
+	g.Expect(notFound.Id).To(Equal("non-existent-subject"))
+}
+
+// TestCacheFindSubjectAutoRefresh tests refresh-on-miss behavior.
+func TestCacheFindSubjectAutoRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create user after cache is initialized
+	user := &model.User{
+		Subject:  "new-user-subject",
+		Userid:   "newuser",
+		Password: secret.HashPassword("password"),
+		Email:    "newuser@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// FindSubject should trigger refresh and find the new user
+	subject, err := provider.cache.FindSubject(user.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsUser()).To(BeTrue())
+	g.Expect(subject.name).To(Equal("newuser"))
+
+	// Create identity after cache refresh
+	identity := &Identity{
+		Issuer:  "https://idp.example.com",
+		Subject: "new-identity-subject",
+		Userid:  "newidentity",
+		Email:   "newidentity@example.com",
+		Scopes:  "openid",
+	}
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+
+	// FindSubject should trigger refresh and find the new identity
+	subject, err = provider.cache.FindSubject(identity.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsIdentity()).To(BeTrue())
+	g.Expect(subject.name).To(Equal("newidentity"))
+}
+
+// TestCacheFindSubjectTimeBasedRefresh tests time-based refresh with FindSubject.
+func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Save original cache lifespan and restore after test
+	originalLifespan := Settings.CacheLifespan
+	defer func() {
+		Settings.CacheLifespan = originalLifespan
+	}()
+
+	// Set very short cache lifespan
+	Settings.CacheLifespan = 100 * time.Millisecond
+
+	user := &model.User{
+		Subject:  "time-subject-user",
+		Userid:   "timesubjectuser",
+		Password: secret.HashPassword("password"),
+		Email:    "timesubject@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Find subject successfully (cache is fresh)
+	subject, err := provider.cache.FindSubject(user.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.name).To(Equal("timesubjectuser"))
+
+	// Wait for cache to expire
+	time.Sleep(150 * time.Millisecond)
+
+	// Create new user while cache is stale
+	newUser := &model.User{
+		Subject:  "new-time-subject",
+		Userid:   "newtimesubject",
+		Password: secret.HashPassword("password"),
+		Email:    "newtimesubject@example.com",
+	}
+	err = db.Create(newUser).Error
+	g.Expect(err).To(BeNil())
+
+	// FindSubject should trigger time-based refresh and find new user
+	subject, err = provider.cache.FindSubject(newUser.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.name).To(Equal("newtimesubject"))
+}
+
+// TestCacheUserSavedBySubject tests that UserSaved updates bySubject map.
+func TestCacheUserSavedBySubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Create user not in DB (just for cache testing)
+	user := &User{
+		Model:    model.Model{ID: 999},
+		Subject:  "cached-user-subject",
+		Userid:   "cacheduser",
+		Email:    "cached@example.com",
+		Password: secret.HashPassword("password"),
+	}
+
+	// Save to cache
+	cache.UserSaved(user)
+
+	// Verify it's in both maps
+	cache.mutex.RLock()
+	userById, foundById := cache.userById[999]
+	userBySubject, foundBySubject := cache.userBySubject["cached-user-subject"]
+	cache.mutex.RUnlock()
+
+	g.Expect(foundById).To(BeTrue())
+	g.Expect(foundBySubject).To(BeTrue())
+	g.Expect(userById.Userid).To(Equal("cacheduser"))
+	g.Expect(userBySubject.Userid).To(Equal("cacheduser"))
+
+	// Verify FindSubject works without DB query
+	subject, err := cache.FindSubject("cached-user-subject")
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.name).To(Equal("cacheduser"))
+}
+
+// TestCacheIdentitySavedBySubject tests that IdentitySaved updates bySubject map.
+func TestCacheIdentitySavedBySubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Create identity not in DB (just for cache testing)
+	identity := &Identity{
+		Model:   model.Model{ID: 888},
+		Issuer:  "https://test.idp.com",
+		Subject: "cached-identity-subject",
+		Userid:  "cachedidentity",
+		Email:   "cachedidentity@example.com",
+		Scopes:  "openid profile",
+	}
+
+	// Save to cache
+	cache.IdentitySaved(identity)
+
+	// Verify it's in both maps
+	cache.mutex.RLock()
+	identById, foundById := cache.identById[888]
+	identBySubject, foundBySubject := cache.identBySubject["cached-identity-subject"]
+	cache.mutex.RUnlock()
+
+	g.Expect(foundById).To(BeTrue())
+	g.Expect(foundBySubject).To(BeTrue())
+	g.Expect(identById.Userid).To(Equal("cachedidentity"))
+	g.Expect(identBySubject.Userid).To(Equal("cachedidentity"))
+
+	// Verify FindSubject works without DB query
+	subject, err := cache.FindSubject("cached-identity-subject")
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.name).To(Equal("cachedidentity"))
+}
+
+// TestCacheUserDeletedBySubject tests that UserDeleted removes from bySubject map.
+func TestCacheUserDeletedBySubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	user := &User{
+		Model:   model.Model{ID: 777},
+		Subject: "delete-user-subject",
+		Userid:  "deleteuser",
+	}
+
+	cache.UserSaved(user)
+
+	// Verify it's in both maps
+	cache.mutex.RLock()
+	_, foundById := cache.userById[777]
+	_, foundBySubject := cache.userBySubject["delete-user-subject"]
+	cache.mutex.RUnlock()
+	g.Expect(foundById).To(BeTrue())
+	g.Expect(foundBySubject).To(BeTrue())
+
+	// Delete user
+	cache.UserDeleted(777)
+
+	// Verify removed from both maps
+	cache.mutex.RLock()
+	_, foundById = cache.userById[777]
+	_, foundBySubject = cache.userBySubject["delete-user-subject"]
+	cache.mutex.RUnlock()
+	g.Expect(foundById).To(BeFalse())
+	g.Expect(foundBySubject).To(BeFalse())
+
+	// Verify FindSubject returns NotFound
+	_, err = cache.FindSubject("delete-user-subject")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestCacheIdentityDeletedBySubject tests that IdentityDeleted removes from bySubject map.
+func TestCacheIdentityDeletedBySubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	identity := &Identity{
+		Model:   model.Model{ID: 666},
+		Subject: "delete-identity-subject",
+		Userid:  "deleteidentity",
+	}
+
+	cache.IdentitySaved(identity)
+
+	// Verify it's in both maps
+	cache.mutex.RLock()
+	_, foundById := cache.identById[666]
+	_, foundBySubject := cache.identBySubject["delete-identity-subject"]
+	cache.mutex.RUnlock()
+	g.Expect(foundById).To(BeTrue())
+	g.Expect(foundBySubject).To(BeTrue())
+
+	// Delete identity
+	cache.IdentityDeleted(666)
+
+	// Verify removed from both maps
+	cache.mutex.RLock()
+	_, foundById = cache.identById[666]
+	_, foundBySubject = cache.identBySubject["delete-identity-subject"]
+	cache.mutex.RUnlock()
+	g.Expect(foundById).To(BeFalse())
+	g.Expect(foundBySubject).To(BeFalse())
+
+	// Verify FindSubject returns NotFound
+	_, err = cache.FindSubject("delete-identity-subject")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestStorageFindSubject tests Storage integration with cache FindSubject.
+func TestStorageFindSubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test data
+	user := &model.User{
+		Subject:  "storage-user-subject",
+		Userid:   "storageuser",
+		Password: secret.HashPassword("password"),
+		Email:    "storage@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	identity := &Identity{
+		Issuer:  "https://storage.idp.com",
+		Subject: "storage-identity-subject",
+		Userid:  "storageidentity",
+		Email:   "storageidentity@example.com",
+		Scopes:  "openid",
+	}
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Storage uses cache under the hood
+	storage := provider.storage
+
+	// Find user subject
+	subject, err := storage.findSubject(user.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsUser()).To(BeTrue())
+	g.Expect(subject.name).To(Equal("storageuser"))
+
+	// Find identity subject
+	subject, err = storage.findSubject(identity.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsIdentity()).To(BeTrue())
+	g.Expect(subject.name).To(Equal("storageidentity"))
+
+	// Find non-existent subject
+	_, err = storage.findSubject("non-existent")
+	g.Expect(err).NotTo(BeNil())
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(

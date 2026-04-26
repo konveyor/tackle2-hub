@@ -20,7 +20,6 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Storage implements op.Storage.
@@ -31,6 +30,7 @@ type Storage struct {
 	authReqs   map[string]*AuthRequest
 	authByCode map[string]string
 	idpHandler *IdpHandler
+	cache      *Cache
 }
 
 // GetClientByClientID retrieves a client by ID.
@@ -1004,20 +1004,7 @@ func (r *Storage) deleteAuthRequestByCode(_ context.Context, code string) (err e
 
 // findSubject finds and resolves a subject to User or IdpIdentity.
 func (r *Storage) findSubject(subject string) (s *Subject, err error) {
-	s = &Subject{}
-	user := &model.User{}
-	db := r.db.Preload(clause.Associations).Preload("Roles.Permissions")
-	err = db.First(user, "subject", subject).Error
-	if err == nil {
-		s.With(user)
-		return
-	}
-	identity := &Identity{}
-	err = r.db.First(identity, "subject", subject).Error
-	if err == nil {
-		s.WithIdentity(identity)
-		return
-	}
+	s, err = r.cache.FindSubject(subject)
 	return
 }
 
@@ -1382,55 +1369,4 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
-}
-
-// Subject represents a resolved subject (User or IdpIdentity).
-type Subject struct {
-	name       string
-	email      string
-	roles      []string
-	scopes     []string
-	userId     *uint
-	identityId *uint
-	user       *model.User
-	identity   *Identity
-}
-
-// With populates Subject from a User model.
-func (r *Subject) With(user *model.User) {
-	r.userId = &user.ID
-	r.user = user
-	r.name = user.Userid
-	r.email = user.Email
-	for _, role := range user.Roles {
-		r.roles = append(r.roles, role.Name)
-		for _, permission := range role.Permissions {
-			r.scopes = append(r.scopes, permission.Scope)
-		}
-	}
-}
-
-// WithIdentity populates Subject from an IdpIdentity model.
-func (r *Subject) WithIdentity(idp *Identity) {
-	r.identityId = &idp.ID
-	r.identity = idp
-	r.name = idp.Userid
-	r.email = idp.Email
-
-	if idp.Roles != "" {
-		r.roles = strings.Fields(idp.Roles)
-	}
-	if idp.Scopes != "" {
-		r.scopes = strings.Fields(idp.Scopes)
-	}
-}
-
-// IsUser returns true if this subject is a User.
-func (r *Subject) IsUser() bool {
-	return r.userId != nil
-}
-
-// IsIdentity returns true if this subject is an IdpIdentity.
-func (r *Subject) IsIdentity() bool {
-	return r.identityId != nil
 }

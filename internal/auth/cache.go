@@ -26,16 +26,18 @@ func NewCache(db *gorm.DB) (cache *Cache) {
 // Cache caches resources.
 // Tokens are cached to mitigate DB pressure during heavy loads.
 type Cache struct {
-	db            *gorm.DB
-	mutex         sync.RWMutex
-	permById      map[uint]*Permission
-	roleById      map[uint]*Role
-	userById      map[uint]*User
-	taskById      map[uint]*Task
-	identById     map[uint]*Identity
-	tokenById     map[uint]*Token
-	tokenByDigest map[string]*Token
-	refreshed     time.Time
+	db             *gorm.DB
+	mutex          sync.RWMutex
+	permById       map[uint]*Permission
+	roleById       map[uint]*Role
+	userById       map[uint]*User
+	userBySubject  map[string]*User
+	taskById       map[uint]*Task
+	identById      map[uint]*Identity
+	identBySubject map[string]*Identity
+	tokenById      map[uint]*Token
+	tokenByDigest  map[string]*Token
+	refreshed      time.Time
 }
 
 func (r *Cache) Reset() {
@@ -66,13 +68,18 @@ func (r *Cache) RoleDeleted(id uint) {
 func (r *Cache) UserSaved(m *User) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+	r.userBySubject[m.Subject] = m
 	r.userById[m.ID] = m
 }
 
 func (r *Cache) UserDeleted(id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	delete(r.userById, id)
+	m, found := r.userById[id]
+	if found {
+		delete(r.userBySubject, m.Subject)
+		delete(r.userById, id)
+	}
 }
 
 func (r *Cache) TaskSaved(m *Task) {
@@ -91,12 +98,17 @@ func (r *Cache) IdentitySaved(m *Identity) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.identById[m.ID] = m
+	r.identBySubject[m.Subject] = m
 }
 
 func (r *Cache) IdentityDeleted(id uint) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	delete(r.identById, id)
+	m, found := r.identById[id]
+	if found {
+		delete(r.identBySubject, m.Subject)
+		delete(r.identById, id)
+	}
 }
 
 func (r *Cache) TokenSaved(m *Token) {
@@ -147,13 +159,53 @@ func (r *Cache) GetToken(token string) (m *Token, err error) {
 	return
 }
 
+// FindSubject returns a subject.
+func (r *Cache) FindSubject(subject string) (m *Subject, err error) {
+	var needsRefresh bool
+	var found bool
+	func() {
+		r.mutex.RLock()
+		defer r.mutex.RUnlock()
+		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
+		if !needsRefresh {
+			m, found = r.findSubject(subject)
+			if !found {
+				needsRefresh = true
+			}
+		}
+	}()
+	if needsRefresh {
+		func() {
+			r.mutex.Lock()
+			defer r.mutex.Unlock()
+			err = r.refresh()
+		}()
+		func() {
+			r.mutex.RLock()
+			defer r.mutex.RUnlock()
+			if err == nil {
+				m, found = r.findSubject(subject)
+			}
+		}()
+	}
+	if !found {
+		err = &NotFound{
+			Resource: "subject",
+			Id:       subject,
+		}
+	}
+	return
+}
+
 func (r *Cache) reset() {
 	r.permById = make(map[uint]*Permission)
 	r.roleById = make(map[uint]*Role)
 	r.userById = make(map[uint]*User)
+	r.userBySubject = make(map[string]*User)
 	r.taskById = make(map[uint]*Task)
 	r.tokenById = make(map[uint]*Token)
 	r.identById = make(map[uint]*Identity)
+	r.identBySubject = make(map[string]*Identity)
 	r.tokenByDigest = make(map[string]*Token)
 }
 
@@ -224,6 +276,7 @@ func (r *Cache) getUsers() (err error) {
 	}
 	for _, m := range list {
 		r.userById[m.ID] = m
+		r.userBySubject[m.Subject] = m
 	}
 	return
 }
@@ -256,6 +309,7 @@ func (r *Cache) getIdentities() (err error) {
 	}
 	for _, m := range list {
 		r.identById[m.ID] = m
+		r.identBySubject[m.Subject] = m
 	}
 	return
 }
@@ -334,8 +388,36 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 	return
 }
 
+// findSubject returns the subject.
+func (r *Cache) findSubject(subject string) (s *Subject, found bool) {
+	s = &Subject{}
+	user, found := r.userBySubject[subject]
+	if found {
+		s.With(user, r.roleById)
+		return
+	}
+	identity, found := r.identBySubject[subject]
+	if found {
+		s.WithIdentity(identity)
+		return
+	}
+	return
+}
+
 // User alias.
 type User model.User
+
+// scopes returns the user's role names.
+func (m *User) roles(roles map[uint]*Role) (names []string) {
+	for _, r := range m.Roles {
+		role, found := roles[r.ID]
+		if found {
+			names = append(names, role.Name)
+		}
+	}
+	sort.Strings(names)
+	return
+}
 
 // scopes returns the user's scopes.
 func (m *User) scopes(roles map[uint]*Role) (scopes []string) {
@@ -371,6 +453,62 @@ func (m *Role) scopes() (scopes []string) {
 	sort.Strings(scopes)
 	return
 }
+
+// Subject represents a resolved subject (User or IdpIdentity).
+type Subject struct {
+	name       string
+	email      string
+	roles      []string
+	scopes     []string
+	userId     *uint
+	identityId *uint
+	user       *User
+	identity   *Identity
+}
+
+// With populates Subject from a User model.
+func (r *Subject) With(user *User, roles map[uint]*Role) {
+	r.userId = &user.ID
+	r.user = user
+	r.name = user.Userid
+	r.email = user.Email
+	for _, ref := range user.Roles {
+		role, found := roles[ref.ID]
+		if !found {
+			continue
+		}
+		r.roles = append(r.roles, role.Name)
+		r.scopes = role.scopes()
+	}
+}
+
+// WithIdentity populates Subject from an IdpIdentity model.
+func (r *Subject) WithIdentity(idp *Identity) {
+	r.identityId = &idp.ID
+	r.identity = idp
+	r.name = idp.Userid
+	r.email = idp.Email
+
+	if idp.Roles != "" {
+		r.roles = strings.Fields(idp.Roles)
+	}
+	if idp.Scopes != "" {
+		r.scopes = strings.Fields(idp.Scopes)
+	}
+}
+
+// IsUser returns true if this subject is a User.
+func (r *Subject) IsUser() bool {
+	return r.userId != nil
+}
+
+// IsIdentity returns true if this subject is an IdpIdentity.
+func (r *Subject) IsIdentity() bool {
+	return r.identityId != nil
+}
+
+//
+// aliases
 
 // Permission alias.
 type Permission = model.Permission
