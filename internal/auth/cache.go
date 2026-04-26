@@ -32,7 +32,7 @@ type Cache struct {
 	roleById      map[uint]*Role
 	userById      map[uint]*User
 	taskById      map[uint]*Task
-	identById     map[uint]*model.IdpIdentity
+	identById     map[uint]*Identity
 	tokenById     map[uint]*Token
 	tokenByDigest map[string]*Token
 	refreshed     time.Time
@@ -87,7 +87,7 @@ func (r *Cache) TaskDeleted(id uint) {
 	delete(r.taskById, id)
 }
 
-func (r *Cache) IdentitySaved(m *model.IdpIdentity) {
+func (r *Cache) IdentitySaved(m *Identity) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	r.identById[m.ID] = m
@@ -153,7 +153,7 @@ func (r *Cache) reset() {
 	r.userById = make(map[uint]*User)
 	r.taskById = make(map[uint]*Task)
 	r.tokenById = make(map[uint]*Token)
-	r.identById = make(map[uint]*model.IdpIdentity)
+	r.identById = make(map[uint]*Identity)
 	r.tokenByDigest = make(map[string]*Token)
 }
 
@@ -248,7 +248,7 @@ func (r *Cache) getTasks() (err error) {
 }
 
 func (r *Cache) getIdentities() (err error) {
-	list := make([]*model.IdpIdentity, 0)
+	list := make([]*Identity, 0)
 	err = r.db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -279,7 +279,7 @@ func (r *Cache) getTokens() (err error) {
 
 // getToken returns a PAT.
 func (r *Cache) getToken(token string) (m *Token, err error) {
-	m, found := r.tokenByDigest[secret.Hash(token)]
+	cached, found := r.tokenByDigest[secret.Hash(token)]
 	if !found {
 		err = &NotFound{
 			Resource: "token",
@@ -287,6 +287,8 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 		}
 		return
 	}
+	// Create a copy to avoid modifying cached instance
+	m = &Token{Token: cached.Token}
 	// user binding.
 	if m.UserID != nil {
 		user, found := r.userById[*m.UserID]
@@ -375,3 +377,15 @@ type Permission = model.Permission
 
 // Task alias.
 type Task = model.Task
+
+// Identity alias.
+type Identity = model.IdpIdentity
+
+// Grant alias.
+type Grant = model.Grant
+
+// Token alias.
+type Token struct {
+	model.Token
+	Secret string `gorm:"-"`
+}

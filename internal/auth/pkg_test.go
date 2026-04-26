@@ -2,6 +2,8 @@ package auth
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -709,6 +711,673 @@ func TestLDAP(t *testing.T) {
 	t.Log(groups)
 }
 
+// TestCacheAutoRefresh tests automatic cache refresh on miss and expiry.
+func TestCacheAutoRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create user and token
+	user := &model.User{
+		Subject:  "cache-refresh-user",
+		Userid:   "cacherefreshuser",
+		Password: secret.HashPassword("password"),
+		Email:    "cacherefresh@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Verify token is in cache
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Delete token from DB but not cache
+	err = db.Delete(&model.Token{}, token.ID).Error
+	g.Expect(err).To(BeNil())
+
+	// Create new token in DB (not in cache yet)
+	newUser := &model.User{
+		Subject:  "new-user",
+		Userid:   "newuser",
+		Password: secret.HashPassword("password"),
+		Email:    "newuser@example.com",
+	}
+	err = db.Create(newUser).Error
+	g.Expect(err).To(BeNil())
+
+	newToken := Token{
+		Token: model.Token{
+			Kind:       KindAPIKey,
+			AuthId:     "new-auth-id",
+			Digest:     secret.Hash("new-secret-token"),
+			Expiration: time.Now().Add(24 * time.Hour),
+			UserID:     &newUser.ID,
+		},
+		Secret: "new-secret-token",
+	}
+	err = db.Create(&newToken.Token).Error
+	g.Expect(err).To(BeNil())
+
+	// Trigger refresh by requesting token not in cache (miss-based refresh)
+	request = &Request{}
+	request.With("Bearer " + newToken.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil()) // Should succeed after auto-refresh
+
+	// Verify old deleted token is now gone from cache (refresh removed it)
+	request = &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestCacheTimeBasedRefresh tests time-based cache expiration.
+func TestCacheTimeBasedRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Save original cache lifespan and restore after test
+	originalLifespan := Settings.CacheLifespan
+	defer func() {
+		Settings.CacheLifespan = originalLifespan
+	}()
+
+	// Set very short cache lifespan
+	Settings.CacheLifespan = 100 * time.Millisecond
+
+	user := &model.User{
+		Subject:  "time-refresh-user",
+		Userid:   "timerefreshuser",
+		Password: secret.HashPassword("password"),
+		Email:    "timerefresh@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Authenticate successfully (cache is fresh)
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Wait for cache to expire
+	time.Sleep(150 * time.Millisecond)
+
+	// Create new token while cache is stale
+	newUser := &model.User{
+		Subject:  "new-time-user",
+		Userid:   "newtimeuser",
+		Password: secret.HashPassword("password"),
+		Email:    "newtime@example.com",
+	}
+	err = db.Create(newUser).Error
+	g.Expect(err).To(BeNil())
+
+	newToken := Token{
+		Token: model.Token{
+			Kind:       KindAPIKey,
+			AuthId:     "time-auth-id",
+			Digest:     secret.Hash("time-secret-token"),
+			Expiration: time.Now().Add(24 * time.Hour),
+			UserID:     &newUser.ID,
+		},
+		Secret: "time-secret-token",
+	}
+	err = db.Create(&newToken.Token).Error
+	g.Expect(err).To(BeNil())
+
+	// Authenticate with new token - should trigger time-based refresh
+	request = &Request{}
+	request.With("Bearer " + newToken.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+}
+
+// TestIdpIdentityTokenBinding tests token binding to IdP identities.
+func TestIdpIdentityTokenBinding(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create IdP identity
+	identity := &Identity{
+		Issuer:       "https://idp.example.com",
+		Subject:      "idp-user-123",
+		RefreshToken: "refresh-token",
+		Expiration:   time.Now().Add(24 * time.Hour),
+		Scopes:       "openid profile email",
+		Userid:       "idpuser",
+		Email:        "idpuser@example.com",
+	}
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token bound to IdP identity
+	token, err := provider.NewPAT(identity.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.IdpIdentityID).NotTo(BeNil())
+	g.Expect(*token.IdpIdentityID).To(Equal(identity.ID))
+
+	// Authenticate with IdP-bound token
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+	g.Expect(jwToken).NotTo(BeNil())
+
+	// Verify claims
+	claims := jwToken.Claims.(jwt.MapClaims)
+	g.Expect(claims[ClaimSub]).To(Equal("idp-user-123"))
+	g.Expect(claims[ClaimScope]).To(Equal("openid profile email"))
+}
+
+// TestCacheEntityUpdates tests all Saved/Deleted methods.
+func TestCacheEntityUpdates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Test RoleSaved/RoleDeleted
+	role := &Role{
+		Model: model.Model{ID: 100},
+		Name:  "TestRole",
+	}
+	cache.RoleSaved(role)
+	cache.mutex.RLock()
+	_, found := cache.roleById[100]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeTrue())
+
+	cache.RoleDeleted(100)
+	cache.mutex.RLock()
+	_, found = cache.roleById[100]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeFalse())
+
+	// Test UserSaved/UserDeleted
+	user := &User{
+		Model:   model.Model{ID: 200},
+		Subject: "test-user",
+	}
+	cache.UserSaved(user)
+	cache.mutex.RLock()
+	_, found = cache.userById[200]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeTrue())
+
+	cache.UserDeleted(200)
+	cache.mutex.RLock()
+	_, found = cache.userById[200]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeFalse())
+
+	// Test TaskSaved/TaskDeleted
+	task := &Task{
+		Model: model.Model{ID: 300},
+		Name:  "test-task",
+		State: "Running",
+	}
+	cache.TaskSaved(task)
+	cache.mutex.RLock()
+	_, found = cache.taskById[300]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeTrue())
+
+	cache.TaskDeleted(300)
+	cache.mutex.RLock()
+	_, found = cache.taskById[300]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeFalse())
+
+	// Test IdentitySaved/IdentityDeleted
+	identity := &Identity{
+		Model:   model.Model{ID: 400},
+		Issuer:  "https://idp.example.com",
+		Subject: "idp-subject",
+	}
+	cache.IdentitySaved(identity)
+	cache.mutex.RLock()
+	_, found = cache.identById[400]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeTrue())
+
+	cache.IdentityDeleted(400)
+	cache.mutex.RLock()
+	_, found = cache.identById[400]
+	cache.mutex.RUnlock()
+	g.Expect(found).To(BeFalse())
+}
+
+// TestCacheInconsistency tests error paths when referenced entities are missing.
+func TestCacheInconsistency(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Create token referencing non-existent user
+	userID := uint(9999)
+	userTokenSecret := "inconsistent-user-token"
+	userTokenDigest := secret.Hash(userTokenSecret)
+	userToken := &Token{
+		Token: model.Token{
+			Model:  model.Model{ID: 1},
+			UserID: &userID,
+			Digest: userTokenDigest,
+		},
+	}
+	cache.mutex.Lock()
+	cache.tokenByDigest[userTokenDigest] = userToken
+	cache.tokenById[1] = userToken
+	cache.mutex.Unlock()
+
+	_, err = cache.getToken(userTokenSecret)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("user"))
+
+	// Create token referencing non-existent task
+	taskID := uint(8888)
+	taskTokenSecret := "inconsistent-task-token"
+	taskTokenDigest := secret.Hash(taskTokenSecret)
+	taskToken := &Token{
+		Token: model.Token{
+			Model:  model.Model{ID: 2},
+			TaskID: &taskID,
+			Digest: taskTokenDigest,
+		},
+	}
+	cache.mutex.Lock()
+	cache.tokenByDigest[taskTokenDigest] = taskToken
+	cache.tokenById[2] = taskToken
+	cache.mutex.Unlock()
+
+	_, err = cache.getToken(taskTokenSecret)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("task"))
+
+	// Create token referencing non-existent identity
+	identityID := uint(7777)
+	identityTokenSecret := "inconsistent-identity-token"
+	identityTokenDigest := secret.Hash(identityTokenSecret)
+	identityToken := &Token{
+		Token: model.Token{
+			Model:         model.Model{ID: 3},
+			IdpIdentityID: &identityID,
+			Digest:        identityTokenDigest,
+		},
+	}
+	cache.mutex.Lock()
+	cache.tokenByDigest[identityTokenDigest] = identityToken
+	cache.tokenById[3] = identityToken
+	cache.mutex.Unlock()
+
+	_, err = cache.getToken(identityTokenSecret)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("identity"))
+}
+
+// TestCacheConcurrency tests concurrent access to the cache.
+func TestCacheConcurrency(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create multiple users and tokens
+	users := make([]*model.User, 10)
+	tokens := make([]Token, 10)
+	for i := 0; i < 10; i++ {
+		users[i] = &model.User{
+			Subject:  fmt.Sprintf("concurrent-user-%d", i),
+			Userid:   fmt.Sprintf("concurrentuser%d", i),
+			Password: secret.HashPassword("password"),
+			Email:    fmt.Sprintf("concurrent%d@example.com", i),
+		}
+		err = db.Create(users[i]).Error
+		g.Expect(err).To(BeNil())
+	}
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	for i := 0; i < 10; i++ {
+		tokens[i], err = provider.NewPAT(users[i].Subject, 24*time.Hour)
+		g.Expect(err).To(BeNil())
+	}
+
+	// Launch concurrent GetToken operations
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			tokenIdx := idx % 10
+			request := &Request{}
+			request.With("Bearer " + tokens[tokenIdx].Secret)
+			_, err := provider.Authenticate(request)
+			g.Expect(err).To(BeNil())
+		}(i)
+	}
+
+	// Launch concurrent Refresh operations
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := provider.cache.Refresh()
+			g.Expect(err).To(BeNil())
+		}()
+	}
+
+	// Launch concurrent TokenSaved operations
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			provider.cache.TokenSaved(&tokens[idx%10])
+		}(i)
+	}
+
+	wg.Wait()
+}
+
+// TestScopeCalculation tests edge cases in scope calculation.
+func TestScopeCalculation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Test 1: User with no roles
+	userNoRoles := &model.User{
+		Subject:  "user-no-roles",
+		Userid:   "usernoroles",
+		Password: secret.HashPassword("password"),
+		Email:    "noroles@example.com",
+	}
+	err = db.Create(userNoRoles).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	token, err := provider.NewPAT(userNoRoles.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	claims := jwToken.Claims.(jwt.MapClaims)
+	scopes := claims[ClaimScope].(string)
+	g.Expect(scopes).To(BeEmpty())
+
+	// Test 2: Role with no permissions
+	roleNoPerm := &model.Role{
+		Name: "EmptyRole",
+	}
+	err = db.Create(roleNoPerm).Error
+	g.Expect(err).To(BeNil())
+
+	userEmptyRole := &model.User{
+		Subject:  "user-empty-role",
+		Userid:   "useremptyrole",
+		Password: secret.HashPassword("password"),
+		Email:    "emptyrole@example.com",
+	}
+	err = db.Create(userEmptyRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(userEmptyRole).Association("Roles").Append(roleNoPerm)
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to load new user
+	err = provider.cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	token, err = provider.NewPAT(userEmptyRole.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	request = &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	claims = jwToken.Claims.(jwt.MapClaims)
+	scopes = claims[ClaimScope].(string)
+	g.Expect(scopes).To(BeEmpty())
+
+	// Test 3: Multiple roles with overlapping permissions (deduplication)
+	perm1 := &model.Permission{
+		Name:  "Read",
+		Scope: "apps:GET",
+	}
+	perm2 := &model.Permission{
+		Name:  "Write",
+		Scope: "apps:POST",
+	}
+	err = db.Create(perm1).Error
+	g.Expect(err).To(BeNil())
+	err = db.Create(perm2).Error
+	g.Expect(err).To(BeNil())
+
+	role1 := &model.Role{Name: "Reader"}
+	role2 := &model.Role{Name: "Writer"}
+	err = db.Create(role1).Error
+	g.Expect(err).To(BeNil())
+	err = db.Create(role2).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role1).Association("Permissions").Append(perm1)
+	g.Expect(err).To(BeNil())
+	err = db.Model(role2).Association("Permissions").Append(perm1, perm2) // perm1 overlaps
+	g.Expect(err).To(BeNil())
+
+	userMultiRole := &model.User{
+		Subject:  "user-multi-role",
+		Userid:   "usermultirole",
+		Password: secret.HashPassword("password"),
+		Email:    "multirole@example.com",
+	}
+	err = db.Create(userMultiRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(userMultiRole).Association("Roles").Append(role1, role2)
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache
+	err = provider.cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	token, err = provider.NewPAT(userMultiRole.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	request = &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	claims = jwToken.Claims.(jwt.MapClaims)
+	scopes = claims[ClaimScope].(string)
+	// Should have both scopes, deduplicated
+	g.Expect(scopes).To(ContainSubstring("apps:GET"))
+	g.Expect(scopes).To(ContainSubstring("apps:POST"))
+}
+
+// TestTokenBindingEdgeCases tests edge cases in token bindings.
+func TestTokenBindingEdgeCases(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	cache := provider.cache
+
+	// Test 1: Token with no bindings (all foreign keys nil)
+	unboundTokenDigest := secret.Hash("unbound-token")
+	cache.mutex.Lock()
+	cache.tokenByDigest[unboundTokenDigest] = &Token{
+		Token: model.Token{
+			Model:         model.Model{ID: 999},
+			UserID:        nil,
+			TaskID:        nil,
+			IdpIdentityID: nil,
+		},
+	}
+	cache.mutex.Unlock()
+
+	m, err := cache.GetToken("unbound-token")
+	g.Expect(err).To(BeNil())
+	g.Expect(m.Subject).To(BeEmpty())
+	g.Expect(m.Scopes).To(BeEmpty())
+
+	// Test 2: Pending task token
+	pendingTask := &model.Task{
+		Name:  "pending-task",
+		State: "Pending",
+	}
+	err = db.Create(pendingTask).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to load pending task
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	token, err := provider.NewTaskToken(pendingTask.ID)
+	g.Expect(err).To(BeNil())
+
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+	g.Expect(jwToken).NotTo(BeNil())
+
+	// Verify task subject format
+	claims := jwToken.Claims.(jwt.MapClaims)
+	subject := claims[ClaimSub].(string)
+	g.Expect(subject).To(ContainSubstring("task:"))
+}
+
+// TestManualCacheRefresh tests explicit Refresh() and Reset() calls.
+func TestManualCacheRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	user := &model.User{
+		Subject:  "manual-refresh-user",
+		Userid:   "manualrefreshuser",
+		Password: secret.HashPassword("password"),
+		Email:    "manualrefresh@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token
+	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Verify in cache
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Call Reset - should clear cache
+	provider.cache.Reset()
+
+	// Token should still work via refresh
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Call manual Refresh
+	err = provider.cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Token should still work
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+}
+
+// TestTaskStateFiltering tests that only Pending/Running tasks are cached.
+func TestTaskStateFiltering(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create tasks in various states
+	states := []string{"Pending", "Running", "Succeeded", "Failed", "Canceled"}
+	tasks := make([]*model.Task, len(states))
+	for i, state := range states {
+		tasks[i] = &model.Task{
+			Name:  "task-" + state,
+			State: state,
+		}
+		err = db.Create(tasks[i]).Error
+		g.Expect(err).To(BeNil())
+	}
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify only Pending and Running are in cache
+	provider.cache.mutex.RLock()
+	_, foundPending := provider.cache.taskById[tasks[0].ID]
+	_, foundRunning := provider.cache.taskById[tasks[1].ID]
+	_, foundSucceeded := provider.cache.taskById[tasks[2].ID]
+	_, foundFailed := provider.cache.taskById[tasks[3].ID]
+	_, foundCanceled := provider.cache.taskById[tasks[4].ID]
+	provider.cache.mutex.RUnlock()
+
+	g.Expect(foundPending).To(BeTrue())
+	g.Expect(foundRunning).To(BeTrue())
+	g.Expect(foundSucceeded).To(BeFalse())
+	g.Expect(foundFailed).To(BeFalse())
+	g.Expect(foundCanceled).To(BeFalse())
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(
@@ -732,7 +1401,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&model.Token{},
 		&model.Grant{},
 		&model.RsaKey{},
-		&model.IdpIdentity{},
+		&Identity{},
 	)
 	return
 }

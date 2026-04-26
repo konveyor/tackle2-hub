@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 )
 
@@ -133,15 +132,6 @@ func (r *BaseScope) With(s string) {
 		r.Method = part[1]
 	}
 	return
-}
-
-// Grant alias.
-type Grant = model.Grant
-
-// Token alias.
-type Token struct {
-	model.Token
-	Secret string `gorm:"-"`
 }
 
 // hasExpiredIdentity returns true when the token references and expired IpP identity.

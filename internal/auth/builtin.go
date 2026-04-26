@@ -150,7 +150,7 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 		m.UserID = &user.ID
 		return
 	}
-	idpId := &model.IdpIdentity{}
+	idpId := &Identity{}
 	err = p.db.First(idpId, "subject", subject).Error
 	if err == nil {
 		m.IdpIdentityID = &idpId.ID

@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
@@ -78,7 +77,7 @@ func (h *IdpHandler) parseAccessToken(accessToken string) (claims map[string]any
 }
 
 // identitySaved notification the Idp identity has been saved.
-func (h *IdpHandler) identitySaved(m *model.IdpIdentity) {
+func (h *IdpHandler) identitySaved(m *Identity) {
 	h.cache.IdentitySaved(m)
 }
 
@@ -99,7 +98,7 @@ type IdpLogin struct {
 	tokens            *oidc.Tokens[*oidc.IDTokenClaims]
 	userInfo          *oidc.UserInfo
 	accessTokenClaims map[string]any
-	idpIdentity       *model.IdpIdentity
+	identity          *Identity
 }
 
 // begin initiates the external IdP authentication flow.
@@ -254,7 +253,7 @@ func (f *IdpLogin) parseAccessToken() (err error) {
 
 // ensureIdentity ensures the identity created/updated.
 func (f *IdpLogin) ensureIdentity() (err error) {
-	f.idpIdentity = f.buildIdentity()
+	f.identity = f.buildIdentity()
 	db := f.handler.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "subject"},
@@ -271,17 +270,17 @@ func (f *IdpLogin) ensureIdentity() (err error) {
 			"updateUser",
 		}),
 	})
-	err = db.Create(f.idpIdentity).Error
+	err = db.Create(f.identity).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	f.handler.identitySaved(f.idpIdentity)
+	f.handler.identitySaved(f.identity)
 	return
 }
 
 // buildIdentity builds an IdpIdentity from userinfo and tokens.
-func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
+func (f *IdpLogin) buildIdentity() (identity *Identity) {
 	email := f.userInfo.Email
 	if email == "" {
 		email = fmt.Sprintf("%s@unknown", f.userInfo.Subject)
@@ -300,7 +299,7 @@ func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 		expiration = f.tokens.Expiry
 	}
 
-	idpIdentity = &model.IdpIdentity{
+	identity = &Identity{
 		Issuer:            Settings.Auth.Idp.Name,
 		Subject:           f.userInfo.Subject,
 		Userid:            userid,
@@ -312,8 +311,8 @@ func (f *IdpLogin) buildIdentity() (idpIdentity *model.IdpIdentity) {
 		Scopes:            scopes,
 		Roles:             roles,
 	}
-	idpIdentity.CreateUser = "system"
-	idpIdentity.UpdateUser = "system"
+	identity.CreateUser = "system"
+	identity.UpdateUser = "system"
 
 	return
 }
@@ -344,7 +343,7 @@ func (f *IdpLogin) issueTokens() (err error) {
 	var requestID string
 
 	// Use external IdP subject directly
-	subject := f.idpIdentity.Subject
+	subject := f.identity.Subject
 
 	if f.authRequestID != "" {
 		// Complete existing OIDC authorization request
@@ -435,7 +434,7 @@ func (f *IdpLogin) RefreshIdentity() (err error) {
 	f.tokens, err = rp.RefreshTokens[*oidc.IDTokenClaims](
 		context.Background(),
 		f.handler.rpClient,
-		f.idpIdentity.RefreshToken,
+		f.identity.RefreshToken,
 		"",
 		"",
 	)
@@ -451,7 +450,7 @@ func (f *IdpLogin) RefreshIdentity() (err error) {
 	if err != nil {
 		return
 	}
-	f.idpIdentity = f.buildIdentity()
+	f.identity = f.buildIdentity()
 	err = f.ensureIdentity()
 	return
 }

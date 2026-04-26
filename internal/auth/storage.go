@@ -850,8 +850,8 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest) (err error) {
 		return
 	}
 	login := &IdpLogin{
-		handler:     r.idpHandler,
-		idpIdentity: s.identity,
+		handler:  r.idpHandler,
+		identity: s.identity,
 	}
 	err = login.RefreshIdentity()
 	if err != nil {
@@ -1012,10 +1012,10 @@ func (r *Storage) findSubject(subject string) (s *Subject, err error) {
 		s.With(user)
 		return
 	}
-	idpIdentity := &model.IdpIdentity{}
-	err = r.db.First(idpIdentity, "subject", subject).Error
+	identity := &Identity{}
+	err = r.db.First(identity, "subject", subject).Error
 	if err == nil {
-		s.WithIdentity(idpIdentity)
+		s.WithIdentity(identity)
 		return
 	}
 	return
@@ -1393,7 +1393,7 @@ type Subject struct {
 	userId     *uint
 	identityId *uint
 	user       *model.User
-	identity   *model.IdpIdentity
+	identity   *Identity
 }
 
 // With populates Subject from a User model.
@@ -1411,7 +1411,7 @@ func (r *Subject) With(user *model.User) {
 }
 
 // WithIdentity populates Subject from an IdpIdentity model.
-func (r *Subject) WithIdentity(idp *model.IdpIdentity) {
+func (r *Subject) WithIdentity(idp *Identity) {
 	r.identityId = &idp.ID
 	r.identity = idp
 	r.name = idp.Userid
