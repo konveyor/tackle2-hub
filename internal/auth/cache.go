@@ -25,6 +25,11 @@ func NewCache(db *gorm.DB) (cache *Cache) {
 
 // Cache caches resources.
 // Tokens are cached to mitigate DB pressure during heavy loads.
+//
+// Security Note:
+// FindUserByUserid() always refreshes the cache to ensure password changes,
+// permission updates, and other security-critical changes are immediately
+// effective. This is acceptable because user count is typically < 100.
 type Cache struct {
 	db             *gorm.DB
 	mutex          sync.RWMutex
@@ -201,34 +206,22 @@ func (r *Cache) FindSubject(subject string) (m *Subject, err error) {
 }
 
 // FindUserByUserid returns a user by userid.
+// Cache refreshed (forced) to prevent using stale password.
 func (r *Cache) FindUserByUserid(userid string) (m *User, err error) {
-	var needsRefresh bool
 	var found bool
+	func() {
+		r.mutex.Lock()
+		defer r.mutex.Unlock()
+		err = r.refresh()
+	}()
+	if err != nil {
+		return
+	}
 	func() {
 		r.mutex.RLock()
 		defer r.mutex.RUnlock()
-		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
-		if !needsRefresh {
-			m, found = r.userByUserid[userid]
-			if !found {
-				needsRefresh = true
-			}
-		}
+		m, found = r.userByUserid[userid]
 	}()
-	if needsRefresh {
-		func() {
-			r.mutex.Lock()
-			defer r.mutex.Unlock()
-			err = r.refresh()
-		}()
-		func() {
-			r.mutex.RLock()
-			defer r.mutex.RUnlock()
-			if err == nil {
-				m, found = r.userByUserid[userid]
-			}
-		}()
-	}
 	if !found {
 		err = &NotFound{
 			Resource: "user",
