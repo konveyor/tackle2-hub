@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -296,12 +297,13 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			}
 			return
 		}
-		m.Scopes = strings.Join(user.scopes(), " ")
+		m.Subject = user.Subject
+		m.Scopes = strings.Join(user.scopes(r.roleById), " ")
 		return
 	}
 	// task binding.
 	if m.TaskID != nil {
-		_, found := r.taskById[*m.TaskID]
+		task, found := r.taskById[*m.TaskID]
 		if !found {
 			err = &NotFound{
 				Resource: "task",
@@ -309,6 +311,7 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			}
 			return
 		}
+		m.Subject = "task:" + strconv.Itoa(int(task.ID))
 		m.Scopes = strings.Join(AddonScopes, " ")
 		return
 	}
@@ -322,11 +325,53 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			}
 			return
 		}
+		m.Subject = identity.Subject
 		m.Scopes = identity.Scopes
 		return
 	}
 	return
 }
+
+// User alias.
+type User model.User
+
+// scopes returns the user's scopes.
+func (m *User) scopes(roles map[uint]*Role) (scopes []string) {
+	scopeMap := make(map[string]bool)
+	for _, r := range m.Roles {
+		role, found := roles[r.ID]
+		if !found {
+			continue
+		}
+		for _, scope := range role.scopes() {
+			if !scopeMap[scope] {
+				scopes = append(scopes, scope)
+				scopeMap[scope] = true
+			}
+		}
+	}
+	sort.Strings(scopes)
+	return
+}
+
+// Role alias.
+type Role model.Role
+
+// scopes returns the roles scopes.
+func (m *Role) scopes() (scopes []string) {
+	scopeMap := make(map[string]bool)
+	for _, p := range m.Permissions {
+		if !scopeMap[p.Scope] {
+			scopes = append(scopes, p.Scope)
+			scopeMap[p.Scope] = true
+		}
+	}
+	sort.Strings(scopes)
+	return
+}
+
+// Permission alias.
+type Permission = model.Permission
 
 // Task alias.
 type Task = model.Task

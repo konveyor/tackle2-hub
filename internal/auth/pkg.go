@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
@@ -135,42 +134,6 @@ func (r *BaseScope) With(s string) {
 	}
 	return
 }
-
-// User alias.
-type User model.User
-
-func (m *User) scopes() (scopes []string) {
-	scopeMap := make(map[string]bool)
-	for _, r := range m.Roles {
-		ur := Role(r)
-		for _, scope := range ur.scopes() {
-			if !scopeMap[scope] {
-				scopes = append(scopes, scope)
-				scopeMap[scope] = true
-			}
-		}
-	}
-	sort.Strings(scopes)
-	return
-}
-
-// Role alias.
-type Role model.Role
-
-func (m *Role) scopes() (scopes []string) {
-	scopeMap := make(map[string]bool)
-	for _, p := range m.Permissions {
-		if !scopeMap[p.Scope] {
-			scopes = append(scopes, p.Name)
-			scopeMap[p.Scope] = true
-		}
-	}
-	sort.Strings(scopes)
-	return
-}
-
-// Permission alias.
-type Permission = model.Permission
 
 // Grant alias.
 type Grant = model.Grant
