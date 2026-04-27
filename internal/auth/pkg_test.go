@@ -2096,16 +2096,15 @@ func TestStoreDeviceAuthorization(t *testing.T) {
 	)
 	g.Expect(err).To(BeNil())
 
-	// Verify grant was created
-	var grant model.Grant
-	err = db.Where("UserCode = ?", userCode).First(&grant).Error
-	g.Expect(err).To(BeNil())
-	g.Expect(grant.Kind).To(Equal(KindDevice))
-	g.Expect(grant.UserCode).To(Equal(userCode))
-	g.Expect(grant.DeviceCode).To(Equal(secret.Hash(deviceCode)))
-	g.Expect(grant.Scopes).To(Equal("openid profile"))
-	g.Expect(grant.Done).To(BeFalse())
-	g.Expect(grant.Denied).To(BeFalse())
+	// Verify device authorization was created in memory
+	devAuth, found := storage.GetDevAuthByUserCode(userCode)
+	g.Expect(found).To(BeTrue())
+	g.Expect(devAuth.clientId).To(Equal(clientId))
+	g.Expect(devAuth.userCode).To(Equal(userCode))
+	g.Expect(devAuth.deviceCode).To(Equal(deviceCode))
+	g.Expect(devAuth.scopes).To(Equal(scopes))
+	g.Expect(devAuth.done).To(BeFalse())
+	g.Expect(devAuth.denied).To(BeFalse())
 }
 
 // TestGetDeviceAuthorizatonStatePending tests retrieving pending device grant.
@@ -2175,15 +2174,9 @@ func TestGetDeviceAuthorizatonStateDone(t *testing.T) {
 	)
 	g.Expect(err).To(BeNil())
 
-	// Authorize the grant
+	// Authorize the device
 	authTime := time.Now().Truncate(time.Second)
-	var grant model.Grant
-	err = db.Where("UserCode = ?", userCode).First(&grant).Error
-	g.Expect(err).To(BeNil())
-	grant.Subject = "authorized-user"
-	grant.Done = true
-	grant.AuthTime = authTime
-	err = db.Save(&grant).Error
+	err = storage.UpdateDevAuth(userCode, "authorized-user", true, false, authTime)
 	g.Expect(err).To(BeNil())
 
 	state, err := storage.GetDeviceAuthorizatonState(
@@ -2225,12 +2218,8 @@ func TestGetDeviceAuthorizatonStateDenied(t *testing.T) {
 	)
 	g.Expect(err).To(BeNil())
 
-	// Deny the grant
-	var grant model.Grant
-	err = db.Where("UserCode = ?", userCode).First(&grant).Error
-	g.Expect(err).To(BeNil())
-	grant.Denied = true
-	err = db.Save(&grant).Error
+	// Deny the device authorization
+	err = storage.UpdateDevAuth(userCode, "", false, true, time.Time{})
 	g.Expect(err).To(BeNil())
 
 	state, err := storage.GetDeviceAuthorizatonState(

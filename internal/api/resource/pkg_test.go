@@ -3597,7 +3597,6 @@ func TestGrant_With(t *testing.T) {
 func TestGrant_With_DeviceFlow(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	authTime := time.Now()
 	m := &model.Grant{
 		Model: model.Model{
 			ID:         2,
@@ -3610,10 +3609,6 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 		Scopes:     "openid profile",
 		Issued:     time.Now(),
 		Expiration: time.Now().Add(15 * time.Minute),
-		UserCode:   "ABCD-1234",
-		Done:       true,
-		Denied:     false,
-		AuthTime:   authTime,
 	}
 
 	r := &Grant{}
@@ -3624,10 +3619,6 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 	g.Expect(r.AuthId).To(gomega.Equal("auth123"))
 	g.Expect(r.Subject).To(gomega.Equal("device-user"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
-	g.Expect(r.UserCode).To(gomega.Equal("ABCD-1234"))
-	g.Expect(r.Done).To(gomega.BeTrue())
-	g.Expect(r.Denied).To(gomega.BeFalse())
-	g.Expect(r.AuthTime).To(gomega.Equal(authTime))
 }
 
 // TestToken_With tests the Token.With() method.

@@ -34,8 +34,8 @@ type Stub struct {
 func (s *Stub) Reset() {
 }
 
-// Use API key.
-func (s *Stub) Use(apiKey string) {
+// Use sets the authenticator.
+func (s *Stub) Use(auth Authenticator) {
 }
 
 // SetRetry set the number of retries.

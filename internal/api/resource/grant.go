@@ -17,8 +17,4 @@ func (r *Grant) With(m *model.Grant) {
 	r.Scopes = m.Scopes
 	r.Issued = m.Issued
 	r.Expiration = m.Expiration
-	r.UserCode = m.UserCode
-	r.Done = m.Done
-	r.Denied = m.Denied
-	r.AuthTime = m.AuthTime
 }

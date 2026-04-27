@@ -33,8 +33,8 @@ type Client struct {
 	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
-	// APIKey api key.
-	APIKey string
+	// auth authenticator.
+	auth Authenticator
 	// Retry limit.
 	Retry uint8
 	// Error
@@ -46,9 +46,9 @@ func (r *Client) Reset() {
 	r.Error = nil
 }
 
-// Use API key.
-func (r *Client) Use(apiKey string) {
-	r.APIKey = apiKey
+// Use sets the authenticator.
+func (r *Client) Use(auth Authenticator) {
+	r.auth = auth
 }
 
 // SetRetry set the number of retries.
@@ -731,7 +731,10 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, "Bearer "+r.APIKey)
+		// Set authorization header
+		if r.auth != nil {
+			request.Header.Set(api.Authorization, r.auth.Header())
+		}
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -757,6 +760,17 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					response.StatusCode,
 					request.Method,
 					request.URL.Path))
+			// Handle 401 by refreshing auth and retrying once
+			if response.StatusCode == http.StatusUnauthorized && r.auth != nil && i == 0 {
+				_ = response.Body.Close()
+				loginErr := r.auth.Login()
+				if loginErr != nil {
+					Log.Info("Auth refresh failed: " + loginErr.Error())
+					break
+				}
+				Log.Info("Auth refreshed, retrying request")
+				continue
+			}
 			if response.StatusCode == http.StatusGatewayTimeout {
 				if i < r.Retry {
 					_ = response.Body.Close()

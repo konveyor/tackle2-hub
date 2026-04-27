@@ -274,6 +274,9 @@
         - post
         - get
         - delete
+    - name: device
+      verbs:
+        - post
 - role: architect
   id: 2
   resources:

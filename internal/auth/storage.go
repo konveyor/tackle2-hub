@@ -24,13 +24,15 @@ import (
 
 // Storage implements op.Storage.
 type Storage struct {
-	mutex      sync.RWMutex
-	keySet     KeySet
-	db         *gorm.DB
-	authReqs   map[string]*AuthRequest
-	authByCode map[string]string
-	idpHandler *IdpHandler
-	cache      *Cache
+	mutex         sync.RWMutex
+	keySet        KeySet
+	db            *gorm.DB
+	authReqs      map[string]*AuthRequest
+	authByCode    map[string]string
+	devAuthReqs   map[string]*DeviceAuthRequest
+	devAuthByCode map[string]string
+	idpHandler    *IdpHandler
+	cache         *Cache
 }
 
 // GetClientByClientID retrieves a client by ID.
@@ -40,16 +42,28 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 			Log.Error(err, "")
 		}
 	}()
-	found := &Client{
-		id:           Settings.Auth.Client.ID,
-		secret:       Settings.Auth.Client.Secret,
-		redirectURIs: r.redirectURIs(),
-	}
-	if clientId != found.id {
+
+	switch clientId {
+	case "web-ui":
+		// Web client for browser-based authorization code flow
+		client = &Client{
+			id:              "web-ui",
+			secret:          Settings.Auth.Client.Secret,
+			redirectURIs:    r.redirectURIs(),
+			applicationType: op.ApplicationTypeWeb,
+		}
+	case "cli":
+		// Public CLI client for device authorization grant flow
+		client = &Client{
+			id:              "cli",
+			secret:          "", // Public client - no secret
+			redirectURIs:    []string{},
+			applicationType: op.ApplicationTypeNative,
+		}
+	default:
 		err = oidc.ErrInvalidClient().WithDescription("client not found")
 		return
 	}
-	client = found
 	return
 }
 
@@ -830,9 +844,16 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 	}
 	authCode := r.authCodeById(authReq.GetID())
 	if authCode != "" {
+		// Auth code flow - delete auth request
 		err = r.deleteAuthRequestByCode(ctx, authCode)
 		if err != nil {
 			return
+		}
+	} else {
+		// Device flow - delete device authorization
+		deviceCode := r.devAuthCodeBySubject(authReq.GetSubject())
+		if deviceCode != "" {
+			r.DeleteDevAuthByCode(deviceCode)
 		}
 	}
 	tokenId = refreshToken
@@ -954,11 +975,13 @@ func (r *Storage) createGrant(
 	expiration := time.Now().Add(Settings.Token.RefreshLifespan)
 	scopes := strings.Join(authReq.GetScopes(), " ")
 	authCode := r.authCodeById(authReq.GetID())
+	refreshTokenHash := secret.Hash(refreshToken)
+
 	m := &model.Grant{
 		Kind:         KindAuthCode,
 		AuthId:       grantId,
 		Subject:      authReq.GetSubject(),
-		RefreshToken: secret.Hash(refreshToken),
+		RefreshToken: refreshTokenHash,
 		AuthCode:     authCode,
 		Scopes:       scopes,
 		Issued:       authReq.GetAuthTime(),
@@ -1058,25 +1081,29 @@ func (r *Storage) StoreDeviceAuthorization(
 	expires time.Time,
 	scopes []string) (err error) {
 	//
-	defer func() {
-		if err != nil {
-			Log.Error(err, "")
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	// Clean up expired device authorizations
+	now := time.Now()
+	for code, req := range r.devAuthReqs {
+		if now.After(req.expiration) {
+			delete(r.devAuthReqs, code)
+			delete(r.devAuthByCode, req.userCode)
 		}
-	}()
-	m := &model.Grant{
-		Kind:       KindDevice,
-		AuthId:     r.genId(),
-		DeviceCode: secret.Hash(deviceCode),
-		UserCode:   userCode,
-		Scopes:     strings.Join(scopes, " "),
-		Issued:     time.Now(),
-		Expiration: expires,
 	}
-	err = r.db.Create(m).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
+
+	// Store device authorization in memory
+	devAuth := &DeviceAuthRequest{
+		deviceCode: deviceCode,
+		userCode:   userCode,
+		clientId:   clientId,
+		scopes:     scopes,
+		issued:     time.Now(),
+		expiration: expires,
 	}
+	r.devAuthReqs[deviceCode] = devAuth
+	r.devAuthByCode[userCode] = deviceCode
 	return
 }
 
@@ -1091,34 +1118,93 @@ func (r *Storage) GetDeviceAuthorizatonState(
 			Log.Error(err, "")
 		}
 	}()
-	m := &model.Grant{}
-	digest := secret.Hash(deviceCode)
-	err = r.db.First(m, "DeviceCode = ?", digest).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = oidc.ErrInvalidGrant().WithDescription("device code not found")
-		} else {
-			err = liberr.Wrap(err)
-		}
+	r.mutex.RLock()
+	devAuth, found := r.devAuthReqs[deviceCode]
+	r.mutex.RUnlock()
+
+	if !found {
+		err = oidc.ErrInvalidGrant().WithDescription("device code not found")
 		return
 	}
+
 	state = &op.DeviceAuthorizationState{
 		ClientID: clientId,
-		Scopes:   strings.Fields(m.Scopes),
-		Expires:  m.Expiration,
-		Done:     m.Done,
-		Denied:   m.Denied,
-		Subject:  m.Subject,
-		AuthTime: m.AuthTime,
+		Scopes:   devAuth.scopes,
+		Expires:  devAuth.expiration,
+		Done:     devAuth.done,
+		Denied:   devAuth.denied,
+		Subject:  devAuth.subject,
+		AuthTime: devAuth.authTime,
 	}
+	return
+}
+
+// DeleteDevAuthByCode deletes device authorization by device code.
+func (r *Storage) DeleteDevAuthByCode(deviceCode string) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	devAuth, found := r.devAuthReqs[deviceCode]
+	if found {
+		delete(r.devAuthByCode, devAuth.userCode)
+		delete(r.devAuthReqs, deviceCode)
+	}
+}
+
+// devAuthCodeBySubject returns device code for completed device authorization by subject.
+func (r *Storage) devAuthCodeBySubject(subject string) (deviceCode string) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	for code, req := range r.devAuthReqs {
+		if req.subject == subject && req.done {
+			deviceCode = code
+			return
+		}
+	}
+	return
+}
+
+// GetDevAuthByUserCode returns device authorization by user code.
+// Returns the device authorization request and true if found, otherwise nil and false.
+func (r *Storage) GetDevAuthByUserCode(userCode string) (devAuth *DeviceAuthRequest, found bool) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	deviceCode, found := r.devAuthByCode[userCode]
+	if !found {
+		return
+	}
+	devAuth, found = r.devAuthReqs[deviceCode]
+	return
+}
+
+// UpdateDevAuth updates device authorization state.
+// Sets the subject, completion status, denial status, and authorization time
+// for the device authorization identified by the user code.
+func (r *Storage) UpdateDevAuth(userCode string, subject string, done bool, denied bool, authTime time.Time) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	deviceCode, found := r.devAuthByCode[userCode]
+	if !found {
+		err = fmt.Errorf("device authorization not found")
+		return
+	}
+	devAuth, found := r.devAuthReqs[deviceCode]
+	if !found {
+		err = fmt.Errorf("device authorization not found")
+		return
+	}
+	devAuth.subject = subject
+	devAuth.done = done
+	devAuth.denied = denied
+	devAuth.authTime = authTime
 	return
 }
 
 // Client implements op.Client.
 type Client struct {
-	id           string
-	secret       string
-	redirectURIs []string
+	id              string
+	secret          string
+	redirectURIs    []string
+	applicationType op.ApplicationType
 }
 
 // GetID returns the client ID.
@@ -1141,7 +1227,7 @@ func (c *Client) PostLogoutRedirectURIs() (uris []string) {
 
 // ApplicationType returns the application type.
 func (c *Client) ApplicationType() (t op.ApplicationType) {
-	t = op.ApplicationTypeWeb
+	t = c.applicationType
 	return
 }
 
@@ -1168,6 +1254,7 @@ func (c *Client) GrantTypes() (types []oidc.GrantType) {
 		oidc.GrantTypeRefreshToken,
 		oidc.GrantTypeClientCredentials,
 		oidc.GrantTypeBearer,
+		oidc.GrantTypeDeviceCode,
 	}
 	return
 }
@@ -1392,6 +1479,38 @@ func (r *RefreshRequest) GetSubject() (s string) {
 // SetCurrentScopes sets the current scopes.
 func (r *RefreshRequest) SetCurrentScopes(scopes []string) {
 	r.scopes = scopes
+	return
+}
+
+// DeviceAuthRequest holds device authorization state.
+type DeviceAuthRequest struct {
+	deviceCode string
+	userCode   string
+	clientId   string
+	subject    string
+	scopes     []string
+	issued     time.Time
+	expiration time.Time
+	done       bool
+	denied     bool
+	authTime   time.Time
+}
+
+// Done returns done status.
+func (r *DeviceAuthRequest) Done() (done bool) {
+	done = r.done
+	return
+}
+
+// Denied returns denied status.
+func (r *DeviceAuthRequest) Denied() (denied bool) {
+	denied = r.denied
+	return
+}
+
+// Expiration returns expiration time.
+func (r *DeviceAuthRequest) Expiration() (exp time.Time) {
+	exp = r.expiration
 	return
 }
 

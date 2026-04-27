@@ -130,6 +130,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) ||
 			errors.Is(err, &NotFound{}) ||
+			errors.Is(err, &auth.NotFound{}) ||
 			errors.Is(err, &jsd.NotFound{}) {
 			if ctx.Request.Method == http.MethodDelete {
 				rtx.Status(http.StatusNoContent)

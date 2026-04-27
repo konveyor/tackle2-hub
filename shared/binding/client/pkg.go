@@ -64,14 +64,22 @@ func (s Path) Inject(p Params) (out string) {
 	return
 }
 
+// Authenticator provides authentication for HTTP requests.
+type Authenticator interface {
+	// Login performs authentication and refreshes credentials.
+	Login() (err error)
+	// Header returns the Authorization header value.
+	Header() (header string)
+}
+
 // RestClient defines the interface for REST client operations.
 // It provides methods for standard HTTP operations (GET, POST, PUT, PATCH, DELETE),
 // file/bucket operations, and utility functions.
 type RestClient interface {
 	// Reset clears the error state of the client.
 	Reset()
-	// Use API key.
-	Use(apiKey string)
+	// Use sets the authenticator.
+	Use(auth Authenticator)
 	// SetRetry set the number of retries.
 	SetRetry(n uint8)
 	// SetTransport set the transport.

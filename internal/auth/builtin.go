@@ -36,11 +36,13 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		return
 	}
 	builtin.storage = &Storage{
-		db:         db,
-		keySet:     builtin.keySet,
-		authReqs:   make(map[string]*AuthRequest),
-		authByCode: make(map[string]string),
-		cache:      cache,
+		db:            db,
+		keySet:        builtin.keySet,
+		authReqs:      make(map[string]*AuthRequest),
+		authByCode:    make(map[string]string),
+		devAuthReqs:   make(map[string]*DeviceAuthRequest),
+		devAuthByCode: make(map[string]string),
+		cache:         cache,
 	}
 	issuer := Settings.IssuerURL
 	if issuer == "" {
@@ -56,6 +58,11 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			Lifetime:     15 * time.Minute,
 			PollInterval: 5 * time.Second,
 			UserFormPath: "/device",
+			UserCode: op.UserCodeConfig{
+				CharSet:      "BCDFGHJKLMNPQRSTVWXZ0123456789", // No vowels to avoid words
+				CharAmount:   8,
+				DashInterval: 4, // Format: XXXX-XXXX
+			},
 		},
 	}
 	builtin.provider, err = op.NewProvider(
@@ -94,6 +101,10 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		}
 		builtin.storage.idpHandler = builtin.idpHandler
 	}
+	// Initialize DagHandler
+	builtin.dagHandler = &DagHandler{
+		storage: builtin.storage,
+	}
 	return
 }
 
@@ -102,6 +113,7 @@ type Builtin struct {
 	db         *gorm.DB
 	provider   op.OpenIDProvider
 	idpHandler *IdpHandler
+	dagHandler *DagHandler
 	cache      *Cache
 	storage    *Storage
 	keySet     KeySet
@@ -110,6 +122,12 @@ type Builtin struct {
 // Handler returns an http handler.
 func (p *Builtin) Handler() (h http.Handler) {
 	h = p.provider
+	return
+}
+
+// DagHandler returns the device authorization grant handler.
+func (p *Builtin) DagHandler() (h *DagHandler) {
+	h = p.dagHandler
 	return
 }
 

@@ -263,11 +263,6 @@ type Grant struct {
 	Scopes       string
 	Issued       time.Time
 	Expiration   time.Time
-	DeviceCode   string `gorm:"index"`       // digest
-	UserCode     string `gorm:"uniqueIndex"` // plain text (low entropy)
-	Done         bool   `gorm:"default:false"`
-	Denied       bool   `gorm:"default:false"`
-	AuthTime     time.Time
 }
 
 type Token struct {
