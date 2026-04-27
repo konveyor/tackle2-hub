@@ -189,6 +189,11 @@ type Grant struct {
 	Issued     time.Time `json:"issued"`
 	Expiration time.Time `json:"expiration"`
 	Client     Ref       `json:"client"`
+	// Device Authorization Grant fields
+	UserCode string    `json:"userCode,omitempty" yaml:"userCode,omitempty"`
+	Done     bool      `json:"done,omitempty" yaml:"done,omitempty"`
+	Denied   bool      `json:"denied,omitempty" yaml:"denied,omitempty"`
+	AuthTime time.Time `json:"authTime,omitempty" yaml:"authTime,omitempty"`
 }
 
 // Token REST resource.

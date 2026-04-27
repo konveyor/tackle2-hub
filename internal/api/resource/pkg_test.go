@@ -3593,6 +3593,43 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
 }
 
+// TestGrant_With_DeviceFlow tests Grant.With() with device flow fields.
+func TestGrant_With_DeviceFlow(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	authTime := time.Now()
+	m := &model.Grant{
+		Model: model.Model{
+			ID:         2,
+			CreateUser: "user1",
+			CreateTime: time.Now(),
+		},
+		Kind:       "devCode",
+		AuthId:     "auth123",
+		Subject:    "device-user",
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(15 * time.Minute),
+		UserCode:   "ABCD-1234",
+		Done:       true,
+		Denied:     false,
+		AuthTime:   authTime,
+	}
+
+	r := &Grant{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(2)))
+	g.Expect(r.Kind).To(gomega.Equal("devCode"))
+	g.Expect(r.AuthId).To(gomega.Equal("auth123"))
+	g.Expect(r.Subject).To(gomega.Equal("device-user"))
+	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
+	g.Expect(r.UserCode).To(gomega.Equal("ABCD-1234"))
+	g.Expect(r.Done).To(gomega.BeTrue())
+	g.Expect(r.Denied).To(gomega.BeFalse())
+	g.Expect(r.AuthTime).To(gomega.Equal(authTime))
+}
+
 // TestToken_With tests the Token.With() method.
 func TestToken_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)

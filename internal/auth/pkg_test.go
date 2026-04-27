@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -2066,6 +2067,199 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	g.Expect(foundById).To(BeFalse())
 	g.Expect(foundBySubject).To(BeFalse())
 	g.Expect(foundByUserid).To(BeFalse())
+}
+
+// TestStoreDeviceAuthorization tests storing a device authorization grant.
+func TestStoreDeviceAuthorization(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	storage := provider.storage
+
+	clientId := "test-client"
+	deviceCode := "device-code-123"
+	userCode := "ABCD-1234"
+	expires := time.Now().Add(15 * time.Minute)
+	scopes := []string{"openid", "profile"}
+
+	err = storage.StoreDeviceAuthorization(
+		context.Background(),
+		clientId,
+		deviceCode,
+		userCode,
+		expires,
+		scopes,
+	)
+	g.Expect(err).To(BeNil())
+
+	// Verify grant was created
+	var grant model.Grant
+	err = db.Where("UserCode = ?", userCode).First(&grant).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(grant.Kind).To(Equal(KindDevice))
+	g.Expect(grant.UserCode).To(Equal(userCode))
+	g.Expect(grant.DeviceCode).To(Equal(secret.Hash(deviceCode)))
+	g.Expect(grant.Scopes).To(Equal("openid profile"))
+	g.Expect(grant.Done).To(BeFalse())
+	g.Expect(grant.Denied).To(BeFalse())
+}
+
+// TestGetDeviceAuthorizatonStatePending tests retrieving pending device grant.
+func TestGetDeviceAuthorizatonStatePending(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	storage := provider.storage
+
+	clientId := "test-client"
+	deviceCode := "device-code-pending"
+	userCode := "WXYZ-5678"
+	expires := time.Now().Add(15 * time.Minute)
+	scopes := []string{"openid"}
+
+	err = storage.StoreDeviceAuthorization(
+		context.Background(),
+		clientId,
+		deviceCode,
+		userCode,
+		expires,
+		scopes,
+	)
+	g.Expect(err).To(BeNil())
+
+	state, err := storage.GetDeviceAuthorizatonState(
+		context.Background(),
+		clientId,
+		deviceCode,
+	)
+	g.Expect(err).To(BeNil())
+	g.Expect(state.ClientID).To(Equal(clientId))
+	g.Expect(state.Scopes).To(Equal([]string{"openid"}))
+	g.Expect(state.Done).To(BeFalse())
+	g.Expect(state.Denied).To(BeFalse())
+	g.Expect(state.Subject).To(Equal(""))
+}
+
+// TestGetDeviceAuthorizatonStateDone tests retrieving authorized device grant.
+func TestGetDeviceAuthorizatonStateDone(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	storage := provider.storage
+
+	clientId := "test-client"
+	deviceCode := "device-code-done"
+	userCode := "DONE-1234"
+	expires := time.Now().Add(15 * time.Minute)
+	scopes := []string{"openid", "profile"}
+
+	err = storage.StoreDeviceAuthorization(
+		context.Background(),
+		clientId,
+		deviceCode,
+		userCode,
+		expires,
+		scopes,
+	)
+	g.Expect(err).To(BeNil())
+
+	// Authorize the grant
+	authTime := time.Now().Truncate(time.Second)
+	var grant model.Grant
+	err = db.Where("UserCode = ?", userCode).First(&grant).Error
+	g.Expect(err).To(BeNil())
+	grant.Subject = "authorized-user"
+	grant.Done = true
+	grant.AuthTime = authTime
+	err = db.Save(&grant).Error
+	g.Expect(err).To(BeNil())
+
+	state, err := storage.GetDeviceAuthorizatonState(
+		context.Background(),
+		clientId,
+		deviceCode,
+	)
+	g.Expect(err).To(BeNil())
+	g.Expect(state.Done).To(BeTrue())
+	g.Expect(state.Denied).To(BeFalse())
+	g.Expect(state.Subject).To(Equal("authorized-user"))
+	g.Expect(state.AuthTime.Unix()).To(Equal(authTime.Unix()))
+}
+
+// TestGetDeviceAuthorizatonStateDenied tests retrieving denied device grant.
+func TestGetDeviceAuthorizatonStateDenied(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	storage := provider.storage
+
+	clientId := "test-client"
+	deviceCode := "device-code-denied"
+	userCode := "DENY-9999"
+	expires := time.Now().Add(15 * time.Minute)
+	scopes := []string{"openid"}
+
+	err = storage.StoreDeviceAuthorization(
+		context.Background(),
+		clientId,
+		deviceCode,
+		userCode,
+		expires,
+		scopes,
+	)
+	g.Expect(err).To(BeNil())
+
+	// Deny the grant
+	var grant model.Grant
+	err = db.Where("UserCode = ?", userCode).First(&grant).Error
+	g.Expect(err).To(BeNil())
+	grant.Denied = true
+	err = db.Save(&grant).Error
+	g.Expect(err).To(BeNil())
+
+	state, err := storage.GetDeviceAuthorizatonState(
+		context.Background(),
+		clientId,
+		deviceCode,
+	)
+	g.Expect(err).To(BeNil())
+	g.Expect(state.Done).To(BeFalse())
+	g.Expect(state.Denied).To(BeTrue())
+}
+
+// TestGetDeviceAuthorizatonStateNotFound tests invalid device code.
+func TestGetDeviceAuthorizatonStateNotFound(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+	storage := provider.storage
+
+	_, err = storage.GetDeviceAuthorizatonState(
+		context.Background(),
+		"test-client",
+		"invalid-device-code",
+	)
+	g.Expect(err).NotTo(BeNil())
 }
 
 // setupTestDB creates an in-memory SQLite database for testing.
