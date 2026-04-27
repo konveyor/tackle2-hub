@@ -76,7 +76,7 @@ type Auth struct {
 func (r *Auth) Load() (err error) {
 	// API-Key
 	r.Required = env.GetBool(EnvAuthRequired, false)
-	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 1) // minute: 1.
+	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 5)
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
 	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365) // hour: 10 years.
 	// Token

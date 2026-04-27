@@ -316,6 +316,8 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 	}
 	r.With(m)
 
+	auth.IdP.Cache().UserSaved((*auth.User)(m))
+
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -347,12 +349,13 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+
+	auth.IdP.Cache().UserSaved((*auth.User)(m))
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -377,6 +380,8 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
+	auth.IdP.Cache().UserDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -471,6 +476,8 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 	}
 	r.With(m)
 
+	auth.IdP.Cache().RoleSaved((*auth.Role)(m))
+
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -505,12 +512,13 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	err = h.DB(ctx).Model(m).Association("Permissions").Replace(m.Permissions)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
+
+	auth.IdP.Cache().RoleSaved((*auth.Role)(m))
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -539,6 +547,8 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
+	auth.IdP.Cache().RoleDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
