@@ -52,7 +52,11 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		AuthMethodPrivateKeyJWT: false,
 		GrantTypeRefreshToken:   true,
 		RequestObjectSupported:  false,
-		DeviceAuthorization:     op.DeviceAuthorizationConfig{},
+		DeviceAuthorization: op.DeviceAuthorizationConfig{
+			Lifetime:     15 * time.Minute,
+			PollInterval: 5 * time.Second,
+			UserFormPath: "/device",
+		},
 	}
 	builtin.provider, err = op.NewProvider(
 		config,

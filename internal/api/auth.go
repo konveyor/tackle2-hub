@@ -88,6 +88,11 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
+	// Device authorization routes
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("device"))
+	routeGroup.GET(api.AuthDevAuthRoute, h.DeviceVerify)
+	routeGroup.POST(api.AuthDevAuthRoute, h.DeviceVerifySubmit)
 }
 
 //
@@ -806,6 +811,100 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+}
+
+// DeviceVerify godoc
+// @summary Device authorization verification page.
+// @description Display page for user to enter device code.
+// @tags auth
+// @produce html
+// @success 200
+// @router /auth/device [get]
+func (h AuthHandler) DeviceVerify(ctx *gin.Context) {
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Authorization</title>
+</head>
+<body>
+    <h1>Device Authorization</h1>
+    <form method="POST" action="/auth/device">
+        <label for="userCode">User Code:</label>
+        <input type="text" id="userCode" name="userCode" required>
+        <button type="submit">Authorize</button>
+    </form>
+</body>
+</html>
+`
+	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+}
+
+// DeviceVerifySubmit godoc
+// @summary Submit device authorization.
+// @description Process user authorization for device flow.
+// @tags auth
+// @accept application/x-www-form-urlencoded
+// @produce html
+// @success 200
+// @router /auth/device [post]
+// @param userCode formData string true "User code from device"
+func (h AuthHandler) DeviceVerifySubmit(ctx *gin.Context) {
+	userCode := ctx.PostForm("userCode")
+	if userCode == "" {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "userCode not provided.",
+		})
+		return
+	}
+	db := h.DB(ctx).Where(
+		"Kind = ? AND UserCode = ?",
+		auth.KindDevice,
+		userCode)
+	m := &model.Grant{}
+	err := db.First(m).Error
+	if err != nil {
+		_ = ctx.Error(&NotFound{
+			Reason: "userCode not valid.",
+		})
+		return
+	}
+	if m.Done || m.Denied {
+		_ = ctx.Error(&NotFound{
+			Reason: "userCode already used.",
+		})
+		return
+	}
+	if time.Now().After(m.Expiration) {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "userCode expired.",
+		})
+		return
+	}
+
+	subject := h.CurrentUser(ctx)
+	m.Subject = subject
+	m.Done = true
+	m.AuthTime = time.Now()
+	err = db.Save(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authorization Complete</title>
+</head>
+<body>
+    <h1>Authorization Successful</h1>
+    <p>You may now close this window and return to your device.</p>
+</body>
+</html>
+`
+	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
 }
 
 // Auth REST Resources.

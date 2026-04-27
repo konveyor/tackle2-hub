@@ -16,6 +16,7 @@ const (
 	KindAccessToken = "access"
 	KindAuthCode    = "authCode"
 	KindAPIKey      = "api-key"
+	KindDevice      = "devCode"
 )
 
 var (

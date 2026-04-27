@@ -1051,6 +1051,69 @@ func (r *Storage) genId() (s string) {
 	return
 }
 
+// StoreDeviceAuthorization stores a new device authorization request.
+func (r *Storage) StoreDeviceAuthorization(
+	_ context.Context,
+	clientId, deviceCode, userCode string,
+	expires time.Time,
+	scopes []string) (err error) {
+	//
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{
+		Kind:       KindDevice,
+		AuthId:     r.genId(),
+		DeviceCode: secret.Hash(deviceCode),
+		UserCode:   userCode,
+		Scopes:     strings.Join(scopes, " "),
+		Issued:     time.Now(),
+		Expiration: expires,
+	}
+	err = r.db.Create(m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+// GetDeviceAuthorizatonState returns device authorization state.
+// Note: Method name is intentionally misspelled per zitadel API.
+func (r *Storage) GetDeviceAuthorizatonState(
+	_ context.Context,
+	clientId, deviceCode string) (state *op.DeviceAuthorizationState, err error) {
+	//
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
+	m := &model.Grant{}
+	digest := secret.Hash(deviceCode)
+	err = r.db.First(m, "DeviceCode = ?", digest).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = oidc.ErrInvalidGrant().WithDescription("device code not found")
+		} else {
+			err = liberr.Wrap(err)
+		}
+		return
+	}
+	state = &op.DeviceAuthorizationState{
+		ClientID: clientId,
+		Scopes:   strings.Fields(m.Scopes),
+		Expires:  m.Expiration,
+		Done:     m.Done,
+		Denied:   m.Denied,
+		Subject:  m.Subject,
+		AuthTime: m.AuthTime,
+	}
+	return
+}
+
 // Client implements op.Client.
 type Client struct {
 	id           string
