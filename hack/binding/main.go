@@ -34,6 +34,7 @@ func main() {
 		panic(err)
 	}
 
+	// Get an apikey.
 	pat := &api.PAT{Lifespan: 24}
 	err = client.Token.Create(pat)
 	if err != nil {
@@ -41,6 +42,12 @@ func main() {
 	}
 
 	bearer.Use(pat.Token)
+
+	// Test the client using the key.
+	apps, err = client.Application.List()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("Successfully authenticated! Found %d applications\n", len(apps))
 }
