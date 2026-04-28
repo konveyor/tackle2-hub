@@ -15,19 +15,21 @@ type AuthMethod interface {
 
 ## Implementations
 
-### APIKey
+### Basic
 
-Static API key authentication for backward compatibility.
+HTTP Basic authentication with username and password.
 
 ```go
-auth := auth.NewAPIKey("my-api-key")
+auth := auth.NewBasic("username", "password")
 client := binding.New(hubURL)
 client.Client.Use(auth)
 ```
 
 **Behavior:**
-- `Login()` - No-op (API keys don't expire)
-- `Header()` - Returns `"Bearer <key>"`
+- `Login()` - No-op (credentials don't expire)
+- `Header()` - Returns `"Basic <base64(username:password)>"`
+
+**Important:** Basic auth only works for users defined in the hub's user inventory. It will **not** work for users authenticated via external IdP (Keycloak, Azure AD, etc.). For external IdP users, use Bearer with OIDC device flow.
 
 ### Bearer
 
@@ -36,20 +38,23 @@ OAuth2/OIDC bearer token authentication with device flow and automatic token ref
 Uses standard scopes: `openid`, `profile`, `email`, `offline_access`
 
 ```go
-// issuerURL is the OIDC provider endpoint (hubURL + "/oidc")
+// Option 1: Device flow (interactive OIDC login)
 bearer, _ := auth.NewBearer(hubURL+"/oidc", "cli")
-
-// Perform device login (interactive)
 err := bearer.DeviceLogin(context.Background())
+client := binding.New(hubURL)
+client.Client.Use(bearer)
 
-// Use with client
+// Option 2: Explicit token/API key
+bearer, _ := auth.NewBearer(hubURL+"/oidc", "cli")
+bearer.Use("my-api-key-or-token")
 client := binding.New(hubURL)
 client.Client.Use(bearer)
 ```
 
 **Behavior:**
-- `Login()` - Refreshes access token using refresh token
+- `Login()` - Refreshes access token using refresh token (if available)
 - `Header()` - Returns `"Bearer <access_token>"`
+- `Use(token)` - Set explicit bearer token or API key
 - Thread-safe with mutex protection
 
 ## How It Works
@@ -99,9 +104,10 @@ The Bearer authenticator supports RFC 8628 Device Authorization Grant:
 ✅ **Clean separation** - Client doesn't manage tokens, just calls interface methods  
 ✅ **Automatic retry** - 401 triggers refresh and retry transparently  
 ✅ **No expiry tracking** - Server (401) is source of truth, no clock skew issues  
-✅ **Extensible** - Easy to add BasicAuth, mTLS, etc.  
+✅ **Extensible** - Easy to add custom auth methods (mTLS, digest, etc.)  
 ✅ **Thread-safe** - Bearer uses mutex for concurrent requests  
-✅ **Stateful** - Token lifecycle managed inside authenticator  
+✅ **Stateful** - Token lifecycle managed inside auth method  
+✅ **Multiple methods** - Basic auth, bearer tokens, OIDC device flow  
 
 ## Migration from Old API
 
@@ -111,11 +117,19 @@ client := binding.New(hubURL)
 client.Client.Use("my-api-key")  // String API key
 ```
 
-**After:**
+**After (API key as bearer token):**
 ```go
 client := binding.New(hubURL)
-auth := auth.NewAPIKey("my-api-key")
-client.Client.Use(auth)  // AuthMethod interface
+bearer, _ := auth.NewBearer(hubURL+"/oidc", "cli")
+bearer.Use("my-api-key")
+client.Client.Use(bearer)  // AuthMethod interface
+```
+
+**Or (basic auth):**
+```go
+client := binding.New(hubURL)
+basic := auth.NewBasic("username", "password")
+client.Client.Use(basic)  // AuthMethod interface
 ```
 
 ## Adding Custom Auth Methods

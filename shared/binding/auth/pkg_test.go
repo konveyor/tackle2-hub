@@ -6,19 +6,19 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// TestAPIKey tests APIKey authenticator.
-func TestAPIKey(t *testing.T) {
+// TestBasic tests Basic authenticator.
+func TestBasic(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	auth := NewAPIKey("test-api-key-123")
+	auth := NewBasic("testuser", "testpass")
 
 	// Login should be no-op
 	err := auth.Login()
 	g.Expect(err).To(BeNil())
 
-	// Header should return bearer token
+	// Header should return basic auth header
 	header := auth.Header()
-	g.Expect(header).To(Equal("Bearer test-api-key-123"))
+	g.Expect(header).To(Equal("Basic dGVzdHVzZXI6dGVzdHBhc3M="))
 }
 
 // TestBearerHeader tests Bearer Header method.
