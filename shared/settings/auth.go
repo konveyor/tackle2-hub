@@ -12,6 +12,7 @@ import (
 
 // Environment variables
 const (
+	EnvAuthEnabled          = "AUTH_ENABLED"
 	EnvAuthRequired         = "AUTH_REQUIRED"
 	EnvAPIKeySecret         = "APIKEY_SECRET"
 	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
@@ -54,9 +55,10 @@ type Auth struct {
 }
 
 func (r *Auth) Load() (err error) {
-	// API-Key
+	r.Enabled = env.GetBool(EnvAuthEnabled, true)
 	r.Required = env.GetBool(EnvAuthRequired, false)
 	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 5)
+	// API-Key
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
 	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365) // hour: 10 years.
 	// Token

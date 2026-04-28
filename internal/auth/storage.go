@@ -1261,7 +1261,9 @@ func (c *Client) ResponseTypes() (types []oidc.ResponseType) {
 
 // GrantTypes returns grant types.
 func (c *Client) GrantTypes() (types []oidc.GrantType) {
-	types = c.GrantTypes()
+	for _, g := range c.grantTypes {
+		types = append(types, oidc.GrantType(g))
+	}
 	return
 }
 
