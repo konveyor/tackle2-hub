@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
@@ -50,15 +50,36 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		opClient.With(&client)
 		builtin.storage.clientById[client.Id] = opClient
 	}
+	issuer := Settings.IssuerURL
+	issuerURL, err := url.Parse(issuer)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	devicePath, err := url.JoinPath(issuerURL.Path, "/device")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	deviceCallbackPath, err := url.JoinPath(issuerURL.Path, "/device/callback")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	callbackURL, err := url.Parse(issuer)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	callbackURL.Path = deviceCallbackPath
 	builtin.storage.clientById[DevVerifierClientId] =
 		&Client{
 			id:              DevVerifierClientId,
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
-			redirectURIs:    []string{Settings.Auth.IssuerWithPath(api.AuthDevAuthCallback)},
+			redirectURIs:    []string{callbackURL.String()},
 			scopes:          []string{"openid"},
 		}
-	issuer := Settings.IssuerURL
 	config := &op.Config{
 		CodeMethodS256:          true,
 		AuthMethodPost:          true,
@@ -68,7 +89,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		DeviceAuthorization: op.DeviceAuthorizationConfig{
 			Lifetime:     15 * time.Minute,
 			PollInterval: 5 * time.Second,
-			UserFormPath: "/device",
+			UserFormPath: devicePath,
 			UserCode: op.UserCodeConfig{
 				CharSet:      "BCDFGHJKLMNPQRSTVWXZ0123456789", // No vowels to avoid words
 				CharAmount:   8,

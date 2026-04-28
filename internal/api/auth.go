@@ -25,6 +25,8 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	baseHandler := auth.IdP.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
 	idpHandler := auth.IdP.IdpHandler()
+	dagHandler := auth.IdP.(*auth.Builtin).DagHandler()
+	oidcAuth := dagHandler.OIDCAuth()
 
 	e.Any(
 		api.OIDCRoutes+"/*path",
@@ -41,16 +43,24 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 				if idpHandler != nil {
 					idpHandler.LoginFinished(ctx)
 				}
+			case "/device":
+				oidcAuth.AuthRequired(ctx)
+				if !ctx.IsAborted() {
+					if ctx.Request.Method == http.MethodPost {
+						dagHandler.VerifySubmit(ctx)
+					} else {
+						dagHandler.Verify(ctx)
+					}
+				}
+			case "/device/login":
+				oidcAuth.Login(ctx)
+			case "/device/callback":
+				oidcAuth.Callback(ctx)
 			default:
 				strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 			}
 		})
 
-	if idpHandler != nil {
-		Log.Info("IdP federation routes registered under OIDC wildcard",
-			"loginRoute", api.IdpRoute+"/login",
-			"callbackRoute", api.IdpRoute+"/callback")
-	}
 	// IdpIdentity routes.
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("idp.identities"))
@@ -99,15 +109,6 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
-	// Device authorization routes
-	dagHandler := auth.IdP.(*auth.Builtin).DagHandler()
-	oidcAuth := dagHandler.OIDCAuth()
-	e.GET(api.AuthDevAuthRoute+"/login", oidcAuth.Login)
-	e.GET(api.AuthDevAuthCallback, oidcAuth.Callback)
-	routeGroup = e.Group(api.AuthDevAuthRoute)
-	routeGroup.Use(oidcAuth.AuthRequired)
-	routeGroup.GET("", dagHandler.Verify)
-	routeGroup.POST("", dagHandler.VerifySubmit)
 }
 
 //

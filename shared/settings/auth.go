@@ -80,17 +80,6 @@ func (r *Auth) Load() (err error) {
 	return
 }
 
-// IssuerWithPath returns the issuer URL with an alternate path.
-func (r *Auth) IssuerWithPath(path string) (s string) {
-	p, err := url.Parse(r.IssuerURL)
-	if err != nil {
-		return
-	}
-	p.Path = path
-	s = p.String()
-	return
-}
-
 // IdpClient settings.
 type IdpClient struct {
 	Id              string   `yaml:"id"`

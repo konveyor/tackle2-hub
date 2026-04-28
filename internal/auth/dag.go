@@ -6,12 +6,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -48,6 +48,7 @@ func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 //
 // Verify displays device authorization verification page.
 func (h *DagHandler) Verify(ctx *gin.Context) {
+	formAction := ctx.Request.URL.Path
 	html := `
 <!DOCTYPE html>
 <html>
@@ -56,7 +57,7 @@ func (h *DagHandler) Verify(ctx *gin.Context) {
 </head>
 <body>
     <h1>Device Authorization</h1>
-    <form method="POST" action="/auth/device">
+    <form method="POST" action="` + formAction + `">
         <label for="userCode">User Code:</label>
         <input type="text" id="userCode" name="userCode" required>
         <button type="submit">Authorize</button>
@@ -235,7 +236,12 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 	}
 
 	// Redirect to device authorization page
-	http.Redirect(ctx.Writer, ctx.Request, api.AuthDevAuthRoute, http.StatusFound)
+	devicePath, err := h.devicePath("/device")
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	http.Redirect(ctx.Writer, ctx.Request, devicePath, http.StatusFound)
 }
 
 // AuthRequired checks for valid OIDC session.
@@ -250,7 +256,13 @@ func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
 	subject, err := h.cookies.CheckCookie(ctx.Request, OIDCSubject)
 	if err != nil || subject == "" {
 		// No session
-		ctx.Redirect(http.StatusFound, api.AuthDevAuthRoute+"/login")
+		loginPath, err := h.devicePath("/device/login")
+		if err != nil {
+			_ = ctx.Error(err)
+			ctx.Abort()
+			return
+		}
+		ctx.Redirect(http.StatusFound, loginPath)
 		ctx.Abort()
 		return
 	}
@@ -278,13 +290,20 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			httphelper.WithSameSite(http.SameSiteLaxMode),
 		)
 
+		// Build redirect URI with issuer path
+		var callbackPath string
+		callbackPath, err = h.devicePath("/device/callback")
+		if err != nil {
+			return
+		}
+
 		// Create OIDC RP client (no secret - internal client)
 		h.rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
 			issuer,
 			DevVerifierClientId,
 			"",
-			Settings.IssuerWithPath(api.AuthDevAuthCallback),
+			callbackPath,
 			[]string{"openid"},
 		)
 	})
@@ -314,6 +333,21 @@ func (h *OIDCAuth) storeState(state, verifier string) {
 func (h *OIDCAuth) hashKey256(data []byte) (key []byte) {
 	hash := sha256.Sum256(data)
 	key = hash[:]
+	return
+}
+
+// devicePath builds a device route path based on the issuer.
+func (h *OIDCAuth) devicePath(suffix string) (path string, err error) {
+	issuerURL, err := url.Parse(Settings.IssuerURL)
+	if err != nil {
+		return
+	}
+	path, err = url.JoinPath(issuerURL.Path, suffix)
+	if err != nil {
+		return
+	}
+	issuerURL.Path = path
+	path = issuerURL.String()
 	return
 }
 

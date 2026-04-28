@@ -1043,19 +1043,6 @@ func (r *Storage) grantAuthId(id uint) (authId string) {
 	return
 }
 
-// redirectURIs returns redirect URIs for web-ui client.
-func (r *Storage) redirectURIs() (uris []string) {
-	uris = []string{
-		"http://localhost:8080",
-		"http://f35a.redhat.com:8080",
-		"http://f35a.redhat.com:6060",
-		"http://f35a.redhat.com:8080/idp/callback",
-		"http://f35a.redhat.com:6060/oidc/callback",
-		Settings.IssuerWithPath("/callback"),
-	}
-	return
-}
-
 // genId returns a new generated ID.
 func (r *Storage) genId() (s string) {
 	b := make([]byte, 16)
