@@ -13,7 +13,7 @@ func main() {
 	hubURL := "http://f35a.redhat.com:7070"
 
 	// Create OIDC authenticator
-	bearer, err := auth.NewBearer(hubURL+"/oidc", "cli")
+	bearer, err := auth.NewBearer(hubURL, "cli")
 	if err != nil {
 		panic(err)
 	}
