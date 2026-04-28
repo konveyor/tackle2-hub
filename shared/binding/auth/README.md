@@ -2,12 +2,12 @@
 
 The auth package provides authentication implementations for the Hub API client.
 
-## Authenticator Interface
+## AuthMethod Interface
 
-All authentication methods implement the `Authenticator` interface:
+All authentication methods implement the `AuthMethod` interface:
 
 ```go
-type Authenticator interface {
+type AuthMethod interface {
     Login() (err error)        // Authenticate/refresh credentials
     Header() (header string)   // Get Authorization header value
 }
@@ -29,21 +29,22 @@ client.Client.Use(auth)
 - `Login()` - No-op (API keys don't expire)
 - `Header()` - Returns `"Bearer <key>"`
 
-### OIDC
+### Bearer
 
-OAuth2/OIDC authentication with device flow and automatic token refresh.
+OAuth2/OIDC bearer token authentication with device flow and automatic token refresh.
 
 Uses standard scopes: `openid`, `profile`, `email`, `offline_access`
 
 ```go
-oidcAuth, _ := auth.NewOIDC(hubURL+"/oidc", "konveyor-cli")
+// issuerURL is the OIDC provider endpoint (hubURL + "/oidc")
+bearer, _ := auth.NewBearer(hubURL+"/oidc", "cli")
 
-// Perform device login
-err := oidcAuth.DeviceLogin(context.Background())
+// Perform device login (interactive)
+err := bearer.DeviceLogin(context.Background())
 
 // Use with client
 client := binding.New(hubURL)
-client.Client.Use(oidcAuth)
+client.Client.Use(bearer)
 ```
 
 **Behavior:**
@@ -85,12 +86,12 @@ if response.StatusCode == 401 {
 
 ## Device Authorization Flow
 
-The OIDC implementation supports RFC 8628 Device Authorization Grant:
+The Bearer authenticator supports RFC 8628 Device Authorization Grant:
 
 1. **Initiate:** Client requests device/user codes
 2. **Display:** User code and verification URL printed to console
 3. **Poll:** Client polls for authorization completion
-4. **Store:** Tokens stored in OIDC instance
+4. **Store:** Tokens stored in Bearer instance
 5. **Auto-refresh:** On 401, refresh token is used automatically
 
 ## Design Benefits
@@ -99,7 +100,7 @@ The OIDC implementation supports RFC 8628 Device Authorization Grant:
 ✅ **Automatic retry** - 401 triggers refresh and retry transparently  
 ✅ **No expiry tracking** - Server (401) is source of truth, no clock skew issues  
 ✅ **Extensible** - Easy to add BasicAuth, mTLS, etc.  
-✅ **Thread-safe** - OIDC uses mutex for concurrent requests  
+✅ **Thread-safe** - Bearer uses mutex for concurrent requests  
 ✅ **Stateful** - Token lifecycle managed inside authenticator  
 
 ## Migration from Old API
@@ -114,12 +115,12 @@ client.Client.Use("my-api-key")  // String API key
 ```go
 client := binding.New(hubURL)
 auth := auth.NewAPIKey("my-api-key")
-client.Client.Use(auth)  // Authenticator interface
+client.Client.Use(auth)  // AuthMethod interface
 ```
 
-## Adding Custom Authenticators
+## Adding Custom Auth Methods
 
-Implement the `Authenticator` interface:
+Implement the `AuthMethod` interface:
 
 ```go
 type CustomAuth struct {

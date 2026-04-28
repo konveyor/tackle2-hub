@@ -17,8 +17,8 @@ var Scopes = []string{
 	"offline_access",
 }
 
-// NewOIDC creates a new OIDC authenticator.
-func NewOIDC(issuerURL, clientID string) (h *OIDC, err error) {
+// NewBearer creates a new OIDC bearer token authenticator.
+func NewBearer(issuerURL, clientID string) (h *Bearer, err error) {
 	ctx := context.Background()
 	rpClient, err := rp.NewRelyingPartyOIDC(
 		ctx,
@@ -31,14 +31,14 @@ func NewOIDC(issuerURL, clientID string) (h *OIDC, err error) {
 	if err != nil {
 		return
 	}
-	h = &OIDC{
+	h = &Bearer{
 		rpClient: rpClient,
 	}
 	return
 }
 
-// OIDC provides OIDC authentication with automatic token refresh.
-type OIDC struct {
+// Bearer provides OIDC authentication with automatic token refresh.
+type Bearer struct {
 	mutex        sync.RWMutex
 	rpClient     rp.RelyingParty
 	accessToken  string
@@ -46,14 +46,14 @@ type OIDC struct {
 }
 
 // Use sets the access token.
-func (p *OIDC) Use(token string) {
+func (p *Bearer) Use(token string) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	p.accessToken = token
 }
 
 // Login performs authentication and refreshes credentials.
-func (p *OIDC) Login() (err error) {
+func (p *Bearer) Login() (err error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -74,7 +74,7 @@ func (p *OIDC) Login() (err error) {
 }
 
 // Header returns the Authorization header value.
-func (p *OIDC) Header() (header string) {
+func (p *Bearer) Header() (header string) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 	header = "Bearer " + p.accessToken
@@ -82,13 +82,13 @@ func (p *OIDC) Header() (header string) {
 }
 
 // DeviceAuth initiates device authorization flow.
-func (p *OIDC) DeviceAuth(ctx context.Context, scopes []string) (resp *oidc.DeviceAuthorizationResponse, err error) {
+func (p *Bearer) DeviceAuth(ctx context.Context, scopes []string) (resp *oidc.DeviceAuthorizationResponse, err error) {
 	resp, err = rp.DeviceAuthorization(ctx, scopes, p.rpClient, nil)
 	return
 }
 
 // DeviceAccessToken polls and exchanges device code for tokens.
-func (p *OIDC) DeviceAccessToken(ctx context.Context, deviceCode string, interval time.Duration) (resp *oidc.AccessTokenResponse, err error) {
+func (p *Bearer) DeviceAccessToken(ctx context.Context, deviceCode string, interval time.Duration) (resp *oidc.AccessTokenResponse, err error) {
 	resp, err = rp.DeviceAccessToken(ctx, deviceCode, interval, p.rpClient)
 	if err != nil {
 		return
@@ -105,7 +105,7 @@ func (p *OIDC) DeviceAccessToken(ctx context.Context, deviceCode string, interva
 }
 
 // DeviceLogin performs complete device authorization flow with user interaction.
-func (p *OIDC) DeviceLogin(ctx context.Context) (err error) {
+func (p *Bearer) DeviceLogin(ctx context.Context) (err error) {
 	device, err := p.DeviceAuth(ctx, Scopes)
 	if err != nil {
 		return

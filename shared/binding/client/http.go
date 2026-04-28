@@ -33,8 +33,8 @@ type Client struct {
 	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
-	// auth authenticator.
-	auth Authenticator
+	// auth authentication method.
+	auth AuthMethod
 	// Retry limit.
 	Retry uint8
 	// Error
@@ -46,8 +46,8 @@ func (r *Client) Reset() {
 	r.Error = nil
 }
 
-// Use sets the authenticator.
-func (r *Client) Use(auth Authenticator) {
+// Use sets the authentication method.
+func (r *Client) Use(auth AuthMethod) {
 	r.auth = auth
 }
 

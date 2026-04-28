@@ -64,8 +64,8 @@ func (s Path) Inject(p Params) (out string) {
 	return
 }
 
-// Authenticator provides authentication for HTTP requests.
-type Authenticator interface {
+// AuthMethod provides authentication for HTTP requests.
+type AuthMethod interface {
 	// Login performs authentication and refreshes credentials.
 	Login() (err error)
 	// Header returns the Authorization header value.
@@ -78,8 +78,8 @@ type Authenticator interface {
 type RestClient interface {
 	// Reset clears the error state of the client.
 	Reset()
-	// Use sets the authenticator.
-	Use(auth Authenticator)
+	// Use sets the authentication method.
+	Use(auth AuthMethod)
 	// SetRetry set the number of retries.
 	SetRetry(n uint8)
 	// SetTransport set the transport.

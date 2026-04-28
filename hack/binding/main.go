@@ -13,20 +13,20 @@ func main() {
 	hubURL := "http://f35a.redhat.com:8080"
 
 	// Create OIDC authenticator
-	clientAuth, err := auth.NewOIDC(hubURL+"/oidc", "cli")
+	bearer, err := auth.NewBearer(hubURL+"/oidc", "cli")
 	if err != nil {
 		panic(err)
 	}
 
 	// Perform device login
-	err = clientAuth.DeviceLogin(context.Background())
+	err = bearer.DeviceLogin(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
 	// Create Hub API client and set authenticator
 	client := binding.New(hubURL)
-	client.Client.Use(clientAuth)
+	client.Client.Use(bearer)
 
 	// Test the client
 	apps, err := client.Application.List()
@@ -40,7 +40,7 @@ func main() {
 		panic(err)
 	}
 
-	clientAuth.Use(pat.Token)
+	bearer.Use(pat.Token)
 
 	fmt.Printf("Successfully authenticated! Found %d applications\n", len(apps))
 }

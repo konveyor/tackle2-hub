@@ -21,28 +21,28 @@ func TestAPIKey(t *testing.T) {
 	g.Expect(header).To(Equal("Bearer test-api-key-123"))
 }
 
-// TestOIDCHeader tests OIDC Header method.
-func TestOIDCHeader(t *testing.T) {
+// TestBearerHeader tests Bearer Header method.
+func TestBearerHeader(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create OIDC with mock tokens (skip RP client initialization)
-	oidc := &OIDC{
+	// Create Bearer with mock tokens (skip RP client initialization)
+	bearer := &Bearer{
 		accessToken:  "test-access-token",
 		refreshToken: "test-refresh-token",
 	}
 
-	header := oidc.Header()
+	header := bearer.Header()
 	g.Expect(header).To(Equal("Bearer test-access-token"))
 }
 
-// TestOIDCLoginNoRefreshToken tests Login error when not authenticated.
-func TestOIDCLoginNoRefreshToken(t *testing.T) {
+// TestBearerLoginNoRefreshToken tests Login error when not authenticated.
+func TestBearerLoginNoRefreshToken(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create OIDC with no tokens
-	oidc := &OIDC{}
+	// Create Bearer with no tokens
+	bearer := &Bearer{}
 
-	err := oidc.Login()
+	err := bearer.Login()
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not authenticated"))
 }
