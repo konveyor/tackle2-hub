@@ -120,7 +120,6 @@ func (f *IdpLogin) begin() {
 	// Store state and code verifier in cookies for validation in callback
 	f.ctx.SetCookie("idp_state", f.state, 600, "/", "", false, true)
 	f.ctx.SetSameSite(http.SameSiteLaxMode)
-
 	f.ctx.SetCookie("idp_verifier", f.codeVerifier, 600, "/", "", false, true)
 	f.ctx.SetSameSite(http.SameSiteLaxMode)
 
