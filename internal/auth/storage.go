@@ -60,6 +60,14 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 			redirectURIs:    []string{},
 			applicationType: op.ApplicationTypeNative,
 		}
+	case "device-verifier":
+		// Internal client for device verification page authentication
+		client = &Client{
+			id:              "device-verifier",
+			secret:          Settings.Auth.Client.Secret,
+			redirectURIs:    []string{Settings.Addon.Hub.URL + api.AuthDevAuthCallback},
+			applicationType: op.ApplicationTypeWeb,
+		}
 	default:
 		err = oidc.ErrInvalidClient().WithDescription("client not found")
 		return
@@ -825,8 +833,8 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 		r.SetCurrentScopes(uniqueScopes)
 	case *AuthRequest:
 		r.Scopes = uniqueScopes
-	default:
-		//
+	case *op.DeviceAuthorizationState:
+		r.Scopes = uniqueScopes
 	}
 	return
 }

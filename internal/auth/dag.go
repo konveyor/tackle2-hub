@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -107,21 +106,11 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 
 // currentUser returns the authenticated user from the gin context.
 func (h *DagHandler) currentUser(ctx *gin.Context) (user string) {
-	// RichContext from api package stores User field
-	// We can't import api package, so access via reflection
-	key := "RichContext"
-	object, found := ctx.Get(key)
-	if found {
-		// Use reflect to get User field without importing api package
-		v := reflect.ValueOf(object)
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-		if v.Kind() == reflect.Struct {
-			userField := v.FieldByName("User")
-			if userField.IsValid() && userField.Kind() == reflect.String {
-				user = userField.String()
-			}
+	// Get OIDC subject from context (set by auth middleware)
+	subject, exists := ctx.Get("oidc_subject")
+	if exists {
+		if s, ok := subject.(string); ok {
+			user = s
 		}
 	}
 	return

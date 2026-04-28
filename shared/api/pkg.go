@@ -127,12 +127,13 @@ const (
 
 // Routes - Auth
 const (
-	AuthRoute        = "/auth"
-	AuthGrantsRoute  = AuthRoute + "/grants"
-	AuthGrantRoute   = AuthGrantsRoute + "/:" + ID
-	AuthTokensRoute  = AuthRoute + "/tokens"
-	AuthTokenRoute   = AuthTokensRoute + "/:" + ID
-	AuthDevAuthRoute = AuthRoute + "/device"
+	AuthRoute           = "/auth"
+	AuthGrantsRoute     = AuthRoute + "/grants"
+	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
+	AuthTokensRoute     = AuthRoute + "/tokens"
+	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
+	AuthDevAuthRoute    = AuthRoute + "/device"
+	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
 )
 
 // Routes - Batch
