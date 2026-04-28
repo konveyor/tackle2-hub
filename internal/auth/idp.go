@@ -33,7 +33,7 @@ type IdpHandler struct {
 
 // Login initiates the external IdP authentication flow.
 func (h *IdpHandler) Login(ctx *gin.Context) {
-	if !Settings.Auth.Idp.Enabled {
+	if !federation.Enabled {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -44,7 +44,7 @@ func (h *IdpHandler) Login(ctx *gin.Context) {
 
 // LoginFinished handles the redirect back from the external IdP.
 func (h *IdpHandler) LoginFinished(ctx *gin.Context) {
-	if !Settings.Auth.Idp.Enabled {
+	if !federation.Enabled {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -299,7 +299,7 @@ func (f *IdpLogin) buildIdentity() (identity *Identity) {
 	}
 
 	identity = &Identity{
-		Issuer:            Settings.Auth.Idp.Name,
+		Issuer:            federation.Idp.Name,
 		Subject:           f.userInfo.Subject,
 		Userid:            userid,
 		Email:             email,

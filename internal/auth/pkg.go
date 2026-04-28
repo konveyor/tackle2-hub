@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
 )
 
@@ -18,11 +19,19 @@ const (
 	KindAPIKey      = "api-key"
 )
 
+const (
+	DevVerifierClientId = "device-verifier"
+)
+
 var (
+	// Application settings.
+	Settings = &settings.Settings
 	// Log logger.
 	Log = logr.New("auth", Settings.Log.Auth)
 	// IdP provider.
 	IdP Provider
+	// IdP federation settings.
+	federation = Settings.Federation
 )
 
 func init() {
@@ -170,3 +179,5 @@ func asInt(t time.Time) (i int) {
 	i = int(t.Unix())
 	return
 }
+
+type IdpClient = settings.IdpClient

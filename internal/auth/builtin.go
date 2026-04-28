@@ -13,6 +13,7 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
@@ -41,8 +42,22 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		authByCode:    make(map[string]string),
 		devAuthReqs:   make(map[string]*DeviceAuthRequest),
 		devAuthByCode: make(map[string]string),
+		clientById:    make(map[string]op.Client),
 		cache:         cache,
 	}
+	for _, client := range Settings.Clients {
+		opClient := &Client{}
+		opClient.With(&client)
+		builtin.storage.clientById[client.Id] = opClient
+	}
+	builtin.storage.clientById[DevVerifierClientId] =
+		&Client{
+			id:              DevVerifierClientId,
+			applicationType: op.ApplicationTypeWeb,
+			grantTypes:      []string{"authorization_code"},
+			redirectURIs:    []string{Settings.Auth.IssuerWithPath(api.AuthDevAuthCallback)},
+			scopes:          []string{"openid"},
+		}
 	issuer := Settings.IssuerURL
 	config := &op.Config{
 		CodeMethodS256:          true,
@@ -75,15 +90,15 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		return
 	}
 	// Initialize RP client and IdpHandler if external IdP is enabled
-	if Settings.Auth.Idp.Enabled {
+	if federation.Enabled {
 		var rpClient rp.RelyingParty
 		rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
-			Settings.Auth.Idp.IssuerURL,
-			Settings.Auth.Idp.ClientID,
-			Settings.Auth.Idp.ClientSecret,
-			Settings.Auth.Idp.RedirectURI,
-			Settings.Auth.Idp.Scopes,
+			federation.Idp.Issuer,
+			federation.Idp.ClientId,
+			federation.Idp.ClientSecret,
+			federation.Idp.RedirectURI,
+			federation.Idp.Scopes,
 		)
 		if err != nil {
 			err = liberr.Wrap(err)

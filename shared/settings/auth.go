@@ -3,10 +3,11 @@ package settings
 import (
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/shared/env"
+	"gopkg.in/yaml.v3"
 )
 
 // Environment variables
@@ -15,21 +16,16 @@ const (
 	EnvAPIKeySecret         = "APIKEY_SECRET"
 	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
 	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
-	EnvIssuerURL            = "OIDC_ISSUER_URL"
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
-	EnvIdpEnabled           = "IDP_ENABLED"
-	EnvIdpName              = "IDP_NAME"
-	EnvIdpIssuerURL         = "IDP_ISSUER_URL"
-	EnvIdpClientID          = "IDP_CLIENT_ID"
-	EnvIdpClientSecret      = "IDP_CLIENT_SECRET"
-	EnvIdpRedirectURI       = "IDP_REDIRECT_URI"
-	EnvIdpScopes            = "IDP_SCOPES"
+	EnvAuthFile             = "AUTH_FILE"
 )
 
 type Auth struct {
+	// Auth enabled
+	Enabled bool
 	// Auth required
 	Required bool
 	// Cache
@@ -51,16 +47,10 @@ type Auth struct {
 	}
 	// OIDC Issuer
 	IssuerURL string
-	// IDP (identity-provider) settings
-	Idp struct {
-		Enabled      bool
-		Name         string
-		IssuerURL    string
-		ClientID     string
-		ClientSecret string
-		RedirectURI  string
-		Scopes       []string
-	}
+	// OIDC Clients
+	Clients []IdpClient
+	// Federation settings
+	Federation IdpFederation
 }
 
 func (r *Auth) Load() (err error) {
@@ -74,29 +64,13 @@ func (r *Auth) Load() (err error) {
 	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // second: 5 minutes.
 	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
 	// OIDC Provider
-	r.IssuerURL = env.Get(EnvIssuerURL, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-	// Remote IDP Endpoint.
-	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
-	r.Idp.Name = env.Get(EnvIdpName, "tackle")
-	r.Idp.IssuerURL, _ = os.LookupEnv(EnvIdpIssuerURL)
-	r.Idp.ClientID, _ = os.LookupEnv(EnvIdpClientID)
-	r.Idp.ClientSecret, _ = os.LookupEnv(EnvIdpClientSecret)
-	r.Idp.RedirectURI, _ = os.LookupEnv(EnvIdpRedirectURI)
-	s, found := os.LookupEnv(EnvIdpScopes)
-	if found {
-		r.Idp.Scopes = strings.Split(s, ",")
-		for i := range r.Idp.Scopes {
-			r.Idp.Scopes[i] = strings.TrimSpace(r.Idp.Scopes[i])
-		}
-	} else {
-		r.Idp.Scopes = []string{
-			"offline_access",
-			"openid",
-			"profile",
-			"email",
-		}
-	}
+	// IdP
+	f := AuthFile{}
+	f.Load()
+	r.IssuerURL = f.IssuerURL
+	r.Clients = f.Clients
+	r.Federation = f.Federation
 
 	if _, err := url.Parse(r.IssuerURL); err != nil {
 		panic(err)
@@ -113,4 +87,48 @@ func (r *Auth) IssuerWithPath(path string) (s string) {
 	p.Path = path
 	s = p.String()
 	return
+}
+
+// IdpClient settings.
+type IdpClient struct {
+	Id              string   `yaml:"id"`
+	Secret          string   `yaml:"secret"`
+	ApplicationType string   `yaml:"applicationType"`
+	Grants          []string `yaml:"grants"`
+	RedirectURIs    []string `yaml:"redirectURIs"`
+	Scopes          []string `yaml:"scopes"`
+}
+
+// IdpFederation settings.
+type IdpFederation struct {
+	Enabled bool        `yaml:"enabled"`
+	Ldap    interface{} `yaml:"ldap"`
+	Idp     struct {
+		Name         string   `yaml:"name"`
+		Issuer       string   `yaml:"issuer"`
+		ClientId     string   `yaml:"clientId"`
+		ClientSecret string   `yaml:"clientSecret"`
+		RedirectURI  string   `yaml:"redirectURI"`
+		Scopes       []string `yaml:"scopes"`
+	}
+}
+
+type AuthFile struct {
+	IssuerURL  string        `yaml:"issuer"`
+	Clients    []IdpClient   `yaml:"clients"`
+	Federation IdpFederation `yaml:"federation"`
+}
+
+func (f *AuthFile) Load() {
+	path := env.Get(EnvAuthFile, "/etc/hub/auth.yaml")
+	content, err := os.ReadFile(path)
+	if err != nil {
+		err = liberr.Wrap(err)
+		panic(err)
+	}
+	err = yaml.Unmarshal(content, f)
+	if err != nil {
+		err = liberr.Wrap(err)
+		panic(err)
+	}
 }

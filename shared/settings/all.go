@@ -45,7 +45,6 @@ func (r TackleSettings) String() (s string) {
 	redacted := "********"
 	r.Encryption.Passphrase = redacted
 	r.Auth.APIKey.Secret = redacted
-	r.Auth.Idp.ClientSecret = redacted
 	b, err := yaml.Marshal(r)
 	if err != nil {
 		panic(err)

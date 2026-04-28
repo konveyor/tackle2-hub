@@ -16,14 +16,9 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
-)
-
-const (
-	DevVerifierClientId = "device-verifier"
 )
 
 // Storage implements op.Storage.
@@ -35,6 +30,7 @@ type Storage struct {
 	authByCode    map[string]string
 	devAuthReqs   map[string]*DeviceAuthRequest
 	devAuthByCode map[string]string
+	clientById    map[string]op.Client
 	idpHandler    *IdpHandler
 	cache         *Cache
 }
@@ -46,36 +42,43 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 			Log.Error(err, "")
 		}
 	}()
-
-	switch clientId {
-	case "web-ui":
-		// Web client for browser-based authorization code flow
-		client = &Client{
-			id:              "web-ui",
-			redirectURIs:    r.redirectURIs(),
-			applicationType: op.ApplicationTypeWeb,
-		}
-	case "cli":
-		// Public CLI client for device authorization grant flow
-		client = &Client{
-			id:              "cli",
-			secret:          "", // Public client - no secret
-			redirectURIs:    []string{},
-			applicationType: op.ApplicationTypeNative,
-		}
-	case "device-verifier":
-		// Internal client for device verification page authentication
-		client = &Client{
-			id: DevVerifierClientId,
-			redirectURIs: []string{
-				Settings.IssuerWithPath(api.AuthDevAuthCallback),
-			},
-			applicationType: op.ApplicationTypeWeb,
-		}
-	default:
+	client, found := r.clientById[clientId]
+	if !found {
 		err = oidc.ErrInvalidClient().WithDescription("client not found")
 		return
 	}
+
+	/*
+		switch clientId {
+		case "web-ui":
+			// Web client for browser-based authorization code flow
+			client = &Client{
+				id:              "web-ui",
+				redirectURIs:    r.redirectURIs(),
+				applicationType: op.ApplicationTypeWeb,
+			}
+		case "cli":
+			// Public CLI client for device authorization grant flow
+			client = &Client{
+				id:              "cli",
+				secret:          "", // Public client - no secret
+				redirectURIs:    []string{},
+				applicationType: op.ApplicationTypeNative,
+			}
+		case "device-verifier":
+			// Internal client for device verification page authentication
+			client = &Client{
+				id: DevVerifierClientId,
+				redirectURIs: []string{
+					Settings.IssuerWithPath(api.AuthDevAuthCallback),
+				},
+				applicationType: op.ApplicationTypeWeb,
+			}
+		default:
+			err = oidc.ErrInvalidClient().WithDescription("client not found")
+			return
+		}
+	*/
 	return
 }
 
@@ -730,7 +733,7 @@ func (r *Login) renderPage() (err error) {
 
 	// Build external IdP button HTML if enabled
 	idpButton := ""
-	if Settings.Auth.Idp.Enabled {
+	if federation.Enabled {
 		idpButton = `
         <div style="margin-top: 20px; text-align: center;">
             <div style="margin: 20px 0; color: #999;">- OR -</div>
@@ -742,7 +745,7 @@ func (r *Login) renderPage() (err error) {
                 text-decoration: none;
                 border-radius: 3px;
                 text-align: center;
-            ">Login with ` + Settings.Auth.Idp.Name + `</a>
+            ">Login with ` + federation.Idp.Name + `</a>
         </div>`
 	}
 
@@ -1211,7 +1214,9 @@ type Client struct {
 	id              string
 	secret          string
 	redirectURIs    []string
+	grantTypes      []string
 	applicationType op.ApplicationType
+	scopes          []string
 }
 
 // GetID returns the client ID.
@@ -1256,13 +1261,7 @@ func (c *Client) ResponseTypes() (types []oidc.ResponseType) {
 
 // GrantTypes returns grant types.
 func (c *Client) GrantTypes() (types []oidc.GrantType) {
-	types = []oidc.GrantType{
-		oidc.GrantTypeCode,
-		oidc.GrantTypeRefreshToken,
-		oidc.GrantTypeClientCredentials,
-		oidc.GrantTypeBearer,
-		oidc.GrantTypeDeviceCode,
-	}
+	types = c.GrantTypes()
 	return
 }
 
@@ -1307,7 +1306,12 @@ func (c *Client) RestrictAdditionalAccessTokenScopes() func(scopes []string) []s
 
 // IsScopeAllowed checks if a scope is allowed.
 func (c *Client) IsScopeAllowed(scope string) (b bool) {
-	b = true
+	for i := range c.scopes {
+		if c.scopes[i] == scope {
+			b = true
+			break
+		}
+	}
 	return
 }
 
@@ -1320,6 +1324,20 @@ func (c *Client) IDTokenUserinfoClaimsAssertion() (b bool) {
 func (c *Client) ClockSkew() (d time.Duration) {
 	d = time.Minute
 	return
+}
+
+func (c *Client) With(client *IdpClient) {
+	c.id = client.Id
+	c.secret = client.Secret
+	c.grantTypes = client.Grants
+	c.redirectURIs = client.RedirectURIs
+	c.scopes = client.Scopes
+	switch client.ApplicationType {
+	case "web":
+		c.applicationType = op.ApplicationTypeWeb
+	case "native":
+		c.applicationType = op.ApplicationTypeNative
+	}
 }
 
 // AuthRequest implements op.AuthRequest.

@@ -35,7 +35,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 			}
 		})
 	// IdP routes
-	if Settings.Auth.Idp.Enabled {
+	if Settings.Auth.Enabled {
 		idpHandler := auth.IdP.IdpHandler()
 		e.GET(api.IdpRoute+"/login", idpHandler.Login)
 		e.GET(api.IdpRoute+"/callback", idpHandler.LoginFinished)

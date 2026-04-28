@@ -1,11 +1,5 @@
 package auth
 
-import (
-	"github.com/konveyor/tackle2-hub/shared/settings"
-)
-
-var Settings = &settings.Settings
-
 // AddonScopes defines the addon scopes.
 var AddonScopes = []string{
 	"addons:get",
