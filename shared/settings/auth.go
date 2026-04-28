@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -96,5 +97,20 @@ func (r *Auth) Load() (err error) {
 			"email",
 		}
 	}
+
+	if _, err := url.Parse(r.IssuerURL); err != nil {
+		panic(err)
+	}
+	return
+}
+
+// IssuerWithPath returns the issuer URL with an alternate path.
+func (r *Auth) IssuerWithPath(path string) (s string) {
+	p, err := url.Parse(r.IssuerURL)
+	if err != nil {
+		return
+	}
+	p.Path = path
+	s = p.String()
 	return
 }

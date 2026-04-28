@@ -66,8 +66,10 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 	case "device-verifier":
 		// Internal client for device verification page authentication
 		client = &Client{
-			id:              DevVerifierClientId,
-			redirectURIs:    []string{Settings.Addon.Hub.URL + api.AuthDevAuthCallback},
+			id: DevVerifierClientId,
+			redirectURIs: []string{
+				Settings.IssuerWithPath(api.AuthDevAuthCallback),
+			},
 			applicationType: op.ApplicationTypeWeb,
 		}
 	default:
@@ -717,14 +719,14 @@ func (r *Login) updateAuthRequest() (err error) {
 
 // redirect redirects to the authorization callback.
 func (r *Login) redirect() {
-	issuer := r.storage.issuer()
+	issuer := Settings.IssuerURL
 	callbackURL := fmt.Sprintf("%s/authorize/callback?id=%s", issuer, r.authReqId)
 	http.Redirect(r.writer, r.request, callbackURL, http.StatusFound)
 }
 
 // renderPage renders the login page.
 func (r *Login) renderPage() (err error) {
-	issuer := r.storage.issuer()
+	issuer := Settings.IssuerURL
 
 	// Build external IdP button HTML if enabled
 	idpButton := ""
@@ -1060,23 +1062,13 @@ func (r *Storage) grantAuthId(id uint) (authId string) {
 
 // redirectURIs returns redirect URIs for web-ui client.
 func (r *Storage) redirectURIs() (uris []string) {
-	issuer := r.issuer()
 	uris = []string{
-		issuer + "/callback",
 		"http://localhost:8080",
 		"http://f35a.redhat.com:8080",
 		"http://f35a.redhat.com:6060",
 		"http://f35a.redhat.com:8080/idp/callback",
 		"http://f35a.redhat.com:6060/oidc/callback",
-	}
-	return
-}
-
-// issuer returns the issuer URL.
-func (r *Storage) issuer() (s string) {
-	s = Settings.IssuerURL
-	if s == "" {
-		s = Settings.Addon.Hub.URL + api.OIDCRoutes
+		Settings.IssuerWithPath("/callback"),
 	}
 	return
 }
@@ -1276,11 +1268,9 @@ func (c *Client) GrantTypes() (types []oidc.GrantType) {
 
 // LoginURL returns the login URL.
 func (c *Client) LoginURL(id string) (s string) {
-	issuer := Settings.IssuerURL
-	if issuer == "" {
-		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
-	}
-	s = fmt.Sprintf("%s/login?authRequestID=%s", issuer, id)
+	s = fmt.Sprintf(
+		"%s/login?authRequestID=%s",
+		Settings.IssuerURL, id)
 	return
 }
 

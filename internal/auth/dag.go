@@ -263,11 +263,7 @@ func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
 // ensureRpClient initializes the RP client if not already done.
 func (h *OIDCAuth) ensureRpClient() (err error) {
 	h.initOnce.Do(func() {
-		// Determine issuer URL
 		issuer := Settings.Auth.IssuerURL
-		if issuer == "" {
-			issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
-		}
 
 		// Derive keys
 		secret := Settings.Auth.APIKey.Secret
@@ -288,7 +284,7 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			issuer,
 			DevVerifierClientId,
 			"",
-			Settings.Addon.Hub.URL+api.AuthDevAuthCallback,
+			Settings.IssuerWithPath(api.AuthDevAuthCallback),
 			[]string{"openid"},
 		)
 	})

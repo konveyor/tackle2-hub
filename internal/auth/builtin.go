@@ -13,7 +13,6 @@ import (
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
@@ -45,9 +44,6 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		cache:         cache,
 	}
 	issuer := Settings.IssuerURL
-	if issuer == "" {
-		issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
-	}
 	config := &op.Config{
 		CodeMethodS256:          true,
 		AuthMethodPost:          true,
