@@ -17,6 +17,10 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 )
 
+const (
+	OIDCSubject = "oidc_subject"
+)
+
 //
 // DagHandler
 //
@@ -29,7 +33,7 @@ type DagHandler struct {
 // OIDCAuth creates an OIDC authenticator for the device verification page.
 func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 	auth = &OIDCAuth{
-		stateStore: make(map[string]*PKCEState),
+		pkceState: make(map[string]*PKCEState),
 	}
 	return
 }
@@ -127,9 +131,9 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 }
 
 // currentUser returns the authenticated user from the gin context.
+// Get OIDC subject from context (set by AuthRequired)
 func (h *DagHandler) currentUser(ctx *gin.Context) (user string) {
-	// Get OIDC subject from context (set by auth middleware)
-	subject, exists := ctx.Get("oidc_subject")
+	subject, exists := ctx.Get(OIDCSubject)
 	if exists {
 		if s, cast := subject.(string); cast {
 			user = s
@@ -146,38 +150,31 @@ func (h *DagHandler) currentUser(ctx *gin.Context) (user string) {
 // Uses server-side state storage to avoid cookie domain issues when hub
 // acts as both IdP and RP.
 type OIDCAuth struct {
-	mutex      sync.RWMutex
-	rpClient   rp.RelyingParty
-	cookies    *httphelper.CookieHandler
-	stateStore map[string]*PKCEState
-	initOnce   sync.Once
+	mutex     sync.RWMutex
+	rpClient  rp.RelyingParty
+	cookies   *httphelper.CookieHandler
+	pkceState map[string]*PKCEState
+	initOnce  sync.Once
 }
 
 // Login initiates the OIDC login flow with PKCE.
 func (h *OIDCAuth) Login(ctx *gin.Context) {
-	err := h.ensureRP()
+	err := h.ensureRpClient()
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Generate state
 	state := uuid.New().String()
 
-	// Generate PKCE code verifier
-	verifierBytes := make([]byte, 32)
-	_, err = rand.Read(verifierBytes)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	codeVerifier := base64.RawURLEncoding.EncodeToString(verifierBytes)
+	// build verifier and challenge
+	b := make([]byte, 32)
+	_, _ = rand.Read(b)
+	codeVerifier := base64.RawURLEncoding.EncodeToString(b)
+	digest := sha256.Sum256([]byte(codeVerifier))
+	codeChallenge := base64.RawURLEncoding.EncodeToString(digest[:])
 
-	// Generate PKCE code challenge
-	hash := sha256.Sum256([]byte(codeVerifier))
-	codeChallenge := base64.RawURLEncoding.EncodeToString(hash[:])
-
-	// Store state and verifier server-side
+	// Store state and verifier
 	h.storeState(state, codeVerifier)
 
 	// Build authorize URL with PKCE
@@ -188,7 +185,7 @@ func (h *OIDCAuth) Login(ctx *gin.Context) {
 
 // Callback handles the OIDC callback and exchanges code for tokens.
 func (h *OIDCAuth) Callback(ctx *gin.Context) {
-	err := h.ensureRP()
+	err := h.ensureRpClient()
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -203,9 +200,9 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 	func() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()
-		pkceState, found = h.stateStore[state]
+		pkceState, found = h.pkceState[state]
 		if found {
-			delete(h.stateStore, state)
+			delete(h.pkceState, state)
 		}
 	}()
 
@@ -230,8 +227,8 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 
 	subject := tokens.IDTokenClaims.Subject
 
-	// Store subject in cookie (avoids size limits)
-	err = h.cookies.SetCookie(ctx.Writer, "oidc_subject", subject)
+	// Store subject in cookie.
+	err = h.cookies.SetCookie(ctx.Writer, OIDCSubject, subject)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -243,28 +240,28 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 
 // AuthRequired checks for valid OIDC session.
 func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
-	err := h.ensureRP()
+	err := h.ensureRpClient()
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
 	// Check for session cookie
-	subject, err := h.cookies.CheckCookie(ctx.Request, "oidc_subject")
+	subject, err := h.cookies.CheckCookie(ctx.Request, OIDCSubject)
 	if err != nil || subject == "" {
-		// No session - redirect to login
+		// No session
 		ctx.Redirect(http.StatusFound, api.AuthDevAuthRoute+"/login")
 		ctx.Abort()
 		return
 	}
 
 	// Store subject in context for DagHandler
-	ctx.Set("oidc_subject", subject)
+	ctx.Set(OIDCSubject, subject)
 	ctx.Next()
 }
 
-// ensureRP initializes the RP client if not already done.
-func (h *OIDCAuth) ensureRP() (err error) {
+// ensureRpClient initializes the RP client if not already done.
+func (h *OIDCAuth) ensureRpClient() (err error) {
 	h.initOnce.Do(func() {
 		// Determine issuer URL
 		issuer := Settings.Auth.IssuerURL
@@ -307,16 +304,16 @@ func (h *OIDCAuth) storeState(state, verifier string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	h.stateStore[state] = &PKCEState{
+	h.pkceState[state] = &PKCEState{
 		verifier: verifier,
 		created:  time.Now(),
 	}
 
 	// Clean up old states (>10 minutes)
 	now := time.Now()
-	for s, ps := range h.stateStore {
+	for s, ps := range h.pkceState {
 		if now.Sub(ps.created) > 10*time.Minute {
-			delete(h.stateStore, s)
+			delete(h.pkceState, s)
 		}
 	}
 }
