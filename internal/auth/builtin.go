@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -50,11 +51,18 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		builtin.storage.clientById[client.Id] = opClient
 	}
 	issuer := Settings.IssuerURL
-	devicePath, err := Settings.Auth.AppendIssuer("/device")
+	issuerURL, err := url.Parse(issuer)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
+	// UserFormPath needs just the path component, not full URL
+	devicePath, err := url.JoinPath(issuerURL.Path, "/device")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	// RedirectURI needs the full URL
 	deviceCallbackPath, err := Settings.Auth.AppendIssuer("/device/callback")
 	if err != nil {
 		err = liberr.Wrap(err)
