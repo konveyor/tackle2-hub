@@ -180,9 +180,10 @@ func (h *Adapter) Client() (richClient *RichClient) {
 
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
-	apikey := auth.NewAPIKey(Settings.Hub.Token)
+	bearer := &auth.Bearer{}
+	bearer.Use(Settings.Hub.Token)
 	richClient := binding.New(Settings.Hub.URL)
-	richClient.Client.Use(apikey)
+	richClient.Client.Use(bearer)
 	adapter = &Adapter{}
 	adapter.Use(richClient)
 	Log.Info("Addon (adapter) created.")
