@@ -98,14 +98,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	// Initialize RP client and IdpHandler if external IdP is enabled
-	Log.Info("Federation configuration",
-		"enabled", federation.Enabled,
-		"issuer", federation.Idp.Issuer,
-		"clientId", federation.Idp.ClientId,
-		"redirectURI", federation.Idp.RedirectURI)
 	if federation.Enabled {
-		Log.Info("Initializing IdP federation handler")
 		var rpClient rp.RelyingParty
 		rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
@@ -127,9 +120,6 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			cache:    cache,
 		}
 		builtin.storage.idpHandler = builtin.idpHandler
-		Log.Info("IdP federation handler initialized successfully")
-	} else {
-		Log.Info("IdP federation disabled")
 	}
 	// Initialize DagHandler
 	builtin.dagHandler = &DagHandler{
@@ -181,7 +171,7 @@ func (p *Builtin) Login(
 	return
 }
 
-// NewPAT create a new personal access token.
+// NewPAT creates a new personal access token.
 func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err error) {
 	defer func() {
 		if err != nil {
@@ -211,7 +201,7 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 	return
 }
 
-// NewTaskToken create a new task api-key.
+// NewTaskToken creates a new task api-key.
 func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 	m = p.newToken(0)
 	task, err := p.cache.GetTask(taskId)
@@ -257,6 +247,7 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 	return
 }
 
+// User returns the username from the JWT token.
 func (r *Builtin) User(jwToken *jwt.Token) (user string) {
 	claims := jwToken.Claims.(jwt.MapClaims)
 	v := claims[ClaimSub]

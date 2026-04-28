@@ -143,7 +143,7 @@ func (r *BaseScope) With(s string) {
 	return
 }
 
-// hasExpiredIdentity returns true when the token references and expired IpP identity.
+// hasExpiredIdentity returns true when the token references an expired IdP identity.
 func (t *Token) hasExpiredIdentity() (expired bool) {
 	id := t.IdpIdentity
 	if id == nil {
