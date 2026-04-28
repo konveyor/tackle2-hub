@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,6 +87,9 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 		})
 		return
 	}
+
+	// Normalize to uppercase for case-insensitive comparison
+	userCode = strings.ToUpper(userCode)
 
 	devAuth, found := h.storage.GetDevAuthByUserCode(userCode)
 	if !found {
