@@ -1,12 +1,7 @@
 package api
 
 import (
-	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +11,6 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/zitadel/oidc/v3/pkg/client/rp"
-	httphelper "github.com/zitadel/oidc/v3/pkg/http"
-	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"gorm.io/gorm/clause"
 )
 
@@ -96,8 +88,15 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
-	// Device authorization routes with OIDC authentication
-	h.setupDeviceAuthRoutes(e)
+	// Device authorization routes
+	dagHandler := auth.IdP.(*auth.Builtin).DagHandler()
+	oidcAuth := dagHandler.OIDCAuth()
+	e.GET(api.AuthDevAuthRoute+"/login", oidcAuth.Login)
+	e.GET(api.AuthDevAuthCallback, oidcAuth.Callback)
+	routeGroup = e.Group(api.AuthDevAuthRoute)
+	routeGroup.Use(oidcAuth.AuthRequired)
+	routeGroup.GET("", dagHandler.Verify)
+	routeGroup.POST("", dagHandler.VerifySubmit)
 }
 
 //
@@ -816,208 +815,6 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-}
-
-// hashKey256 derives a 32-byte key using SHA256.
-func hashKey256(data []byte) []byte {
-	hash := sha256.Sum256(data)
-	return hash[:]
-}
-
-// setupDeviceAuthRoutes configures device authorization with OIDC authentication.
-func (h AuthHandler) setupDeviceAuthRoutes(e *gin.Engine) {
-	dagHandler := auth.IdP.(*auth.Builtin).DagHandler()
-
-	// Lazy-initialized RP client (created on first request)
-	var deviceRP rp.RelyingParty
-	var cookieHandler *httphelper.CookieHandler
-
-	// Server-side storage for state and PKCE (state -> pkceData mapping)
-	// Required because hub acts as both IdP and RP, potentially on different hosts
-	type pkceData struct {
-		verifier string
-		created  time.Time
-	}
-	stateStore := make(map[string]*pkceData)
-	var stateStoreMutex sync.RWMutex
-
-	// ensureRP creates the RP client if not already initialized
-	ensureRP := func() (rp.RelyingParty, *httphelper.CookieHandler, error) {
-		if deviceRP != nil {
-			return deviceRP, cookieHandler, nil
-		}
-
-		// Determine issuer URL
-		issuer := Settings.Auth.IssuerURL
-		if issuer == "" {
-			issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
-		}
-
-		// Derive proper-sized keys from client secret
-		secret := Settings.Auth.Client.Secret
-		if secret == "" {
-			secret = "default-secret-change-me" // Fallback for development
-		}
-
-		// Use SHA256 to derive consistent 32-byte keys
-		hashKey := hashKey256([]byte(secret + "-hash"))
-		encryptKey := hashKey256([]byte(secret + "-encrypt"))
-
-		// Create cookie handler for session management only (not state/PKCE)
-		cookieHandler = httphelper.NewCookieHandler(
-			hashKey,
-			encryptKey,
-			httphelper.WithUnsecure(),
-			httphelper.WithSameSite(http.SameSiteLaxMode),
-		)
-
-		// Create OIDC RP client without cookie handler for state
-		// We'll handle state and PKCE manually with server-side storage
-		var err error
-		deviceRP, err = rp.NewRelyingPartyOIDC(
-			context.Background(),
-			issuer,
-			"device-verifier",
-			Settings.Auth.Client.Secret,
-			Settings.Addon.Hub.URL+api.AuthDevAuthCallback,
-			[]string{"openid"},
-		)
-		return deviceRP, cookieHandler, err
-	}
-
-	// Login redirect handler - manual state and PKCE with server-side storage
-	loginHandler := func(ctx *gin.Context) {
-		rpClient, _, err := ensureRP()
-		if err != nil {
-			Log.Error(err, "Failed to initialize device verification RP client")
-			ctx.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-
-		// Generate state
-		state := uuid.New().String()
-
-		// Generate PKCE code verifier (43-128 characters)
-		verifierBytes := make([]byte, 32)
-		_, err = rand.Read(verifierBytes)
-		if err != nil {
-			Log.Error(err, "Failed to generate PKCE verifier")
-			ctx.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		codeVerifier := base64.RawURLEncoding.EncodeToString(verifierBytes)
-
-		// Generate PKCE code challenge (SHA256 hash of verifier)
-		hash := sha256.Sum256([]byte(codeVerifier))
-		codeChallenge := base64.RawURLEncoding.EncodeToString(hash[:])
-
-		// Store state and verifier server-side
-		stateStoreMutex.Lock()
-		stateStore[state] = &pkceData{
-			verifier: codeVerifier,
-			created:  time.Now(),
-		}
-		// Clean up old states (>10 minutes old)
-		now := time.Now()
-		for s, pd := range stateStore {
-			if now.Sub(pd.created) > 10*time.Minute {
-				delete(stateStore, s)
-			}
-		}
-		stateStoreMutex.Unlock()
-
-		// Build authorize URL with state and PKCE challenge
-		authURL := rp.AuthURL(state, rpClient, rp.WithCodeChallenge(codeChallenge))
-
-		http.Redirect(ctx.Writer, ctx.Request, authURL, http.StatusFound)
-	}
-
-	// Login handler - initiates OAuth flow with state management
-	e.GET(api.AuthDevAuthRoute+"/login", loginHandler)
-
-	// Callback handler - manual code exchange with server-side PKCE
-	e.GET(api.AuthDevAuthCallback, func(ctx *gin.Context) {
-		rpClient, cookies, err := ensureRP()
-		if err != nil {
-			Log.Error(err, "Failed to initialize device verification RP client")
-			ctx.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-
-		// Get state and code from query parameters
-		state := ctx.Query("state")
-		code := ctx.Query("code")
-
-		// Retrieve and validate state from server-side storage
-		stateStoreMutex.Lock()
-		pkceInfo, found := stateStore[state]
-		if found {
-			delete(stateStore, state) // Use once and delete
-		}
-		stateStoreMutex.Unlock()
-
-		if !found {
-			Log.Error(nil, "Invalid state in callback", "state", state)
-			http.Error(ctx.Writer, "Invalid state parameter", http.StatusBadRequest)
-			return
-		}
-
-		// Exchange code for tokens with PKCE verifier
-		tokens, err := rp.CodeExchange[*oidc.IDTokenClaims](
-			ctx.Request.Context(),
-			code,
-			rpClient,
-			rp.WithCodeVerifier(pkceInfo.verifier),
-		)
-		if err != nil {
-			Log.Error(err, "Code exchange failed")
-			http.Error(ctx.Writer, "Failed to exchange code for token", http.StatusInternalServerError)
-			return
-		}
-
-		subject := tokens.IDTokenClaims.Subject
-
-		// Store only the subject in the cookie (not the full tokens)
-		// This avoids cookie size limits and we only need the subject for device auth
-		err = cookies.SetCookie(ctx.Writer, "oidc_subject", subject)
-		if err != nil {
-			Log.Error(err, "Failed to set session cookie")
-			http.Error(ctx.Writer, "Failed to create session", http.StatusInternalServerError)
-			return
-		}
-
-		// Redirect to device authorization page
-		http.Redirect(ctx.Writer, ctx.Request, api.AuthDevAuthRoute, http.StatusFound)
-	})
-
-	// Auth middleware - checks for valid OIDC session
-	authMiddleware := func(ctx *gin.Context) {
-		_, cookies, err := ensureRP()
-		if err != nil {
-			Log.Error(err, "Failed to initialize device verification RP client")
-			ctx.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-
-		// Check for session cookie containing subject
-		subject, err := cookies.CheckCookie(ctx.Request, "oidc_subject")
-		if err != nil || subject == "" {
-			// No session - redirect to login handler
-			ctx.Redirect(http.StatusFound, api.AuthDevAuthRoute+"/login")
-			ctx.Abort()
-			return
-		}
-
-		// Store user subject in context for DagHandler
-		ctx.Set("oidc_subject", subject)
-		ctx.Next()
-	}
-
-	// Protected device authorization routes
-	deviceGroup := e.Group(api.AuthDevAuthRoute)
-	deviceGroup.Use(authMiddleware)
-	deviceGroup.GET("", dagHandler.Verify)
-	deviceGroup.POST("", dagHandler.VerifySubmit)
 }
 
 // Auth REST Resources.
