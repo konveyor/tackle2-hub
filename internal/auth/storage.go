@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -47,38 +48,6 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 		err = oidc.ErrInvalidClient().WithDescription("client not found")
 		return
 	}
-
-	/*
-		switch clientId {
-		case "web-ui":
-			// Web client for browser-based authorization code flow
-			client = &Client{
-				id:              "web-ui",
-				redirectURIs:    r.redirectURIs(),
-				applicationType: op.ApplicationTypeWeb,
-			}
-		case "cli":
-			// Public CLI client for device authorization grant flow
-			client = &Client{
-				id:              "cli",
-				secret:          "", // Public client - no secret
-				redirectURIs:    []string{},
-				applicationType: op.ApplicationTypeNative,
-			}
-		case "device-verifier":
-			// Internal client for device verification page authentication
-			client = &Client{
-				id: DevVerifierClientId,
-				redirectURIs: []string{
-					Settings.IssuerWithPath(api.AuthDevAuthCallback),
-				},
-				applicationType: op.ApplicationTypeWeb,
-			}
-		default:
-			err = oidc.ErrInvalidClient().WithDescription("client not found")
-			return
-		}
-	*/
 	return
 }
 
@@ -734,10 +703,21 @@ func (r *Login) renderPage() (err error) {
 	// Build external IdP button HTML if enabled
 	idpButton := ""
 	if federation.Enabled {
+		// Derive IdP login URL from issuer (append /idp/login to issuer path)
+		parsedURL, pErr := url.Parse(issuer)
+		if pErr != nil {
+			err = liberr.Wrap(pErr)
+			return
+		}
+		parsedURL = parsedURL.JoinPath("/idp/login")
+		query := parsedURL.Query()
+		query.Set("authRequestID", r.authReqId)
+		parsedURL.RawQuery = query.Encode()
+
 		idpButton = `
         <div style="margin-top: 20px; text-align: center;">
             <div style="margin: 20px 0; color: #999;">- OR -</div>
-            <a href="/idp/login?authRequestID=` + r.authReqId + `" style="
+            <a href="` + parsedURL.String() + `" style="
                 display: block;
                 background: #28a745;
                 color: white;

@@ -24,21 +24,32 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	// OIDC routes (hub as provider)
 	baseHandler := auth.IdP.Handler()
 	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
+	idpHandler := auth.IdP.IdpHandler()
+
 	e.Any(
 		api.OIDCRoutes+"/*path",
 		func(ctx *gin.Context) {
 			path := ctx.Param("path")
-			if path == "/login" {
+			switch path {
+			case "/login":
 				h.Login(ctx)
-			} else {
+			case "/idp/login":
+				if idpHandler != nil {
+					idpHandler.Login(ctx)
+				}
+			case "/idp/callback":
+				if idpHandler != nil {
+					idpHandler.LoginFinished(ctx)
+				}
+			default:
 				strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 			}
 		})
-	// IdP routes
-	if Settings.Auth.Enabled {
-		idpHandler := auth.IdP.IdpHandler()
-		e.GET(api.IdpRoute+"/login", idpHandler.Login)
-		e.GET(api.IdpRoute+"/callback", idpHandler.LoginFinished)
+
+	if idpHandler != nil {
+		Log.Info("IdP federation routes registered under OIDC wildcard",
+			"loginRoute", api.IdpRoute+"/login",
+			"callbackRoute", api.IdpRoute+"/callback")
 	}
 	// IdpIdentity routes.
 	routeGroup := e.Group("/")

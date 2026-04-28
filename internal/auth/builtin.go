@@ -90,7 +90,13 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		return
 	}
 	// Initialize RP client and IdpHandler if external IdP is enabled
+	Log.Info("Federation configuration",
+		"enabled", federation.Enabled,
+		"issuer", federation.Idp.Issuer,
+		"clientId", federation.Idp.ClientId,
+		"redirectURI", federation.Idp.RedirectURI)
 	if federation.Enabled {
+		Log.Info("Initializing IdP federation handler")
 		var rpClient rp.RelyingParty
 		rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
@@ -101,6 +107,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			federation.Idp.Scopes,
 		)
 		if err != nil {
+			Log.Error(err, "Failed to create RP client for IdP federation")
 			err = liberr.Wrap(err)
 			return
 		}
@@ -111,6 +118,9 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			cache:    cache,
 		}
 		builtin.storage.idpHandler = builtin.idpHandler
+		Log.Info("IdP federation handler initialized successfully")
+	} else {
+		Log.Info("IdP federation disabled")
 	}
 	// Initialize DagHandler
 	builtin.dagHandler = &DagHandler{

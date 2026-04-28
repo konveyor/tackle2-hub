@@ -207,7 +207,7 @@ const (
 
 // Routes - External IdP
 const (
-	IdpRoute           = "/idp"
+	IdpRoute           = OIDCRoutes + "/idp"
 	IdpIdentitiesRoute = AuthRoute + "/identities"
 	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
 )
