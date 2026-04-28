@@ -18,10 +18,6 @@ const (
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
-	EnvClientRedirectURIs   = "OIDC_CLIENT_REDIRECT_URIS"
-	EnvClientID             = "OIDC_CLIENT_ID"
-	EnvClientName           = "OIDC_CLIENT_NAME"
-	EnvClientSecret         = "OIDC_CLIENT_SECRET"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
 	EnvIdpEnabled           = "IDP_ENABLED"
 	EnvIdpName              = "IDP_NAME"
@@ -54,13 +50,6 @@ type Auth struct {
 	}
 	// OIDC Issuer
 	IssuerURL string
-	// OIDC client settings.
-	Client struct {
-		ID           string
-		Name         string
-		Secret       string
-		RedirectURIs []string
-	}
 	// IDP (identity-provider) settings
 	Idp struct {
 		Enabled      bool
@@ -84,18 +73,8 @@ func (r *Auth) Load() (err error) {
 	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // second: 5 minutes.
 	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
 	// OIDC Provider
-	r.IssuerURL, _ = os.LookupEnv(EnvIssuerURL)
+	r.IssuerURL = env.Get(EnvIssuerURL, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-	r.Client.ID = env.Get(EnvClientID, "web-ui")
-	r.Client.Name = env.Get(EnvClientName, "Web UI")
-	r.Client.Secret, _ = os.LookupEnv(EnvClientSecret)
-	s, found := os.LookupEnv(EnvClientRedirectURIs)
-	if found {
-		r.Client.RedirectURIs = strings.Split(s, ",")
-		for i := range r.Client.RedirectURIs {
-			r.Client.RedirectURIs[i] = strings.TrimSpace(r.Client.RedirectURIs[i])
-		}
-	}
 	// Remote IDP Endpoint.
 	r.Idp.Enabled = env.GetBool(EnvIdpEnabled, false)
 	r.Idp.Name = env.Get(EnvIdpName, "tackle")
@@ -103,7 +82,7 @@ func (r *Auth) Load() (err error) {
 	r.Idp.ClientID, _ = os.LookupEnv(EnvIdpClientID)
 	r.Idp.ClientSecret, _ = os.LookupEnv(EnvIdpClientSecret)
 	r.Idp.RedirectURI, _ = os.LookupEnv(EnvIdpRedirectURI)
-	s, found = os.LookupEnv(EnvIdpScopes)
+	s, found := os.LookupEnv(EnvIdpScopes)
 	if found {
 		r.Idp.Scopes = strings.Split(s, ",")
 		for i := range r.Idp.Scopes {

@@ -22,6 +22,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	DevVerifierClientId = "device-verifier"
+)
+
 // Storage implements op.Storage.
 type Storage struct {
 	mutex         sync.RWMutex
@@ -48,7 +52,6 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 		// Web client for browser-based authorization code flow
 		client = &Client{
 			id:              "web-ui",
-			secret:          Settings.Auth.Client.Secret,
 			redirectURIs:    r.redirectURIs(),
 			applicationType: op.ApplicationTypeWeb,
 		}
@@ -63,8 +66,7 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 	case "device-verifier":
 		// Internal client for device verification page authentication
 		client = &Client{
-			id:              "device-verifier",
-			secret:          Settings.Auth.Client.Secret,
+			id:              DevVerifierClientId,
 			redirectURIs:    []string{Settings.Addon.Hub.URL + api.AuthDevAuthCallback},
 			applicationType: op.ApplicationTypeWeb,
 		}
@@ -325,7 +327,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 	}
 	req = &RefreshRequest{
 		grantId:  grant.AuthId,
-		clientId: Settings.Auth.Client.ID,
+		clientId: grant.ClientId,
 		subject:  grant.Subject,
 		scopes:   strings.Fields(grant.Scopes),
 		issued:   grant.Issued,
@@ -578,7 +580,7 @@ func (r *Storage) SetIntrospectionFromToken(
 	expiration := int(token.Expiration.Unix())
 	introspection.Active = expiration > int(time.Now().Unix())
 	introspection.Scope = strings.Fields(token.Scopes)
-	introspection.ClientID = Settings.Auth.Client.ID
+	introspection.ClientID = clientId
 	introspection.Subject = token.Subject
 	introspection.Expiration = oidc.FromTime(token.Expiration)
 	return
@@ -987,6 +989,7 @@ func (r *Storage) createGrant(
 
 	m := &model.Grant{
 		Kind:         KindAuthCode,
+		ClientId:     authReq.GetClientID(),
 		AuthId:       grantId,
 		Subject:      authReq.GetSubject(),
 		RefreshToken: refreshTokenHash,
@@ -1055,12 +1058,16 @@ func (r *Storage) grantAuthId(id uint) (authId string) {
 	return
 }
 
-// redirectURIs returns configured redirect URIs.
+// redirectURIs returns redirect URIs for web-ui client.
 func (r *Storage) redirectURIs() (uris []string) {
-	uris = Settings.Auth.Client.RedirectURIs
-	if len(uris) == 0 {
-		issuer := r.issuer()
-		uris = []string{issuer + "/callback"}
+	issuer := r.issuer()
+	uris = []string{
+		issuer + "/callback",
+		"http://localhost:8080",
+		"http://f35a.redhat.com:8080",
+		"http://f35a.redhat.com:6060",
+		"http://f35a.redhat.com:8080/idp/callback",
+		"http://f35a.redhat.com:6060/oidc/callback",
 	}
 	return
 }

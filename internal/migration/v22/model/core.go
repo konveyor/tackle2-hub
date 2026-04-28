@@ -256,6 +256,7 @@ type RsaKey struct {
 type Grant struct {
 	Model
 	Kind         string `gorm:"not null"`
+	ClientId     string `gorm:"index;not null"`
 	AuthId       string `gorm:"uniqueIndex;not null"`
 	Subject      string `gorm:"index"`
 	RefreshToken string `gorm:"uniqueIndex"` // digest

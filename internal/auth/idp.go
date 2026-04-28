@@ -345,43 +345,26 @@ func (f *IdpLogin) issueTokens() (err error) {
 	// Use external IdP subject directly
 	subject := f.identity.Subject
 
-	if f.authRequestID != "" {
-		// Complete existing OIDC authorization request
-		var authReq op.AuthRequest
-		authReq, err = f.handler.storage.AuthRequestByID(f.ctx.Request.Context(), f.authRequestID)
-		if err != nil {
-			return
-		}
-
-		// Update the auth request with the authenticated user
-		if ar, cast := authReq.(*AuthRequest); cast {
-			ar.subject = subject
-		}
-
-		redirectURI = authReq.GetRedirectURI()
-		state = authReq.GetState()
-		requestID = f.authRequestID
-	} else {
-		// Create a new authorization request (standalone IdP login)
-		var authReq *oidc.AuthRequest
-		var req op.AuthRequest
-		authReq = &oidc.AuthRequest{
-			ClientID:     Settings.Auth.Client.ID,
-			RedirectURI:  Settings.Auth.Client.RedirectURIs[0],
-			Scopes:       []string{"openid", "profile", "email"},
-			ResponseType: oidc.ResponseTypeCode,
-			State:        f.genState(),
-		}
-
-		req, err = f.handler.storage.CreateAuthRequest(f.ctx.Request.Context(), authReq, subject)
-		if err != nil {
-			return
-		}
-
-		redirectURI = authReq.RedirectURI
-		state = authReq.State
-		requestID = req.GetID()
+	if f.authRequestID == "" {
+		err = fmt.Errorf("missing authorization request ID")
+		return
 	}
+
+	// Complete existing OIDC authorization request
+	var authReq op.AuthRequest
+	authReq, err = f.handler.storage.AuthRequestByID(f.ctx.Request.Context(), f.authRequestID)
+	if err != nil {
+		return
+	}
+
+	// Update the auth request with the authenticated user
+	if ar, cast := authReq.(*AuthRequest); cast {
+		ar.subject = subject
+	}
+
+	redirectURI = authReq.GetRedirectURI()
+	state = authReq.GetState()
+	requestID = f.authRequestID
 
 	// Generate authorization code
 	code := f.genState()

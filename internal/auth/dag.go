@@ -269,12 +269,8 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			issuer = Settings.Addon.Hub.URL + api.OIDCRoutes
 		}
 
-		// Derive keys from client secret
-		secret := Settings.Auth.Client.Secret
-		if secret == "" {
-			secret = "default-secret-change-me"
-		}
-
+		// Derive keys
+		secret := Settings.Auth.APIKey.Secret
 		hashKey := h.hashKey256([]byte(secret + "-hash"))
 		encryptKey := h.hashKey256([]byte(secret + "-encrypt"))
 
@@ -286,12 +282,12 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			httphelper.WithSameSite(http.SameSiteLaxMode),
 		)
 
-		// Create OIDC RP client
+		// Create OIDC RP client (no secret - internal client)
 		h.rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
 			issuer,
-			"device-verifier",
-			Settings.Auth.Client.Secret,
+			DevVerifierClientId,
+			"",
 			Settings.Addon.Hub.URL+api.AuthDevAuthCallback,
 			[]string{"openid"},
 		)
