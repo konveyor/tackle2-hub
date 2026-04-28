@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -51,33 +50,22 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		builtin.storage.clientById[client.Id] = opClient
 	}
 	issuer := Settings.IssuerURL
-	issuerURL, err := url.Parse(issuer)
+	devicePath, err := Settings.Auth.AppendIssuer("/device")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	devicePath, err := url.JoinPath(issuerURL.Path, "/device")
+	deviceCallbackPath, err := Settings.Auth.AppendIssuer("/device/callback")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	deviceCallbackPath, err := url.JoinPath(issuerURL.Path, "/device/callback")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	callbackURL, err := url.Parse(issuer)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	callbackURL.Path = deviceCallbackPath
 	builtin.storage.clientById[DevVerifierClientId] =
 		&Client{
 			id:              DevVerifierClientId,
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
-			redirectURIs:    []string{callbackURL.String()},
+			redirectURIs:    []string{deviceCallbackPath},
 			scopes:          []string{"openid"},
 		}
 	config := &op.Config{

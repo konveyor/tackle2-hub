@@ -80,6 +80,21 @@ func (r *Auth) Load() (err error) {
 	return
 }
 
+// AppendIssuer appends a path to the issuer URL.
+func (r *Auth) AppendIssuer(path string) (s string, err error) {
+	issuerURL, err := url.Parse(r.IssuerURL)
+	if err != nil {
+		return
+	}
+	joined, err := url.JoinPath(issuerURL.Path, path)
+	if err != nil {
+		return
+	}
+	issuerURL.Path = joined
+	s = issuerURL.String()
+	return
+}
+
 // IdpClient settings.
 type IdpClient struct {
 	Id              string   `yaml:"id"`

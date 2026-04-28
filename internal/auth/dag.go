@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
@@ -236,7 +235,7 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 	}
 
 	// Redirect to device authorization page
-	devicePath, err := h.devicePath("/device")
+	devicePath, err := Settings.Auth.AppendIssuer("/device")
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -256,7 +255,7 @@ func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
 	subject, err := h.cookies.CheckCookie(ctx.Request, OIDCSubject)
 	if err != nil || subject == "" {
 		// No session
-		loginPath, err := h.devicePath("/device/login")
+		loginPath, err := Settings.Auth.AppendIssuer("/device/login")
 		if err != nil {
 			_ = ctx.Error(err)
 			ctx.Abort()
@@ -292,7 +291,7 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 
 		// Build redirect URI with issuer path
 		var callbackPath string
-		callbackPath, err = h.devicePath("/device/callback")
+		callbackPath, err = Settings.Auth.AppendIssuer("/device/callback")
 		if err != nil {
 			return
 		}
@@ -333,21 +332,6 @@ func (h *OIDCAuth) storeState(state, verifier string) {
 func (h *OIDCAuth) hashKey256(data []byte) (key []byte) {
 	hash := sha256.Sum256(data)
 	key = hash[:]
-	return
-}
-
-// devicePath builds a device route path based on the issuer.
-func (h *OIDCAuth) devicePath(suffix string) (path string, err error) {
-	issuerURL, err := url.Parse(Settings.IssuerURL)
-	if err != nil {
-		return
-	}
-	path, err = url.JoinPath(issuerURL.Path, suffix)
-	if err != nil {
-		return
-	}
-	issuerURL.Path = path
-	path = issuerURL.String()
 	return
 }
 

@@ -704,12 +704,16 @@ func (r *Login) renderPage() (err error) {
 	idpButton := ""
 	if federation.Enabled {
 		// Derive IdP login URL from issuer (append /idp/login to issuer path)
-		parsedURL, pErr := url.Parse(issuer)
+		loginURL, pErr := Settings.Auth.AppendIssuer("/idp/login")
 		if pErr != nil {
 			err = liberr.Wrap(pErr)
 			return
 		}
-		parsedURL = parsedURL.JoinPath("/idp/login")
+		parsedURL, pErr := url.Parse(loginURL)
+		if pErr != nil {
+			err = liberr.Wrap(pErr)
+			return
+		}
 		query := parsedURL.Query()
 		query.Set("authRequestID", r.authReqId)
 		parsedURL.RawQuery = query.Encode()
