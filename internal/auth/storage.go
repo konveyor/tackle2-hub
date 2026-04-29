@@ -719,68 +719,142 @@ func (r *Login) renderPage() (err error) {
 		parsedURL.RawQuery = query.Encode()
 
 		idpButton = `
-        <div style="margin-top: 20px; text-align: center;">
-            <div style="margin: 20px 0; color: #999;">- OR -</div>
-            <a href="` + parsedURL.String() + `" style="
-                display: block;
-                background: #28a745;
-                color: white;
-                padding: 10px 20px;
-                text-decoration: none;
-                border-radius: 3px;
-                text-align: center;
-            ">Login with ` + federation.Idp.Name + `</a>
-        </div>`
+        <div class="divider">OR</div>
+        <a href="` + parsedURL.String() + `" class="idp-button">
+            Sign in with ` + federation.Idp.Name + `
+        </a>`
 	}
 
 	html := `<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tackle Hub - Login</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
             max-width: 400px;
-            margin: 100px auto;
-            padding: 20px;
-        }
-        h1 { color: #333; }
-        form {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        input {
             width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            box-sizing: border-box;
+        }
+        h1 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            color: #333;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
         }
         button {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
             width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
         }
-        button:hover { background: #0056b3; }
-        a:hover { opacity: 0.9; }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .divider {
+            margin: 24px 0;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            position: relative;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        .idp-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .idp-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        .idp-button:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
-    <h1>Tackle Login</h1>
-    <form action="` + issuer + `/login?authRequestID=` + r.authReqId + `" method="post">
-        <div>
-            <label>Userid:</label>
-            <input type="text" name="userid" required autofocus />
-        </div>
-        <div>
-            <label>Password:</label>
-            <input type="password" name="password" required />
-        </div>
-        <button type="submit">Login</button>
-    </form>` + idpButton + `
+    <div class="container">
+        <h1>Tackle Login</h1>
+        <p class="subtitle">Sign in to continue</p>
+        <form action="` + issuer + `/login?authRequestID=` + r.authReqId + `" method="post">
+            <label for="userid">User ID</label>
+            <input type="text" id="userid" name="userid" required autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Sign In</button>
+        </form>` + idpButton + `
+    </div>
 </body>
 </html>`
 	r.writer.Header().Set("Content-Type", "text/html; charset=utf-8")
