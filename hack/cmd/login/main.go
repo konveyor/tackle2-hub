@@ -66,6 +66,10 @@ func main() {
 		"password",
 		"",
 		"User password.")
+	getToken := flag.Bool(
+		"getToken",
+		false,
+		"Get PAT token.")
 	flag.Parse()
 
 	if *issuerURL == "" {
@@ -109,17 +113,19 @@ func main() {
 
 		richClient.UseAuth(bearer)
 
-		pat := &api.PAT{Lifespan: *patLifespan}
-		err = richClient.Token.Create(pat)
-		if err != nil {
-			panic(err)
+		if *getToken {
+			pat := &api.PAT{Lifespan: *patLifespan}
+			err = richClient.Token.Create(pat)
+			if err != nil {
+				panic(err)
+			}
+
+			bearer.Use(pat.Token)
+
+			fmt.Printf("\nGet PAT succeeded. token: %s\n", bearer.Token())
+
+			testClient(richClient)
 		}
-
-		bearer.Use(pat.Token)
-
-		fmt.Printf("\nGet PAT succeeded. token: %s\n", bearer.Token())
-
-		testClient(richClient)
 		return
 	}
 

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"net/url"
@@ -115,6 +116,14 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			federation.Idp.ClientSecret,
 			federation.Idp.RedirectURI,
 			federation.Idp.Scopes,
+			rp.WithHTTPClient(
+				&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							InsecureSkipVerify: true,
+						},
+					},
+				}),
 		)
 		if err != nil {
 			Log.Error(err, "Failed to create RP client for IdP federation")

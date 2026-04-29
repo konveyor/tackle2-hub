@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/base64"
 	"net/http"
 	"strings"
@@ -435,6 +436,14 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			"",
 			callbackPath,
 			[]string{"openid"},
+			rp.WithHTTPClient(
+				&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							InsecureSkipVerify: true,
+						},
+					},
+				}),
 		)
 	})
 	return

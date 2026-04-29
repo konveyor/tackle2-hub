@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -26,6 +28,14 @@ func NewBearer(issuerURL, clientID string) (h *Bearer, err error) {
 		"", // public client, no secret
 		"", // no redirect URI for device flow
 		Scopes,
+		rp.WithHTTPClient(
+			&http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			}),
 	)
 	if err != nil {
 		return
@@ -95,7 +105,11 @@ func (p *Bearer) DeviceAuth(ctx context.Context, scopes []string) (resp *oidc.De
 }
 
 // DeviceAccessToken polls and exchanges device code for tokens.
-func (p *Bearer) DeviceAccessToken(ctx context.Context, deviceCode string, interval time.Duration) (resp *oidc.AccessTokenResponse, err error) {
+func (p *Bearer) DeviceAccessToken(
+	ctx context.Context,
+	deviceCode string,
+	interval time.Duration) (resp *oidc.AccessTokenResponse, err error) {
+	//
 	resp, err = rp.DeviceAccessToken(ctx, deviceCode, interval, p.rpClient)
 	if err != nil {
 		return
