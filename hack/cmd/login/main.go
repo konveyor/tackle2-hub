@@ -55,9 +55,9 @@ func main() {
 		24,
 		"PAT lifespan (hours).")
 	token := flag.String(
-		"token",
+		"b",
 		"",
-		"Token (apikey).")
+		"Use bearer token (apikey).")
 	userid := flag.String(
 		"userid",
 		"",
@@ -91,7 +91,7 @@ func main() {
 	richClient := binding.New(*hubURL)
 
 	// OIDC authentication.
-	if *userid == "" {
+	if *userid == "" && *token == "" {
 
 		bearer, err := auth.NewBearer(*issuerURL, *clientId)
 		if err != nil {
@@ -124,6 +124,7 @@ func main() {
 	if *token != "" {
 		bearer := &auth.Bearer{}
 		bearer.Use(*token)
+		richClient.Client.Use(bearer)
 		testClient(richClient)
 	}
 
