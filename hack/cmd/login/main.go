@@ -77,6 +77,9 @@ func main() {
 		}
 		issuerURL = &path
 	}
+	if *route != "" {
+		hubURL = route
+	}
 
 	fmt.Printf("\nUsing:\n")
 	fmt.Printf("  route:     %s\n", *route)
