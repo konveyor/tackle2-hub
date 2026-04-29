@@ -510,6 +510,9 @@
     - name: tokens
       verbs:
         - post
+    - name: device
+      verbs:
+        - post
 - role: migrator
   id: 3
   resources:
@@ -656,6 +659,9 @@
     - name: tokens
       verbs:
         - post
+    - name: device
+      verbs:
+        - post
 - role: project-manager
   id: 4
   resources:
@@ -790,5 +796,8 @@
       verbs:
         - get
     - name: tokens
+      verbs:
+        - post
+    - name: device
       verbs:
         - post
