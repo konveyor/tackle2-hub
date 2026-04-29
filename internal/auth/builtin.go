@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -51,6 +52,8 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		builtin.storage.clientById[client.Id] = opClient
 	}
 	issuer := Settings.IssuerURL
+	deviceVerifyURL := Settings.Auth.AppendIssuer("/device")
+	deviceVerifyPath, _ := url.Parse(deviceVerifyURL)
 	builtin.storage.clientById[DevVerifierClientId] =
 		&Client{
 			id:              DevVerifierClientId,
@@ -68,7 +71,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		DeviceAuthorization: op.DeviceAuthorizationConfig{
 			Lifetime:     15 * time.Minute,
 			PollInterval: 5 * time.Second,
-			UserFormPath: "/auth/device",
+			UserFormPath: deviceVerifyPath.Path,
 			UserCode: op.UserCodeConfig{
 				CharSet:      "BCDFGHJKLMNPQRSTVWXZ0123456789", // No vowels to avoid words
 				CharAmount:   8,
