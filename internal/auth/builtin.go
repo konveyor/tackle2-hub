@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -52,29 +51,12 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		builtin.storage.clientById[client.Id] = opClient
 	}
 	issuer := Settings.IssuerURL
-	issuerURL, err := url.Parse(issuer)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	// UserFormPath needs just the path component, not full URL
-	devicePath, err := url.JoinPath(issuerURL.Path, "/device")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	// RedirectURI needs the full URL
-	deviceCallbackPath, err := Settings.Auth.AppendIssuer("/device/callback")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	builtin.storage.clientById[DevVerifierClientId] =
 		&Client{
 			id:              DevVerifierClientId,
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
-			redirectURIs:    []string{deviceCallbackPath},
+			redirectURIs:    []string{Settings.Auth.AppendIssuer("/device/callback")},
 			scopes:          []string{"openid"},
 		}
 	config := &op.Config{
@@ -86,7 +68,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		DeviceAuthorization: op.DeviceAuthorizationConfig{
 			Lifetime:     15 * time.Minute,
 			PollInterval: 5 * time.Second,
-			UserFormPath: devicePath,
+			UserFormPath: "/auth/device",
 			UserCode: op.UserCodeConfig{
 				CharSet:      "BCDFGHJKLMNPQRSTVWXZ0123456789", // No vowels to avoid words
 				CharAmount:   8,

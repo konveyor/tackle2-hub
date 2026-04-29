@@ -27,6 +27,9 @@ COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
 
+# OIDC *** REMOVE THIS ***
+COPY --chown=1001:0 auth.yaml /etc/hub/auth.yaml
+
 RUN echo "${VERSION}" > /etc/hub-build
 
 # ENV DEVELOPMENT=1
@@ -37,6 +40,7 @@ RUN microdnf -y install \
   subversion \
   git \
   tar \
+  vim \
  && microdnf -y clean all
 
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd

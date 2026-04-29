@@ -49,7 +49,7 @@ func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 //
 // Verify displays device authorization verification page.
 func (h *DagHandler) Verify(ctx *gin.Context) {
-	formAction := ctx.Request.URL.Path
+	formAction := Settings.Auth.AppendIssuer("/device")
 	html := `
 <!DOCTYPE html>
 <html>
@@ -367,12 +367,11 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 	}
 
 	// Redirect to device authorization page
-	devicePath, err := Settings.Auth.AppendIssuer("/device")
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	http.Redirect(ctx.Writer, ctx.Request, devicePath, http.StatusFound)
+	http.Redirect(
+		ctx.Writer,
+		ctx.Request,
+		Settings.Auth.AppendIssuer("/device"),
+		http.StatusFound)
 }
 
 // AuthRequired checks for valid OIDC session.
@@ -387,13 +386,9 @@ func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
 	subject, err := h.cookies.CheckCookie(ctx.Request, OIDCSubject)
 	if err != nil || subject == "" {
 		// No session
-		loginPath, err := Settings.Auth.AppendIssuer("/device/login")
-		if err != nil {
-			_ = ctx.Error(err)
-			ctx.Abort()
-			return
-		}
-		ctx.Redirect(http.StatusFound, loginPath)
+		ctx.Redirect(
+			http.StatusFound,
+			Settings.Auth.AppendIssuer("/device/login"))
 		ctx.Abort()
 		return
 	}
@@ -421,20 +416,13 @@ func (h *OIDCAuth) ensureRpClient() (err error) {
 			httphelper.WithSameSite(http.SameSiteLaxMode),
 		)
 
-		// Build redirect URI with issuer path
-		var callbackPath string
-		callbackPath, err = Settings.Auth.AppendIssuer("/device/callback")
-		if err != nil {
-			return
-		}
-
 		// Create OIDC RP client (no secret - internal client)
 		h.rpClient, err = rp.NewRelyingPartyOIDC(
 			context.Background(),
 			issuer,
 			DevVerifierClientId,
 			"",
-			callbackPath,
+			Settings.Auth.AppendIssuer("/device/callback"),
 			[]string{"openid"},
 			rp.WithHTTPClient(
 				&http.Client{

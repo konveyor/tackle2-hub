@@ -704,11 +704,7 @@ func (r *Login) renderPage() (err error) {
 	idpButton := ""
 	if federation.Enabled {
 		// Derive IdP login URL from issuer (append /idp/login to issuer path)
-		loginURL, pErr := Settings.Auth.AppendIssuer("/idp/login")
-		if pErr != nil {
-			err = liberr.Wrap(pErr)
-			return
-		}
+		loginURL := Settings.Auth.AppendIssuer("/idp/login")
 		parsedURL, pErr := url.Parse(loginURL)
 		if pErr != nil {
 			err = liberr.Wrap(pErr)
