@@ -23,6 +23,9 @@ func main() {
 		panic(err)
 	}
 
+	println("\nAuth succeeded.")
+	println("\nToken: " + bearer.Token())
+
 	client := binding.New(hubURL)
 	client.Client.Use(bearer)
 
@@ -41,11 +44,14 @@ func main() {
 
 	bearer.Use(pat.Token)
 
+	println("\nPAT grant succeeded.")
+	println("\nToken: " + bearer.Token())
+
 	// Test the client using the apikey.
 	_, err = client.User.List()
 	if err != nil {
 		panic(err)
 	}
 
-	print("Authentication succeeded.")
+	println("Done")
 }

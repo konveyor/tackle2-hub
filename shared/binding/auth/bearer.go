@@ -51,6 +51,14 @@ func (p *Bearer) Use(token string) {
 	p.accessToken = token
 }
 
+// Token returns the access token.
+func (p *Bearer) Token() (token string) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+	token = p.accessToken
+	return
+}
+
 // Login performs authentication and refreshes credentials.
 func (p *Bearer) Login() (err error) {
 	p.mutex.Lock()
