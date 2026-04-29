@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/shared/binding/auth"
 	qf "github.com/konveyor/tackle2-hub/shared/binding/filter"
 )
 
@@ -18,6 +18,7 @@ const (
 // New Constructs a new client
 func New(baseURL string) (client *Client) {
 	client = &Client{
+		auth:    &auth.NoAuth{},
 		BaseURL: baseURL,
 	}
 	client.ensureTransport()
@@ -65,14 +66,22 @@ func (s Path) Inject(p Params) (out string) {
 	return
 }
 
+// AuthMethod provides authentication for HTTP requests.
+type AuthMethod interface {
+	// Login performs authentication and refreshes credentials.
+	Login() (err error)
+	// Header returns the Authorization header value.
+	Header() (header string)
+}
+
 // RestClient defines the interface for REST client operations.
 // It provides methods for standard HTTP operations (GET, POST, PUT, PATCH, DELETE),
 // file/bucket operations, and utility functions.
 type RestClient interface {
 	// Reset clears the error state of the client.
 	Reset()
-	// Use login.
-	Use(login api.Login)
+	// Use sets the authentication method.
+	Use(auth AuthMethod)
 	// SetRetry set the number of retries.
 	SetRetry(n uint8)
 	// SetTransport set the transport.

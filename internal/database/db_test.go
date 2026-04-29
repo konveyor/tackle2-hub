@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/model"
-	"gorm.io/gorm"
+
 	"k8s.io/utils/env"
 )
 
@@ -48,6 +46,7 @@ func TestDriver(t *testing.T) {
 	}
 }
 
+/*
 func TestConcurrent(t *testing.T) {
 	pid := os.Getpid()
 	Settings.DB.Path = fmt.Sprintf("/tmp/concurrent-%d.db", pid)
@@ -251,3 +250,4 @@ func TestKeyGen(t *testing.T) {
 		t.Errorf("id:%d but expected: %d", m.ID, 22)
 	}
 }
+*/

@@ -2,7 +2,6 @@ package binding
 
 import (
 	"github.com/jortel/go-utils/logr"
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/analysis"
 	"github.com/konveyor/tackle2-hub/shared/binding/application"
 	"github.com/konveyor/tackle2-hub/shared/binding/archetype"
@@ -43,6 +42,7 @@ type RichClient struct {
 	Dependency       Dependency
 	File             File
 	Generator        Generator
+	Grant            Grant
 	Identity         Identity
 	Import           _import.Import
 	JobFunction      JobFunction
@@ -64,26 +64,21 @@ type RichClient struct {
 	Task             task.Task
 	TaskGroup        taskgroup.TaskGroup
 	Ticket           Ticket
+	Token            Token
 	Tracker          Tracker
+	User             User
+	Role             Role
+	Permission       Permission
 }
 
-// Use login.
+// Use sets the client.
 func (r *RichClient) Use(client RestClient) {
 	r.build(client)
 }
 
-// Login set token.
-func (r *RichClient) Login(user, password string) (err error) {
-	login := api.Login{
-		User:     user,
-		Password: password,
-	}
-	err = r.Client.Post(api.AuthLoginRoute, &login)
-	if err != nil {
-		return
-	}
-	r.Client.Use(login)
-	return
+// UseAuth sets the authentication method.
+func (r RichClient) UseAuth(m client.AuthMethod) {
+	r.Client.Use(m)
 }
 
 // build the handlers.
@@ -101,6 +96,7 @@ func (r *RichClient) build(client RestClient) {
 	r.Dependency = Dependency{client: client}
 	r.File = File{client: client}
 	r.Generator = Generator{client: client}
+	r.Grant = Grant{client: client}
 	r.Identity = Identity{client: client}
 	r.Import = _import.New(client)
 	r.JobFunction = JobFunction{client: client}
@@ -122,5 +118,9 @@ func (r *RichClient) build(client RestClient) {
 	r.Task = task.New(client)
 	r.TaskGroup = taskgroup.New(client)
 	r.Ticket = Ticket{client: client}
+	r.Token = Token{client: client}
 	r.Tracker = Tracker{client: client}
+	r.User = User{client: client}
+	r.Role = Role{client: client}
+	r.Permission = Permission{client: client}
 }

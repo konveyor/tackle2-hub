@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	pathlib "path"
-	"strings"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -34,8 +33,8 @@ type Client struct {
 	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
-	// login API resource.
-	Login api.Login
+	// auth authentication method.
+	auth AuthMethod
 	// Retry limit.
 	Retry uint8
 	// Error
@@ -47,9 +46,9 @@ func (r *Client) Reset() {
 	r.Error = nil
 }
 
-// Use the login.
-func (r *Client) Use(login api.Login) {
-	r.Login = login
+// Use sets the authentication method.
+func (r *Client) Use(auth AuthMethod) {
+	r.auth = auth
 }
 
 // SetRetry set the number of retries.
@@ -732,7 +731,11 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if err != nil {
 			return
 		}
-		request.Header.Set(api.Authorization, "Bearer "+r.Login.Token)
+		authHeader := r.auth.Header()
+		if authHeader != "" {
+			request.Header.Set(api.Authorization, authHeader)
+		}
+		request.Header.Set(api.Authorization, r.auth.Header())
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
@@ -758,22 +761,21 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 					response.StatusCode,
 					request.Method,
 					request.URL.Path))
+			// Handle 401 by refreshing auth and retrying once
+			if response.StatusCode == http.StatusUnauthorized && r.auth != nil && i == 0 {
+				_ = response.Body.Close()
+				loginErr := r.auth.Login()
+				if loginErr != nil {
+					Log.Info("Auth refresh failed: " + loginErr.Error())
+					break
+				}
+				Log.Info("Auth refreshed, retrying request")
+				continue
+			}
 			if response.StatusCode == http.StatusGatewayTimeout {
 				if i < r.Retry {
 					_ = response.Body.Close()
 					time.Sleep(RetryDelay)
-					continue
-				}
-			}
-			if response.StatusCode == http.StatusUnauthorized {
-				refreshed, nErr := r.refreshToken(request)
-				if nErr != nil {
-					r.Error = liberr.Wrap(nErr)
-					err = r.Error
-					return
-				}
-				if refreshed {
-					_ = response.Body.Close()
 					continue
 				}
 			}
@@ -878,24 +880,5 @@ func (f *Field) encoding() (mt string) {
 // disposition returns content-disposition.
 func (f *Field) disposition() (d string) {
 	d = fmt.Sprintf(`form-data; name="%s"; filename="%s"`, f.Name, pathlib.Base(f.Path))
-	return
-}
-
-// refreshToken refreshes the token.
-func (r *Client) refreshToken(request *http.Request) (refreshed bool, err error) {
-	if r.Login.Token == "" ||
-		strings.HasSuffix(request.URL.Path, api.AuthRefreshRoute) {
-		return
-	}
-	login := &api.Login{Refresh: r.Login.Refresh}
-	err = r.Post(api.AuthRefreshRoute, login)
-	if err == nil {
-		r.Login.Token = login.Token
-		refreshed = true
-		return
-	}
-	if errors.Is(err, &RestError{}) {
-		err = nil
-	}
 	return
 }

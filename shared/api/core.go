@@ -124,15 +124,6 @@ type Repository struct {
 	Path   string `json:"path"`
 }
 
-// Login REST resource.
-type Login struct {
-	User     string `json:"user"`
-	Password string `json:"password,omitempty"`
-	Token    string `json:"token"`
-	Refresh  string `json:"refresh"`
-	Expiry   int    `json:"expiry"`
-}
-
 // Addon REST resource.
 type Addon struct {
 	Name       string        `json:"name"`
@@ -148,4 +139,76 @@ type Extension struct {
 	Capabilities []string      `json:"capabilities,omitempty"`
 	Container    k8s.Container `json:"container"`
 	Metadata     any           `json:"metadata,omitempty"`
+}
+
+// IdpIdentity REST resource.
+type IdpIdentity struct {
+	Resource          `yaml:",inline"`
+	Issuer            string    `json:"issuer" binding:"required"`
+	Subject           string    `json:"subject" binding:"required"`
+	Userid            string    `json:"userid"`
+	Email             string    `json:"email"`
+	Expiration        time.Time `json:"expiration"`
+	LastAuthenticated time.Time `json:"lastAuthenticated"`
+	LastRefreshed     time.Time `json:"lastRefreshed"`
+	Scopes            string    `json:"scopes"`
+	Roles             string    `json:"roles"`
+}
+
+// User REST resource.
+type User struct {
+	Resource `yaml:",inline"`
+	Subject  string `json:"subject"`
+	Userid   string `json:"userid" binding:"required"`
+	Password string `json:"password" binding:"required,max=72"`
+	Email    string `json:"email" binding:"required"`
+	Roles    []Ref  `json:"roles"`
+}
+
+// Role REST resource.
+type Role struct {
+	Resource    `yaml:",inline"`
+	Name        string `json:"name" binding:"required"`
+	Permissions []Ref  `json:"permissions"`
+}
+
+// Permission REST resource.
+type Permission struct {
+	Resource `yaml:",inline"`
+	Name     string `json:"name" binding:"required"`
+	Scope    string `json:"scope" binding:"required"`
+}
+
+// Grant REST resource.
+type Grant struct {
+	Resource   `yaml:",inline"`
+	Kind       string    `json:"kind"`
+	AuthId     string    `json:"authId"`
+	Subject    string    `json:"subject"`
+	Scopes     string    `json:"scopes"`
+	Issued     time.Time `json:"issued"`
+	Expiration time.Time `json:"expiration"`
+}
+
+// Token REST resource.
+type Token struct {
+	Resource    `yaml:",inline"`
+	Kind        string    `json:"kind"`
+	AuthId      string    `json:"authId,omitempty" yaml:"authId,omitempty"`
+	Subject     string    `json:"subject,omitempty" yaml:",omitempty"`
+	Scopes      string    `json:"scopes,omitempty" yaml:",omitempty"`
+	Issued      time.Time `json:"issued,omitempty" yaml:",omitempty"`
+	Expiration  time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Lifespan    int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Grant       *Ref      `json:"grant,omitempty" yaml:"grant,omitempty"`
+	Task        *Ref      `json:"task,omitempty" yaml:"task,omitempty"`
+	User        *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
+	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:"idpIdentity,omitempty"`
+}
+
+// PAT REST resource.
+type PAT struct {
+	Lifespan   int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Token      string    `json:"token,omitempty" yaml:",omitempty"`
 }

@@ -3,47 +3,86 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/shared/settings"
+	"gorm.io/gorm"
+)
+
+const (
+	KindAccessToken = "access"
+	KindAuthCode    = "authCode"
+	KindAPIKey      = "api-key"
+)
+
+const (
+	DevVerifierClientId = "device-verifier"
 )
 
 var (
+	// Application settings.
+	Settings = &settings.Settings
 	// Log logger.
 	Log = logr.New("auth", Settings.Log.Auth)
-	// Hub provider.
-	Hub Provider
-	// Remote provider.
-	Remote Provider
+	// IdP provider.
+	IdP Provider
+	// IdP federation settings.
+	federation = Settings.Federation
 )
 
 func init() {
-	Hub = &NoAuth{}
-	Remote = &NoAuth{}
+	IdP = &NoAuth{}
+}
+
+// New returns an auth provider.
+func New(db *gorm.DB) (p Provider, err error) {
+	builtin, err := NewBuiltin(db)
+	if err != nil {
+		return
+	}
+	p = NewNoAuth(builtin)
+	if Settings.Auth.Required {
+		p = builtin
+	}
+	return
 }
 
 // Provider provides RBAC.
 type Provider interface {
-	// NewToken creates a signed token.
-	NewToken(user string, scopes []string, claims jwt.MapClaims) (signed string, err error)
-	// Authenticate authenticates and validates the token.
+	// Cache returns the provider cache.
+	Cache() *Cache
+	// Login begin OIDC auth.
+	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
+	// NewPAT creates a new personal access token.
+	NewPAT(subject string, lifespan time.Duration) (token Token, err error)
+	// NewTaskToken creates a new api-key.
+	NewTaskToken(taskId uint) (token Token, err error)
+	// Revoke a token.
+	Revoke(tokenId uint) (err error)
+	// Authenticate the request.
 	Authenticate(r *Request) (jwToken *jwt.Token, err error)
 	// Scopes extracts a list of scopes from the token.
 	Scopes(jwToken *jwt.Token) []Scope
 	// User extracts the user from token.
 	User(jwToken *jwt.Token) (user string)
-	// Login and obtain a token.
-	Login(user, password string) (token Token, err error)
-	// Refresh token.
-	Refresh(refresh string) (token Token, err error)
+	// Handler returns an OIDC handler.
+	Handler() (h http.Handler)
+	// IdpHandler returns the external IdP handler.
+	IdpHandler() (h *IdpHandler)
 }
 
-type Token struct {
-	Access  string
-	Refresh string
-	Expiry  int
-}
+// JWT Claims - Standard claims.
+const (
+	ClaimSub   = "sub"   // Subject
+	ClaimScope = "scope" // Scope
+	ClaimExp   = "exp"   // Expiration Time
+	ClaimIss   = "iss"   // Issuer
+	ClaimAud   = "aud"   // Audience
+)
 
 // NotAuthenticated is returned when a token cannot be authenticated.
 type NotAuthenticated struct {
@@ -104,6 +143,16 @@ func (r *BaseScope) With(s string) {
 	return
 }
 
+// hasExpiredIdentity returns true when the token references an expired IdP identity.
+func (t *Token) hasExpiredIdentity() (expired bool) {
+	id := t.IdpIdentity
+	if id == nil {
+		return
+	}
+	expired = id.Expiration.Before(time.Now())
+	return
+}
+
 // Match returns whether the scope is a match.
 func (r *BaseScope) Match(resource string, method string) (b bool) {
 	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&
@@ -116,3 +165,19 @@ func (r *BaseScope) String() (s string) {
 	s = strings.Join([]string{r.Resource, r.Method}, ":")
 	return
 }
+
+// asTime returns a time.Time for unix time.
+func asTime(n int) (t time.Time) {
+	t = time.Unix(int64(n), 0)
+	t = t.UTC()
+	return
+}
+
+// asInt returns unix time for time.Time.
+func asInt(t time.Time) (i int) {
+	t = t.UTC()
+	i = int(t.Unix())
+	return
+}
+
+type IdpClient = settings.IdpClient
