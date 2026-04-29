@@ -10,9 +10,10 @@ import (
 
 func main() {
 	hubURL := "http://f35a.redhat.com:7070"
+	issuer := "http://f35a.redhat.com:7070/oidc"
 
 	// Create OIDC authenticator
-	bearer, err := auth.NewBearer(hubURL, "cli")
+	bearer, err := auth.NewBearer(issuer, "cli")
 	if err != nil {
 		panic(err)
 	}

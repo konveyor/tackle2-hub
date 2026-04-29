@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 )
@@ -19,10 +18,7 @@ var Scopes = []string{
 }
 
 // NewBearer creates a new OIDC bearer token authenticator.
-// The hubURL should be the base hub URL (e.g., "http://localhost:7070").
-// The OIDC issuer path will be appended automatically.
-func NewBearer(hubURL, clientID string) (h *Bearer, err error) {
-	issuerURL := hubURL + api.OIDCRoutes
+func NewBearer(issuerURL, clientID string) (h *Bearer, err error) {
 	rpClient, err := rp.NewRelyingPartyOIDC(
 		context.Background(),
 		issuerURL,
