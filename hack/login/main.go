@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding"
@@ -18,23 +17,21 @@ func main() {
 		panic(err)
 	}
 
-	// Perform device login
 	err = bearer.DeviceLogin(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	// Create Hub API client and set authenticator
 	client := binding.New(hubURL)
 	client.Client.Use(bearer)
 
 	// Test the client
-	apps, err := client.Application.List()
+	_, err = client.User.List()
 	if err != nil {
 		panic(err)
 	}
 
-	// Get an apikey.
+	// Get a (PAT) personal access token.
 	pat := &api.PAT{Lifespan: 24}
 	err = client.Token.Create(pat)
 	if err != nil {
@@ -43,11 +40,11 @@ func main() {
 
 	bearer.Use(pat.Token)
 
-	// Test the client using the key.
-	apps, err = client.Application.List()
+	// Test the client using the apikey.
+	_, err = client.User.List()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Successfully authenticated! Found %d applications\n", len(apps))
+	print("Authentication succeeded.")
 }
