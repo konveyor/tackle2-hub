@@ -77,20 +77,20 @@ func (h *DagHandler) Verify(ctx *gin.Context) {
         }
         h1 {
             color: #333;
-            font-size: 24px;
+            font-size: 20px;
             margin-bottom: 8px;
             text-align: center;
         }
         .subtitle {
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
             margin-bottom: 30px;
             text-align: center;
         }
         label {
             display: block;
             color: #333;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             margin-bottom: 8px;
         }
@@ -99,7 +99,7 @@ func (h *DagHandler) Verify(ctx *gin.Context) {
             padding: 12px 16px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-family: monospace;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -117,7 +117,7 @@ func (h *DagHandler) Verify(ctx *gin.Context) {
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             cursor: pointer;
             transition: transform 0.1s, box-shadow 0.2s;
@@ -239,12 +239,12 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
         }
         h1 {
             color: #333;
-            font-size: 24px;
+            font-size: 20px;
             margin-bottom: 16px;
         }
         p {
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.6;
         }
     </style>
