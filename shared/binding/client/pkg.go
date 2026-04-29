@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/shared/binding/auth"
 	qf "github.com/konveyor/tackle2-hub/shared/binding/filter"
 )
 
@@ -17,6 +18,7 @@ const (
 // New Constructs a new client
 func New(baseURL string) (client *Client) {
 	client = &Client{
+		auth:    &auth.NoAuth{},
 		BaseURL: baseURL,
 	}
 	client.ensureTransport()

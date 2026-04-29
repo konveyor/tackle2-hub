@@ -107,7 +107,7 @@ func main() {
 
 		fmt.Printf("\nAuth succeeded. token: %s\n", bearer.Token())
 
-		richClient.Client.Use(bearer)
+		richClient.UseAuth(bearer)
 
 		pat := &api.PAT{Lifespan: *patLifespan}
 		err = richClient.Token.Create(pat)

@@ -71,9 +71,14 @@ type RichClient struct {
 	Permission       Permission
 }
 
-// Use login.
+// Use sets the client.
 func (r *RichClient) Use(client RestClient) {
 	r.build(client)
+}
+
+// UseAuth sets the authentication method.
+func (r RichClient) UseAuth(m client.AuthMethod) {
+	r.Client.Use(m)
 }
 
 // build the handlers.
