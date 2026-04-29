@@ -75,7 +75,7 @@ func (r *Request) With(header string) {
 		r.Token = part[1]
 	case "basic":
 		encoded := part[1]
-		b, err := base64.URLEncoding.DecodeString(encoded)
+		b, err := base64.StdEncoding.DecodeString(encoded)
 		if err != nil {
 			return
 		}

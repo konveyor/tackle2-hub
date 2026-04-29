@@ -25,7 +25,7 @@ func (p *Basic) Login() (err error) {
 // Header returns the Authorization header value.
 func (p *Basic) Header() (header string) {
 	credentials := p.userid + ":" + p.password
-	encoded := base64.StdEncoding.EncodeToString([]byte(credentials))
+	encoded := base64.URLEncoding.EncodeToString([]byte(credentials))
 	header = "Basic " + encoded
 	return
 }

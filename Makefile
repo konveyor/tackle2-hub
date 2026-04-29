@@ -47,6 +47,9 @@ docker: vet
 run: fmt vet
 	go run ./cmd/main.go
 
+login:
+	go build -o bin/login ./hack/cmd/login/main.go
+
 run-addon:
 	go run ./hack/cmd/addon/main.go
 

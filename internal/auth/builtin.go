@@ -480,12 +480,13 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	}
 	unique := make(map[string]bool)
 	scopes := make([]string, 0)
-	for _, u := range user.Roles {
-		for _, perm := range u.Permissions {
-			if !unique[perm.Scope] {
-				scopes = append(scopes, perm.Scope)
+	for _, ref := range user.Roles {
+		role := p.cache.roleById[ref.ID]
+		for _, scope := range role.scopes() {
+			if !unique[scope] {
+				scopes = append(scopes, scope)
 			}
-			unique[perm.Scope] = true
+			unique[scope] = true
 		}
 	}
 	jwToken = jwt.New(jwt.SigningMethodRS256)
