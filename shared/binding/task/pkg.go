@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"time"
 
-	task2 "github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
+	taskapi "github.com/konveyor/tackle2-hub/shared/task"
 )
 
 func New(client client.RestClient) (h Task) {
@@ -224,7 +224,7 @@ func (h Blocking) Cancel(ctx context.Context) (err error) {
 		if err != nil {
 			return
 		}
-		if task.State == task2.Canceled {
+		if task.State == taskapi.Canceled {
 			return
 		}
 	}
