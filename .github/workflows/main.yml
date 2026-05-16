@@ -89,14 +89,27 @@ jobs:
       - run: |
           rm -f $DB_PATH
           echo "=== Starting server in background ==="
-          make run > /tmp/hub.log 2>&1 &
+          stdbuf -oL -eL make run > /tmp/hub.log 2>&1 &
           SERVER_PID=$!
           echo "Server PID: $SERVER_PID"
-          sleep 15
-          echo "=== Checking if server process is still running ==="
-          ps -p $SERVER_PID || echo "Server process died"
+
+          echo "=== Waiting 30 seconds for server startup ==="
+          for i in {1..30}; do
+            sleep 1
+            if grep -q "listening" /tmp/hub.log 2>/dev/null; then
+              echo "Server started after $i seconds"
+              break
+            fi
+            echo -n "."
+          done
+          echo ""
+
+          echo "=== Server process status ==="
+          ps aux | grep -E "PID|$SERVER_PID" || echo "Process not found"
+
           echo "=== Server logs ==="
           cat /tmp/hub.log || echo "No log file"
+
           echo "=== Running tests ==="
           make test-api
 
