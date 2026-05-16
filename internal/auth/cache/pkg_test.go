@@ -7,24 +7,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	. "github.com/onsi/gomega"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
-	db, err = gorm.Open(
-		sqlite.Open("file::memory:?_foreign_keys=yes"),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
+	db, err = database.OpenTest()
 	if err != nil {
 		return
 	}

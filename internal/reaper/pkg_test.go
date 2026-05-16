@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/onsi/gomega"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 // TestBucketReaper_OrphanDetection tests bucket orphan detection and deletion.
@@ -1373,14 +1372,7 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 
 // setupDB creates an in-memory SQLite database for testing.
 func setupDB() (db *gorm.DB, err error) {
-	db, err = gorm.Open(
-		sqlite.Open("file::memory:?_foreign_keys=yes"),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
+	db, err = database.OpenTest()
 	if err != nil {
 		return
 	}

@@ -8,12 +8,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	. "github.com/onsi/gomega"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
 
 // TestUserGrant tests creating and authenticating with user tokens.
@@ -2479,14 +2478,7 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 
 // setupDomainTestDB creates an in-memory SQLite database for domain testing.
 func setupDomainTestDB() (db *gorm.DB, err error) {
-	db, err = gorm.Open(
-		sqlite.Open("file::memory:?_foreign_keys=yes"),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
+	db, err = database.OpenTest()
 	if err != nil {
 		return
 	}
@@ -2508,14 +2500,7 @@ func findClientByID(clients []seed.IdpClient, clientId string) *seed.IdpClient {
 
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
-	db, err = gorm.Open(
-		sqlite.Open("file::memory:?_foreign_keys=yes"),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
+	db, err = database.OpenTest()
 	if err != nil {
 		return
 	}
