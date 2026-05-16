@@ -68,7 +68,7 @@ generate: $(CONTROLLERGEN)
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.17.0
 
 # Ensure goimports installed.
 $(GOIMPORTS):
