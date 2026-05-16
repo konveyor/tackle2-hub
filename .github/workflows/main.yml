@@ -88,8 +88,16 @@ jobs:
           go-version: '1.25'
       - run: |
           rm -f $DB_PATH
-          make run &
-          sleep 15  # probably a dirty solution
+          echo "=== Starting server in background ==="
+          make run > /tmp/hub.log 2>&1 &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          sleep 15
+          echo "=== Checking if server process is still running ==="
+          ps -p $SERVER_PID || echo "Server process died"
+          echo "=== Server logs ==="
+          cat /tmp/hub.log || echo "No log file"
+          echo "=== Running tests ==="
           make test-api
 
   build-image:
