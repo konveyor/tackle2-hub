@@ -71,6 +71,8 @@ These settings pertain to authentication and authorization.
 | **Token**.RefreshLifespan | I | OIDC_REFRESH_TOKEN_LIFESPAN | 172800 (second)      | (seconds) OAuth refresh token lifespan (default: 2 days).                  |
 | IssuerURL              | S | OIDC_ISSUER                 | http://localhost:8080 | OIDC issuer URL (hub base URL).                                            |
 | **Key**.Rotation       | I | OIDC_KEY_ROTATION           | 90 (day)             | (days) RSA signing key rotation interval.                                  |
+| **RedirectURI**.WebUI  | S | OIDC_REDIRECT_URI_WEBUI     | (issuer URL)         | Redirect URI for Web UI OIDC client (defaults to issuer URL).              |
+| **RedirectURI**.KAI    | S | OIDC_REDIRECT_URI_KAI       | vscode://konveyor.konveyor-ide/auth | Redirect URI for KAI OIDC client.                           |
 
 **Authentication Staleness:**
 

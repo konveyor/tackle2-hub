@@ -162,6 +162,8 @@ Complete list of authentication-related environment variables:
 | `OIDC_TOKEN_LIFESPAN` | Integer | `300` | OAuth access token lifespan in seconds (5 minutes) |
 | `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800` | OAuth refresh token lifespan in seconds (2 days) |
 | `OIDC_KEY_ROTATION` | Integer | `90` | RSA signing key rotation interval in days |
+| `OIDC_REDIRECT_URI_WEBUI` | String | (issuer URL) | Redirect URI for Web UI OIDC client (defaults to issuer URL) |
+| `OIDC_REDIRECT_URI_KAI` | String | `vscode://konveyor.konveyor-ide/auth` | Redirect URI for KAI OIDC client |
 | `APIKEY_SECRET` | String | `tackle` | Secret used for API key generation |
 | `APIKEY_LIFESPAN` | Integer | `87600` | Personal Access Token lifespan in hours (10 years) |
 
