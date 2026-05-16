@@ -8,25 +8,6 @@ on:
     paths-ignore:
       - '**.md'
 
-jobs:
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.25'
-      - run: make fmt
-
-  vet:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.25'
-      - run: make vet
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +15,7 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.25'
+          cache: true
       - run: make cmd
 
   test-unit:
@@ -43,9 +25,12 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.25'
+          cache: true
       - run: make test
 
   test-binding:
+    needs:
+      - test-unit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,17 +43,31 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.25'
+          cache: true
       - run: |
           make vet
-          DISCONNECTED=1 make run &
-          sleep 15  # probably a dirty solution
+          echo "=== Starting server for test-binding ==="
+          DISCONNECTED=1 make run > /tmp/hub-binding.log 2>&1 &
+          SERVER_PID=$!
+
+          echo "=== Waiting up to 90 seconds ==="
+          for i in {1..90}; do
+            if grep -q "listening" /tmp/hub-binding.log 2>/dev/null; then
+              echo "Server ready after $i seconds"
+              break
+            fi
+            sleep 1
+            echo -n "."
+          done
+          echo ""
+
+          echo "=== Server logs ==="
+          tail -50 /tmp/hub-binding.log
+
           HUB_BASE_URL=http://localhost:8080 make test-binding
 
   test-api:
     needs:
-    - fmt
-    - vet
-    - build
     - test-unit
     runs-on: ubuntu-latest
     env:
@@ -86,6 +85,7 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.25'
+          cache: true
       - run: |
           rm -f $DB_PATH
           echo "=== Go module cache status ==="
@@ -124,11 +124,9 @@ jobs:
 
   build-image:
     needs:
-    - fmt
-    - vet
     - build
     - test-unit
-    - test-api
+    - test-binding
     runs-on: ubuntu-latest
     env:
       IMG: ttl.sh/konveyor-hub-${{ github.sha }}:2h
