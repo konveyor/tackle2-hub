@@ -69,12 +69,12 @@ graph TB
 
 ### Deployment Topologies
 
-| Deployment | Issuer Path | Notes |
-|------------|-------------|-------|
-| **OpenShift/Kubernetes Route** | `/auth` | Web app frontend proxies requests from `/auth` to hub `/oidc` |
-| **Direct Hub Access** | `/oidc` | Direct connection to hub |
+| Deployment | Auth REST API | OIDC Endpoints | Notes |
+|------------|---------------|----------------|-------|
+| **Direct Hub Access** | `/auth/*` | `/oidc/*` | Non-OIDC resources (users, roles, etc.) at `/auth`, OIDC endpoints at `/oidc` |
+| **Kubernetes/OpenShift (with Route)** | `/hub/auth/*` | `/oidc/*` | `/auth` routes to external IdP (e.g., Keycloak), hub resources at `/hub/auth` |
 
-**Note:** All OIDC endpoints on the hub are under `/oidc`. When deployed behind a web app proxy (Kubernetes Ingress/Route), the web UI may use `/auth` as the client-facing path, which is proxied to `/oidc` on the backend.
+**Note:** In all deployments, OIDC endpoints are at `/oidc/*`. When deployed in a cluster with a route/ingress, `/auth` typically routes to an external IdP, and hub auth resources (users, roles, etc.) are accessed at `/hub/auth/*`.
 
 ---
 
@@ -1456,21 +1456,6 @@ The RBAC system automatically maintains permissions, roles, and users at runtime
 3. **Loading users** from `users.yaml` with role references
 
 **Trigger:** `Domain.Seed()` called after route registration completes
-
-### Seeding Sequence
-
-```mermaid
-graph TD
-    Start[Hub Startup] --> Register[Register Routes]
-    Register --> Discover[Discover Scopes]
-    Discover --> GenPerms[Generate Permissions<br/>5 verbs per scope]
-    GenPerms --> ReconcilePerms[Reconcile Permissions<br/>preserve IDs, delete orphans]
-    ReconcilePerms --> LoadRoles[Load roles.yaml]
-    LoadRoles --> ReconcileRoles[Reconcile Roles<br/>map scopes to permissions]
-    ReconcileRoles --> LoadUsers[Load users.yaml]
-    LoadUsers --> ReconcileUsers[Reconcile Users<br/>map roles, hash passwords]
-    ReconcileUsers --> Complete[Seeding Complete]
-```
 
 ### Permission Generation
 
