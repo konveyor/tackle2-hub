@@ -156,7 +156,6 @@ Complete list of authentication-related environment variables:
 |----------|------|---------|-------------|
 | `AUTH_ENABLED` | Boolean | `true` | Enable authentication system |
 | `AUTH_REQUIRED` | Boolean | `false` | Enforce authentication for all API requests |
-| `AUTH_FILE` | String | - | Path to auth.yaml configuration file |
 | `AUTH_CACHE_LIFESPAN` | Integer | `5` | Cache refresh interval in minutes |
 | `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60` | Basic auth identity lifespan for LDAP users in seconds |
 | `OIDC_ISSUER` | String | `http://localhost:8080` | OIDC issuer URL (hub base URL) |
@@ -665,31 +664,51 @@ sequenceDiagram
 
 ### Configuration
 
-Configuration in `auth.yaml`:
+To enable federation to an external OIDC provider, create an `OpenidProvider` Custom Resource:
 
 ```yaml
-auth:
-  idp:
-    enabled: true
-    issuer: "https://idp.example.com/realms/tackle"
-    clientId: "tackle-hub"
-    clientSecret: "<secret>"
-    redirectURI: "https://hub.example.com/oidc/idp/callback"
-    scopes:
-      - openid
-      - profile
-      - email
-    name: "Corporate SSO"
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: OpenidProvider
+metadata:
+  name: corporate-sso
+  namespace: konveyor-tackle
+spec:
+  name: "Corporate SSO"
+  issuer: "https://idp.example.com/realms/tackle"
+  clientId: "tackle-hub"
+  clientSecret:
+    name: idp-client-secret
+    namespace: konveyor-tackle
+  redirectURI: "https://hub.example.com/oidc/idp/callback"
+  scopes:
+    - openid
+    - profile
+    - email
 ```
 
-| Setting | Purpose |
-|---------|---------|
-| **issuer** | External IdP issuer URL for discovery |
-| **clientId** | OAuth client ID registered with IdP |
-| **clientSecret** | OAuth client secret |
-| **redirectURI** | Callback URL after IdP authentication |
-| **scopes** | OAuth scopes to request |
+If the external IdP requires a client secret, store it in a Kubernetes Secret:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: idp-client-secret
+  namespace: konveyor-tackle
+type: Opaque
+stringData:
+  clientSecret: "<secret>"
+```
+
+**Note:** This configures an external provider for federated authentication. The hub's built-in OIDC provider does not require configuration.
+
+| CRD Field | Purpose |
+|-----------|---------|
 | **name** | Display name for "Sign in with..." button |
+| **issuer** | External IdP issuer URL for OIDC discovery |
+| **clientId** | OAuth client ID registered with the external IdP |
+| **clientSecret** | Reference to Kubernetes Secret containing client secret (optional) |
+| **redirectURI** | Callback URL to hub after external IdP authentication |
+| **scopes** | OAuth scopes to request from external IdP |
 
 ### Identity Lifecycle
 
@@ -777,38 +796,60 @@ sequenceDiagram
 
 ### Configuration
 
-Configuration in `auth.yaml`:
+To enable federation to an external LDAP or Active Directory server, create an `LdapProvider` Custom Resource:
 
 ```yaml
-auth:
-  ldap:
-    enabled: true
-    kind: "ActiveDirectory"  # or "LDAP"
-    name: "Corporate LDAP"
-    url: "ldaps://ldap.example.com:636"
-    baseDN: "dc=example,dc=com"
-    bindDN: "cn=service,dc=example,dc=com"
-    password: "<service-account-password>"
-    userFilter: "(sAMAccountName=%s)"  # Optional
-    groupFilter: "(&(objectClass=group)(member=%s))"  # Optional
-    hasMemberOf: true
-    roleMappings:
-      - and: ["CN=Developers,OU=Groups,DC=example,DC=com"]
-        roles: ["architect"]
-      - any: ["*Admins*"]
-        roles: ["tackle-admin"]
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ldap-service-account
+  namespace: konveyor-tackle
+type: Opaque
+stringData:
+  password: "<service-account-password>"
+
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: LdapProvider
+metadata:
+  name: corporate-ldap
+  namespace: konveyor-tackle
+spec:
+  name: "Corporate LDAP"
+  kind: "ActiveDirectory"
+  url: "ldaps://ldap.example.com:636"
+  baseDN: "dc=example,dc=com"
+  bindDN: "cn=service,dc=example,dc=com"
+  password:
+    name: ldap-service-account
+    namespace: konveyor-tackle
+  userFilter: "(sAMAccountName=%s)"
+  groupFilter: "(&(objectClass=group)(member=%s))"
+  hasMemberOf: true
+  roleMappings:
+    - and:
+        - "CN=Developers,OU=Groups,DC=example,DC=com"
+      roles:
+        - architect
+    - any:
+        - "*Admins*"
+      roles:
+        - tackle-admin
 ```
 
-| Setting | Purpose | Default (AD) | Default (LDAP) |
-|---------|---------|--------------|----------------|
-| **kind** | Server type | - | - |
-| **url** | LDAP server URL | - | - |
-| **baseDN** | Base for searches | - | - |
-| **bindDN** | Service account DN | - | - |
-| **password** | Service account password | - | - |
+**Note:** This configures an external LDAP/AD server for federated authentication. LDAP users are stored as `IdpIdentity` records, not local hub users.
+
+| CRD Field | Purpose | Default (AD) | Default (LDAP) |
+|-----------|---------|--------------|----------------|
+| **kind** | Server type ("ACTIVEDIRECTORY", "AD", or blank) | - | - |
+| **url** | External LDAP server URL | - | - |
+| **baseDN** | Base DN for LDAP searches | - | - |
+| **bindDN** | Service account bind DN | - | - |
+| **password** | Reference to Secret containing service account password | - | - |
 | **userFilter** | User search filter | `(sAMAccountName=%s)` | `(uid=%s)` |
 | **groupFilter** | Group search filter | `(&(objectClass=group)(member=%s))` | `(&(objectClass=*)(member=%s))` |
-| **hasMemberOf** | Use memberOf attribute | - | - |
+| **hasMemberOf** | Use memberOf attribute for group membership | - | - |
+| **roleMappings** | Map LDAP groups to hub roles | - | - |
 
 ### LDAP Userid as Subject
 
