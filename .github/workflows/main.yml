@@ -96,8 +96,8 @@ jobs:
           SERVER_PID=$!
           echo "Server PID: $SERVER_PID"
 
-          echo "=== Waiting 30 seconds for server startup ==="
-          for i in {1..30}; do
+          echo "=== Waiting up to 90 seconds for server startup ==="
+          for i in {1..90}; do
             sleep 1
             if grep -q "listening" /tmp/hub.log 2>/dev/null; then
               echo "Server started after $i seconds"
