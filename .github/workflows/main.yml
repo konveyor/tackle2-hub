@@ -47,23 +47,16 @@ jobs:
           cache: true
       - run: |
           make vet
-          echo "=== Starting server for test-binding ==="
-          DISCONNECTED=1 make run > /tmp/hub-binding.log 2>&1 &
-          SERVER_PID=$!
+          DISCONNECTED=1 make run > /tmp/hub.log 2>&1 &
 
-          echo "=== Waiting up to 90 seconds ==="
+          # Wait for server to start (compilation can take 60+ seconds on cold cache)
           for i in {1..90}; do
-            if grep -q "listening" /tmp/hub-binding.log 2>/dev/null; then
+            if grep -q "listening" /tmp/hub.log 2>/dev/null; then
               echo "Server ready after $i seconds"
               break
             fi
             sleep 1
-            echo -n "."
           done
-          echo ""
-
-          echo "=== Server logs ==="
-          tail -50 /tmp/hub-binding.log
 
           HUB_BASE_URL=http://localhost:8080 make test-binding
 
@@ -89,38 +82,17 @@ jobs:
           cache: true
       - run: |
           rm -f $DB_PATH
-          echo "=== Go module cache status ==="
-          ls -la $(go env GOMODCACHE)/cache/lock || echo "No locks"
+          make run > /tmp/hub.log 2>&1 &
 
-          echo "=== Starting server with verbose output ==="
-          stdbuf -oL -eL bash -x -c 'make run' > /tmp/hub.log 2>&1 &
-          SERVER_PID=$!
-          echo "Server PID: $SERVER_PID"
-
-          echo "=== Waiting up to 90 seconds for server startup ==="
+          # Wait for server to start (compilation can take 60+ seconds on cold cache)
           for i in {1..90}; do
-            sleep 1
             if grep -q "listening" /tmp/hub.log 2>/dev/null; then
-              echo "Server started after $i seconds"
+              echo "Server ready after $i seconds"
               break
             fi
-            echo -n "."
+            sleep 1
           done
-          echo ""
 
-          echo "=== Server process status ==="
-          ps aux | grep -E "PID|$SERVER_PID" || echo "Process not found"
-
-          echo "=== Server logs ==="
-          cat /tmp/hub.log || echo "No log file"
-
-          echo "=== Process tree ==="
-          pstree -p $SERVER_PID || ps --forest -g $(ps -o pgid= -p $SERVER_PID | tr -d ' ')
-
-          echo "=== Check if go run is actually running ==="
-          ps aux | grep "go run" | grep -v grep || echo "No go run process found"
-
-          echo "=== Running tests ==="
           make test-api
 
   build-image:
