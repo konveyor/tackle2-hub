@@ -27,7 +27,7 @@ func TestReviewCRUD(t *testing.T) {
 			// Get.
 			got, err := Review.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Compare got values with expected values.
@@ -40,7 +40,7 @@ func TestReviewCRUD(t *testing.T) {
 			// Find Review and check its parameters with the got(On Updation).
 			got, err = Review.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Check if the unchanged values remain same or not.
@@ -82,14 +82,14 @@ func TestReviewCRUD(t *testing.T) {
 
 			err := Review.Copy(r.ID, destApp.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			destAppRef, _ := Application.Get(destApp.ID)
 			gotReview, err := Review.Get(destAppRef.Review.ID)
 			if err != nil {
 				fmt.Println(err.Error())
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Check if the expcted review and got review is same.
@@ -124,7 +124,7 @@ func TestReviewList(t *testing.T) {
 	// List Reviews.
 	got, err := Review.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// check if created Reviews are in the list we got from Review.List()

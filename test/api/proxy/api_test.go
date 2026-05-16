@@ -11,7 +11,7 @@ func TestProxyGetUpdate(t *testing.T) {
 			// Get.
 			orig, err := Proxy.Get(id)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Update.
@@ -21,12 +21,12 @@ func TestProxyGetUpdate(t *testing.T) {
 			update.Enabled = true
 			err = Proxy.Update(&update)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			updated, err := Proxy.Get(update.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if updated.Host != update.Host || updated.Port != update.Port || updated.Enabled != update.Enabled {
 				t.Errorf("Different response error. Got %+v, expected %+v", updated, update)
@@ -35,7 +35,7 @@ func TestProxyGetUpdate(t *testing.T) {
 			// Update back to original.
 			err = Proxy.Update(orig)
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err)
 			}
 		})
 	}
@@ -44,7 +44,7 @@ func TestProxyGetUpdate(t *testing.T) {
 func TestSeedProxyList(t *testing.T) {
 	got, err := Proxy.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	foundHttp, foundHttps := false, false
 	for _, r := range got {

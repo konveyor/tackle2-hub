@@ -30,13 +30,13 @@ func TestAnalysisProfileCRUD(t *testing.T) {
 
 	err = AnalysisProfile.Create(&r)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	// Get
 	got, err := AnalysisProfile.Get(r.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.Eq(got, r) {
 		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
@@ -46,11 +46,11 @@ func TestAnalysisProfileCRUD(t *testing.T) {
 	r.Name = r.Name + "updated"
 	err = AnalysisProfile.Update(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	got, err = AnalysisProfile.Get(r.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	r.UpdateUser = got.UpdateUser
 	if !assert.Eq(got, r) {
@@ -60,7 +60,7 @@ func TestAnalysisProfileCRUD(t *testing.T) {
 	// Delete.
 	err = AnalysisProfile.Delete(r.ID)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	_, err = AnalysisProfile.Get(r.ID)
 	if err == nil {
@@ -75,7 +75,7 @@ func TestAnalysisProfileGetBundle(t *testing.T) {
 
 	f, err := RichClient.File.Touch("Test")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	r.Rules.Files = append(r.Rules.Files, api.Ref{ID: f.ID})
 	defer func() {
@@ -83,24 +83,24 @@ func TestAnalysisProfileGetBundle(t *testing.T) {
 	}()
 	err = RichClient.File.Patch(f.ID, []byte("Testing."))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	err = AnalysisProfile.Create(&r)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	defer func() {
 		_ = AnalysisProfile.Delete(r.ID)
 	}()
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	defer func() {
 		_ = nas.RmDir(tmpDir)
 	}()
 	err = AnalysisProfile.GetBundle(r.ID, filepath.Join(tmpDir, "bundle"))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 }
