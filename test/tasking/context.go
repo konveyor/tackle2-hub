@@ -17,7 +17,7 @@ func New(g *gomega.GomegaWithT) (ctx *Context) {
 	ctx = &Context{}
 	// Setup in-memory database
 	db, err := gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,

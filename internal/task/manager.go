@@ -371,7 +371,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 			if err != nil {
 				return
 			}
-			err = task.update(m.DB)
+			err = m.batchUpdate([]*Task{task})
 			if err != nil {
 				err = liberr.Wrap(err)
 				return

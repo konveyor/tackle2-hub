@@ -15,7 +15,7 @@ func TestDependencyBeforeCreate(t *testing.T) {
 
 	// Setup in-memory database
 	db, err := gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,
@@ -98,7 +98,7 @@ func TestDependencyBeforeCreate_SelfLoop(t *testing.T) {
 
 	// Setup in-memory database
 	db, err := gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,
@@ -130,7 +130,7 @@ func TestDependencyBeforeCreate_ComplexGraph(t *testing.T) {
 
 	// Setup in-memory database
 	db, err := gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,

@@ -1374,7 +1374,7 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 // setupDB creates an in-memory SQLite database for testing.
 func setupDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,

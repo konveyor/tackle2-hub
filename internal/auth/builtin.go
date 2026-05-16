@@ -178,11 +178,7 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 // NewTaskToken creates a new task api-key.
 func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 	m = p.newToken(0)
-	task, err := p.cache.FindTaskById(taskId)
-	if err != nil {
-		return
-	}
-	m.TaskID = &task.ID
+	m.TaskID = &taskId
 	err = p.db.Create(&m).Error
 	if err != nil {
 		err = liberr.Wrap(err)

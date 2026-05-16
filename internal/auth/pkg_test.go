@@ -2480,7 +2480,7 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 // setupDomainTestDB creates an in-memory SQLite database for domain testing.
 func setupDomainTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,
@@ -2509,7 +2509,7 @@ func findClientByID(clients []seed.IdpClient, clientId string) *seed.IdpClient {
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = gorm.Open(
-		sqlite.Open(":memory:"),
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
 		&gorm.Config{
 			NamingStrategy: &schema.NamingStrategy{
 				SingularTable: true,

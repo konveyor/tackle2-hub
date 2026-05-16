@@ -177,7 +177,10 @@ func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
 			return
 		}
 	}
-	secret := r.secret()
+	secret, err := r.secret()
+	if err != nil {
+		return
+	}
 	err = client.Create(context.TODO(), &secret)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -680,8 +683,11 @@ func (r *Task) propagateEnv(addon, extension *core.Container) {
 }
 
 // secret builds the pod secret.
-func (r *Task) secret() (secret core.Secret) {
-	token, _ := auth.IdP.NewTaskToken(r.ID)
+func (r *Task) secret() (secret core.Secret, err error) {
+	token, err := auth.IdP.NewTaskToken(r.ID)
+	if err != nil {
+		return
+	}
 	secret = core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,
