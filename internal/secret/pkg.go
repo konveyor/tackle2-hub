@@ -1,6 +1,7 @@
 package secret
 
 import (
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
@@ -23,6 +24,7 @@ func Encrypt(object any) (err error) {
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Encrypt(object)
+	err = liberr.Wrap(err)
 	return
 }
 
@@ -36,5 +38,6 @@ func Decrypt(object any) (err error) {
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
 	err = secret.Decrypt(object)
+	err = liberr.Wrap(err)
 	return
 }

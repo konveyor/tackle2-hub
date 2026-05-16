@@ -1,0 +1,57 @@
+package cache
+
+import (
+	"sort"
+	"strings"
+)
+
+// Subject represents a resolved subject (User, IdpIdentity).
+// The entity being authenticated.
+type Subject struct {
+	Key        string
+	Email      string
+	Scopes     []string
+	UserId     *uint
+	IdentityId *uint
+	User       *User
+	Identity   *Identity
+}
+
+// WithUser populates Subject from a User model.
+func (r *Subject) WithUser(user *User, cache *Cache) {
+	r.UserId = &user.ID
+	r.Key = user.Subject
+	r.User = user
+	r.Email = user.Email
+	for _, ref := range user.Roles {
+		role, err := cache.FindRoleById(ref.ID)
+		if err != nil {
+			continue
+		}
+		r.Scopes = append(r.Scopes, role.GetScopes()...)
+	}
+	r.Scopes = uniqueStrings(r.Scopes)
+	sort.Strings(r.Scopes)
+}
+
+// WithIdentity populates Subject from an IdpIdentity model.
+func (r *Subject) WithIdentity(idp *Identity) {
+	r.IdentityId = &idp.ID
+	r.Identity = idp
+	r.Key = idp.Subject
+	r.Email = idp.Email
+
+	if idp.Scopes != "" {
+		r.Scopes = strings.Fields(idp.Scopes)
+	}
+}
+
+// IsUser returns true if this subject is a User.
+func (r *Subject) IsUser() bool {
+	return r.UserId != nil
+}
+
+// IsIdentity returns true if this subject is an IdpIdentity.
+func (r *Subject) IsIdentity() bool {
+	return r.IdentityId != nil
+}

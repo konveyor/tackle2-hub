@@ -1,0 +1,134 @@
+package cache
+
+import "github.com/konveyor/tackle2-hub/shared/task"
+
+// Tx is a cache transaction.
+type Tx struct {
+	cache   *Cache
+	changes []func()
+}
+
+// RoleSaved updates the cache when a role is saved.
+func (r *Tx) RoleSaved(m *Role) {
+	r.changes = append(
+		r.changes, func() {
+			r.cache.roleById[m.ID] = m
+			r.cache.roleByName[m.Name] = m
+		})
+}
+
+// RoleDeleted removes a role from the cache.
+func (r *Tx) RoleDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			m, found := r.cache.roleById[id]
+			if found {
+				delete(r.cache.roleById, id)
+				delete(r.cache.roleByName, m.Name)
+			}
+		})
+}
+
+// UserSaved updates the cache when a user is saved.
+func (r *Tx) UserSaved(m *User) {
+	r.changes = append(
+		r.changes, func() {
+			r.cache.userById[m.ID] = m
+			r.cache.userBySubject[m.Subject] = m
+			r.cache.userByUserid[m.Userid] = m
+		})
+}
+
+// UserDeleted removes a user from the cache.
+func (r *Tx) UserDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			m, found := r.cache.userById[id]
+			if found {
+				delete(r.cache.userBySubject, m.Subject)
+				delete(r.cache.userByUserid, m.Userid)
+				delete(r.cache.userById, id)
+			}
+		})
+}
+
+// TaskSaved updates the cache when a task is saved.
+// Cache only interested in state in (Pending|Running).
+func (r *Tx) TaskSaved(m *Task) {
+	if m.State == task.Pending || m.State == task.Running {
+		r.changes = append(
+			r.changes, func() {
+				r.cache.taskById[m.ID] = m
+			})
+	} else {
+		r.TaskDeleted(m.ID)
+	}
+}
+
+// TaskDeleted removes a task from the cache.
+func (r *Tx) TaskDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			delete(r.cache.taskById, id)
+		})
+}
+
+// IdentitySaved updates the cache when an identity is saved.
+func (r *Tx) IdentitySaved(m *Identity) {
+	r.changes = append(
+		r.changes, func() {
+			r.cache.identById[m.ID] = m
+			r.cache.identBySubject[m.Subject] = m
+			r.cache.identByUserid[m.Userid] = m
+		})
+}
+
+// IdentityDeleted removes an identity from the cache.
+func (r *Tx) IdentityDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			m, found := r.cache.identById[id]
+			if found {
+				delete(r.cache.identByUserid, m.Userid)
+				delete(r.cache.identBySubject, m.Subject)
+				delete(r.cache.identById, id)
+			}
+		})
+}
+
+// TokenSaved updates the cache when a token is saved.
+func (r *Tx) TokenSaved(m *Token) {
+	r.changes = append(
+		r.changes, func() {
+			r.cache.tokenById[m.ID] = m
+			r.cache.tokenByDigest[m.Digest] = m
+		})
+}
+
+// TokenDeleted removes a token from the cache.
+func (r *Tx) TokenDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			token, found := r.cache.tokenById[id]
+			if found {
+				delete(r.cache.tokenByDigest, token.Digest)
+				delete(r.cache.tokenById, id)
+			}
+		})
+}
+
+// Commit applies all changelog operations atomically.
+func (r *Tx) Commit() {
+	r.cache.mutex.Lock()
+	defer r.cache.mutex.Unlock()
+	for _, fn := range r.changes {
+		fn()
+	}
+	r.changes = nil
+}
+
+// Rollback discards the changelog.
+// Safe to call multiple times (idempotent for defer).
+func (r *Tx) Rollback() {
+	r.changes = nil
+}

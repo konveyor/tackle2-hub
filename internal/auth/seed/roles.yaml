@@ -1,4 +1,5 @@
-- role: tackle-admin
+- role: admin
+  id: 1
   resources:
     - name: addons
       verbs:
@@ -246,7 +247,38 @@
         - get
         - post
         - put
-- role: tackle-architect
+    - name: users
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: roles
+      verbs:
+        - delete
+        - get
+        - post
+        - put
+    - name: permissions
+      verbs:
+        - get
+    - name: idp.identities
+      verbs:
+        - get
+    - name: grants
+      verbs:
+        - get
+        - delete
+    - name: tokens
+      verbs:
+        - post
+        - get
+        - delete
+    - name: device
+      verbs:
+        - post
+- role: architect
+  id: 2
   resources:
     - name: addons
       verbs:
@@ -475,7 +507,14 @@
     - name: questionnaires
       verbs:
         - get
-- role: tackle-migrator
+    - name: tokens
+      verbs:
+        - post
+    - name: device
+      verbs:
+        - post
+- role: migrator
+  id: 3
   resources:
     - name: addons
       verbs:
@@ -617,7 +656,14 @@
     - name: questionnaires
       verbs:
         - get
-- role: tackle-project-manager
+    - name: tokens
+      verbs:
+        - post
+    - name: device
+      verbs:
+        - post
+- role: project-manager
+  id: 4
   resources:
     - name: addons
       verbs:
@@ -749,3 +795,9 @@
     - name: questionnaires
       verbs:
         - get
+    - name: tokens
+      verbs:
+        - post
+    - name: device
+      verbs:
+        - post

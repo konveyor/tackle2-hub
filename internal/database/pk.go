@@ -25,11 +25,7 @@ func (r *PkSequence) Load(db *gorm.DB, models []any) (err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	for _, m := range models {
-		mt := reflect.TypeOf(m)
-		if mt.Kind() == reflect.Ptr {
-			mt = mt.Elem()
-		}
-		kind := strings.ToUpper(mt.Name())
+		kind := r.Table(m)
 		db = r.session(db)
 		q := db.Table(kind)
 		q = q.Select("MAX(ID) id")
@@ -90,6 +86,23 @@ func (r *PkSequence) Assigned(db *gorm.DB, id uint) {
 			panic(err)
 		}
 	}
+	return
+}
+
+// Table name for object.
+func (r *PkSequence) Table(m any) (kind string) {
+	mt := reflect.TypeOf(m)
+	if mt.Kind() == reflect.Ptr {
+		mt = mt.Elem()
+	}
+	kind = strings.ToUpper(mt.Name())
+	return
+}
+
+// Begin ensures the pk sequence begins with the specified id.
+func (r *PkSequence) Begin(db *gorm.DB, m any, pk uint) {
+	db = db.Table(r.Table(m))
+	r.Assigned(db, pk)
 	return
 }
 

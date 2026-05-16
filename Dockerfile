@@ -24,8 +24,6 @@ ARG SEED_ROOT
 ARG VERSION=latest
 COPY --from=centos /usr/bin/tini /usr/bin/tini
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
-COPY --from=builder /opt/app-root/src/internal/auth/roles.yaml /tmp/roles.yaml
-COPY --from=builder /opt/app-root/src/internal/auth/users.yaml /tmp/users.yaml
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
 
@@ -39,6 +37,7 @@ RUN microdnf -y install \
   subversion \
   git \
   tar \
+  vim \
  && microdnf -y clean all
 
 RUN echo "hub:x:1001:0:hub:/:/sbin/nologin" >> /etc/passwd

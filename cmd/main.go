@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"runtime/debug"
 	"syscall"
@@ -69,6 +70,12 @@ func buildScheme() (err error) {
 	return
 }
 
+// port returns the API port.
+func port() (port string) {
+	port = fmt.Sprintf(":%d", Settings.API.Port)
+	return
+}
+
 // main.
 func main() {
 	Log.Info("Started:\n" + Settings.String())
@@ -124,28 +131,6 @@ func main() {
 		return
 	}
 	//
-	// Auth
-	if settings.Settings.Auth.Required {
-		r := auth.NewReconciler(
-			settings.Settings.Auth.Keycloak.Host,
-			settings.Settings.Auth.Keycloak.Realm,
-			settings.Settings.Auth.Keycloak.ClientID,
-			settings.Settings.Auth.Keycloak.ClientSecret,
-			settings.Settings.Auth.Keycloak.Admin.User,
-			settings.Settings.Auth.Keycloak.Admin.Pass,
-			settings.Settings.Auth.Keycloak.Admin.Realm,
-		)
-		err = r.Reconcile()
-		if err != nil {
-			return
-		}
-		auth.Hub = &auth.Builtin{}
-		auth.Remote = auth.NewKeycloak(
-			settings.Settings.Auth.Keycloak.Host,
-			settings.Settings.Auth.Keycloak.Realm,
-		)
-	}
-	//
 	// Task
 	taskManager := task.New(db, client)
 	taskManager.Run(context.Background())
@@ -183,6 +168,11 @@ func main() {
 		}
 		metricsManager.Run(context.Background())
 	}
+	// Auth
+	auth.IdP, err = auth.New(db)
+	if err != nil {
+		return
+	}
 	// Web
 	router := gin.Default()
 	router.Use(
@@ -199,5 +189,13 @@ func main() {
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
-	err = router.Run()
+	//
+	// Auth
+	domain := auth.NewDomain(db)
+	err = domain.Seed()
+	if err != nil {
+		return
+	}
+	//
+	err = router.Run(port())
 }

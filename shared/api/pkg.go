@@ -127,9 +127,13 @@ const (
 
 // Routes - Auth
 const (
-	AuthRoute        = "/auth"
-	AuthLoginRoute   = AuthRoute + "/login"
-	AuthRefreshRoute = AuthRoute + "/refresh"
+	AuthRoute           = "/auth"
+	AuthGrantsRoute     = AuthRoute + "/grants"
+	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
+	AuthTokensRoute     = AuthRoute + "/tokens"
+	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
+	AuthDevAuthRoute    = AuthRoute + "/device"
+	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
 )
 
 // Routes - Batch
@@ -185,10 +189,37 @@ const (
 
 // Routes - Identities
 const (
-	IdentitiesRoute = "/identities"
-	IdentityRoute   = IdentitiesRoute + "/:" + ID
-
+	IdentitiesRoute    = "/identities"
+	IdentityRoute      = IdentitiesRoute + "/:" + ID
 	AppIdentitiesRoute = ApplicationRoute + "/identities"
+)
+
+// Routes - OIDC
+const (
+	OIDCRoutes       = "/oidc"
+	UsersRoute       = "/users"
+	UserRoute        = UsersRoute + "/:" + ID
+	RolesRoute       = "/roles"
+	RoleRoute        = RolesRoute + "/:" + ID
+	PermissionsRoute = "/permissions"
+	PermissionRoute  = PermissionsRoute + "/:" + ID
+	IdpClientsRoute  = AuthRoute + "/clients"
+	IdpClientRoute   = IdpClientsRoute + "/:" + ID
+	// OIDC flow paths (relative to OIDCRoutes)
+	LoginRoute       = "/login"
+	IdpLoginRoute    = "/idp/login"
+	IdpCbRoute       = "/idp/callback"
+	DeviceRoute      = "/device"
+	DeviceLoginRoute = "/device/login"
+	DeviceCbRoute    = "/device/callback"
+	AuthorizeCbRoute = "/authorize/callback"
+)
+
+// Routes - External IdP
+const (
+	IdpRoute           = OIDCRoutes + "/idp"
+	IdpIdentitiesRoute = AuthRoute + "/identities"
+	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
 )
 
 // Routes - Imports
