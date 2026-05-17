@@ -184,6 +184,30 @@ The authentication system uses **Subject** as the central abstraction representi
 
 **Key principle**: A Subject is **mutually exclusive** — it references either a User OR an IdpIdentity, never both.
 
+### Terminology: Login, Name, and ID
+
+The authentication system uses three distinct identifiers for users and identities:
+
+| Field | Type | Purpose | Example | Notes |
+|-------|------|---------|---------|-------|
+| **ID** | uint | Database primary key | `1`, `42` | Auto-generated, internal use only |
+| **Login** | string | Login identifier | `jsmith` | **Unique**, used for authentication, like a "username" or "userid" |
+| **Name** | string | Display name | `John Smith` | **Optional**, human-friendly, can be non-unique |
+
+**Why "Login" instead of "Username" or "Userid"?**
+
+The term "Login" was chosen to avoid collision and confusion:
+- **"ID" / "UserId"** already refers to the numeric database primary key (`User.ID`)
+- **"Name" / "UserName"** refers to the display name (`User.Name`)
+- **"Login"** clearly indicates the identifier used for authentication (like `jsmith`)
+
+**Examples:**
+- Local user: `Login = "admin"`, `Name = "Administrator"`, `ID = 1`
+- LDAP user: `Login = "jsmith"` (from LDAP uid/sAMAccountName), `Name = "John Smith"` (from LDAP cn)
+- External IdP: `Login = "jsmith"` (from preferred_username), `Name = "John Smith"` (from name claim)
+
+The `Login` field follows the **GitHub API pattern**, which uses `"login"` for the unique identifier and `"name"` for the display name.
+
 ```mermaid
 graph TB
     subgraph "Authentication Sources"
@@ -282,9 +306,9 @@ The IdpIdentity table stores external authentication mappings for **both** LDAP 
 | **Kind** | String | Discriminator | `"ldap"` | `"openid"` |
 | **Issuer** | String | Authentication source | LDAP server URL | OIDC issuer URL |
 | **Subject** | String (unique) | Opaque identifier | `secret.Hash(login)` | IdP subject claim |
-| **Login** | String | Login identifier | LDAP login | IdP preferred_username |
-| **Name** | String | Display name (optional) | From LDAP (optional) | From IdP claims (optional) |
-| **Email** | String | Email address | From LDAP | From IdP claims |
+| **Login** | String | Login identifier (username like `jsmith`) | LDAP uid/sAMAccountName | IdP preferred_username |
+| **Name** | String | Display name (optional, like `John Smith`) | From LDAP cn (optional) | From IdP name claim (optional) |
+| **Email** | String | Email address | From LDAP mail attribute | From IdP email claim |
 | **RefreshToken** | String (encrypted) | Refresh credentials | User password | OAuth refresh token |
 | **Expiration** | Timestamp | When identity expires | Based on config | From token expiry |
 | **Scopes** | String | Permission scopes | Mapped from LDAP groups | Extracted from access token |
@@ -747,7 +771,8 @@ External IdP claims are mapped to hub identity:
 | IdP Claim | IdpIdentity Field | Notes |
 |-----------|-------------------|-------|
 | **sub** | Subject | Unique identifier from IdP |
-| **preferred_username** | Login | Login identifier |
+| **preferred_username** | Login | Login identifier (username like `jsmith` used for authentication) |
+| **name** | Name | Display name (optional, like `John Smith`) |
 | **email** | Email | Email address |
 | **scope** (access token) | Scopes | Permission scopes extracted from access token |
 
@@ -785,7 +810,7 @@ sequenceDiagram
     LDAP-->>Hub: OK
     
     Hub->>LDAP: Search for user DN
-    LDAP-->>Hub: DN=cn=alice,ou=people,dc=example,dc=com
+    LDAP-->>Hub: DN=cn=jsmith,ou=people,dc=example,dc=com
     
     Hub->>LDAP: Bind as user (authenticate)
     LDAP-->>Hub: OK - password valid
@@ -860,8 +885,8 @@ LDAP users are identified by their login identifier (username), which is hashed 
 
 **Example:**
 ```
-Login from LDAP: alice
-Subject hash:    HMAC-SHA256(alice) → dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=
+Login from LDAP: jsmith
+Subject hash:    HMAC-SHA256(jsmith) → dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=
 ```
 
 **Why hash the login?**
