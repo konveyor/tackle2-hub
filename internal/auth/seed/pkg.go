@@ -13,7 +13,7 @@ type Role struct {
 // User used to read users.yaml.
 type User struct {
 	ID       uint     `yaml:"id"`
-	Userid   string   `yaml:"userid"`
+	Login    string   `yaml:"login"`
 	Password string   `yaml:"password"`
 	Roles    []string `yaml:"roles"`
 }

@@ -35,7 +35,7 @@ func (r *Tx) UserSaved(m *User) {
 		r.changes, func() {
 			r.cache.userById[m.ID] = m
 			r.cache.userBySubject[m.Subject] = m
-			r.cache.userByUserid[m.Userid] = m
+			r.cache.userByLogin[m.Login] = m
 		})
 }
 
@@ -46,7 +46,7 @@ func (r *Tx) UserDeleted(id uint) {
 			m, found := r.cache.userById[id]
 			if found {
 				delete(r.cache.userBySubject, m.Subject)
-				delete(r.cache.userByUserid, m.Userid)
+				delete(r.cache.userByLogin, m.Login)
 				delete(r.cache.userById, id)
 			}
 		})
@@ -79,7 +79,7 @@ func (r *Tx) IdentitySaved(m *Identity) {
 		r.changes, func() {
 			r.cache.identById[m.ID] = m
 			r.cache.identBySubject[m.Subject] = m
-			r.cache.identByUserid[m.Userid] = m
+			r.cache.identByLogin[m.Login] = m
 		})
 }
 
@@ -89,7 +89,7 @@ func (r *Tx) IdentityDeleted(id uint) {
 		r.changes, func() {
 			m, found := r.cache.identById[id]
 			if found {
-				delete(r.cache.identByUserid, m.Userid)
+				delete(r.cache.identByLogin, m.Login)
 				delete(r.cache.identBySubject, m.Subject)
 				delete(r.cache.identById, id)
 			}

@@ -46,14 +46,14 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	}
 }
 
-// UserName returns the user (login) name (Eg: jsmith).
-func (r *Subject) UserName() (userid string) {
+// Login returns the user (login) name (Eg: jsmith).
+func (r *Subject) Login() (login string) {
 	if r.IsUser() {
-		userid = r.User.Userid
+		login = r.User.Login
 		return
 	}
 	if r.IsIdentity() {
-		userid = r.Identity.Userid
+		login = r.Identity.Login
 		return
 	}
 	return

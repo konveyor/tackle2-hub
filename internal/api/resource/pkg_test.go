@@ -3382,7 +3382,7 @@ func TestUser_With(t *testing.T) {
 			ID:         1,
 			CreateUser: "admin",
 		},
-		Userid:   "john.doe",
+		Login:    "john.doe",
 		Subject:  "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
@@ -3397,7 +3397,7 @@ func TestUser_With(t *testing.T) {
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Subject).To(gomega.Equal(m.Subject))
-	g.Expect(r.Userid).To(gomega.Equal("john.doe"))
+	g.Expect(r.Login).To(gomega.Equal("john.doe"))
 	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(r.Roles)).To(gomega.Equal(2))
@@ -3413,7 +3413,7 @@ func TestUser_Model(t *testing.T) {
 
 	r := &User{
 		Resource: Resource{ID: 1},
-		Userid:   "john.doe",
+		Login:    "john.doe",
 		Subject:  "1234",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
@@ -3427,7 +3427,7 @@ func TestUser_Model(t *testing.T) {
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Subject).To(gomega.Equal(r.Subject))
-	g.Expect(m.Userid).To(gomega.Equal("john.doe"))
+	g.Expect(m.Login).To(gomega.Equal("john.doe"))
 	g.Expect(m.Password).To(gomega.Equal("encrypted-password"))
 	g.Expect(m.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(m.Roles)).To(gomega.Equal(2))
@@ -3441,7 +3441,7 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 
 	r := &User{
 		Resource: Resource{ID: 1},
-		Userid:   "john.doe",
+		Login:    "john.doe",
 		Password: "encrypted-password",
 		Email:    "john.doe@example.com",
 		Roles:    []Ref{},
@@ -3450,7 +3450,7 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
-	g.Expect(m.Userid).To(gomega.Equal("john.doe"))
+	g.Expect(m.Login).To(gomega.Equal("john.doe"))
 	g.Expect(len(m.Roles)).To(gomega.Equal(0))
 }
 
@@ -3645,8 +3645,8 @@ func TestToken_With(t *testing.T) {
 		Revoked:    revoked,
 		UserID:     &userID,
 		User: &model.User{
-			Model:  model.Model{ID: 5},
-			Userid: "testuser",
+			Model: model.Model{ID: 5},
+			Login: "testuser",
 		},
 	}
 

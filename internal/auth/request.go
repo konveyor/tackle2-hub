@@ -15,7 +15,7 @@ type Request struct {
 	DB       *gorm.DB
 	CTX      *gin.Context
 	Token    string
-	Userid   string
+	Login    string
 	Password string
 	Scope    string
 	Method   string
@@ -83,7 +83,7 @@ func (r *Request) With(header string) {
 		if len(part) != 2 {
 			return
 		}
-		r.Userid = part[0]
+		r.Login = part[0]
 		r.Password = part[1]
 	}
 	return

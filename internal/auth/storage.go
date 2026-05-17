@@ -529,9 +529,9 @@ func (r *Storage) SetUserinfoFromScopes(
 	userinfo.Subject = userId
 	// Set PreferredUsername from the appropriate source
 	if s.User != nil {
-		userinfo.PreferredUsername = s.User.Userid
+		userinfo.PreferredUsername = s.User.Login
 	} else if s.Identity != nil {
-		userinfo.PreferredUsername = s.Identity.Userid
+		userinfo.PreferredUsername = s.Identity.Login
 	} else {
 		userinfo.PreferredUsername = s.Key
 	}
@@ -568,9 +568,9 @@ func (r *Storage) SetUserinfoFromToken(
 	userinfo.Subject = subject
 	// Set PreferredUsername from the appropriate source
 	if s.User != nil {
-		userinfo.PreferredUsername = s.User.Userid
+		userinfo.PreferredUsername = s.User.Login
 	} else if s.Identity != nil {
-		userinfo.PreferredUsername = s.Identity.Userid
+		userinfo.PreferredUsername = s.Identity.Login
 	} else {
 		userinfo.PreferredUsername = s.Key
 	}
@@ -655,7 +655,7 @@ type Login struct {
 	request   *http.Request
 	authReqId string
 
-	userid   string
+	login    string
 	password string
 	subject  *Subject
 	authReq  *AuthRequest
@@ -668,7 +668,7 @@ func (r *Login) complete() (err error) {
 		return
 	}
 
-	if r.userid == "" || r.password == "" {
+	if r.login == "" || r.password == "" {
 		err = r.renderPage()
 		return
 	}
@@ -694,7 +694,7 @@ func (r *Login) parseCredentials() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	r.userid = r.request.PostFormValue("userid")
+	r.login = r.request.PostFormValue("login")
 	r.password = r.request.PostFormValue("password")
 	return
 }
@@ -716,21 +716,21 @@ func (r *Login) authenticate() (err error) {
 	_ = r.renderPage()
 	err = &NotAuthenticated{
 		Reason: "user not found",
-		Token:  r.userid,
+		Token:  r.login,
 	}
 	return
 }
 
 // authUser authenticates a user.
 func (r *Login) authUser() (err error) {
-	user, err := r.storage.cache.FindUserByUserid(r.userid)
+	user, err := r.storage.cache.FindUserByLogin(r.login)
 	if err == nil {
 		subject := &Subject{}
 		subject.WithUser(user, r.storage.cache)
 		if !secret.MatchPassword(r.password, user.Password) {
 			err = &NotAuthenticated{
 				Reason: "invalid password",
-				Token:  r.userid,
+				Token:  r.login,
 			}
 			return
 		}
@@ -743,7 +743,7 @@ func (r *Login) authUser() (err error) {
 // authUser authenticates an LDAP user.
 func (r *Login) authLdapUser() (err error) {
 	lifespan := Settings.Auth.Token.Lifespan
-	r.subject, err = r.storage.dsHandler.Authenticate(r.userid, r.password, lifespan)
+	r.subject, err = r.storage.dsHandler.Authenticate(r.login, r.password, lifespan)
 	return
 }
 
@@ -918,8 +918,8 @@ func (r *Login) renderPage() (err error) {
         <h1>Tackle Login</h1>
         <p class="subtitle">Sign in to continue</p>
         <form action="` + Settings.Auth.AppendIssuer(api.LoginRoute) + `?authRequestID=` + r.authReqId + `" method="post">
-            <label for="userid">User ID</label>
-            <input type="text" id="userid" name="userid" required autofocus>
+            <label for="login">Login</label>
+            <input type="text" id="login" name="login" required autofocus>
 
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
@@ -1033,7 +1033,7 @@ func (r *Storage) refreshLdapIdentity(identity *Identity) (err error) {
 		return
 	}
 	password := identity.RefreshToken
-	subject, err := r.dsHandler.Authenticate(identity.Userid, password, Settings.Auth.Token.Lifespan)
+	subject, err := r.dsHandler.Authenticate(identity.Login, password, Settings.Auth.Token.Lifespan)
 	if err != nil {
 		return
 	}

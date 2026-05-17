@@ -36,11 +36,11 @@ type Cache struct {
 	roleByName     map[string]*Role
 	userById       map[uint]*User
 	userBySubject  map[string]*User
-	userByUserid   map[string]*User
+	userByLogin    map[string]*User
 	taskById       map[uint]*Task
 	identById      map[uint]*Identity
 	identBySubject map[string]*Identity
-	identByUserid  map[string]*Identity
+	identByLogin   map[string]*Identity
 	tokenById      map[uint]*Token
 	tokenByDigest  map[string]*Token
 	refreshed      time.Time
@@ -172,19 +172,19 @@ func (r *Cache) FindSubject(subject string) (m *Subject, err error) {
 	return
 }
 
-// FindIdentityByUserid finds and returns identities by username.
-func (r *Cache) FindIdentityByUserid(userid string) (m *Identity, err error) {
+// FindIdentityByLogin finds and returns identities by login.
+func (r *Cache) FindIdentityByLogin(login string) (m *Identity, err error) {
 	err = r.ensureFresh()
 	if err != nil {
 		return
 	}
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
-	m, found := r.identByUserid[userid]
+	m, found := r.identByLogin[login]
 	if !found {
 		err = &NotFound{
 			Resource: "identity",
-			Id:       userid,
+			Id:       login,
 		}
 	}
 	return
@@ -226,19 +226,19 @@ func (r *Cache) FindRoleByName(name string) (m *Role, err error) {
 	return
 }
 
-// FindUserByUserid returns a user by userid.
-func (r *Cache) FindUserByUserid(userid string) (m *User, err error) {
+// FindUserByLogin returns a user by login.
+func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	err = r.ensureFresh()
 	if err != nil {
 		return
 	}
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
-	m, found := r.userByUserid[userid]
+	m, found := r.userByLogin[login]
 	if !found {
 		err = &NotFound{
 			Resource: "user",
-			Id:       userid,
+			Id:       login,
 		}
 	}
 	return
@@ -311,12 +311,12 @@ func (r *Cache) reset() {
 	r.roleByName = make(map[string]*Role)
 	r.userById = make(map[uint]*User)
 	r.userBySubject = make(map[string]*User)
-	r.userByUserid = make(map[string]*User)
+	r.userByLogin = make(map[string]*User)
 	r.taskById = make(map[uint]*Task)
 	r.tokenById = make(map[uint]*Token)
 	r.identById = make(map[uint]*Identity)
 	r.identBySubject = make(map[string]*Identity)
-	r.identByUserid = make(map[string]*Identity)
+	r.identByLogin = make(map[string]*Identity)
 	r.tokenByDigest = make(map[string]*Token)
 	r.refreshed = time.Time{}
 }
@@ -394,7 +394,7 @@ func (r *Cache) getUsers() (err error) {
 	for _, m := range list {
 		r.userById[m.ID] = m
 		r.userBySubject[m.Subject] = m
-		r.userByUserid[m.Userid] = m
+		r.userByLogin[m.Login] = m
 	}
 	return
 }
@@ -432,7 +432,7 @@ func (r *Cache) getIdentities() (err error) {
 		if err == nil {
 			r.identById[m.ID] = m
 			r.identBySubject[m.Subject] = m
-			r.identByUserid[m.Userid] = m
+			r.identByLogin[m.Login] = m
 		} else {
 			return
 		}

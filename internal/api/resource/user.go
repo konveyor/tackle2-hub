@@ -12,7 +12,8 @@ type User api.User
 func (r *User) With(m *model.User) {
 	baseWith(&r.Resource, &m.Model)
 	r.Subject = m.Subject
-	r.Userid = m.Userid
+	r.Login = m.Login
+	r.Name = m.Name
 	r.Password = m.Password
 	r.Email = m.Email
 	r.Roles = []Ref{}
@@ -25,7 +26,8 @@ func (r *User) With(m *model.User) {
 func (r *User) Model() (m *model.User) {
 	m = &model.User{
 		Subject:  r.Subject,
-		Userid:   r.Userid,
+		Login:    r.Login,
+		Name:     r.Name,
 		Password: r.Password,
 		Email:    r.Email,
 	}

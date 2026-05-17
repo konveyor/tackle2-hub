@@ -45,7 +45,7 @@ func TestUser(t *testing.T) {
 
 	// Define the user to create with password and roles
 	user := &api.User{
-		Userid:   "testuser",
+		Login:   "testuser",
 		Password: password,
 		Email:    "testuser@example.com",
 		Roles: []api.Ref{
@@ -82,7 +82,7 @@ func TestUser(t *testing.T) {
 	g.Expect(retrieved.Password).NotTo(Equal(password)) // Should not equal plaintext
 
 	// Verify basic fields
-	g.Expect(retrieved.Userid).To(Equal(user.Userid))
+	g.Expect(retrieved.Login).To(Equal(user.Login))
 	g.Expect(retrieved.Subject).ToNot(BeZero()) // assigned.
 	g.Expect(retrieved.Email).To(Equal(user.Email))
 
@@ -130,7 +130,7 @@ func TestUserPasswordTruncation(t *testing.T) {
 
 	// CREATE: User with 72-byte password (should succeed)
 	user72 := &api.User{
-		Userid:   "user72",
+		Login:   "user72",
 		Password: password72,
 		Email:    "user72@example.com",
 	}
@@ -144,7 +144,7 @@ func TestUserPasswordTruncation(t *testing.T) {
 
 	// CREATE: User with 80-byte password (should fail validation)
 	user80 := &api.User{
-		Userid:   "user80",
+		Login:   "user80",
 		Password: password80,
 		Email:    "user80@example.com",
 	}

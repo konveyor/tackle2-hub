@@ -14,7 +14,8 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	r.Kind = m.Kind
 	r.Issuer = m.Issuer
 	r.Subject = m.Subject
-	r.Userid = m.Userid
+	r.Login = m.Login
+	r.Name = m.Name
 	r.Email = m.Email
 	r.Expiration = m.Expiration
 	r.LastAuthenticated = m.LastAuthenticated
@@ -28,7 +29,8 @@ func (r *IdpIdentity) Model() (m *model.IdpIdentity) {
 		Kind:              r.Kind,
 		Issuer:            r.Issuer,
 		Subject:           r.Subject,
-		Userid:            r.Userid,
+		Login:             r.Login,
+		Name:              r.Name,
 		Email:             r.Email,
 		Expiration:        r.Expiration,
 		LastAuthenticated: r.LastAuthenticated,

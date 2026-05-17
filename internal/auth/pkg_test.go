@@ -25,7 +25,7 @@ func TestUserGrant(t *testing.T) {
 	// Create test user
 	user := &model.User{
 		Subject:  "test-uuid-123",
-		Userid:   "testuser",
+		Login:    "testuser",
 		Password: secret.HashPassword("testpassword"),
 		Email:    "test@example.com",
 	}
@@ -213,6 +213,16 @@ func TestUserExtraction(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
+	// Create a user in the database
+	user := &model.User{
+		Subject:  "test-user-456",
+		Login:    "testuser456",
+		Password: secret.HashPassword("password"),
+		Email:    "testuser456@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
@@ -222,15 +232,15 @@ func TestUserExtraction(t *testing.T) {
 	claims[ClaimSub] = "test-user-456"
 	claims[ClaimScope] = "openid profile"
 
-	user := provider.User(token)
-	g.Expect(user).To(Equal("test-user-456"))
+	login := provider.User(token)
+	g.Expect(login).To(Equal("testuser456"))
 
 	// Test with missing sub claim
 	tokenNoSub := jwt.New(jwt.SigningMethodHS256)
 	tokenNoSub.Claims.(jwt.MapClaims)[ClaimScope] = "openid"
 
-	user = provider.User(tokenNoSub)
-	g.Expect(user).To(BeEmpty())
+	login = provider.User(tokenNoSub)
+	g.Expect(login).To(BeEmpty())
 }
 
 // TestScopesExtraction tests extracting scopes from token.
@@ -419,7 +429,7 @@ func TestRequestPermit(t *testing.T) {
 	// Create user with specific permissions
 	user := &model.User{
 		Subject:  "user-123",
-		Userid:   "testuser",
+		Login:    "testuser",
 		Password: secret.HashPassword("password"),
 		Email:    "test@example.com",
 	}
@@ -466,7 +476,7 @@ func TestRequestPermit(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(result.Authenticated).To(BeTrue())
 	g.Expect(result.Authorized).To(BeTrue())
-	g.Expect(result.User).To(Equal("user-123"))
+	g.Expect(result.User).To(Equal("testuser"))
 
 	// Test authenticated but not authorized (wrong method)
 	request = &Request{
@@ -517,13 +527,13 @@ func TestNoAuthProvider(t *testing.T) {
 	g.Expect(scope.Match("anything", "POST")).To(BeTrue())
 
 	// User returns fixed admin user
-	userid := provider.User(token)
-	g.Expect(userid).To(Equal("admin.noauth"))
+	login := provider.User(token)
+	g.Expect(login).To(Equal("admin.noauth"))
 
 	// Create test user.
 	user := &model.User{
 		Subject:  "noauth-test-subject",
-		Userid:   "testuser",
+		Login:    "testuser",
 		Password: secret.HashPassword("password"),
 		Email:    "noauth@example.com",
 	}
@@ -599,7 +609,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	// Create test user
 	user := &model.User{
 		Subject:  "cache-delete-user",
-		Userid:   "cachedeleteuser",
+		Login:    "cachedeleteuser",
 		Password: secret.HashPassword("password"),
 		Email:    "cachedelete@example.com",
 	}
@@ -646,7 +656,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	// Create test user with permissions
 	user := &model.User{
 		Subject:  "builtin-delete-user",
-		Userid:   "builtindeleteuser",
+		Login:    "builtindeleteuser",
 		Password: secret.HashPassword("password"),
 		Email:    "builtindelete@example.com",
 	}
@@ -1124,7 +1134,7 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	// Create user BEFORE provider initialization
 	user := &model.User{
 		Subject:  "cache-notification-user",
-		Userid:   "cachenotifuser",
+		Login:    "cachenotifuser",
 		Password: secret.HashPassword("password"),
 		Email:    "cachenotif@example.com",
 	}
@@ -1174,7 +1184,7 @@ func TestCacheTimeBasedRefresh(t *testing.T) {
 
 	user := &model.User{
 		Subject:  "time-refresh-user",
-		Userid:   "timerefreshuser",
+		Login:    "timerefreshuser",
 		Password: secret.HashPassword("password"),
 		Email:    "timerefresh@example.com",
 	}
@@ -1199,7 +1209,7 @@ func TestCacheTimeBasedRefresh(t *testing.T) {
 	// Create new token while cache is stale
 	newUser := &model.User{
 		Subject:  "new-time-user",
-		Userid:   "newtimeuser",
+		Login:    "newtimeuser",
 		Password: secret.HashPassword("password"),
 		Email:    "newtime@example.com",
 	}
@@ -1240,7 +1250,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 		RefreshToken: "refresh-token",
 		Expiration:   time.Now().Add(24 * time.Hour),
 		Scopes:       "openid profile email",
-		Userid:       "idpuser",
+		Login:        "idpuser",
 		Email:        "idpuser@example.com",
 	}
 	err = secret.Encrypt(identity)
@@ -1282,7 +1292,7 @@ func TestScopeCalculation(t *testing.T) {
 	// Test 1: User with no roles
 	userNoRoles := &model.User{
 		Subject:  "user-no-roles",
-		Userid:   "usernoroles",
+		Login:    "usernoroles",
 		Password: secret.HashPassword("password"),
 		Email:    "noroles@example.com",
 	}
@@ -1313,7 +1323,7 @@ func TestScopeCalculation(t *testing.T) {
 
 	userEmptyRole := &model.User{
 		Subject:  "user-empty-role",
-		Userid:   "useremptyrole",
+		Login:    "useremptyrole",
 		Password: secret.HashPassword("password"),
 		Email:    "emptyrole@example.com",
 	}
@@ -1367,7 +1377,7 @@ func TestScopeCalculation(t *testing.T) {
 
 	userMultiRole := &model.User{
 		Subject:  "user-multi-role",
-		Userid:   "usermultirole",
+		Login:    "usermultirole",
 		Password: secret.HashPassword("password"),
 		Email:    "multirole@example.com",
 	}
@@ -1516,7 +1526,7 @@ func TestCacheFindSubject(t *testing.T) {
 
 	user := &model.User{
 		Subject:  "user-subject-123",
-		Userid:   "testuser",
+		Login:    "testuser",
 		Password: secret.HashPassword("password"),
 		Email:    "user@example.com",
 	}
@@ -1533,7 +1543,7 @@ func TestCacheFindSubject(t *testing.T) {
 		RefreshToken: "refresh-token",
 		Expiration:   time.Now().Add(24 * time.Hour),
 		Scopes:       "openid profile email",
-		Userid:       "idpuser",
+		Login:        "idpuser",
 		Email:        "idp@example.com",
 	}
 	err = secret.Encrypt(identity)
@@ -1551,7 +1561,7 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsUser()).To(BeTrue())
 	g.Expect(subject.IsIdentity()).To(BeFalse())
 	g.Expect(subject.Key).To(Equal("user-subject-123"))
-	g.Expect(subject.User.Userid).To(Equal("testuser"))
+	g.Expect(subject.User.Login).To(Equal("testuser"))
 	g.Expect(subject.Email).To(Equal("user@example.com"))
 	g.Expect(subject.Scopes).To(ContainElement("applications:GET"))
 
@@ -1562,7 +1572,7 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsUser()).To(BeFalse())
 	g.Expect(subject.IsIdentity()).To(BeTrue())
 	g.Expect(subject.Key).To(Equal("idp-subject-456"))
-	g.Expect(subject.Identity.Userid).To(Equal("idpuser"))
+	g.Expect(subject.Identity.Login).To(Equal("idpuser"))
 	g.Expect(subject.Email).To(Equal("idp@example.com"))
 	g.Expect(subject.Scopes).To(ContainElement("openid"))
 	g.Expect(subject.Scopes).To(ContainElement("profile"))
@@ -1605,7 +1615,7 @@ func TestCacheFindSubjectMiss(t *testing.T) {
 	// Create user after cache is loaded (NOT notified to cache)
 	user := &model.User{
 		Subject:  "new-user-subject",
-		Userid:   "newuser",
+		Login:    "newuser",
 		Password: secret.HashPassword("password"),
 		Email:    "newuser@example.com",
 	}
@@ -1643,7 +1653,7 @@ func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
 
 	user := &model.User{
 		Subject:  "time-subject-user",
-		Userid:   "timesubjectuser",
+		Login:    "timesubjectuser",
 		Password: secret.HashPassword("password"),
 		Email:    "timesubject@example.com",
 	}
@@ -1657,7 +1667,7 @@ func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
 	subject, err := provider.cache.FindSubject(user.Subject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.Key).To(Equal("time-subject-user"))
-	g.Expect(subject.User.Userid).To(Equal("timesubjectuser"))
+	g.Expect(subject.User.Login).To(Equal("timesubjectuser"))
 
 	// Wait for cache to expire
 	time.Sleep(150 * time.Millisecond)
@@ -1665,7 +1675,7 @@ func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
 	// Create new user while cache is stale
 	newUser := &model.User{
 		Subject:  "new-time-subject",
-		Userid:   "newtimesubject",
+		Login:    "newtimesubject",
 		Password: secret.HashPassword("password"),
 		Email:    "newtimesubject@example.com",
 	}
@@ -1676,7 +1686,7 @@ func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
 	subject, err = provider.cache.FindSubject(newUser.Subject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.Key).To(Equal("new-time-subject"))
-	g.Expect(subject.User.Userid).To(Equal("newtimesubject"))
+	g.Expect(subject.User.Login).To(Equal("newtimesubject"))
 }
 
 // TestCacheUserSavedBySubject tests that UserSaved updates bySubject map.
@@ -1689,7 +1699,7 @@ func TestStorageFindSubject(t *testing.T) {
 	// Create test data
 	user := &model.User{
 		Subject:  "storage-user-subject",
-		Userid:   "storageuser",
+		Login:    "storageuser",
 		Password: secret.HashPassword("password"),
 		Email:    "storage@example.com",
 	}
@@ -1699,7 +1709,7 @@ func TestStorageFindSubject(t *testing.T) {
 	identity := &Identity{
 		Issuer:  "https://storage.idp.com",
 		Subject: "storage-identity-subject",
-		Userid:  "storageidentity",
+		Login:   "storageidentity",
 		Email:   "storageidentity@example.com",
 		Scopes:  "openid",
 	}
@@ -1720,7 +1730,7 @@ func TestStorageFindSubject(t *testing.T) {
 	g.Expect(subject).NotTo(BeNil())
 	g.Expect(subject.IsUser()).To(BeTrue())
 	g.Expect(subject.Key).To(Equal("storage-user-subject"))
-	g.Expect(subject.User.Userid).To(Equal("storageuser"))
+	g.Expect(subject.User.Login).To(Equal("storageuser"))
 
 	// Find identity subject
 	subject, err = storage.findSubject(identity.Subject)
@@ -1728,15 +1738,15 @@ func TestStorageFindSubject(t *testing.T) {
 	g.Expect(subject).NotTo(BeNil())
 	g.Expect(subject.IsIdentity()).To(BeTrue())
 	g.Expect(subject.Key).To(Equal("storage-identity-subject"))
-	g.Expect(subject.Identity.Userid).To(Equal("storageidentity"))
+	g.Expect(subject.Identity.Login).To(Equal("storageidentity"))
 
 	// Find non-existent subject
 	_, err = storage.findSubject("non-existent")
 	g.Expect(err).NotTo(BeNil())
 }
 
-// TestCacheFindUserByUserid tests finding user by userid field.
-func TestCacheFindUserByUserid(t *testing.T) {
+// TestCacheFindUserByLogin tests finding user by userid field.
+func TestCacheFindUserByLogin(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -1745,7 +1755,7 @@ func TestCacheFindUserByUserid(t *testing.T) {
 	// Create test user
 	user := &model.User{
 		Subject:  "userid-test-subject",
-		Userid:   "testuserid",
+		Login:    "testuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "userid@example.com",
 	}
@@ -1756,22 +1766,22 @@ func TestCacheFindUserByUserid(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Find by userid
-	found, err := provider.cache.FindUserByUserid("testuserid")
+	found, err := provider.cache.FindUserByLogin("testuserid")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 	g.Expect(found.Subject).To(Equal("userid-test-subject"))
 	g.Expect(found.Email).To(Equal("userid@example.com"))
 
 	// Find non-existent userid
-	_, err = provider.cache.FindUserByUserid("nonexistent")
+	_, err = provider.cache.FindUserByLogin("nonexistent")
 	g.Expect(err).NotTo(BeNil())
 	var notFound *NotFound
 	g.Expect(errors.As(err, &notFound)).To(BeTrue())
 	g.Expect(notFound.Resource).To(Equal("user"))
 }
 
-// TestCacheFindUserByUseridNotification tests notification-based cache updates.
-func TestCacheFindUserByUseridNotification(t *testing.T) {
+// TestCacheFindUserByLoginNotification tests notification-based cache updates.
+func TestCacheFindUserByLoginNotification(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -1781,20 +1791,20 @@ func TestCacheFindUserByUseridNotification(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Force initial cache load
-	_, _ = provider.cache.FindUserByUserid("force-initial-load")
+	_, _ = provider.cache.FindUserByLogin("force-initial-load")
 
 	// Create user after cache is loaded (NOT notified)
 	user := &model.User{
 		Subject:  "new-userid-subject",
-		Userid:   "newuserid",
+		Login:    "newuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "newuserid@example.com",
 	}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
-	// FindUserByUserid should NOT find it (cache is fresh, no notification)
-	found, err := provider.cache.FindUserByUserid("newuserid")
+	// FindUserByLogin should NOT find it (cache is fresh, no notification)
+	found, err := provider.cache.FindUserByLogin("newuserid")
 	g.Expect(err).NotTo(BeNil()) // NotFound
 	g.Expect(found).To(BeNil())
 
@@ -1802,14 +1812,14 @@ func TestCacheFindUserByUseridNotification(t *testing.T) {
 	provider.cache.UserSaved((*User)(user))
 
 	// Now it should be found immediately
-	found, err = provider.cache.FindUserByUserid("newuserid")
+	found, err = provider.cache.FindUserByLogin("newuserid")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 	g.Expect(found.Subject).To(Equal("new-userid-subject"))
 }
 
-// TestCacheFindUserByUseridTimeRefresh tests time-based refresh for userid lookup.
-func TestCacheFindUserByUseridTimeRefresh(t *testing.T) {
+// TestCacheFindUserByLoginTimeRefresh tests time-based refresh for userid lookup.
+func TestCacheFindUserByLoginTimeRefresh(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -1826,7 +1836,7 @@ func TestCacheFindUserByUseridTimeRefresh(t *testing.T) {
 
 	user := &model.User{
 		Subject:  "time-userid-subject",
-		Userid:   "timeuserid",
+		Login:    "timeuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "timeuserid@example.com",
 	}
@@ -1837,7 +1847,7 @@ func TestCacheFindUserByUseridTimeRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Find successfully (cache is fresh)
-	found, err := provider.cache.FindUserByUserid("timeuserid")
+	found, err := provider.cache.FindUserByLogin("timeuserid")
 	g.Expect(err).To(BeNil())
 	g.Expect(found.Subject).To(Equal("time-userid-subject"))
 
@@ -1847,15 +1857,15 @@ func TestCacheFindUserByUseridTimeRefresh(t *testing.T) {
 	// Create new user while cache is stale
 	newUser := &model.User{
 		Subject:  "new-time-userid-subject",
-		Userid:   "newtimeuserid",
+		Login:    "newtimeuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "newtimeuserid@example.com",
 	}
 	err = db.Create(newUser).Error
 	g.Expect(err).To(BeNil())
 
-	// FindUserByUserid should trigger time-based refresh
-	found, err = provider.cache.FindUserByUserid("newtimeuserid")
+	// FindUserByLogin should trigger time-based refresh
+	found, err = provider.cache.FindUserByLogin("newtimeuserid")
 	g.Expect(err).To(BeNil())
 	g.Expect(found.Subject).To(Equal("new-time-userid-subject"))
 }

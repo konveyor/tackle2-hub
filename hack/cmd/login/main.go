@@ -58,10 +58,10 @@ func main() {
 		"b",
 		"",
 		"Use bearer token (apikey).")
-	userid := flag.String(
-		"userid",
+	login := flag.String(
+		"login",
 		"",
-		"User ID (non-federated OIDC user).")
+		"Login (non-federated OIDC user).")
 	password := flag.String(
 		"password",
 		"",
@@ -91,7 +91,7 @@ func main() {
 	fmt.Printf("  issuerURL: %s\n", *issuerURL)
 	fmt.Printf("  clientId:  %s\n", *clientId)
 	fmt.Printf("  token:     %s\n", *token)
-	fmt.Printf("  userid:    %s\n", *userid)
+	fmt.Printf("  login:     %s\n", *login)
 	fmt.Printf("  password:  %s\n", *password)
 	fmt.Printf("\n")
 
@@ -99,7 +99,7 @@ func main() {
 	richClient := binding.New(*hubURL)
 
 	// OIDC authentication.
-	if *userid == "" && *token == "" {
+	if *login == "" && *token == "" {
 		tr := richClient.Client.Transport()
 		tr.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
@@ -141,8 +141,8 @@ func main() {
 	}
 
 	// Basic auth.
-	if *userid != "" {
-		basic := auth.NewBasic(*userid, *password)
+	if *login != "" {
+		basic := auth.NewBasic(*login, *password)
 		richClient.Client.Use(basic)
 		testClient(richClient)
 	}

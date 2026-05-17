@@ -358,7 +358,7 @@ func (f *FedIdpLogin) buildIdentity() (identity *Identity) {
 		Kind:              IdentityKindOpenid,
 		Issuer:            federated.Idp.Name,
 		Subject:           f.userInfo.Subject,
-		Userid:            f.userInfo.PreferredUsername,
+		Login:             f.userInfo.PreferredUsername,
 		Email:             f.userInfo.Email,
 		RefreshToken:      f.tokens.RefreshToken,
 		Expiration:        expiration,

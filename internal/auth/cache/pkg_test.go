@@ -63,14 +63,14 @@ func TestCacheEntityUpdates(t *testing.T) {
 	user := &User{
 		Model:   model.Model{ID: 200},
 		Subject: "test-user",
-		Userid:  "testuser",
+		Login:   "testuser",
 	}
 	cache.UserSaved(user)
-	_, err = cache.FindUserByUserid("testuser")
+	_, err = cache.FindUserByLogin("testuser")
 	g.Expect(err).To(BeNil())
 
 	cache.UserDeleted(200)
-	_, err = cache.FindUserByUserid("testuser")
+	_, err = cache.FindUserByLogin("testuser")
 	g.Expect(err).NotTo(BeNil())
 
 	// Test TaskSaved/TaskDeleted
@@ -92,14 +92,14 @@ func TestCacheEntityUpdates(t *testing.T) {
 		Model:   model.Model{ID: 400},
 		Issuer:  "https://idp.example.com",
 		Subject: "idp-subject",
-		Userid:  "idp-userid",
+		Login:   "idp-userid",
 	}
 	cache.IdentitySaved(identity)
-	_, err = cache.FindIdentityByUserid("idp-userid")
+	_, err = cache.FindIdentityByLogin("idp-userid")
 	g.Expect(err).To(BeNil())
 
 	cache.IdentityDeleted(400)
-	_, err = cache.FindIdentityByUserid("idp-userid")
+	_, err = cache.FindIdentityByLogin("idp-userid")
 	g.Expect(err).NotTo(BeNil())
 }
 
@@ -162,7 +162,7 @@ func TestCacheTransaction(t *testing.T) {
 	user := &User{
 		Model:   model.Model{ID: 201},
 		Subject: "tx-user",
-		Userid:  "txuser",
+		Login:   "txuser",
 	}
 	tx.UserSaved(user)
 	tx.Commit()
@@ -177,7 +177,7 @@ func TestCacheTransaction(t *testing.T) {
 	user2 := &User{
 		Model:   model.Model{ID: 202},
 		Subject: "tx-user2",
-		Userid:  "txuser2",
+		Login:   "txuser2",
 	}
 	tx.UserSaved(user2)
 	tx.Rollback() // Discard changes
@@ -198,7 +198,7 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 	// Create test data
 	user := &model.User{
 		Subject:  "double-check-user",
-		Userid:   "doublecheckuser",
+		Login:    "doublecheckuser",
 		Password: secret.HashPassword("password"),
 		Email:    "doublecheck@example.com",
 	}
@@ -214,7 +214,7 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 	cache.refreshed = time.Now().Add(-10 * time.Minute)
 	cache.mutex.Unlock()
 
-	// Launch multiple concurrent calls to FindUserByUserid (which calls ensureFresh)
+	// Launch multiple concurrent calls to FindUserByLogin (which calls ensureFresh)
 	var wg sync.WaitGroup
 	errors := make([]error, 10)
 
@@ -222,7 +222,7 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			_, err := cache.FindUserByUserid("doublecheckuser")
+			_, err := cache.FindUserByLogin("doublecheckuser")
 			errors[idx] = err
 		}(i)
 	}
@@ -235,7 +235,7 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 	}
 
 	// Cache should have refreshed and found the user
-	found, err := cache.FindUserByUserid("doublecheckuser")
+	found, err := cache.FindUserByLogin("doublecheckuser")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 }
@@ -331,7 +331,7 @@ func TestCacheUserSavedBySubject(t *testing.T) {
 	user := &User{
 		Model:    model.Model{ID: 999},
 		Subject:  "cached-user-subject",
-		Userid:   "cacheduser",
+		Login:    "cacheduser",
 		Email:    "cached@example.com",
 		Password: secret.HashPassword("password"),
 	}
@@ -347,14 +347,14 @@ func TestCacheUserSavedBySubject(t *testing.T) {
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
-	g.Expect(userById.Userid).To(Equal("cacheduser"))
-	g.Expect(userBySubject.Userid).To(Equal("cacheduser"))
+	g.Expect(userById.Login).To(Equal("cacheduser"))
+	g.Expect(userBySubject.Login).To(Equal("cacheduser"))
 
 	// Verify FindSubject works without DB query
 	subject, err := cache.FindSubject("cached-user-subject")
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.Key).To(Equal("cached-user-subject"))
-	g.Expect(subject.User.Userid).To(Equal("cacheduser"))
+	g.Expect(subject.User.Login).To(Equal("cacheduser"))
 }
 
 // TestCacheIdentitySavedBySubject tests that IdentitySaved updates bySubject map.
@@ -373,7 +373,7 @@ func TestCacheIdentitySavedBySubject(t *testing.T) {
 		Model:   model.Model{ID: 888},
 		Issuer:  "https://test.idp.com",
 		Subject: "cached-identity-subject",
-		Userid:  "cachedidentity",
+		Login:   "cachedidentity",
 		Email:   "cachedidentity@example.com",
 		Scopes:  "openid profile",
 	}
@@ -389,14 +389,14 @@ func TestCacheIdentitySavedBySubject(t *testing.T) {
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
-	g.Expect(identById.Userid).To(Equal("cachedidentity"))
-	g.Expect(identBySubject.Userid).To(Equal("cachedidentity"))
+	g.Expect(identById.Login).To(Equal("cachedidentity"))
+	g.Expect(identBySubject.Login).To(Equal("cachedidentity"))
 
 	// Verify FindSubject works without DB query
 	subject, err := cache.FindSubject("cached-identity-subject")
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.Key).To(Equal("cached-identity-subject"))
-	g.Expect(subject.Identity.Userid).To(Equal("cachedidentity"))
+	g.Expect(subject.Identity.Login).To(Equal("cachedidentity"))
 }
 
 // TestCacheUserDeletedBySubject tests that UserDeleted removes from bySubject map.
@@ -413,7 +413,7 @@ func TestCacheUserDeletedBySubject(t *testing.T) {
 	user := &User{
 		Model:   model.Model{ID: 777},
 		Subject: "delete-user-subject",
-		Userid:  "deleteuser",
+		Login:   "deleteuser",
 	}
 
 	cache.UserSaved(user)
@@ -456,7 +456,7 @@ func TestCacheIdentityDeletedBySubject(t *testing.T) {
 	identity := &Identity{
 		Model:   model.Model{ID: 666},
 		Subject: "delete-identity-subject",
-		Userid:  "deleteidentity",
+		Login:   "deleteidentity",
 	}
 
 	cache.IdentitySaved(identity)
@@ -500,7 +500,7 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	user := &User{
 		Model:    model.Model{ID: 555},
 		Subject:  "map-test-subject",
-		Userid:   "maptestuser",
+		Login:    "maptestuser",
 		Email:    "maptest@example.com",
 		Password: secret.HashPassword("password"),
 	}
@@ -512,15 +512,15 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	cache.mutex.RLock()
 	userById, foundById := cache.userById[555]
 	userBySubject, foundBySubject := cache.userBySubject["map-test-subject"]
-	userByUserid, foundByUserid := cache.userByUserid["maptestuser"]
+	userByLogin, foundByLogin := cache.userByLogin["maptestuser"]
 	cache.mutex.RUnlock()
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
-	g.Expect(foundByUserid).To(BeTrue())
-	g.Expect(userById.Userid).To(Equal("maptestuser"))
-	g.Expect(userBySubject.Userid).To(Equal("maptestuser"))
-	g.Expect(userByUserid.Subject).To(Equal("map-test-subject"))
+	g.Expect(foundByLogin).To(BeTrue())
+	g.Expect(userById.Login).To(Equal("maptestuser"))
+	g.Expect(userBySubject.Login).To(Equal("maptestuser"))
+	g.Expect(userByLogin.Subject).To(Equal("map-test-subject"))
 
 	// Delete user
 	cache.UserDeleted(555)
@@ -529,12 +529,12 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	cache.mutex.RLock()
 	_, foundById = cache.userById[555]
 	_, foundBySubject = cache.userBySubject["map-test-subject"]
-	_, foundByUserid = cache.userByUserid["maptestuser"]
+	_, foundByLogin = cache.userByLogin["maptestuser"]
 	cache.mutex.RUnlock()
 
 	g.Expect(foundById).To(BeFalse())
 	g.Expect(foundBySubject).To(BeFalse())
-	g.Expect(foundByUserid).To(BeFalse())
+	g.Expect(foundByLogin).To(BeFalse())
 }
 
 // TestCacheConcurrency tests concurrent access to the cache.
@@ -549,7 +549,7 @@ func TestCacheConcurrency(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		users[i] = &model.User{
 			Subject:  fmt.Sprintf("concurrent-user-%d", i),
-			Userid:   fmt.Sprintf("concurrentuser%d", i),
+			Login:    fmt.Sprintf("concurrentuser%d", i),
 			Password: secret.HashPassword("password"),
 			Email:    fmt.Sprintf("concurrent%d@example.com", i),
 		}
@@ -561,14 +561,14 @@ func TestCacheConcurrency(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Launch concurrent FindUserByUserid operations
+	// Launch concurrent FindUserByLogin operations
 	var wg sync.WaitGroup
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
 			userIdx := idx % 10
-			_, err := cache.FindUserByUserid(fmt.Sprintf("concurrentuser%d", userIdx))
+			_, err := cache.FindUserByLogin(fmt.Sprintf("concurrentuser%d", userIdx))
 			g.Expect(err).To(BeNil())
 		}(i)
 	}
@@ -605,7 +605,7 @@ func TestManualCacheRefresh(t *testing.T) {
 
 	user := &model.User{
 		Subject:  "manual-refresh-user",
-		Userid:   "manualrefreshuser",
+		Login:    "manualrefreshuser",
 		Password: secret.HashPassword("password"),
 		Email:    "manualrefresh@example.com",
 	}
@@ -617,7 +617,7 @@ func TestManualCacheRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify user is in cache
-	found, err := cache.FindUserByUserid("manualrefreshuser")
+	found, err := cache.FindUserByLogin("manualrefreshuser")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 
@@ -625,7 +625,7 @@ func TestManualCacheRefresh(t *testing.T) {
 	cache.Reset()
 
 	// User should still be found via automatic refresh (ensureFresh)
-	found, err = cache.FindUserByUserid("manualrefreshuser")
+	found, err = cache.FindUserByLogin("manualrefreshuser")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 
@@ -634,7 +634,7 @@ func TestManualCacheRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// User should still be found
-	found, err = cache.FindUserByUserid("manualrefreshuser")
+	found, err = cache.FindUserByLogin("manualrefreshuser")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 }
@@ -741,8 +741,8 @@ func TestFindRoleById(t *testing.T) {
 	g.Expect(notFound.Resource).To(Equal("Role"))
 }
 
-// TestFindIdentityByUserid tests finding identities by userid.
-func TestFindIdentityByUserid(t *testing.T) {
+// TestFindIdentityByLogin tests finding identities by userid.
+func TestFindIdentityByLogin(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -751,7 +751,7 @@ func TestFindIdentityByUserid(t *testing.T) {
 	identity := &Identity{
 		Issuer:  "https://idp.example.com",
 		Subject: "idp-subject-123",
-		Userid:  "idpuser123",
+		Login:   "idpuser123",
 		Email:   "idp@example.com",
 		Scopes:  "openid profile email",
 	}
@@ -763,14 +763,14 @@ func TestFindIdentityByUserid(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test finding existing identity by userid
-	found, err := cache.FindIdentityByUserid("idpuser123")
+	found, err := cache.FindIdentityByLogin("idpuser123")
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 	g.Expect(found.Subject).To(Equal("idp-subject-123"))
 	g.Expect(found.Email).To(Equal("idp@example.com"))
 
 	// Test finding non-existent identity
-	_, err = cache.FindIdentityByUserid("nonexistent")
+	_, err = cache.FindIdentityByLogin("nonexistent")
 	g.Expect(err).NotTo(BeNil())
 	var notFound *NotFound
 	g.Expect(errors.As(err, &notFound)).To(BeTrue())
@@ -944,7 +944,7 @@ func TestUserGetScopes(t *testing.T) {
 	// Create user with both roles
 	user := &model.User{
 		Subject: "test-user",
-		Userid:  "testuser",
+		Login:   "testuser",
 		Roles:   []model.Role{*role1, *role2},
 	}
 	err = db.Create(user).Error
@@ -954,7 +954,7 @@ func TestUserGetScopes(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	cachedUser, err := cache.FindUserByUserid("testuser")
+	cachedUser, err := cache.FindUserByLogin("testuser")
 	g.Expect(err).To(BeNil())
 
 	scopes := cachedUser.GetScopes(cache)
@@ -967,7 +967,7 @@ func TestUserGetScopes(t *testing.T) {
 	userNoRoles := &User{
 		Model:   model.Model{ID: 999},
 		Subject: "noroles",
-		Userid:  "noroles",
+		Login:   "noroles",
 	}
 	scopes = userNoRoles.GetScopes(cache)
 	g.Expect(scopes).To(BeEmpty())

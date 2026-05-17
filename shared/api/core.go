@@ -147,7 +147,8 @@ type IdpIdentity struct {
 	Kind              string    `json:"kind" binding:"required"`
 	Issuer            string    `json:"issuer" binding:"required"`
 	Subject           string    `json:"subject" binding:"required"`
-	Userid            string    `json:"userid"`
+	Login             string    `json:"login"`
+	Name              string    `json:"name"`
 	Email             string    `json:"email"`
 	Expiration        time.Time `json:"expiration"`
 	LastAuthenticated time.Time `json:"lastAuthenticated"`
@@ -170,7 +171,8 @@ type IdpClient struct {
 type User struct {
 	Resource `yaml:",inline"`
 	Subject  string `json:"subject"`
-	Userid   string `json:"userid" binding:"required"`
+	Login    string `json:"login" binding:"required"`
+	Name     string `json:"name"`
 	Password string `json:"password" binding:"required,max=72"`
 	Email    string `json:"email" binding:"required"`
 	Roles    []Ref  `json:"roles"`

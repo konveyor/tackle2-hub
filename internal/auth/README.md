@@ -142,7 +142,7 @@ Different authentication methods have different staleness characteristics based 
 ### Lifespan vs Staleness
 
 **Lifespan** = how long a caller controls when creating authentication data:
-- `LdapHandler.Authenticate(userid, password, lifespan)` sets Identity.Expiration
+- `LdapHandler.Authenticate(login, password, lifespan)` sets Identity.Expiration
 
 **Staleness** = resulting delay before changes take effect:
 - Basic Auth passes `BasicAuthLifespan` (1 min) → 1 min staleness
@@ -236,7 +236,7 @@ The `Subject` field is the **unique identifier** for an authenticated entity and
 |----------------------|----------------|---------|------------|
 | **Local User** | UUID v4 | `550e8400-e29b-41d4-a716-446655440000` | `uuid.New().String()` |
 | **OIDC (External IdP)** | IdP subject | `f8e3a2b1-4c5d-6e7f-8a9b-0c1d2e3f4a5b` | External IdP's `sub` claim (as-is) |
-| **LDAP** | HMAC-SHA256 hash | `dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=` | `secret.Hash(userid)` |
+| **LDAP** | HMAC-SHA256 hash | `dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=` | `secret.Hash(login)` |
 
 **Design principles:**
 - **Opaque**: Subjects don't reveal PII (username, email, DN) in JWT tokens
@@ -257,11 +257,11 @@ The `Subject` field is the **unique identifier** for an authenticated entity and
 - Already globally unique within the issuer's namespace
 - No hashing needed - would break IdP integration
 
-*LDAP (Hash of userid):*
-- Raw userid would leak PII in JWT tokens
+*LDAP (Hash of login):*
+- Raw login identifier would leak PII in JWT tokens
 - HMAC with hub's secret passphrase ensures:
-  - Opacity: Hash conceals actual userid
-  - Stability: Userid doesn't change when user moves OUs in LDAP
+  - Opacity: Hash conceals actual login identifier
+  - Stability: Login doesn't change when user moves OUs in LDAP
   - Uniqueness: Hub passphrase makes hash unique to this hub instance
   - No collision: External IdP cannot generate matching hash (doesn't know passphrase)
 - DN hash was rejected because DN changes break identity (OU reorganizations)
@@ -281,8 +281,9 @@ The IdpIdentity table stores external authentication mappings for **both** LDAP 
 |-------|------|---------|------------|--------------|
 | **Kind** | String | Discriminator | `"ldap"` | `"openid"` |
 | **Issuer** | String | Authentication source | LDAP server URL | OIDC issuer URL |
-| **Subject** | String (unique) | Opaque identifier | `secret.Hash(userid)` | IdP subject claim |
-| **Userid** | String | Display username | LDAP userid | IdP preferred_username |
+| **Subject** | String (unique) | Opaque identifier | `secret.Hash(login)` | IdP subject claim |
+| **Login** | String | Login identifier | LDAP login | IdP preferred_username |
+| **Name** | String | Display name (optional) | From LDAP (optional) | From IdP claims (optional) |
 | **Email** | String | Email address | From LDAP | From IdP claims |
 | **RefreshToken** | String (encrypted) | Refresh credentials | User password | OAuth refresh token |
 | **Expiration** | Timestamp | When identity expires | Based on config | From token expiry |
@@ -321,7 +322,7 @@ Subjects are resolved from cache for performance:
 
 **Cache structure:**
 - Users indexed by subject hash (UUID)
-- IdpIdentities indexed by subject hash (userid hash for LDAP or external subject for OIDC)
+- IdpIdentities indexed by subject hash (login hash for LDAP or external subject for OIDC)
 - O(1) lookup by subject identifier
 - Auto-refresh when not found or cache expired
 
@@ -383,7 +384,7 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 **Local User:**
 ```
 1. User authenticates with username/password
-2. Lookup User in database by userid
+2. Lookup User in database by login
 3. Verify password hash
 4. Subject.Key = User.Subject (UUID)
 5. Subject.Scopes = User.Roles → Permissions.Scope
@@ -396,8 +397,8 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 2. LDAP server validates credentials, returns DN
 3. Fetch group memberships from LDAP
 4. Map groups to roles → resolve to scopes
-5. Create/update IdpIdentity (Kind=ldap, Subject=hash(userid))
-6. Subject.Key = hash(userid)
+5. Create/update IdpIdentity (Kind=ldap, Subject=hash(login))
+6. Subject.Key = hash(login)
 7. Subject.Scopes = from IdpIdentity.Scopes
 8. Subject.source = IdpIdentity reference
 ```
@@ -415,10 +416,10 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 
 ### Key Design Decisions
 
-**Why hash LDAP userid for subject?**
-- Raw userid would expose usernames in JWT tokens
+**Why hash LDAP login for subject?**
+- Raw login identifier would expose usernames in JWT tokens
 - HMAC hash provides stable, opaque identifier
-- Same userid always produces same subject
+- Same login always produces same subject
 - Stable across LDAP OU reorganizations (unlike DN)
 - Database uniqueness constraint on subject
 
@@ -746,7 +747,7 @@ External IdP claims are mapped to hub identity:
 | IdP Claim | IdpIdentity Field | Notes |
 |-----------|-------------------|-------|
 | **sub** | Subject | Unique identifier from IdP |
-| **preferred_username** | Userid | Display username |
+| **preferred_username** | Login | Login identifier |
 | **email** | Email | Email address |
 | **scope** (access token) | Scopes | Permission scopes extracted from access token |
 
@@ -779,7 +780,7 @@ sequenceDiagram
     participant LDAP as LDAP Server
     participant Database
     
-    Client->>Hub: POST /login (userid, password)
+    Client->>Hub: POST /login (login, password)
     Hub->>LDAP: Bind with service account
     LDAP-->>Hub: OK
     
@@ -853,21 +854,21 @@ spec:
 | **hasMemberOf** | Use memberOf attribute for group membership | - | - |
 | **roleMappings** | Map LDAP groups to hub roles | - | - |
 
-### LDAP Userid as Subject
+### LDAP Login as Subject
 
-LDAP users are identified by their userid (username), which is hashed for use as the subject:
+LDAP users are identified by their login identifier (username), which is hashed for use as the subject:
 
 **Example:**
 ```
-Userid from LDAP: alice
-Subject hash:     HMAC-SHA256(alice) → dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=
+Login from LDAP: alice
+Subject hash:    HMAC-SHA256(alice) → dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=
 ```
 
-**Why hash the userid?**
-- Raw userid would expose usernames in JWT tokens
+**Why hash the login?**
+- Raw login identifier would expose usernames in JWT tokens
 - HMAC with hub's secret passphrase ensures:
-  - Opacity: Hash conceals actual userid
-  - Stability: Userid doesn't change when user moves OUs in LDAP
+  - Opacity: Hash conceals actual login identifier
+  - Stability: Login doesn't change when user moves OUs in LDAP
   - Uniqueness: Hub passphrase makes hash unique to this hub instance
 - Same user always has same subject
 - Database uniqueness constraint enforced
@@ -951,8 +952,8 @@ Result:        User has roles: architect, tackle-admin
 7. Resolve roles to permission scopes
 8. **Create IdpIdentity**:
    - Kind = "ldap"
-   - Subject = HMAC-SHA256(userid)
-   - Userid = userid
+   - Subject = HMAC-SHA256(login)
+   - Login = login
    - RefreshToken = password (encrypted)
    - Scopes = resolved scopes (from role mapping)
    - Expiration = now + lifespan (from caller)
@@ -1117,7 +1118,7 @@ In-memory cache reduces database load:
 
 | Cached Data | Index | Refresh Strategy |
 |-------------|-------|------------------|
-| **Users** | By subject, by userid | Always on lookup (security) |
+| **Users** | By subject, by login | Always on lookup (security) |
 | **IdpIdentities** | By subject | Item expiration + cache lifespan |
 | **Roles** | By ID, by name | Standard lifespan |
 | **Tokens (PATs)** | By digest | Standard lifespan |
@@ -1427,7 +1428,7 @@ applications, err := client.Application.List()
 | Flow | Command Example | Use Case |
 |------|-----------------|----------|
 | **Device flow** | `./login -r https://tackle.example.com` | Interactive login |
-| **Basic auth** | `./login -userid admin -password pass` | Local users |
+| **Basic auth** | `./login -login admin -password pass` | Local users |
 | **Bearer token** | `./login -b <token>` | Reuse existing token |
 | **PAT** | Create via API after device login | Scripting, CI/CD |
 
@@ -1501,7 +1502,7 @@ Users defined in `seed/users.yaml`:
 
 ```yaml
 - id: 1
-  userid: admin
+  login: admin
   password: admin
   roles:
     - admin

@@ -199,7 +199,7 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 		jwToken, err = p.authToken(req)
 		return
 	}
-	if req.Userid != "" {
+	if req.Login != "" {
 		for _, method := range []func(*Request) (*jwt.Token, error){
 			p.authUser,
 			p.authLdapUser,
@@ -235,7 +235,7 @@ func (p *Builtin) User(jwToken *jwt.Token) (user string) {
 	if s, cast := v.(string); cast {
 		subject, err := p.cache.FindSubject(s)
 		if err == nil {
-			user = subject.UserName()
+			user = subject.Login()
 		}
 	}
 	return
@@ -453,16 +453,16 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 
 // authUser authenticates the user.
 func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
-	userid := req.Userid
+	login := req.Login
 	password := req.Password
-	user, err := p.cache.FindUserByUserid(userid)
+	user, err := p.cache.FindUserByLogin(login)
 	if err != nil {
 		return
 	}
 	if !secret.MatchPassword(password, user.Password) {
 		err = &NotAuthenticated{
 			Reason: "invalid password",
-			Token:  userid,
+			Token:  login,
 		}
 		return
 	}
@@ -489,7 +489,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 // authLdapUser authenticates an LDAP user.
 func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	lifespan := Settings.Auth.BasicAuthLifespan
-	subject, err := p.dsHandler.Authenticate(req.Userid, req.Password, lifespan)
+	subject, err := p.dsHandler.Authenticate(req.Login, req.Password, lifespan)
 	if err != nil {
 		return
 	}

@@ -26,15 +26,15 @@ type LdapHandler struct {
 // Authenticate a user.
 // Authenticated users (identities) are cached.
 // Authenticated with the DS when cached identity not found or expired.
-func (h *LdapHandler) Authenticate(userid, password string, lifespan time.Duration) (subject *Subject, err error) {
+func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duration) (subject *Subject, err error) {
 	if !h.enabled {
 		err = &NotAuthenticated{
 			Reason: "LDAP authentication disabled",
-			Token:  userid,
+			Token:  login,
 		}
 		return
 	}
-	identity, err := h.cache.FindIdentityByUserid(userid)
+	identity, err := h.cache.FindIdentityByLogin(login)
 	if err == nil &&
 		identity.Kind == IdentityKindLDAP &&
 		identity.Expiration.After(time.Now()) {
@@ -42,7 +42,7 @@ func (h *LdapHandler) Authenticate(userid, password string, lifespan time.Durati
 		subject.WithIdentity(identity)
 		return
 	}
-	ldapUser, err := h.ds.Authenticate(userid, password)
+	ldapUser, err := h.ds.Authenticate(login, password)
 	if err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespa
 		Kind:              IdentityKindLDAP,
 		Issuer:            h.ds.URL,
 		Subject:           ldapUser.Subject,
-		Userid:            ldapUser.Userid,
+		Login:             ldapUser.Login,
 		RefreshToken:      password,
 		Expiration:        time.Now().Add(lifespan),
 		LastAuthenticated: time.Now(),
@@ -131,7 +131,7 @@ type LDAP struct {
 }
 
 // Authenticate authenticates a user against LDAP and returns group membership.
-func (r *LDAP) Authenticate(userid, password string) (dsUser *LdapUser, err error) {
+func (r *LDAP) Authenticate(login, password string) (dsUser *LdapUser, err error) {
 	r.Kind = strings.ToUpper(r.Kind)
 	// Connect.
 	r.conn, err = ldap.DialURL(r.URL)
@@ -159,7 +159,7 @@ func (r *LDAP) Authenticate(userid, password string) (dsUser *LdapUser, err erro
 	}
 
 	// Find the user and authenticate using bind.
-	user, err := r.findUser(userid)
+	user, err := r.findUser(login)
 	if err != nil {
 		return
 	}
@@ -167,7 +167,7 @@ func (r *LDAP) Authenticate(userid, password string) (dsUser *LdapUser, err erro
 	if err != nil {
 		err = &NotAuthenticated{
 			Reason: "invalid password",
-			Token:  userid,
+			Token:  login,
 		}
 	}
 
@@ -177,8 +177,8 @@ func (r *LDAP) Authenticate(userid, password string) (dsUser *LdapUser, err erro
 	defer func() {
 		dsUser = &LdapUser{
 			DN:      user.DN,
-			Userid:  userid,
-			Subject: secret.Hash(userid),
+			Login:   login,
+			Subject: secret.Hash(login),
 			Roles:   r.mapper.roles(groups),
 		}
 	}()
@@ -211,11 +211,11 @@ func (r *LDAP) Authenticate(userid, password string) (dsUser *LdapUser, err erro
 }
 
 // findUser finds and returns a user.
-func (r *LDAP) findUser(userid string) (entry *ldap.Entry, err error) {
+func (r *LDAP) findUser(login string) (entry *ldap.Entry, err error) {
 	baseDN := fmt.Sprintf("ou=people,%s", r.BaseDN)
 	request := r.request(
 		baseDN,
-		r.userFilter(userid),
+		r.userFilter(login),
 		"dn",
 		"cn",
 		"uid",
@@ -228,7 +228,7 @@ func (r *LDAP) findUser(userid string) (entry *ldap.Entry, err error) {
 	if len(result.Entries) == 0 || len(result.Entries) > 1 {
 		err = &NotFound{
 			Resource: "user",
-			Id:       userid,
+			Id:       login,
 		}
 		return
 	}
@@ -261,7 +261,7 @@ func (r *LDAP) findGroup(userDN string) (groups []string, err error) {
 }
 
 // userFilter returns the user search filter.
-func (r *LDAP) userFilter(userid string) (filter string) {
+func (r *LDAP) userFilter(login string) (filter string) {
 	filter = r.UserFilter
 	switch r.Kind {
 	case "ACTIVEDIRECTORY",
@@ -275,7 +275,7 @@ func (r *LDAP) userFilter(userid string) (filter string) {
 		}
 	}
 
-	filter = fmt.Sprintf(filter, ldap.EscapeFilter(userid))
+	filter = fmt.Sprintf(filter, ldap.EscapeFilter(login))
 
 	return
 }
@@ -429,7 +429,7 @@ func (m *RoleMapper) and(patterns, groups []string) (matched bool) {
 // LdapUser defines an authenticated user.
 type LdapUser struct {
 	DN         string
-	Userid     string
+	Login      string
 	Subject    string
 	Roles      []string
 	Scopes     []string

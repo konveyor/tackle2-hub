@@ -392,7 +392,7 @@ func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
 	}
 	users = make(map[string]User)
 	for _, u := range list {
-		users[u.Userid] = u
+		users[u.Login] = u
 	}
 	return
 }
@@ -404,11 +404,11 @@ func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch 
 	}
 	wantedMap := make(map[string]seed.User)
 	for _, user := range wanted {
-		wantedMap[user.Userid] = user
+		wantedMap[user.Login] = user
 	}
-	for userid, user := range existing {
+	for login, user := range existing {
 		if user.ID < LastId {
-			if _, found := wantedMap[userid]; !found {
+			if _, found := wantedMap[login]; !found {
 				patch.toDelete = append(patch.toDelete, user.ID)
 			}
 		}
@@ -418,14 +418,14 @@ func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch 
 		if err != nil {
 			continue
 		}
-		if existingUser, found := existing[user.Userid]; found {
+		if existingUser, found := existing[user.Login]; found {
 			patch.toUpdate = append(patch.toUpdate, userWithRoles{
 				user:  existingUser,
 				roles: roles,
 			})
 		} else {
 			newUser := User{
-				Userid:   user.Userid,
+				Login:    user.Login,
 				Subject:  uuid.New().String(),
 				Password: secret.HashPassword(user.Password),
 			}

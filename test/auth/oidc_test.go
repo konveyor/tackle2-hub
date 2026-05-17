@@ -103,7 +103,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 
 	// Create test user
 	user := api.User{
-		Userid:   "oidc-test-user",
+		Login:   "oidc-test-user",
 		Email:    "oidc-test@example.com",
 		Password: "oidc-test-password",
 	}
@@ -114,7 +114,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	})
 
 	// Use the original plaintext password for login (not the encrypted one from API)
-	username := user.Userid
+	username := user.Login
 	password := "oidc-test-password"
 
 	// Create HTTP client with cookie jar (to maintain session)
@@ -172,7 +172,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	// Step 2: Submit login form (POST /login?authRequestID=...)
 	loginURL = issuer + "/login?authRequestID=" + authReqID
 	loginForm := url.Values{}
-	loginForm.Set("userid", username)
+	loginForm.Set("login", username)
 	loginForm.Set("password", password)
 
 	resp, err = httpClient.PostForm(loginURL, loginForm)
@@ -314,7 +314,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 
 	// Create test user with role
 	user := api.User{
-		Userid:   "oidc-role-test-user",
+		Login:   "oidc-role-test-user",
 		Email:    "oidc-role-test@example.com",
 		Password: "oidc-role-test-password",
 		Roles: []api.Ref{
@@ -331,7 +331,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	issuer := Settings.Addon.Hub.URL + api.OIDCRoutes
 
 	// Use plaintext password
-	username := user.Userid
+	username := user.Login
 	password := "oidc-role-test-password"
 
 	// Create HTTP client with cookie jar
@@ -387,7 +387,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Step 2: Submit login form
 	loginURL = issuer + "/login?authRequestID=" + authReqID
 	loginForm := url.Values{}
-	loginForm.Set("userid", username)
+	loginForm.Set("login", username)
 	loginForm.Set("password", password)
 
 	resp, err = httpClient.PostForm(loginURL, loginForm)
