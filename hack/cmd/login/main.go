@@ -52,8 +52,8 @@ func main() {
 		"OIDC client ID.")
 	patLifespan := flag.Int(
 		"h",
-		24,
-		"PAT lifespan (hours).")
+		720,
+		"PAT lifespan (hours) Default: 30 days.")
 	token := flag.String(
 		"b",
 		"",
@@ -68,7 +68,7 @@ func main() {
 		"User password.")
 	getToken := flag.Bool(
 		"getToken",
-		false,
+		true,
 		"Get PAT token.")
 	flag.Parse()
 
@@ -104,7 +104,7 @@ func main() {
 		tr.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
-		
+
 		bearer := auth.NewBearer(*issuerURL, *clientId)
 		bearer.SetTransport(tr)
 		err := bearer.Login()

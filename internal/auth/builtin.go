@@ -229,11 +229,14 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 }
 
 // User returns the username from the JWT token.
-func (r *Builtin) User(jwToken *jwt.Token) (user string) {
+func (p *Builtin) User(jwToken *jwt.Token) (user string) {
 	claims := jwToken.Claims.(jwt.MapClaims)
 	v := claims[ClaimSub]
 	if s, cast := v.(string); cast {
-		user = s
+		subject, err := p.cache.FindSubject(s)
+		if err == nil {
+			user = subject.UserName()
+		}
 	}
 	return
 }

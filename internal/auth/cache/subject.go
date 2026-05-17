@@ -46,6 +46,19 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	}
 }
 
+// UserName returns the user (login) name (Eg: jsmith).
+func (r *Subject) UserName() (userid string) {
+	if r.IsUser() {
+		userid = r.User.Userid
+		return
+	}
+	if r.IsIdentity() {
+		userid = r.Identity.Userid
+		return
+	}
+	return
+}
+
 // IsUser returns true if this subject is a User.
 func (r *Subject) IsUser() bool {
 	return r.UserId != nil
