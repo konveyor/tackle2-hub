@@ -920,7 +920,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	if r.Expiration.IsZero() {
 		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
 	}
-	subject := h.CurrentUser(ctx)
+	subject := h.CurrentSubject(ctx)
 	lifespan := time.Until(r.Expiration)
 	token, err := auth.IdP.NewPAT(subject, lifespan)
 	if err != nil {
@@ -1067,6 +1067,7 @@ func Required(scope string) func(*gin.Context) {
 			return
 		}
 		rtx.User = result.User
+		rtx.Subject = result.Subject
 		rtx.Scope.Granted = result.Scopes
 		rtx.Scope.Required = append(
 			rtx.Scope.Required,

@@ -38,9 +38,14 @@ func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	return
 }
 
-// User returns the username for NoAuth provider.
+// User returns the login for NoAuth provider.
 func (r *NoAuth) User(jwToken *jwt.Token) (name string) {
 	name = "admin.noauth"
+	return
+}
+
+// Subject returns the subject for NoAuth provider.
+func (r *NoAuth) Subject(jwToken *jwt.Token) (subject string) {
 	return
 }
 

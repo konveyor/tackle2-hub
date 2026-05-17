@@ -50,6 +50,7 @@ func (r *Request) Permit() (result Result, err error) {
 			if scope.Match(r.Scope, r.Method) {
 				result.Scopes = scopes
 				result.User = p.User(jwToken)
+				result.Subject = p.Subject(jwToken)
 				result.Authorized = true
 				break
 			}
@@ -93,6 +94,7 @@ func (r *Request) With(header string) {
 type Result struct {
 	Authenticated bool
 	Authorized    bool
+	Subject       string
 	User          string
 	Scopes        []Scope
 }

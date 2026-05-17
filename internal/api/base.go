@@ -101,12 +101,23 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 	return
 }
 
-// CurrentUser gets username from Keycloak auth token.
+// CurrentUser gets username from auth token.
 func (h *BaseHandler) CurrentUser(ctx *gin.Context) (user string) {
 	rtx := RichContext(ctx)
 	user = rtx.User
 	if user == "" {
 		Log.Info("Failed to get current user.")
+	}
+
+	return
+}
+
+// CurrentSubject gets subject from auth token.
+func (h *BaseHandler) CurrentSubject(ctx *gin.Context) (subject string) {
+	rtx := RichContext(ctx)
+	subject = rtx.Subject
+	if subject == "" {
+		Log.Info("Failed to get current subject.")
 	}
 
 	return

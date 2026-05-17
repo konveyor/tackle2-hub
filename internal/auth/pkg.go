@@ -79,6 +79,8 @@ type Provider interface {
 	Scopes(jwToken *jwt.Token) []Scope
 	// User extracts the user from token.
 	User(jwToken *jwt.Token) (user string)
+	// Subject extracts the subject from the token.
+	Subject(jwToken *jwt.Token) (subject string)
 	// Handler returns an OIDC handler.
 	Handler() (h http.Handler)
 	// IdpHandler returns the external IdP handler.
