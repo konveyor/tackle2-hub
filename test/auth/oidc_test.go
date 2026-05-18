@@ -62,15 +62,15 @@ func TestClientCredentialsFlow(t *testing.T) {
 	client := NewClient()
 
 	// Create test OAuth client with client_credentials grant
-	testClient, err := CreateTestClient(
-		client,
-		"test-client-credentials",
-		[]string{"client_credentials"},
-		[]string{"openid", "profile", "email", "applications:get"},
-	)
+	testClient := &api.IdpClient{
+		ClientId:        "test-client-credentials",
+		Secret:          "test-secret",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid", "profile", "email", "applications:get"},
+	}
+	err := client.IdpClient.Create(testClient)
 	g.Expect(err).To(BeNil())
-	t.Logf("Created client ID=%d ClientId=%s Scopes=%v",
-		testClient.ID, testClient.ClientId, testClient.Scopes)
 	t.Cleanup(func() {
 		_ = client.IdpClient.Delete(testClient.ID)
 	})
@@ -121,12 +121,15 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	client := NewClient()
 
 	// Create test OAuth client with authorization_code grant
-	testClient, err := CreateTestClient(
-		client,
-		"test-authorization-code",
-		[]string{"authorization_code", "refresh_token"},
-		nil, // use default scopes
-	)
+	testClient := &api.IdpClient{
+		ClientId:        "test-authorization-code",
+		Secret:          "test-secret",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code", "refresh_token"},
+		RedirectURIs:    []string{"http://test-redirect"},
+		Scopes:          []string{"openid", "profile", "email"},
+	}
+	err := client.IdpClient.Create(testClient)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
 		_ = client.IdpClient.Delete(testClient.ID)
@@ -170,9 +173,8 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
 
 	// Step 1: Request authorization (GET /authorize)
-	// Use the issuer URL for redirect_uri to match what's configured in the client
 	var loginURL string
-	redirectURI := issuer + "/callback"
+	redirectURI := "http://test-redirect"
 	authURL := issuer + "/authorize?" +
 		"client_id=" + testClient.ClientId +
 		"&redirect_uri=" + url.QueryEscape(redirectURI) +
@@ -231,7 +233,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(resp.StatusCode).To(BeNumerically(">=", 300))
 	g.Expect(resp.StatusCode).To(BeNumerically("<", 400))
 	location := resp.Header.Get("Location")
-	g.Expect(location).To(ContainSubstring("/callback?code="))
+	g.Expect(location).To(ContainSubstring("?code="))
 
 	// Extract authorization code
 	parsedURL, err = url.Parse(location)
@@ -286,12 +288,15 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	client := NewClient()
 
 	// Create test OAuth client with authorization_code grant
-	testClient, err := CreateTestClient(
-		client,
-		"test-authorization-scopes",
-		[]string{"authorization_code", "refresh_token"},
-		nil, // use default scopes
-	)
+	testClient := &api.IdpClient{
+		ClientId:        "test-authorization-scopes",
+		Secret:          "test-secret",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code", "refresh_token"},
+		RedirectURIs:    []string{"http://test-redirect"},
+		Scopes:          []string{"openid", "profile", "email"},
+	}
+	err := client.IdpClient.Create(testClient)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
 		_ = client.IdpClient.Delete(testClient.ID)
@@ -363,7 +368,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 
 	// Step 1: Request authorization
 	var loginURL string
-	redirectURI := issuer + "/callback"
+	redirectURI := "http://test-redirect"
 	authURL := issuer + "/authorize?" +
 		"client_id=" + testClient.ClientId +
 		"&redirect_uri=" + url.QueryEscape(redirectURI) +
