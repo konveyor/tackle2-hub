@@ -176,6 +176,7 @@ func (r *BaseScope) String() (s string) {
 
 // cache aliases
 
+type RsaKey = model.RsaKey
 type Cache = cache.Cache
 type Tx = cache.Tx
 type Model = cache.Model

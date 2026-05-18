@@ -9,7 +9,6 @@ import (
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"gorm.io/gorm"
 )
@@ -28,7 +27,7 @@ type KeyManager struct {
 // KeySet returns a keyset.
 // Rotation is applied.
 func (r *KeyManager) KeySet() (keySet KeySet, err error) {
-	var keyList []*model.RsaKey
+	var keyList []*RsaKey
 	db := r.db.Order("id desc")
 	err = db.Find(&keyList).Error
 	if err != nil {
@@ -61,7 +60,7 @@ func (r *KeyManager) KeySet() (keySet KeySet, err error) {
 
 // rotate returns a new RSA key as determined
 // by the rotation schedule.
-func (r *KeyManager) rotate(keyList []*model.RsaKey) (created []*model.RsaKey, err error) {
+func (r *KeyManager) rotate(keyList []*RsaKey) (created []*RsaKey, err error) {
 	threshold := Settings.Key.Rotation
 	for _, key := range keyList {
 		age := time.Since(key.CreateTime)
@@ -89,8 +88,8 @@ func (r *KeyManager) rotate(keyList []*model.RsaKey) (created []*model.RsaKey, e
 // - crypto/rand fails (indicates catastrophic system failure)
 // Panic is appropriate here since key generation failure during
 // initialization means the system cannot operate securely.
-func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *model.RsaKey) {
-	m = &model.RsaKey{}
+func (r *KeyManager) newKey() (key *rsa.PrivateKey, m *RsaKey) {
+	m = &RsaKey{}
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err)

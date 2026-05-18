@@ -23,14 +23,14 @@ func setupTestDB() (db *gorm.DB, err error) {
 
 	// Auto-migrate test models
 	err = db.AutoMigrate(
-		&model.User{},
-		&model.Task{},
-		&model.Role{},
-		&model.Permission{},
-		&model.Token{},
-		&model.Grant{},
-		&model.RsaKey{},
+		&User{},
+		&Task{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
 		&Identity{},
+		&IdpClient{},
 	)
 	return
 }
@@ -48,7 +48,7 @@ func TestCacheEntityUpdates(t *testing.T) {
 
 	// Test RoleSaved/RoleDeleted
 	role := &Role{
-		Model: model.Model{ID: 100},
+		Model: Model{ID: 100},
 		Name:  "TestRole",
 	}
 	cache.RoleSaved(role)
@@ -61,7 +61,7 @@ func TestCacheEntityUpdates(t *testing.T) {
 
 	// Test UserSaved/UserDeleted
 	user := &User{
-		Model:   model.Model{ID: 200},
+		Model:   Model{ID: 200},
 		Subject: "test-user",
 		Login:   "testuser",
 	}
@@ -75,7 +75,7 @@ func TestCacheEntityUpdates(t *testing.T) {
 
 	// Test TaskSaved/TaskDeleted
 	task := &Task{
-		Model: model.Model{ID: 300},
+		Model: Model{ID: 300},
 		Name:  "test-task",
 		State: "Running",
 	}
@@ -89,7 +89,7 @@ func TestCacheEntityUpdates(t *testing.T) {
 
 	// Test IdentitySaved/IdentityDeleted
 	identity := &Identity{
-		Model:   model.Model{ID: 400},
+		Model:   Model{ID: 400},
 		Issuer:  "https://idp.example.com",
 		Subject: "idp-subject",
 		Login:   "idp-userid",
@@ -116,11 +116,11 @@ func TestCacheTransaction(t *testing.T) {
 
 	// Test successful transaction
 	role1 := &Role{
-		Model: model.Model{ID: 101},
+		Model: Model{ID: 101},
 		Name:  "TxRole1",
 	}
 	role2 := &Role{
-		Model: model.Model{ID: 102},
+		Model: Model{ID: 102},
 		Name:  "TxRole2",
 	}
 
@@ -141,7 +141,7 @@ func TestCacheTransaction(t *testing.T) {
 
 	// Test rollback on error
 	role3 := &Role{
-		Model: model.Model{ID: 103},
+		Model: Model{ID: 103},
 		Name:  "TxRole3",
 	}
 
@@ -160,7 +160,7 @@ func TestCacheTransaction(t *testing.T) {
 	// Test explicit Begin/Commit/Rollback
 	tx := cache.Begin()
 	user := &User{
-		Model:   model.Model{ID: 201},
+		Model:   Model{ID: 201},
 		Subject: "tx-user",
 		Login:   "txuser",
 	}
@@ -175,7 +175,7 @@ func TestCacheTransaction(t *testing.T) {
 	// Test rollback
 	tx = cache.Begin()
 	user2 := &User{
-		Model:   model.Model{ID: 202},
+		Model:   Model{ID: 202},
 		Subject: "tx-user2",
 		Login:   "txuser2",
 	}
@@ -196,7 +196,7 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create test data
-	user := &model.User{
+	user := &User{
 		Subject:  "double-check-user",
 		Login:    "doublecheckuser",
 		Password: secret.HashPassword("password"),
@@ -257,7 +257,7 @@ func TestCacheInconsistency(t *testing.T) {
 	userTokenDigest := secret.Hash(userTokenSecret)
 	userToken := &Token{
 		Token: model.Token{
-			Model:  model.Model{ID: 1},
+			Model:  Model{ID: 1},
 			UserID: &userID,
 			Digest: userTokenDigest,
 		},
@@ -279,7 +279,7 @@ func TestCacheInconsistency(t *testing.T) {
 	taskTokenDigest := secret.Hash(taskTokenSecret)
 	taskToken := &Token{
 		Token: model.Token{
-			Model:  model.Model{ID: 2},
+			Model:  Model{ID: 2},
 			TaskID: &taskID,
 			Digest: taskTokenDigest,
 		},
@@ -300,7 +300,7 @@ func TestCacheInconsistency(t *testing.T) {
 	identityTokenDigest := secret.Hash(identityTokenSecret)
 	identityToken := &Token{
 		Token: model.Token{
-			Model:         model.Model{ID: 3},
+			Model:         Model{ID: 3},
 			IdpIdentityID: &identityID,
 			Digest:        identityTokenDigest,
 		},
@@ -329,7 +329,7 @@ func TestCacheUserSavedBySubject(t *testing.T) {
 
 	// Create user not in DB (just for cache testing)
 	user := &User{
-		Model:    model.Model{ID: 999},
+		Model:    Model{ID: 999},
 		Subject:  "cached-user-subject",
 		Login:    "cacheduser",
 		Email:    "cached@example.com",
@@ -370,7 +370,7 @@ func TestCacheIdentitySavedBySubject(t *testing.T) {
 
 	// Create identity not in DB (just for cache testing)
 	identity := &Identity{
-		Model:   model.Model{ID: 888},
+		Model:   Model{ID: 888},
 		Issuer:  "https://test.idp.com",
 		Subject: "cached-identity-subject",
 		Login:   "cachedidentity",
@@ -411,7 +411,7 @@ func TestCacheUserDeletedBySubject(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	user := &User{
-		Model:   model.Model{ID: 777},
+		Model:   Model{ID: 777},
 		Subject: "delete-user-subject",
 		Login:   "deleteuser",
 	}
@@ -454,7 +454,7 @@ func TestCacheIdentityDeletedBySubject(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	identity := &Identity{
-		Model:   model.Model{ID: 666},
+		Model:   Model{ID: 666},
 		Subject: "delete-identity-subject",
 		Login:   "deleteidentity",
 	}
@@ -498,7 +498,7 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 
 	// Create user
 	user := &User{
-		Model:    model.Model{ID: 555},
+		Model:    Model{ID: 555},
 		Subject:  "map-test-subject",
 		Login:    "maptestuser",
 		Email:    "maptest@example.com",
@@ -545,9 +545,9 @@ func TestCacheConcurrency(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create multiple users in DB
-	users := make([]*model.User, 10)
+	users := make([]*User, 10)
 	for i := 0; i < 10; i++ {
-		users[i] = &model.User{
+		users[i] = &User{
 			Subject:  fmt.Sprintf("concurrent-user-%d", i),
 			Login:    fmt.Sprintf("concurrentuser%d", i),
 			Password: secret.HashPassword("password"),
@@ -603,7 +603,7 @@ func TestManualCacheRefresh(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	user := &model.User{
+	user := &User{
 		Subject:  "manual-refresh-user",
 		Login:    "manualrefreshuser",
 		Password: secret.HashPassword("password"),
@@ -647,30 +647,30 @@ func TestFindRoleByName(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create test roles
-	perm1 := &model.Permission{
+	perm1 := &Permission{
 		Name:  "Read Apps",
 		Scope: "applications:get",
 	}
 	err = db.Create(perm1).Error
 	g.Expect(err).To(BeNil())
 
-	perm2 := &model.Permission{
+	perm2 := &Permission{
 		Name:  "Write Apps",
 		Scope: "applications:post",
 	}
 	err = db.Create(perm2).Error
 	g.Expect(err).To(BeNil())
 
-	role1 := &model.Role{
+	role1 := &Role{
 		Name:        "AppReader",
-		Permissions: []model.Permission{*perm1},
+		Permissions: []Permission{*perm1},
 	}
 	err = db.Create(role1).Error
 	g.Expect(err).To(BeNil())
 
-	role2 := &model.Role{
+	role2 := &Role{
 		Name:        "AppWriter",
-		Permissions: []model.Permission{*perm2},
+		Permissions: []Permission{*perm2},
 	}
 	err = db.Create(role2).Error
 	g.Expect(err).To(BeNil())
@@ -708,16 +708,16 @@ func TestFindRoleById(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	perm := &model.Permission{
+	perm := &Permission{
 		Name:  "Read Tasks",
 		Scope: "tasks:get",
 	}
 	err = db.Create(perm).Error
 	g.Expect(err).To(BeNil())
 
-	role := &model.Role{
+	role := &Role{
 		Name:        "TaskReader",
-		Permissions: []model.Permission{*perm},
+		Permissions: []Permission{*perm},
 	}
 	err = db.Create(role).Error
 	g.Expect(err).To(BeNil())
@@ -867,9 +867,9 @@ func TestRoleGetScopes(t *testing.T) {
 
 	// Test role with multiple permissions
 	role := &Role{
-		Model: model.Model{ID: 1},
+		Model: Model{ID: 1},
 		Name:  "TestRole",
-		Permissions: []model.Permission{
+		Permissions: []Permission{
 			{Scope: "applications:get"},
 			{Scope: "applications:post"},
 			{Scope: "tasks:get"},
@@ -884,9 +884,9 @@ func TestRoleGetScopes(t *testing.T) {
 
 	// Test role with duplicate scopes
 	roleWithDupes := &Role{
-		Model: model.Model{ID: 2},
+		Model: Model{ID: 2},
 		Name:  "RoleWithDupes",
-		Permissions: []model.Permission{
+		Permissions: []Permission{
 			{Scope: "tasks:get"},
 			{Scope: "applications:get"},
 			{Scope: "tasks:get"}, // Duplicate
@@ -900,9 +900,9 @@ func TestRoleGetScopes(t *testing.T) {
 
 	// Test role with no permissions
 	emptyRole := &Role{
-		Model:       model.Model{ID: 3},
+		Model:       Model{ID: 3},
 		Name:        "EmptyRole",
-		Permissions: []model.Permission{},
+		Permissions: []Permission{},
 	}
 
 	scopes = emptyRole.GetScopes()
@@ -917,9 +917,9 @@ func TestUserGetScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create permissions
-	perm1 := &model.Permission{Name: "Perm1", Scope: "apps:get"}
-	perm2 := &model.Permission{Name: "Perm2", Scope: "apps:post"}
-	perm3 := &model.Permission{Name: "Perm3", Scope: "tasks:get"}
+	perm1 := &Permission{Name: "Perm1", Scope: "apps:get"}
+	perm2 := &Permission{Name: "Perm2", Scope: "apps:post"}
+	perm3 := &Permission{Name: "Perm3", Scope: "tasks:get"}
 	err = db.Create(perm1).Error
 	g.Expect(err).To(BeNil())
 	err = db.Create(perm2).Error
@@ -928,13 +928,13 @@ func TestUserGetScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create roles
-	role1 := &model.Role{
+	role1 := &Role{
 		Name:        "Role1",
-		Permissions: []model.Permission{*perm1, *perm2},
+		Permissions: []Permission{*perm1, *perm2},
 	}
-	role2 := &model.Role{
+	role2 := &Role{
 		Name:        "Role2",
-		Permissions: []model.Permission{*perm2, *perm3}, // perm2 is duplicate
+		Permissions: []Permission{*perm2, *perm3}, // perm2 is duplicate
 	}
 	err = db.Create(role1).Error
 	g.Expect(err).To(BeNil())
@@ -942,10 +942,10 @@ func TestUserGetScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create user with both roles
-	user := &model.User{
+	user := &User{
 		Subject: "test-user",
 		Login:   "testuser",
-		Roles:   []model.Role{*role1, *role2},
+		Roles:   []model.Role{model.Role(*role1), model.Role(*role2)},
 	}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
@@ -965,7 +965,7 @@ func TestUserGetScopes(t *testing.T) {
 
 	// Test user with no roles
 	userNoRoles := &User{
-		Model:   model.Model{ID: 999},
+		Model:   Model{ID: 999},
 		Subject: "noroles",
 		Login:   "noroles",
 	}
