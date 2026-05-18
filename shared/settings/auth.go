@@ -71,7 +71,7 @@ func (r *Auth) Load() (err error) {
 	r.IssuerURL = env.Get(EnvOidcIssuer, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	r.RedirectURI.WebUI = env.Get(EnvRedirectURIWebUI, "")
-	r.RedirectURI.KAI = env.Get(EnvRedirectURIKAI, "vscode://konveyor.konveyor-ide/auth")
+	r.RedirectURI.KAI = env.Get(EnvRedirectURIKAI, "vscode://konveyor.konveyor-core/auth")
 
 	issuerURL, err := url.Parse(r.IssuerURL)
 	if err == nil {
