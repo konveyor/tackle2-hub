@@ -175,14 +175,15 @@ Complete list of authentication-related environment variables:
 
 ### Core Concepts
 
-The authentication system uses **Subject** as the central abstraction representing an authenticated entity. A Subject is resolved from one of two sources:
+The authentication system uses **Subject** as the central abstraction representing an authenticated entity. A Subject is resolved from one of three sources:
 
 | Source | Description | Use Case |
 |--------|-------------|----------|
 | **User** | Local hub user with role assignments | Hub-managed authentication |
 | **IdpIdentity** | External identity (LDAP or federated OIDC) | LDAP or external IdP authentication |
+| **IdpClient** | OAuth2 client for machine-to-machine auth | Client credentials grant flow |
 
-**Key principle**: A Subject is **mutually exclusive** — it references either a User OR an IdpIdentity, never both.
+**Key principle**: A Subject is **mutually exclusive** — it references either a User, an IdpIdentity, OR an IdpClient, never more than one.
 
 ### Terminology: Login, Name, and ID
 
@@ -214,11 +215,13 @@ graph TB
         LocalUser[Local User<br/>username/password]
         LDAPUser[LDAP User<br/>LDAP credentials]
         FedUser[Federated User<br/>external OIDC]
+        OAuthClient[OAuth Client<br/>client credentials]
     end
     
     subgraph "Data Layer"
         UserTable[(User Table)]
         IdentityTable[(IdpIdentity Table)]
+        ClientTable[(IdpClient Table)]
     end
     
     subgraph "Resolution"
@@ -233,9 +236,11 @@ graph TB
     LocalUser --> UserTable
     LDAPUser --> IdentityTable
     FedUser --> IdentityTable
+    OAuthClient --> ClientTable
     
     UserTable --> SubjectCache
     IdentityTable --> SubjectCache
+    ClientTable --> SubjectCache
     
     SubjectCache --> SubjectAbstraction
     SubjectAbstraction --> JWT
@@ -247,10 +252,10 @@ A Subject contains the following information:
 
 | Attribute | Description |
 |-----------|-------------|
-| **Key** | Subject identifier (UUID for User, hash/external subject for IdpIdentity) |
-| **Email** | User's email address |
+| **Key** | Subject identifier (UUID for User/IdpClient, hash/external subject for IdpIdentity) |
+| **Email** | User's email address (empty for IdpClient) |
 | **Scopes** | Permission scopes (injected into JWT tokens) |
-| **Source Reference** | Points to either User or IdpIdentity record (UserId/IdentityId) |
+| **Source Reference** | Points to either User, IdpIdentity, or IdpClient record (UserId/IdentityId/ClientId) |
 
 ### Subject Derivation
 
@@ -258,7 +263,8 @@ The `Subject` field is the **unique identifier** for an authenticated entity and
 
 | Authentication Method | Subject Format | Example | Derivation |
 |----------------------|----------------|---------|------------|
-| **Local User** | UUID v4 | `550e8400-e29b-41d4-a716-446655440000` | `uuid.New().String()` |
+| **Local User** | UUID v4 | `550e8400-e29b-41d4-a716-446655440000` | `uuid.New().String()` via BeforeCreate hook |
+| **OIDC Client (Client Credentials)** | UUID v4 | `d3e8f5a6-7b8c-9d0e-1f2a-3b4c5d6e7f8a` | `uuid.New().String()` via BeforeCreate hook |
 | **OIDC (External IdP)** | IdP subject | `f8e3a2b1-4c5d-6e7f-8a9b-0c1d2e3f4a5b` | External IdP's `sub` claim (as-is) |
 | **LDAP** | HMAC-SHA256 hash | `dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nBheFA=` | `secret.Hash(login)` |
 
@@ -274,6 +280,13 @@ The `Subject` field is the **unique identifier** for an authenticated entity and
 - Random UUID provides natural uniqueness and opacity
 - Stable across user's lifetime
 - Standard practice for local identity systems
+- Generated automatically via GORM BeforeCreate hook
+
+*OIDC Client (UUID):*
+- Same benefits as Local User (uniqueness, opacity, stability)
+- Consistent with user subject format
+- Generated automatically via GORM BeforeCreate hook
+- Enables client credentials grant flow for machine-to-machine authentication
 
 *OIDC (Raw IdP subject):*
 - External IdP subject is already opaque per OIDC spec (typically a UUID)
@@ -345,8 +358,9 @@ graph LR
 Subjects are resolved from cache for performance:
 
 **Cache structure:**
-- Users indexed by subject hash (UUID)
-- IdpIdentities indexed by subject hash (login hash for LDAP or external subject for OIDC)
+- Users indexed by subject (UUID)
+- IdpIdentities indexed by subject (login hash for LDAP or external subject for OIDC)
+- IdpClients indexed by subject (UUID)
 - O(1) lookup by subject identifier
 - Auto-refresh when not found or cache expired
 
@@ -438,6 +452,17 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 7. Subject.source = IdpIdentity reference
 ```
 
+**OAuth Client (Client Credentials):**
+```
+1. Client authenticates with client_id and client_secret
+2. Lookup IdpClient in database by client_id
+3. Verify client_secret hash
+4. Subject.Key = IdpClient.Subject (UUID)
+5. Subject.Scopes = IdpClient.Scopes
+6. Subject.source = IdpClient reference
+7. JWT issued with client scopes (no user context)
+```
+
 ### Key Design Decisions
 
 **Why hash LDAP login for subject?**
@@ -512,19 +537,25 @@ Service-to-service authentication without user context:
 sequenceDiagram
     participant Service
     participant Hub
+    participant Cache
     participant Database
 
     Service->>Hub: POST /token<br/>grant_type=client_credentials<br/>client_id + client_secret
-    Hub->>Hub: Validate credentials
+    Hub->>Cache: Lookup IdpClient by client_id
+    Cache-->>Hub: IdpClient found
+    Hub->>Hub: Validate client_secret
+    Hub->>Hub: Resolve Subject from IdpClient
     Hub->>Database: Create access token
     Hub-->>Service: access_token (no refresh token)
 ```
 
 **Characteristics:**
-- No user context
+- No user context - client is the subject
 - Direct token issuance
 - No refresh token (re-authenticate for new token)
-- Scoped to client permissions
+- Scoped to client permissions (IdpClient.Scopes)
+- Subject resolved from IdpClient.Subject (UUID)
+- Cached for performance
 
 ### Refresh Token Flow
 
@@ -1127,6 +1158,7 @@ Long-lived authentication artifacts are persisted:
 |-------|----------|----------|---------|
 | **Users** | Local user credentials, roles | Indefinite | Hub-managed authentication |
 | **IdpIdentities** | LDAP/federated user mappings | Until user deleted | External authentication |
+| **IdpClients** | OAuth2 client credentials, scopes | Until client deleted | Client credentials grant |
 | **Grants** | Refresh tokens (hashed) | 30 days (default) | Token refresh |
 | **Tokens** | Access tokens, PATs, task keys | Varies by type | API authentication |
 | **RsaKeys** | JWT signing keys | Until rotated | Token signing |
@@ -1145,6 +1177,7 @@ In-memory cache reduces database load:
 |-------------|-------|------------------|
 | **Users** | By subject, by login | Always on lookup (security) |
 | **IdpIdentities** | By subject | Item expiration + cache lifespan |
+| **IdpClients** | By subject, by ID | Standard lifespan |
 | **Roles** | By ID, by name | Standard lifespan |
 | **Tokens (PATs)** | By digest | Standard lifespan |
 
@@ -1153,7 +1186,7 @@ In-memory cache reduces database load:
 **Cache invalidation:**
 - Auto-refresh when data not found
 - Auto-refresh when lifespan exceeded
-- Explicit notification on data changes (UserSaved, IdentitySaved, etc.)
+- Explicit notification on data changes (UserSaved, IdentitySaved, ClientSaved, etc.)
 
 **Why always refresh Users?**
 - Password changes must take effect immediately
