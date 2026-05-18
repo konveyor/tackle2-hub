@@ -825,7 +825,8 @@ External IdP claims are mapped to hub identity:
 
 ## LDAP Authentication
 
-LDAP authentication allows the hub to authenticate users against an LDAP or Active Directory server. LDAP users are stored as **IdpIdentity** records with Kind=`"ldap"`.
+LDAP authentication allows the hub to authenticate users against an LDAP or Active Directory server (backend).
+LDAP users are stored as **IdpIdentity** records with Kind=`"ldap"`.
 
 ### Architecture
 
