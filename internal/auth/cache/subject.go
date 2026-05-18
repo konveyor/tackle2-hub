@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Subject represents a resolved subject (User, IdpIdentity).
+// Subject represents a resolved subject (User, IdpIdentity, IdpClient).
 // The entity being authenticated.
 type Subject struct {
 	Key        string
@@ -13,8 +13,10 @@ type Subject struct {
 	Scopes     []string
 	UserId     *uint
 	IdentityId *uint
+	ClientId   *uint
 	User       *User
 	Identity   *Identity
+	Client     *IdpClient
 }
 
 // WithUser populates Subject from a User model.
@@ -46,6 +48,14 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	}
 }
 
+// WithClient populates Subject from an IdpClient model.
+func (r *Subject) WithClient(client *IdpClient, cache *Cache) {
+	r.ClientId = &client.ID
+	r.Client = client
+	r.Key = client.Subject
+	r.Scopes = client.GetScopes()
+}
+
 // Login returns the user (login) name (Eg: jsmith).
 func (r *Subject) Login() (login string) {
 	if r.IsUser() {
@@ -67,4 +77,9 @@ func (r *Subject) IsUser() bool {
 // IsIdentity returns true if this subject is an IdpIdentity.
 func (r *Subject) IsIdentity() bool {
 	return r.IdentityId != nil
+}
+
+// IsClient returns true if this subject is an IdpClient.
+func (r *Subject) IsClient() bool {
+	return r.ClientId != nil
 }

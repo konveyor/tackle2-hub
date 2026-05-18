@@ -66,6 +66,17 @@ type Task = model.Task
 // Identity alias.
 type Identity = model.IdpIdentity
 
+// IdpClient alias.
+type IdpClient model.IdpClient
+
+// GetScopes returns the client's scopes.
+func (m *IdpClient) GetScopes() (scopes []string) {
+	scopes = m.Scopes
+	scopes = uniqueStrings(scopes)
+	sort.Strings(scopes)
+	return
+}
+
 // Grant alias.
 type Grant = model.Grant
 

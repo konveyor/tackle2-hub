@@ -49,6 +49,7 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 	if clientId == DevVerifierClientId {
 		client = &Client{
 			id:              DevVerifierClientId,
+			subject:         "device-verifier-subject",
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
 			redirectURIs:    []string{Settings.Auth.AppendIssuer(api.DeviceCbRoute)},
@@ -117,14 +118,19 @@ func (r *Storage) ClientCredentials(ctx context.Context, id, secret string) (cli
 
 // ClientCredentialsTokenRequest creates a token request for client credentials.
 func (r *Storage) ClientCredentialsTokenRequest(
-	_ context.Context,
+	ctx context.Context,
 	clientId string,
 	scopes []string) (req op.TokenRequest, err error) {
 	//
+	client, err := r.GetClientByClientID(ctx, clientId)
+	if err != nil {
+		return
+	}
+	c := client.(*Client)
 	req = &RefreshRequest{
 		grantId:  r.genId(),
 		clientId: clientId,
-		subject:  clientId,
+		subject:  c.subject,
 		scopes:   scopes,
 	}
 	return
@@ -1341,6 +1347,7 @@ func (r *Storage) UpdateDevAuth(userCode string, subject string, done bool, deni
 // Client implements op.Client.
 type Client struct {
 	id              string
+	subject         string
 	secret          string
 	redirectURIs    []string
 	grantTypes      []string
@@ -1460,6 +1467,7 @@ func (c *Client) ClockSkew() (d time.Duration) {
 // With populates op.Client using the model.
 func (c *Client) With(m *IdpClient) {
 	c.id = m.ClientId
+	c.subject = m.Subject
 	c.secret = m.Secret
 	c.grantTypes = m.Grants
 	c.redirectURIs = m.RedirectURIs

@@ -265,6 +265,12 @@
     - name: idp.identities
       verbs:
         - get
+    - name: idp.clients
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: grants
       verbs:
         - get

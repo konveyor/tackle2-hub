@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -202,8 +202,10 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	r.With(m)
+
+	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
+
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
@@ -242,6 +244,15 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 		return
 	}
 
+	// Reload to get full model including Subject
+	err = h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
+
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -273,6 +284,8 @@ func (h AuthHandler) IdpClientDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+
+	auth.IdP.Cache().ClientDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -487,7 +500,6 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
-	m.Subject = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
 	m.Password = secret.HashPassword(r.Password)
 	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error

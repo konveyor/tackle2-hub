@@ -96,6 +96,27 @@ func (r *Tx) IdentityDeleted(id uint) {
 		})
 }
 
+// ClientSaved updates the cache when a client is saved.
+func (r *Tx) ClientSaved(m *IdpClient) {
+	r.changes = append(
+		r.changes, func() {
+			r.cache.clientById[m.ID] = m
+			r.cache.clientBySubject[m.Subject] = m
+		})
+}
+
+// ClientDeleted removes a client from the cache.
+func (r *Tx) ClientDeleted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			m, found := r.cache.clientById[id]
+			if found {
+				delete(r.cache.clientBySubject, m.Subject)
+				delete(r.cache.clientById, id)
+			}
+		})
+}
+
 // TokenSaved updates the cache when a token is saved.
 func (r *Tx) TokenSaved(m *Token) {
 	r.changes = append(

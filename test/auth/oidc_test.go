@@ -58,14 +58,31 @@ func TestOIDCDiscovery(t *testing.T) {
 func TestClientCredentialsFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create API client
+	client := NewClient()
+
+	// Create test OAuth client with client_credentials grant
+	testClient, err := CreateTestClient(
+		client,
+		"test-client-credentials",
+		[]string{"client_credentials"},
+		[]string{"openid", "profile", "email", "applications:get"},
+	)
+	g.Expect(err).To(BeNil())
+	t.Logf("Created client ID=%d ClientId=%s Scopes=%v",
+		testClient.ID, testClient.ClientId, testClient.Scopes)
+	t.Cleanup(func() {
+		_ = client.IdpClient.Delete(testClient.ID)
+	})
+
 	// Request token using client credentials
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
-	form.Set("client_id", Settings.Auth.Client.ID)
-	form.Set("client_secret", Settings.Auth.Client.Secret)
+	form.Set("client_id", testClient.ClientId)
+	form.Set("client_secret", testClient.Secret)
 	form.Set("scope", "openid")
 
-	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/oauth/token", form)
+	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -77,12 +94,14 @@ func TestClientCredentialsFlow(t *testing.T) {
 		TokenType    string `json:"token_type"`
 		ExpiresIn    int    `json:"expires_in"`
 		RefreshToken string `json:"refresh_token"`
+		Scope        string `json:"scope"`
 	}
 	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
 	g.Expect(err).To(BeNil())
 	g.Expect(tokenResp.AccessToken).NotTo(BeEmpty())
 	g.Expect(tokenResp.TokenType).To(Equal("Bearer"))
 	g.Expect(tokenResp.ExpiresIn).To(BeNumerically(">", 0))
+	t.Logf("Token scopes: %s", tokenResp.Scope)
 
 	// Test using the access token to call an API endpoint
 	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)
@@ -98,6 +117,21 @@ func TestClientCredentialsFlow(t *testing.T) {
 func TestAuthorizationCodeFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create API client
+	client := NewClient()
+
+	// Create test OAuth client with authorization_code grant
+	testClient, err := CreateTestClient(
+		client,
+		"test-authorization-code",
+		[]string{"authorization_code", "refresh_token"},
+		nil, // use default scopes
+	)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.IdpClient.Delete(testClient.ID)
+	})
+
 	// Use the configured issuer URL (not from discovery, which may have different hostname)
 	issuer := Settings.Addon.Hub.URL + api.OIDCRoutes
 
@@ -107,7 +141,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 		Email:    "oidc-test@example.com",
 		Password: "oidc-test-password",
 	}
-	err := client.User.Create(&user)
+	err = client.User.Create(&user)
 	g.Expect(err).To(BeNil())
 	t.Cleanup(func() {
 		_ = client.User.Delete(user.ID)
@@ -137,7 +171,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	var loginURL string
 	redirectURI := issuer + "/callback"
 	authURL := issuer + "/authorize?" +
-		"client_id=" + Settings.Auth.Client.ID +
+		"client_id=" + testClient.ClientId +
 		"&redirect_uri=" + url.QueryEscape(redirectURI) +
 		"&response_type=code" +
 		"&scope=openid+profile+email" +
@@ -207,11 +241,11 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	tokenForm.Set("grant_type", "authorization_code")
 	tokenForm.Set("code", code)
 	tokenForm.Set("redirect_uri", redirectURI)
-	tokenForm.Set("client_id", Settings.Auth.Client.ID)
-	tokenForm.Set("client_secret", Settings.Auth.Client.Secret)
+	tokenForm.Set("client_id", testClient.ClientId)
+	tokenForm.Set("client_secret", testClient.Secret)
 	tokenForm.Set("code_verifier", verifier)
 
-	resp, err = http.PostForm(issuer+"/oauth/token", tokenForm)
+	resp, err = http.PostForm(issuer+"/token", tokenForm)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -245,14 +279,29 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 func TestRefreshTokenFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// Create API client
+	client := NewClient()
+
+	// Create test OAuth client with client_credentials and refresh_token grants
+	testClient, err := CreateTestClient(
+		client,
+		"test-refresh-token",
+		[]string{"client_credentials", "refresh_token"},
+		nil, // use default scopes
+	)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.IdpClient.Delete(testClient.ID)
+	})
+
 	// First get a refresh token via client_credentials
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
-	form.Set("client_id", Settings.Auth.Client.ID)
-	form.Set("client_secret", Settings.Auth.Client.Secret)
+	form.Set("client_id", testClient.ClientId)
+	form.Set("client_secret", testClient.Secret)
 	form.Set("scope", "openid")
 
-	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/oauth/token", form)
+	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 
@@ -274,8 +323,8 @@ func TestRefreshTokenFlow(t *testing.T) {
 	refreshForm := url.Values{}
 	refreshForm.Set("grant_type", "refresh_token")
 	refreshForm.Set("refresh_token", initialTokenResp.RefreshToken)
-	refreshForm.Set("client_id", Settings.Auth.Client.ID)
-	refreshForm.Set("client_secret", Settings.Auth.Client.Secret)
+	refreshForm.Set("client_id", testClient.ClientId)
+	refreshForm.Set("client_secret", testClient.Secret)
 
 	resp, err = http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", refreshForm)
 	g.Expect(err).To(BeNil())
@@ -294,6 +343,21 @@ func TestRefreshTokenFlow(t *testing.T) {
 // TestAuthorizationCodeFlowWithScopes tests that user roles inject scopes into tokens.
 func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
+
+	// Create API client
+	client := NewClient()
+
+	// Create test OAuth client with authorization_code grant
+	testClient, err := CreateTestClient(
+		client,
+		"test-authorization-scopes",
+		[]string{"authorization_code", "refresh_token"},
+		nil, // use default scopes
+	)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.IdpClient.Delete(testClient.ID)
+	})
 
 	permissions, err := client.Permission.List()
 	g.Expect(err).To(BeNil())
@@ -352,7 +416,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	var loginURL string
 	redirectURI := issuer + "/callback"
 	authURL := issuer + "/authorize?" +
-		"client_id=" + Settings.Auth.Client.ID +
+		"client_id=" + testClient.ClientId +
 		"&redirect_uri=" + url.QueryEscape(redirectURI) +
 		"&response_type=code" +
 		"&scope=openid+profile+email" +
@@ -420,11 +484,11 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	tokenForm.Set("grant_type", "authorization_code")
 	tokenForm.Set("code", code)
 	tokenForm.Set("redirect_uri", redirectURI)
-	tokenForm.Set("client_id", Settings.Auth.Client.ID)
-	tokenForm.Set("client_secret", Settings.Auth.Client.Secret)
+	tokenForm.Set("client_id", testClient.ClientId)
+	tokenForm.Set("client_secret", testClient.Secret)
 	tokenForm.Set("code_verifier", verifier)
 
-	resp, err = http.PostForm(issuer+"/oauth/token", tokenForm)
+	resp, err = http.PostForm(issuer+"/token", tokenForm)
 	g.Expect(err).To(BeNil())
 	defer resp.Body.Close()
 

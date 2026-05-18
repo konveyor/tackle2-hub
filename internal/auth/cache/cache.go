@@ -29,21 +29,23 @@ func New(db *gorm.DB) (cache *Cache) {
 //   - Password changes, role updates, and other changes are propagated
 //     immediately via notifications
 type Cache struct {
-	db             *gorm.DB
-	mutex          sync.RWMutex
-	permById       map[uint]*Permission
-	roleById       map[uint]*Role
-	roleByName     map[string]*Role
-	userById       map[uint]*User
-	userBySubject  map[string]*User
-	userByLogin    map[string]*User
-	taskById       map[uint]*Task
-	identById      map[uint]*Identity
-	identBySubject map[string]*Identity
-	identByLogin   map[string]*Identity
-	tokenById      map[uint]*Token
-	tokenByDigest  map[string]*Token
-	refreshed      time.Time
+	db              *gorm.DB
+	mutex           sync.RWMutex
+	permById        map[uint]*Permission
+	roleById        map[uint]*Role
+	roleByName      map[string]*Role
+	userById        map[uint]*User
+	userBySubject   map[string]*User
+	userByLogin     map[string]*User
+	taskById        map[uint]*Task
+	identById       map[uint]*Identity
+	identBySubject  map[string]*Identity
+	identByLogin    map[string]*Identity
+	clientById      map[uint]*IdpClient
+	clientBySubject map[string]*IdpClient
+	tokenById       map[uint]*Token
+	tokenByDigest   map[string]*Token
+	refreshed       time.Time
 }
 
 // Reset clears all cached data.
@@ -121,6 +123,22 @@ func (r *Cache) IdentitySaved(m *Identity) {
 func (r *Cache) IdentityDeleted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
 		tx.IdentityDeleted(id)
+		return
+	})
+}
+
+// ClientSaved updates the cache when a client is saved.
+func (r *Cache) ClientSaved(m *IdpClient) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.ClientSaved(m)
+		return
+	})
+}
+
+// ClientDeleted removes a client from the cache.
+func (r *Cache) ClientDeleted(id uint) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.ClientDeleted(id)
 		return
 	})
 }
@@ -317,6 +335,8 @@ func (r *Cache) reset() {
 	r.identById = make(map[uint]*Identity)
 	r.identBySubject = make(map[string]*Identity)
 	r.identByLogin = make(map[string]*Identity)
+	r.clientById = make(map[uint]*IdpClient)
+	r.clientBySubject = make(map[string]*IdpClient)
 	r.tokenByDigest = make(map[string]*Token)
 	r.refreshed = time.Time{}
 }
@@ -341,6 +361,10 @@ func (r *Cache) refresh() (err error) {
 		return
 	}
 	err = r.getIdentities()
+	if err != nil {
+		return
+	}
+	err = r.getClients()
 	if err != nil {
 		return
 	}
@@ -440,6 +464,21 @@ func (r *Cache) getIdentities() (err error) {
 	return
 }
 
+// getClients fetches idp clients from the DB and populates.
+func (r *Cache) getClients() (err error) {
+	list := make([]*IdpClient, 0)
+	err = r.db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		r.clientById[m.ID] = m
+		r.clientBySubject[m.Subject] = m
+	}
+	return
+}
+
 // getTokens fetches permissions from the DB and populates.
 func (r *Cache) getTokens() (err error) {
 	list := []*Token{}
@@ -527,6 +566,12 @@ func (r *Cache) findSubject(subject string) (s *Subject, found bool) {
 	if found {
 		s = &Subject{}
 		s.WithIdentity(identity)
+		return
+	}
+	client, found := r.clientBySubject[subject]
+	if found {
+		s = &Subject{}
+		s.WithClient(client, r)
 		return
 	}
 	return

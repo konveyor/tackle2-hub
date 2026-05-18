@@ -219,6 +219,12 @@ type User struct {
 	Roles    []Role `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
 }
 
+// BeforeCreate sets the Subject field to a unique UUID.
+func (m *User) BeforeCreate(db *gorm.DB) (err error) {
+	m.Subject = uuid.New().String()
+	return
+}
+
 type Role struct {
 	Model
 	Name        string       `gorm:"index;not null"`
@@ -233,12 +239,19 @@ type Permission struct {
 
 type IdpClient struct {
 	Model
+	Subject         string   `gorm:"<-:create;index;not null"`
 	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
 	Secret          string   `gorm:"" secret:""`
 	ApplicationType string   `gorm:"not null"`
 	Grants          []string `gorm:"type:json;serializer:json"`
 	RedirectURIs    []string `gorm:"type:json;serializer:json"`
 	Scopes          []string `gorm:"type:json;serializer:json"`
+}
+
+// BeforeCreate sets the Subject field to a unique UUID.
+func (m *IdpClient) BeforeCreate(db *gorm.DB) (err error) {
+	m.Subject = uuid.New().String()
+	return
 }
 
 //
