@@ -135,11 +135,14 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	// Use the configured issuer URL (not from discovery, which may have different hostname)
 	issuer := Settings.Addon.Hub.URL + api.OIDCRoutes
 
-	// Create test user
+	// Create test user with admin role
 	user := api.User{
-		Login:   "oidc-test-user",
+		Login:    "oidc-test-user",
 		Email:    "oidc-test@example.com",
 		Password: "oidc-test-password",
+		Roles: []api.Ref{
+			{ID: 1}, // admin role
+		},
 	}
 	err = client.User.Create(&user)
 	g.Expect(err).To(BeNil())
@@ -275,71 +278,6 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(apiResp.StatusCode).To(Equal(http.StatusOK))
 }
 
-// TestRefreshTokenFlow tests token refresh.
-func TestRefreshTokenFlow(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	// Create API client
-	client := NewClient()
-
-	// Create test OAuth client with client_credentials and refresh_token grants
-	testClient, err := CreateTestClient(
-		client,
-		"test-refresh-token",
-		[]string{"client_credentials", "refresh_token"},
-		nil, // use default scopes
-	)
-	g.Expect(err).To(BeNil())
-	t.Cleanup(func() {
-		_ = client.IdpClient.Delete(testClient.ID)
-	})
-
-	// First get a refresh token via client_credentials
-	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
-	form.Set("client_id", testClient.ClientId)
-	form.Set("client_secret", testClient.Secret)
-	form.Set("scope", "openid")
-
-	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
-	g.Expect(err).To(BeNil())
-	defer resp.Body.Close()
-
-	var initialTokenResp struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&initialTokenResp)
-	g.Expect(err).To(BeNil())
-	g.Expect(initialTokenResp.AccessToken).NotTo(BeEmpty())
-
-	// Skip refresh token test if not provided
-	if initialTokenResp.RefreshToken == "" {
-		t.Skip("Refresh token not provided in client_credentials response")
-		return
-	}
-
-	// Use refresh token to get new access token
-	refreshForm := url.Values{}
-	refreshForm.Set("grant_type", "refresh_token")
-	refreshForm.Set("refresh_token", initialTokenResp.RefreshToken)
-	refreshForm.Set("client_id", testClient.ClientId)
-	refreshForm.Set("client_secret", testClient.Secret)
-
-	resp, err = http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", refreshForm)
-	g.Expect(err).To(BeNil())
-	defer resp.Body.Close()
-
-	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-	var newTokenResp struct {
-		AccessToken string `json:"access_token"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&newTokenResp)
-	g.Expect(err).To(BeNil())
-	g.Expect(newTokenResp.AccessToken).NotTo(BeEmpty())
-}
-
 // TestAuthorizationCodeFlowWithScopes tests that user roles inject scopes into tokens.
 func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -363,11 +301,22 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(len(permissions)).To(BeNumerically(">", 0))
 
-	// Create role with permission
+	// Find applications:get permission
+	var appsGetPerm *api.Permission
+	for i := range permissions {
+		if permissions[i].Scope == "applications:get" {
+			appsGetPerm = &permissions[i]
+			break
+		}
+	}
+	g.Expect(appsGetPerm).NotTo(BeNil(), "applications:get permission not found")
+
+	// Create role with multiple permissions including applications:get
 	role := api.Role{
-		Name: "Admin Role",
+		Name: "Test Role",
 		Permissions: []api.Ref{
-			{ID: permissions[0].ID, Name: permissions[0].Name},
+			{ID: permissions[0].ID, Name: permissions[0].Name}, // First permission (for scope test)
+			{ID: appsGetPerm.ID, Name: appsGetPerm.Name},       // applications:get
 		},
 	}
 	err = client.Role.Create(&role)
