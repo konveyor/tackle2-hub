@@ -44,11 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: konveyor/tackle2-seed
-          path: seed
-
-      - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
@@ -72,11 +67,6 @@ jobs:
       HUB_BASE_URL: http://localhost:8080
       DB_PATH: /tmp/hub.db
     steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: konveyor/tackle2-seed
-          path: seed
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5

@@ -4,17 +4,22 @@ name: Start Hub Server
 inputs:
   disconnected:
     description: 'Set DISCONNECTED=1'
-    default: 'false'
+    default: 'true'
   db-path:
     description: 'Path to DB'
-    default: ''
+    default: '/tmp/hub.db'
 
 runs:
   using: composite
   steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: konveyor/tackle2-seed
+        path: tackle2-seed
+
     - run: |
         mkdir -p /tmp/seed
-        cp -r ${{ github.workspace }}/seed/resources/* /tmp/seed || true
+        cp -r tackle2-seed/resources/* /tmp/seed
       shell: bash
 
     - run: rm -f ${{ inputs.db-path }}
