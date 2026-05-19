@@ -31,7 +31,7 @@ var (
 // Client provides a REST client.
 type Client struct {
 	// transport
-	transport http.RoundTripper
+	transport *http.Transport
 	// baseURL for the nub.
 	BaseURL string
 	// login API resource.
@@ -55,6 +55,17 @@ func (r *Client) Use(login api.Login) {
 // SetRetry set the number of retries.
 func (r *Client) SetRetry(n uint8) {
 	r.Retry = n
+}
+
+// SetTransport set the transport.
+func (r *Client) SetTransport(tp *http.Transport) {
+	r.transport = tp.Clone()
+}
+
+// Transport returns the http transport.
+func (r *Client) Transport() (tp *http.Transport) {
+	tp = r.transport
+	return
 }
 
 // Get a resource.
@@ -715,10 +726,7 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		err = r.Error
 		return
 	}
-	err = r.buildTransport()
-	if err != nil {
-		return
-	}
+	r.ensureTransport()
 	for i := uint8(0); ; i++ {
 		request, err = rb()
 		if err != nil {
@@ -775,8 +783,8 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 	return
 }
 
-// buildTransport builds transport.
-func (r *Client) buildTransport() (err error) {
+// ensureTransport ensures a transport is set.
+func (r *Client) ensureTransport() {
 	if r.transport != nil {
 		return
 	}
@@ -791,7 +799,6 @@ func (r *Client) buildTransport() (err error) {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	return
 }
 
 // Join the URL.

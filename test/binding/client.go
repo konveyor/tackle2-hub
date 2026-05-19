@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"crypto/tls"
 	"os"
 
 	"github.com/konveyor/tackle2-hub/shared/binding"
@@ -20,6 +21,9 @@ var (
 func init() {
 	client = binding.New(Settings.Addon.Hub.URL)
 	client.Client.SetRetry(uint8(1))
+	client.Client.Transport().TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
 	user := os.Getenv(User)
 	password := os.Getenv(Password)
 	if user == "" || password == "" {
