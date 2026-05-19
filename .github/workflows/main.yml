@@ -8,24 +8,10 @@ on:
     paths-ignore:
       - '**.md'
 
-jobs:
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.21'
-      - run: make fmt
+env:
+  REF: ${{ github.head_ref || github.ref_name }}
 
-  vet:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.21'
-      - run: make vet
+jobs:
 
   build:
     runs-on: ubuntu-latest
@@ -64,52 +50,32 @@ jobs:
           sleep 15  # probably a dirty solution
           HUB_BASE_URL=http://localhost:8080 make test-binding
 
-  test-api:
-    needs:
-    - fmt
-    - vet
-    - build
-    - test-unit
-    runs-on: ubuntu-latest
-    env:
-      DISCONNECTED: 1
-      HUB_BASE_URL: http://localhost:8080
-      DB_PATH: /tmp/hub.db
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: konveyor/tackle2-seed
-      - run: |
-          mkdir -p /tmp/seed
-          cp -r resources/* /tmp/seed
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.21'
-      - run: |
-          rm -f $DB_PATH
-          make run &
-          sleep 15  # probably a dirty solution
-          make test-api
-
-  build-image:
-    needs:
-    - fmt
-    - vet
-    - build
-    - test-unit
-    - test-api
-    runs-on: ubuntu-latest
-    env:
-      IMG: ttl.sh/konveyor-hub-${{ github.sha }}:2h
-    steps:
-      - uses: actions/checkout@v4
-      - run: make docker-build
-      - run: docker push ${IMG}
-
-  test-integration:
-    needs: build-image
-    uses: konveyor/ci/.github/workflows/global-ci-bundle.yml@main
+  build-images:
+    uses: konveyor/ci/.github/workflows/e2e-image-build.yaml@main
     with:
-      tackle_hub: ttl.sh/konveyor-hub-${{ github.sha }}:2h
-      api_hub_tests_ref: ${{ github.ref }}
+      repo: ${{ inputs.repo || github.repository }}
+      ref: $REF
+    secrets: inherit
+
+  run-koncur:
+    runs-on: ubuntu-latest
+    needs:
+      - test-unit
+      - test-binding
+      - build-images
+    steps:
+      - name: Run Koncur Testing
+        uses: konveyor/ci/koncur-tackle-hub@main
+        with:
+          image_pattern: |
+            *{tackle-keycloak-init,tackle2-*,provider}--${{ github.run_id }}
+          ref: ${{ github.base_ref || inputs.ref || github.ref_name}}
+
+  test-ui:
+    runs-on: ubuntu-latest
+    needs:
+      - test-unit
+      - test-binding
+      - build-images
+    steps:
+
