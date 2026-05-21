@@ -684,13 +684,11 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	err = h.DB(ctx).Model(m).Association("Permissions").Replace(m.Permissions)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	err = db.First(m).Error
 	if err != nil {
@@ -742,6 +740,13 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	db = h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r.With(m)
 
 	auth.IdP.Cache().RoleSaved((*auth.Role)(m))
 

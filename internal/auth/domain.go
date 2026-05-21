@@ -605,8 +605,6 @@ func (d *Domain) seedClients(db *gorm.DB) (err error) {
 		switch clients[i].ClientId {
 		case "web-ui":
 			clients[i].RedirectURIs = []string{Settings.Auth.RedirectURI.WebUI}
-		case "kai-ide":
-			clients[i].RedirectURIs = []string{Settings.Auth.RedirectURI.KAI}
 		}
 	}
 

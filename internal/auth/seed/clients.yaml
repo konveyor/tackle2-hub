@@ -36,3 +36,6 @@
     - "openid"
     - "profile"
     - "email"
+  redirectURIs:
+    - vscode://konveyor.konveyor-core/auth
+    - http://127.0.0.1:*

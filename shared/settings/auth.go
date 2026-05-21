@@ -21,7 +21,6 @@ const (
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
 	EnvRedirectURIWebUI     = "OIDC_REDIRECT_URI_WEBUI"
-	EnvRedirectURIKAI       = "OIDC_REDIRECT_URI_KAI"
 )
 
 type Auth struct {
@@ -53,7 +52,6 @@ type Auth struct {
 	// RedirectURI settings for OIDC clients.
 	RedirectURI struct {
 		WebUI string
-		KAI   string
 	}
 }
 
@@ -70,7 +68,6 @@ func (r *Auth) Load() (err error) {
 	r.IssuerURL = env.Get(EnvOidcIssuer, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	r.RedirectURI.WebUI = env.Get(EnvRedirectURIWebUI, "")
-	r.RedirectURI.KAI = env.Get(EnvRedirectURIKAI, "vscode://konveyor.konveyor-core/auth")
 
 	issuerURL, err := url.Parse(r.IssuerURL)
 	if err == nil {

@@ -2244,14 +2244,11 @@ func TestSeedClientsCreate(t *testing.T) {
 
 	// Set redirect URIs in settings
 	originalWebUI := Settings.Auth.RedirectURI.WebUI
-	originalKAI := Settings.Auth.RedirectURI.KAI
 	defer func() {
 		Settings.Auth.RedirectURI.WebUI = originalWebUI
-		Settings.Auth.RedirectURI.KAI = originalKAI
 	}()
 
 	Settings.Auth.RedirectURI.WebUI = "http://localhost:3000/login/callback"
-	Settings.Auth.RedirectURI.KAI = "vscode://test.extension/auth"
 
 	domain := NewDomain(db)
 
@@ -2285,8 +2282,9 @@ func TestSeedClientsCreate(t *testing.T) {
 	err = db.First(&kaiIDE, "ClientId = ?", "kai-ide").Error
 	g.Expect(err).To(BeNil())
 	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
-	g.Expect(kaiIDE.RedirectURIs).To(HaveLen(1))
-	g.Expect(kaiIDE.RedirectURIs[0]).To(Equal("vscode://test.extension/auth"))
+	g.Expect(kaiIDE.RedirectURIs).To(HaveLen(2))
+	g.Expect(kaiIDE.RedirectURIs[0]).To(Equal("vscode://konveyor.konveyor-core/auth"))
+	g.Expect(kaiIDE.RedirectURIs[1]).To(Equal("http://127.0.0.1:*"))
 }
 
 // TestSeedClientsUpdate tests updating existing clients.
@@ -2450,14 +2448,11 @@ func TestSeedClientsRedirectURIInjection(t *testing.T) {
 
 	// Test with custom redirect URIs
 	originalWebUI := Settings.Auth.RedirectURI.WebUI
-	originalKAI := Settings.Auth.RedirectURI.KAI
 	defer func() {
 		Settings.Auth.RedirectURI.WebUI = originalWebUI
-		Settings.Auth.RedirectURI.KAI = originalKAI
 	}()
 
 	Settings.Auth.RedirectURI.WebUI = "https://custom.example.com/callback"
-	Settings.Auth.RedirectURI.KAI = "vscode://custom.extension/auth"
 
 	domain := NewDomain(db)
 	err = domain.seedClients(db)
@@ -2472,7 +2467,7 @@ func TestSeedClientsRedirectURIInjection(t *testing.T) {
 	var kaiIDE IdpClient
 	err = db.First(&kaiIDE, "ClientId = ?", "kai-ide").Error
 	g.Expect(err).To(BeNil())
-	g.Expect(kaiIDE.RedirectURIs).To(Equal([]string{"vscode://custom.extension/auth"}))
+	g.Expect(kaiIDE.RedirectURIs).To(Equal([]string{"vscode://konveyor.konveyor-core/auth", "http://127.0.0.1:*"}))
 
 	// Verify kantra has no redirect URIs
 	var kantra IdpClient
