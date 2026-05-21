@@ -105,7 +105,7 @@ func main() {
 			InsecureSkipVerify: true,
 		}
 
-		bearer := auth.NewBearer(*issuerURL, *clientId)
+		bearer := auth.NewOIDC(*issuerURL, *clientId)
 		bearer.SetTransport(tr)
 		err := bearer.Login()
 		if err != nil {
@@ -134,7 +134,7 @@ func main() {
 
 	// User supplied token.
 	if *token != "" {
-		bearer := &auth.Bearer{}
+		bearer := &auth.OIDC{}
 		bearer.Use(*token)
 		richClient.Client.Use(bearer)
 		testClient(richClient)

@@ -20,7 +20,6 @@ const (
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
-	EnvAuthFile             = "AUTH_FILE"
 	EnvRedirectURIWebUI     = "OIDC_REDIRECT_URI_WEBUI"
 	EnvRedirectURIKAI       = "OIDC_REDIRECT_URI_KAI"
 )

@@ -180,7 +180,7 @@ func (h *Adapter) Client() (richClient *RichClient) {
 
 // New builds a new Addon Adapter object.
 func New() (adapter *Adapter) {
-	bearer := &auth.Bearer{}
+	bearer := &auth.OIDC{}
 	bearer.Use(Settings.Hub.Token)
 	richClient := binding.New(Settings.Hub.URL)
 	richClient.Client.Use(bearer)

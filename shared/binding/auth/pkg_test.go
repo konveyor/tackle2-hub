@@ -22,40 +22,40 @@ func TestBasic(t *testing.T) {
 	g.Expect(header).To(Equal("Basic dGVzdHVzZXI6dGVzdHBhc3M="))
 }
 
-// TestBearerHeader tests Bearer Header method.
-func TestBearerHeader(t *testing.T) {
+// TestOIDCHeader tests OIDC Header method.
+func TestOIDCHeader(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Create Bearer with mock tokens (skip RP client initialization)
-	bearer := &Bearer{
+	// Create OIDC with mock tokens (skip RP client initialization)
+	bearer := &OIDC{
 		accessToken:  "test-access-token",
 		refreshToken: "test-refresh-token",
 	}
 
 	header := bearer.Header()
-	g.Expect(header).To(Equal("Bearer test-access-token"))
+	g.Expect(header).To(Equal("OIDC test-access-token"))
 }
 
-// TestBearerTokenMethods tests Bearer token storage and retrieval.
-func TestBearerTokenMethods(t *testing.T) {
+// TestOIDCTokenMethods tests OIDC token storage and retrieval.
+func TestOIDCTokenMethods(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	bearer := NewBearer("http://localhost:8080", "test-client")
+	bearer := NewOIDC("http://localhost:8080", "test-client")
 
 	// Use method should set access token
 	bearer.Use("test-access-token")
 	g.Expect(bearer.Token()).To(Equal("test-access-token"))
 
-	// Header should include Bearer prefix
+	// Header should include OIDC prefix
 	header := bearer.Header()
-	g.Expect(header).To(Equal("Bearer test-access-token"))
+	g.Expect(header).To(Equal("OIDC test-access-token"))
 }
 
-// TestBearerSetTransport tests Bearer transport configuration.
-func TestBearerSetTransport(t *testing.T) {
+// TestOIDCSetTransport tests OIDC transport configuration.
+func TestOIDCSetTransport(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	bearer := NewBearer("http://localhost:8080", "test-client")
+	bearer := NewOIDC("http://localhost:8080", "test-client")
 
 	// SetTransport should update httpClient transport
 	transport := &http.Transport{

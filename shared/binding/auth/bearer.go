@@ -38,9 +38,9 @@ const (
 	SlowDown    = "slow_down"
 )
 
-// NewBearer creates a new OIDC bearer token authenticator.
-func NewBearer(issuerURL, clientId string) (h *Bearer) {
-	h = &Bearer{
+// NewOIDC creates a new OIDC bearer token authenticator.
+func NewOIDC(issuerURL, clientId string) (h *OIDC) {
+	h = &OIDC{
 		issuerURL:  issuerURL,
 		clientId:   clientId,
 		httpClient: &http.Client{},
@@ -48,8 +48,8 @@ func NewBearer(issuerURL, clientId string) (h *Bearer) {
 	return
 }
 
-// Bearer provides OIDC authentication with automatic token refresh.
-type Bearer struct {
+// OIDC provides OIDC authentication with automatic token refresh.
+type OIDC struct {
 	mutex        sync.RWMutex
 	issuerURL    string
 	clientId     string
@@ -59,14 +59,14 @@ type Bearer struct {
 }
 
 // Use sets the access token.
-func (p *Bearer) Use(token string) {
+func (p *OIDC) Use(token string) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	p.accessToken = token
 }
 
 // Token returns the access token.
-func (p *Bearer) Token() (token string) {
+func (p *OIDC) Token() (token string) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 	token = p.accessToken
@@ -75,7 +75,7 @@ func (p *Bearer) Token() (token string) {
 
 // Login refreshes the access token.
 // DeviceLogin when refresh fails.
-func (p *Bearer) Login() (err error) {
+func (p *OIDC) Login() (err error) {
 	var refreshToken string
 	func() {
 		p.mutex.Lock()
@@ -110,22 +110,22 @@ func (p *Bearer) Login() (err error) {
 }
 
 // Header returns the Authorization header value.
-func (p *Bearer) Header() (header string) {
+func (p *OIDC) Header() (header string) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
-	header = "Bearer " + p.accessToken
+	header = "OIDC " + p.accessToken
 	return
 }
 
 // SetTransport sets the http transport.
-func (p *Bearer) SetTransport(tr *http.Transport) {
+func (p *OIDC) SetTransport(tr *http.Transport) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	p.httpClient.Transport = tr
 }
 
 // DeviceLogin performs device authorization flow.
-func (p *Bearer) DeviceLogin() (err error) {
+func (p *OIDC) DeviceLogin() (err error) {
 	authReq := &DeviceAuth{
 		ClientId: p.clientId,
 		Scope:    Scopes,
@@ -143,7 +143,7 @@ func (p *Bearer) DeviceLogin() (err error) {
 }
 
 // getToken polls for tokens.
-func (p *Bearer) getToken(authReq *DeviceAuth) (err error) {
+func (p *OIDC) getToken(authReq *DeviceAuth) (err error) {
 	seconds := max(authReq.Interval, 5)
 
 	token := &Token{
@@ -188,7 +188,7 @@ func (p *Bearer) getToken(authReq *DeviceAuth) (err error) {
 }
 
 // post makes a POST request to the OIDC endpoint.
-func (p *Bearer) post(path string, object Form) (err error) {
+func (p *OIDC) post(path string, object Form) (err error) {
 	parsed, err := url.Parse(p.issuerURL)
 	if err != nil {
 		err = liberr.Wrap(err)
