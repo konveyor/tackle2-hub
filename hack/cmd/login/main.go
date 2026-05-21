@@ -67,7 +67,7 @@ func main() {
 		"",
 		"User password.")
 	getToken := flag.Bool(
-		"getToken",
+		"pat",
 		true,
 		"Get PAT token.")
 	flag.Parse()
