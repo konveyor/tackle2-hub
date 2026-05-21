@@ -13,13 +13,13 @@ func TestIdentityCRUD(t *testing.T) {
 			// Create.
 			err := Identity.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Identity.Decrypted().Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -29,12 +29,12 @@ func TestIdentityCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = Identity.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Identity.Decrypted().Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -43,7 +43,7 @@ func TestIdentityCRUD(t *testing.T) {
 			// Delete.
 			err = Identity.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = Identity.Decrypted().Get(r.ID)
@@ -65,7 +65,7 @@ func TestIdentityList(t *testing.T) {
 
 	got, err := Identity.Decrypted().List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)

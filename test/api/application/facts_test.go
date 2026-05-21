@@ -42,14 +42,14 @@ func TestApplicationFactCRUD(t *testing.T) {
 			// Create.
 			err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			var v any
 			err = Client.Get(factPath, &v)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			// Not sure about map[] wrapping of the Fact Value (interface) by the API
 			//if !reflect.DeepEqual(got.Value, fact.Value) {
@@ -62,13 +62,13 @@ func TestApplicationFactCRUD(t *testing.T) {
 			}
 			err = Client.Put(factPath, updated.Value)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get the updated.
 			err = Client.Get(factPath, &v)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			//if !reflect.DeepEqual(got.Value, updated.Value) {
 			//	t.Errorf("Different updated fact value error. Got %v, expected %v", got.Value, updated.Value)
@@ -77,7 +77,7 @@ func TestApplicationFactCRUD(t *testing.T) {
 			// Delete.
 			err = Client.Delete(factPath)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Check the it was deleted.
@@ -103,7 +103,7 @@ func TestApplicationFactsList(t *testing.T) {
 	for _, r := range SampleFacts {
 		err := Client.Post(binding.Path(api.ApplicationFactsRoute).Inject(binding.Params{api.ID: application.ID}), &r)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 	}
 
@@ -139,7 +139,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 		t.Run(fmt.Sprintf("Fact %s application %s", r.Key, application.Name), func(t *testing.T) {
 			err := RichClient.Application.Select(application.ID).Fact.Create(r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
@@ -150,7 +150,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 				Source(r.Source).
 				Get(r.Key, &v)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			// Update.
 			err = RichClient.Application.
@@ -159,7 +159,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 				Source(r.Source).
 				Set(r.Key, &v)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get the updated.
@@ -169,7 +169,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 				Source(r.Source).
 				Get(r.Key, &v)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// List
@@ -179,7 +179,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 				Source(r.Source).
 				List()
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if len(facts) != 1 {
 				t.Errorf("Len facts must be 1.")
@@ -192,7 +192,7 @@ func TestApplicationFactCRUD_Select(t *testing.T) {
 				Source(r.Source).
 				Delete(r.Key)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Ensure it's deleted.

@@ -97,12 +97,6 @@ var (
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
 
-func init() {
-	auth.Validators = append(
-		auth.Validators,
-		&Validator{})
-}
-
 // New manager.
 func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 	m = &Manager{
@@ -377,7 +371,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 			if err != nil {
 				return
 			}
-			err = task.update(m.DB)
+			err = m.batchUpdate([]*Task{task})
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -1278,6 +1272,8 @@ func (m *Manager) advancePipeline(task *Task) (updated []*Task, err error) {
 // batchUpdate tasks.
 func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 	digest := make(map[uint]string)
+	cache := auth.IdP.Cache()
+	cacheTx := cache.Begin()
 	err = m.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			for _, task := range tasks {
@@ -1288,13 +1284,16 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 						err = liberr.Wrap(err)
 						break
 					}
+					cacheTx.TaskSaved(task.Task)
 				}
 			}
 			return
 		})
 	if err == nil {
+		cacheTx.Commit()
 		return
 	}
+	cacheTx.Rollback()
 	for _, task := range tasks {
 		task.digest = digest[task.ID]
 		if task.hasChanged() {
@@ -1303,6 +1302,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 				err = liberr.Wrap(err)
 				break
 			}
+			cache.TaskSaved(task.Task)
 		}
 	}
 	return

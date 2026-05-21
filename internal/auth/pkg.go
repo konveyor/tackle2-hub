@@ -1,0 +1,218 @@
+package auth
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/internal/auth/cache"
+	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
+	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/settings"
+	"gorm.io/gorm"
+)
+
+const (
+	KindAccessToken = cache.KindAccessToken
+	KindAuthCode    = cache.KindAuthCode
+	KindAPIKey      = cache.KindAPIKey
+)
+
+const (
+	IdentityKindOpenid = cache.IdentityKindOpenid
+	IdentityKindLDAP   = cache.IdentityKindLDAP
+)
+
+const (
+	DevVerifierClientId = "device-verifier"
+)
+
+var (
+	Settings  = &settings.Settings
+	Log       = logr.New("auth", Settings.Log.Auth)
+	federated = &as.Federated{}
+	IdP       Provider
+)
+
+func init() {
+	IdP = &NoAuth{}
+}
+
+// New returns an auth provider.
+func New(db *gorm.DB) (p Provider, err error) {
+	if !Settings.Disconnected {
+		err = federated.Load(Settings.Namespace)
+		if err != nil {
+			return
+		}
+	}
+	builtin, err := NewBuiltin(db)
+	if err != nil {
+		return
+	}
+	p = NewNoAuth(builtin)
+	if Settings.Auth.Required {
+		p = builtin
+	}
+	return
+}
+
+// Provider provides RBAC.
+type Provider interface {
+	// Cache returns the provider cache.
+	Cache() *Cache
+	// Login begin OIDC auth.
+	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
+	// NewPAT creates a new personal access token.
+	NewPAT(subject string, lifespan time.Duration) (token Token, err error)
+	// NewTaskToken creates a new api-key.
+	NewTaskToken(taskId uint) (token Token, err error)
+	// Revoke a token.
+	Revoke(tokenId uint) (err error)
+	// Authenticate the request.
+	Authenticate(r *Request) (jwToken *jwt.Token, err error)
+	// Scopes extracts a list of scopes from the token.
+	Scopes(jwToken *jwt.Token) []Scope
+	// User extracts the user from token.
+	User(jwToken *jwt.Token) (user string)
+	// Subject extracts the subject from the token.
+	Subject(jwToken *jwt.Token) (subject string)
+	// Handler returns an OIDC handler.
+	Handler() (h http.Handler)
+	// IdpHandler returns the external IdP handler.
+	IdpHandler() (h *FedIdpHandler)
+	// DagHandler returns the device access grant handler.
+	DagHandler() (h *DagHandler)
+}
+
+// JWT Claims - Standard claims.
+const (
+	ClaimSub   = "sub"   // Subject
+	ClaimScope = "scope" // Scope
+	ClaimExp   = "exp"   // Expiration Time
+	ClaimIss   = "iss"   // Issuer
+	ClaimAud   = "aud"   // Audience
+)
+
+// NotAuthenticated is returned when a token cannot be authenticated.
+type NotAuthenticated struct {
+	Token  string
+	Reason string
+}
+
+func (e *NotAuthenticated) Error() (s string) {
+	if e.Reason != "" {
+		return fmt.Sprintf("Token [%s] not-authenticated: %s", e.Token, e.Reason)
+	}
+	return fmt.Sprintf("Token [%s] not-authenticated.", e.Token)
+}
+
+func (e *NotAuthenticated) Is(err error) (matched bool) {
+	notAuth := &NotAuthenticated{}
+	matched = errors.As(err, &notAuth)
+	return
+}
+
+// NotValid is returned when a token is not valid.
+type NotValid struct {
+	Reason string
+	Token  string
+}
+
+func (e *NotValid) Error() (s string) {
+	return fmt.Sprintf("Token [%s] not-valid: %s", e.Token, e.Reason)
+}
+
+func (e *NotValid) Is(err error) (matched bool) {
+	notValid := &NotValid{}
+	matched = errors.As(err, &notValid)
+	return
+}
+
+// Scope represents an authorization scope.
+type Scope interface {
+	// Match returns whether the scope is a match.
+	Match(resource string, method string) bool
+	//String representations of the scope.
+	String() (s string)
+}
+
+// BaseScope provides base behavior.
+type BaseScope struct {
+	Resource string
+	Method   string
+}
+
+// With parses a scope and populate fields.
+// Format: <resource>:<method>
+func (r *BaseScope) With(s string) {
+	part := strings.Split(s, ":")
+	n := len(part)
+	if n > 0 {
+		r.Resource = part[0]
+	}
+	if n > 1 {
+		r.Method = part[1]
+	}
+	return
+}
+
+// Match returns whether the scope is a match.
+func (r *BaseScope) Match(resource string, method string) (b bool) {
+	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&
+		(r.Method == "*" || strings.EqualFold(r.Method, method))
+	return
+}
+
+// String representations of the scope.
+func (r *BaseScope) String() (s string) {
+	s = strings.Join([]string{r.Resource, r.Method}, ":")
+	return
+}
+
+// cache aliases
+
+type RsaKey = model.RsaKey
+type Cache = cache.Cache
+type Tx = cache.Tx
+type Model = cache.Model
+type User = cache.User
+type Role = cache.Role
+type Token = cache.Token
+type Identity = cache.Identity
+type Subject = cache.Subject
+type Task = cache.Task
+type Permission = cache.Permission
+type Grant = cache.Grant
+
+// asTime returns a time.Time for unix time.
+func asTime(n int) (t time.Time) {
+	t = time.Unix(int64(n), 0)
+	t = t.UTC()
+	return
+}
+
+// asInt returns unix time for time.Time.
+func asInt(t time.Time) (i int) {
+	t = t.UTC()
+	i = int(t.Unix())
+	return
+}
+
+func uniqueStrings(items []string) (result []string) {
+	seen := make(map[string]bool, len(items))
+	result = make([]string, 0, len(items))
+	for _, item := range items {
+		if !seen[item] {
+			seen[item] = true
+			result = append(result, item)
+		}
+	}
+	return
+}
+
+type IdpClient = model.IdpClient

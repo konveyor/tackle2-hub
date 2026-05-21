@@ -6,7 +6,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestConfigMap(t *testing.T) {
+// TODO: Disabled.
+// No configmap deployed by default.
+func _TestConfigMap(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// LIST: List all configmaps

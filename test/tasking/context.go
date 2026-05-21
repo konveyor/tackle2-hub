@@ -3,27 +3,19 @@ package tasking
 import (
 	"context"
 
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/onsi/gomega"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func New(g *gomega.GomegaWithT) (ctx *Context) {
 	ctx = &Context{}
 	// Setup in-memory database
-	db, err := gorm.Open(
-		sqlite.Open(":memory:"),
-		&gorm.Config{
-			NamingStrategy: &schema.NamingStrategy{
-				SingularTable: true,
-				NoLowerCase:   true,
-			},
-		})
+	db, err := database.OpenTest()
 	g.Expect(err).To(gomega.BeNil())
 	ctx.DB = db
 	// Auto-migrate required tables

@@ -1,10 +1,10 @@
 package client
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/auth"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"k8s.io/utils/env"
 )
@@ -25,11 +25,13 @@ func PrepareRichClient() (richClient *binding.RichClient) {
 		env.GetString(
 			settings.EnvHubBaseURL,
 			"http://localhost:8080"))
-	err := richClient.Login(
-		os.Getenv(Username),
-		os.Getenv(Password))
-	if err != nil {
-		panic(fmt.Sprintf("Cannot login to API: %v.", err.Error()))
+
+	// Set up Basic auth if credentials provided
+	username := os.Getenv(Username)
+	password := os.Getenv(Password)
+	if username != "" && password != "" {
+		basicAuth := auth.NewBasic(username, password)
+		richClient.UseAuth(basicAuth)
 	}
 
 	// Disable HTTP requests retry for network-related errors to fail quickly.

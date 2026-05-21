@@ -24,7 +24,7 @@ func TestManifestCRUD(t *testing.T) {
 	r.Application.ID = application.ID
 	err = Manifest.Create(&r)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	created := r
 	if !assert.MapEq(Base.Content, created.Content) {
@@ -37,7 +37,7 @@ func TestManifestCRUD(t *testing.T) {
 	// Get encrypted.
 	got, err := Manifest.Get(created.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, got.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, got.Content)
@@ -48,7 +48,7 @@ func TestManifestCRUD(t *testing.T) {
 	// Get decrypted.
 	decrypted, err := Manifest.Decrypted().Get(created.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, decrypted.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, decrypted.Content)
@@ -59,7 +59,7 @@ func TestManifestCRUD(t *testing.T) {
 	// Get decrypted and injected.
 	injected, err := Manifest.Decrypted().Injected().Get(created.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(InjectedContent, injected.Content) {
 		t.Errorf("Content not injected.\n Expected: %s\n Actual: %s", InjectedContent, injected.Content)
@@ -73,11 +73,11 @@ func TestManifestCRUD(t *testing.T) {
 	r.Secret["password"] = "_$44rabbit-"
 	err = Manifest.Update(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	got, err = Manifest.Decrypted().Get(r.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if got.Content["fqdn"] != r.Content["fqdn"] {
 		t.Errorf("fqdn not updated.")
@@ -89,7 +89,7 @@ func TestManifestCRUD(t *testing.T) {
 	// Delete.
 	err = Manifest.Delete(r.ID)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	_, err = Manifest.Get(r.ID)
 	if err == nil {

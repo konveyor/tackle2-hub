@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/konveyor/tackle2-hub/shared/binding"
+	"github.com/konveyor/tackle2-hub/shared/binding/auth"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
@@ -29,8 +30,5 @@ func init() {
 	if user == "" || password == "" {
 		return
 	}
-	err := client.Login(user, password)
-	if err != nil {
-		panic(err)
-	}
+	client.Client.Use(auth.NewBasic(user, password))
 }

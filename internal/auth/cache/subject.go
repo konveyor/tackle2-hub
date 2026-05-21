@@ -1,0 +1,85 @@
+package cache
+
+import (
+	"sort"
+	"strings"
+)
+
+// Subject represents a resolved subject (User, IdpIdentity, IdpClient).
+// The entity being authenticated.
+type Subject struct {
+	Key        string
+	Email      string
+	Scopes     []string
+	UserId     *uint
+	IdentityId *uint
+	ClientId   *uint
+	User       *User
+	Identity   *Identity
+	Client     *IdpClient
+}
+
+// WithUser populates Subject from a User model.
+func (r *Subject) WithUser(user *User, cache *Cache) {
+	r.UserId = &user.ID
+	r.Key = user.Subject
+	r.User = user
+	r.Email = user.Email
+	for _, ref := range user.Roles {
+		role, err := cache.FindRoleById(ref.ID)
+		if err != nil {
+			continue
+		}
+		r.Scopes = append(r.Scopes, role.GetScopes()...)
+	}
+	r.Scopes = uniqueStrings(r.Scopes)
+	sort.Strings(r.Scopes)
+}
+
+// WithIdentity populates Subject from an IdpIdentity model.
+func (r *Subject) WithIdentity(idp *Identity) {
+	r.IdentityId = &idp.ID
+	r.Identity = idp
+	r.Key = idp.Subject
+	r.Email = idp.Email
+
+	if idp.Scopes != "" {
+		r.Scopes = strings.Fields(idp.Scopes)
+	}
+}
+
+// WithClient populates Subject from an IdpClient model.
+func (r *Subject) WithClient(client *IdpClient, cache *Cache) {
+	r.ClientId = &client.ID
+	r.Client = client
+	r.Key = client.Subject
+	r.Scopes = client.GetScopes()
+}
+
+// Login returns the user (login) name (Eg: jsmith).
+func (r *Subject) Login() (login string) {
+	if r.IsUser() {
+		login = r.User.Login
+		return
+	}
+	if r.IsIdentity() {
+		login = r.Identity.Login
+		return
+	}
+	return
+}
+
+// IsUser returns true if this subject is a User.
+func (r *Subject) IsUser() bool {
+	return r.UserId != nil
+}
+
+// IsIdentity returns true if this subject is an IdpIdentity.
+func (r *Subject) IsIdentity() bool {
+	return r.IdentityId != nil
+}
+
+// IsClient returns true if this subject is an IdpClient.
+func (r *Subject) IsClient() bool {
+	return r.ClientId != nil
+}

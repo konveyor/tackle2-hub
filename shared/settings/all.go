@@ -44,9 +44,7 @@ func (r *TackleSettings) Load() (err error) {
 func (r TackleSettings) String() (s string) {
 	redacted := "********"
 	r.Encryption.Passphrase = redacted
-	r.Auth.Keycloak.ClientSecret = redacted
-	r.Auth.Keycloak.Admin.Pass = redacted
-	r.Auth.Keycloak.Admin.User = redacted
+	r.Auth.APIKey.Secret = redacted
 	b, err := yaml.Marshal(r)
 	if err != nil {
 		panic(err)

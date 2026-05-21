@@ -106,3 +106,20 @@ func Close(db *gorm.DB) (err error) {
 	}
 	return
 }
+
+// OpenTest creates an in-memory SQLite database for testing with foreign keys enabled.
+func OpenTest() (db *gorm.DB, err error) {
+	db, err = gorm.Open(
+		sqlite.Open("file::memory:?_foreign_keys=yes"),
+		&gorm.Config{
+			NamingStrategy: &schema.NamingStrategy{
+				SingularTable: true,
+				NoLowerCase:   true,
+			},
+		})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}

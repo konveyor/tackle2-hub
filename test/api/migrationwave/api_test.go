@@ -48,7 +48,7 @@ func TestMigrationWaveCRUD(t *testing.T) {
 		// Get migration wave.
 		got, err := MigrationWave.Get(r.ID)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 
 		// Compare got values with expected values.
@@ -61,7 +61,7 @@ func TestMigrationWaveCRUD(t *testing.T) {
 		// Find MigrationWave and check its parameters with the got(On Updation).
 		got, err = MigrationWave.Get(r.ID)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 
 		// Check if the unchanged values remain same or not.
@@ -134,7 +134,7 @@ func TestMigrationWaveList(t *testing.T) {
 	// List MigrationWaves.
 	got, err := MigrationWave.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// Compare contents of migration waves.
