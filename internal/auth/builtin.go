@@ -282,6 +282,13 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 			})
 		return
 	}
+	//
+	// Inject iss claim for legacy HMAC tokens.
+	if _, cast := jwToken.Method.(*jwt.SigningMethodHMAC); cast {
+		if _, found := claims[ClaimIss]; !found {
+			claims[ClaimIss] = Settings.IssuerURL
+		}
+	}
 	v, found := claims[ClaimSub]
 	if !found {
 		err = liberr.Wrap(

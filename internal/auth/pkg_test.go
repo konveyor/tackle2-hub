@@ -215,6 +215,52 @@ func TestJWTAuthentication(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("Scope not specified"))
 }
 
+// TestLegacyHMACTokenAuthentication tests authenticating legacy HMAC tokens
+// that were created before iss claim validation was added (simulates old NewToken() behavior).
+func TestLegacyHMACTokenAuthentication(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Simulate old NewToken() behavior:
+	// - HMAC signing
+	// - Sets sub, scope, exp
+	// - NO iss claim (this is what we're testing)
+	// - Custom claims (like task ID)
+	signingKey := []byte(Settings.Auth.Token.Key)
+
+	token := jwt.New(jwt.SigningMethodHS512)
+	claims := token.Claims.(jwt.MapClaims)
+	claims[ClaimSub] = "addon-user-123"
+	claims[ClaimScope] = "tasks:post applications:get"
+	claims[ClaimExp] = float64(time.Now().Add(24 * time.Hour).Unix())
+	// NO iss claim - simulates legacy token
+	claims["task"] = 42 // Custom claim from old NewToken() usage
+
+	tokenString, err := token.SignedString(signingKey)
+	g.Expect(err).To(BeNil())
+
+	// Authenticate with legacy token
+	request := &Request{}
+	request.With("Bearer " + tokenString)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+	g.Expect(jwToken).NotTo(BeNil())
+
+	// Verify claims
+	jwtClaims := jwToken.Claims.(jwt.MapClaims)
+	g.Expect(jwtClaims[ClaimSub]).To(Equal("addon-user-123"))
+	g.Expect(jwtClaims[ClaimScope]).To(Equal("tasks:post applications:get"))
+	g.Expect(jwtClaims["task"]).To(Equal(float64(42)))
+
+	// Verify iss was injected
+	g.Expect(jwtClaims[ClaimIss]).To(Equal(Settings.IssuerURL))
+}
+
 // TestUserExtraction tests extracting user from token.
 func TestUserExtraction(t *testing.T) {
 	g := NewGomegaWithT(t)
