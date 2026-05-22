@@ -97,6 +97,8 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 			"lastAuthenticated",
 			"lastRefreshed",
 			"scopes",
+			"login",
+			"name",
 			"email",
 			"updateUser",
 		}),
