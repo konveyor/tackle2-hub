@@ -344,6 +344,32 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 		}
 		return
 	}
+	v, found = claims[ClaimIss]
+	if !found {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Iss not specified.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	issuerStr, cast := v.(string)
+	if !cast {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Iss not string.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
+	if issuerStr != Settings.IssuerURL {
+		err = liberr.Wrap(
+			&NotValid{
+				Reason: "Iss mismatch.",
+				Token:  jwToken.Raw,
+			})
+		return
+	}
 	return
 }
 
@@ -447,8 +473,11 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	if err == nil {
 		jwToken = jwt.New(jwt.SigningMethodHS512)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
-		jwtClaims[ClaimScope] = pat.Scopes
 		jwtClaims[ClaimSub] = pat.Subject
+		jwtClaims[ClaimScope] = pat.Scopes
+		jwtClaims[ClaimIss] = Settings.IssuerURL
+		jwtClaims[ClaimIat] = time.Now().Unix()
+		jwtClaims[ClaimExp] = pat.Expiration.Unix()
 		return
 	}
 	err = liberr.Wrap(&NotAuthenticated{
@@ -490,6 +519,9 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = user.Subject
 	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
+	jwtClaims[ClaimIss] = Settings.IssuerURL
+	jwtClaims[ClaimIat] = time.Now().Unix()
+	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.BasicAuthLifespan).Unix()
 	return
 }
 
@@ -504,6 +536,9 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = subject.Key
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
+	jwtClaims[ClaimIss] = Settings.IssuerURL
+	jwtClaims[ClaimIat] = time.Now().Unix()
+	jwtClaims[ClaimExp] = time.Now().Add(lifespan).Unix()
 	return
 }
 

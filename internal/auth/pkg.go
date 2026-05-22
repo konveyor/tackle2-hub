@@ -96,6 +96,7 @@ const (
 	ClaimExp   = "exp"   // Expiration Time
 	ClaimIss   = "iss"   // Issuer
 	ClaimAud   = "aud"   // Audience
+	ClaimIat   = "iat"   // Issued At
 )
 
 // NotAuthenticated is returned when a token cannot be authenticated.
