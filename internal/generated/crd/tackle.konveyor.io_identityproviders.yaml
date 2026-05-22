@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.5
-  name: ldapproviders.tackle.konveyor.io
+  name: identityproviders.tackle.konveyor.io
 spec:
   group: tackle.konveyor.io
   names:
-    kind: LdapProvider
-    listKind: LdapProviderList
-    plural: ldapproviders
-    singular: ldapprovider
+    kind: IdentityProvider
+    listKind: IdentityProviderList
+    plural: identityproviders
+    singular: identityprovider
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LdapProvider defines LDAP authentication and authorization settings.
+        description: IdentityProvider defines external IDP federation settings.
         properties:
           apiVersion:
             description: |-
@@ -39,29 +39,11 @@ spec:
           spec:
             description: Spec defines the desired state of the resource.
             properties:
-              baseDN:
-                description: Base DN for LDAP searches (e.g., dc=example,dc=com).
+              clientId:
+                description: Client ID.
                 type: string
-              bindDN:
-                description: Service account bind DN for LDAP authentication.
-                type: string
-              groupFilter:
-                description: Custom group search filter (optional, defaults based
-                  on Kind).
-                type: string
-              hasMemberOf:
-                description: Use memberOf attribute for group membership (faster if
-                  available).
-                type: boolean
-              kind:
-                description: LDAP kind (ACTIVEDIRECTORY, AD, or blank for standard
-                  LDAP).
-                type: string
-              name:
-                description: Provider name.
-                type: string
-              password:
-                description: Password reference for service account authentication.
+              clientSecret:
+                description: Client secret reference.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -103,28 +85,19 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              roleMappings:
-                description: Role mappings from LDAP groups to application roles.
+              issuer:
+                description: Issuer URL.
+                type: string
+              name:
+                description: Provider name.
+                type: string
+              redirectURI:
+                description: Redirect URI.
+                type: string
+              scopes:
+                description: OAuth scopes.
                 items:
-                  description: RoleMapping defines pattern matching for LDAP groups
-                    to roles.
-                  properties:
-                    and:
-                      description: And patterns (AND condition).
-                      items:
-                        type: string
-                      type: array
-                    any:
-                      description: Any patterns (OR condition).
-                      items:
-                        type: string
-                      type: array
-                    roles:
-                      description: Role name to assign when matched.
-                      items:
-                        type: string
-                      type: array
-                  type: object
+                  type: string
                 type: array
               tls:
                 description: TLS connection settings.
@@ -140,13 +113,6 @@ spec:
                       Use only for development/testing with self-signed certificates.
                     type: boolean
                 type: object
-              url:
-                description: LDAP server URL (e.g., ldap://ldap.example.com:389).
-                type: string
-              userFilter:
-                description: Custom user search filter (optional, defaults based on
-                  Kind).
-                type: string
             type: object
           status:
             description: Status defines the observed state of the resource.

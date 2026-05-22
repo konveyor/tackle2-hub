@@ -2,6 +2,7 @@ package settings
 
 import (
 	"context"
+	"crypto/tls"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -14,7 +15,7 @@ import (
 
 // Federated defines federation settings.
 type Federated struct {
-	Idp  OpenidProvider
+	Idp  IdentityProvider
 	Ldap LdapProvider
 	//
 	client    client2.Client
@@ -45,22 +46,27 @@ func (r *Federated) Load(namespace string) (err error) {
 
 // String returns a string representation.
 func (r Federated) String() (s string) {
+	r.Idp.TLS = nil
+	r.Ldap.TLS = nil
 	b, _ := yaml.Marshal(r)
 	s = string(b)
 	return
 }
 
-// getIdp get a federated openid provider.
+// getIdp get a federated identity provider.
 func (r *Federated) getIdp() (err error) {
-	list := crd.OpenidProviderList{}
+	list := crd.IdentityProviderList{}
 	opt := client2.InNamespace(r.namespace)
 	err = r.client.List(context.Background(), &list, opt)
 	if err != nil {
 		return
 	}
 	for _, m := range list.Items {
-		m2 := OpenidProvider{}
-		m2.with(&m)
+		m2 := IdentityProvider{}
+		err = m2.with(&m)
+		if err != nil {
+			return
+		}
 		ref := m.Spec.ClientSecret
 		if ref != nil {
 			m2.ClientSecret, err = r.secret(ref, "clientSecret")
@@ -85,7 +91,10 @@ func (r *Federated) getLdap() (err error) {
 	}
 	for _, m := range list.Items {
 		m2 := LdapProvider{}
-		m2.with(&m)
+		err = m2.with(&m)
+		if err != nil {
+			return
+		}
 		ref := m.Spec.Password
 		if ref != nil {
 			m2.Password, err = r.secret(ref, "password")
@@ -118,8 +127,8 @@ func (r *Federated) secret(ref *core.ObjectReference, key string) (s string, err
 	return
 }
 
-// OpenidProvider defines a federated IdP.
-type OpenidProvider struct {
+// IdentityProvider defines a federated IdP.
+type IdentityProvider struct {
 	Enabled      bool
 	Name         string
 	Issuer       string
@@ -127,16 +136,23 @@ type OpenidProvider struct {
 	ClientSecret string
 	RedirectURI  string
 	Scopes       []string
+	TLS          *tls.Config
 }
 
 // with populates self with the crd.
-func (r *OpenidProvider) with(idp *crd.OpenidProvider) {
+func (r *IdentityProvider) with(idp *crd.IdentityProvider) (err error) {
 	r.Enabled = true
 	r.Name = idp.Name
 	r.Issuer = idp.Spec.Issuer
 	r.ClientId = idp.Spec.ClientId
 	r.RedirectURI = idp.Spec.RedirectURI
 	r.Scopes = idp.Spec.Scopes
+	r.TLS, err = idp.Spec.TLS.AsConfig()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
 }
 
 // LdapProvider defines a federated LDAP directory.
@@ -152,10 +168,11 @@ type LdapProvider struct {
 	GroupFilter  string
 	HasMemberOf  bool
 	RoleMappings []MappingRule
+	TLS          *tls.Config
 }
 
 // with populates self using the crd.
-func (r *LdapProvider) with(ds *crd.LdapProvider) {
+func (r *LdapProvider) with(ds *crd.LdapProvider) (err error) {
 	r.Enabled = true
 	r.Name = ds.Name
 	r.Kind = ds.Spec.Kind
@@ -172,6 +189,12 @@ func (r *LdapProvider) with(ds *crd.LdapProvider) {
 			Roles: m.Roles,
 		})
 	}
+	r.TLS, err = ds.Spec.TLS.AsConfig()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
 }
 
 // MappingRule defines how LDAP groups are mapped to roles.

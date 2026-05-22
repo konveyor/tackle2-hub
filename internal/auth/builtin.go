@@ -89,6 +89,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		UserFilter:  federated.Ldap.UserFilter,
 		GroupFilter: federated.Ldap.GroupFilter,
 		HasMemberOf: federated.Ldap.HasMemberOf,
+		TLS:         federated.Ldap.TLS,
 	}
 	ds.mapper.Use(federated.Ldap.RoleMappings)
 	builtin.dsHandler = &LdapHandler{

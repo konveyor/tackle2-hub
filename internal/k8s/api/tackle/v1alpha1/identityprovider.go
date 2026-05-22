@@ -17,12 +17,49 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// OpenidProviderSpec defines the desired state of the resource.
-type OpenidProviderSpec struct {
+// TLS configures TLS/SSL connection settings.
+type TLS struct {
+	// Insecure skips server certificate verification.
+	// Use only for development/testing with self-signed certificates.
+	// +optional
+	Insecure bool `json:"insecure,omitempty"`
+	// CA is a PEM-encoded CA certificate for validating the server certificate.
+	// Use when the server uses a certificate signed by an internal/private CA.
+	// +optional
+	CA string `json:"ca,omitempty"`
+}
+
+// AsConfig converts TLS settings to a tls.Config.
+func (t TLS) AsConfig() (config *tls.Config, err error) {
+	config = &tls.Config{}
+	if t.Insecure {
+		config.InsecureSkipVerify = true
+		return
+	}
+
+	if t.CA != "" {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM([]byte(t.CA)) {
+			err = fmt.Errorf("failed to parse CA certificate")
+			config = nil
+			return
+		}
+		config.RootCAs = caCertPool
+	}
+
+	return
+}
+
+// IdentityProviderSpec defines the desired state of the resource.
+type IdentityProviderSpec struct {
 	// Provider name.
 	Name string `json:"name,omitempty"`
 	// Issuer URL.
@@ -35,10 +72,13 @@ type OpenidProviderSpec struct {
 	RedirectURI string `json:"redirectURI,omitempty"`
 	// OAuth scopes.
 	Scopes []string `json:"scopes,omitempty"`
+	// TLS connection settings.
+	// +optional
+	TLS TLS `json:"tls,omitempty"`
 }
 
-// OpenidProviderStatus defines the observed state of the resource.
-type OpenidProviderStatus struct {
+// IdentityProviderStatus defines the observed state of the resource.
+type IdentityProviderStatus struct {
 	// The most recent generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -46,29 +86,29 @@ type OpenidProviderStatus struct {
 	Conditions []meta.Condition `json:"conditions,omitempty"`
 }
 
-// OpenidProvider defines external IDP federation settings.
+// IdentityProvider defines external IDP federation settings.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-type OpenidProvider struct {
+type IdentityProvider struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the desired state of the resource.
-	Spec OpenidProviderSpec `json:"spec"`
+	Spec IdentityProviderSpec `json:"spec"`
 	// Status defines the observed state of the resource.
-	Status OpenidProviderStatus `json:"status,omitempty"`
+	Status IdentityProviderStatus `json:"status,omitempty"`
 }
 
-// OpenidProviderList is a list of OpenidProvider.
+// IdentityProviderList is a list of IdentityProvider.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type OpenidProviderList struct {
+type IdentityProviderList struct {
 	meta.TypeMeta `json:",inline"`
 	meta.ListMeta `json:"metadata,omitempty"`
-	Items         []OpenidProvider `json:"items"`
+	Items         []IdentityProvider `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenidProvider{}, &OpenidProviderList{})
+	SchemeBuilder.Register(&IdentityProvider{}, &IdentityProviderList{})
 }

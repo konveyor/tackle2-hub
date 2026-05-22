@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/tls"
 	"fmt"
 	"sort"
 	"strings"
@@ -127,6 +128,7 @@ type LDAP struct {
 	UserFilter  string
 	GroupFilter string
 	HasMemberOf bool
+	TLS         *tls.Config
 	//
 	mapper RoleMapper
 	conn   *ldap.Conn
@@ -135,8 +137,11 @@ type LDAP struct {
 // Authenticate authenticates a user against LDAP and returns group membership.
 func (r *LDAP) Authenticate(login, password string) (dsUser *LdapUser, err error) {
 	r.Kind = strings.ToUpper(r.Kind)
-	// Connect.
-	r.conn, err = ldap.DialURL(r.URL)
+	if r.TLS != nil {
+		r.conn, err = ldap.DialURL(r.URL, ldap.DialWithTLSConfig(r.TLS))
+	} else {
+		r.conn, err = ldap.DialURL(r.URL)
+	}
 	if err != nil {
 		Log.Info(
 			"LDAP connection failed.",

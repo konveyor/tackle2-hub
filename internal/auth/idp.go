@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -83,9 +82,7 @@ func (h *FedIdpHandler) RpClient() (rpClient rp.RelyingParty, err error) {
 		rp.WithHTTPClient(
 			&http.Client{
 				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
+					TLSClientConfig: federated.Idp.TLS,
 				},
 			}),
 	)

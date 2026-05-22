@@ -53,6 +53,9 @@ type LdapProviderSpec struct {
 	HasMemberOf bool `json:"hasMemberOf,omitempty"`
 	// Role mappings from LDAP groups to application roles.
 	RoleMappings []RoleMapping `json:"roleMappings,omitempty"`
+	// TLS connection settings.
+	// +optional
+	TLS TLS `json:"tls,omitempty"`
 }
 
 // LdapProviderStatus defines the observed state of the resource.
