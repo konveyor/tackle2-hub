@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
+	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
@@ -592,42 +593,16 @@ func (p *PermissionPatch) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-// seedClients seeds OIDC clients from clients.yaml.
+// seedClients seeds OIDC clients from CRDs.
 // Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
-// and creates new clients with static IDs from YAML.
+// and creates new clients with IDs from CRD spec.
 func (d *Domain) seedClients(db *gorm.DB) (err error) {
-	clients, err := d.readClients()
-	if err != nil {
-		return
-	}
-
-	for i := range clients {
-		switch clients[i].ClientId {
-		case "web-ui":
-			clients[i].RedirectURIs = []string{Settings.Auth.RedirectURI.WebUI}
-		}
-	}
-
 	existing, err := d.fetchClients(db)
 	if err != nil {
 		return
 	}
-	patch := d.clientPatch(existing, clients)
+	patch := d.clientPatch(existing, federated.Clients)
 	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// readClients reads client definitions from clients.yaml.
-func (d *Domain) readClients() (clients []seed.IdpClient, err error) {
-	b, err := fs.ReadFile(seedDir, "clients.yaml")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = yaml.Unmarshal(b, &clients)
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -649,12 +624,12 @@ func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err er
 	return
 }
 
-// clientPatch computes the client reconciliation patch from YAML clients.
-func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []seed.IdpClient) (patch *IdpClientPatch) {
+// clientPatch computes the client reconciliation patch from CRD clients.
+func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
 	patch = &IdpClientPatch{
 		db: d.DB,
 	}
-	wantedMap := make(map[string]seed.IdpClient)
+	wantedMap := make(map[string]as.IdpClient)
 	for _, client := range wanted {
 		wantedMap[client.ClientId] = client
 	}
@@ -665,25 +640,18 @@ func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []seed.IdpCli
 			}
 		}
 	}
-	for _, seedClient := range wanted {
-		if existingClient, found := existing[seedClient.ClientId]; found {
-			patch.toUpdate = append(patch.toUpdate, clientWithSeed{
-				client: existingClient,
-				seed:   seedClient,
+	for _, settingsClient := range wanted {
+		if existingClient, found := existing[settingsClient.ClientId]; found {
+			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
+				client:   existingClient,
+				settings: settingsClient,
 			})
 		} else {
-			newClient := IdpClient{
-				ClientId:        seedClient.ClientId,
-				Secret:          seedClient.Secret,
-				ApplicationType: seedClient.ApplicationType,
-				Grants:          seedClient.Grants,
-				RedirectURIs:    seedClient.RedirectURIs,
-				Scopes:          seedClient.Scopes,
-			}
-			newClient.ID = seedClient.ID
-			patch.toCreate = append(patch.toCreate, clientWithSeed{
-				client: newClient,
-				seed:   seedClient,
+			newClient := IdpClient{}
+			newClient.With(&settingsClient)
+			patch.toCreate = append(patch.toCreate, clientWithSettings{
+				client:   newClient,
+				settings: settingsClient,
 			})
 		}
 	}
@@ -694,14 +662,14 @@ func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []seed.IdpCli
 type IdpClientPatch struct {
 	db       *gorm.DB
 	toDelete []uint
-	toUpdate []clientWithSeed
-	toCreate []clientWithSeed
+	toUpdate []clientWithSettings
+	toCreate []clientWithSettings
 }
 
-// clientWithSeed pairs database client with seed data.
-type clientWithSeed struct {
-	client IdpClient
-	seed   seed.IdpClient
+// clientWithSettings pairs database client with settings data.
+type clientWithSettings struct {
+	client   IdpClient
+	settings as.IdpClient
 }
 
 // Apply applies the client patch to the database.
@@ -714,16 +682,9 @@ func (p *IdpClientPatch) Apply(db *gorm.DB) (err error) {
 		}
 	}
 	for _, item := range p.toUpdate {
-		m := &IdpClient{
-			ApplicationType: item.seed.ApplicationType,
-			Grants:          item.seed.Grants,
-			RedirectURIs:    item.seed.RedirectURIs,
-			Scopes:          item.seed.Scopes,
-		}
+		m := &IdpClient{}
+		m.With(&item.settings)
 		m.ID = item.client.ID
-		if item.seed.Secret != "" {
-			m.Secret = item.seed.Secret
-		}
 		err = db.Model(m).Updates(m).Error
 		if err != nil {
 			err = liberr.Wrap(err)

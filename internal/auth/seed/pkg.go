@@ -17,14 +17,3 @@ type User struct {
 	Password string   `yaml:"password"`
 	Roles    []string `yaml:"roles"`
 }
-
-// IdpClient used to read clients.yaml.
-type IdpClient struct {
-	ID              uint     `yaml:"id"`
-	ClientId        string   `yaml:"clientId"`
-	Secret          string   `yaml:"secret"`
-	ApplicationType string   `yaml:"applicationType"`
-	Grants          []string `yaml:"grants"`
-	RedirectURIs    []string `yaml:"redirectURIs"`
-	Scopes          []string `yaml:"scopes"`
-}

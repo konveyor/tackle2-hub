@@ -15,8 +15,9 @@ import (
 
 // Federated defines federation settings.
 type Federated struct {
-	Idp  IdentityProvider
-	Ldap LdapProvider
+	Idp     IdentityProvider
+	Ldap    LdapProvider
+	Clients []IdpClient
 	//
 	client    client2.Client
 	namespace string
@@ -36,6 +37,10 @@ func (r *Federated) Load(namespace string) (err error) {
 		return
 	}
 	err = r.getLdap()
+	if err != nil {
+		return
+	}
+	err = r.getClients()
 	if err != nil {
 		return
 	}
@@ -104,6 +109,38 @@ func (r *Federated) getLdap() (err error) {
 		}
 		r.Ldap = m2
 		break
+	}
+	return
+}
+
+// getClients gets federated OIDC clients.
+func (r *Federated) getClients() (err error) {
+	list := crd.IdpClientList{}
+	opt := client2.InNamespace(r.namespace)
+	err = r.client.List(context.Background(), &list, opt)
+	if err != nil {
+		return
+	}
+
+	for _, m := range list.Items {
+		client := IdpClient{
+			ID:              m.Spec.ID,
+			ClientId:        m.Spec.ClientId,
+			ApplicationType: m.Spec.ApplicationType,
+			Grants:          m.Spec.Grants,
+			RedirectURIs:    m.Spec.RedirectURIs,
+			Scopes:          m.Spec.Scopes,
+		}
+		ref := m.Spec.ClientSecret
+		if ref != nil {
+			client.Secret, err = r.secret(ref, "clientSecret")
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+
+		r.Clients = append(r.Clients, client)
 	}
 	return
 }
@@ -202,4 +239,15 @@ type MappingRule struct {
 	Any   []string
 	And   []string
 	Roles []string
+}
+
+// IdpClient represents a loaded OIDC client configuration.
+type IdpClient struct {
+	ID              uint
+	ClientId        string
+	Secret          string
+	ApplicationType string
+	Grants          []string
+	RedirectURIs    []string
+	Scopes          []string
 }

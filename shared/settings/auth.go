@@ -20,7 +20,6 @@ const (
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
-	EnvRedirectURIWebUI     = "OIDC_REDIRECT_URI_WEBUI"
 )
 
 type Auth struct {
@@ -49,10 +48,6 @@ type Auth struct {
 	}
 	// OIDC Issuer
 	IssuerURL string
-	// RedirectURI settings for OIDC clients.
-	RedirectURI struct {
-		WebUI string
-	}
 }
 
 func (r *Auth) Load() (err error) {
@@ -67,15 +62,9 @@ func (r *Auth) Load() (err error) {
 	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
 	r.IssuerURL = env.Get(EnvOidcIssuer, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-	r.RedirectURI.WebUI = env.Get(EnvRedirectURIWebUI, "")
 
-	issuerURL, err := url.Parse(r.IssuerURL)
-	if err == nil {
-		if r.RedirectURI.WebUI == "" {
-			issuerURL.Path = ""
-			r.RedirectURI.WebUI = issuerURL.String()
-		}
-	} else {
+	_, err = url.Parse(r.IssuerURL)
+	if err != nil {
 		panic(err)
 	}
 

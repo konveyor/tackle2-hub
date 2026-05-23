@@ -216,4 +216,4 @@ func uniqueStrings(items []string) (result []string) {
 	return
 }
 
-type IdpClient = model.IdpClient
+type IdpClient = cache.IdpClient
