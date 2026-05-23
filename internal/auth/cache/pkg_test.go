@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
@@ -971,4 +972,54 @@ func TestUserGetScopes(t *testing.T) {
 	}
 	scopes = userNoRoles.GetScopes(cache)
 	g.Expect(scopes).To(BeEmpty())
+}
+
+// TestIdpClientWith tests IdpClient.With() method.
+func TestIdpClientWith(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Test with all fields populated
+	settingsClient := &as.IdpClient{
+		ID:              1,
+		ClientId:        "test-client",
+		Secret:          "test-secret",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code", "refresh_token"},
+		RedirectURIs:    []string{"http://localhost/callback"},
+		Scopes:          []string{"openid", "profile"},
+	}
+
+	cacheClient := &IdpClient{}
+	cacheClient.With(settingsClient)
+
+	g.Expect(cacheClient.ID).To(Equal(uint(1)))
+	g.Expect(cacheClient.ClientId).To(Equal("test-client"))
+	g.Expect(cacheClient.Secret).To(Equal("test-secret"))
+	g.Expect(cacheClient.ApplicationType).To(Equal("web"))
+	g.Expect(cacheClient.Grants).To(HaveLen(2))
+	g.Expect(cacheClient.Grants).To(ContainElement("authorization_code"))
+	g.Expect(cacheClient.Grants).To(ContainElement("refresh_token"))
+	g.Expect(cacheClient.RedirectURIs).To(HaveLen(1))
+	g.Expect(cacheClient.RedirectURIs[0]).To(Equal("http://localhost/callback"))
+	g.Expect(cacheClient.Scopes).To(HaveLen(2))
+	g.Expect(cacheClient.Scopes).To(ContainElement("openid"))
+	g.Expect(cacheClient.Scopes).To(ContainElement("profile"))
+
+	// Test with empty secret (public client)
+	publicClient := &as.IdpClient{
+		ID:              2,
+		ClientId:        "public-client",
+		Secret:          "",
+		ApplicationType: "native",
+		Grants:          []string{"device_code"},
+		Scopes:          []string{"openid"},
+	}
+
+	cachePublic := &IdpClient{}
+	cachePublic.With(publicClient)
+
+	g.Expect(cachePublic.ID).To(Equal(uint(2)))
+	g.Expect(cachePublic.ClientId).To(Equal("public-client"))
+	g.Expect(cachePublic.Secret).To(BeEmpty())
+	g.Expect(cachePublic.ApplicationType).To(Equal("native"))
 }

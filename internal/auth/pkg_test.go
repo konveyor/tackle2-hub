@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
@@ -2262,6 +2263,235 @@ func TestGetDeviceAuthorizatonStateNotFound(t *testing.T) {
 		"invalid-device-code",
 	)
 	g.Expect(err).NotTo(BeNil())
+}
+
+// TestSeedClientsFromCRD tests seeding clients from CRDs in disconnected mode.
+func TestSeedClientsFromCRD(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Setup disconnected mode
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+		federated = &as.Federated{} // Reset federated for next test
+	}()
+	Settings.Disconnected = true
+
+	// Setup DB
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Load federated settings (gets fake client with seed data)
+	err = federated.Load("konveyor-tackle")
+	g.Expect(err).To(BeNil())
+
+	// Seed clients
+	domain := NewDomain(db)
+	err = domain.seedClients(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify database state
+	var clients []IdpClient
+	err = db.Find(&clients).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(clients).To(HaveLen(3))
+
+	// Find and verify web-ui client
+	var webUI IdpClient
+	err = db.First(&webUI, "ClientId = ?", "web-ui").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(webUI.ID).To(Equal(uint(1)))
+	g.Expect(webUI.ClientId).To(Equal("web-ui"))
+	g.Expect(webUI.ApplicationType).To(Equal("web"))
+	g.Expect(webUI.Secret).To(Equal("test-secret-value"))
+	g.Expect(webUI.Grants).To(ContainElement("authorization_code"))
+	g.Expect(webUI.Scopes).To(ContainElement("openid"))
+
+	// Find and verify kantra client
+	var kantra IdpClient
+	err = db.First(&kantra, "ClientId = ?", "kantra").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(kantra.ID).To(Equal(uint(2)))
+	g.Expect(kantra.ApplicationType).To(Equal("native"))
+	g.Expect(kantra.Secret).To(BeEmpty())
+
+	// Find and verify kai-ide client
+	var kaiIDE IdpClient
+	err = db.First(&kaiIDE, "ClientId = ?", "kai-ide").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
+	g.Expect(kaiIDE.ApplicationType).To(Equal("native"))
+	g.Expect(kaiIDE.Secret).To(BeEmpty())
+}
+
+// TestSeedClientsUpdate tests updating existing clients from CRDs.
+func TestSeedClientsUpdate(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+		federated = &as.Federated{} // Reset federated for next test
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Pre-create client in DB with different grants
+	existing := &IdpClient{
+		ClientId:        "web-ui",
+		ApplicationType: "web",
+		Grants:          []string{"old-grant"},
+		Scopes:          []string{"openid"},
+	}
+	existing.ID = 1
+	err = db.Create(existing).Error
+	g.Expect(err).To(BeNil())
+
+	// Load CRDs
+	err = federated.Load("konveyor-tackle")
+	g.Expect(err).To(BeNil())
+
+	// Seed clients
+	domain := NewDomain(db)
+	err = domain.seedClients(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify client was updated (not recreated)
+	var updated IdpClient
+	err = db.First(&updated, "ClientId = ?", "web-ui").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.ID).To(Equal(uint(1))) // ID preserved
+	g.Expect(updated.Grants).To(ContainElement("authorization_code"))
+	g.Expect(updated.Grants).To(ContainElement("refresh_token"))
+	g.Expect(updated.Grants).NotTo(ContainElement("old-grant"))
+	g.Expect(updated.Secret).To(Equal("test-secret-value")) // Secret resolved
+}
+
+// TestSeedClientsDeleteOrphaned tests deleting orphaned seeded clients.
+func TestSeedClientsDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+		federated = &as.Federated{} // Reset federated for next test
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded client (ID < 1000, not in CRDs)
+	orphaned := &IdpClient{
+		ClientId:        "orphaned-client",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code"},
+		Scopes:          []string{"openid"},
+	}
+	orphaned.ID = 500
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create non-seeded client (ID >= 1000, should be preserved)
+	nonSeeded := &IdpClient{
+		ClientId:        "custom-client",
+		ApplicationType: "native",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"api"},
+	}
+	nonSeeded.ID = 1001
+	err = db.Create(nonSeeded).Error
+	g.Expect(err).To(BeNil())
+
+	// Load CRDs (web-ui, kantra, kai-ide)
+	err = federated.Load("konveyor-tackle")
+	g.Expect(err).To(BeNil())
+
+	// Seed clients
+	domain := NewDomain(db)
+	err = domain.seedClients(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify orphaned client was deleted
+	var orphanedCheck IdpClient
+	err = db.First(&orphanedCheck, "ClientId = ?", "orphaned-client").Error
+	g.Expect(err).NotTo(BeNil()) // Should not be found
+
+	// Verify non-seeded client was preserved
+	var nonSeededCheck IdpClient
+	err = db.First(&nonSeededCheck, "ClientId = ?", "custom-client").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(nonSeededCheck.ID).To(Equal(uint(1001)))
+
+	// Verify total count (3 from CRDs + 1 custom)
+	var count int64
+	db.Model(&IdpClient{}).Count(&count)
+	g.Expect(count).To(Equal(int64(4)))
+}
+
+// TestSeedClientsIDPreservation tests that IDs from CRDs are preserved across multiple seeds.
+func TestSeedClientsIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+		federated = &as.Federated{} // Reset federated for next test
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Load CRDs
+	err = federated.Load("konveyor-tackle")
+	g.Expect(err).To(BeNil())
+
+	domain := NewDomain(db)
+
+	// First seed
+	err = domain.seedClients(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify IDs after first seed
+	var webUI, kantra, kaiIDE IdpClient
+	err = db.First(&webUI, "ClientId = ?", "web-ui").Error
+	g.Expect(err).To(BeNil())
+	err = db.First(&kantra, "ClientId = ?", "kantra").Error
+	g.Expect(err).To(BeNil())
+	err = db.First(&kaiIDE, "ClientId = ?", "kai-ide").Error
+	g.Expect(err).To(BeNil())
+
+	g.Expect(webUI.ID).To(Equal(uint(1)))
+	g.Expect(kantra.ID).To(Equal(uint(2)))
+	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
+
+	// Verify count after first seed
+	var count int64
+	db.Model(&IdpClient{}).Count(&count)
+	g.Expect(count).To(Equal(int64(3)))
+
+	// Second seed (should preserve IDs)
+	err = domain.seedClients(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify IDs after second seed
+	err = db.First(&webUI, "ClientId = ?", "web-ui").Error
+	g.Expect(err).To(BeNil())
+	err = db.First(&kantra, "ClientId = ?", "kantra").Error
+	g.Expect(err).To(BeNil())
+	err = db.First(&kaiIDE, "ClientId = ?", "kai-ide").Error
+	g.Expect(err).To(BeNil())
+
+	g.Expect(webUI.ID).To(Equal(uint(1)))
+	g.Expect(kantra.ID).To(Equal(uint(2)))
+	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
+
+	// Verify count after second seed (should still be 3)
+	db.Model(&IdpClient{}).Count(&count)
+	g.Expect(count).To(Equal(int64(3)))
 }
 
 // setupTestDB creates an in-memory SQLite database for testing.

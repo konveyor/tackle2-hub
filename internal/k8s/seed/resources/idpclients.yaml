@@ -1,0 +1,53 @@
+---
+# web-ui client (with secret reference)
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui
+  namespace: konveyor-tackle
+spec:
+  id: 1
+  clientId: web-ui
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  applicationType: web
+  grants:
+  - authorization_code
+  - refresh_token
+  scopes:
+  - openid
+  - profile
+
+---
+# kantra client (public, no secret)
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: kantra
+  namespace: konveyor-tackle
+spec:
+  id: 2
+  clientId: kantra
+  applicationType: native
+  grants:
+  - urn:ietf:params:oauth:grant-type:device_code
+  scopes:
+  - openid
+
+---
+# kai-ide client (public, no secret)
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: kai-ide
+  namespace: konveyor-tackle
+spec:
+  id: 3
+  clientId: kai-ide
+  applicationType: native
+  grants:
+  - authorization_code
+  scopes:
+  - openid
