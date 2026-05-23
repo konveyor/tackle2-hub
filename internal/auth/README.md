@@ -1505,6 +1505,310 @@ applications, err := client.Application.List()
 
 ---
 
+## Client Configuration
+
+### Overview
+
+OIDC clients (web applications, CLI tools, IDE extensions) are configured using **IdpClient CRDs** instead of embedded YAML files. This provides:
+
+- **Runtime configurability** - Add/modify clients without code changes
+- **Kubernetes-native management** - Use kubectl/operators to manage clients
+- **Secret management** - Reference Kubernetes Secrets for client credentials
+- **Consistent with IdP/LDAP** - Same CRD pattern as OpenidProvider and LdapProvider
+
+### IdpClient CRD Structure
+
+```yaml
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui
+  namespace: konveyor-tackle
+spec:
+  # Database ID (required, must be 1-999 for seeded clients)
+  id: 1
+  
+  # OAuth2 client identifier
+  clientId: web-ui
+  
+  # Optional reference to Kubernetes Secret containing client credentials
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  
+  # Application type: "web" or "native"
+  applicationType: web
+  
+  # OAuth2 grant types
+  grants:
+  - authorization_code
+  - refresh_token
+  
+  # Redirect URIs for OAuth flows
+  redirectURIs:
+  - https://tackle-konveyor-tackle.apps.example.com
+  
+  # OAuth2 scopes
+  scopes:
+  - openid
+  - profile
+  - email
+```
+
+### Field Reference
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `id` | Yes | integer (1-999) | Database ID for the client. Must be < 1000 for seeded clients. |
+| `clientId` | Yes | string | OAuth2 client identifier (e.g., "web-ui", "kantra") |
+| `clientSecret` | No | ObjectReference | Reference to Kubernetes Secret. Omit for public clients. |
+| `applicationType` | Yes | string | OAuth2 application type: "web" or "native" |
+| `grants` | Yes | []string | Supported OAuth2 grant types |
+| `redirectURIs` | No | []string | Redirect URIs for authorization code flow |
+| `scopes` | Yes | []string | OAuth2 scopes requested by this client |
+
+### Client Types
+
+#### Confidential Clients (Web Applications)
+
+Web applications use client secrets for authentication:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: web-ui-secret
+  namespace: konveyor-tackle
+type: Opaque
+stringData:
+  clientSecret: "your-secret-here"
+---
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui
+  namespace: konveyor-tackle
+spec:
+  id: 1
+  clientId: web-ui
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  applicationType: web
+  grants:
+  - authorization_code
+  - refresh_token
+  redirectURIs:
+  - https://tackle-konveyor-tackle.apps.example.com
+  scopes:
+  - openid
+  - profile
+  - email
+```
+
+**Secret format:**
+- The referenced Secret must contain a key named `clientSecret`
+- The secret value will be resolved at startup and stored in the database
+- Changing the secret requires a hub restart to take effect
+
+#### Public Clients (CLI Tools, Native Apps)
+
+Public clients (CLI tools, IDE extensions) cannot securely store secrets:
+
+```yaml
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: kantra
+  namespace: konveyor-tackle
+spec:
+  id: 2
+  clientId: kantra
+  # No clientSecret field - this is a public client
+  applicationType: native
+  grants:
+  - urn:ietf:params:oauth:grant-type:device_code
+  - refresh_token
+  scopes:
+  - openid
+  - profile
+  - email
+```
+
+**Public client characteristics:**
+- Omit the `clientSecret` field entirely
+- Use `applicationType: native`
+- Typically use device code or authorization code with PKCE
+
+### Supported Grant Types
+
+| Grant Type | Use Case | Client Type |
+|------------|----------|-------------|
+| `authorization_code` | Browser-based flows | Web, Native |
+| `refresh_token` | Token refresh | Web, Native |
+| `urn:ietf:params:oauth:grant-type:device_code` | CLI device flow | Native |
+| `urn:ietf:params:oauth:grant-type:jwt-bearer` | Service accounts | Web, Native |
+
+### ID Reservation System
+
+IdpClient uses the same two-tier ID system as the RBAC seeding:
+
+| ID Range | Source | Managed By | Purpose |
+|----------|--------|------------|---------|
+| **1-999** | IdpClient CRDs | Seeding system | Predefined clients (web-ui, kantra, kai-ide) |
+| **≥ 1000** | User-created | Hub users | Custom clients added via API |
+
+**ID field validation:**
+- **Required** - Every IdpClient CR must specify an `id`
+- **Range** - Must be between 1-999 (enforced by CRD validation)
+- **Unique** - Each client must have a unique ID
+- **Stable** - Same client always gets same ID across restarts
+
+**Benefits:**
+- Deterministic client IDs (e.g., web-ui is always ID 1)
+- Safe reconciliation without affecting user-created clients
+- Foreign key stability for database references
+
+### Loading and Reconciliation
+
+#### Startup Loading
+
+On hub startup, clients are loaded from IdpClient CRDs:
+
+1. **Kubernetes lookup** - List all IdpClient CRs in the hub namespace
+2. **Secret resolution** - Resolve `clientSecret` references from Kubernetes Secrets
+3. **Cache population** - Load clients into in-memory cache
+4. **Database reconciliation** - Sync CRD state with database
+
+**Code location:** `internal/auth/settings/pkg.go:Federated.getClients()`
+
+#### Database Reconciliation
+
+The seeding system reconciles CRD state with the database:
+
+1. **Match on clientId** - Existing clients matched by `clientId` natural key
+2. **Preserve specified IDs** - If CRD specifies `id` and client doesn't exist, use that ID
+3. **Update fields** - Update existing clients if spec changes
+4. **Delete orphaned** - Remove clients with ID < 1000 not in CRD list
+5. **Ignore user clients** - Never touch clients with ID ≥ 1000
+
+**Code location:** `internal/auth/domain.go:seedClients()`
+
+#### Reconciliation Example
+
+**Before reconciliation (database state):**
+- Client ID=1, clientId="web-ui", secret="old-secret"
+- Client ID=500, clientId="removed-client"
+- Client ID=1001, clientId="user-custom-client"
+
+**IdpClient CRDs:**
+- web-ui (id=1, new secret)
+- kantra (id=2, new client)
+
+**After reconciliation:**
+- Client ID=1, clientId="web-ui", secret="new-secret" ← Updated
+- Client ID=2, clientId="kantra" ← Created
+- Client ID=500, clientId="removed-client" ← Deleted (orphaned)
+- Client ID=1001, clientId="user-custom-client" ← Preserved (ID ≥ 1000)
+
+### Example: Full Client Setup
+
+**Step 1: Create Secret (if needed)**
+
+```bash
+kubectl create secret generic web-ui-secret \
+  --from-literal=clientSecret="your-secret-here" \
+  -n konveyor-tackle
+```
+
+**Step 2: Create IdpClient CR**
+
+```yaml
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui
+  namespace: konveyor-tackle
+spec:
+  id: 1
+  clientId: web-ui
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  applicationType: web
+  grants:
+  - authorization_code
+  - refresh_token
+  redirectURIs:
+  - https://tackle-konveyor-tackle.apps.example.com
+  scopes:
+  - offline_access
+  - openid
+  - profile
+  - email
+```
+
+**Step 3: Apply and restart**
+
+```bash
+kubectl apply -f client.yaml
+# Restart hub to load new client
+kubectl rollout restart deployment/tackle-hub -n konveyor-tackle
+```
+
+### Default Clients
+
+Tackle ships with three default clients:
+
+#### 1. web-ui (ID=1)
+- **Type:** Confidential web application
+- **Grants:** authorization_code, refresh_token
+- **Use:** Browser-based Tackle UI
+- **Secret:** Required (referenced from Kubernetes Secret)
+
+#### 2. kantra (ID=2)
+- **Type:** Public native application
+- **Grants:** device_code, refresh_token
+- **Use:** Konveyor CLI tool
+- **Secret:** None (public client)
+
+#### 3. kai-ide (ID=3)
+- **Type:** Public native application
+- **Grants:** authorization_code, refresh_token
+- **Use:** IDE extensions (VS Code, IntelliJ)
+- **Secret:** None (public client)
+
+### Troubleshooting
+
+**Client not found:**
+```
+Error: client "web-ui" not found
+```
+**Fix:** Ensure IdpClient CR is created in the correct namespace and hub has restarted
+
+**Secret resolution failed:**
+```
+Error: secret "web-ui-secret" not found
+```
+**Fix:** Create the referenced Secret in the same namespace as the IdpClient CR
+
+**ID validation error:**
+```
+Error: spec.id: Invalid value: 1000: spec.id in body should be less than or equal to 999
+```
+**Fix:** Use ID between 1-999 for seeded clients. IDs ≥ 1000 are reserved for user-created clients.
+
+**Duplicate clientId:**
+```
+Error: UNIQUE constraint failed: IdpClients.clientId
+```
+**Fix:** Each client must have a unique `clientId`. Check for duplicate CRs or existing database entries.
+
+---
+
 ## RBAC Seeding System
 
 ### Overview
