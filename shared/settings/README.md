@@ -61,7 +61,7 @@ These settings pertain to authentication and authorization.
 | Enabled                | B | AUTH_ENABLED                | TRUE                 | Authentication system enabled.                                             |
 | Required               | B | AUTH_REQUIRED               | FALSE                | API enforces authentication/authorization.                                 |
 | CacheLifespan          | I | AUTH_CACHE_LIFESPAN         | 5 (minute)           | (minutes) cache refresh interval (safety net for missed notifications).    |
-| BasicAuthLifespan      | I | AUTH_BASIC_AUTH_LIFESPAN    | 60 (second)          | (seconds) Basic Auth cached identity staleness for LDAP users.             |
+| BasicAuthLifespan      | I | BASIC_AUTH_LIFESPAN    | 60 (second)          | (seconds) Basic Auth cached identity staleness for LDAP users.             |
 | RolePath               | S | RULE_PATH                   | /tmp/roles.yaml      | Path to file used to seed roles.                                           |
 | UserPath               | S | USER_PATH                   | /tmp/users/yaml      | Path to file used to seed users.                                           |
 | **APIKey**.Secret      | S | APIKEY_SECRET               | tackle               | Secret used for API key generation.                                        |

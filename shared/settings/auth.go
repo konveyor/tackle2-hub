@@ -14,7 +14,7 @@ const (
 	EnvAPIKeySecret         = "APIKEY_SECRET"
 	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
 	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
-	EnvBasicAuthLifespan    = "AUTH_BASIC_AUTH_LIFESPAN"
+	EnvBasicAuthLifespan    = "BASIC_AUTH_LIFESPAN"
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
 	EnvOidcIssuer           = "OIDC_ISSUER"
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
