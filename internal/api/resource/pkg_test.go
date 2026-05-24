@@ -3454,6 +3454,61 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 	g.Expect(len(m.Roles)).To(gomega.Equal(0))
 }
 
+// TestIdpClient_With tests the IdpClient.With() method
+func TestIdpClient_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.IdpClient{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Subject:         "client-subject-123",
+		ClientId:        "web-ui",
+		Secret:          "encrypted-secret-value",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code", "refresh_token"},
+		RedirectURIs:    []string{"https://example.com/callback"},
+		Scopes:          []string{"openid", "profile", "email"},
+	}
+
+	r := &IdpClient{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.ClientId).To(gomega.Equal("web-ui"))
+	g.Expect(r.Secret).To(gomega.Equal(SecretMask))
+	g.Expect(r.ApplicationType).To(gomega.Equal("web"))
+	g.Expect(r.Grants).To(gomega.Equal([]string{"authorization_code", "refresh_token"}))
+	g.Expect(r.RedirectURIs).To(gomega.Equal([]string{"https://example.com/callback"}))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid", "profile", "email"}))
+}
+
+// TestIdpClient_Model tests the IdpClient.Model() method
+func TestIdpClient_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &IdpClient{
+		Resource:        Resource{ID: 1},
+		ClientId:        "kantra",
+		Secret:          "plaintext-secret",
+		ApplicationType: "native",
+		Grants:          []string{"device_code"},
+		RedirectURIs:    []string{},
+		Scopes:          []string{"openid"},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.ClientId).To(gomega.Equal("kantra"))
+	g.Expect(m.Secret).To(gomega.Equal("plaintext-secret"))
+	g.Expect(m.ApplicationType).To(gomega.Equal("native"))
+	g.Expect(m.Grants).To(gomega.Equal([]string{"device_code"}))
+	g.Expect(m.RedirectURIs).To(gomega.Equal([]string{}))
+	g.Expect(m.Scopes).To(gomega.Equal([]string{"openid"}))
+}
+
 // TestRole_With tests the Role.With() method
 func TestRole_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
