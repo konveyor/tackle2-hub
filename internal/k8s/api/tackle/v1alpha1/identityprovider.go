@@ -92,6 +92,7 @@ type IdentityProviderStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=idp
 type IdentityProvider struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`

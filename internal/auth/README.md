@@ -11,6 +11,7 @@ This document describes the design and architecture of the authentication and au
 - [Device Authorization Grant](#device-authorization-grant)
 - [IdP Federation](#idp-federation)
 - [LDAP Authentication](#ldap-authentication)
+- [Client Configuration](#client-configuration)
 - [Storage Architecture](#storage-architecture)
 - [Token Types](#token-types)
 - [Key Management](#key-management)
@@ -152,20 +153,18 @@ Different authentication methods have different staleness characteristics based 
 
 Complete list of authentication-related environment variables:
 
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `AUTH_ENABLED` | Boolean | `true` | Enable authentication system |
-| `AUTH_REQUIRED` | Boolean | `false` | Enforce authentication for all API requests |
-| `AUTH_CACHE_LIFESPAN` | Integer | `5` | Cache refresh interval in minutes |
-| `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60` | Basic auth identity lifespan for LDAP users in seconds |
-| `OIDC_ISSUER` | String | `http://localhost:8080` | OIDC issuer URL (hub base URL) |
-| `OIDC_TOKEN_LIFESPAN` | Integer | `300` | OAuth access token lifespan in seconds (5 minutes) |
-| `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800` | OAuth refresh token lifespan in seconds (2 days) |
-| `OIDC_KEY_ROTATION` | Integer | `90` | RSA signing key rotation interval in days |
-| `OIDC_REDIRECT_URI_WEBUI` | String | (issuer URL) | Redirect URI for Web UI OIDC client (defaults to issuer URL) |
-| `OIDC_REDIRECT_URI_KAI` | String | `vscode://konveyor.konveyor-ide/auth` | Redirect URI for KAI OIDC client |
-| `APIKEY_SECRET` | String | `tackle` | Secret used for API key generation |
-| `APIKEY_LIFESPAN` | Integer | `87600` | Personal Access Token lifespan in hours (10 years) |
+| Variable | Type | Default                      | Description |
+|----------|------|------------------------------|-------------|
+| `AUTH_ENABLED` | Boolean | `true`                       | Enable authentication system |
+| `AUTH_REQUIRED` | Boolean | `false`                      | Enforce authentication for all API requests |
+| `AUTH_CACHE_LIFESPAN` | Integer | `5`                          | Cache refresh interval in minutes |
+| `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60`                         | Basic auth identity lifespan for LDAP users in seconds |
+| `OIDC_ISSUER` | String | `http://localhost:8080/oidc` | OIDC issuer URL (hub base URL) |
+| `OIDC_TOKEN_LIFESPAN` | Integer | `300`                        | OAuth access token lifespan in seconds (5 minutes) |
+| `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800`                     | OAuth refresh token lifespan in seconds (2 days) |
+| `OIDC_KEY_ROTATION` | Integer | `90`                         | RSA signing key rotation interval in days |
+| `APIKEY_SECRET` | String | `tackle`                     | Secret used for API key generation |
+| `APIKEY_LIFESPAN` | Integer | `87600`                      | Personal Access Token lifespan in hours (10 years) |
 
 **Note:** See [shared/settings/README.md](../../shared/settings/README.md) for complete settings documentation.
 
@@ -1842,7 +1841,7 @@ For each registered scope, 5 permissions are generated:
 
 ### Role Definition Format
 
-Roles defined in `seed/roles.yaml`:
+Roles defined in `internal/auth/seed/roles.yaml`:
 
 ```yaml
 - id: 1
@@ -1861,7 +1860,7 @@ Roles defined in `seed/roles.yaml`:
 
 ### User Definition Format
 
-Users defined in `seed/users.yaml`:
+Users defined in `internal/auth/seed/users.yaml`:
 
 ```yaml
 - id: 1

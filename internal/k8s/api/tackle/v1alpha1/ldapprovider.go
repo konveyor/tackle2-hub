@@ -73,6 +73,7 @@ type LdapProviderStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=ldap
 type LdapProvider struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`

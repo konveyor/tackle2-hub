@@ -14,6 +14,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	SecretMask = "*****"
+)
+
 // AuthHandler handles auth routes.
 type AuthHandler struct {
 	BaseHandler
@@ -499,6 +503,12 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		})
 		return
 	}
+	if r.Password == SecretMask {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "invalid password",
+		})
+		return
+	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
 	m.Password = secret.HashPassword(r.Password)
@@ -552,7 +562,6 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-	m.Password = secret.HashPassword(r.Password)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Save(m).Error

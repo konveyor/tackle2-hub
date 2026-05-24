@@ -62,8 +62,6 @@ These settings pertain to authentication and authorization.
 | Required               | B | AUTH_REQUIRED               | FALSE                | API enforces authentication/authorization.                                 |
 | CacheLifespan          | I | AUTH_CACHE_LIFESPAN         | 5 (minute)           | (minutes) cache refresh interval (safety net for missed notifications).    |
 | BasicAuthLifespan      | I | BASIC_AUTH_LIFESPAN    | 60 (second)          | (seconds) Basic Auth cached identity staleness for LDAP users.             |
-| RolePath               | S | RULE_PATH                   | /tmp/roles.yaml      | Path to file used to seed roles.                                           |
-| UserPath               | S | USER_PATH                   | /tmp/users/yaml      | Path to file used to seed users.                                           |
 | **APIKey**.Secret      | S | APIKEY_SECRET               | tackle               | Secret used for API key generation.                                        |
 | **APIKey**.Lifespan    | I | APIKEY_LIFESPAN             | 87600 (hour)         | (hours) Personal Access Token lifespan (default: 10 years).                |
 | **Token**.Key          | S | ADDON_TOKEN                 | tackle               | HMAC key for legacy tokens (deprecated).                                   |
@@ -71,8 +69,6 @@ These settings pertain to authentication and authorization.
 | **Token**.RefreshLifespan | I | OIDC_REFRESH_TOKEN_LIFESPAN | 172800 (second)      | (seconds) OAuth refresh token lifespan (default: 2 days).                  |
 | IssuerURL              | S | OIDC_ISSUER                 | http://localhost:8080 | OIDC issuer URL (hub base URL).                                            |
 | **Key**.Rotation       | I | OIDC_KEY_ROTATION           | 90 (day)             | (days) RSA signing key rotation interval.                                  |
-| **RedirectURI**.WebUI  | S | OIDC_REDIRECT_URI_WEBUI     | (issuer URL)         | Redirect URI for Web UI OIDC client (defaults to issuer URL).              |
-| **RedirectURI**.KAI    | S | OIDC_REDIRECT_URI_KAI       | vscode://konveyor.konveyor-ide/auth | Redirect URI for KAI OIDC client.                           |
 
 **Authentication Staleness:**
 

@@ -11,6 +11,8 @@ spec:
     kind: LdapProvider
     listKind: LdapProviderList
     plural: ldapproviders
+    shortNames:
+    - ldap
     singular: ldapprovider
   scope: Namespaced
   versions:
