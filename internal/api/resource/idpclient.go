@@ -12,7 +12,7 @@ type IdpClient api.IdpClient
 func (r *IdpClient) With(m *model.IdpClient) {
 	baseWith(&r.Resource, &m.Model)
 	r.ClientId = m.ClientId
-	r.Secret = "" // Never expose secret in GET responses
+	r.Secret = SecretMask
 	r.ApplicationType = m.ApplicationType
 	r.Grants = m.Grants
 	r.RedirectURIs = m.RedirectURIs

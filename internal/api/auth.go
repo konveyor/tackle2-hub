@@ -187,16 +187,23 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
-	// Prevent manual creation of seeded clients (ID < 1000)
 	if r.ID > 0 && r.ID < auth.LastId {
 		_ = ctx.Error(&BadRequestError{Reason: "id reserved"})
 		return
 	}
-
+	if r.Secret == SecretMask {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "invalid secret",
+		})
+		return
+	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
-
+	err = secret.Encrypt(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	err = h.DB(ctx).Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -220,31 +227,35 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 // @param client body api.IdpClient true "Client data"
 func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-
-	// Prevent modification of seeded clients (ID < 1000)
 	if id < auth.LastId {
 		_ = ctx.Error(&BadRequestError{Reason: "id reserved"})
 		return
 	}
-
 	r := &IdpClient{}
 	err := h.Bind(ctx, r)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
-
-	err = h.DB(ctx).Model(m).Updates(m).Error
+	db := h.DB(ctx)
+	db = db.Model(m)
+	if m.Secret != SecretMask {
+		err = secret.Encrypt(&m.Secret)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+	} else {
+		db = db.Omit("Secret")
+	}
+	err = db.Save(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	// Reload to get full model including Subject
 	err = h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -265,20 +276,16 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 // @param id path int true "Client ID"
 func (h AuthHandler) IdpClientDelete(ctx *gin.Context) {
 	id := h.pk(ctx)
-
-	// Prevent deletion of seeded clients (ID < 1000)
 	if id < auth.LastId {
 		_ = ctx.Error(&BadRequestError{Reason: "id reserved"})
 		return
 	}
-
 	m := &model.IdpClient{}
 	err := h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
 	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
