@@ -3398,7 +3398,7 @@ func TestUser_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Subject).To(gomega.Equal(m.Subject))
 	g.Expect(r.Login).To(gomega.Equal("john.doe"))
-	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
+	g.Expect(r.Password).To(gomega.Equal(SecretMask))
 	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(r.Roles)).To(gomega.Equal(2))
 	g.Expect(r.Roles[0].ID).To(gomega.Equal(uint(10)))
