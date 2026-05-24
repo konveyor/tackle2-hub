@@ -46,6 +46,12 @@ const (
 	Injected = "injected"
 )
 
+// SecretMask obfuscates hashed and encrypted fields.
+// Fields interpreted as unchanged when submitted to update methods.
+const (
+	SecretMask = "_/>>MASKED-SECRET<</_"
+)
+
 // Routes - Addons
 const (
 	AddonsRoute = "/addons"

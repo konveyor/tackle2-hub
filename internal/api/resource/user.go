@@ -5,6 +5,10 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
+const (
+	SecretMask = api.SecretMask
+)
+
 // User REST resource.
 type User api.User
 
@@ -14,7 +18,7 @@ func (r *User) With(m *model.User) {
 	r.Subject = m.Subject
 	r.Login = m.Login
 	r.Name = m.Name
-	r.Password = m.Password
+	r.Password = SecretMask
 	r.Email = m.Email
 	r.Roles = []Ref{}
 	for _, role := range m.Roles {
