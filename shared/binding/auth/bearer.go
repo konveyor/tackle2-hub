@@ -38,6 +38,40 @@ const (
 	SlowDown    = "slow_down"
 )
 
+// NewBearer return a new static bearer token auth method.
+func NewBearer(token string) (m *Bearer) {
+	m = &Bearer{
+		accessToken: token,
+	}
+	return
+}
+
+// Bearer static bearer method.
+type Bearer struct {
+	accessToken string
+}
+
+// Token returns the bearer token.
+func (p *Bearer) Token() (token string) {
+	token = p.accessToken
+	return
+}
+
+// Header returns the authorization header.
+func (p *Bearer) Header() (h string) {
+	h = "Bearer " + p.accessToken
+	return
+}
+
+// Login No-op.
+func (p *Bearer) Login() (err error) {
+	return
+}
+
+// SetTransport No-op.
+func (p *Bearer) SetTransport(*http.Transport) {
+}
+
 // NewOIDC creates a new OIDC bearer token authenticator.
 func NewOIDC(issuerURL, clientId string) (h *OIDC) {
 	h = &OIDC{
@@ -50,11 +84,11 @@ func NewOIDC(issuerURL, clientId string) (h *OIDC) {
 
 // OIDC provides OIDC authentication with automatic token refresh.
 type OIDC struct {
+	Bearer
 	mutex        sync.RWMutex
 	issuerURL    string
 	clientId     string
 	httpClient   *http.Client
-	accessToken  string
 	refreshToken string
 }
 
@@ -113,7 +147,7 @@ func (p *OIDC) Login() (err error) {
 func (p *OIDC) Header() (header string) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
-	header = "Bearer " + p.accessToken
+	header = p.Bearer.Header()
 	return
 }
 

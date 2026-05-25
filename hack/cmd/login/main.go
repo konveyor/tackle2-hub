@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -20,6 +21,44 @@ import (
 const (
 	ClientId = "kantra"
 )
+
+type AuthMethod struct {
+	*auth.OIDC
+	hubURL    string
+	lifespan  int
+	transport *http.Transport
+}
+
+func (m *AuthMethod) Header() (h string) {
+	// Read token.
+	// m.Use(token)
+	//
+	h = m.OIDC.Header()
+	return
+}
+
+func (m *AuthMethod) Login() (err error) {
+	err = m.OIDC.Login()
+	if err != nil {
+		return
+	}
+	richClient := binding.New(m.hubURL)
+	richClient.Client.SetTransport(m.transport)
+	richClient.Client.Use(auth.NewBearer(m.OIDC.Token()))
+	pat := &api.PAT{Lifespan: m.lifespan}
+	err = richClient.Token.Create(pat)
+	if err != nil {
+		return
+	}
+	m.Use(pat.Token)
+	// Write token.
+	return
+}
+
+func (m *AuthMethod) SetTransport(tr *http.Transport) {
+	m.transport = tr
+	m.OIDC.SetTransport(tr)
+}
 
 func main() {
 	defer func() {
@@ -66,10 +105,6 @@ func main() {
 		"password",
 		"",
 		"User password.")
-	getToken := flag.Bool(
-		"pat",
-		true,
-		"Get PAT token.")
 	flag.Parse()
 
 	if *issuerURL == "" {
@@ -105,30 +140,22 @@ func main() {
 			InsecureSkipVerify: true,
 		}
 
-		bearer := auth.NewOIDC(*issuerURL, *clientId)
-		bearer.SetTransport(tr)
-		err := bearer.Login()
+		authMethod := &AuthMethod{
+			OIDC:     auth.NewOIDC(*issuerURL, *clientId),
+			hubURL:   *hubURL,
+			lifespan: *patLifespan,
+		}
+		authMethod.SetTransport(tr)
+		err := authMethod.Login()
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Printf("\nAuth succeeded. token: %s\n", bearer.Token())
+		fmt.Printf("\nAuth succeeded. token: %s\n", authMethod.Token())
 
-		richClient.UseAuth(bearer)
+		richClient.UseAuth(authMethod)
 
-		if *getToken {
-			pat := &api.PAT{Lifespan: *patLifespan}
-			err = richClient.Token.Create(pat)
-			if err != nil {
-				panic(err)
-			}
-
-			bearer.Use(pat.Token)
-
-			fmt.Printf("\nGet PAT succeeded. token: %s\n", bearer.Token())
-
-			testClient(richClient)
-		}
+		testClient(richClient)
 		return
 	}
 
